@@ -65,9 +65,23 @@ pub fn createBinarySymlinkFromPath(
         return error.BinDirCreationFailed;
     };
 
-    // Check if symlink already exists from a different package — don't overwrite
-    if (symlinkOwnedByDifferentPackage(allocator, symlink_path, bin_path)) {
-        if (!style.isCI()) style.print("  ~ Skipped {s} (already provided by another package)\n", .{bin_name});
+    // Check if symlink already exists from a different package — don't overwrite.
+    // Always log a structured message (even in CI) so `pantry doctor` and CI logs
+    // can surface symlink collisions.
+    if (symlinkOwnedByExistingPackage(allocator, symlink_path)) |existing_owner| {
+        defer allocator.free(existing_owner);
+        if (style.isCI()) {
+            // Machine-parseable line for CI log scraping
+            style.print(
+                "pantry:symlink:skip bin={s} link={s} owner={s}\n",
+                .{ bin_name, symlink_path, existing_owner },
+            );
+        } else {
+            style.print(
+                "  ~ Skipped {s} (already provided by {s})\n",
+                .{ bin_name, existing_owner },
+            );
+        }
         return;
     }
 
@@ -100,6 +114,37 @@ fn symlinkOwnedByDifferentPackage(
 
     // If they're from different package directories, the existing one takes precedence
     return !std.mem.eql(u8, existing_pkg, new_pkg);
+}
+
+/// Return the owning package name (last path component of its version dir) of an
+/// existing symlink, or null if the link doesn't exist / doesn't live inside a
+/// recognisable package directory. Caller owns the returned slice.
+fn symlinkOwnedByExistingPackage(
+    allocator: std.mem.Allocator,
+    symlink_path: []const u8,
+) ?[]u8 {
+    const existing_target = io_helper.readLinkAlloc(allocator, symlink_path) catch return null;
+    defer allocator.free(existing_target);
+
+    const pkg_dir = extractPackageDir(existing_target) orelse return null;
+    // pkg_dir looks like ".../packages/redis.io/v8.6.1" — take the parent segment as owner
+    const slash = std.mem.lastIndexOfScalar(u8, pkg_dir, '/') orelse return null;
+    const parent = pkg_dir[0..slash];
+    const owner_start = (std.mem.lastIndexOfScalar(u8, parent, '/') orelse 0);
+    const owner_begin = if (owner_start > 0) owner_start + 1 else 0;
+    return allocator.dupe(u8, parent[owner_begin..]) catch null;
+}
+
+test "extractPackageDir handles bin and sbin" {
+    try std.testing.expectEqualStrings(
+        "/root/packages/redis.io/v8.6.1",
+        extractPackageDir("/root/packages/redis.io/v8.6.1/bin/redis-server") orelse unreachable,
+    );
+    try std.testing.expectEqualStrings(
+        "/root/packages/valkey.io/v9.0.3",
+        extractPackageDir("/root/packages/valkey.io/v9.0.3/sbin/valkey-server") orelse unreachable,
+    );
+    try std.testing.expect(extractPackageDir("/bogus/path") == null);
 }
 
 /// Extract the package directory portion from a binary path.

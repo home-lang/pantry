@@ -42,8 +42,10 @@ pub const ShellCommands = struct {
         defer self.allocator.free(current_dir);
 
         while (true) {
-            // Compute hash for this directory
-            const hash = lib.string.md5Hash(current_dir);
+            // Compute hash for this directory. Uses `hashProjectPath` which
+            // mixes in the (dev, inode) pair so renamed parents yield a
+            // different hash — prevents stale cache hits after `mv old new`.
+            const hash = lib.string.hashProjectPath(current_dir);
             const hash_hex = try lib.string.hashToHex(hash, self.allocator);
             defer self.allocator.free(hash_hex);
 
@@ -70,6 +72,14 @@ pub const ShellCommands = struct {
                     if (mtime != entry.dep_mtime) {
                         // Dependency file changed, invalidate cache
                         return null; // Force re-detection
+                    }
+
+                    // 3. Belt-and-braces: if the size field is populated on
+                    // the cache entry, compare it too. mtime has 1s resolution
+                    // on many filesystems so a same-second edit can fool the
+                    // mtime check alone. Size divergence is a cheap tiebreaker.
+                    if (entry.dep_size != 0 and stat.size != entry.dep_size) {
+                        return null;
                     }
                 }
 
@@ -122,27 +132,35 @@ pub const ShellCommands = struct {
         // If pantry.json mtime unchanged, use cached environment instantly
         const now = @as(i64, @intCast((io_helper.clockGettime()).sec));
 
-        const project_hash_quick = lib.string.md5Hash(project_root);
+        const project_hash_quick = lib.string.hashProjectPath(project_root);
         if (try self.env_cache.get(project_hash_quick)) |cached_entry| {
-            // Get current dep file mtime
-            const current_dep_mtime = if (dep_file) |file| blk: {
+            // Capture current dep file (mtime, size) together so we can catch
+            // same-second edits that mtime alone would miss.
+            const current_dep_mtime: i128 = if (dep_file) |file| blk: {
                 const f = io_helper.cwd().openFile(io_helper.io, file, .{}) catch break :blk 0;
                 defer f.close(io_helper.io);
                 const stat = f.stat(io_helper.io) catch break :blk 0;
                 break :blk @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s);
             } else 0;
+            const current_dep_size: u64 = if (dep_file) |file| blk: {
+                const f = io_helper.cwd().openFile(io_helper.io, file, .{}) catch break :blk 0;
+                defer f.close(io_helper.io);
+                const stat = f.stat(io_helper.io) catch break :blk 0;
+                break :blk @intCast(stat.size);
+            } else 0;
 
-            // Cache hit if dep file mtime unchanged (primary check)
-            if (current_dep_mtime == cached_entry.dep_mtime) {
-                // File unchanged - use cache regardless of TTL
-                // Just update last_validated timestamp for bookkeeping
+            // Cache hit requires mtime AND size to match (size check skipped
+            // when the cached entry predates this field, i.e. dep_size == 0).
+            const mtime_ok = current_dep_mtime == cached_entry.dep_mtime;
+            const size_ok = cached_entry.dep_size == 0 or current_dep_size == cached_entry.dep_size;
+            if (mtime_ok and size_ok) {
                 cached_entry.last_validated = now;
                 const project_basename = std.fs.path.basename(project_root);
                 style.print("✓ Environment cached: {s}\n", .{project_basename});
                 style.print("  Dependencies already installed. Use --force to reinstall.\n", .{});
                 return try self.generateShellCode(project_root, cached_entry.path);
             }
-            // File mtime changed: invalidate cache and do full activation
+            // File changed: invalidate cache and do full activation
         }
 
         // Cache miss or invalidated - proceed with full activation
@@ -341,13 +359,20 @@ pub const ShellCommands = struct {
             }
         }
 
-        // 7. Update cache
-        const project_hash_for_cache = lib.string.md5Hash(project_root);
-        const dep_mtime = if (dep_file) |file| blk: {
+        // 7. Update cache. Capture (mtime, size) for same-second edit
+        // detection — mtime alone is 1-second resolution on many filesystems.
+        const project_hash_for_cache = lib.string.hashProjectPath(project_root);
+        const dep_mtime: i128 = if (dep_file) |file| blk: {
             const f = io_helper.cwd().openFile(io_helper.io, file, .{}) catch break :blk 0;
             defer f.close(io_helper.io);
             const stat = f.stat(io_helper.io) catch break :blk 0;
             break :blk @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s);
+        } else 0;
+        const dep_size: u64 = if (dep_file) |file| blk: {
+            const f = io_helper.cwd().openFile(io_helper.io, file, .{}) catch break :blk 0;
+            defer f.close(io_helper.io);
+            const stat = f.stat(io_helper.io) catch break :blk 0;
+            break :blk @intCast(stat.size);
         } else 0;
 
         const entry = try self.allocator.create(lib.cache.env_cache.Entry);
@@ -355,6 +380,7 @@ pub const ShellCommands = struct {
             .hash = project_hash_for_cache,
             .dep_file = try self.allocator.dupe(u8, dep_file orelse ""),
             .dep_mtime = dep_mtime,
+            .dep_size = dep_size,
             .path = try self.allocator.dupe(u8, env_dir),
             .env_vars = std.StringHashMap([]const u8).init(self.allocator),
             .created_at = @as(i64, @intCast((io_helper.clockGettime()).sec)),

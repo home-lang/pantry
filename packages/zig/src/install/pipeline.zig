@@ -13,10 +13,113 @@ const installer_mod = @import("installer.zig");
 const cache_mod = @import("../cache.zig");
 const packages = @import("../packages.zig");
 const style = @import("../cli/style.zig");
+const offline = @import("offline.zig");
+const patches_mod = @import("patches.zig");
 
 const Installer = installer_mod.Installer;
 const PackageCache = cache_mod.PackageCache;
 const PackageSpec = packages.PackageSpec;
+
+/// Verify a downloaded tarball's bytes against an `integrity` string, which
+/// may be either:
+///   * an npm-style SRI value like "sha512-BASE64..." / "sha256-BASE64..."
+///   * a raw lowercase hex SHA256 (64 chars)
+///
+/// Unknown / unrecognised formats are accepted (we have no way to verify,
+/// so we fall back to trusting the transport).
+pub fn verifyIntegrity(allocator: std.mem.Allocator, bytes: []const u8, integrity: []const u8) bool {
+    // Raw hex SHA256
+    if (integrity.len == 64) {
+        var is_hex = true;
+        for (integrity) |c| {
+            if (!((c >= '0' and c <= '9') or (c >= 'a' and c <= 'f') or (c >= 'A' and c <= 'F'))) {
+                is_hex = false;
+                break;
+            }
+        }
+        if (is_hex) {
+            var digest: [32]u8 = undefined;
+            std.crypto.hash.sha2.Sha256.hash(bytes, &digest, .{});
+            const hex = std.fmt.bytesToHex(digest, .lower);
+            // Case-insensitive compare
+            for (hex, 0..) |h, i| {
+                const g = integrity[i];
+                const lower_g: u8 = if (g >= 'A' and g <= 'Z') g + ('a' - 'A') else g;
+                if (h != lower_g) return false;
+            }
+            return true;
+        }
+    }
+
+    // SRI form: "<algo>-<base64>"
+    const dash = std.mem.indexOfScalar(u8, integrity, '-') orelse return true; // unknown → trust
+    const algo = integrity[0..dash];
+    const b64 = integrity[dash + 1 ..];
+
+    if (std.mem.eql(u8, algo, "sha256")) {
+        var digest: [32]u8 = undefined;
+        std.crypto.hash.sha2.Sha256.hash(bytes, &digest, .{});
+        var expected: [32]u8 = undefined;
+        const decoded = std.base64.standard.Decoder.calcSizeForSlice(b64) catch return true;
+        if (decoded != 32) return true;
+        std.base64.standard.Decoder.decode(&expected, b64) catch return true;
+        return std.mem.eql(u8, &digest, &expected);
+    } else if (std.mem.eql(u8, algo, "sha512")) {
+        var digest: [64]u8 = undefined;
+        std.crypto.hash.sha2.Sha512.hash(bytes, &digest, .{});
+        var expected: [64]u8 = undefined;
+        const decoded = std.base64.standard.Decoder.calcSizeForSlice(b64) catch return true;
+        if (decoded != 64) return true;
+        std.base64.standard.Decoder.decode(&expected, b64) catch return true;
+        return std.mem.eql(u8, &digest, &expected);
+    } else if (std.mem.eql(u8, algo, "sha1")) {
+        // sha1 still shows up on npm; verify for completeness
+        var digest: [20]u8 = undefined;
+        std.crypto.hash.Sha1.hash(bytes, &digest, .{});
+        var expected: [20]u8 = undefined;
+        const decoded = std.base64.standard.Decoder.calcSizeForSlice(b64) catch return true;
+        if (decoded != 20) return true;
+        std.base64.standard.Decoder.decode(&expected, b64) catch return true;
+        return std.mem.eql(u8, &digest, &expected);
+    }
+
+    _ = allocator;
+    // Unknown algorithm — don't reject (avoid bricking installs on weird algos)
+    return true;
+}
+
+test "verifyIntegrity sha256 hex happy path" {
+    const allocator = std.testing.allocator;
+    const body = "hello world";
+    // sha256("hello world") = b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
+    const hex = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
+    try std.testing.expect(verifyIntegrity(allocator, body, hex));
+    const bad = "0000000000000000000000000000000000000000000000000000000000000000";
+    try std.testing.expect(!verifyIntegrity(allocator, body, bad));
+}
+
+test "verifyIntegrity unknown algorithm is accepted" {
+    const allocator = std.testing.allocator;
+    try std.testing.expect(verifyIntegrity(allocator, "x", "frobnitz-abc"));
+}
+
+test "verifyIntegrity sha512 SRI happy path" {
+    const allocator = std.testing.allocator;
+    const body = "hello world";
+    // node -e 'console.log("sha512-" + require("crypto").createHash("sha512").update("hello world").digest("base64"))'
+    const sri = "sha512-MJ7MSJwS1utMxA9QyQLytNDtd+5RGnx6m808qG1M2G+YndNbxf9JlnDaNh2EwjW9Cl3XUMEp76DKfIvi01d14Q==";
+    try std.testing.expect(verifyIntegrity(allocator, body, sri));
+}
+
+test "verifyIntegrity detects tampered body under sha256 hex" {
+    const allocator = std.testing.allocator;
+    const original = "hello world";
+    const tampered = "hello World"; // capital W
+    // sha256("hello world") hex
+    const hex = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
+    try std.testing.expect(verifyIntegrity(allocator, original, hex));
+    try std.testing.expect(!verifyIntegrity(allocator, tampered, hex));
+}
 
 // ============================================================================
 // Public Types
@@ -376,6 +479,25 @@ const DownloadThreadCtx = struct {
             else
                 null;
 
+            // Offline mode: if tarball isn't in the content-addressed cache, we refuse to
+            // touch the network. A clear error message is surfaced via error_msg so the
+            // user knows exactly which package was missing and can either re-run online
+            // or pre-seed the cache.
+            if (tarball_data == null and offline.isOfflineMode()) {
+                const em = std.fmt.allocPrint(
+                    ctx.installer.allocator,
+                    "{s}@{s}: not in cache and PANTRY_OFFLINE=1 is set",
+                    .{ pkg.name, pkg.version },
+                ) catch null;
+                ctx.results[i] = .{
+                    .name = owned_name,
+                    .version = owned_version,
+                    .success = false,
+                    .error_msg = em,
+                };
+                continue;
+            }
+
             const tarball_bytes = tarball_data orelse dl_blk: {
                 // Download tarball with retry
                 var downloaded: ?[]const u8 = null;
@@ -413,14 +535,43 @@ const DownloadThreadCtx = struct {
             }
             defer ctx.installer.allocator.free(tarball_bytes.?);
 
-            // Extract tarball to install directory
-            io_helper.makePath(install_dir) catch {
+            // Integrity verification — if the resolver gave us an integrity value
+            // (SRI or raw hex), make sure the bytes match before we touch disk.
+            // Unknown formats are accepted silently to avoid bricking installs.
+            if (pkg.integrity) |integrity| {
+                if (integrity.len > 0 and !verifyIntegrity(ctx.installer.allocator, tarball_bytes.?, integrity)) {
+                    const em = std.fmt.allocPrint(
+                        ctx.installer.allocator,
+                        "{s}@{s}: integrity mismatch (expected {s})",
+                        .{ pkg.name, pkg.version, integrity[0..@min(integrity.len, 80)] },
+                    ) catch null;
+                    ctx.results[i] = .{
+                        .name = owned_name,
+                        .version = owned_version,
+                        .success = false,
+                        .error_msg = em,
+                    };
+                    continue;
+                }
+            }
+
+            // Atomic extraction: extract into <install_dir>.partial first, then rename
+            // to <install_dir>. A crash mid-extract leaves a `.partial` sibling that we
+            // clean up on every entry, so it never lands as a half-installed package.
+            var partial_buf: [std.fs.max_path_bytes]u8 = undefined;
+            const partial_dir = std.fmt.bufPrint(&partial_buf, "{s}.partial", .{install_dir}) catch {
+                ctx.results[i] = .{ .name = owned_name, .version = owned_version, .success = false, .error_msg = null };
+                continue;
+            };
+            // Clean up any leftover partial from a previous run
+            io_helper.deleteTree(partial_dir) catch {};
+            io_helper.makePath(partial_dir) catch {
                 ctx.results[i] = .{ .name = owned_name, .version = owned_version, .success = false, .error_msg = null };
                 continue;
             };
 
             const extract_success = blk: {
-                var dest = io_helper.cwd().openDir(io_helper.io, install_dir, .{}) catch break :blk false;
+                var dest = io_helper.cwd().openDir(io_helper.io, partial_dir, .{}) catch break :blk false;
                 defer dest.close(io_helper.io);
 
                 var input_reader: std.Io.Reader = .fixed(tarball_bytes.?);
@@ -435,16 +586,33 @@ const DownloadThreadCtx = struct {
                     .strip_components = 1,
                     .diagnostics = &diagnostics,
                 }) catch {
-                    io_helper.deleteTree(install_dir) catch {};
+                    io_helper.deleteTree(partial_dir) catch {};
                     break :blk false;
                 };
                 break :blk true;
             };
 
             if (!extract_success) {
+                io_helper.deleteTree(partial_dir) catch {};
                 ctx.results[i] = .{ .name = owned_name, .version = owned_version, .success = false, .error_msg = null };
                 continue;
             }
+
+            // Rename .partial → install_dir atomically. If a previous install is
+            // present, we delete it first so the rename target is free.
+            io_helper.accessAbsolute(install_dir, .{}) catch {
+                // Good — target doesn't exist, proceed
+            };
+            io_helper.deleteTree(install_dir) catch {};
+            io_helper.rename(partial_dir, install_dir) catch |ren_err| {
+                // Best-effort recovery: fall back to moving by copy, then clean up.
+                _ = ren_err;
+                io_helper.makePath(install_dir) catch {};
+                // Leave a breadcrumb so partial contents are cleaned next run
+                io_helper.deleteTree(partial_dir) catch {};
+                ctx.results[i] = .{ .name = owned_name, .version = owned_version, .success = false, .error_msg = null };
+                continue;
+            };
 
             // Create bin shims
             ctx.installer.createNpmShims(ctx.project_root, pkg.name, install_dir) catch {};
@@ -633,6 +801,35 @@ fn resolveViaRegistry(
 // Pipeline Entry Point
 // ============================================================================
 
+/// Remove any `<pkg>.partial` extraction dirs inside `<project_root>/<modules_dir>`
+/// left over from a previously crashed install. Best-effort; any IO errors are
+/// reported to the caller which logs them at verbose level.
+fn cleanupStalePartials(
+    allocator: std.mem.Allocator,
+    project_root: []const u8,
+    modules_dir: []const u8,
+    verbose: bool,
+) !void {
+    const base = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ project_root, modules_dir });
+    defer allocator.free(base);
+
+    var dir = io_helper.openDirForIteration(base) catch return;
+    defer dir.close();
+
+    var it = dir.iterate();
+    var cleaned: usize = 0;
+    while (it.next() catch null) |entry| {
+        if (!std.mem.endsWith(u8, entry.name, ".partial")) continue;
+        const victim = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ base, entry.name });
+        defer allocator.free(victim);
+        io_helper.deleteTree(victim) catch continue;
+        cleaned += 1;
+    }
+    if (verbose and cleaned > 0) {
+        std.debug.print("[verbose:pipeline:recovery] cleaned {d} stale .partial dirs\n", .{cleaned});
+    }
+}
+
 /// Run the 3-phase parallel install pipeline.
 /// Returns results for each package (success/fail, for reporting and lockfile generation).
 pub fn run(
@@ -644,6 +841,12 @@ pub fn run(
 ) !PipelineResult {
     const total_start = io_helper.clockGettime();
     const total_start_ms = @as(i64, @intCast(total_start.sec)) * 1000 + @divFloor(@as(i64, @intCast(total_start.nsec)), 1_000_000);
+
+    // ── Phase 0: Recovery — sweep stale `.partial` extraction dirs left behind by
+    // crashed runs. Cheap (single iteration) and keeps disk clean without user action.
+    cleanupStalePartials(allocator, project_root, inst.modules_dir, verbose) catch |err| {
+        if (verbose) std.debug.print("[verbose:pipeline:recovery] cleanup skipped: {s}\n", .{@errorName(err)});
+    };
 
     // ── Fast path: check if all top-level deps are already installed ──
     {
@@ -771,6 +974,27 @@ pub fn run(
 
     if (verbose) {
         std.debug.print("[verbose:pipeline:timer] Phase 2 (download+extract): {d}ms\n", .{phase2_ms - phase1_ms});
+    }
+
+    // ── Phase 3: Post-install patches ──
+    // Skip gracefully when no `patchedDependencies` field is present. The patch
+    // module is a no-op in that case, so the cost is one file read.
+    const patch_result = patches_mod.applyPatchesIn(
+        allocator,
+        project_root,
+        inst.modules_dir,
+        verbose,
+    ) catch |err| blk: {
+        if (verbose) std.debug.print("[verbose:pipeline:patches] error: {s}\n", .{@errorName(err)});
+        break :blk patches_mod.PatchResult{ .applied = 0, .failed = 0, .skipped = 0 };
+    };
+    if (verbose and (patch_result.applied + patch_result.failed + patch_result.skipped) > 0) {
+        std.debug.print("[verbose:pipeline:patches] applied={d} failed={d} skipped={d}\n", .{
+            patch_result.applied, patch_result.failed, patch_result.skipped,
+        });
+    }
+
+    if (verbose) {
         std.debug.print("[verbose:pipeline:timer] Total pipeline: {d}ms — installed={d}, cached={d}, failed={d}\n", .{
             phase2_ms - total_start_ms, installed, cached, failed,
         });

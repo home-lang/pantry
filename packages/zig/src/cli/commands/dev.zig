@@ -43,6 +43,23 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\  PATH="$p"
         \\}
         \\
+        \\# Prepend a directory to PATH, de-duplicating any existing copies (pure bash).
+        \\__pantry_path_prepend() {
+        \\  local dir="$1"
+        \\  [[ -z "$dir" ]] && return 0
+        \\  # Strip every existing occurrence of $dir from PATH
+        \\  local p=":${PATH}:" remove=":$dir:"
+        \\  while [[ "$p" == *"$remove"* ]]; do
+        \\    p="${p//$remove/:}"
+        \\  done
+        \\  p="${p#:}"; p="${p%:}"
+        \\  if [[ -n "$p" ]]; then
+        \\    PATH="$dir:$p"
+        \\  else
+        \\    PATH="$dir"
+        \\  fi
+        \\}
+        \\
         \\# Find dependency file in current directory only (fast single-dir check)
         \\__pantry_find_dep_here() {
         \\  local dir="$1"
@@ -72,37 +89,65 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\  return 1
         \\}
         \\
-        \\# Shell-side cache lookup (pure shell, zero subprocesses)
-        \\# Format: dir|env_dir|dep_file|mtime (one entry per line)
+        \\# Shell-side cache lookup (pure shell, zero subprocesses).
+        \\# Format: dir|env_dir|dep_file|mtime|size|last_access (one entry per line)
+        \\# The `last_access` field is an integer epoch for LRU-style eviction; on a
+        \\# hit we bump it, which pushes the entry to the tail of the file on the
+        \\# next write. Entries older than PANTRY_CACHE_MAX_AGE seconds (default 30
+        \\# days) are evicted unconditionally.
         \\__pantry_cache_lookup() {
         \\  [[ -f "$__PANTRY_CACHE_FILE" ]] || return 1
-        \\  local line cached_dir env_dir dep_file cached_mtime
-        \\  while IFS='|' read -r cached_dir env_dir dep_file cached_mtime; do
-        \\    [[ "$cached_dir" == "$1" ]] || continue
+        \\  local line cached_dir env_dir dep_file cached_mtime cached_size cached_access
+        \\  local target_dir="$1"
+        \\  local now; now=$(date +%s 2>/dev/null || echo 0)
+        \\  while IFS='|' read -r cached_dir env_dir dep_file cached_mtime cached_size cached_access; do
+        \\    [[ "$cached_dir" == "$target_dir" ]] || continue
         \\    # Validate: env bin dir still exists
         \\    [[ -d "$env_dir/bin" ]] || return 1
-        \\    # Validate: dep file mtime unchanged
+        \\    # Validate: dep file mtime AND size unchanged (size catches same-second edits)
         \\    if [[ -n "$dep_file" && -f "$dep_file" ]]; then
         \\      [[ "$(__pantry_mtime "$dep_file")" == "$cached_mtime" ]] || return 1
+        \\      local cur_size
+        \\      cur_size=$(stat -f %z "$dep_file" 2>/dev/null || stat -c %s "$dep_file" 2>/dev/null || echo 0)
+        \\      [[ -z "$cached_size" || "$cur_size" == "$cached_size" ]] || return 1
         \\    fi
         \\    REPLY="$env_dir"
+        \\    # LRU bump: rewrite this entry with a fresh access timestamp (best-effort).
+        \\    __pantry_cache_write "$target_dir" "$env_dir" "${dep_file:-}" "${cached_mtime:-0}" >/dev/null 2>&1 || true
         \\    return 0
         \\  done < "$__PANTRY_CACHE_FILE"
         \\  return 1
         \\}
         \\
-        \\# Write/update shell-side cache entry
+        \\# Write/update shell-side cache entry. Implements LRU: on write we re-emit
+        \\# all entries (excluding stale ones and the target dir) in access order,
+        \\# then append the target dir at the tail with a fresh timestamp. Size is
+        \\# capped by PANTRY_CACHE_MAX_ENTRIES (default 100, was 50).
         \\__pantry_cache_write() {
         \\  local dir="$1" env_dir="$2" dep_file="$3" mtime="$4"
+        \\  local max_entries="${PANTRY_CACHE_MAX_ENTRIES:-100}"
+        \\  local max_age="${PANTRY_CACHE_MAX_AGE:-2592000}" # 30 days
         \\  mkdir -p "${__PANTRY_CACHE_FILE%/*}" 2>/dev/null
         \\  local tmp="${__PANTRY_CACHE_FILE}.$$"
-        \\  if [[ -f "$__PANTRY_CACHE_FILE" ]]; then
-        \\    # Remove stale entry for this dir, keep last 50
-        \\    while IFS='|' read -r d rest; do
-        \\      [[ "$d" != "$dir" ]] && echo "$d|$rest"
-        \\    done < "$__PANTRY_CACHE_FILE" | tail -49 > "$tmp"
+        \\  local now size keep_lines
+        \\  now=$(date +%s 2>/dev/null || echo 0)
+        \\  if [[ -n "$dep_file" && -f "$dep_file" ]]; then
+        \\    size=$(stat -f %z "$dep_file" 2>/dev/null || stat -c %s "$dep_file" 2>/dev/null || echo 0)
+        \\  else
+        \\    size=0
         \\  fi
-        \\  echo "${dir}|${env_dir}|${dep_file}|${mtime}" >> "$tmp"
+        \\  keep_lines=$((max_entries - 1))
+        \\  if [[ -f "$__PANTRY_CACHE_FILE" ]]; then
+        \\    # Preserve existing entries (dropping stale and the target dir), cap to keep_lines
+        \\    while IFS='|' read -r d rest_env rest_dep rest_mtime rest_size rest_access; do
+        \\      [[ "$d" == "$dir" ]] && continue
+        \\      if [[ -n "$rest_access" && "$rest_access" -gt 0 && $((now - rest_access)) -gt "$max_age" ]]; then
+        \\        continue
+        \\      fi
+        \\      echo "$d|$rest_env|$rest_dep|$rest_mtime|$rest_size|$rest_access"
+        \\    done < "$__PANTRY_CACHE_FILE" | tail -n "$keep_lines" > "$tmp"
+        \\  fi
+        \\  echo "${dir}|${env_dir}|${dep_file}|${mtime}|${size}|${now}" >> "$tmp"
         \\  mv -f "$tmp" "$__PANTRY_CACHE_FILE" 2>/dev/null
         \\}
         \\
@@ -114,12 +159,12 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\  export PANTRY_ENV_DIR="$env_dir"
         \\  export PANTRY_DEP_FILE="$dep_file"
         \\  export PANTRY_DEP_MTIME="$(__pantry_mtime "$dep_file")"
-        \\  # Add env bin to PATH (avoid duplicates)
-        \\  [[ ":$PATH:" != *":$env_dir/bin:"* ]] && PATH="$env_dir/bin:$PATH"
+        \\  # Add env bin to PATH with de-duplication (avoids PATH growing on repeat cds)
+        \\  __pantry_path_prepend "$env_dir/bin"
         \\  # Add pantry/.bin if it exists (project-local tool wrappers)
         \\  if [[ -d "$project_dir/pantry/.bin" ]]; then
         \\    export PANTRY_BIN_PATH="$project_dir/pantry/.bin"
-        \\    [[ ":$PATH:" != *":$PANTRY_BIN_PATH:"* ]] && PATH="$PANTRY_BIN_PATH:$PATH"
+        \\    __pantry_path_prepend "$PANTRY_BIN_PATH"
         \\  fi
         \\  export PATH
         \\}
@@ -174,9 +219,12 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\  fi
         \\
         \\  # BINARY LOOKUP: Walks up parent dirs, checks Zig-side cache (~50ms, first visit)
-        \\  local lookup_result
-        \\  lookup_result=$(pantry shell:lookup "$PWD" 2>/dev/null)
-        \\  if [[ $? -eq 0 && -n "$lookup_result" ]]; then
+        \\  local lookup_result lookup_err lookup_rc
+        \\  lookup_err=$(mktemp 2>/dev/null || echo "/tmp/pantry-lookup-err.$$")
+        \\  lookup_result=$(pantry shell:lookup "$PWD" 2>"$lookup_err")
+        \\  lookup_rc=$?
+        \\  if [[ $lookup_rc -eq 0 && -n "$lookup_result" ]]; then
+        \\    rm -f "$lookup_err" 2>/dev/null
         \\    local env_dir="${lookup_result%%|*}"
         \\    local project_dir="${lookup_result#*|}"
         \\    if [[ -d "$env_dir/bin" ]]; then
@@ -187,21 +235,61 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\      __pantry_activate "$env_dir" "${project_dir:-$PWD}" "${dep_file:-}"
         \\      return 0
         \\    fi
+        \\  elif [[ $lookup_rc -ne 0 && $lookup_rc -ne 1 ]]; then
+        \\    # Non-zero non-"no env" exit → pantry binary crashed. Show the stderr so the
+        \\    # user knows why their prompt isn't activating anything. Exit 1 is reserved
+        \\    # for "no env found" and is intentionally silent.
+        \\    if [[ -s "$lookup_err" ]]; then
+        \\      printf 'pantry: shell:lookup failed (exit %d): %s\n' "$lookup_rc" "$(cat "$lookup_err")" >&2
+        \\    else
+        \\      printf 'pantry: shell:lookup failed (exit %d)\n' "$lookup_rc" >&2
+        \\    fi
         \\  fi
+        \\  rm -f "$lookup_err" 2>/dev/null
         \\
-        \\  # No env found but dep file exists - auto-install unless PANTRY_NO_AUTO_INSTALL is set
+        \\  # No env found but dep file exists — auto-install.
+        \\  # Opt-out: PANTRY_NO_AUTO_INSTALL=1
+        \\  # Background:  PANTRY_DEV_INSTALL_BG=1  (prompt returns immediately)
+        \\  # Timeout:     PANTRY_DEV_INSTALL_TIMEOUT=<seconds>  (default 120, enforced via `timeout` if present)
         \\  if [[ -n "$dep_file" && -z "$PANTRY_NO_AUTO_INSTALL" ]]; then
-        \\    if pantry install 2>&1; then
-        \\      lookup_result=$(pantry shell:lookup "$PWD" 2>/dev/null)
-        \\      if [[ $? -eq 0 && -n "$lookup_result" ]]; then
-        \\        local env_dir="${lookup_result%%|*}"
-        \\        local project_dir="${lookup_result#*|}"
-        \\        if [[ -d "$env_dir/bin" ]]; then
-        \\          local mtime="$(__pantry_mtime "$dep_file")"
-        \\          __pantry_cache_write "$PWD" "$env_dir" "$dep_file" "$mtime"
-        \\          [[ "$PWD" != "$project_dir" ]] && __pantry_cache_write "$project_dir" "$env_dir" "$dep_file" "$mtime"
-        \\          __pantry_activate "$env_dir" "${project_dir:-$PWD}" "$dep_file"
-        \\          return 0
+        \\    local __pantry_timeout="${PANTRY_DEV_INSTALL_TIMEOUT:-120}"
+        \\    if [[ -n "$PANTRY_DEV_INSTALL_BG" ]]; then
+        \\      # Background install: don't block the prompt. Write outcome to ~/.pantry/.auto-install.log
+        \\      local __pantry_log="${HOME}/.pantry/.auto-install.log"
+        \\      mkdir -p "${HOME}/.pantry" 2>/dev/null
+        \\      (
+        \\        if command -v timeout >/dev/null 2>&1; then
+        \\          timeout "$__pantry_timeout" pantry install >>"$__pantry_log" 2>&1
+        \\        else
+        \\          pantry install >>"$__pantry_log" 2>&1
+        \\        fi
+        \\      ) &
+        \\      disown 2>/dev/null
+        \\      printf 'pantry: auto-install started in background (see %s)\n' "$__pantry_log" >&2
+        \\    else
+        \\      local __pantry_install_rc=0
+        \\      if command -v timeout >/dev/null 2>&1; then
+        \\        timeout "$__pantry_timeout" pantry install 2>&1
+        \\        __pantry_install_rc=$?
+        \\        if [[ $__pantry_install_rc -eq 124 ]]; then
+        \\          printf 'pantry: auto-install timed out after %ss (set PANTRY_DEV_INSTALL_TIMEOUT or PANTRY_DEV_INSTALL_BG=1)\n' "$__pantry_timeout" >&2
+        \\        fi
+        \\      else
+        \\        pantry install 2>&1
+        \\        __pantry_install_rc=$?
+        \\      fi
+        \\      if [[ $__pantry_install_rc -eq 0 ]]; then
+        \\        lookup_result=$(pantry shell:lookup "$PWD" 2>/dev/null)
+        \\        if [[ $? -eq 0 && -n "$lookup_result" ]]; then
+        \\          local env_dir="${lookup_result%%|*}"
+        \\          local project_dir="${lookup_result#*|}"
+        \\          if [[ -d "$env_dir/bin" ]]; then
+        \\            local mtime="$(__pantry_mtime "$dep_file")"
+        \\            __pantry_cache_write "$PWD" "$env_dir" "$dep_file" "$mtime"
+        \\            [[ "$PWD" != "$project_dir" ]] && __pantry_cache_write "$project_dir" "$env_dir" "$dep_file" "$mtime"
+        \\            __pantry_activate "$env_dir" "${project_dir:-$PWD}" "$dep_file"
+        \\            return 0
+        \\          fi
         \\        fi
         \\      fi
         \\    fi

@@ -16,6 +16,11 @@ pub const Entry = struct {
     dep_file: []const u8,
     /// Dependency file modification time
     dep_mtime: i128,
+    /// Dependency file size. Belt-and-braces tiebreaker for same-second mtime
+    /// edits (EXT4 1s mtime resolution vs. nanosecond clocks). A value of 0
+    /// means "unknown" and disables the size check for backwards compat with
+    /// cache entries written by older pantry versions.
+    dep_size: u64 = 0,
     /// Cached PATH value
     path: []const u8,
     /// Environment variables
@@ -48,6 +53,13 @@ pub const Entry = struct {
             const current_mtime = @divFloor(stat.mtime, std.time.ns_per_s);
             if (current_mtime != self.dep_mtime) {
                 return false; // File has been modified
+            }
+
+            // Size tiebreaker: if we have a recorded size (0 = unknown for old
+            // cache entries) and it diverges, the file changed even if mtime
+            // stayed identical (same-second edit on 1s-resolution FS).
+            if (self.dep_size != 0 and stat.size != self.dep_size) {
+                return false;
             }
         }
 
@@ -444,9 +456,12 @@ pub fn createEntry(
         .hash = hash,
         .dep_file = try allocator.dupe(u8, dep_file),
         .dep_mtime = @divFloor(stat.mtime, std.time.ns_per_s), // Store in seconds to match isValid comparison
+        .dep_size = @intCast(stat.size),
         .path = try allocator.dupe(u8, path),
         .env_vars = env_vars,
         .created_at = @as(i64, @intCast(io_helper.clockGettime().sec)),
+        .cached_at = @as(i64, @intCast(io_helper.clockGettime().sec)),
+        .last_validated = @as(i64, @intCast(io_helper.clockGettime().sec)),
     };
 
     return entry;

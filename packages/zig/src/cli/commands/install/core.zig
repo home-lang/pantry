@@ -89,7 +89,16 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
         if (all_exist) {
             // Also check if any workspace member's package.json was modified after the lockfile.
             // This detects bumped dependency versions, added/removed deps, etc.
-            const lockfile_mtime_ns: i128 = @as(i128, lockfile.generated_at) * 1_000_000_000;
+            //
+            // Important: we stat the *lockfile file itself* rather than reading
+            // `lockfile.generated_at`, because the lockfile is written with the
+            // generatedAt field elided so it's byte-for-byte deterministic —
+            // the in-memory `generated_at` is just the time this process loaded
+            // it, which would false-invalidate every run.
+            const lockfile_stat = io_helper.statFile(lockfile_path_stack) catch {
+                return null;
+            };
+            const lockfile_mtime_ns: i128 = lockfile_stat.mtime;
             var ws_dep_it = lockfile.workspaces.iterator();
             while (ws_dep_it.next()) |ws_entry| {
                 const ws_rel_path = ws_entry.key_ptr.*;
@@ -1099,7 +1108,16 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     var failed_count: usize = 0;
 
     // Track successful installs for lockfile
-    var installed_packages = std.ArrayList(struct { name: []const u8, version: []const u8, source: lib.packages.PackageSource }).empty;
+    // Tracks packages we've installed so we can emit a lockfile entry per-pkg.
+    // `integrity` is the SRI/hex hash captured from the resolver when available
+    // — persisted into the lockfile so a subsequent `pantry install --frozen`
+    // can re-verify the tarball against the pinned digest.
+    var installed_packages = std.ArrayList(struct {
+        name: []const u8,
+        version: []const u8,
+        source: lib.packages.PackageSource,
+        integrity: ?[]const u8 = null,
+    }).empty;
     defer {
         for (installed_packages.items) |pkg| {
             allocator.free(pkg.name);
@@ -1264,12 +1282,18 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         success_count += 1;
 
         // Track for lockfile
+        const tracked_integrity: ?[]const u8 = if (result.integrity) |i|
+            (allocator.dupe(u8, i) catch null)
+        else
+            null;
         installed_packages.append(allocator, .{
             .name = allocator.dupe(u8, name) catch continue,
             .version = allocator.dupe(u8, result.version) catch continue,
             .source = spec.source,
+            .integrity = tracked_integrity,
         }) catch |err| {
             style.print("Warning: Failed to track installed package {s}: {}\n", .{ name, err });
+            if (tracked_integrity) |ti| allocator.free(ti);
         };
 
         // Update package.json with the new dependency (skip when --no-save)
@@ -1337,7 +1361,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 .source = pkg.source,
                 .url = null,
                 .resolved = null,
-                .integrity = null,
+                .integrity = if (pkg.integrity) |i| (allocator.dupe(u8, i) catch null) else null,
                 .dependencies = null,
             };
 

@@ -56,18 +56,34 @@ pub fn upgradeCommand(allocator: std.mem.Allocator, _: []const []const u8, optio
 
     style.print("  Checking for updates...\n", .{});
 
-    const response = io_helper.httpGet(allocator, api_url) catch {
-        return CommandResult.err(allocator, "Failed to check for updates. Check your internet connection.");
+    const response = io_helper.httpGet(allocator, api_url) catch |err| {
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "Failed to reach GitHub API ({s}). URL: {s}\n" ++
+                "    Hints: check internet, set HTTPS_PROXY, or try --canary/--dry-run.",
+            .{ @errorName(err), api_url },
+        );
+        return CommandResult.err(allocator, msg);
     };
     defer allocator.free(response);
 
     if (response.len == 0) {
-        return CommandResult.err(allocator, "Empty response from GitHub API");
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "Empty response from GitHub API (url: {s}). API rate limit? try again in a few minutes.",
+            .{api_url},
+        );
+        return CommandResult.err(allocator, msg);
     }
 
     // Parse the release JSON
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, response, .{}) catch {
-        return CommandResult.err(allocator, "Failed to parse GitHub API response");
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, response, .{}) catch |err| {
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "Failed to parse GitHub API response ({s}). body[0..64]={s}",
+            .{ @errorName(err), response[0..@min(response.len, 64)] },
+        );
+        return CommandResult.err(allocator, msg);
     };
     defer parsed.deinit();
 
@@ -137,36 +153,111 @@ pub fn upgradeCommand(allocator: std.mem.Allocator, _: []const []const u8, optio
     io_helper.makePath(tmp_parent) catch {};
     io_helper.makePath(tmp_dir) catch {};
 
-    downloader.downloadFileQuiet(allocator, url, tmp_zip, false) catch {
-        return CommandResult.err(allocator, "Failed to download update");
+    downloader.downloadFileQuiet(allocator, url, tmp_zip, false) catch |err| {
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "Failed to download update ({s}).\n" ++
+                "    URL: {s}\n" ++
+                "    Hints: retry; set HTTPS_PROXY; check https://status.github.com",
+            .{ @errorName(err), url },
+        );
+        return CommandResult.err(allocator, msg);
     };
 
     // Extract
     style.print("  Extracting...\n", .{});
     _ = io_helper.spawnAndWait(.{
         .argv = &.{ "unzip", "-o", tmp_zip, "-d", tmp_dir },
-    }) catch {
-        return CommandResult.err(allocator, "Failed to extract update");
+    }) catch |err| {
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "Failed to extract update ({s}). Archive may be corrupt; try: pantry upgrade --canary",
+            .{@errorName(err)},
+        );
+        return CommandResult.err(allocator, msg);
     };
 
-    // Replace binary
+    // Install path + staged binary path
     const install_path = try std.fmt.allocPrint(allocator, "{s}/.local/bin/{s}", .{ home, bin_name });
     defer allocator.free(install_path);
     const new_binary = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ tmp_dir, bin_name });
     defer allocator.free(new_binary);
 
-    style.print("  Installing to {s}...\n", .{install_path});
-
-    _ = io_helper.spawnAndWait(.{
-        .argv = &.{ "cp", new_binary, install_path },
-    }) catch {
-        return CommandResult.err(allocator, "Failed to install update. Try: sudo pantry upgrade");
+    // Staged binary must exist before we do anything
+    io_helper.accessAbsolute(new_binary, .{}) catch |err| {
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "Extracted archive missing expected binary {s} ({s})",
+            .{ new_binary, @errorName(err) },
+        );
+        return CommandResult.err(allocator, msg);
     };
 
-    // chmod +x
+    // chmod +x the staged binary before verifying
     _ = io_helper.spawnAndWait(.{
-        .argv = &.{ "chmod", "+x", install_path },
+        .argv = &.{ "chmod", "+x", new_binary },
     }) catch {};
+
+    // Smoke-test the staged binary: `pantry --version` should exit 0 and print the new tag.
+    // This protects against corrupt downloads that extract but don't run.
+    style.print("  Verifying staged binary...\n", .{});
+    const verify_result = io_helper.childRun(allocator, &[_][]const u8{ new_binary, "--version" }) catch |err| {
+        io_helper.deleteTree(tmp_dir) catch {};
+        io_helper.deleteFile(tmp_zip) catch {};
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "Staged binary failed to execute ({s}). Upgrade aborted; existing install left intact.",
+            .{@errorName(err)},
+        );
+        return CommandResult.err(allocator, msg);
+    };
+    defer allocator.free(verify_result.stdout);
+    defer allocator.free(verify_result.stderr);
+    if (verify_result.term != .exited or verify_result.term.exited != 0) {
+        io_helper.deleteTree(tmp_dir) catch {};
+        io_helper.deleteFile(tmp_zip) catch {};
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "Staged binary exited non-zero during verification (stderr: {s}). Upgrade aborted; existing install left intact.",
+            .{verify_result.stderr[0..@min(verify_result.stderr.len, 256)]},
+        );
+        return CommandResult.err(allocator, msg);
+    }
+
+    style.print("  Installing to {s}...\n", .{install_path});
+
+    // Atomic replace: rename(2) into place so the binary swap is crash-safe.
+    // The parent dir must exist; we stage alongside for same-filesystem rename.
+    const staging_final = try std.fmt.allocPrint(allocator, "{s}.pantry-upgrade-{d}", .{ install_path, std.time.milliTimestamp() });
+    defer allocator.free(staging_final);
+
+    // Try cross-filesystem-safe copy-then-rename: copy to staging next to target, then rename.
+    io_helper.copyFile(new_binary, staging_final) catch |err| {
+        io_helper.deleteTree(tmp_dir) catch {};
+        io_helper.deleteFile(tmp_zip) catch {};
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "Failed to stage new binary at {s} ({s}). Try: sudo pantry upgrade, or check {s} is writable.",
+            .{ staging_final, @errorName(err), install_path },
+        );
+        return CommandResult.err(allocator, msg);
+    };
+    _ = io_helper.spawnAndWait(.{
+        .argv = &.{ "chmod", "+x", staging_final },
+    }) catch {};
+
+    io_helper.rename(staging_final, install_path) catch |err| {
+        // rename failed — clean up staging and report
+        io_helper.deleteFile(staging_final) catch {};
+        io_helper.deleteTree(tmp_dir) catch {};
+        io_helper.deleteFile(tmp_zip) catch {};
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "Atomic rename failed ({s}). Target: {s}; Staged: {s}. Existing install left intact.",
+            .{ @errorName(err), install_path, staging_final },
+        );
+        return CommandResult.err(allocator, msg);
+    };
 
     // Cleanup
     io_helper.deleteTree(tmp_dir) catch {};

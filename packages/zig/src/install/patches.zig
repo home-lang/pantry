@@ -97,6 +97,18 @@ pub fn applyPatches(
     project_root: []const u8,
     verbose: bool,
 ) !PatchResult {
+    return applyPatchesIn(allocator, project_root, "node_modules", verbose);
+}
+
+/// Variant that honors a configurable modules directory (pantry defaults to
+/// "pantry/" for its project-local installs but can be retargeted). This is
+/// the integration point used by pipeline.run() after extraction.
+pub fn applyPatchesIn(
+    allocator: std.mem.Allocator,
+    project_root: []const u8,
+    modules_dir: []const u8,
+    verbose: bool,
+) !PatchResult {
     var result = PatchResult{ .applied = 0, .failed = 0, .skipped = 0 };
 
     const entries = try readPatchedDependencies(allocator, project_root);
@@ -131,8 +143,8 @@ pub fn applyPatches(
             continue;
         };
 
-        // Determine the package directory in node_modules
-        const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/node_modules/{s}", .{ project_root, entry.package_name });
+        // Determine the package directory inside the configured modules dir
+        const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ project_root, modules_dir, entry.package_name });
         defer allocator.free(pkg_dir);
 
         // Check if package is installed

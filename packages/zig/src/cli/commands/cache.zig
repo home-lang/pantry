@@ -126,6 +126,53 @@ pub fn cacheClearCommand(allocator: std.mem.Allocator, args: []const []const u8)
 // Cache Clean Command
 // ============================================================================
 
+/// Prune cache using LRU eviction + age-based cleanup.
+/// Intended for CI/cron use: accepts --max-size=<bytes> and --max-age-days=<N>.
+pub fn cachePruneCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    var max_size_bytes: usize = 5 * 1024 * 1024 * 1024; // 5 GB default
+    var max_age_days: u32 = 30;
+    var keep_recent: usize = 50;
+
+    for (args) |arg| {
+        if (std.mem.startsWith(u8, arg, "--max-size=")) {
+            const rest = arg[11..];
+            max_size_bytes = std.fmt.parseInt(usize, rest, 10) catch max_size_bytes;
+        } else if (std.mem.startsWith(u8, arg, "--max-age-days=")) {
+            const rest = arg[15..];
+            max_age_days = std.fmt.parseInt(u32, rest, 10) catch max_age_days;
+        } else if (std.mem.startsWith(u8, arg, "--keep-recent=")) {
+            const rest = arg[14..];
+            keep_recent = std.fmt.parseInt(usize, rest, 10) catch keep_recent;
+        }
+    }
+
+    var pkg_cache = try cache.PackageCache.initWithMaxSize(allocator, max_size_bytes);
+    defer pkg_cache.deinit();
+
+    const before = pkg_cache.stats();
+    style.print("Pruning cache (max {d:.2} MB, max age {d} days, keep {d} most-recent)...\n", .{
+        @as(f64, @floatFromInt(max_size_bytes)) / 1024.0 / 1024.0,
+        max_age_days,
+        keep_recent,
+    });
+
+    const result = try pkg_cache.prune(max_age_days, keep_recent);
+    const after = pkg_cache.stats();
+
+    style.print("Removed {d} package(s), freed {d:.2} MB\n", .{
+        result.packages_removed,
+        @as(f64, @floatFromInt(result.bytes_freed)) / 1024.0 / 1024.0,
+    });
+    style.print("Before: {d} pkgs / {d:.2} MB → After: {d} pkgs / {d:.2} MB\n", .{
+        before.total_packages,
+        @as(f64, @floatFromInt(before.total_size)) / 1024.0 / 1024.0,
+        after.total_packages,
+        @as(f64, @floatFromInt(after.total_size)) / 1024.0 / 1024.0,
+    });
+
+    return .{ .exit_code = 0 };
+}
+
 /// Clean cache (remove unused entries)
 pub fn cacheCleanCommand(allocator: std.mem.Allocator) !CommandResult {
     var pkg_cache = try cache.PackageCache.init(allocator);

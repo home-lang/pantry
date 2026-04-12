@@ -8,6 +8,160 @@ const parser = @import("../../deps/parser.zig");
 
 const CommandResult = common.CommandResult;
 
+/// File-local pointer to the active run's metadata cache. Set at the top of
+/// `execute` and cleared at the bottom; `updatePackage` / `updateSystemPackage`
+/// consult this before falling back to a direct HTTP fetch. This keeps the
+/// existing function signatures stable while letting us serve cached bodies.
+var g_metadata_cache: ?*MetadataCache = null;
+
+fn cachedHttpGet(allocator: std.mem.Allocator, url: []const u8) ![]u8 {
+    if (g_metadata_cache) |cache| {
+        if (cache.getOrFetch(url)) |body| return body;
+    }
+    return io_helper.httpGet(allocator, url);
+}
+
+/// Thread-safe URL → body cache used by `pantry update` to avoid refetching the
+/// same registry metadata multiple times in a single run and to let a parallel
+/// prefetch phase populate all URLs concurrently before the serial update loop.
+pub const MetadataCache = struct {
+    map: std.StringHashMap([]const u8),
+    mutex: io_helper.Mutex,
+    alloc: std.mem.Allocator,
+
+    pub fn init(alloc: std.mem.Allocator) MetadataCache {
+        return .{
+            .map = std.StringHashMap([]const u8).init(alloc),
+            .mutex = .{},
+            .alloc = alloc,
+        };
+    }
+
+    pub fn deinit(self: *MetadataCache) void {
+        var it = self.map.iterator();
+        while (it.next()) |entry| {
+            self.alloc.free(entry.key_ptr.*);
+            self.alloc.free(entry.value_ptr.*);
+        }
+        self.map.deinit();
+    }
+
+    /// Atomic get-or-fetch. If URL is cached, returns a caller-owned copy of the
+    /// cached body. Otherwise fetches it, stores it, and returns a copy.
+    pub fn getOrFetch(self: *MetadataCache, url: []const u8) ?[]u8 {
+        self.mutex.lock();
+        if (self.map.get(url)) |cached| {
+            const copy = self.alloc.dupe(u8, cached) catch {
+                self.mutex.unlock();
+                return null;
+            };
+            self.mutex.unlock();
+            return copy;
+        }
+        self.mutex.unlock();
+
+        const body = io_helper.httpGet(self.alloc, url) catch return null;
+        // Insert (race tolerated — last writer wins for cache; we still return
+        // the body we just fetched).
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        const owned_key = self.alloc.dupe(u8, url) catch return body;
+        const owned_val = self.alloc.dupe(u8, body) catch {
+            self.alloc.free(owned_key);
+            return body;
+        };
+        if (self.map.fetchPut(owned_key, owned_val) catch null) |prev| {
+            // Someone raced us — free the old value.
+            self.alloc.free(prev.key);
+            self.alloc.free(prev.value);
+        }
+        return body;
+    }
+};
+
+/// Shared context for a `pantry update` invocation. Passed into updatePackage /
+/// updateSystemPackage so they can hit the cache instead of firing HTTP per-call.
+pub const UpdateContext = struct {
+    metadata: *MetadataCache,
+};
+
+/// Worker context for parallel metadata prefetch.
+const PrefetchCtx = struct {
+    cache: *MetadataCache,
+    urls: []const []const u8,
+    next: *std.atomic.Value(usize),
+
+    fn worker(ctx: *PrefetchCtx) void {
+        while (true) {
+            const i = ctx.next.fetchAdd(1, .monotonic);
+            if (i >= ctx.urls.len) break;
+            if (ctx.cache.getOrFetch(ctx.urls[i])) |body| {
+                ctx.cache.alloc.free(body);
+            }
+        }
+    }
+};
+
+/// Fan out HTTP fetches for all URLs in `urls` across a bounded thread pool
+/// (at most 8 threads to keep registry courteous). Results land in `cache`.
+pub fn prefetchMetadata(
+    allocator: std.mem.Allocator,
+    cache: *MetadataCache,
+    urls: []const []const u8,
+) void {
+    if (urls.len == 0) return;
+    if (urls.len == 1) {
+        if (cache.getOrFetch(urls[0])) |b| cache.alloc.free(b);
+        return;
+    }
+
+    const cpu_count = std.Thread.getCpuCount() catch 4;
+    const thread_count = @min(urls.len, @min(cpu_count, 8));
+
+    var next = std.atomic.Value(usize).init(0);
+    var ctx = PrefetchCtx{ .cache = cache, .urls = urls, .next = &next };
+
+    if (thread_count <= 1) {
+        ctx.worker();
+        return;
+    }
+
+    const spawned = thread_count - 1;
+    const threads = allocator.alloc(?std.Thread, spawned) catch {
+        ctx.worker();
+        return;
+    };
+    defer allocator.free(threads);
+    for (threads) |*t| t.* = null;
+
+    for (0..spawned) |t| {
+        threads[t] = std.Thread.spawn(.{}, PrefetchCtx.worker, .{&ctx}) catch null;
+    }
+    ctx.worker();
+    for (threads) |*t| {
+        if (t.*) |th| {
+            th.join();
+            t.* = null;
+        }
+    }
+}
+
+test "MetadataCache dedupes fetches" {
+    const allocator = std.testing.allocator;
+    var cache = MetadataCache.init(allocator);
+    defer cache.deinit();
+
+    // Seed manually to avoid hitting the network in tests.
+    const url = "https://example.test/body";
+    const key = try allocator.dupe(u8, url);
+    const body = try allocator.dupe(u8, "cached-body");
+    try cache.map.put(key, body);
+
+    const first = cache.getOrFetch(url) orelse return error.TestFetchFailed;
+    defer allocator.free(first);
+    try std.testing.expectEqualStrings("cached-body", first);
+}
+
 /// Dependency kind for version resolution
 const DepKind = enum {
     npm, // npm registry package
@@ -89,11 +243,95 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     }
 
     if (deps.len == 0) {
-        return CommandResult.success(allocator, "No dependencies found");
+        // Distinguish "no deps file at all" from "deps file is empty". The former
+        // almost always means the user ran `pantry update` in the wrong directory
+        // and deserves a real error, not the cheerful-sounding success message.
+        const detector = @import("../../deps/detector.zig");
+        const has_deps_file = blk: {
+            const f = detector.findDepsFile(allocator, cwd) catch break :blk false;
+            if (f) |found| {
+                allocator.free(found.path);
+                break :blk true;
+            }
+            break :blk false;
+        };
+        const has_pkg_json = blk: {
+            const p = std.fmt.allocPrint(allocator, "{s}/package.json", .{cwd}) catch break :blk false;
+            defer allocator.free(p);
+            io_helper.accessAbsolute(p, .{}) catch break :blk false;
+            break :blk true;
+        };
+        if (!has_deps_file and !has_pkg_json) {
+            const msg = try std.fmt.allocPrint(
+                allocator,
+                "No dependency file found in {s}.\n" ++
+                    "    Expected one of: pantry.jsonc, pantry.json, deps.yaml, dependencies.yaml, package.json, pyproject.toml, Cargo.toml, go.mod.\n" ++
+                    "    Are you running `pantry update` from the right directory?",
+                .{cwd},
+            );
+            return CommandResult.err(allocator, msg);
+        }
+        return CommandResult.success(allocator, "No dependencies found (deps file present but empty)");
     }
 
     if (dry_run) {
         style.print("Dry run mode - no changes will be made\n\n", .{});
+    }
+
+    // Shared metadata cache + parallel prefetch: before we enter the serial
+    // version-check loop below, fan out HTTP requests for every package we're
+    // about to examine. Subsequent lookups hit the in-memory cache so the
+    // update loop runs at CPU/parse speed rather than network latency * N.
+    var metadata_cache = MetadataCache.init(allocator);
+    defer metadata_cache.deinit();
+    g_metadata_cache = &metadata_cache;
+    defer g_metadata_cache = null;
+
+    // Build URL list for prefetch
+    var prefetch_urls = std.ArrayList([]u8).empty;
+    defer {
+        for (prefetch_urls.items) |u| allocator.free(u);
+        prefetch_urls.deinit(allocator);
+    }
+    for (deps) |dep| {
+        const kind = classifyDep(dep.name, dep.version);
+        if (kind == .skip) continue;
+        if (update_specific) |name| {
+            if (!std.mem.eql(u8, dep.name, name)) continue;
+        }
+        const url = switch (kind) {
+            .skip => continue,
+            .npm => blk: {
+                const clean_name = if (std.mem.startsWith(u8, dep.name, "auto:"))
+                    dep.name[5..]
+                else if (std.mem.startsWith(u8, dep.name, "npm:"))
+                    dep.name[4..]
+                else
+                    dep.name;
+                break :blk std.fmt.allocPrint(allocator, "https://registry.npmjs.org/{s}", .{clean_name}) catch continue;
+            },
+            .system => blk: {
+                const domain = resolveSystemDomain(dep.name);
+                break :blk std.fmt.allocPrint(
+                    allocator,
+                    "https://pantry-registry.s3.amazonaws.com/binaries/{s}/metadata.json",
+                    .{domain},
+                ) catch continue;
+            },
+        };
+        prefetch_urls.append(allocator, url) catch {
+            allocator.free(url);
+            continue;
+        };
+    }
+    if (prefetch_urls.items.len > 0) {
+        // Convert to const slices for the prefetch API. On allocation failure we
+        // just skip prefetch (the serial loop will still work, just slower).
+        if (allocator.alloc([]const u8, prefetch_urls.items.len)) |const_urls| {
+            defer allocator.free(const_urls);
+            for (prefetch_urls.items, 0..) |u, idx| const_urls[idx] = u;
+            prefetchMetadata(allocator, &metadata_cache, const_urls);
+        } else |_| {}
     }
 
     var updates_made: usize = 0;
@@ -255,7 +493,7 @@ fn updatePackage(
             const url = try std.fmt.allocPrint(allocator, "https://registry.npmjs.org/{s}", .{clean_name});
             defer allocator.free(url);
 
-            const body = io_helper.httpGet(allocator, url) catch {
+            const body = cachedHttpGet(allocator, url) catch {
                 return UpdateResult{ .has_update = false, .new_version = null, .current_version = installed_version };
             };
             defer allocator.free(body);
@@ -333,7 +571,7 @@ fn updateSystemPackage(
     );
     defer allocator.free(metadata_url);
 
-    const body = io_helper.httpGet(allocator, metadata_url) catch {
+    const body = cachedHttpGet(allocator, metadata_url) catch {
         return UpdateResult{ .has_update = false, .new_version = null, .current_version = installed_version };
     };
     defer allocator.free(body);
@@ -494,8 +732,13 @@ pub fn collectAllDeps(allocator: std.mem.Allocator, cwd: []const u8) ![]parser.P
 }
 
 /// Scan workspace members matching a glob pattern and collect their deps.
-/// Handles patterns like "storage/framework/**" by walking the base dir
-/// and scanning one or two levels deep for package.json files.
+/// Supports:
+///   - plain paths:       "packages/core"
+///   - one-level globs:   "packages/*"
+///   - recursive globs:   "apps/**", "apps/**/*"   (walks the whole subtree)
+///
+/// For `**` patterns the walker descends the full tree (bounded by
+/// `max_recursion_depth`), stopping at node_modules / .git / dist.
 fn scanWorkspaceMembers(
     allocator: std.mem.Allocator,
     workspace_root: []const u8,
@@ -503,9 +746,7 @@ fn scanWorkspaceMembers(
     all_deps: *std.ArrayList(parser.PackageDependency),
     seen: *std.StringHashMap(void),
 ) !void {
-    const detector = @import("../../deps/detector.zig");
-
-    // Resolve the pattern to a base directory (before any *)
+    // Resolve the pattern to a base directory (everything before any `*`)
     const star_pos = std.mem.indexOf(u8, pattern, "*");
     const base_rel = if (star_pos) |pos| blk: {
         var last_slash: usize = 0;
@@ -515,50 +756,88 @@ fn scanWorkspaceMembers(
         break :blk if (last_slash > 0) pattern[0 .. last_slash - 1] else ".";
     } else pattern;
 
-    const is_double_star = star_pos != null and
+    const is_recursive = star_pos != null and
         star_pos.? + 1 < pattern.len and pattern[star_pos.? + 1] == '*';
 
     const base_dir = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ workspace_root, base_rel });
     defer allocator.free(base_dir);
 
-    // Open the base directory and scan subdirectories for package.json
+    if (is_recursive) {
+        try walkRecursivelyForPackageJson(allocator, base_dir, 0, all_deps, seen);
+        return;
+    }
+
+    // Non-recursive: open the base dir and pick up immediate subdirs only.
     var dir = io_helper.cwd().openDir(io_helper.io, base_dir, .{ .iterate = true }) catch return;
     defer dir.close(io_helper.io);
 
     var iter = dir.iterate();
     while (try iter.next(io_helper.io)) |entry| {
         if (entry.kind != .directory) continue;
-        const name = entry.name;
-        // Skip hidden dirs and node_modules
-        if (name.len > 0 and name[0] == '.') continue;
-        if (std.mem.eql(u8, name, "node_modules")) continue;
-        if (std.mem.eql(u8, name, "dist")) continue;
+        if (skipWorkspaceDir(entry.name)) continue;
+        try scanMemberDir(allocator, base_dir, entry.name, all_deps, seen);
+    }
+}
 
-        // Try this directory itself
-        try scanMemberDir(allocator, base_dir, name, all_deps, seen);
+/// Maximum directory recursion depth for `**` glob expansion.
+/// 12 is deep enough for every real-world monorepo we've seen while still
+/// bounding runtime on pathological trees (symlink loops are defended against
+/// by `skipWorkspaceDir` + our walker ignoring non-directory entries).
+const max_recursion_depth: u8 = 12;
 
-        // For ** patterns, also scan one level deeper
-        if (is_double_star) {
-            const sub_dir_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ base_dir, name });
-            defer allocator.free(sub_dir_path);
+fn skipWorkspaceDir(name: []const u8) bool {
+    if (name.len == 0) return true;
+    if (name[0] == '.') return true;
+    if (std.mem.eql(u8, name, "node_modules")) return true;
+    if (std.mem.eql(u8, name, "dist")) return true;
+    if (std.mem.eql(u8, name, "build")) return true;
+    if (std.mem.eql(u8, name, "target")) return true;
+    if (std.mem.eql(u8, name, "vendor")) return true;
+    return false;
+}
 
-            var sub_dir = io_helper.cwd().openDir(io_helper.io, sub_dir_path, .{ .iterate = true }) catch continue;
-            defer sub_dir.close(io_helper.io);
+/// Depth-first walk under `dir` collecting deps from every `package.json` we find.
+/// The walker prunes common junk directories and never follows symlinks.
+fn walkRecursivelyForPackageJson(
+    allocator: std.mem.Allocator,
+    dir_path: []const u8,
+    depth: u8,
+    all_deps: *std.ArrayList(parser.PackageDependency),
+    seen: *std.StringHashMap(void),
+) !void {
+    if (depth > max_recursion_depth) return;
 
-            var sub_iter = sub_dir.iterate();
-            while (try sub_iter.next(io_helper.io)) |sub_entry| {
-                if (sub_entry.kind != .directory) continue;
-                if (sub_entry.name.len > 0 and sub_entry.name[0] == '.') continue;
-                if (std.mem.eql(u8, sub_entry.name, "node_modules")) continue;
-
-                const nested = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ name, sub_entry.name });
-                defer allocator.free(nested);
-                try scanMemberDir(allocator, base_dir, nested, all_deps, seen);
-            }
-        }
+    // If a package.json exists at this level, collect its deps first.
+    {
+        const pkg_json = try std.fmt.allocPrint(allocator, "{s}/package.json", .{dir_path});
+        defer allocator.free(pkg_json);
+        if (io_helper.accessAbsolute(pkg_json, .{})) |_| {
+            try scanMemberDir(allocator, dir_path, ".", all_deps, seen);
+        } else |_| {}
     }
 
-    _ = detector;
+    var dir = io_helper.cwd().openDir(io_helper.io, dir_path, .{ .iterate = true }) catch return;
+    defer dir.close(io_helper.io);
+
+    var iter = dir.iterate();
+    while (try iter.next(io_helper.io)) |entry| {
+        if (entry.kind != .directory) continue;
+        if (skipWorkspaceDir(entry.name)) continue;
+
+        const child = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ dir_path, entry.name });
+        defer allocator.free(child);
+        try walkRecursivelyForPackageJson(allocator, child, depth + 1, all_deps, seen);
+    }
+}
+
+test "skipWorkspaceDir filters junk dirs and keeps real ones" {
+    try std.testing.expect(skipWorkspaceDir(".git"));
+    try std.testing.expect(skipWorkspaceDir("node_modules"));
+    try std.testing.expect(skipWorkspaceDir("dist"));
+    try std.testing.expect(skipWorkspaceDir("target"));
+    try std.testing.expect(!skipWorkspaceDir("apps"));
+    try std.testing.expect(!skipWorkspaceDir("packages"));
+    try std.testing.expect(!skipWorkspaceDir("frontend"));
 }
 
 /// Scan a single workspace member directory for package.json deps.

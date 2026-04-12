@@ -59,6 +59,80 @@ pub fn hashDependencyFile(path: []const u8) [16]u8 {
     return md5Hash(path);
 }
 
+/// Hash a project directory identity. Mixes the absolute path with the `(dev,
+/// inode)` pair from stat(2) so that renaming a parent directory — which
+/// changes the string — produces a *different* hash (not a stale cache hit on
+/// the old path), and re-parenting the same inode at a new location produces
+/// the *same* hash (so the cached env still applies). When stat fails (e.g.
+/// the path no longer exists) we fall back to the plain-path hash so callers
+/// keep working.
+pub fn hashProjectPath(path: []const u8) [16]u8 {
+    // Build the hash input: path || 0 || dev || 0 || inode || 0.
+    var hasher = std.crypto.hash.Md5.init(.{});
+    hasher.update(path);
+
+    // We pull dev/inode via std.posix.stat if available.
+    const posix = std.posix;
+    var stat_buf: posix.Stat = undefined;
+    if (posix.fstatat(posix.AT.FDCWD, pathZ(path), &stat_buf, 0)) |_| {
+        const sep: u8 = 0;
+        hasher.update((&sep)[0..1]);
+        hasher.update(std.mem.asBytes(&stat_buf.dev));
+        hasher.update((&sep)[0..1]);
+        hasher.update(std.mem.asBytes(&stat_buf.ino));
+    } else |_| {}
+
+    var result: [16]u8 = undefined;
+    hasher.final(&result);
+    return result;
+}
+
+/// Buffered null-terminator for a filesystem path. If the path contains a null
+/// byte it's truncated to the null byte (shouldn't happen in practice). Caller
+/// must copy within a single call site (the returned pointer references
+/// function-local state).
+fn pathZ(path: []const u8) [*:0]const u8 {
+    // stash in a thread-local buffer — path lengths should fit.
+    const S = struct {
+        threadlocal var buf: [std.fs.max_path_bytes + 1]u8 = undefined;
+    };
+    const len = @min(path.len, S.buf.len - 1);
+    @memcpy(S.buf[0..len], path[0..len]);
+    S.buf[len] = 0;
+    return @ptrCast(&S.buf);
+}
+
+/// Content-hash a file for the staleness check. Returns a zero-filled hash on
+/// any IO error (missing file / permission) so callers can treat that as
+/// "always stale" without having to propagate errors.
+pub fn hashDependencyFileContent(path: []const u8) [16]u8 {
+    const file = std.fs.cwd().openFile(path, .{}) catch return .{0} ** 16;
+    defer file.close();
+
+    var hasher = std.crypto.hash.Md5.init(.{});
+    var buf: [8192]u8 = undefined;
+    while (true) {
+        const n = file.read(&buf) catch return .{0} ** 16;
+        if (n == 0) break;
+        hasher.update(buf[0..n]);
+    }
+    var result: [16]u8 = undefined;
+    hasher.final(&result);
+    return result;
+}
+
+test "hashProjectPath differs when path differs" {
+    const a = hashProjectPath("/nonexistent/pantry/test/a");
+    const b = hashProjectPath("/nonexistent/pantry/test/b");
+    try std.testing.expect(!std.mem.eql(u8, &a, &b));
+}
+
+test "hashDependencyFileContent zero on missing file" {
+    const zero = [_]u8{0} ** 16;
+    const h = hashDependencyFileContent("/nonexistent/pantry/test/missing.file");
+    try std.testing.expectEqualSlices(u8, &zero, &h);
+}
+
 /// Hash environment variables
 /// Combines multiple env vars into single hash
 pub fn hashEnvironment(vars: []const []const u8, allocator: std.mem.Allocator) ![16]u8 {

@@ -165,7 +165,14 @@ pub const PackageCache = struct {
             return null;
         };
 
-        // File exists on disk — reconstruct metadata and cache it in-memory
+        // File exists on disk — reconstruct metadata and cache it in-memory.
+        // Stat the file so we record its real size (otherwise evictLRU can't
+        // count it toward the cap and disk-fallback entries stick forever).
+        const real_size: usize = blk: {
+            const s = io_helper.statFile(cache_path) catch break :blk 0;
+            break :blk @intCast(s.size);
+        };
+
         const now = @as(i64, @intCast(io_helper.clockGettime().sec));
         const metadata = PackageMetadata{
             .name = self.allocator.dupe(u8, name) catch {
@@ -183,7 +190,7 @@ pub const PackageCache = struct {
             .checksum = [_]u8{0} ** 32,
             .downloaded_at = now,
             .last_accessed = now,
-            .size = 0,
+            .size = real_size,
             .uncompressed_size = 0,
             .cache_path = cache_path,
         };
@@ -243,17 +250,25 @@ pub const PackageCache = struct {
             .cache_path = cache_path,
         };
 
-        self.lock.lock();
-        defer self.lock.unlock();
+        // Lock scope: insert under lock. Eviction is called outside the lock
+        // (it re-acquires the lock internally) to avoid double-lock deadlock.
+        {
+            self.lock.lock();
+            defer self.lock.unlock();
 
-        // Remove old entry if exists
-        if (self.metadata.fetchRemove(key)) |old_kv| {
-            self.allocator.free(old_kv.key);
-            var old_meta = old_kv.value;
-            old_meta.deinit(self.allocator);
+            // Remove old entry if exists
+            if (self.metadata.fetchRemove(key)) |old_kv| {
+                self.allocator.free(old_kv.key);
+                var old_meta = old_kv.value;
+                old_meta.deinit(self.allocator);
+            }
+
+            try self.metadata.put(key, metadata);
         }
 
-        try self.metadata.put(key, metadata);
+        // Enforce the size cap every insert. evictLRU is a no-op when
+        // `max_size_bytes == 0` or the cache is under the limit.
+        self.evictLRU() catch {};
     }
 
     /// Remove package from cache
@@ -349,6 +364,24 @@ pub const PackageCache = struct {
                 meta.deinit(self.allocator);
             }
         }
+    }
+
+    /// Public prune entrypoint combining LRU eviction (enforces `max_size_bytes`)
+    /// with age-based cleanup (removes entries untouched for `max_age_days`).
+    /// Designed for `pantry cache prune` CLI integration — returns a rollup.
+    pub fn prune(
+        self: *PackageCache,
+        max_age_days: u32,
+        keep_recent_count: usize,
+    ) !PruneStats {
+        const before = self.stats();
+        const cleaned = try self.cleanUnused(max_age_days, keep_recent_count);
+        try self.evictLRU();
+        const after = self.stats();
+        return .{
+            .packages_removed = cleaned.packages_removed + (before.total_packages - after.total_packages - cleaned.packages_removed),
+            .bytes_freed = cleaned.bytes_freed + (before.total_size - @min(before.total_size, after.total_size) - cleaned.bytes_freed),
+        };
     }
 
     /// Get cache statistics
@@ -449,6 +482,11 @@ pub const CleanupStats = struct {
     bytes_freed: usize,
 };
 
+pub const PruneStats = struct {
+    packages_removed: usize,
+    bytes_freed: usize,
+};
+
 /// Estimate uncompressed size from compressed tarball data
 /// This is a heuristic since we can't know the exact size without extraction
 fn estimateUncompressedSize(data: []const u8) usize {
@@ -496,6 +534,29 @@ test "PackageCache basic operations" {
     // Remove
     try cache.remove(name, version);
     try std.testing.expect(!try cache.has(name, version));
+}
+
+test "PackageCache put triggers LRU eviction at size cap" {
+    const allocator = std.testing.allocator;
+    var cache = try PackageCache.initWithMaxSize(allocator, 100); // 100-byte cap
+    defer cache.deinit();
+
+    // Each put stores "payloadXXX" (10 bytes). At cap=100 and 15 puts, we should
+    // end up with at most ~10 entries after eviction.
+    var i: usize = 0;
+    while (i < 15) : (i += 1) {
+        var name_buf: [32]u8 = undefined;
+        const name = try std.fmt.bufPrint(&name_buf, "pkg_{d}", .{i});
+        const checksum = [_]u8{0} ** 32;
+        try cache.put(name, "1.0.0", "http://test", checksum, "payload 10");
+    }
+
+    const s = cache.stats();
+    // Under the limit (or exactly at it) after automatic eviction
+    try std.testing.expect(s.total_size <= 100);
+    try std.testing.expect(s.total_packages <= 10);
+    // And strictly less than 15 — something had to go
+    try std.testing.expect(s.total_packages < 15);
 }
 
 test "PackageCache clear" {

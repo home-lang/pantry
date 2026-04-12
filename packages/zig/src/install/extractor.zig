@@ -10,6 +10,13 @@ pub const ExtractError = error{
     CorruptArchive,
 };
 
+/// Verbose diagnostics gate — mirrors `PANTRY_VERBOSE=1`/`PANTRY_DEBUG=1`.
+/// Kept inline (not @import of lib) to avoid a dependency cycle through lib.zig.
+fn verboseExtract() bool {
+    const v = io_helper.getenv("PANTRY_VERBOSE") orelse io_helper.getenv("PANTRY_DEBUG") orelse return false;
+    return v.len > 0 and !std.mem.eql(u8, v, "0") and !std.mem.eql(u8, v, "false");
+}
+
 /// Extract a tar archive to a destination directory
 pub fn extractArchive(
     allocator: std.mem.Allocator,
@@ -39,12 +46,23 @@ pub fn extractArchiveQuiet(
     // Use system tar as primary extraction method — it handles all entry types
     // (symlinks, hard links, large archives) reliably. Fall back to Zig native
     // tar only when system tar is unavailable.
+    var system_tar_stderr: ?[]u8 = null;
+    defer if (system_tar_stderr) |s| allocator.free(s);
     const system_tar_ok = blk: {
-        extractWithSystemTar(allocator, archive_path, dest_dir) catch break :blk false;
+        extractWithSystemTar(allocator, archive_path, dest_dir, &system_tar_stderr) catch break :blk false;
         break :blk true;
     };
 
     if (system_tar_ok) return;
+
+    if (verboseExtract()) {
+        if (system_tar_stderr) |s| {
+            style.print("  [pantry:extract] system tar failed, falling back to native extractor\n", .{});
+            style.print("  [pantry:extract] system tar stderr:\n{s}\n", .{s});
+        } else {
+            style.print("  [pantry:extract] system tar unavailable, using native extractor\n", .{});
+        }
+    }
 
     // System tar unavailable — fall back to Zig's native tar extraction.
     // Only read archive into memory for the native path.
@@ -73,17 +91,30 @@ pub fn extractArchiveQuiet(
     }
 }
 
-/// Fall back to system tar command for extraction
-fn extractWithSystemTar(allocator: std.mem.Allocator, archive_path: []const u8, dest_dir: []const u8) !void {
+/// Fall back to system tar command for extraction.
+/// On non-zero exit the captured stderr is returned via `stderr_out` so the caller
+/// can include it in diagnostics (ownership transferred to caller — must free).
+fn extractWithSystemTar(
+    allocator: std.mem.Allocator,
+    archive_path: []const u8,
+    dest_dir: []const u8,
+    stderr_out: *?[]u8,
+) !void {
     const result = io_helper.childRun(allocator, &[_][]const u8{
         "/usr/bin/tar", "xf", archive_path, "-C", dest_dir,
-    }) catch return error.ExtractionFailed;
+    }) catch |err| {
+        // tar binary not present — no stderr to surface, treat as unavailable
+        stderr_out.* = std.fmt.allocPrint(allocator, "spawn failed: {s}", .{@errorName(err)}) catch null;
+        return error.ExtractionFailed;
+    };
     defer allocator.free(result.stdout);
-    defer allocator.free(result.stderr);
 
     if (result.term != .exited or result.term.exited != 0) {
+        // Transfer stderr ownership to caller for diagnostics
+        stderr_out.* = result.stderr;
         return error.ExtractionFailed;
     }
+    allocator.free(result.stderr);
 }
 
 /// Check if a file is a valid archive

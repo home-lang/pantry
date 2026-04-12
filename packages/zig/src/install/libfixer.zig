@@ -214,6 +214,50 @@ fn fixDylibInstallName(
     allocator.free(result.stderr);
 }
 
+/// Fix ELF RPATH/RUNPATH entries on Linux using `patchelf`.
+/// Adds `$ORIGIN/../lib` (so binaries find sibling `lib/`) plus the package's
+/// lib dir as a fallback. Silently skipped if `patchelf` isn't on PATH — we
+/// treat it as best-effort because most prebuilt tarballs already have sane
+/// RPATH. For packages that hardcode a build-time absolute path, this is the
+/// Linux equivalent of the macOS `install_name_tool` dance above.
+pub fn fixLinuxRpaths(
+    allocator: std.mem.Allocator,
+    binary_path: []const u8,
+    lib_dir: []const u8,
+) !void {
+    const builtin = @import("builtin");
+    if (builtin.os.tag != .linux) return;
+
+    // Skip anything that isn't ELF — cheap magic byte check to avoid spawning
+    // patchelf on scripts, symlinks to /dev/null, etc.
+    {
+        const f = io_helper.cwd().openFile(io_helper.io, binary_path, .{ .mode = .read_only }) catch return;
+        defer f.close(io_helper.io);
+        var magic: [4]u8 = undefined;
+        const n = io_helper.platformRead(f.handle, &magic) catch return;
+        if (n < 4) return;
+        if (magic[0] != 0x7f or magic[1] != 'E' or magic[2] != 'L' or magic[3] != 'F') return;
+    }
+
+    // Build the rpath list: "$ORIGIN/../lib:<abs lib dir>"
+    const rpath = try std.fmt.allocPrint(allocator, "$ORIGIN/../lib:{s}", .{lib_dir});
+    defer allocator.free(rpath);
+
+    // Try `patchelf --force-rpath --set-rpath <rpath> <binary>`. We use
+    // `--force-rpath` so we don't depend on the kernel honouring DT_RUNPATH.
+    const result = io_helper.childRun(allocator, &[_][]const u8{
+        "patchelf", "--force-rpath", "--set-rpath", rpath, binary_path,
+    }) catch {
+        return;
+    };
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+    if (result.term != .exited or result.term.exited != 0) {
+        // patchelf failed (not ELF, or not dynamically linked) — nothing more we can do.
+        return;
+    }
+}
+
 /// Fix library paths for all executables and dylibs in a package directory
 /// This includes both binaries in bin/ and libraries in lib/
 pub fn fixDirectoryLibraryPaths(
@@ -221,6 +265,44 @@ pub fn fixDirectoryLibraryPaths(
     package_dir: []const u8,
 ) !void {
     const builtin = @import("builtin");
+    // Linux-only path: walk bin/ and lib/ and patch ELF rpaths
+    if (builtin.os.tag == .linux) {
+        var bin_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const bin_dir = std.fmt.bufPrint(&bin_buf, "{s}/bin", .{package_dir}) catch return;
+        var lib_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const lib_dir = std.fmt.bufPrint(&lib_buf, "{s}/lib", .{package_dir}) catch return;
+
+        io_helper.accessAbsolute(lib_dir, .{}) catch return;
+
+        // bin/
+        if (io_helper.openDirAbsoluteForIteration(bin_dir)) |*dir_ptr| {
+            var dir = dir_ptr.*;
+            defer dir.close();
+            var it = dir.iterate();
+            while (it.next() catch null) |entry| {
+                if (entry.kind != .file) continue;
+                var bp: [std.fs.max_path_bytes]u8 = undefined;
+                const p = std.fmt.bufPrint(&bp, "{s}/{s}", .{ bin_dir, entry.name }) catch continue;
+                fixLinuxRpaths(allocator, p, lib_dir) catch {};
+            }
+        } else |_| {}
+
+        // lib/
+        if (io_helper.openDirAbsoluteForIteration(lib_dir)) |*dir_ptr| {
+            var dir = dir_ptr.*;
+            defer dir.close();
+            var it = dir.iterate();
+            while (it.next() catch null) |entry| {
+                if (entry.kind != .file) continue;
+                if (std.mem.indexOf(u8, entry.name, ".so") == null) continue;
+                var lp: [std.fs.max_path_bytes]u8 = undefined;
+                const p = std.fmt.bufPrint(&lp, "{s}/{s}", .{ lib_dir, entry.name }) catch continue;
+                fixLinuxRpaths(allocator, p, lib_dir) catch {};
+            }
+        } else |_| {}
+
+        return;
+    }
     if (builtin.os.tag != .macos) return;
 
     // Build paths to bin and lib directories using stack buffers

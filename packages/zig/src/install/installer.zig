@@ -45,11 +45,17 @@ pub const InstallResult = struct {
     from_cache: bool,
     /// Installation time in milliseconds
     install_time_ms: u64,
+    /// Integrity string (SRI or hex SHA256) captured from the resolver, if any.
+    /// Persisted to the lockfile for `--frozen` re-verification. Owned by the
+    /// returned struct; freed in `deinit`. `null` when the source didn't
+    /// provide an integrity value.
+    integrity: ?[]const u8 = null,
 
     pub fn deinit(self: *InstallResult, allocator: std.mem.Allocator) void {
         allocator.free(self.name);
         allocator.free(self.version);
         allocator.free(self.install_path);
+        if (self.integrity) |i| allocator.free(i);
     }
 };
 
@@ -254,7 +260,7 @@ pub const Installer = struct {
     /// Thread-safe cache tracking which packages are installed at the hoisted level.
     /// Eliminates redundant filesystem checks when the same transitive dep is encountered
     /// dozens of times in a dependency tree.
-    const HoisteVersionCache = struct {
+    pub const HoisteVersionCache = struct {
         map: std.StringHashMap([]const u8),
         mutex: io_helper.Mutex,
         alloc: std.mem.Allocator,
@@ -300,6 +306,73 @@ pub const Installer = struct {
                 self.alloc.free(owned_name);
                 self.alloc.free(owned_version);
             };
+        }
+
+        /// Atomic check-and-reserve: if `name` is not already hoisted, insert a
+        /// placeholder version and return true. A second racing thread observing
+        /// the placeholder will see `checkSatisfies()` return true (because the
+        /// reservation matches any constraint) and skip the redundant install.
+        ///
+        /// After the install completes the caller must call `finalizeReservation`
+        /// with the real resolved version.
+        pub fn tryReserve(self: *HoisteVersionCache, name: []const u8, version_hint: []const u8) bool {
+            self.mutex.lock();
+            defer self.mutex.unlock();
+            if (self.map.contains(name)) return false;
+            const owned_name = self.alloc.dupe(u8, name) catch return false;
+            const owned_version = self.alloc.dupe(u8, version_hint) catch {
+                self.alloc.free(owned_name);
+                return false;
+            };
+            self.map.put(owned_name, owned_version) catch {
+                self.alloc.free(owned_name);
+                self.alloc.free(owned_version);
+                return false;
+            };
+            return true;
+        }
+
+        /// Replace the stored version for an entry previously created via
+        /// `tryReserve`. If the entry does not exist, acts like `put`. Safe to
+        /// call even if the entry already has the final version (no-op).
+        pub fn finalizeReservation(self: *HoisteVersionCache, name: []const u8, final_version: []const u8) void {
+            self.mutex.lock();
+            defer self.mutex.unlock();
+            if (self.map.getEntry(name)) |entry| {
+                if (std.mem.eql(u8, entry.value_ptr.*, final_version)) return;
+                const owned_version = self.alloc.dupe(u8, final_version) catch return;
+                const old = entry.value_ptr.*;
+                entry.value_ptr.* = owned_version;
+                self.alloc.free(old);
+                return;
+            }
+            // Not reserved — fall through to put-like behaviour (unlocked path below
+            // is unnecessary since we're still inside the mutex).
+            const owned_name = self.alloc.dupe(u8, name) catch return;
+            const owned_version = self.alloc.dupe(u8, final_version) catch {
+                self.alloc.free(owned_name);
+                return;
+            };
+            self.map.put(owned_name, owned_version) catch {
+                self.alloc.free(owned_name);
+                self.alloc.free(owned_version);
+            };
+        }
+
+        /// Release a reservation that turned out to be un-installable (e.g. resolver
+        /// failure) so another thread can retry. Only removes the entry if the
+        /// current value equals `version_hint`.
+        pub fn releaseReservation(self: *HoisteVersionCache, name: []const u8, version_hint: []const u8) void {
+            self.mutex.lock();
+            defer self.mutex.unlock();
+            if (self.map.getEntry(name)) |entry| {
+                if (!std.mem.eql(u8, entry.value_ptr.*, version_hint)) return;
+                const old_key = entry.key_ptr.*;
+                const old_val = entry.value_ptr.*;
+                _ = self.map.remove(name);
+                self.alloc.free(old_key);
+                self.alloc.free(old_val);
+            }
         }
     };
 
@@ -3896,6 +3969,24 @@ test "Installer basic operations" {
 
     // Clean up
     try installer.uninstall("test-pkg", "1.0.0");
+}
+
+test "HoisteVersionCache tryReserve is single-winner" {
+    var hcache = Installer.HoisteVersionCache.init(std.testing.allocator);
+    defer hcache.deinit();
+    try std.testing.expect(hcache.tryReserve("react", "^18"));
+    // Second attempt must fail — reservation is held
+    try std.testing.expect(!hcache.tryReserve("react", "^18"));
+    hcache.finalizeReservation("react", "18.2.0");
+    try std.testing.expect(hcache.checkSatisfies("react", "^18"));
+}
+
+test "HoisteVersionCache releaseReservation lets a retry win" {
+    var hcache = Installer.HoisteVersionCache.init(std.testing.allocator);
+    defer hcache.deinit();
+    try std.testing.expect(hcache.tryReserve("lodash", "^4"));
+    hcache.releaseReservation("lodash", "^4");
+    try std.testing.expect(hcache.tryReserve("lodash", "^4"));
 }
 
 /// Report a package download to the pantry.dev analytics API.

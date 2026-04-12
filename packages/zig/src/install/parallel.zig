@@ -42,12 +42,12 @@ const DownloadThreadContext = struct {
                     .success = false,
                     .error_msg = std.fmt.allocPrint(
                         ctx.alloc,
-                        "Download failed: {}",
-                        .{err},
+                        "{s}: download failed ({s}): {s}",
+                        .{ task.name, @errorName(err), task.url },
                     ) catch null,
                 };
-                style.print(" failed\n", .{});
-                return;
+                style.print(" failed ({s})\n", .{task.name});
+                continue;
             };
 
             ctx.results[i] = .{
@@ -84,8 +84,12 @@ pub fn downloadParallel(
     if (tasks.len == 1) {
         style.print("  [1/1] {s}...", .{tasks[0].name});
         downloader.downloadFile(allocator, tasks[0].url, tasks[0].dest_path) catch |err| {
-            results[0].error_msg = try std.fmt.allocPrint(allocator, "Download failed: {}", .{err});
-            style.print(" failed\n", .{});
+            results[0].error_msg = try std.fmt.allocPrint(
+                allocator,
+                "{s}: download failed ({s}): {s}",
+                .{ tasks[0].name, @errorName(err), tasks[0].url },
+            );
+            style.print(" failed ({s})\n", .{tasks[0].name});
             return results;
         };
         results[0].success = true;
@@ -154,12 +158,12 @@ const RetryDownloadThreadContext = struct {
                     .success = false,
                     .error_msg = std.fmt.allocPrint(
                         ctx.alloc,
-                        "Download failed after retries: {}",
-                        .{err},
+                        "{s}: download failed after {d} retries ({s}): {s}",
+                        .{ task.name, ctx.options.max_retries, @errorName(err), task.url },
                     ) catch null,
                 };
-                style.print(" failed\n", .{});
-                return;
+                style.print(" failed ({s})\n", .{task.name});
+                continue;
             };
 
             ctx.results[i] = .{
@@ -197,8 +201,12 @@ pub fn downloadParallelWithRetry(
     if (tasks.len == 1) {
         style.print("  [1/1] {s}...", .{tasks[0].name});
         downloader.downloadFileWithRetry(allocator, tasks[0].url, tasks[0].dest_path, options) catch |err| {
-            results[0].error_msg = try std.fmt.allocPrint(allocator, "Download failed after retries: {}", .{err});
-            style.print(" failed\n", .{});
+            results[0].error_msg = try std.fmt.allocPrint(
+                allocator,
+                "{s}: download failed after {d} retries ({s}): {s}",
+                .{ tasks[0].name, options.max_retries, @errorName(err), tasks[0].url },
+            );
+            style.print(" failed ({s})\n", .{tasks[0].name});
             return results;
         };
         results[0].success = true;
@@ -265,4 +273,28 @@ test "downloadParallel with empty tasks" {
     defer allocator.free(results);
 
     try std.testing.expectEqual(@as(usize, 0), results.len);
+}
+
+test "downloadParallel error message carries package name and url" {
+    const allocator = std.testing.allocator;
+
+    // Invalid URL guarantees InvalidUrl error without hitting the network
+    const tasks = [_]DownloadTask{.{
+        .url = "not-a-real-url",
+        .dest_path = "/tmp/pantry_parallel_test_output.bin",
+        .name = "libfoo@1.2.3",
+    }};
+
+    const results = try downloadParallel(allocator, &tasks, 2);
+    defer {
+        for (results) |*r| r.deinit(allocator);
+        allocator.free(results);
+    }
+
+    try std.testing.expectEqual(@as(usize, 1), results.len);
+    try std.testing.expect(!results[0].success);
+    const msg = results[0].error_msg orelse return error.TestMissingErrorMessage;
+    // Must include the package name and the URL so users can identify the failure
+    try std.testing.expect(std.mem.indexOf(u8, msg, "libfoo@1.2.3") != null);
+    try std.testing.expect(std.mem.indexOf(u8, msg, "not-a-real-url") != null);
 }

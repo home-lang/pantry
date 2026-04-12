@@ -11,16 +11,44 @@ pub const Shell = enum {
     zsh,
     bash,
     fish,
+    nushell,
+    powershell,
     unknown,
 
-    /// Detect current shell from environment
+    /// Detect current shell from environment. Checks both `$SHELL` (Unix) and
+    /// Windows-friendly env vars so nushell/powershell users get picked up.
     pub fn detect() Shell {
+        // Explicit override
+        if (io_helper.getEnvVarOwned(std.heap.page_allocator, "PANTRY_SHELL")) |forced| {
+            defer std.heap.page_allocator.free(forced);
+            if (std.mem.eql(u8, forced, "zsh")) return .zsh;
+            if (std.mem.eql(u8, forced, "bash")) return .bash;
+            if (std.mem.eql(u8, forced, "fish")) return .fish;
+            if (std.mem.eql(u8, forced, "nushell") or std.mem.eql(u8, forced, "nu")) return .nushell;
+            if (std.mem.eql(u8, forced, "powershell") or std.mem.eql(u8, forced, "pwsh")) return .powershell;
+        } else |_| {}
+
+        // PowerShell sets $PSModulePath; check that before $SHELL which may
+        // be unset on Windows.
+        if (io_helper.getEnvVarOwned(std.heap.page_allocator, "PSModulePath")) |ps| {
+            std.heap.page_allocator.free(ps);
+            return .powershell;
+        } else |_| {}
+
+        // Nushell sets $NU_VERSION in its environment.
+        if (io_helper.getEnvVarOwned(std.heap.page_allocator, "NU_VERSION")) |nu| {
+            std.heap.page_allocator.free(nu);
+            return .nushell;
+        } else |_| {}
+
         const shell_env = io_helper.getEnvVarOwned(std.heap.page_allocator, "SHELL") catch return .unknown;
         defer std.heap.page_allocator.free(shell_env);
 
         if (std.mem.endsWith(u8, shell_env, "zsh")) return .zsh;
         if (std.mem.endsWith(u8, shell_env, "bash")) return .bash;
         if (std.mem.endsWith(u8, shell_env, "fish")) return .fish;
+        if (std.mem.endsWith(u8, shell_env, "nu")) return .nushell;
+        if (std.mem.endsWith(u8, shell_env, "pwsh") or std.mem.endsWith(u8, shell_env, "powershell")) return .powershell;
         return .unknown;
     }
 
@@ -29,6 +57,8 @@ pub const Shell = enum {
             .zsh => "zsh",
             .bash => "bash",
             .fish => "fish",
+            .nushell => "nushell",
+            .powershell => "powershell",
             .unknown => "unknown",
         };
     }
@@ -40,8 +70,84 @@ pub fn generateHook(shell: Shell, allocator: std.mem.Allocator) ![]const u8 {
         .zsh => try generateZshHook(allocator),
         .bash => try generateBashHook(allocator),
         .fish => try generateFishHook(allocator),
+        .nushell => try generateNushellHook(allocator),
+        .powershell => try generatePowershellHook(allocator),
         .unknown => error.ShellNotSupported,
     };
+}
+
+/// Nushell hook. Uses `env_change PWD` (Nushell's chpwd analogue) and invokes
+/// `pantry shell:lookup` which emits `env_dir|project_dir` — the same format
+/// the bash/zsh shellcode consumes. Set PATH via `$env.PATH = ...` pre-pending
+/// the env bin dir.
+fn generateNushellHook(allocator: std.mem.Allocator) ![]const u8 {
+    const hook =
+        \\# pantry shell integration for nushell
+        \\# Drop into ~/.config/nushell/env.nu (or source from config.nu)
+        \\$env.config = ($env.config | upsert hooks.env_change.PWD {|config|
+        \\  let hooks = ($config.hooks.env_change.PWD? | default [])
+        \\  $hooks | append {|before, after|
+        \\    let lookup = (do --ignore-errors { pantry shell:lookup $after } | str trim)
+        \\    if ($lookup | is-empty) { return }
+        \\    let parts = ($lookup | split column '|' env project)
+        \\    let env_dir = ($parts | get 0.env)
+        \\    let project_dir = ($parts | get 0.project)
+        \\    let bin = $'($env_dir)/bin'
+        \\    if not ($bin | path exists) { return }
+        \\    # De-dupe PATH
+        \\    let clean = ($env.PATH | where {|p| $p != $bin })
+        \\    $env.PATH = ([$bin] ++ $clean)
+        \\    $env.PANTRY_CURRENT_PROJECT = $project_dir
+        \\    $env.PANTRY_ENV_DIR = $env_dir
+        \\    $env.PANTRY_ENV_BIN_PATH = $bin
+        \\  }
+        \\})
+    ;
+    return try allocator.dupe(u8, hook);
+}
+
+/// PowerShell hook. Uses a ScriptBlock wired into the prompt so it fires after
+/// every `cd`. Safe to stick in $PROFILE.
+fn generatePowershellHook(allocator: std.mem.Allocator) ![]const u8 {
+    const hook =
+        \\# pantry shell integration for PowerShell
+        \\$global:__PantryLastPwd = $null
+        \\function Invoke-PantryChpwd {
+        \\    if ($global:__PantryLastPwd -eq (Get-Location).Path) { return }
+        \\    $global:__PantryLastPwd = (Get-Location).Path
+        \\
+        \\    try {
+        \\        $lookup = & pantry shell:lookup (Get-Location).Path 2>$null
+        \\    } catch { return }
+        \\    if (-not $lookup) { return }
+        \\
+        \\    $parts = $lookup -split '\|', 2
+        \\    if ($parts.Count -lt 1) { return }
+        \\    $envDir = $parts[0]
+        \\    $projectDir = if ($parts.Count -ge 2) { $parts[1] } else { (Get-Location).Path }
+        \\    $bin = Join-Path $envDir 'bin'
+        \\    if (-not (Test-Path $bin)) { return }
+        \\
+        \\    # De-dupe PATH
+        \\    $sep = [IO.Path]::PathSeparator
+        \\    $existing = $env:PATH -split [regex]::Escape($sep) | Where-Object { $_ -ne $bin }
+        \\    $env:PATH = $bin + $sep + ($existing -join $sep)
+        \\    $env:PANTRY_CURRENT_PROJECT = $projectDir
+        \\    $env:PANTRY_ENV_DIR        = $envDir
+        \\    $env:PANTRY_ENV_BIN_PATH   = $bin
+        \\}
+        \\
+        \\# Hook into the prompt so Invoke-PantryChpwd fires after every `cd`.
+        \\$existingPrompt = $function:prompt
+        \\function global:prompt {
+        \\    Invoke-PantryChpwd
+        \\    & $existingPrompt
+        \\}
+        \\
+        \\# Run once at shell start
+        \\Invoke-PantryChpwd
+    ;
+    return try allocator.dupe(u8, hook);
 }
 
 /// Generate zsh hook (chpwd function)
@@ -150,7 +256,22 @@ pub fn getRcFile(shell: Shell, allocator: std.mem.Allocator) ![]const u8 {
             };
             break :blk bashrc;
         },
-        .fish => try std.fmt.allocPrint(allocator, "{s}/.config/fish/config.fish", .{home}),
+        // Prefer a drop-in `conf.d/pantry.fish` if `~/.config/fish/conf.d`
+        // exists — keeps the user's config.fish clean. Falls back to config.fish.
+        .fish => blk: {
+            const confd = try std.fmt.allocPrint(allocator, "{s}/.config/fish/conf.d", .{home});
+            defer allocator.free(confd);
+            io_helper.cwd().access(io_helper.io, confd, .{}) catch {
+                break :blk try std.fmt.allocPrint(allocator, "{s}/.config/fish/config.fish", .{home});
+            };
+            break :blk try std.fmt.allocPrint(allocator, "{s}/.config/fish/conf.d/pantry.fish", .{home});
+        },
+        .nushell => try std.fmt.allocPrint(allocator, "{s}/.config/nushell/env.nu", .{home}),
+        .powershell => blk: {
+            // Best-effort default: $HOME/Documents/PowerShell/Microsoft.PowerShell_profile.ps1
+            // Users who symlink their profile elsewhere can always use `pantry shell:install --path`.
+            break :blk try std.fmt.allocPrint(allocator, "{s}/Documents/PowerShell/Microsoft.PowerShell_profile.ps1", .{home});
+        },
         .unknown => error.ShellNotSupported,
     };
 }
@@ -207,6 +328,29 @@ test "Hook generation" {
         const hook = try generateHook(.bash, allocator);
         defer allocator.free(hook);
         try std.testing.expect(std.mem.indexOf(u8, hook, "PROMPT_COMMAND") != null);
+    }
+
+    // Fish hook
+    {
+        const hook = try generateHook(.fish, allocator);
+        defer allocator.free(hook);
+        try std.testing.expect(std.mem.indexOf(u8, hook, "--on-variable PWD") != null);
+    }
+
+    // Nushell hook
+    {
+        const hook = try generateHook(.nushell, allocator);
+        defer allocator.free(hook);
+        try std.testing.expect(std.mem.indexOf(u8, hook, "env_change.PWD") != null);
+        try std.testing.expect(std.mem.indexOf(u8, hook, "pantry shell:lookup") != null);
+    }
+
+    // PowerShell hook
+    {
+        const hook = try generateHook(.powershell, allocator);
+        defer allocator.free(hook);
+        try std.testing.expect(std.mem.indexOf(u8, hook, "Invoke-PantryChpwd") != null);
+        try std.testing.expect(std.mem.indexOf(u8, hook, "$env:PATH") != null);
     }
 }
 
