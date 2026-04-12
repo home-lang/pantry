@@ -75,6 +75,7 @@ export const mitmproxyorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '12.2.2',
     '12.2.1',
     '12.2.0',
     '12.1.2',
