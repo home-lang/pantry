@@ -70,16 +70,19 @@ fn matchGlobInternal(pattern: []const u8, text: []const u8, p_idx: usize, t_idx:
             var test_pattern_len: usize = 0;
 
             // Copy prefix
+            const alt_trimmed = std.mem.trim(u8, alt, " ");
+            const suffix = pattern[close_brace + 1 ..];
+            const total_len = p_idx + alt_trimmed.len + suffix.len;
+            if (total_len > test_pattern_buf.len) continue; // skip alternatives that exceed buffer
+
             @memcpy(test_pattern_buf[0..p_idx], pattern[0..p_idx]);
             test_pattern_len = p_idx;
 
             // Copy alternative
-            const alt_trimmed = std.mem.trim(u8, alt, " ");
             @memcpy(test_pattern_buf[test_pattern_len .. test_pattern_len + alt_trimmed.len], alt_trimmed);
             test_pattern_len += alt_trimmed.len;
 
             // Copy suffix
-            const suffix = pattern[close_brace + 1 ..];
             @memcpy(test_pattern_buf[test_pattern_len .. test_pattern_len + suffix.len], suffix);
             test_pattern_len += suffix.len;
 

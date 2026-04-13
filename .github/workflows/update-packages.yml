@@ -107,7 +107,7 @@ jobs:
         if: steps.git-check.outputs.changes == 'true' && steps.deletion-check.outputs.safe_to_commit == 'true'
         run: |
           if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
-            git config --global user.name "chrisbbreuer"
+            git config --global user.name "chrisbreuer"
             git config --global user.email "chrisbreuer93@gmail.com"
             git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git
           else
@@ -118,7 +118,11 @@ jobs:
           git add packages/ts-pantry/src/packages/
           git commit -m "${{ steps.commit-message.outputs.commit_message }}" -m "Automated version update via GitHub API"
           git stash --include-untracked
-          git pull --rebase origin refs/heads/main
+          if ! git pull --rebase origin refs/heads/main; then
+            echo "::warning::Rebase failed, aborting rebase and retrying with merge"
+            git rebase --abort
+            git pull origin refs/heads/main
+          fi
           git stash pop || true
           git push origin HEAD:refs/heads/main
 

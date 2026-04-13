@@ -147,7 +147,12 @@ export class DynamoDBClient {
       throw new Error(`DynamoDB ${action} failed: ${response.status} ${text}`)
     }
 
-    return response.json() as T
+    try {
+      return await response.json() as T
+    }
+    catch {
+      return {} as T
+    }
   }
 
   /**
@@ -291,8 +296,14 @@ export class DynamoDBClient {
   static unmarshalValue(value: AttributeValue): any {
     if (value.S !== undefined)
       return value.S
-    if (value.N !== undefined)
-      return Number(value.N)
+    if (value.N !== undefined) {
+      const num = Number(value.N)
+      // Preserve as string if precision would be lost
+      if (!Number.isSafeInteger(num) && value.N.indexOf('.') === -1 && num > Number.MAX_SAFE_INTEGER) {
+        return value.N
+      }
+      return num
+    }
     if (value.BOOL !== undefined)
       return value.BOOL
     if (value.NULL)
@@ -305,6 +316,10 @@ export class DynamoDBClient {
       return value.SS
     if (value.NS)
       return value.NS.map(Number)
+    if (value.B)
+      return value.B
+    if (value.BS)
+      return value.BS
     return null
   }
 }

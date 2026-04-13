@@ -307,15 +307,12 @@ async function analyzeJavaScriptBundles(
   const endpoints = new Set<string>()
 
   const analysisPromises = scriptUrls.map(async (scriptUrl) => {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
     try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), timeout)
-
       const response = await fetch(scriptUrl, {
         signal: controller.signal,
       })
-
-      clearTimeout(timeoutId)
 
       if (!response.ok)
         return
@@ -354,8 +351,8 @@ async function analyzeJavaScriptBundles(
             endpoint = `${baseUrl}/${endpoint}`
           }
 
-          // Filter out obvious non-API URLs
-          if (!endpoint.includes('.js') && !endpoint.includes('.css') && !endpoint.includes('.png')) {
+          // Filter out obvious non-API URLs; cap at 500 to prevent unbounded growth
+          if (!endpoint.includes('.js') && !endpoint.includes('.css') && !endpoint.includes('.png') && endpoints.size < 500) {
             endpoints.add(endpoint)
           }
 
@@ -365,6 +362,9 @@ async function analyzeJavaScriptBundles(
     }
     catch {
       // Ignore fetch errors
+    }
+    finally {
+      clearTimeout(timeoutId)
     }
   })
 
@@ -387,10 +387,9 @@ async function fetchAPIEndpoints(
   const prioritizedEndpoints = prioritizeEndpoints(endpoints, refererUrl)
 
   const fetchPromises = prioritizedEndpoints.slice(0, 5).map(async (endpoint) => {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), Math.max(timeout / 2, 100))
     try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), timeout / 2)
-
       const response = await fetch(endpoint, {
         headers: {
           Accept: 'application/json, text/plain, */*',
@@ -398,8 +397,6 @@ async function fetchAPIEndpoints(
         },
         signal: controller.signal,
       })
-
-      clearTimeout(timeoutId)
 
       if (response.ok) {
         const contentType = response.headers.get('content-type') || ''
@@ -416,6 +413,9 @@ async function fetchAPIEndpoints(
     }
     catch {
       // Ignore fetch errors
+    }
+    finally {
+      clearTimeout(timeoutId)
     }
   })
 

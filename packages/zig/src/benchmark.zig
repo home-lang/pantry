@@ -47,7 +47,10 @@ pub fn benchmark(
             sec_diff -= 1;
             nsec_diff += std.time.ns_per_s;
         }
-        const elapsed = @as(u64, @intCast(sec_diff)) * std.time.ns_per_s + @as(u64, @intCast(nsec_diff));
+        const elapsed = if (sec_diff >= 0)
+            @as(u64, @intCast(sec_diff)) * std.time.ns_per_s + @as(u64, @intCast(nsec_diff))
+        else
+            0;
         total_ns += elapsed;
 
         if (elapsed < min_ns) min_ns = elapsed;
@@ -87,7 +90,10 @@ pub fn benchmarkCacheLookup(
             sec_diff -= 1;
             nsec_diff += std.time.ns_per_s;
         }
-        const elapsed = @as(u64, @intCast(sec_diff)) * std.time.ns_per_s + @as(u64, @intCast(nsec_diff));
+        const elapsed = if (sec_diff >= 0)
+            @as(u64, @intCast(sec_diff)) * std.time.ns_per_s + @as(u64, @intCast(nsec_diff))
+        else
+            0;
         total_ns += elapsed;
 
         if (elapsed < min_ns) min_ns = elapsed;
@@ -131,7 +137,10 @@ pub fn benchmarkHash(
             sec_diff -= 1;
             nsec_diff += std.time.ns_per_s;
         }
-        const elapsed = @as(u64, @intCast(sec_diff)) * std.time.ns_per_s + @as(u64, @intCast(nsec_diff));
+        const elapsed = if (sec_diff >= 0)
+            @as(u64, @intCast(sec_diff)) * std.time.ns_per_s + @as(u64, @intCast(nsec_diff))
+        else
+            0;
         total_ns += elapsed;
 
         if (elapsed < min_ns) min_ns = elapsed;

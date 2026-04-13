@@ -28,7 +28,7 @@ for dir in packages/*/ ; do
 
     # Check if package is private using Bun
     if command -v bun >/dev/null 2>&1; then
-      is_private=$(bun --eval "try { const pkg = JSON.parse(require('fs').readFileSync('$package_json', 'utf8')); console.log(pkg.private === true ? 'true' : 'false'); } catch(e) { console.log('false'); }")
+      is_private=$(PACKAGE_JSON_PATH="$package_json" bun --eval "try { const pkg = JSON.parse(require('fs').readFileSync(process.env.PACKAGE_JSON_PATH, 'utf8')); console.log(pkg.private === true ? 'true' : 'false'); } catch(e) { console.log('false'); }")
     # Then try jq as a fallback
     elif command -v jq >/dev/null 2>&1; then
       is_private=$(jq -r '.private // false' "$package_json")

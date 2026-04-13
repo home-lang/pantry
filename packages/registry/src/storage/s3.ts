@@ -1,3 +1,4 @@
+import { resolve, relative } from 'node:path'
 import type { TarballStorage } from '../types'
 // TODO: Switch to ts-cloud when published on npm
 // import { S3Client } from 'ts-cloud/aws'
@@ -24,7 +25,7 @@ export class S3Storage implements TarballStorage {
    */
   private getKey(packageName: string, version: string): string {
     // Handle scoped packages (@scope/name -> scope-name)
-    const safeName = packageName.replace('@', '').replace('/', '-')
+    const safeName = packageName.replaceAll('@', '').replaceAll('/', '-')
     return `packages/pantry/${safeName}/${version}/${safeName}-${version}.tgz`
   }
 
@@ -41,6 +42,9 @@ export class S3Storage implements TarballStorage {
 
   async download(key: string): Promise<ArrayBuffer> {
     const buffer = await this.s3.getObjectBuffer(this.bucket, key)
+    if (!buffer || buffer.byteLength === 0) {
+      throw new Error(`S3 download returned empty data for key: ${key}`)
+    }
     return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer
   }
 
@@ -164,7 +168,11 @@ export class LocalStorage implements TarballStorage {
   }
 
   private getFilePath(key: string): string {
-    return `${this.basePath}/${key}`
+    const resolved = resolve(this.basePath, key)
+    if (relative(this.basePath, resolved).startsWith('..')) {
+      throw new Error(`Path traversal detected: ${key}`)
+    }
+    return resolved
   }
 
   async upload(key: string, data: ArrayBuffer): Promise<string> {
@@ -173,7 +181,7 @@ export class LocalStorage implements TarballStorage {
     const dir = filePath.substring(0, filePath.lastIndexOf('/'))
     if (dir) {
       const fs = await import('node:fs/promises')
-      await fs.mkdir(dir, { recursive: true }).catch(() => {})
+      await fs.mkdir(dir, { recursive: true }).catch(err => console.warn(`LocalStorage: mkdir failed for ${dir}:`, err))
     }
     await Bun.write(filePath, data)
     return this.getUrl(key)
@@ -194,7 +202,11 @@ export class LocalStorage implements TarballStorage {
   async delete(key: string): Promise<void> {
     const filePath = this.getFilePath(key)
     const fs = await import('node:fs/promises')
-    await fs.unlink(filePath).catch(() => {})
+    await fs.unlink(filePath).catch(err => {
+      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+        console.warn(`LocalStorage: delete failed for ${filePath}:`, err)
+      }
+    })
   }
 
   getUrl(key: string): string {
@@ -203,26 +215,28 @@ export class LocalStorage implements TarballStorage {
 
   async list(prefix: string): Promise<string[]> {
     const fs = await import('node:fs/promises')
-    const path = await import('node:path')
-    // Emulate S3 prefix matching: list the parent directory and filter by prefix
+    const nodePath = await import('node:path')
+    // Emulate S3 prefix matching: if prefix ends with /, list that dir directly; otherwise filter parent
     const fullPrefix = this.getFilePath(prefix)
-    const parentDir = path.dirname(fullPrefix)
-    const prefixBase = path.basename(fullPrefix)
+    const isDir = prefix.endsWith('/')
+    const parentDir = isDir ? fullPrefix : nodePath.dirname(fullPrefix)
+    const prefixBase = isDir ? '' : nodePath.basename(fullPrefix)
 
     try {
       const entries = await fs.readdir(parentDir, { withFileTypes: true })
       const results: string[] = []
       for (const entry of entries) {
-        if (!entry.name.startsWith(prefixBase)) continue
-        const entryPath = path.join(parentDir, entry.name)
+        if (prefixBase && !entry.name.startsWith(prefixBase)) continue
+        const entryPath = nodePath.join(parentDir, entry.name)
+        const keyPrefix = isDir ? prefix : prefix.slice(0, prefix.length - prefixBase.length)
         if (entry.isDirectory()) {
           const subEntries = await fs.readdir(entryPath, { recursive: true })
           for (const sub of subEntries) {
-            results.push(`${prefix.slice(0, prefix.length - prefixBase.length)}${entry.name}/${sub}`)
+            results.push(`${keyPrefix}${entry.name}/${sub}`)
           }
         }
         else {
-          results.push(`${prefix.slice(0, prefix.length - prefixBase.length)}${entry.name}`)
+          results.push(`${keyPrefix}${entry.name}`)
         }
       }
       return results

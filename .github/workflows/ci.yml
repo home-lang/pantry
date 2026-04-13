@@ -107,12 +107,12 @@ jobs:
       - name: Configure AWS credentials
         run: |
           mkdir -p ~/.aws
-          cat > ~/.aws/credentials << EOC
+          cat > ~/.aws/credentials << 'EOC'
           [default]
           aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           EOC
-          cat > ~/.aws/config << EOC
+          cat > ~/.aws/config << 'EOC'
           [default]
           region = us-east-1
           EOC

@@ -247,7 +247,7 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
         tarballUrl: metadata.tarballUrl || '',
         checksum: metadata.checksum || '',
         publishedAt: metadata.publishedAt || now,
-        size: 0,
+        size: metadata.size || 0,
       }),
     })
   }
@@ -264,7 +264,7 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
         ':metadata': { S: 'METADATA' },
         ':query': { S: lowerQuery },
       },
-      Limit: limit * 2, // Get extra to account for filtering
+      Limit: Math.min(limit, 100) * 2, // Get extra to account for filtering, cap at 200
     })
 
     const results: SearchResult[] = result.Items.map((item) => {
@@ -297,7 +297,7 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
     const versions = result.Items.map((item) => {
       const data = DynamoDBClient.unmarshal(item)
       return data.version as string
-    })
+    }).filter(Boolean)
 
     return versions.sort(this.compareSemver)
   }
@@ -443,7 +443,7 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
         name: data.name,
         sha: data.sha,
         tarballUrl: data.tarballUrl,
-        checksum: '',
+        checksum: data.checksum || '',
         publishedAt: data.publishedAt,
         repository: data.repository,
       }
@@ -471,11 +471,11 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
       enabled: data.enabled ?? true,
       price: data.price,
       currency: data.currency || 'usd',
-      stripeAccountId: data.stripeAccountId || undefined,
-      stripePriceId: data.stripePriceId || undefined,
-      stripeProductId: data.stripeProductId || undefined,
-      freeVersions: data.freeVersions || undefined,
-      trialDays: data.trialDays || undefined,
+      stripeAccountId: data.stripeAccountId,
+      stripePriceId: data.stripePriceId,
+      stripeProductId: data.stripeProductId,
+      freeVersions: data.freeVersions,
+      trialDays: data.trialDays,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     }

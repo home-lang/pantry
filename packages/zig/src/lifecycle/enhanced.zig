@@ -152,7 +152,7 @@ pub fn executeScriptWithTimeout(
 
     const exit_code: u8 = switch (timeout_result) {
         .success => |term| switch (term) {
-            .exited => |code| @intCast(code),
+            .exited => |code| if (code <= 255) @intCast(code) else 1,
             else => 1,
         },
         .timeout => 124,
@@ -591,7 +591,7 @@ pub fn executeScriptSandboxed(
 
     const exit_code: u8 = switch (timeout_result) {
         .success => |term| switch (term) {
-            .exited => |code| @intCast(code),
+            .exited => |code| if (code <= 255) @intCast(code) else 1,
             else => 1,
         },
         .timeout => 124,

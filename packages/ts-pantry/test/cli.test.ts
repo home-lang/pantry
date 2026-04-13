@@ -64,7 +64,7 @@ describe('CLI Module', () => {
         }
 
         const friendlyNames = domainNames.map(domain => reverseAliases[domain] || domain)
-        const mixedNames = domainNames.map(domain => reverseAliases[domain] || domain)
+        const mixedNames = domainNames.map(domain => reverseAliases[domain] ? `${reverseAliases[domain]} (${domain})` : domain)
 
         return { friendlyNames, mixedNames }
       }
@@ -73,7 +73,7 @@ describe('CLI Module', () => {
       const result = getFriendlyNames(domains)
 
       expect(result.friendlyNames).toEqual(['node', 'python', 'unknown.org'])
-      expect(result.mixedNames).toEqual(['node', 'python', 'unknown.org'])
+      expect(result.mixedNames).toEqual(['node (nodejs.org)', 'python (python.org)', 'unknown.org'])
     })
   })
 

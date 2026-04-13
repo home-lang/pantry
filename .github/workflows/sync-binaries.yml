@@ -116,6 +116,10 @@ jobs:
         run: |
           cd packages/ts-pantry
           TOTAL=$(bun scripts/build-all-packages.ts --count-only 2>/dev/null | tail -1)
+          if [ -z "$TOTAL" ] || ! echo "$TOTAL" | grep -qE '^[0-9]+$'; then
+            echo "::error::Failed to discover package count (got: '$TOTAL')"
+            exit 1
+          fi
           echo "total=$TOTAL"
           echo "total=$TOTAL" >> $GITHUB_OUTPUT
 

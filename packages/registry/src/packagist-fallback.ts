@@ -68,7 +68,11 @@ export async function fetchFromPackagist(name: string): Promise<{
   require: Record<string, string>
 } | null> {
   try {
-    const response = await fetch(`${PACKAGIST_API}/packages/${name}.json`, {
+    // Validate package name matches vendor/package format
+    if (!/^[a-z0-9]([a-z0-9._-]*[a-z0-9])?\/[a-z0-9]([a-z0-9._-]*[a-z0-9])?$/i.test(name)) {
+      return null
+    }
+    const response = await fetch(`${PACKAGIST_API}/packages/${encodeURIComponent(name)}.json`, {
       headers: { 'User-Agent': 'pantry-registry/1.0' },
     })
     if (!response.ok) return null

@@ -179,7 +179,7 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
     allocator.free(result.stderr);
 
     const exit_code: u8 = switch (result.term) {
-        .exited => |code| @intCast(code),
+        .exited => |code| if (code <= 255) @intCast(code) else 1,
         else => 1,
     };
 

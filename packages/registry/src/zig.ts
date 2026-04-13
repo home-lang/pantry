@@ -151,9 +151,11 @@ export function generateDependencyEntry(
   tarballUrl: string,
   hash: string,
 ): string {
+  const safeUrl = tarballUrl.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+  const safeHash = hash.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
   return `.${name} = .{
-    .url = "${tarballUrl}",
-    .hash = "${hash}",
+    .url = "${safeUrl}",
+    .hash = "${safeHash}",
 },`
 }
 
@@ -161,7 +163,7 @@ export function generateDependencyEntry(
  * Generate the zig fetch command for a package
  */
 export function generateFetchCommand(tarballUrl: string): string {
-  return `zig fetch --save ${tarballUrl}`
+  return `zig fetch --save '${tarballUrl.replace(/'/g, "'\\''")}'`
 }
 
 /**
@@ -341,7 +343,7 @@ export class DynamoDBZigStorage implements ZigPackageStorage {
   }
 
   private s3Key(name: string, version: string): string {
-    const safeName = name.replace('@', '').replace('/', '-')
+    const safeName = name.replaceAll('@', '').replaceAll('/', '-')
     return `zig-packages/${safeName}/${version}/${safeName}-${version}.tar.gz`
   }
 
@@ -377,6 +379,7 @@ export class DynamoDBZigStorage implements ZigPackageStorage {
     })
     if (!meta.Item) return null
     const md = this.unmarshal(meta.Item)
+    if (!md.latest) return null
     return this.getPackage(name, md.latest)
   }
 

@@ -83,12 +83,17 @@ for dir in "$ROOT_DIR"/packages/*/ ; do
 
       echo "Publishing $package_name with OIDC..."
       cd "$dir"
-      $PANTRY_BIN publish --access public $DRY_RUN
+      publish_exit=0
+      $PANTRY_BIN publish --access public $DRY_RUN || publish_exit=$?
       cd - > /dev/null  # Suppress the directory change message
 
-      # Cleanup propagated files
+      # Cleanup propagated files (always, even on publish failure)
       [ -n "$COPIED_README" ] && rm -f "$COPIED_README"
       [ -n "$COPIED_LICENSE" ] && rm -f "$COPIED_LICENSE"
+
+      if [ "$publish_exit" -ne 0 ]; then
+        echo "  Failed to publish $package_name (exit code $publish_exit)"
+      fi
     fi
 
     echo "----------------------------------------"

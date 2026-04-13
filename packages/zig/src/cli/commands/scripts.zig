@@ -178,7 +178,7 @@ pub fn runScriptCommandWithOptions(
     }
 
     const exit_code: u8 = switch (result.term) {
-        .exited => |code| @intCast(code),
+        .exited => |code| if (code <= 255) @intCast(code) else 1,
         else => 1,
     };
 

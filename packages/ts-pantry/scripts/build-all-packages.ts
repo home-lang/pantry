@@ -1793,6 +1793,10 @@ Options:
   let packagesToBuild = allPackages
   if (values.batch !== undefined) {
     const batchIndex = parseInt(values.batch, 10)
+    if (Number.isNaN(batchIndex) || batchIndex < 0) {
+      console.error(`Invalid batch index: ${values.batch} (must be a non-negative integer)`)
+      process.exit(1)
+    }
     const start = batchIndex * batchSize
     const end = start + batchSize
     packagesToBuild = allPackages.slice(start, end)

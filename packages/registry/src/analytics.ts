@@ -271,8 +271,8 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
           }
         }
       }
-      catch {
-        // Ignore errors for missing days
+      catch (err) {
+        console.warn(`Warning: failed to fetch daily stats for ${packageName} on ${dateStr}:`, err)
       }
     }
 

@@ -169,6 +169,10 @@ async function renderDashboardPage(file: string, context: Record<string, unknown
   })
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 function htmlResponse(html: string, status = 200): Response {
   return new Response(html, {
     status,
@@ -358,7 +362,7 @@ export function createHandler(
         const sort = url.searchParams.get('sort') || 'relevance'
         const view = url.searchParams.get('view') || 'list'
         const type = url.searchParams.get('type') || 'all'
-        const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10))
+        const page = Math.min(Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10) || 1), 10000)
         return await handleSiteSearch(q, registry, binaryStorage, analyticsStorage, sort, view, type, zigPackageStorage, page, phpPackageStorage)
       }
 
@@ -655,13 +659,14 @@ export function createHandler(
             })
           }
           catch (err: any) {
-            return Response.json({ error: err.message }, { status: 400, headers: corsHeaders })
+            console.error('Checkout session error:', err)
+            return Response.json({ error: 'Failed to create checkout session' }, { status: 400, headers: corsHeaders })
           }
         }
 
         // GET /packages/{name}/checkout/success — post-payment landing
         if (rest === 'checkout/success' && req.method === 'GET') {
-          const safePackageName = packageName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+          const safePackageName = escapeHtml(packageName)
           const html = `<!DOCTYPE html>
 <html><head><title>Payment Successful</title></head>
 <body style="font-family: system-ui; max-width: 480px; margin: 80px auto; text-align: center;">
@@ -1453,7 +1458,7 @@ async function handleAuthRoutes(
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
-          'Set-Cookie': `pantry_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
+          'Set-Cookie': `pantry_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
         },
       })
     }
@@ -1474,7 +1479,7 @@ async function handleAuthRoutes(
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
-          'Set-Cookie': `pantry_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
+          'Set-Cookie': `pantry_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
         },
       })
     }
@@ -1495,7 +1500,7 @@ async function handleAuthRoutes(
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
-        'Set-Cookie': 'pantry_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+        'Set-Cookie': 'pantry_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0',
       },
     })
   }
@@ -1513,7 +1518,7 @@ async function handleAuthRoutes(
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
-          'Set-Cookie': 'pantry_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+          'Set-Cookie': 'pantry_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0',
         },
       })
     }
@@ -1614,7 +1619,7 @@ async function handleSiteAuth(
           headers: {
             ...htmlHeaders,
             'Location': '/account',
-            'Set-Cookie': `pantry_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
+            'Set-Cookie': `pantry_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
           },
         })
       }
@@ -1650,7 +1655,7 @@ async function handleSiteAuth(
           headers: {
             ...htmlHeaders,
             'Location': '/account',
-            'Set-Cookie': `pantry_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
+            'Set-Cookie': `pantry_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
           },
         })
       }
@@ -1684,7 +1689,7 @@ async function handleSiteAuth(
         headers: {
           ...htmlHeaders,
           'Location': '/login',
-          'Set-Cookie': 'pantry_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+          'Set-Cookie': 'pantry_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0',
         },
       })
     }
@@ -2232,6 +2237,11 @@ async function handleBinaryProxy(
   // Strip leading slash to get S3 key: /binaries/curl.se/metadata.json -> binaries/curl.se/metadata.json
   const s3Key = path.slice(1)
 
+  // Reject path traversal attempts
+  if (s3Key.includes('..') || /[\x00-\x1f]/.test(s3Key)) {
+    return Response.json({ error: 'Invalid path' }, { status: 400, headers: corsHeaders })
+  }
+
   // Determine content type and cache policy
   const isMetadata = path.endsWith('/metadata.json')
   const isTarball = path.endsWith('.tar.gz')
@@ -2390,7 +2400,7 @@ async function handleDashboard(
       headers: {
         ...noCacheHeaders,
         'Location': '/dashboard/login',
-        'Set-Cookie': 'pantry_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+        'Set-Cookie': 'pantry_token=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0',
       },
     })
   }
@@ -2406,7 +2416,7 @@ async function handleDashboard(
           headers: {
             ...noCacheHeaders,
             'Location': `/dashboard?token=${encodeURIComponent(token)}`,
-            'Set-Cookie': `pantry_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400`,
+            'Set-Cookie': `pantry_token=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`,
           },
         })
       }
@@ -2447,7 +2457,7 @@ async function handleDashboard(
 
   // Package detail page
   if (path.startsWith('/dashboard/package/')) {
-    const packageName = decodeURIComponent(path.replace('/dashboard/package/', ''))
+    const packageName = escapeHtml(decodeURIComponent(path.replace('/dashboard/package/', '')))
     const [stats, timeline] = await Promise.all([
       analytics.getPackageStats(packageName),
       analytics.getDownloadTimeline(packageName, 30),
@@ -2472,8 +2482,9 @@ async function handleDashboard(
   // Requested versions page
   if (path === '/dashboard/requested-versions') {
     const allRequests = await analytics.getAllMissingVersionRequests(500)
-    const filter = url.searchParams.get('filter') || 'known'
-    const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10))
+    const rawFilter = url.searchParams.get('filter') || 'known'
+    const filter = ['known', 'unknown', 'all'].includes(rawFilter) ? rawFilter : 'known'
+    const page = Math.min(Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10) || 1), 10000)
 
     // Top requested packages bar chart
     const pkgCounts = new Map<string, number>()
@@ -2493,7 +2504,7 @@ async function handleDashboard(
   // Overview page (default)
   if (path === '/dashboard' || path === '/dashboard/') {
     const topPackages = await analytics.getTopPackages(100)
-    const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10))
+    const page = Math.min(Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10) || 1), 10000)
 
     // Generate sparklines for visible packages on current page
     const startIdx = (page - 1) * 25
@@ -2825,8 +2836,8 @@ async function handleSiteSearch(
     pageStart,
     pageEnd,
     pageNumbers,
-    title: type === 'zig' ? 'zig packages' : type === 'php' ? 'php packages' : query ? `search: ${query}` : 'search',
-    metaDescription: type === 'zig' ? 'Browse Zig packages on pantry.dev' : type === 'php' ? 'Browse PHP/Composer packages on pantry.dev' : query ? `Search results for "${query}" on pantry.dev` : 'Search packages on pantry.dev',
+    title: type === 'zig' ? 'zig packages' : type === 'php' ? 'php packages' : query ? `search: ${escapeHtml(query)}` : 'search',
+    metaDescription: type === 'zig' ? 'Browse Zig packages on pantry.dev' : type === 'php' ? 'Browse PHP/Composer packages on pantry.dev' : query ? `Search results for "${escapeHtml(query)}" on pantry.dev` : 'Search packages on pantry.dev',
     canonicalUrl: 'https://pantry.dev/search',
   })
   return htmlResponse(html)
@@ -3219,8 +3230,8 @@ async function handleSiteCompare(
     packagesQuery: packagesParam,
     multiLineChart,
     downloadsBarChart,
-    title: `Compare: ${packageNames.join(' vs ')}`,
-    metaDescription: `Compare ${packageNames.join(', ')} — downloads, versions, and platform support on pantry.dev.`,
+    title: `Compare: ${packageNames.map(escapeHtml).join(' vs ')}`,
+    metaDescription: `Compare ${packageNames.map(escapeHtml).join(', ')} — downloads, versions, and platform support on pantry.dev.`,
     canonicalUrl: 'https://pantry.dev/compare',
   })
   return htmlResponse(html)

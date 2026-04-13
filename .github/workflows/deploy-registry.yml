@@ -25,13 +25,14 @@ jobs:
       - name: Deploy to registry server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.REGISTRY_SSH_KEY }}
+          REGISTRY_HOST: ${{ secrets.REGISTRY_HOST || '54.243.196.101' }}
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H 54.243.196.101 >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -H "$REGISTRY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
 
-          ssh -o StrictHostKeyChecking=no ec2-user@54.243.196.101 << 'EOF'
+          ssh -o StrictHostKeyChecking=no "ec2-user@${REGISTRY_HOST}" << 'EOF'
             set -e
             cd /opt/pantry-registry/repo
 

@@ -95,7 +95,13 @@ export function computePhpChecksum(data: ArrayBuffer | Buffer): string {
  * Parse a composer.json file content
  */
 export function parseComposerJson(content: string): ComposerManifest {
-  const parsed = JSON.parse(content)
+  let parsed: any
+  try {
+    parsed = JSON.parse(content)
+  }
+  catch {
+    throw new Error('Invalid composer.json: malformed JSON')
+  }
 
   const manifest: ComposerManifest = {
     name: parsed.name || '',
@@ -120,7 +126,9 @@ export function parseComposerJson(content: string): ComposerManifest {
  * Generate a composer require command for a package
  */
 export function generateComposerRequire(name: string, version: string): string {
-  return `composer require ${name}:^${version}`
+  const safeName = name.replace(/[^a-z0-9/_.-]/gi, '')
+  const safeVersion = version.replace(/[^a-z0-9._-]/gi, '')
+  return `composer require '${safeName}:^${safeVersion}'`
 }
 
 /**
@@ -280,7 +288,7 @@ export class DynamoDBPhpStorage implements PhpPackageStorage {
   }
 
   private s3Key(name: string, version: string): string {
-    const safeName = name.replace('/', '-')
+    const safeName = name.replaceAll('/', '-').replaceAll('@', '')
     return `php-packages/${safeName}/${version}/${safeName}-${version}.tar.gz`
   }
 
@@ -316,6 +324,7 @@ export class DynamoDBPhpStorage implements PhpPackageStorage {
     })
     if (!meta.Item) return null
     const md = this.unmarshal(meta.Item)
+    if (!md.latest) return null
     return this.getPackage(name, md.latest)
   }
 

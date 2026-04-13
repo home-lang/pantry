@@ -38,12 +38,15 @@ interface PutObjectOptions {
  */
 export class S3Client {
   private region: string
+  private cachedCredentials: AWSCredentials | null = null
 
   constructor(region = 'us-east-1') {
     this.region = region
   }
 
   private getCredentials(): AWSCredentials {
+    if (this.cachedCredentials) return this.cachedCredentials
+
     const accessKeyId = process.env.AWS_ACCESS_KEY_ID
     const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
     const sessionToken = process.env.AWS_SESSION_TOKEN
@@ -52,7 +55,8 @@ export class S3Client {
       throw new Error('AWS credentials not found. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables.')
     }
 
-    return { accessKeyId, secretAccessKey, sessionToken }
+    this.cachedCredentials = { accessKeyId, secretAccessKey, sessionToken }
+    return this.cachedCredentials
   }
 
   private getHost(bucket: string): string {
@@ -174,7 +178,8 @@ export class S3Client {
     })
 
     if (!response.ok) {
-      throw new Error(`S3 GET failed: ${response.status}`)
+      const text = await response.text().catch(() => '')
+      throw new Error(`S3 GET failed: ${response.status} ${text}`)
     }
 
     const arrayBuffer = await response.arrayBuffer()
@@ -193,7 +198,8 @@ export class S3Client {
     })
 
     if (!response.ok) {
-      throw new Error(`S3 HEAD failed: ${response.status}`)
+      const text = await response.text().catch(() => '')
+      throw new Error(`S3 HEAD failed: ${response.status} ${text}`)
     }
 
     const result: Record<string, string> = {}
@@ -215,7 +221,8 @@ export class S3Client {
     })
 
     if (!response.ok && response.status !== 404) {
-      throw new Error(`S3 DELETE failed: ${response.status}`)
+      const text = await response.text().catch(() => '')
+      throw new Error(`S3 DELETE failed: ${response.status} ${text}`)
     }
   }
 
@@ -267,7 +274,7 @@ export class S3Client {
     return objects
   }
 
-  generatePresignedGetUrl(bucket: string, key: string, expiresInSeconds = 3600): string {
+  generatePresignedGetUrl(bucket: string, key: string, expiresInSeconds = 900): string {
     const credentials = this.getCredentials()
     const host = this.getHost(bucket)
     const path = `/${encodeURIComponent(key).replace(/%2F/g, '/')}`
@@ -323,7 +330,7 @@ export class S3Client {
     return `https://${host}${path}?${sortedParams.toString()}`
   }
 
-  generatePresignedPutUrl(bucket: string, key: string, contentType: string, expiresInSeconds = 3600): string {
+  generatePresignedPutUrl(bucket: string, key: string, contentType: string, expiresInSeconds = 900): string {
     const credentials = this.getCredentials()
     const host = this.getHost(bucket)
     const path = `/${encodeURIComponent(key).replace(/%2F/g, '/')}`
