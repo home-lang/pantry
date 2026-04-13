@@ -283,14 +283,11 @@ pub fn extractArchiveWithVerification(
 fn extractZipArchive(allocator: std.mem.Allocator, archive_path: []const u8, dest_dir: []const u8) !void {
     const builtin = @import("builtin");
     if (comptime builtin.os.tag == .windows) {
-        // PowerShell: Expand-Archive -Path <zip> -DestinationPath <dir> -Force
-        const ps_cmd = try std.fmt.allocPrint(
-            allocator,
-            "Expand-Archive -Path '{s}' -DestinationPath '{s}' -Force",
-            .{ archive_path, dest_dir },
-        );
-        defer allocator.free(ps_cmd);
-        _ = try io_helper.childRun(allocator, &[_][]const u8{ "powershell", "-NoProfile", "-Command", ps_cmd });
+        // PowerShell: use separate arguments to avoid command injection
+        _ = try io_helper.childRun(allocator, &[_][]const u8{
+            "powershell", "-NoProfile", "-Command",
+            "Expand-Archive", "-Path", archive_path, "-DestinationPath", dest_dir, "-Force",
+        });
     } else {
         // Unix: unzip -o -q <zip> -d <dir>
         _ = try io_helper.childRun(allocator, &[_][]const u8{ "unzip", "-o", "-q", archive_path, "-d", dest_dir });

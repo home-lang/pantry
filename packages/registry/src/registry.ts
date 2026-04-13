@@ -99,7 +99,9 @@ export class Registry {
    * Search for packages
    */
   async search(query: string, limit = 20): Promise<SearchResult[]> {
-    const results = await this.metadataStorage.search(query, limit)
+    const safeQuery = query.slice(0, 256)
+    const safeLimit = Math.min(Math.max(limit, 1), 100)
+    const results = await this.metadataStorage.search(safeQuery, safeLimit)
 
     // If we have enough results or npm fallback is disabled, return
     if (results.length >= limit || !this.config.npmFallback) {
@@ -137,7 +139,11 @@ export class Registry {
           return this.tarballStorage.download(key)
         }
 
-        // Otherwise, fetch from the URL
+        // Otherwise, fetch from the URL (validate HTTPS to prevent SSRF)
+        const tarballUrlObj = new URL(metadata.tarballUrl)
+        if (tarballUrlObj.protocol !== 'https:' || ['localhost', '127.0.0.1', '0.0.0.0', '169.254.169.254'].includes(tarballUrlObj.hostname)) {
+          throw new Error(`Blocked tarball URL: ${tarballUrlObj.hostname}`)
+        }
         const response = await fetch(metadata.tarballUrl)
         if (response.ok) {
           return response.arrayBuffer()

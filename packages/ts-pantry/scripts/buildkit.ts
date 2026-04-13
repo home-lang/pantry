@@ -643,7 +643,7 @@ else if (osName === 'linux' && archName === 'x86-64') {
   sections.push('    done')
   sections.push('    export RUSTUP_HOME="$HOME/.rustup"')
   sections.push('  fi')
-  sections.push('  export CARGO_HOME="$REAL_HOME/.cargo"')
+  sections.push('  export CARGO_HOME="$HOME/.cargo"')
   sections.push('fi')
   sections.push('')
 
@@ -978,15 +978,21 @@ else if (osName === 'darwin') {
     depLibPaths.push('/opt/homebrew/lib')
   }
 
-  if (depBinPaths.length > 0 || depPkgConfigPaths.length > 0) {
+  if (depBinPaths.length > 0 || depLibPaths.length > 0 || depPkgConfigPaths.length > 0) {
     sections.push('# Dependency paths')
     if (depBinPaths.length > 0) {
       sections.push(`export PATH="${depBinPaths.join(':')}:$PATH"`)
     }
-    sections.push(`export LIBRARY_PATH="${depLibPaths.join(':')}:\${LIBRARY_PATH:-}"`)
-    sections.push(`export CPATH="${depIncludePaths.join(':')}:\${CPATH:-}"`)
-    sections.push(`export PKG_CONFIG_PATH="${depPkgConfigPaths.join(':')}:\${PKG_CONFIG_PATH:-}"`)
-    sections.push(`export LD_LIBRARY_PATH="${depLibPaths.join(':')}:\${LD_LIBRARY_PATH:-}"`)
+    if (depLibPaths.length > 0) {
+      sections.push(`export LIBRARY_PATH="${depLibPaths.join(':')}:\${LIBRARY_PATH:-}"`)
+      sections.push(`export LD_LIBRARY_PATH="${depLibPaths.join(':')}:\${LD_LIBRARY_PATH:-}"`)
+    }
+    if (depIncludePaths.length > 0) {
+      sections.push(`export CPATH="${depIncludePaths.join(':')}:\${CPATH:-}"`)
+    }
+    if (depPkgConfigPaths.length > 0) {
+      sections.push(`export PKG_CONFIG_PATH="${depPkgConfigPaths.join(':')}:\${PKG_CONFIG_PATH:-}"`)
+    }
     if (osName === 'linux') {
       // On Linux, LD_LIBRARY_PATH is searched BEFORE default locations. S3 deps may
       // ship libcurl/libreadline that override system libraries, breaking system tools

@@ -364,16 +364,19 @@ fn resolveFromMetadataUrl(allocator: std.mem.Allocator, s3_path: []const u8, ver
         .{tarball_path},
     ) catch return null;
 
+    const duped_s3_path = allocator.dupe(u8, s3_path) catch {
+        allocator.free(tarball_url);
+        return null;
+    };
+    const duped_version = allocator.dupe(u8, version) catch {
+        allocator.free(duped_s3_path);
+        allocator.free(tarball_url);
+        return null;
+    };
+
     return PantryPackageInfo{
-        .s3_path = allocator.dupe(u8, s3_path) catch {
-            allocator.free(tarball_url);
-            return null;
-        },
-        .version = allocator.dupe(u8, version) catch {
-            allocator.free(tarball_url);
-            // s3_path was already duped, but we can't easily free it here
-            return null;
-        },
+        .s3_path = duped_s3_path,
+        .version = duped_version,
         .tarball_url = tarball_url,
     };
 }

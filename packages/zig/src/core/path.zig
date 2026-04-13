@@ -150,7 +150,7 @@ pub fn normalize(allocator: std.mem.Allocator, path: []const u8) ![]const u8 {
     for (parts.items) |part| {
         total_len += part.len;
     }
-    total_len += parts.items.len - 1; // separators
+    total_len += if (parts.items.len > 0) parts.items.len - 1 else 0; // separators
 
     var result = try allocator.alloc(u8, total_len);
     var pos: usize = 0;

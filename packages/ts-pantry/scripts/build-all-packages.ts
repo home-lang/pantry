@@ -98,6 +98,9 @@ interface BuildPlatformInfo {
 
 function detectPlatform(): BuildPlatformInfo {
   const os = process.platform === 'darwin' ? 'darwin' : process.platform === 'win32' ? 'windows' : 'linux'
+  if (process.arch !== 'arm64' && process.arch !== 'x64' && process.arch !== 'x86_64') {
+    console.warn(`Warning: unexpected architecture '${process.arch}', defaulting to x86-64`)
+  }
   const arch = process.arch === 'arm64' ? 'arm64' : 'x86-64'
   // Windows uses x64 naming convention
   const platformArch = os === 'windows' ? 'x64' : arch
@@ -807,11 +810,11 @@ else if (spec.startsWith('<')) {
 
 /** Compare semver-like version strings. Returns <0 if a<b, 0 if a==b, >0 if a>b */
 function compareVersions(a: string, b: string): number {
-  const pa = a.split('.').map(Number)
-  const pb = b.split('.').map(Number)
+  const pa = a.split(/[._-]/).map(s => Number.parseInt(s, 10) || 0)
+  const pb = b.split(/[._-]/).map(s => Number.parseInt(s, 10) || 0)
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    const na = pa[i] || 0
-    const nb = pb[i] || 0
+    const na = pa[i] ?? 0
+    const nb = pb[i] ?? 0
     if (na !== nb) return na - nb
   }
   return 0
@@ -831,7 +834,10 @@ function selectImportantVersions(pkg: BuildablePackage, maxVersions: number): st
   const validVersions = pkg.versions.filter(v =>
     v !== '999.999.999' && v !== '0.0.0' && !isVersionSkipped(pkg.domain, v)
   )
-  if (validVersions.length === 0) return []
+  if (validVersions.length === 0) {
+    console.warn(`  Warning: ${pkg.domain} has no valid versions after filtering`)
+    return []
+  }
   if (validVersions.length <= maxVersions) return validVersions
 
   const selected = new Set<string>()

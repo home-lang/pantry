@@ -578,7 +578,11 @@ export async function resolveTransitiveDependencies(
   } = options
 
   // Prevent infinite recursion
-  if (depth > maxDepth || visited.has(packageName)) {
+  if (depth > maxDepth) {
+    if (verbose) console.warn(`  Warning: max dependency depth (${maxDepth}) exceeded for ${packageName}`)
+    return []
+  }
+  if (visited.has(packageName)) {
     return []
   }
 

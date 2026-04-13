@@ -166,6 +166,19 @@ export async function installPackage(
     throw new Error(`Unknown package: ${domain}. Supported: ${Object.keys(resolvers).join(', ')}`)
   }
 
+  // Resolve semver constraints (^, ~, >=, etc.) to concrete versions
+  if (/^[\^~>=<]/.test(version)) {
+    version = await resolveVersionConstraint(domain, version)
+  }
+  else if (version === 'latest' || version === '*' || !version) {
+    version = await resolveLatestVersion(domain)
+  }
+  // Resolve short dev versions (e.g. "0.16.0-dev") to full version via upstream API
+  else if (domain === 'ziglang.org' && version.endsWith('-dev')) {
+    const resolved = await resolveZigShortDevVersion(version)
+    if (resolved) version = resolved
+  }
+
   const installDir = options.installDir || path.join(process.cwd(), 'pantry')
   const binDir = path.join(installDir, '.bin')
   const pkgDir = path.join(installDir, domain.replace(/\./g, '-'), version)
@@ -317,6 +330,79 @@ export async function resolveLatestVersion(domain: string): Promise<string> {
     return (lts?.version || versions[0]?.version || '').replace(/^v/, '')
   }
   throw new Error(`Cannot resolve latest version for ${domain}`)
+}
+
+/**
+ * Resolve a short zig dev version like "0.16.0-dev" to the full version from ziglang.org
+ */
+async function resolveZigShortDevVersion(shortVersion: string): Promise<string | null> {
+  try {
+    const resp = await fetchJSON('https://ziglang.org/download/index.json')
+    const masterVersion = (resp as { master?: { version?: string } }).master?.version
+    if (masterVersion && masterVersion.startsWith(shortVersion)) {
+      return masterVersion
+    }
+  }
+  catch { /* fall through */ }
+  return null
+}
+
+/**
+ * Resolve a semver constraint (^1.0.0, ~1.2.0, >=1.0.0, etc.) to the best matching concrete version.
+ */
+async function resolveVersionConstraint(domain: string, constraint: string): Promise<string> {
+  // Get available versions from package metadata
+  let availableVersions: readonly string[]
+  try {
+    const pkgKey = domain.replace(/[^a-z0-9]/gi, '').toLowerCase()
+    const { packages } = await import('./packages/index.js').catch(() => import('./index.js'))
+    const pkg = (packages as any)[pkgKey]
+    availableVersions = pkg?.versions || []
+  }
+  catch {
+    availableVersions = []
+  }
+
+  if (availableVersions.length === 0) {
+    // Fallback to latest if no package metadata available
+    return resolveLatestVersion(domain)
+  }
+
+  // Parse constraint: ^0.15.1, ~0.15.1, >=0.15.1, etc.
+  const match = constraint.match(/^([~^>=<]+)(\d+(?:\.\d+)*)/)
+  if (!match) return resolveLatestVersion(domain)
+
+  const op = match[1]
+  const target = match[2].split('.').map(Number)
+
+  for (const ver of availableVersions) {
+    // Skip dev/pre-release versions for stable constraints
+    if (ver.includes('-')) continue
+    const parts = ver.split('.').map(Number)
+
+    if (op === '^') {
+      // ^0.15.1 means >=0.15.1 and <0.16.0 (or <1.0.0 if major is 0 and minor is the "major")
+      if (target[0] === 0) {
+        // ^0.x.y: same major AND minor, patch >= target patch
+        if (parts[0] === target[0] && parts[1] === target[1] && parts[2] >= (target[2] || 0)) return ver
+      }
+      else {
+        // ^x.y.z: same major, minor.patch >= target
+        if (parts[0] === target[0] && (parts[1] > target[1] || (parts[1] === target[1] && parts[2] >= (target[2] || 0)))) return ver
+      }
+    }
+    else if (op === '~') {
+      // ~0.15.1 means >=0.15.1 and <0.16.0
+      if (parts[0] === target[0] && parts[1] === target[1] && parts[2] >= (target[2] || 0)) return ver
+    }
+    else if (op === '>=') {
+      if (parts[0] > target[0] || (parts[0] === target[0] && parts[1] > target[1]) || (parts[0] === target[0] && parts[1] === target[1] && parts[2] >= (target[2] || 0))) return ver
+    }
+  }
+
+  // No match found — fall back to latest
+  console.warn(`No version matching ${constraint} found for ${domain}, falling back to latest`)
+  return resolveLatestVersion(domain)
 }
 
 // ── Helpers ──

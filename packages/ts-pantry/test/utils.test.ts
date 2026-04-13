@@ -65,7 +65,7 @@ describe('Utils Module', () => {
     test('should handle nested paths with hyphens', () => {
       expect(convertDomainToFileName('agwa.name/git-crypt')).toBe('agwaname-git-crypt')
       expect(convertDomainToFileName('aws.amazon.com/cli')).toBe('awsamazoncom-cli')
-      expect(convertDomainToFileName('github.com/cli/cli')).toBe('githubcom-cli')
+      expect(convertDomainToFileName('github.com/cli/cli')).toBe('githubcom-cli-cli')
     })
 
     test('should handle domains with multiple dots', () => {

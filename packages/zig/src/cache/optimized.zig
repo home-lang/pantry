@@ -138,10 +138,7 @@ pub const OptimizedCache = struct {
     allocator: std.mem.Allocator,
 
     pub fn init(allocator: std.mem.Allocator, config: CacheConfig) !OptimizedCache {
-        const base = if (config.shared_cache_dir) |_|
-            try PackageCache.initWithMaxSize(allocator, config.max_size_bytes)
-        else
-            try PackageCache.initWithMaxSize(allocator, config.max_size_bytes);
+        const base = try PackageCache.initWithMaxSize(allocator, config.max_size_bytes);
 
         return .{
             .base = base,
@@ -191,7 +188,7 @@ pub const OptimizedCache = struct {
             if (self.config.max_age_seconds > 0) {
                 const now = @as(i64, @intCast(io_helper.clockGettime().sec));
                 const age = now - meta.downloaded_at;
-                if (age > self.config.max_age_seconds) {
+                if (age < 0 or age > self.config.max_age_seconds) {
                     // Expired, remove from cache
                     try self.base.remove(name, version);
                     return null;

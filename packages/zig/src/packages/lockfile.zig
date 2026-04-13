@@ -348,6 +348,8 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
         const direct_file = try io_helper.cwd().createFile(io_helper.io, file_path, .{});
         defer direct_file.close(io_helper.io);
         try io_helper.writeAllToFile(direct_file, buf.items);
+        // Clean up leftover temp file
+        io_helper.cwd().deleteFile(io_helper.io, tmp_path) catch {};
     };
 }
 
@@ -436,10 +438,11 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
                             var d_it = deps_val.object.iterator();
                             while (d_it.next()) |d_entry| {
                                 if (d_entry.value_ptr.* == .string) {
-                                    try map.put(
-                                        try allocator.dupe(u8, d_entry.key_ptr.*),
-                                        try allocator.dupe(u8, d_entry.value_ptr.string),
-                                    );
+                                    const duped_key = try allocator.dupe(u8, d_entry.key_ptr.*);
+                                    errdefer allocator.free(duped_key);
+                                    const duped_val = try allocator.dupe(u8, d_entry.value_ptr.string);
+                                    errdefer allocator.free(duped_val);
+                                    try map.put(duped_key, duped_val);
                                 }
                             }
                             if (map.count() > 0) pair[1].* = map else map.deinit(allocator);

@@ -8,10 +8,13 @@ const NPM_REGISTRY = 'https://registry.npmjs.org'
 export async function fetchFromNpm(name: string, version?: string): Promise<PackageMetadata | null> {
   try {
     const url = version
-      ? `${NPM_REGISTRY}/${encodeURIComponent(name)}/${version}`
+      ? `${NPM_REGISTRY}/${encodeURIComponent(name)}/${encodeURIComponent(version)}`
       : `${NPM_REGISTRY}/${encodeURIComponent(name)}/latest`
 
-    const response = await fetch(url)
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30000)
+    const response = await fetch(url, { signal: controller.signal })
+    clearTimeout(timeout)
     if (!response.ok) {
       return null
     }
@@ -44,7 +47,10 @@ export async function fetchFromNpm(name: string, version?: string): Promise<Pack
  */
 export async function listNpmVersions(name: string): Promise<string[]> {
   try {
-    const response = await fetch(`${NPM_REGISTRY}/${encodeURIComponent(name)}`)
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30000)
+    const response = await fetch(`${NPM_REGISTRY}/${encodeURIComponent(name)}`, { signal: controller.signal })
+    clearTimeout(timeout)
     if (!response.ok) {
       return []
     }
@@ -72,9 +78,13 @@ export async function listNpmVersions(name: string): Promise<string[]> {
  */
 export async function searchNpm(query: string, limit = 20): Promise<SearchResult[]> {
   try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30000)
     const response = await fetch(
-      `${NPM_REGISTRY}/-/v1/search?text=${encodeURIComponent(query)}&size=${limit}`,
+      `${NPM_REGISTRY}/-/v1/search?text=${encodeURIComponent(query)}&size=${Math.min(limit, 100)}`,
+      { signal: controller.signal },
     )
+    clearTimeout(timeout)
     if (!response.ok) {
       return []
     }
@@ -104,7 +114,16 @@ export async function downloadNpmTarball(name: string, version: string): Promise
       return null
     }
 
-    const response = await fetch(metadata.tarballUrl)
+    // Validate tarball URL is from expected registries (SSRF protection)
+    const tarballUrl = new URL(metadata.tarballUrl)
+    if (!['registry.npmjs.org', 'registry.yarnpkg.com'].includes(tarballUrl.hostname) && !tarballUrl.hostname.endsWith('.npmjs.org')) {
+      return null
+    }
+
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 60000)
+    const response = await fetch(metadata.tarballUrl, { signal: controller.signal })
+    clearTimeout(timeout)
     if (!response.ok) {
       return null
     }

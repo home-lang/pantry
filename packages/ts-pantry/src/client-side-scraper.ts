@@ -428,7 +428,13 @@ async function fetchAPIEndpoints(
  * Prioritize endpoints based on URL patterns
  */
 function prioritizeEndpoints(endpoints: string[], refererUrl: string): string[] {
-  const url = new URL(refererUrl)
+  let url: URL
+  try {
+    url = new URL(refererUrl)
+  }
+  catch {
+    return endpoints
+  }
   const pathSegments = url.pathname.split('/').filter(Boolean)
 
   return endpoints.sort((a, b) => {

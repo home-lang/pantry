@@ -121,7 +121,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
             if (now_ms - last_update_ms >= 100) {
                 if (inline_progress) |opts| {
                     // Inline progress: update the package line
-                    const lines_up = opts.total_deps - opts.line_offset;
+                    const lines_up = if (opts.total_deps > opts.line_offset) opts.total_deps - opts.line_offset else 0;
                     var current_buf: [32]u8 = undefined;
                     const current_str = formatBytes(bytes_downloaded, &current_buf) catch "?";
 

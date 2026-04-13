@@ -566,8 +566,11 @@ pub fn compareVersions(a: []const u8, b: []const u8) std.math.Order {
 fn determineStatus(current: []const u8, latest: []const u8) VersionStatus {
     if (std.mem.eql(u8, current, latest)) return .up_to_date;
 
-    var current_parts = std.mem.splitScalar(u8, current, '.');
-    var latest_parts = std.mem.splitScalar(u8, latest, '.');
+    // Strip 'v' prefix if present (e.g. "v1.2.3" -> "1.2.3")
+    const current_clean = if (std.mem.startsWith(u8, current, "v")) current[1..] else current;
+    const latest_clean = if (std.mem.startsWith(u8, latest, "v")) latest[1..] else latest;
+    var current_parts = std.mem.splitScalar(u8, current_clean, '.');
+    var latest_parts = std.mem.splitScalar(u8, latest_clean, '.');
 
     const current_major = std.fmt.parseInt(u32, current_parts.next() orelse "0", 10) catch 0;
     const latest_major = std.fmt.parseInt(u32, latest_parts.next() orelse "0", 10) catch 0;

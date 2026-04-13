@@ -352,13 +352,13 @@ export function createHandler(
         // Serve JSON if format=json (instant search) or Accept: application/json (API clients)
         const wantsJson = format === 'json' || (accept.includes('application/json') && !accept.includes('text/html'))
         if (wantsJson) {
-          const query = url.searchParams.get('q') || ''
+          const query = (url.searchParams.get('q') || '').slice(0, 256)
           const limit = Number.parseInt(url.searchParams.get('limit') || '20', 10)
           const results = await registry.search(query, Math.min(limit, 50))
           return Response.json({ results }, { headers: corsHeaders })
         }
         // Default to HTML for browsers
-        const q = url.searchParams.get('q') || ''
+        const q = (url.searchParams.get('q') || '').slice(0, 256)
         const sort = url.searchParams.get('sort') || 'relevance'
         const view = url.searchParams.get('view') || 'list'
         const type = url.searchParams.get('type') || 'all'
@@ -1624,7 +1624,7 @@ async function handleSiteAuth(
         })
       }
       catch (err: any) {
-        const html = await renderSitePage('login.stx', { error: err.message, title: 'Log In' })
+        const html = await renderSitePage('login.stx', { error: escapeHtml(err.message || 'Login failed'), title: 'Log In' })
         return new Response(html, { status: 401, headers: htmlHeaders })
       }
     }
@@ -1660,7 +1660,7 @@ async function handleSiteAuth(
         })
       }
       catch (err: any) {
-        const html = await renderSitePage('signup.stx', { error: err.message, title: 'Sign Up' })
+        const html = await renderSitePage('signup.stx', { error: escapeHtml(err.message || 'Signup failed'), title: 'Sign Up' })
         return new Response(html, { status: err instanceof AuthError ? err.status : 400, headers: htmlHeaders })
       }
     }
@@ -2822,7 +2822,8 @@ async function handleSiteSearch(
 
   const suggestions = ['python.org', 'nodejs.org', 'curl.se', 'go.dev', 'redis.io', 'postgresql.org', 'bun.sh', 'rust-lang.org']
   const html = await renderSitePage('search.stx', {
-    query,
+    query: escapeHtml(query),
+    encodedQuery: encodeURIComponent(query),
     results: pagedResults,
     sort,
     view,
@@ -2851,6 +2852,8 @@ async function handleSitePackage(
   zigStorage?: ZigPackageStorage,
   phpStorage?: PhpPackageStorage,
 ): Promise<Response> {
+  const safeName = escapeHtml(name)
+  const encodedName = encodeURIComponent(name)
   const [meta, stats, timeline, pkgInfo, zigPkg, phpPkg] = await Promise.all([
     fetchPackageMetadata(name, binaryStorage),
     analytics.getPackageStats(name),
@@ -2870,7 +2873,7 @@ async function handleSitePackage(
 
   if (!meta && !pkgInfo && !zigPkg && !phpPkg && !packagistPkg) {
     const html = await renderSitePage('package.stx', {
-      name,
+      name, safeName, encodedName,
       notFound: true,
       isZigPackage: false,
       isPhpPackage: false,
@@ -2894,7 +2897,7 @@ async function handleSitePackage(
     const zigStats = stats || { totalDownloads: 0, weeklyDownloads: 0, monthlyDownloads: 0, versionDownloads: {} }
 
     const html = await renderSitePage('package.stx', {
-      name,
+      name, safeName, encodedName,
       notFound: false,
       isZigPackage: true,
       isPhpPackage: false,
@@ -2933,7 +2936,7 @@ async function handleSitePackage(
     const phpDeps = phpPkg.require ? Object.keys(phpPkg.require).filter(d => d !== 'php') : []
 
     const html = await renderSitePage('package.stx', {
-      name,
+      name, safeName, encodedName,
       notFound: false,
       isZigPackage: false,
       isPhpPackage: true,
@@ -2972,7 +2975,7 @@ async function handleSitePackage(
     const pkgVersions = (packagistPkg.versions || []) as string[]
 
     const html = await renderSitePage('package.stx', {
-      name,
+      name, safeName, encodedName,
       notFound: false,
       isZigPackage: false,
       isPhpPackage: true,
@@ -3045,7 +3048,7 @@ async function handleSitePackage(
 
     const pkgDescription = meta.description || `${name} — ${versionCount} versions available for macOS and Linux`
     const html = await renderSitePage('package.stx', {
-      name,
+      name, safeName, encodedName,
       notFound: false,
       isZigPackage,
       isPhpPackage,
@@ -3083,7 +3086,7 @@ async function handleSitePackage(
   const fbVersions = fbVersion !== 'unknown' ? [fbVersion] : []
 
   const html = await renderSitePage('package.stx', {
-    name,
+    name, safeName, encodedName,
     notFound: false,
     isZigPackage,
     isPhpPackage,
@@ -3131,7 +3134,7 @@ async function handleSiteCompare(
     const html = await renderSitePage('compare.stx', {
       comparePackages: [],
       hasPackages: false,
-      packagesQuery: packagesParam,
+      packagesQuery: encodeURIComponent(packagesParam),
       title: 'Compare',
       metaDescription: 'Compare packages side by side on pantry.dev — downloads, versions, and platform support.',
       canonicalUrl: 'https://pantry.dev/compare',
@@ -3156,8 +3159,8 @@ async function handleSiteCompare(
       const depCount = Object.keys(deps).length
 
       return {
-        name,
-        description: meta?.description || '',
+        name: escapeHtml(name),
+        description: escapeHtml(meta?.description || ''),
         latestVersion,
         totalDownloads: pkgStats?.totalDownloads || 0,
         formattedDownloads: chartFormatCount(pkgStats?.totalDownloads || 0),

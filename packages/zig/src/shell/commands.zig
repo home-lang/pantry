@@ -1860,7 +1860,7 @@ pub const ShellCommands = struct {
     fn ensurePostgresDatabase(self: *ShellCommands, project_root: []const u8, db_host: []const u8, db_port: []const u8, username: []const u8, database: []const u8) !void {
         const check_cmd = try std.fmt.allocPrint(
             self.allocator,
-            "export PATH=\"{s}/pantry/.bin:$PATH\"; psql -h {s} -p {s} -U {s} -d {s} -c 'SELECT 1' > /dev/null 2>&1",
+            "export PATH=\"{s}/pantry/.bin:$PATH\"; psql -h '{s}' -p '{s}' -U '{s}' -d '{s}' -c 'SELECT 1' > /dev/null 2>&1",
             .{ project_root, db_host, db_port, username, database },
         );
         defer self.allocator.free(check_cmd);
@@ -1877,7 +1877,7 @@ pub const ShellCommands = struct {
 
         const create_cmd = try std.fmt.allocPrint(
             self.allocator,
-            "export PATH=\"{s}/pantry/.bin:$PATH\"; createdb -h {s} -p {s} -U {s} {s}",
+            "export PATH=\"{s}/pantry/.bin:$PATH\"; createdb -h '{s}' -p '{s}' -U '{s}' '{s}'",
             .{ project_root, db_host, db_port, username, database },
         );
         defer self.allocator.free(create_cmd);
@@ -1901,7 +1901,7 @@ pub const ShellCommands = struct {
     fn ensureMysqlDatabase(self: *ShellCommands, project_root: []const u8, db_host: []const u8, db_port: []const u8, username: []const u8, database: []const u8) !void {
         const check_cmd = try std.fmt.allocPrint(
             self.allocator,
-            "export PATH=\"{s}/pantry/.bin:$PATH\"; mysql -h {s} -P {s} -u {s} -e \"USE `{s}`;\" > /dev/null 2>&1",
+            "export PATH=\"{s}/pantry/.bin:$PATH\"; mysql -h '{s}' -P '{s}' -u '{s}' -e \"USE `{s}`;\" > /dev/null 2>&1",
             .{ project_root, db_host, db_port, username, database },
         );
         defer self.allocator.free(check_cmd);
@@ -1918,7 +1918,7 @@ pub const ShellCommands = struct {
 
         const create_cmd = try std.fmt.allocPrint(
             self.allocator,
-            "export PATH=\"{s}/pantry/.bin:$PATH\"; mysql -h {s} -P {s} -u {s} -e \"CREATE DATABASE IF NOT EXISTS `{s}`;\"",
+            "export PATH=\"{s}/pantry/.bin:$PATH\"; mysql -h '{s}' -P '{s}' -u '{s}' -e \"CREATE DATABASE IF NOT EXISTS `{s}`;\"",
             .{ project_root, db_host, db_port, username, database },
         );
         defer self.allocator.free(create_cmd);

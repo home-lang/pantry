@@ -2574,9 +2574,27 @@ pub const Installer = struct {
             };
         }
 
-        // Resolve short dev versions like "0.16.0-dev" to full version
-        const resolved_version = try downloader.resolveZigDevVersion(self.allocator, spec.version);
-        defer if (!std.mem.eql(u8, resolved_version, spec.version)) self.allocator.free(resolved_version);
+        // Resolve semver constraints (^, ~, >=, etc.) against known versions first
+        const effective_version = blk: {
+            if (spec.version.len > 0 and (spec.version[0] == '^' or spec.version[0] == '~' or spec.version[0] == '>' or spec.version[0] == '<')) {
+                if (semver.resolveVersion("ziglang.org", spec.version)) |resolved| {
+                    if (!options.quiet) {
+                        style.print("  → Resolved {s} to {s}\n", .{ spec.version, resolved });
+                    }
+                    break :blk resolved;
+                }
+                // If no match in generated.zig, fall back to latest
+                if (!options.quiet) {
+                    style.print("  → No match for {s}, resolving latest\n", .{spec.version});
+                }
+                break :blk spec.version;
+            }
+            break :blk spec.version;
+        };
+
+        // Resolve short dev versions like "0.16.0-dev" to full version, or "*"/"latest" to latest stable
+        const resolved_version = try downloader.resolveZigDevVersion(self.allocator, effective_version);
+        defer if (!std.mem.eql(u8, resolved_version, effective_version)) self.allocator.free(resolved_version);
 
         if (!options.quiet) {
             const is_dev = downloader.isZigDevVersion(resolved_version);
@@ -2702,7 +2720,7 @@ pub const Installer = struct {
 
         return InstallResult{
             .name = try self.allocator.dupe(u8, spec.name),
-            .version = try self.allocator.dupe(u8, spec.version),
+            .version = try self.allocator.dupe(u8, resolved_version),
             .install_path = install_dir,
             .from_cache = false,
             .install_time_ms = @intCast(end_time - start_time),

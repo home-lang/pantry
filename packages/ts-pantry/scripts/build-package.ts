@@ -1917,6 +1917,7 @@ else {
       },
       stdio: 'inherit',
       shell: bashShell,
+      timeout: 30 * 60 * 1000, // 30 minute timeout per build
     })
   }
 catch (error: unknown) {
