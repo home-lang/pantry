@@ -40,6 +40,11 @@ pub fn publishBinaryCommand(allocator: std.mem.Allocator, args: []const []const 
         break :blk os_str ++ "-" ++ arch_str;
     };
 
+    // Validate domain doesn't contain path traversal
+    if (std.mem.indexOf(u8, options.domain, "..") != null) {
+        return CommandResult.err(allocator, "Invalid domain: contains path traversal");
+    }
+
     // Sanitize domain for use in filenames (replace / with -)
     var domain_slug_buf: [256]u8 = undefined;
     var slug_len: usize = 0;
@@ -117,7 +122,12 @@ pub fn publishBinaryCommand(allocator: std.mem.Allocator, args: []const []const 
         else => true,
     };
     if (upload_failed) {
-        const msg = try std.fmt.allocPrint(allocator, "Error: S3 upload failed: {s}", .{upload_result.stderr});
+        // Truncate stderr to avoid leaking credentials in error messages
+        const safe_len = @min(upload_result.stderr.len, 500);
+        const msg = try std.fmt.allocPrint(allocator, "Error: S3 upload failed (exit code {d}): {s}", .{
+            switch (upload_result.term) { .exited => |code| code, else => 1 },
+            upload_result.stderr[0..safe_len],
+        });
         return CommandResult.err(allocator, msg);
     }
 

@@ -105,6 +105,10 @@ pub fn verifyCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
     if (kid_str == null) return .{ .exit_code = 1, .message = try allocator.dupe(u8, "Signature file missing 'key_id' field") };
     if (ts_val == null) return .{ .exit_code = 1, .message = try allocator.dupe(u8, "Signature file missing 'timestamp' field") };
 
+    // Validate algorithm is from the supported set
+    const valid_algo = std.mem.eql(u8, algo_str.?, "ed25519") or std.mem.eql(u8, algo_str.?, "sha256") or std.mem.eql(u8, algo_str.?, "sha512");
+    if (!valid_algo) return .{ .exit_code = 1, .message = try std.fmt.allocPrint(allocator, "Unsupported signature algorithm: {s}", .{algo_str.?}) };
+
     var signature = signing.PackageSignature{
         .algorithm = try allocator.dupe(u8, algo_str.?),
         .signature = try allocator.dupe(u8, sig_str.?),

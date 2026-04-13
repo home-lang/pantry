@@ -234,8 +234,8 @@ export class AuthService {
    * Handles both legacy REGISTRY_TOKEN and user ptry_ tokens.
    */
   async validatePublishToken(token: string, legacyToken: string): Promise<TokenValidationResult> {
-    // Legacy admin token check
-    if (token === legacyToken) {
+    // Legacy admin token check (constant-time comparison to prevent timing attacks)
+    if (legacyToken && token.length === legacyToken.length && crypto.timingSafeEqual(Buffer.from(token), Buffer.from(legacyToken))) {
       return { valid: true, userId: '_admin' }
     }
 

@@ -190,7 +190,7 @@ function validateToken(authHeader: string | null): { valid: boolean, error?: str
     ? authHeader.slice(7)
     : authHeader
 
-  if (token !== REGISTRY_TOKEN) {
+  if (!REGISTRY_TOKEN || token.length !== REGISTRY_TOKEN.length || !require('node:crypto').timingSafeEqual(Buffer.from(token), Buffer.from(REGISTRY_TOKEN))) {
     return { valid: false, error: 'Invalid token' }
   }
 

@@ -550,6 +550,7 @@ pub fn executeScriptSandboxed(
     // Check if timed out
     if (timeout_result == .timeout) {
         io_helper.kill(&child);
+        _ = io_helper.wait(&child) catch {}; // Reap child to prevent zombie
 
         const error_msg = try std.fmt.allocPrint(
             allocator,

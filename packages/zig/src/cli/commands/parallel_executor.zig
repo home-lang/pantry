@@ -189,6 +189,11 @@ pub fn executeParallelGroup(
     var error_occurred = false;
 
     // Spawn threads
+    var spawned_count: usize = 0;
+    errdefer {
+        // If spawn fails, join all already-spawned threads before propagating error
+        for (threads[0..spawned_count]) |t| t.join();
+    }
     for (members, 0..) |member, i| {
         const task = Task{
             .ctx = .{
@@ -204,6 +209,7 @@ pub fn executeParallelGroup(
         };
 
         threads[i] = try std.Thread.spawn(.{}, worker, .{task});
+        spawned_count += 1;
     }
 
     // Wait for all threads

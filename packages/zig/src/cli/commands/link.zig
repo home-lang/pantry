@@ -64,6 +64,10 @@ pub fn linkCommand(allocator: std.mem.Allocator, name: ?[]const u8) !CommandResu
     try io_helper.makePath(links_dir);
 
     if (name) |pkg_name| {
+        // Reject path traversal in package names
+        if (std.mem.indexOf(u8, pkg_name, "..") != null) {
+            return .{ .exit_code = 1, .message = try allocator.dupe(u8, "Invalid package name: contains path traversal") };
+        }
         // `pantry link <name>`: Link a registered package into the current project
         const link_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ links_dir, pkg_name });
         defer allocator.free(link_path);

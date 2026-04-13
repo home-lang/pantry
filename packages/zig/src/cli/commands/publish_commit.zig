@@ -583,7 +583,11 @@ fn publishCommitPackage(
     if (has_aws_creds) {
         return uploadCommitToS3(allocator, pkg.name, sha, tarball_data, repo_url, pkg.version, options);
     } else {
-        return uploadCommitViaHttp(allocator, pkg.name, sha, tarball_data, repo_url, pkg.version, options, token orelse "");
+        const auth_token = token orelse "";
+        if (auth_token.len == 0) {
+            return CommandResult.err(allocator, "Error: PANTRY_REGISTRY_TOKEN is empty. Set a valid token for HTTP upload.");
+        }
+        return uploadCommitViaHttp(allocator, pkg.name, sha, tarball_data, repo_url, pkg.version, options, auth_token);
     }
 }
 
