@@ -68,6 +68,7 @@ export const jbangdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.138.0',
     '0.137.0',
     '0.136.0',
     '0.135.1',
