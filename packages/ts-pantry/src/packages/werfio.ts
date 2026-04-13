@@ -71,6 +71,9 @@ export const werfioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.66.1',
+    '2.66.0',
+    '2.65.2',
     '2.65.1',
     '2.65.0',
     '2.64.0',
