@@ -185,7 +185,9 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
         const pkg = entry.value_ptr.*;
         if (pkg.integrity) |expected_integrity| {
             const pkg_path = std.fmt.bufPrint(&integrity_path_buf, "{s}/{s}/{s}", .{ effective_dir, modules_dir, pkg.name }) catch continue;
-            const valid = helpers.verifyPackageIntegrity(allocator, pkg_path, expected_integrity) catch continue;
+            const valid = helpers.verifyPackageIntegrity(allocator, pkg_path, expected_integrity) catch {
+                return null; // Integrity verification failed (missing/unreadable) → reinstall
+            };
             if (!valid) {
                 return null; // Integrity mismatch → fall through to slow path for reinstall
             }

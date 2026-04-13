@@ -173,6 +173,13 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
+function sanitizeUrl(url: string): string {
+  if (!url) return ''
+  const trimmed = url.trim()
+  if (trimmed.startsWith('javascript:') || trimmed.startsWith('data:') || trimmed.startsWith('vbscript:')) return ''
+  return trimmed
+}
+
 function htmlResponse(html: string, status = 200): Response {
   return new Response(html, {
     status,
@@ -359,9 +366,12 @@ export function createHandler(
         }
         // Default to HTML for browsers
         const q = (url.searchParams.get('q') || '').slice(0, 256)
-        const sort = url.searchParams.get('sort') || 'relevance'
-        const view = url.searchParams.get('view') || 'list'
-        const type = url.searchParams.get('type') || 'all'
+        const rawSort = url.searchParams.get('sort') || 'relevance'
+        const sort = ['relevance', 'downloads', 'name', 'newest'].includes(rawSort) ? rawSort : 'relevance'
+        const rawView = url.searchParams.get('view') || 'list'
+        const view = ['list', 'grid'].includes(rawView) ? rawView : 'list'
+        const rawType = url.searchParams.get('type') || 'all'
+        const type = ['all', 'system', 'zig', 'php', 'npm'].includes(rawType) ? rawType : 'all'
         const page = Math.min(Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10) || 1), 10000)
         return await handleSiteSearch(q, registry, binaryStorage, analyticsStorage, sort, view, type, zigPackageStorage, page, phpPackageStorage)
       }
@@ -459,7 +469,7 @@ export function createHandler(
             version: sha.slice(0, 7),
             timestamp: new Date().toISOString(),
             userAgent: req.headers.get('user-agent') || undefined,
-          }).catch(() => {})
+          }).catch(err => console.warn('Analytics tracking failed:', err))
           return new Response(tarball, {
             headers: {
               ...corsHeaders,
@@ -500,7 +510,7 @@ export function createHandler(
             version: sha.slice(0, 7),
             timestamp: new Date().toISOString(),
             userAgent: req.headers.get('user-agent') || undefined,
-          }).catch(() => {})
+          }).catch(err => console.warn('Analytics tracking failed:', err))
           const safeName = packageName.replaceAll('@', '').replaceAll('/', '-')
           return new Response(tarball, {
             headers: {
@@ -740,7 +750,7 @@ export function createHandler(
               rest,
               req.headers.get('user-agent') || undefined,
               isKnownVersion(packageName, rest),
-            ).catch(() => {}) // fire-and-forget
+            ).catch(err => console.warn('Analytics tracking failed:', err))
             return Response.json(
               { error: 'Package version not found' },
               { status: 404, headers: corsHeaders },
@@ -2278,13 +2288,13 @@ async function handleBinaryProxy(
           version,
           timestamp: new Date().toISOString(),
           userAgent: req.headers.get('user-agent') || undefined,
-        }).catch(() => {})
+        }).catch(err => console.warn('Analytics tracking failed:', err))
         analytics.trackEvent({
           packageName: domain,
           category: 'install',
           timestamp: new Date().toISOString(),
           version,
-        }).catch(() => {})
+        }).catch(err => console.warn('Analytics tracking failed:', err))
       }
 
       // Stream tarball: use injected storage for tests, S3 direct for production
@@ -3060,8 +3070,8 @@ async function handleSitePackage(
       formattedDownloads: chartFormatCount(pkgStats.totalDownloads),
       formattedWeekly: chartFormatCount(pkgStats.weeklyDownloads),
       pkgDescription: meta.description || '',
-      homepage: meta.homepage || '',
-      source: meta.source || meta.repository || '',
+      homepage: sanitizeUrl(meta.homepage || ''),
+      source: sanitizeUrl(meta.source || meta.repository || ''),
       depList,
       hasDeps,
       depCount,

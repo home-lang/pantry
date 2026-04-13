@@ -34,7 +34,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
   'bun': 'bun.sh',
   'bun.com': 'bun.sh',
   'git': 'git-scm.com',
-  'docker': 'docker.com',
+  'docker': 'docker.com/cli',
   'kubectl': 'kubernetes.io',
   'terraform': 'terraform.io',
   'ansible': 'ansible.com',

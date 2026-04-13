@@ -542,9 +542,16 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
             if (pkg_value.object.get("optionalPeers")) |op_val| {
                 if (op_val == .array) {
                     var op_map = std.StringHashMap(bool).init(allocator);
+                    errdefer {
+                        var op_it = op_map.keyIterator();
+                        while (op_it.next()) |k| allocator.free(k.*);
+                        op_map.deinit(allocator);
+                    }
                     for (op_val.array.items) |item| {
                         if (item == .string) {
-                            try op_map.put(try allocator.dupe(u8, item.string), true);
+                            const duped = try allocator.dupe(u8, item.string);
+                            errdefer allocator.free(duped);
+                            try op_map.put(duped, true);
                         }
                     }
                     if (op_map.count() > 0) optional_peers = op_map else op_map.deinit(allocator);

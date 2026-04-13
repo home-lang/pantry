@@ -101,7 +101,7 @@ export async function handlePhpRoutes(
         version,
         timestamp: new Date().toISOString(),
         userAgent: req.headers.get('user-agent') || undefined,
-      }).catch(() => {})
+      }).catch(err => console.warn('Analytics tracking failed:', err))
 
       return new Response(tarball, {
         headers: {
@@ -281,7 +281,7 @@ async function handlePhpPublish(
       category: 'install' as any,
       timestamp: new Date().toISOString(),
       version,
-    }).catch(() => {})
+    }).catch(err => console.warn('Analytics tracking failed:', err))
 
     return Response.json({
       success: true,

@@ -1252,9 +1252,10 @@ fn extractSubClaim(allocator: std.mem.Allocator, jwt: []const u8) ![]const u8 {
     _ = parts.next(); // Skip header
     const payload_b64 = parts.next() orelse return error.InvalidJWT;
 
-    // Base64url decode the payload
+    // Base64url decode the payload (limit to 64KB to prevent DoS from malicious JWTs)
     const decoder = std.base64.url_safe_no_pad.Decoder;
     const payload_len = decoder.calcSizeForSlice(payload_b64) catch return error.InvalidJWT;
+    if (payload_len > 65536) return error.InvalidJWT;
     const payload = try allocator.alloc(u8, payload_len);
     defer allocator.free(payload);
 

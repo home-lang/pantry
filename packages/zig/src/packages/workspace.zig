@@ -352,6 +352,8 @@ fn loadWorkspaceConfigFromPackageJson(
             for (arr.items) |item| {
                 if (item == .string) {
                     try patterns_list.append(allocator, try allocator.dupe(u8, item.string));
+                } else {
+                    std.debug.print("Warning: non-string value in workspaces array (expected string pattern)\n", .{});
                 }
             }
         },

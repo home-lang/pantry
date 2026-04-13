@@ -146,7 +146,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
                             style.reset,
                         });
                     }
-                    if (opts.line_offset < opts.total_deps - 1) {
+                    if (opts.total_deps > 0 and opts.line_offset < opts.total_deps - 1 and lines_up > 0) {
                         style.moveDown(lines_up - 1);
                     }
                 } else {

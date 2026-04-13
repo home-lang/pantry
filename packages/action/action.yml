@@ -44,7 +44,7 @@ inputs:
     required: false
     default: ''
   notification-title:
-    description: Custom title for release notifications. Defaults to "New Release Published".
+    description: Custom title for release notifications. Defaults to "{name}@{version} — Published".
     required: false
     default: ''
   notification-mentions:

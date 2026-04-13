@@ -208,6 +208,12 @@ pub const GitHubClient = struct {
         const success = response.head.status == .ok or response.head.status == .created;
 
         if (!success) {
+            if (response.head.status == .unauthorized or response.head.status == .forbidden) {
+                return .{
+                    .success = false,
+                    .message = try self.allocator.dupe(u8, "GitHub authentication failed — check your token permissions"),
+                };
+            }
             return .{
                 .success = false,
                 .message = if (resp_body.len > 0) try self.allocator.dupe(u8, resp_body) else null,

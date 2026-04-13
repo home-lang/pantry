@@ -144,6 +144,20 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
         try generateBasicTemplate(allocator, safe_name, version, safe_desc);
     defer allocator.free(template);
 
+    // Check if pantry.json already exists (unless --force)
+    if (!force) {
+        const exists = blk: {
+            io_helper.cwd().access(io_helper.io, "pantry.json", .{}) catch break :blk false;
+            break :blk true;
+        };
+        if (exists) {
+            return .{
+                .exit_code = 1,
+                .message = try allocator.dupe(u8, "Error: pantry.json already exists. Run with --force to overwrite."),
+            };
+        }
+    }
+
     // Write file
     const file = try io_helper.cwd().createFile(io_helper.io, "pantry.json", .{});
     defer file.close(io_helper.io);

@@ -22,6 +22,9 @@ function detectPlatform(): Platform {
   const arch = os.arch()
 
   const osName = platform === 'darwin' ? 'darwin' : platform === 'win32' ? 'windows' : 'linux'
+  if (arch !== 'arm64' && arch !== 'x64') {
+    core.warning(`Unexpected architecture '${arch}', defaulting to x64`)
+  }
   const archName = arch === 'arm64' ? 'arm64' : 'x64'
   const binaryName = osName === 'windows' ? 'pantry.exe' : 'pantry'
   const assetName = `pantry-${osName}-${archName}.zip`
@@ -379,7 +382,7 @@ async function sendDiscordNotification(webhookUrl: string, ctx: NotificationCont
     }
 
     if (ctx.mentions)
-      payload.content = ctx.mentions
+      payload.content = ctx.mentions.slice(0, 500)
 
     const response = await fetch(webhookUrl, {
       method: 'POST',
@@ -419,7 +422,7 @@ async function sendSlackNotification(webhookUrl: string, ctx: NotificationContex
     lines.push(`<${ctx.runUrl}|View workflow run>`)
 
     if (ctx.mentions)
-      lines.push(ctx.mentions)
+      lines.push(ctx.mentions.slice(0, 500))
 
     const payload = {
       text: lines.join('\n'),

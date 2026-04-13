@@ -156,11 +156,15 @@ pub const ShellIntegrator = struct {
                 skip_next = true;
                 continue;
             }
-            if (skip_next and (std.mem.indexOf(u8, line, "pantry dev:shellcode") != null or
-                std.mem.indexOf(u8, line, "# https://github.com/stacksjs/pantry") != null))
-            {
+            if (skip_next) {
+                if (std.mem.indexOf(u8, line, "pantry dev:shellcode") != null or
+                    std.mem.indexOf(u8, line, "# https://github.com/stacksjs/pantry") != null)
+                {
+                    // Keep skipping pantry-related continuation lines
+                    continue;
+                }
+                // Non-pantry line after marker — stop skipping
                 skip_next = false;
-                continue;
             }
 
             try lines.append(self.allocator, line);

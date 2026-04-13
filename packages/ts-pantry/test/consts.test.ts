@@ -31,7 +31,7 @@ describe('Constants Module', () => {
       Object.values(PACKAGE_ALIASES).forEach((domain) => {
         expect(typeof domain).toBe('string')
         expect(domain.length).toBeGreaterThan(0)
-        expect(domain).toMatch(/^[a-z0-9.-]+$/i)
+        expect(domain).toMatch(/^[a-z0-9./-]+$/i)
       })
     })
 
