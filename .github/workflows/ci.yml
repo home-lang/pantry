@@ -76,7 +76,7 @@ jobs:
       - name: Zig Tests
         run: |
           if ! command -v zig &>/dev/null; then
-            echo "Zig not available — skipping Zig tests"
+            echo "::warning::Zig not available — skipping Zig tests"
             exit 0
           fi
           cd packages/zig

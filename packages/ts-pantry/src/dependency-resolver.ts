@@ -330,18 +330,11 @@ async function getAvailableVersionsFromPackage(packageName: string): Promise<str
     // Try to find the package in the pantry
     let pkg = (packages as any)[packageKey]
 
-    // If direct key lookup fails, try searching by domain
+    // If direct key lookup fails, search by domain or aliases
     if (!pkg) {
       const allPackages = Object.values(packages as any)
       pkg = allPackages.find((p: any) => p.domain === packageName)
-    }
-
-    // If domain lookup also fails, try searching by aliases (e.g., bun.com → bun.sh)
-    if (!pkg) {
-      const allPackages = Object.values(packages as any)
-      pkg = allPackages.find((p: any) =>
-        Array.isArray(p.aliases) && p.aliases.includes(packageName),
-      )
+        || allPackages.find((p: any) => Array.isArray(p.aliases) && p.aliases.includes(packageName))
     }
 
     if (pkg && pkg.versions && Array.isArray(pkg.versions)) {
@@ -650,15 +643,20 @@ export async function resolveTransitiveDependencies(
       allDependencies.push(dep)
     }
 
-    // Resolve all transitive deps in parallel
-    const transitiveResults = await Promise.all(
+    // Resolve all transitive deps in parallel (tolerate individual failures)
+    const transitiveResults = await Promise.allSettled(
       parsed.map(({ pkgName }) =>
         resolveTransitiveDependencies(pkgName, options, visited, depth + 1),
       ),
     )
 
-    for (const transitive of transitiveResults) {
-      allDependencies.push(...transitive)
+    for (const result of transitiveResults) {
+      if (result.status === 'fulfilled') {
+        allDependencies.push(...result.value)
+      }
+      else if (verbose) {
+        console.warn(`  Warning: transitive dependency resolution failed: ${result.reason}`)
+      }
     }
   }
   catch (error) {

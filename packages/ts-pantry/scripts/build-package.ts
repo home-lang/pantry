@@ -1342,7 +1342,7 @@ else if (Array.isArray(test.script)) {
 finally {
     // Clean up test dir
     try { execSync(`rm -rf "${testDir}"`, { stdio: 'ignore' }) }
-catch {}
+    catch (e) { console.warn(`Warning: failed to clean test dir: ${(e as Error).message}`) }
   }
 }
 

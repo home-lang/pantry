@@ -40,7 +40,7 @@ export async function handleZigRoutes(
   // GET /zig/search
   if (zigPath === '/search' && req.method === 'GET') {
     const query = url.searchParams.get('q') || ''
-    const limit = Number.parseInt(url.searchParams.get('limit') || '20', 10)
+    const limit = Math.min(Number.parseInt(url.searchParams.get('limit') || '20', 10), 100)
     const results = await storage.search(query, limit)
 
     return Response.json({
@@ -171,13 +171,17 @@ export async function handleZigRoutes(
   return null
 }
 
-// Simple token for authentication (replace with proper auth in production)
-const REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN || 'ABCD1234'
+// Token for authentication — must be set via environment variable
+const REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN
 
 /**
  * Validate authorization token
  */
 function validateToken(authHeader: string | null): { valid: boolean, error?: string } {
+  if (!REGISTRY_TOKEN) {
+    return { valid: false, error: 'Server misconfigured — no registry token set' }
+  }
+
   if (!authHeader) {
     return { valid: false, error: 'Authorization required' }
   }

@@ -238,7 +238,10 @@ async function verifyStripeWebhook(rawBody: string, signature: string): Promise<
   const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload))
   const computedSig = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('')
 
-  if (computedSig !== expectedSig) {
+  // Use constant-time comparison to prevent timing attacks
+  const computedBuf = Buffer.from(computedSig)
+  const expectedBuf = Buffer.from(expectedSig)
+  if (computedBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(computedBuf, expectedBuf)) {
     throw new Error('Stripe webhook signature verification failed')
   }
 
@@ -248,7 +251,12 @@ async function verifyStripeWebhook(rawBody: string, signature: string): Promise<
     throw new Error('Stripe webhook timestamp too old')
   }
 
-  return JSON.parse(rawBody)
+  try {
+    return JSON.parse(rawBody)
+  }
+  catch {
+    throw new Error('Invalid webhook body JSON')
+  }
 }
 
 // ---------------------------------------------------------------------------

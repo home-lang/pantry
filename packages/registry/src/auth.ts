@@ -82,7 +82,7 @@ export class AuthService {
   async signup(email: string, name: string, password: string): Promise<Omit<User, 'passwordHash'>> {
     const normalizedEmail = email.toLowerCase().trim()
 
-    if (!normalizedEmail || !normalizedEmail.includes('@')) {
+    if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       throw new AuthError('Invalid email address', 400)
     }
     if (!name || name.trim().length === 0) {
@@ -188,7 +188,7 @@ export class AuthService {
       : undefined
 
     const apiToken: ApiToken = {
-      id: rawToken.slice(0, 16) + '...',
+      id: `${rawToken.slice(0, 8)}...${rawToken.slice(-4)}`,
       name: name.trim(),
       userId,
       tokenHash: hashToken(rawToken),
@@ -257,7 +257,7 @@ export class AuthService {
       }
 
       // Update last-used timestamp (fire-and-forget)
-      this.storage.updateTokenLastUsed(tokenRecord.tokenHash).catch(() => {})
+      this.storage.updateTokenLastUsed(tokenRecord.tokenHash).catch(err => console.warn('Failed to update token last-used:', err))
 
       return { valid: true, userId: tokenRecord.userId, tokenId: tokenRecord.id }
     }

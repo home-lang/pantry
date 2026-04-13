@@ -399,9 +399,8 @@ else {
     }
 
     // For POSIX shell export: use double quotes around value
-    // Remove inner quotes that came from YAML (e.g. --prefix="{{prefix}}")
-    // since we're already wrapping in double quotes
-    const cleaned = expanded.trim().replace(/"/g, '')
+    // Escape embedded double quotes for safe shell embedding, then wrap in double quotes
+    const cleaned = expanded.trim().replace(/"/g, '\\"')
     lines.push(`export ${key}="${cleaned}"`)
   }
 
@@ -492,13 +491,13 @@ else {
         // Only escape backslashes that aren't already part of an escape sequence.
         run = [
           'OLD_PROP=$PROP',
-          `PROP=$(mktemp)${extname}`,
-          `cat <<'DEV_PKGX_EOF' > $PROP`,
+          `PROP="$(mktemp)${extname}"`,
+          `cat <<'DEV_PKGX_EOF' > "$PROP"`,
           propContent,
           'DEV_PKGX_EOF',
-          propContent.startsWith('#!') ? 'chmod +x $PROP' : '',
+          propContent.startsWith('#!') ? 'chmod +x "$PROP"' : '',
           run.trim(),
-          'rm -f $PROP*',
+          'rm -f "$PROP"',
           'if test -n "$OLD_PROP"; then PROP=$OLD_PROP; else unset PROP; fi',
         ].filter(Boolean).join('\n')
       }

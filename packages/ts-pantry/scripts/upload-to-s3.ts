@@ -123,12 +123,21 @@ async function syncToDynamoDB(pkgName: string, version: string, availableVersion
   }, region)
 }
 
+function parseVersionPart(s: string): number {
+  const n = Number.parseInt(s, 10)
+  return Number.isNaN(n) ? 0 : n
+}
+
 function isNewerVersion(a: string, b: string): boolean {
-  const [aM, am, ap] = a.split('.').map(Number)
-  const [bM, bm, bp] = b.split('.').map(Number)
-  if ((aM || 0) !== (bM || 0)) return (aM || 0) > (bM || 0)
-  if ((am || 0) !== (bm || 0)) return (am || 0) > (bm || 0)
-  return (ap || 0) > (bp || 0)
+  const aParts = a.split(/[._-]/).map(parseVersionPart)
+  const bParts = b.split(/[._-]/).map(parseVersionPart)
+  const len = Math.max(aParts.length, bParts.length)
+  for (let i = 0; i < len; i++) {
+    const av = aParts[i] ?? 0
+    const bv = bParts[i] ?? 0
+    if (av !== bv) return av > bv
+  }
+  return false
 }
 
 export async function uploadToS3(options: UploadOptions): Promise<void> {

@@ -335,30 +335,15 @@ describe('Fetch Module', () => {
 
   describe('cleanupBrowserResources', () => {
     test('should not throw when called', async () => {
-      // This function should handle cleanup gracefully
-      try {
-        await cleanupBrowserResources()
-        // If we get here, the function resolved successfully
-        expect(true).toBe(true)
-      }
-      catch (error) {
-        // If we get here, the function threw an error
-        expect(error).toBeUndefined() // This will fail and show the error
-      }
+      const result = await cleanupBrowserResources()
+      expect(result).toBeUndefined()
     })
 
     test('should be callable multiple times', async () => {
-      try {
-        await cleanupBrowserResources()
-        await cleanupBrowserResources()
-        await cleanupBrowserResources()
-        // If we get here, all calls resolved successfully
-        expect(true).toBe(true)
-      }
-      catch (error) {
-        // If we get here, one of the function calls threw an error
-        expect(error).toBeUndefined() // This will fail and show the error
-      }
+      await cleanupBrowserResources()
+      await cleanupBrowserResources()
+      const result = await cleanupBrowserResources()
+      expect(result).toBeUndefined()
     })
   })
 

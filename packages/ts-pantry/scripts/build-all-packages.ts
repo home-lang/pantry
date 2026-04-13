@@ -930,9 +930,9 @@ function tryBuildVersion(
 ): void {
   // Cleanup from previous attempt
   try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) }
-catch {}
+  catch (e) { console.warn(`Warning: cleanup failed for ${buildDir}: ${(e as Error).message}`) }
   try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) }
-catch {}
+  catch (e) { console.warn(`Warning: cleanup failed for ${installDir}: ${(e as Error).message}`) }
   mkdirSync(buildDir, { recursive: true })
   mkdirSync(installDir, { recursive: true })
 
@@ -1081,9 +1081,9 @@ catch (error: any) {
     const elapsed = Math.round((Date.now() - pkgStartTime) / 1000)
     console.error(`   ❌ Failed (${elapsed}s): ${lastError.message}`)
     try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) }
-catch {}
+    catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) }
-catch {}
+    catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     return { status: 'failed', error: lastError.message }
   }
 
@@ -1109,11 +1109,11 @@ catch {}
 
     // Cleanup
     try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) }
-catch {}
+    catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) }
-catch {}
+    catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     try { execSync(`rm -rf "${artifactDir}"`, { stdio: 'pipe' }) }
-catch {}
+    catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
 
     const elapsed = Math.round((Date.now() - pkgStartTime) / 1000)
     console.log(`   ✅ Uploaded ${domain}@${usedVersion} (${elapsed}s)`)
@@ -1122,12 +1122,12 @@ catch {}
 catch (error: any) {
     console.error(`   ❌ Failed packaging/upload: ${error.message}`)
     try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) }
-catch {}
+    catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) }
-catch {}
+    catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     // Also clean artifacts to prevent stale tarballs leaking to next iteration
     try { execSync(`rm -rf "${artifactsDir}"/*`, { stdio: 'pipe' }) }
-catch {}
+    catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     return { status: 'failed', error: error.message }
   }
 }
@@ -1897,7 +1897,7 @@ else {
 
         // Clean artifacts dir between iterations to prevent stale tarballs leaking
         try { execSync('rm -rf /tmp/buildkit-artifacts/*', { stdio: 'pipe' }) }
-catch {}
+        catch (e) { console.warn(`Warning: failed to clean artifacts dir: ${(e as Error).message}`) }
 
         // Create a modified package with ONLY this version (prevent fallback to other versions)
         const versionPkg = { ...pkg, latestVersion: ver, versions: [ver] }

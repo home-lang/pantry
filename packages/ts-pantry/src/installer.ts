@@ -172,6 +172,9 @@ export async function installPackage(
 
   // Check if already installed
   const binaries = resolver.getBinaries(platform)
+  if (binaries.length === 0) {
+    throw new Error(`No binaries defined for ${domain} on ${platform.os}-${platform.arch}`)
+  }
   const firstBin = path.join(pkgDir, binaries[0])
   if (fs.existsSync(firstBin)) {
     if (!options.quiet) console.log(`  ✓ ${domain}@${version} (cached)`)
@@ -331,9 +334,9 @@ function downloadFile(url: string, dest: string): Promise<void> {
         return downloadFile(res.headers.location, dest).then(resolve, reject)
       }
 
-      if (res.statusCode && res.statusCode >= 400) {
+      if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
         file.close()
-        return reject(new Error(`HTTP ${res.statusCode} downloading ${url}`))
+        return reject(new Error(`HTTP ${res.statusCode || 'unknown'} downloading ${url}`))
       }
 
       res.pipe(file)
@@ -377,6 +380,9 @@ function fetchJSON(url: string): Promise<unknown> {
     get(url, { headers: { 'User-Agent': 'pantry-installer' } }, (res) => {
       if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         return fetchJSON(res.headers.location).then(resolve, reject)
+      }
+      if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
+        return reject(new Error(`HTTP ${res.statusCode || 'unknown'} fetching ${url}`))
       }
       let data = ''
       res.on('data', chunk => data += chunk)

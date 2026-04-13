@@ -51,10 +51,22 @@ jobs:
           echo "Built binaries:"
           ls -la packages/zig/zig-out/bin/
 
+          # Verify critical targets exist before packaging
+          MISSING=0
+          for required in linux-x86_64 macos-aarch64; do
+            if [ ! -d "packages/zig/zig-out/bin/$required" ]; then
+              echo "::error::Required target $required not found"
+              MISSING=1
+            fi
+          done
+          if [ "$MISSING" = "1" ]; then
+            exit 1
+          fi
+
           for target in linux-x86_64 linux-aarch64 macos-x86_64 macos-aarch64 windows-x86_64 freebsd-x86_64 freebsd-aarch64; do
             dir="packages/zig/zig-out/bin/$target"
             if [ ! -d "$dir" ]; then
-              echo "Warning: $target not found"
+              echo "::warning::Optional target $target not found"
               continue
             fi
 

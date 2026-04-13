@@ -106,7 +106,7 @@ async function downloadAndInstall(version: string, platform: Platform): Promise<
 function hashFile(filePath: string): string {
   try {
     const content = fs.readFileSync(filePath, 'utf-8')
-    return crypto.createHash('sha256').update(content).digest('hex').slice(0, 16)
+    return crypto.createHash('sha256').update(content).digest('hex')
   }
   catch {
     return 'none'
@@ -392,8 +392,8 @@ async function sendDiscordNotification(webhookUrl: string, ctx: NotificationCont
     else
       core.info('Discord notification sent')
   }
-  catch {
-    core.warning('Discord notification failed')
+  catch (err) {
+    core.warning(`Discord notification failed: ${err instanceof Error ? err.message : String(err)}`)
   }
   core.endGroup()
 }
@@ -437,8 +437,8 @@ async function sendSlackNotification(webhookUrl: string, ctx: NotificationContex
     else
       core.info('Slack notification sent')
   }
-  catch {
-    core.warning('Slack notification failed')
+  catch (err) {
+    core.warning(`Slack notification failed: ${err instanceof Error ? err.message : String(err)}`)
   }
   core.endGroup()
 }
@@ -478,9 +478,9 @@ export async function run(): Promise<void> {
     // Export registry token as env vars for subsequent steps (e.g. pantry publish:commit)
     const token = inputs.token || process.env.PANTRY_TOKEN || process.env.PANTRY_REGISTRY_TOKEN || ''
     if (token) {
+      core.setSecret(token)
       core.exportVariable('PANTRY_TOKEN', token)
       core.exportVariable('PANTRY_REGISTRY_TOKEN', token)
-      core.setSecret(token)
     }
 
     const platform = detectPlatform()
@@ -492,6 +492,9 @@ export async function run(): Promise<void> {
     // ── Install pantry CLI ──
     core.startGroup('Setup pantry')
     const resolvedVersion = await resolveVersion(inputs.version)
+    if (!resolvedVersion) {
+      throw new Error('Failed to resolve pantry version — check https://github.com/home-lang/pantry/releases')
+    }
     const installDir = await downloadAndInstall(resolvedVersion, platform)
     core.addPath(installDir)
 
@@ -634,10 +637,12 @@ export async function run(): Promise<void> {
             fs.chmodSync(binPath, 0o755)
           }
           catch { /* not a file or already executable */ }
-          // Also chmod the symlink target if it's a symlink
+          // Also chmod the symlink target if it's a symlink (but only if within pantry dir)
           try {
             const realPath = fs.realpathSync(binPath)
-            fs.chmodSync(realPath, 0o755)
+            if (!path.relative(pantryDir, realPath).startsWith('..')) {
+              fs.chmodSync(realPath, 0o755)
+            }
           }
           catch { /* not a symlink */ }
         }
@@ -754,7 +759,7 @@ async function publishZigPackage(registryUrl: string, token: string, cwd: string
     includePaths = pathsMatch[1]
       .split(',')
       .map(p => p.trim().replace(/^"/, '').replace(/"$/, '').trim())
-      .filter(p => p.length > 0)
+      .filter(p => p.length > 0 && !p.includes('..') && !p.startsWith('/'))
   }
 
   // Create tarball
@@ -779,8 +784,9 @@ async function publishZigPackage(registryUrl: string, token: string, cwd: string
   core.info(`Publishing to ${url}`)
 
   // Write manifest and auth to temp files to avoid leaking secrets in process args
-  const manifestPath = path.join(os.tmpdir(), `${name}-manifest.zon`)
-  const headerFile = path.join(os.tmpdir(), `${name}-auth-header`)
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pantry-publish-'))
+  const manifestPath = path.join(tmpDir, 'manifest.zon')
+  const headerFile = path.join(tmpDir, 'auth-header')
   fs.writeFileSync(manifestPath, zonContent)
   fs.writeFileSync(headerFile, `Authorization: Bearer ${token}`, { mode: 0o600 })
 
@@ -802,8 +808,7 @@ async function publishZigPackage(registryUrl: string, token: string, cwd: string
 
   // Clean up
   fs.unlinkSync(tarballPath)
-  fs.unlinkSync(manifestPath)
-  try { fs.unlinkSync(headerFile) } catch { /* already cleaned */ }
+  try { fs.rmSync(tmpDir, { recursive: true, force: true }) } catch { /* already cleaned */ }
 
   if (exitCode !== 0) {
     throw new Error(`curl failed (exit ${exitCode}): ${stderr || output}`)

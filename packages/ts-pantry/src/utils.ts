@@ -52,6 +52,9 @@ export function shouldProceedWithGitHubRequest(): boolean {
     }
 
     const rateLimitInfo = JSON.parse(fs.readFileSync(GITHUB_RATE_LIMIT_FILE, 'utf8'))
+    if (!rateLimitInfo || typeof rateLimitInfo.resetTimestamp !== 'number' || typeof rateLimitInfo.remaining !== 'number') {
+      return true
+    }
     const now = Date.now()
 
     // If reset time has passed, we can proceed
@@ -478,7 +481,9 @@ export function convertDomainToVarName(domain: string): string {
 export function convertDomainToFileName(domain: string): string {
   // Handle nested paths consistently with convertDomainToVarName function
   if (domain.includes('/')) {
-    const [parentDomain, subPath] = domain.split('/')
+    const parts = domain.split('/')
+    const parentDomain = parts[0]
+    const subPath = parts.slice(1).join('/')
     // Clean the parent domain (remove dots)
     const cleanParent = parentDomain.replace(/\./g, '')
 

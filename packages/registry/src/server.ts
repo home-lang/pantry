@@ -1,4 +1,4 @@
-import { resolve, dirname } from 'node:path'
+import { resolve, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { RegistryConfig, AuthStorage } from './types'
 import { Registry, createLocalRegistry, createRegistryFromEnv } from './registry'
@@ -175,6 +175,8 @@ function htmlResponse(html: string, status = 200): Response {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'public, max-age=60',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'SAMEORIGIN',
     },
   })
 }
@@ -385,6 +387,9 @@ export function createHandler(
       const categoryApiMatch = path.match(/^\/api\/analytics\/(install|install-on-request|build-error)\/(30|90|365)d\.json$/)
       if (categoryApiMatch && req.method === 'GET') {
         const category = categorySlugMap[categoryApiMatch[1]]
+        if (!category) {
+          return Response.json({ error: 'Unknown category' }, { status: 400, headers: corsHeaders })
+        }
         const days = Number.parseInt(categoryApiMatch[2], 10) as 30 | 90 | 365
         const result = await analyticsStorage.getCategoryAnalytics(category, days)
         return Response.json(result, {
@@ -565,6 +570,10 @@ export function createHandler(
       const packageMatch = path.match(/^\/packages\/(@[^/]+\/[^/]+|[^/]+)(?:\/(.+))?$/)
       if (packageMatch) {
         const packageName = decodeURIComponent(packageMatch[1])
+        // Reject package names with path traversal or control characters
+        if (packageName.includes('..') || /[\x00-\x1f]/.test(packageName)) {
+          return Response.json({ error: 'Invalid package name' }, { status: 400, headers: corsHeaders })
+        }
         const rest = packageMatch[2]
 
         // GET /packages/{name}/versions
@@ -595,7 +604,13 @@ export function createHandler(
             return Response.json({ error: authResult.error }, { status: 401, headers: corsHeaders })
           }
 
-          const body = await req.json() as { price: number, currency?: string, freeVersions?: string[], trialDays?: number }
+          let body: { price: number, currency?: string, freeVersions?: string[], trialDays?: number }
+          try {
+            body = await req.json()
+          }
+          catch {
+            return Response.json({ error: 'Invalid JSON body' }, { status: 400, headers: corsHeaders })
+          }
           if (!body.price || typeof body.price !== 'number' || body.price < 100) {
             return Response.json({ error: 'Price must be at least 100 cents ($1.00)' }, { status: 400, headers: corsHeaders })
           }
@@ -646,12 +661,13 @@ export function createHandler(
 
         // GET /packages/{name}/checkout/success — post-payment landing
         if (rest === 'checkout/success' && req.method === 'GET') {
+          const safePackageName = packageName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
           const html = `<!DOCTYPE html>
 <html><head><title>Payment Successful</title></head>
 <body style="font-family: system-ui; max-width: 480px; margin: 80px auto; text-align: center;">
 <h1>Payment Successful</h1>
-<p>You now have access to <strong>${packageName}</strong>.</p>
-<p>Run <code>pantry install ${packageName}</code> to install it.</p>
+<p>You now have access to <strong>${safePackageName}</strong>.</p>
+<p>Run <code>pantry install ${safePackageName}</code> to install it.</p>
 </body></html>`
           return htmlResponse(html)
         }
@@ -659,6 +675,9 @@ export function createHandler(
         // GET /packages/{name}/{version}/tarball
         if (rest?.endsWith('/tarball') && req.method === 'GET') {
           const version = rest.replace('/tarball', '')
+          if (!version || version.includes('..') || /[\x00-\x1f/\\]/.test(version)) {
+            return Response.json({ error: 'Invalid version' }, { status: 400, headers: corsHeaders })
+          }
 
           // Check paywall before serving tarball
           const authToken = extractBearerToken(req.headers.get('authorization'))
@@ -767,14 +786,21 @@ export function createHandler(
 
       // Fonts — serve self-hosted font files
       if (path.startsWith('/fonts/')) {
-        const fontFile = Bun.file(resolve(__dirname, '../../../public', path.slice(1)))
-        if (await fontFile.exists()) {
-          return new Response(fontFile, {
-            headers: {
-              'Content-Type': 'font/woff2',
-              'Cache-Control': 'public, max-age=31536000, immutable',
-            },
-          })
+        const publicDir = resolve(__dirname, '../../../public')
+        const fontPath = resolve(publicDir, path.slice(1))
+        // Prevent path traversal — resolved path must stay within public dir
+        if (!relative(publicDir, fontPath).startsWith('..')) {
+          const fontFile = Bun.file(fontPath)
+          if (await fontFile.exists()) {
+            const ext = fontPath.split('.').pop()
+            const mimeType = ext === 'woff' ? 'font/woff' : ext === 'ttf' ? 'font/ttf' : ext === 'otf' ? 'font/otf' : 'font/woff2'
+            return new Response(fontFile, {
+              headers: {
+                'Content-Type': mimeType,
+                'Cache-Control': 'public, max-age=31536000, immutable',
+              },
+            })
+          }
         }
       }
 
@@ -936,6 +962,9 @@ async function handleAnalytics(
   const categoryMatch = path?.match(/^(install|install-on-request|build-error)\/(30|90|365)d$/)
   if (categoryMatch) {
     const category = categorySlugMap[categoryMatch[1]]
+    if (!category) {
+      return Response.json({ error: 'Unknown category' }, { status: 400, headers: corsHeaders })
+    }
     const days = Number.parseInt(categoryMatch[2], 10) as 30 | 90 | 365
     const result = await analytics.getCategoryAnalytics(category, days)
     return Response.json(result, {
@@ -945,7 +974,7 @@ async function handleAnalytics(
 
   // GET /analytics/top
   if (path === 'top' || !path) {
-    const limit = Number.parseInt(url.searchParams.get('limit') || '10', 10)
+    const limit = Math.min(Number.parseInt(url.searchParams.get('limit') || '10', 10), 100)
     const packages = await analytics.getTopPackages(limit)
     return Response.json({ packages }, { headers: corsHeaders })
   }
@@ -953,7 +982,7 @@ async function handleAnalytics(
   // GET /analytics/{name}/requested-versions
   if (path.endsWith('/requested-versions')) {
     const packageName = decodeURIComponent(path.replace('/requested-versions', ''))
-    const limit = Number.parseInt(url.searchParams.get('limit') || '20', 10)
+    const limit = Math.min(Number.parseInt(url.searchParams.get('limit') || '20', 10), 100)
     const requests = await analytics.getMissingVersionRequests(packageName, limit)
     return Response.json({ packageName, requests }, { headers: corsHeaders })
   }
@@ -1043,7 +1072,10 @@ async function handleAnalyticsEvent(
 }
 
 // Legacy admin token for backward compatibility with CI workflows
-const REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN || 'ABCD1234'
+const REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN
+if (!REGISTRY_TOKEN) {
+  console.warn('WARNING: PANTRY_REGISTRY_TOKEN or PANTRY_TOKEN must be set — publish/admin endpoints will reject all requests')
+}
 
 /** Reference to the AuthService (set by createServer, used by validateToken) */
 let _authService: AuthService | undefined
@@ -1076,7 +1108,7 @@ async function validateToken(authHeader: string | null): Promise<{ valid: boolea
   }
 
   // Fall back to legacy admin token
-  if (token !== REGISTRY_TOKEN) {
+  if (!REGISTRY_TOKEN || token !== REGISTRY_TOKEN) {
     return { valid: false, error: 'Invalid token' }
   }
 
@@ -1123,7 +1155,16 @@ async function handlePublish(
       )
     }
 
-    const metadata = JSON.parse(metadataStr)
+    let metadata: any
+    try {
+      metadata = JSON.parse(metadataStr)
+    }
+    catch {
+      return Response.json(
+        { error: 'Invalid metadata JSON' },
+        { status: 400, headers: corsHeaders },
+      )
+    }
     const tarball = await tarballFile.arrayBuffer()
 
     // Check if version already exists
@@ -1145,7 +1186,16 @@ async function handlePublish(
 
   // Handle JSON with base64 tarball (alternative)
   if (contentType.includes('application/json')) {
-    const body = await req.json() as { metadata?: any, tarball?: string }
+    let body: { metadata?: any, tarball?: string }
+    try {
+      body = await req.json()
+    }
+    catch {
+      return Response.json(
+        { error: 'Invalid JSON body' },
+        { status: 400, headers: corsHeaders },
+      )
+    }
     const { metadata, tarball: tarballBase64 } = body
 
     if (!metadata || !tarballBase64) {
@@ -1155,7 +1205,16 @@ async function handlePublish(
       )
     }
 
-    const tarball = Uint8Array.from(atob(tarballBase64), c => c.charCodeAt(0)).buffer
+    let tarball: ArrayBuffer
+    try {
+      tarball = Uint8Array.from(atob(tarballBase64), c => c.charCodeAt(0)).buffer
+    }
+    catch {
+      return Response.json(
+        { error: 'Invalid base64 tarball data' },
+        { status: 400, headers: corsHeaders },
+      )
+    }
 
     const exists = await registry.exists(metadata.name, metadata.version)
     if (exists) {
@@ -1220,10 +1279,19 @@ async function handleCommitPublish(
       )
     }
 
-    const metadata = JSON.parse(metadataStr) as {
+    let metadata: {
       sha: string
       repository?: string
       packages: Array<{ name: string, packageDir?: string, version?: string }>
+    }
+    try {
+      metadata = JSON.parse(metadataStr)
+    }
+    catch {
+      return Response.json(
+        { error: 'Invalid metadata JSON' },
+        { status: 400, headers: corsHeaders },
+      )
     }
 
     if (!metadata.sha || !metadata.packages?.length) {
@@ -1274,10 +1342,19 @@ async function handleCommitPublish(
   }
 
   if (contentType.includes('application/json')) {
-    const body = await req.json() as {
+    let body: {
       sha: string
       repository?: string
       packages: Array<{ name: string, tarball: string, packageDir?: string, version?: string }>
+    }
+    try {
+      body = await req.json()
+    }
+    catch {
+      return Response.json(
+        { error: 'Invalid JSON body' },
+        { status: 400, headers: corsHeaders },
+      )
     }
 
     if (!body.sha || !body.packages?.length) {
@@ -1290,7 +1367,16 @@ async function handleCommitPublish(
     const results: Array<{ name: string, url: string, sha: string }> = []
 
     for (const pkg of body.packages) {
-      const tarball = Uint8Array.from(atob(pkg.tarball), c => c.charCodeAt(0)).buffer
+      let tarball: ArrayBuffer
+      try {
+        tarball = Uint8Array.from(atob(pkg.tarball), c => c.charCodeAt(0)).buffer
+      }
+      catch {
+        return Response.json(
+          { error: `Invalid base64 tarball data for ${pkg.name}` },
+          { status: 400, headers: corsHeaders },
+        )
+      }
 
       if (tarball.byteLength > MAX_COMMIT_TARBALL_SIZE) {
         return Response.json(
@@ -1461,8 +1547,12 @@ async function handleAuthRoutes(
 
     try {
       const body = await req.json() as { name?: string, permissions?: ('publish' | 'read')[], expiresInDays?: number }
+      const validPermissions = ['publish', 'read'] as const
+      const permissions = Array.isArray(body.permissions)
+        ? body.permissions.filter((p): p is 'publish' | 'read' => validPermissions.includes(p as any))
+        : undefined
       const result = await auth.createApiToken(user.email, body.name || '', {
-        permissions: body.permissions,
+        permissions,
         expiresInDays: body.expiresInDays,
       })
       return Response.json({ success: true, ...result }, { status: 201, headers: corsHeaders })
@@ -1506,7 +1596,9 @@ async function handleSiteAuth(
   const htmlHeaders = {
     ...corsHeaders,
     'Content-Type': 'text/html; charset=utf-8',
-    'Cache-Control': 'no-cache, no-store',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'X-Content-Type-Options': 'nosniff',
   }
 
   // Login page
@@ -2022,6 +2114,13 @@ async function handleNpmResolve(req: Request, corsHeaders: Record<string, string
           npmResolutionCache.delete(key)
         }
       }
+      // Hard cap: if still over limit after TTL eviction, drop oldest entries
+      if (npmResolutionCache.size > 2000) {
+        const entries = [...npmResolutionCache.entries()].sort((a, b) => a[1].ts - b[1].ts)
+        for (let i = 0; i < entries.length - 1000; i++) {
+          npmResolutionCache.delete(entries[i][0])
+        }
+      }
     }
 
     return Response.json(responseData, {
@@ -2031,7 +2130,7 @@ async function handleNpmResolve(req: Request, corsHeaders: Record<string, string
   catch (error) {
     console.error('npm resolve error:', error)
     return Response.json(
-      { error: error instanceof Error ? error.message : 'Failed to resolve npm dependencies' },
+      { error: 'Failed to resolve npm dependencies' },
       { status: 500, headers: corsHeaders },
     )
   }
@@ -2110,7 +2209,7 @@ else {
   catch (error) {
     console.error('npm resolve GET error:', error)
     return Response.json(
-      { error: error instanceof Error ? error.message : 'Failed to resolve npm dependencies' },
+      { error: 'Failed to resolve npm dependencies' },
       { status: 500, headers: corsHeaders },
     )
   }
@@ -2238,9 +2337,11 @@ async function handleBinaryProxy(
 /**
  * Handle dashboard routes — analytics UI (rendered via stx)
  */
-const DASHBOARD_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN || 'ABCD1234'
+const DASHBOARD_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN
 
 function getDashboardAuth(req: Request, url?: URL): boolean {
+  if (!DASHBOARD_TOKEN) return false
+
   // Check cookie first (direct access / cookie-forwarding CDN)
   const cookieHeader = req.headers.get('cookie') || ''
   // eslint-disable-next-line max-statements-per-line -- semicolon is inside regex, not a statement separator
@@ -3317,6 +3418,8 @@ async function handleDocs(reqPath: string): Promise<Response> {
   ]
 
   for (const candidate of candidates) {
+    // Prevent path traversal — resolved path must stay within docsDir
+    if (relative(docsDir, candidate).startsWith('..')) continue
     const file = Bun.file(candidate)
     if (await file.exists()) {
       const ext = candidate.split('.').pop()

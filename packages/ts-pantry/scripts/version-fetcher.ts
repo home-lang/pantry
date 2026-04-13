@@ -10,7 +10,7 @@
  *   bun scripts/version-fetcher.ts [--domain <domain>] [--dry-run]
  */
 
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs'
 import { join } from 'node:path'
 import type { VersionSource, Recipe } from './recipe-types'
 
@@ -55,7 +55,7 @@ async function fetchGitHubReleases(repo: string, tagPattern?: RegExp, stable = t
     }
 
     // Only accept versions that look like semver (digits + dots, optional pre-release suffix)
-    if (version && /^\d[\d.]*\d$/.test(version) || /^\d[\d.]*\d[._-]\w+$/.test(version)) {
+    if (version && (/^\d[\d.]*\d$/.test(version) || /^\d[\d.]*\d[._-]\w+$/.test(version))) {
       versions.push(version)
     }
   }
@@ -84,7 +84,7 @@ async function fetchGitHubTags(repo: string, tagPattern?: RegExp): Promise<strin
     else {
       version = version.replace(/^v/, '')
     }
-    if (version && /^\d[\d.]*\d$/.test(version) || /^\d[\d.]*\d[._-]\w+$/.test(version)) versions.push(version)
+    if (version && (/^\d[\d.]*\d$/.test(version) || /^\d[\d.]*\d[._-]\w+$/.test(version))) versions.push(version)
   }
 
   return versions
@@ -190,7 +190,9 @@ function updatePackageVersions(domain: string, newVersions: string[]): boolean {
     return true
   }
 
-  writeFileSync(filePath, updated)
+  const tmpFile = `${filePath}.tmp`
+  writeFileSync(tmpFile, updated)
+  renameSync(tmpFile, filePath)
   return true
 }
 
@@ -240,6 +242,8 @@ async function main() {
       }
     }
     catch (err) {
+      const basename = file.split('/').pop()
+      console.error(`  ERROR loading ${basename}: ${(err as Error).message}`)
       errors++
     }
   }

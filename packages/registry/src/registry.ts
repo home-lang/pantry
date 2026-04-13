@@ -161,7 +161,7 @@ export class Registry {
    */
   async publish(metadata: PackageMetadata, tarball: ArrayBuffer): Promise<void> {
     // Generate tarball key
-    const safeName = metadata.name.replace('@', '').replace('/', '-')
+    const safeName = metadata.name.replaceAll('@', '').replaceAll('/', '-').replace(/[^a-z0-9._-]/gi, '')
     const key = `packages/pantry/${safeName}/${metadata.version}/${safeName}-${metadata.version}.tgz`
 
     // Upload tarball

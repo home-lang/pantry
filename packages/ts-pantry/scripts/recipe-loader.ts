@@ -29,7 +29,8 @@ const tsPackagesDir = join(scriptsDir, '..', 'src')
  */
 export async function loadRecipe(
   domain: string,
-  platform?: string,
+  // eslint-disable-next-line
+  _platform?: string,
 ): Promise<LoadedRecipe & { yamlPath?: string }> {
   // 1. Try native TS recipe
   const recipePath = findRecipeFile(domain)
@@ -45,7 +46,8 @@ export async function loadRecipe(
         }
       }
     }
-    catch {
+    catch (err) {
+      console.warn(`[recipe-loader] Failed to load TS recipe for ${domain}: ${(err as Error).message}`)
       // Fall through to YAML
     }
   }
@@ -135,9 +137,7 @@ function recipeDefToNormalized(def: Recipe): Record<string, any> {
   return {
     distributable: def.distributable
       ? { url: def.distributable.url, 'strip-components': def.distributable.stripComponents }
-      : def.distributable === null
-        ? undefined
-        : undefined,
+      : undefined,
     dependencies: def.dependencies || {},
     build: {
       dependencies: def.buildDependencies || {},

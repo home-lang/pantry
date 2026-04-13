@@ -10,11 +10,6 @@ describe('Index Module', () => {
       expect(typeof packages).toBe('object')
     })
 
-    test('should export packages object', () => {
-      expect(packages).toBeDefined()
-      expect(typeof packages).toBe('object')
-    })
-
     test('should export aliases object', () => {
       expect(aliases).toBeDefined()
       expect(typeof aliases).toBe('object')
@@ -23,12 +18,6 @@ describe('Index Module', () => {
   })
 
   describe('Type Exports', () => {
-    test('should export Packages type', () => {
-      // Test that the type exists by creating a variable of that type
-      const testPackages: Packages = packages
-      expect(testPackages).toBeDefined()
-    })
-
     test('should export Packages type', () => {
       // Test that the type exists by creating a variable of that type
       const testPackages: Packages = packages
@@ -69,45 +58,6 @@ describe('Index Module', () => {
         expect(typeof firstPackage.installCommand).toBe('string')
         expect(Array.isArray(firstPackage.programs)).toBe(true)
         expect(Array.isArray(firstPackage.versions)).toBe(true)
-      }
-    })
-  })
-
-  describe('Packages Object Structure', () => {
-    test('should have package entries', () => {
-      const packageKeys = Object.keys(packages)
-      expect(packageKeys.length).toBeGreaterThan(0)
-    })
-
-    test('should have consistent package structure', () => {
-      const packageKeys = Object.keys(packages)
-
-      if (packageKeys.length > 0) {
-        const firstPackage = packages[packageKeys[0] as keyof typeof packages]
-
-        // Check that package has expected properties
-        expect(firstPackage).toHaveProperty('name')
-        expect(firstPackage).toHaveProperty('domain')
-        expect(firstPackage).toHaveProperty('description')
-        expect(firstPackage).toHaveProperty('installCommand')
-        expect(firstPackage).toHaveProperty('programs')
-        expect(firstPackage).toHaveProperty('versions')
-      }
-    })
-
-    test('should match packages structure', () => {
-      const packagesKeys = Object.keys(packages)
-      const packageKeys = Object.keys(packages)
-
-      // Both should have the same number of entries
-      expect(packagesKeys.length).toBe(packageKeys.length)
-
-      // Both should reference the same packages
-      if (packagesKeys.length > 0 && packageKeys.length > 0) {
-        const firstPackagesPackage = packages[packagesKeys[0] as keyof typeof packages]
-        const firstPackagePackage = packages[packageKeys[0] as keyof typeof packages]
-
-        expect(firstPackagesPackage.domain).toBe(firstPackagePackage.domain)
       }
     })
   })
@@ -154,12 +104,10 @@ describe('Index Module', () => {
   describe('Integration Tests', () => {
     test('should have consistent data across exports', () => {
       const packagesKeys = Object.keys(packages)
-      const packageKeys = Object.keys(packages)
       const aliasValues = Object.values(aliases)
 
       // All exports should be non-empty
       expect(packagesKeys.length).toBeGreaterThan(0)
-      expect(packageKeys.length).toBeGreaterThan(0)
       expect(aliasValues.length).toBeGreaterThan(0)
 
       // Aliases should point to domains that exist in packages/packages
@@ -319,11 +267,9 @@ describe('Index Module', () => {
     test('should handle empty objects gracefully', () => {
       // Even if objects are empty, they should still be objects
       expect(typeof packages).toBe('object')
-      expect(typeof packages).toBe('object')
       expect(typeof aliases).toBe('object')
 
       // Should not throw when getting keys
-      expect(() => Object.keys(packages)).not.toThrow()
       expect(() => Object.keys(packages)).not.toThrow()
       expect(() => Object.keys(aliases)).not.toThrow()
     })

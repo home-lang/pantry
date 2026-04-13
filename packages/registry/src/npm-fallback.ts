@@ -51,14 +51,15 @@ export async function listNpmVersions(name: string): Promise<string[]> {
 
     const data = await response.json() as Record<string, any>
     return Object.keys(data.versions || {}).sort((a, b) => {
-      // Sort by semver descending
-      const [aMajor, aMinor, aPatch] = a.split('.').map(Number)
-      const [bMajor, bMinor, bPatch] = b.split('.').map(Number)
-      if (aMajor !== bMajor)
-        return bMajor - aMajor
-      if (aMinor !== bMinor)
-        return bMinor - aMinor
-      return bPatch - aPatch
+      // Sort by semver descending (handle non-numeric segments safely)
+      const aParts = a.split('.').map(s => Number.parseInt(s, 10) || 0)
+      const bParts = b.split('.').map(s => Number.parseInt(s, 10) || 0)
+      const len = Math.max(aParts.length, bParts.length)
+      for (let i = 0; i < len; i++) {
+        const diff = (bParts[i] ?? 0) - (aParts[i] ?? 0)
+        if (diff !== 0) return diff
+      }
+      return 0
     })
   }
   catch {
