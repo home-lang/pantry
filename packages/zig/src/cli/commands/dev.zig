@@ -354,7 +354,7 @@ pub fn devMd5Command(allocator: std.mem.Allocator, path: []const u8) !CommandRes
                 .message = msg,
             };
         };
-        defer file.close();
+        defer file.close(io_helper.io);
 
         var buf: [4096]u8 = undefined;
         while (true) {

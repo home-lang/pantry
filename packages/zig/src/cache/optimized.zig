@@ -263,9 +263,9 @@ pub const OptimizedCache = struct {
 
         // Read file
         const file = try io_helper.cwd().openFile(io_helper.io, meta.cache_path, .{});
-        defer file.close();
+        defer file.close(io_helper.io);
 
-        const data = try file.readToEndAlloc(self.allocator, 100 * 1024 * 1024);
+        const data = try file.readToEndAlloc(self.allocator, std.Io.Limit.limited(100 * 1024 * 1024));
         errdefer self.allocator.free(data);
 
         // Decompress if needed

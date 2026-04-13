@@ -246,7 +246,7 @@ test "RollbackManager file creation and rollback" {
     const test_file = "test_rollback.txt";
     {
         const file = try std.Io.Dir.cwd().createFile(io_helper.io, test_file, .{});
-        file.close();
+        file.close(io_helper.io);
     }
 
     try manager.recordFileCreated(test_file);

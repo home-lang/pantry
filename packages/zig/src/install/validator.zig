@@ -94,9 +94,9 @@ pub fn validateBinary(
     // Check if file is executable (Unix systems)
     if (@import("builtin").os.tag != .windows) {
         const file = try io_helper.cwd().openFile(io_helper.io, binary_path, .{});
-        defer file.close();
+        defer file.close(io_helper.io);
 
-        const stat = try file.stat();
+        const stat = try file.stat(io_helper.io);
         const is_executable = (stat.mode & 0o111) != 0;
 
         if (!is_executable) {
@@ -175,7 +175,7 @@ test "validateInstallation success" {
 
     // Create a test file
     const file = try tmp_dir.dir.createFile("test.txt", .{});
-    file.close();
+    file.close(io_helper.io);
 
     // Get path
     var path_buf: [std.fs.max_path_bytes]u8 = undefined;

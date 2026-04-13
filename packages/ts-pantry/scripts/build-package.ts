@@ -1285,9 +1285,10 @@ else if (Array.isArray(test.script)) {
   // Interpolate template variables
   testCommands = testCommands.map(cmd => interpolate(cmd, templateVars))
 
-  // Build PATH with prefix/bin and dep paths
+  // Build PATH with prefix/bin and dep paths (only .prefix keys are actual install paths)
   const pathParts = [`${prefix}/bin`, `${prefix}/sbin`]
-  for (const depDir of Object.values(depPaths)) {
+  for (const [key, depDir] of Object.entries(depPaths)) {
+    if (!key.endsWith('.prefix')) continue
     pathParts.push(`${depDir}/bin`)
   }
   pathParts.push(process.env.PATH || '/usr/bin:/bin')
@@ -1295,7 +1296,8 @@ else if (Array.isArray(test.script)) {
 
   // Build LD_LIBRARY_PATH / DYLD_FALLBACK_LIBRARY_PATH
   const libParts = [`${prefix}/lib`]
-  for (const depDir of Object.values(depPaths)) {
+  for (const [key, depDir] of Object.entries(depPaths)) {
+    if (!key.endsWith('.prefix')) continue
     libParts.push(`${depDir}/lib`)
   }
   const [os] = platform.split('-')

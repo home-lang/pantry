@@ -5,6 +5,7 @@ export {
   startPostgres,
   stopPostgres,
   type PostgresConfig,
+  type PostgresConnection,
 } from './postgres'
 export {
   useRedis,
@@ -12,6 +13,7 @@ export {
   startRedis,
   stopRedis,
   type RedisConfig,
+  type RedisConnection,
 } from './redis'
 export {
   useMysql,
@@ -19,6 +21,7 @@ export {
   startMysql,
   stopMysql,
   type MysqlConfig,
+  type MysqlConnection,
 } from './mysql'
 export {
   createTempDir,

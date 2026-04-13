@@ -197,7 +197,7 @@ pub const RuntimeInstaller = struct {
 
         // Make binary executable
         const file = try io_helper.openFileAbsolute(binary_path, .{});
-        defer file.close();
+        defer file.close(io_helper.io);
 
         const metadata = try file.metadata();
         var perms = metadata.permissions();

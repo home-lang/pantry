@@ -107,7 +107,7 @@ fn pathZ(path: []const u8) [*:0]const u8 {
 /// "always stale" without having to propagate errors.
 pub fn hashDependencyFileContent(path: []const u8) [16]u8 {
     const file = std.fs.cwd().openFile(path, .{}) catch return .{0} ** 16;
-    defer file.close();
+    defer file.close(io_helper.io);
 
     var hasher = std.crypto.hash.Md5.init(.{});
     var buf: [8192]u8 = undefined;

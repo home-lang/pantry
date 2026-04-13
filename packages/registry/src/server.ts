@@ -1742,6 +1742,13 @@ async function fetchNpmMetadata(name: string): Promise<any> {
   }
   const data = await res.json()
   npmMetadataCache.set(name, { data, ts: Date.now() })
+  // Evict stale entries when cache grows large
+  if (npmMetadataCache.size > 500) {
+    const now = Date.now()
+    for (const [key, val] of npmMetadataCache) {
+      if (now - val.ts > NPM_METADATA_TTL) npmMetadataCache.delete(key)
+    }
+  }
   return data
 }
 
@@ -2070,7 +2077,7 @@ async function resolveNpmDeps(
         }
       }
 
-      resolved.set(name, entry)
+      resolved.set(actualName, entry)
     }
   }
 
@@ -2216,6 +2223,22 @@ else {
     const responseData = { resolved }
 
     npmResolutionCache.set(cacheKey, { data: responseData, ts: Date.now() })
+
+    // Evict old cache entries (same logic as POST endpoint)
+    if (npmResolutionCache.size > 1000) {
+      const now = Date.now()
+      for (const [key, val] of npmResolutionCache) {
+        if (now - val.ts > NPM_RESOLUTION_TTL) {
+          npmResolutionCache.delete(key)
+        }
+      }
+      if (npmResolutionCache.size > 2000) {
+        const entries = [...npmResolutionCache.entries()].sort((a, b) => a[1].ts - b[1].ts)
+        for (let i = 0; i < entries.length - 1000; i++) {
+          npmResolutionCache.delete(entries[i][0])
+        }
+      }
+    }
 
     return Response.json(responseData, {
       headers: { ...corsHeaders, 'X-Cache': 'MISS' },

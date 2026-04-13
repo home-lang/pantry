@@ -132,12 +132,12 @@ pub fn executeScriptWithTimeout(
 
     if (options.capture_output) {
         if (child.stdout) |stdout_pipe| {
-            const output = try stdout_pipe.readToEndAlloc(allocator, 10 * 1024 * 1024);
+            const output = try stdout_pipe.readToEndAlloc(allocator, std.Io.Limit.limited(10 * 1024 * 1024));
             stdout = output;
         }
 
         if (child.stderr) |stderr_pipe| {
-            const output = try stderr_pipe.readToEndAlloc(allocator, 10 * 1024 * 1024);
+            const output = try stderr_pipe.readToEndAlloc(allocator, std.Io.Limit.limited(10 * 1024 * 1024));
             stderr = output;
         }
     }
@@ -572,12 +572,12 @@ pub fn executeScriptSandboxed(
 
     if (options.capture_output) {
         if (child.stdout) |stdout_pipe| {
-            const output = try stdout_pipe.readToEndAlloc(allocator, 10 * 1024 * 1024);
+            const output = try stdout_pipe.readToEndAlloc(allocator, std.Io.Limit.limited(10 * 1024 * 1024));
             stdout = output;
         }
 
         if (child.stderr) |stderr_pipe| {
-            const output = try stderr_pipe.readToEndAlloc(allocator, 10 * 1024 * 1024);
+            const output = try stderr_pipe.readToEndAlloc(allocator, std.Io.Limit.limited(10 * 1024 * 1024));
             stderr = output;
         }
     }

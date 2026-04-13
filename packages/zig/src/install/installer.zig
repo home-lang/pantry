@@ -1889,10 +1889,6 @@ pub const Installer = struct {
             self.allocator.free(current_batch);
 
             if (all_deps.items.len == 0) {
-                for (all_deps.items) |dep| {
-                    self.allocator.free(@constCast(dep.name));
-                    self.allocator.free(@constCast(dep.version));
-                }
                 all_deps.deinit(self.allocator);
                 break;
             }

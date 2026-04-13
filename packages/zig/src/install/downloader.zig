@@ -683,10 +683,10 @@ pub fn verifyChecksum(
 ) !bool {
     // Read file contents
     const file = try io_helper.cwd().openFile(io_helper.io, file_path, .{});
-    defer file.close();
+    defer file.close(io_helper.io);
 
-    const file_size = (try file.stat()).size;
-    const contents = try file.readToEndAlloc(allocator, file_size);
+    const file_size = (try file.stat(io_helper.io)).size;
+    const contents = try file.readToEndAlloc(allocator, std.Io.Limit.limited(file_size));
     defer allocator.free(contents);
 
     // Compute SHA256 hash

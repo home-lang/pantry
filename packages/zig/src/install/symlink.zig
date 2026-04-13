@@ -738,7 +738,7 @@ test "discoverBinaries" {
         defer allocator.free(test_bin);
 
         const file = try io_helper.cwd().createFile(io_helper.io, test_bin, .{ .mode = 0o755 });
-        file.close();
+        file.close(io_helper.io);
     }
 
     // Discover binaries
@@ -775,7 +775,7 @@ test "createBinarySymlink" {
 
     {
         const file = try io_helper.cwd().createFile(io_helper.io, bin_path, .{ .mode = 0o755 });
-        file.close();
+        file.close(io_helper.io);
     }
 
     // Create symlink

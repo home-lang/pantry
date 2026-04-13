@@ -74,7 +74,7 @@ pub const SharedCache = struct {
             });
         }
         errdefer if (lock_file) |file| {
-            file.close();
+            file.close(io_helper.io);
         };
 
         return .{
@@ -87,7 +87,7 @@ pub const SharedCache = struct {
 
     pub fn deinit(self: *SharedCache) void {
         if (self.lock_file) |file| {
-            file.close();
+            file.close(io_helper.io);
         }
         self.cache.deinit();
         if (self.config.base_config.shared_cache_dir) |dir| {
