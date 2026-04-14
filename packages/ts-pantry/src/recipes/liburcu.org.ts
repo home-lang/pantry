@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'liburcu.org',
   name: 'liburcu',
   description: 'liburcu is a LGPLv2.1 userspace RCU (read-copy-update) library. This data synchronization library provides read-side access which scales linearly with the number of cores.',
-  homepage: 'http://liburcu.org',
+  homepage: 'https://liburcu.org',
   github: 'https://github.com/urcu/userspace-rcu',
   programs: [],
   versionSource: {
@@ -19,7 +19,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure --prefix="{{prefix}}"',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
     ],
   },
 }

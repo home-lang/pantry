@@ -12,6 +12,9 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'echo "Build not yet configured for opencore-amr.sourceforge.io"',    ],
+      './configure --prefix={{prefix}}',
+      'make --jobs {{hw.concurrency}}',
+      'make install',
+    ],
   },
 }

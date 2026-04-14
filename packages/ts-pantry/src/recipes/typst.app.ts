@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(\d\d-\d\d-\d\d(?:-\d)?)$/,
   },
   distributable: {
-    url: 'https://github.com/typst/typst/archive/refs/tags/v{{ version }}.tar.gz',
+    url: 'https://github.com/typst/typst/archive/refs/tags/v{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {
@@ -30,7 +30,7 @@ export const recipe: Recipe = {
       'cargo install --path crates/typst-cli --locked --root {{prefix}}',
     ],
     env: {
-      'TYPST_VERSION': '${{ version }}',
+      'TYPST_VERSION': '${{version}}',
     },
   },
 }

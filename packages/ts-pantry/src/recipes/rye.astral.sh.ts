@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'astral-sh/rye',
   },
   distributable: {
-    url: 'https://github.com/astral-sh/rye/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/astral-sh/rye/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

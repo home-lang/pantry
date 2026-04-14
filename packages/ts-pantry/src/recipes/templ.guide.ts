@@ -21,8 +21,8 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'echo -n {{ version }} >.version',
-      'go build -v -ldflags="$LDFLAGS" -o "{{ prefix }}"/bin/templ ./cmd/templ',
+      'echo -n {{version}} >.version',
+      'go build -v -ldflags="$LDFLAGS" -o "{{prefix}}"/bin/templ ./cmd/templ',
     ],
     env: {
       'CGO_ENABLED': '0',

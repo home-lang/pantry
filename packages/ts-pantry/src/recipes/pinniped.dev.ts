@@ -22,8 +22,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go mod download',
-      'mkdir -p "{{ prefix }}"/bin',
-      'go build -trimpath -ldflags="$LDFLAGS" -o "{{ prefix }}"/bin/pinniped ./cmd/pinniped',
+      'mkdir -p "{{prefix}}"/bin',
+      'go build -trimpath -ldflags="$LDFLAGS" -o "{{prefix}}"/bin/pinniped ./cmd/pinniped',
     ],
     env: {
       'CGO_ENABLED': '0',

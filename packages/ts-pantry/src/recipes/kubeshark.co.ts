@@ -24,8 +24,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'make build',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv bin/kubeshark_$PLATFORM "{{ prefix }}"/bin/kubeshark',
+      'mkdir -p "{{prefix}}"/bin',
+      'mv bin/kubeshark_$PLATFORM "{{prefix}}"/bin/kubeshark',
       '',
     ],
     env: {

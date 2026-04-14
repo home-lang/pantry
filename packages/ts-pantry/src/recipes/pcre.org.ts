@@ -18,13 +18,13 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure \\',
-      '  --prefix={{ prefix }} \\',
+      '  --prefix={{prefix}} \\',
       '  --enable-pcre2-16 \\',
       '  --enable-pcre2-32 \\',
       '  --enable-pcre2grep-libz \\',
       '  --enable-pcre2grep-libbz2 \\',
       '  --enable-jit',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'make install',
       '',
     ],

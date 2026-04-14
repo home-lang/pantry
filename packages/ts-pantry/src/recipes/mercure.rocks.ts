@@ -24,8 +24,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'goreleaser build --clean --single-target --skip=validate',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv dist/caddy_{{hw.platform}}_$ARCH/mercure "{{ prefix }}"/bin',
+      'mkdir -p "{{prefix}}"/bin',
+      'mv dist/caddy_{{hw.platform}}_$ARCH/mercure "{{prefix}}"/bin',
     ],
     env: {
       'CGO_ENABLED': '0',

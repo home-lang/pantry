@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/getzola/zola/archive/refs/tags/v{{ version }}.tar.gz',
+    url: 'https://github.com/getzola/zola/archive/refs/tags/v{{version}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {

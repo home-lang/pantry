@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/twpayne/chezmoi/archive/refs/tags/v{{ version }}.tar.gz',
+    url: 'https://github.com/twpayne/chezmoi/archive/refs/tags/v{{version}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {
@@ -23,12 +23,12 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go build -v -ldflags="$LDFLAGS"',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv chezmoi "{{ prefix }}"/bin',
+      'mkdir -p "{{prefix}}"/bin',
+      'mv chezmoi "{{prefix}}"/bin',
       '',
     ],
     env: {
-      'LDFLAGS': ['-s', '-w', '-X main.version={{ version }}', '-X main.revision=tea'],
+      'LDFLAGS': ['-s', '-w', '-X main.version={{version}}', '-X main.revision=tea'],
     },
   },
 }

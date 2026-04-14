@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       'cp -a build_static/src/capnp/*.a build_static/src/kj/*.a {{prefix}}/lib',
     ],
     env: {
-      'CMAKE_ARGS': ['-DCMAKE_CXX_STANDARD=20', '-DCMAKE_INSTALL_RPATH={{ prefix }}/lib', '-DCMAKE_INSTALL_PREFIX={{ prefix }}', '-DCMAKE_INSTALL_LIBDIR={{ prefix }}/lib', '-DCMAKE_BUILD_TYPE=Release', '-Wno-dev', '-DCMAKE_CXX_FLAGS=-fPIC', '-DCMAKE_POSITION_INDEPENDENT_CODE=ON'],
+      'CMAKE_ARGS': ['-DCMAKE_CXX_STANDARD=20', '-DCMAKE_INSTALL_RPATH={{prefix}}/lib', '-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_LIBDIR={{prefix}}/lib', '-DCMAKE_BUILD_TYPE=Release', '-Wno-dev', '-DCMAKE_CXX_FLAGS=-fPIC', '-DCMAKE_POSITION_INDEPENDENT_CODE=ON'],
     },
   },
 }

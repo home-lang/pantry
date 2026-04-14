@@ -21,7 +21,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build -v -trimpath -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/flipt ./cmd/flipt',
+      'go build -v -trimpath -ldflags="${GO_LDFLAGS}" -o "{{prefix}}"/bin/flipt ./cmd/flipt',
     ],
     env: {
       'GO_LDFLAGS': ['-s', '-w', '-X main.version={{version}}'],

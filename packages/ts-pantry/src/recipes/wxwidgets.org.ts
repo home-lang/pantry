@@ -34,7 +34,7 @@ export const recipe: Recipe = {
       'cd "src"',
       'rm -r expat jpeg png tiff zlib',
       './configure $CONFIGURE_ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       'cd "${{prefix}}/bin"',
       'rm wx-config',
       'ln -s ../lib/wx/config/$WX_CONFIG wx-config',

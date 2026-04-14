@@ -17,13 +17,13 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'if test {{ hw.platform }} = "darwin"; then',
+      'if test {{hw.platform}} = "darwin"; then',
       '  # needed to work on macOS',
       '  patch -p0 < props/Makefile.patch',
       'fi',
       '',
-      'make --jobs {{ hw.concurrency }} all',
-      'make install PREFIX="{{ prefix }}"',
+      'make --jobs {{hw.concurrency}} all',
+      'make install PREFIX="{{prefix}}"',
     ],
   },
 }

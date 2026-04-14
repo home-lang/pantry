@@ -20,8 +20,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS --with-readline-ldflags="-L{{deps.gnu.org/readline.prefix}}/lib -lreadline"',
-      'make --jobs {{ hw.concurrency }} install',
-      'run: |',
+      'make --jobs {{hw.concurrency}} install',
     ],
   },
 }

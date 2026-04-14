@@ -21,7 +21,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build -ldflags "$GO_LDFLAGS" -o {{ prefix }}/bin/coredns',
+      'go build -ldflags "$GO_LDFLAGS" -o {{prefix}}/bin/coredns',
     ],
     env: {
       'GO_LDFLAGS': ['-s', '-w', '-X main.Version={{version}}', '-X github.com/coredns/coredns/coremain.GitCommit=pkgx'],

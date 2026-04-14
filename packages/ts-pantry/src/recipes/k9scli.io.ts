@@ -24,8 +24,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'make build',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv ./execs/k9s "{{ prefix }}"/bin',
+      'mkdir -p "{{prefix}}"/bin',
+      'mv ./execs/k9s "{{prefix}}"/bin',
       '',
     ],
   },

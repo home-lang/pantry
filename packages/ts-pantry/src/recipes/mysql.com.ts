@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'mysql.com',
   name: 'mysql',
   description: 'MySQL Server, the world\\s most popular open source database, and MySQL Cluster, a real-time, open source transactional database.',
-  homepage: 'http://www.mysql.com/',
+  homepage: 'https://www.mysql.com/',
   github: 'https://github.com/mysql/mysql-server',
   programs: ['mysql_client_test', 'my_print_defaults', 'myisam_ftdump', 'myisamchk', 'myisamlog', 'myisampack', 'mysql', 'mysql_config', 'mysql_config_editor', 'mysql_keyring_encryption_test', 'mysql_migrate_keyring', 'mysql_secure_installation', 'mysql_tzinfo_to_sql', 'mysqladmin', 'mysqlbinlog', 'mysqlcheck', 'mysqld', 'mysqld_multi', 'mysqld_safe', 'mysqldump', 'mysqldumpslow', 'mysqlimport', 'mysqlrouter', 'mysqlrouter_keyring', 'mysqlrouter_passwd', 'mysqlrouter_plugin_info', 'mysqlshow', 'mysqlslap', 'mysqltest', 'mysqltest_safe_process', 'mysqlxtest'],
   versionSource: {
@@ -23,7 +23,7 @@ export const recipe: Recipe = {
       'run: export ARGS="$(echo $ARGS | sed \\s/WITH_ZLIB=system/WITH_ZLIB=bundled/g\\)"',
       'run: export ARGS="$ARGS -DCMAKE_C_STANDARD=17"',
       'cmake .. $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       'mkdir -p mysql tmp',
       'mysqld --no-defaults --initialize-insecure --user=$USER --datadir=$PWD/mysql --tmpdir=$PWD/tmp',
       'PORT=$(pkgx get-port | tail -n1)',

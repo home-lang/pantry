@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'teaxyz/cli',
   },
   distributable: {
-    url: 'https://github.com/teaxyz/cli/releases/download/v{{ version }}/tea-{{ version }}.tar.xz',
+    url: 'https://github.com/teaxyz/cli/releases/download/v{{version}}/tea-{{version}}.tar.xz',
     stripComponents: 1,
   },
   buildDependencies: {

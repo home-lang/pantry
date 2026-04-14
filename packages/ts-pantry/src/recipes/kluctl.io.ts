@@ -27,8 +27,8 @@ export const recipe: Recipe = {
     script: [
       'make build-webui',
       'go build -v -ldflags="$LDFLAGS" -o bin/kluctl cmd/main.go',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv bin/kluctl "{{ prefix }}"/bin',
+      'mkdir -p "{{prefix}}"/bin',
+      'mv bin/kluctl "{{prefix}}"/bin',
       '',
     ],
     env: {

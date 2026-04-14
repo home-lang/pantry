@@ -19,16 +19,13 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'run: |',
       'mkdir -p .build',
       'make deps',
-      'run: export LDFLAGS="$LDFLAGS -Wl,-ltinfow"',
       'make crystal $ARGS',
       'mkdir -p "{{prefix}}/bin"',
       'cp .build/crystal "{{prefix}}/bin/crystal.bin"',
       'cp props/shim "{{prefix}}/bin/crystal"',
       'cp -a src "{{prefix}}/lib"',
-      'run: |',
     ],
   },
 }

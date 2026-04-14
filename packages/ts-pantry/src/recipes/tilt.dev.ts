@@ -25,7 +25,7 @@ export const recipe: Recipe = {
     script: [
       'make build-js',
       'go mod download',
-      'mkdir -p "{{ prefix }}"/bin',
+      'mkdir -p "{{prefix}}"/bin',
       'go build -v -trimpath -ldflags="$LDFLAGS" -o $BUILDLOC ./cmd/tilt',
     ],
     env: {

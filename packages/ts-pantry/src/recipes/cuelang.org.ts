@@ -22,11 +22,11 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go mod download',
-      'go build -v -ldflags="$LDFLAGS" -o "{{ prefix }}"/bin/cue ./cmd/cue',
+      'go build -v -ldflags="$LDFLAGS" -o "{{prefix}}"/bin/cue ./cmd/cue',
       '',
     ],
     env: {
-      'LDFLAGS': ['-s', '-w', '-X cuelang.org/go/cmd/cue/cmd.version=v{{ version }}'],
+      'LDFLAGS': ['-s', '-w', '-X cuelang.org/go/cmd/cue/cmd.version=v{{version}}'],
     },
   },
 }

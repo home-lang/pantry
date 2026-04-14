@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'yarnpkg/yarn',
   },
   distributable: {
-    url: 'https://yarnpkg.com/downloads/{{ version }}/yarn-v{{ version }}.tar.gz',
+    url: 'https://yarnpkg.com/downloads/{{version}}/yarn-v{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

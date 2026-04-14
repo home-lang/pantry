@@ -6,7 +6,7 @@ export const recipe: Recipe = {
   programs: ['ld.musl-clang', 'musl-clang'],
   platforms: ['linux'],
   distributable: {
-    url: 'https://git.musl-libc.org/cgit/musl/snapshot/musl-{{ version }}.tar.gz',
+    url: 'https://git.musl-libc.org/cgit/musl/snapshot/musl-{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {
@@ -15,8 +15,8 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      './configure --prefix={{ prefix }} --syslibdir={{ prefix }}/lib',
-      'make --jobs {{ hw.concurrency }}',
+      './configure --prefix={{prefix}} --syslibdir={{prefix}}/lib',
+      'make --jobs {{hw.concurrency}}',
       'make install',
       'cd "{{prefix}}/lib"',
       'ln -sf libc.so ld-musl-{{hw.arch}}.so.1',

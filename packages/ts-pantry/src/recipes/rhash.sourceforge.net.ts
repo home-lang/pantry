@@ -12,15 +12,15 @@ export const recipe: Recipe = {
     repo: 'rhash/RHash',
   },
   distributable: {
-    url: 'https://github.com/rhash/RHash/archive/refs/tags/v{{ version }}.tar.gz',
+    url: 'https://github.com/rhash/RHash/archive/refs/tags/v{{version}}.tar.gz',
     stripComponents: 1,
   },
 
   build: {
     script: [
-      './configure --disable-gettext --prefix={{ prefix }}',
+      './configure --disable-gettext --prefix={{prefix}}',
       'make rhash',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'make install',
       'make -C librhash install-lib-headers',
       'make test',

@@ -32,7 +32,7 @@ export const recipe: Recipe = {
       'ARGS="$ARGS --enable-virtfs"',
       'sed -i.bak -e"s/-isystem\', /-isystem\' + /g" meson.build',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       'xattr -cr {{prefix}}/bin/*',
     ],
     env: {

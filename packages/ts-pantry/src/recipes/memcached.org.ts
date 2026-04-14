@@ -10,7 +10,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://memcached.org/files/memcached-{{ version }}.tar.gz',
+    url: 'https://memcached.org/files/memcached-{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {
@@ -23,7 +23,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'make install',
     ],
     env: {

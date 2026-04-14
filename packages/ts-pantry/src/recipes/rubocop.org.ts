@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'rubocop/rubocop',
   },
   distributable: {
-    url: 'https://github.com/rubocop/rubocop/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/rubocop/rubocop/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

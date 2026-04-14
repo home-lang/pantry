@@ -15,8 +15,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'cmake .. $ARGS',
-      'make --jobs {{ hw.concurrency }}',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}}',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
       'ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF', '-DWITH_STATIC_LIB=ON', '-DWITH_CMOCKERY_SUPPORT=ON', '-DUNIT_TESTING=ON'],

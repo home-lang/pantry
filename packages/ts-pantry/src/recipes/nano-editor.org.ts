@@ -13,6 +13,9 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'echo "Build not yet configured for nano-editor.org"',    ],
+      './configure --prefix={{prefix}} --enable-utf8',
+      'make --jobs {{hw.concurrency}}',
+      'make install',
+    ],
   },
 }

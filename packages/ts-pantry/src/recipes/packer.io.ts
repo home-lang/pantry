@@ -23,7 +23,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go mod download',
-      'go build -v -ldflags="$GO_LDFLAGS" -o "{{ prefix }}"/bin/packer',
+      'go build -v -ldflags="$GO_LDFLAGS" -o "{{prefix}}"/bin/packer',
     ],
     env: {
       'GO111MODULE': 'on',

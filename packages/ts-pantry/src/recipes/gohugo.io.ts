@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'gohugoio/hugo',
   },
   distributable: {
-    url: 'https://github.com/gohugoio/hugo/archive/v{{ version }}.tar.gz',
+    url: 'https://github.com/gohugoio/hugo/archive/v{{version}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {
@@ -21,7 +21,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build -ldflags="$GO_LDFLAGS" -o "{{ prefix }}/bin/hugo" -tags extended,withdeploy',
+      'go build -ldflags="$GO_LDFLAGS" -o "{{prefix}}/bin/hugo" -tags extended,withdeploy',
     ],
     env: {
       'CGO_ENABLED': '1',

@@ -12,15 +12,15 @@ export const recipe: Recipe = {
     repo: 'libexpat/libexpat',
   },
   distributable: {
-    url: 'https://github.com/libexpat/libexpat/releases/download/R_{{ version.major }}_{{ version.minor }}_{{ version.patch }}/expat-{{ version }}.tar.xz',
+    url: 'https://github.com/libexpat/libexpat/releases/download/R_{{version.major}}_{{version.minor}}_{{version.patch}}/expat-{{version}}.tar.xz',
     stripComponents: 1,
   },
 
   build: {
     script: [
-      './configure --prefix={{ prefix }}',
-      'make --jobs {{ hw.concurrency }} install',
-      'cd "${{ prefix }}/lib"',
+      './configure --prefix={{prefix}}',
+      'make --jobs {{hw.concurrency}} install',
+      'cd "${{prefix}}/lib"',
       'rm *.la',
     ],
   },

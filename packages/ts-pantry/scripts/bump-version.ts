@@ -117,8 +117,18 @@ function main() {
   execCommand(`git tag v${newVersion}`)
 
   console.log('📤 Pushing changes and tag...')
-  execCommand('git push origin main')
-  execCommand(`git push origin v${newVersion}`)
+  try {
+    execCommand('git push origin main')
+    execCommand(`git push origin v${newVersion}`)
+  }
+  catch (err) {
+    // Roll back the local tag so the repo is not left with an orphan tag pointing
+    // at an unpublished commit (otherwise the next release will conflict).
+    console.error('❌ Push failed — rolling back local tag')
+    try { execCommand(`git tag -d v${newVersion}`) }
+    catch { /* ignore */ }
+    throw err
+  }
 
   console.log(`🎉 Successfully released v${newVersion}!`)
 

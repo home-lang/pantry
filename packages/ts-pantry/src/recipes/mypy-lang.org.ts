@@ -22,7 +22,6 @@ export const recipe: Recipe = {
       'bkpyvenv stage {{prefix}} {{version}}',
       '${{prefix}}/venv/bin/pip install .',
       'bkpyvenv seal {{prefix}} mypy',
-      'run: |',
     ],
   },
 }

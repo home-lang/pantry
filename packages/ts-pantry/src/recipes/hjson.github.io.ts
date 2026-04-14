@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'hjson/hjson-rust',
   },
   distributable: {
-    url: 'https://github.com/hjson/hjson-rust/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/hjson/hjson-rust/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {

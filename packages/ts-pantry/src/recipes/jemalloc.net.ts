@@ -3,7 +3,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'jemalloc.net',
   name: 'jemalloc',
-  homepage: 'http://jemalloc.net/',
+  homepage: 'https://jemalloc.net/',
   github: 'https://github.com/jemalloc/jemalloc',
   programs: [],
   versionSource: {
@@ -23,7 +23,7 @@ export const recipe: Recipe = {
     script: [
       'if [ -f version ]; then mv version VERSION.jemalloc; fi',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'make install',
       'cd "${{prefix}}/include/jemalloc"',
       'sed -i \'s/defined(JEMALLOC_USE_CXX_THROW)/defined(JEMALLOC_USE_CXX_THROW) \\&\\& \\!defined(__clang__)/g\' jemalloc.h',

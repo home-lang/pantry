@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^gd-(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/libgd/libgd/releases/download/gd-{{ version }}/libgd-{{ version }}.tar.gz',
+    url: 'https://github.com/libgd/libgd/releases/download/gd-{{version}}/libgd-{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {
@@ -34,7 +34,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       '',
     ],
     env: {

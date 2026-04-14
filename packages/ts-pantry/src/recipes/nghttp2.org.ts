@@ -13,14 +13,14 @@ export const recipe: Recipe = {
     tagPattern: /^nghttp2 v(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/nghttp2/nghttp2/releases/download/v{{ version }}/nghttp2-{{ version }}.tar.gz',
+    url: 'https://github.com/nghttp2/nghttp2/releases/download/v{{version}}/nghttp2-{{version}}.tar.gz',
     stripComponents: 1,
   },
 
   build: {
     script: [
-      './configure --prefix={{ prefix }}',
-      'make -j {{ hw.concurrency }} -C lib install',
+      './configure --prefix={{prefix}}',
+      'make -j {{hw.concurrency}} -C lib install',
     ],
   },
 }

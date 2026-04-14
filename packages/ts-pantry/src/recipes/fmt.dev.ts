@@ -23,10 +23,10 @@ export const recipe: Recipe = {
     script: [
       'cmake . -B build $ARGS -DBUILD_SHARED_LIBS=ON',
       'cd "build"',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       'cmake . -B build-static $ARGS -DBUILD_SHARED_LIBS=OFF',
       'cd "build-static"',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
       'ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release'],

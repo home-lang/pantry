@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'watchexec/watchexec',
   },
   distributable: {
-    url: 'https://github.com/watchexec/watchexec/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/watchexec/watchexec/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {

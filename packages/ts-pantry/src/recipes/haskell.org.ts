@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'haskell.org',
   name: 'haskell',
   description: 'The Glasgow Haskell Compiler',
-  homepage: 'http://www.haskell.org/ghc/',
+  homepage: 'https://www.haskell.org/ghc/',
   github: 'https://github.com/ghc/ghc',
   programs: ['ghc', 'ghc-{{version.marketing}}', 'ghc-{{version}}', 'ghc-pkg', 'ghc-pkg-{{version.marketing}}', 'ghc-pkg-{{version}}', 'ghci', 'ghci-{{version.marketing}}', 'ghci-{{version}}', 'ghcup', 'haddock', 'haddock-{{version.marketing}}', 'haddock-{{version}}', 'hp2ps', 'hp2ps-{{version.marketing}}', 'hp2ps-{{version}}', 'hpc', 'hpc-{{version.marketing}}', 'hpc-{{version}}', 'hsc2hs', 'hsc2hs-{{version.marketing}}', 'hsc2hs-{{version}}', 'runghc', 'runghc-{{version.marketing}}', 'runghc-{{version}}', 'runhaskell', 'runhaskell-{{version.marketing}}', 'runhaskell-{{version}}'],
   versionSource: {

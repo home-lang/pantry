@@ -35,7 +35,7 @@ export const recipe: Recipe = {
       'curl -L https://github.com/hercules-team/augeas/commit/7b26cbb74ed634d886ed842e3d5495361d8fd9b1.patch?full_index=1 | patch -p1',
       'autoreconf --force --install',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
       'CFLAGS': '-Wno-implicit-function-declaration',

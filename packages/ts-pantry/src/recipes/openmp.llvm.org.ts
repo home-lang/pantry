@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'openmp.llvm.org',
   name: 'libomp',
   description: 'The LLVM Project is a collection of modular and reusable compiler and toolchain technologies.',
-  homepage: 'http://llvm.org',
+  homepage: 'https://llvm.org',
   github: 'https://github.com/llvm/llvm-project',
   programs: [],
   versionSource: {

@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /(cli\/v|@biomejs\/biome@)(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/biomejs/biome/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/biomejs/biome/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {

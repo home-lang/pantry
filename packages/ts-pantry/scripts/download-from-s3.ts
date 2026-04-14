@@ -336,7 +336,7 @@ catch {
 
     // Extract tarball
     console.log(`   📂 Extracting...`)
-    execSync(`tar -xzf "${tarballPath}" -C "${pkgInstallDir}"`, { stdio: 'inherit' })
+    execSync(`tar -xzf "${tarballPath}" -C "${pkgInstallDir}" --no-same-owner --exclude='../*' --exclude='*/../*'`, { stdio: 'inherit' })
 
     // Remove tarball after extraction
     execSync(`rm "${tarballPath}"`)

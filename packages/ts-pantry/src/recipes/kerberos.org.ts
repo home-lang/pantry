@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     tagPattern: /^krb5-(.+?)(?:-final)?$/,
   },
   distributable: {
-    url: 'https://kerberos.org/dist/krb5/{{ version.marketing }}/krb5-{{ version.raw }}.tar.gz',
+    url: 'https://kerberos.org/dist/krb5/{{version.marketing}}/krb5-{{version.raw}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {
@@ -25,7 +25,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'make install',
       '',
     ],

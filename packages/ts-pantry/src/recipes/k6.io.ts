@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'grafana/k6',
   },
   distributable: {
-    url: 'https://github.com/grafana/k6/archive/refs/tags/v{{ version }}.tar.gz',
+    url: 'https://github.com/grafana/k6/archive/refs/tags/v{{version}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {
@@ -22,12 +22,12 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go build -v -ldflags="$LDFLAGS"',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv k6 "{{ prefix }}"/bin',
+      'mkdir -p "{{prefix}}"/bin',
+      'mv k6 "{{prefix}}"/bin',
       '',
     ],
     env: {
-      'LDFLAGS': ['-s', '-w', '-X main.version={{ version }}', '-X main.revision=tea'],
+      'LDFLAGS': ['-s', '-w', '-X main.version={{version}}', '-X main.revision=tea'],
     },
   },
 }

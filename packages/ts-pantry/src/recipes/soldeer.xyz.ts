@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'mario-eth/soldeer',
   },
   distributable: {
-    url: 'https://github.com/mario-eth/soldeer/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/mario-eth/soldeer/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {

@@ -21,7 +21,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'make --environment-overrides --jobs {{ hw.concurrency }} install MANPATH=$MANPATH',
+      'make --environment-overrides --jobs {{hw.concurrency}} install MANPATH=$MANPATH',
     ],
     env: {
       'PREFIX': '${{prefix}}',

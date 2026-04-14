@@ -27,7 +27,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'cmake .. -DCMAKE_INSTALL_PREFIX={{prefix}} $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       'cd "${{prefix}}/lib/cmake/libwebsockets"',
       'sed -E -i.bak \\',
       '  -e "s:{{pkgx.prefix}}:\\$\\{_IMPORT_PREFIX\\}/../..:g" \\',

@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     repo: 'trapexit/mergerfs',
   },
   distributable: {
-    url: 'https://github.com/trapexit/mergerfs/archive/refs/tags/{{ version }}.tar.gz',
+    url: 'https://github.com/trapexit/mergerfs/archive/refs/tags/{{version}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {
@@ -24,11 +24,11 @@ export const recipe: Recipe = {
   build: {
     script: [
       'cd "tools"',
-      'sed -i -e \'s/^VERSION=.*/VERSION={{ version }}/\' update-version',
+      'sed -i -e \'s/^VERSION=.*/VERSION={{version}}/\' update-version',
       'cd "buildtools"',
-      'sed -i -e \'s/^VERSION=.*/VERSION={{ version }}/\' update-version',
+      'sed -i -e \'s/^VERSION=.*/VERSION={{version}}/\' update-version',
       'sed -i -e \'/\\(chown\\|chmod\\|CHOWN\\|CHMOD\\)/d\' libfuse/Makefile',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'make install DESTDIR="{{prefix}}" PREFIX=""',
     ],
     env: {

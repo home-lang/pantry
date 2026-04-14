@@ -20,7 +20,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './make.sh',
-      'make install PREFIX={{ prefix }}',
+      'make install PREFIX={{prefix}}',
       'run: sed -i -e \\s_^includedir=.*$_includedir=${libdir}/../include_\\ capstone.pc',
       'run: gcc $FIXTURE -lcapstone -o test',
       './test | tee out',

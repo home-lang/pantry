@@ -19,6 +19,9 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'echo "Build not yet configured for html-tidy.org"',    ],
+      'cd build/cmake',
+      'cmake ../.. -DCMAKE_INSTALL_PREFIX={{prefix}} -DCMAKE_BUILD_TYPE=Release',
+      'make --jobs {{hw.concurrency}} install',
+    ],
   },
 }

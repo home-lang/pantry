@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       'go mod download',
       'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o \'{{prefix}}/bin/steampipe\' .',
       'goreleaser build --clean --single-target --skip=validate',
-      'install -Dm755 "dist/steampipe_${PLATFORM}/steampipe" "{{ prefix }}"/bin/steampipe',
+      'install -Dm755 "dist/steampipe_${PLATFORM}/steampipe" "{{prefix}}"/bin/steampipe',
     ],
     env: {
       'GO111MODULE': 'on',

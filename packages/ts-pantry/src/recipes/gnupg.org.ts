@@ -28,8 +28,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }}',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}}',
+      'make --jobs {{hw.concurrency}} install',
       'cp props/gpgconf.ctl {{prefix}}/bin',
       'cd "{{prefix}}/libexec"',
       'sed -i.bak "s|{{prefix}}|\\$(dirname \\$0)/..|g" gpg-wks-client',

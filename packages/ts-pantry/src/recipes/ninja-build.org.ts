@@ -19,6 +19,9 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'echo "Build not yet configured for ninja-build.org"',    ],
+      'cmake -Bbuild-cmake -DCMAKE_INSTALL_PREFIX={{prefix}} -DCMAKE_BUILD_TYPE=Release',
+      'cmake --build build-cmake --parallel {{hw.concurrency}}',
+      'cmake --install build-cmake',
+    ],
   },
 }

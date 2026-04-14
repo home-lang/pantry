@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'TheLocehiliosan/yadm',
   },
   distributable: {
-    url: 'https://github.com/TheLocehiliosan/yadm/archive/refs/tags/{{ version }}.tar.gz',
+    url: 'https://github.com/TheLocehiliosan/yadm/archive/refs/tags/{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {
@@ -22,7 +22,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'make install PREFIX={{ prefix }}',
+      'make install PREFIX={{prefix}}',
     ],
   },
 }

@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'carapace-sh/carapace-bin',
   },
   distributable: {
-    url: 'https://github.com/carapace-sh/carapace-bin/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/carapace-sh/carapace-bin/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {
@@ -27,7 +27,7 @@ export const recipe: Recipe = {
     ],
     env: {
       'ARGS': ['-trimpath', '-tags release', '-o={{prefix}}/bin/carapace'],
-      'GO_LDFLAGS': ['-s', '-w', '-X main.version={{ version }}'],
+      'GO_LDFLAGS': ['-s', '-w', '-X main.version={{version}}'],
     },
   },
 }

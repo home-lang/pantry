@@ -551,11 +551,20 @@ export function savePackageAsTypeScript(outputDir: string, domainName: string, p
   if (domainName.includes('/')) {
     // Split the domain into parts: github.com/user/repo -> [github.com, user, repo]
     const parts = domainName.split('/')
+    // Reject path-traversal segments to prevent writing outside outputDir
+    if (parts.some(p => !p || p === '..' || p === '.' || p.includes('\0') || p.includes('\\'))) {
+      throw new Error(`Invalid domain name (contains path-traversal): ${domainName}`)
+    }
     const baseDomain = parts[0] // github.com
     const subParts = parts.slice(1) // [user, repo]
 
     // Create directory structure: outputDir/github.com/user/
     const packageDir = path.join(outputDir, baseDomain, ...subParts.slice(0, -1))
+    // Defensive: ensure resolved path stays within outputDir
+    const resolvedOutputDir = path.resolve(outputDir)
+    if (!path.resolve(packageDir).startsWith(`${resolvedOutputDir}${path.sep}`) && path.resolve(packageDir) !== resolvedOutputDir) {
+      throw new Error(`Path traversal detected for ${domainName}`)
+    }
     if (!fs.existsSync(packageDir)) {
       fs.mkdirSync(packageDir, { recursive: true })
     }

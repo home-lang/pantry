@@ -26,7 +26,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'cmake $CMAKE_ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       'cd "{{prefix}}/bin"',
       'sed -i -e "s|prefix=|prefix=\\$(dirname \\$0)/..|g" -e "s|{{prefix}}|\\$(dirname \\$0)/..|g" taglib-config',
     ],

@@ -12,8 +12,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'cp props/config.guess props/config.sub .',
-      './configure --disable-dependency-tracking --disable-silent-rules --prefix="{{ prefix }}"',
-      'make --jobs {{ hw.concurrency }} install',
+      './configure --disable-dependency-tracking --disable-silent-rules --prefix="{{prefix}}"',
+      'make --jobs {{hw.concurrency}} install',
     ],
   },
 }

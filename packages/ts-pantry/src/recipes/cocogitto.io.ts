@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/cocogitto/cocogitto/archive/refs/tags/{{ version }}.tar.gz',
+    url: 'https://github.com/cocogitto/cocogitto/archive/refs/tags/{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

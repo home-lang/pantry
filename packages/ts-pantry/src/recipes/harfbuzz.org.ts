@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'harfbuzz.org',
   name: 'harfbuzz',
   description: 'HarfBuzz text shaping engine',
-  homepage: 'http://harfbuzz.github.io/',
+  homepage: 'https://harfbuzz.github.io/',
   github: 'https://github.com/harfbuzz/harfbuzz',
   programs: ['hb-ot-shape-closure', 'hb-shape', 'hb-subset', 'hb-view'],
   versionSource: {
@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'harfbuzz/harfbuzz',
   },
   distributable: {
-    url: 'https://github.com/harfbuzz/harfbuzz/archive/{{ version }}.tar.gz',
+    url: 'https://github.com/harfbuzz/harfbuzz/archive/{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

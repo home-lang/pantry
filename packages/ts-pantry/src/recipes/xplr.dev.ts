@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'sayanarijit/xplr',
   },
   distributable: {
-    url: 'https://github.com/sayanarijit/xplr/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/sayanarijit/xplr/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {

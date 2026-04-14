@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/dagger/dagger/archive/refs/tags/v{{ version }}.tar.gz',
+    url: 'https://github.com/dagger/dagger/archive/refs/tags/v{{version}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {
@@ -23,13 +23,13 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go build -v -ldflags="$LDFLAGS" ./cmd/dagger',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv dagger "{{ prefix }}"/bin',
+      'mkdir -p "{{prefix}}"/bin',
+      'mv dagger "{{prefix}}"/bin',
       '',
     ],
     env: {
       'CGO_ENABLED': '0',
-      'LDFLAGS': ['-s', '-w', '-X github.com/dagger/dagger/engine.Version={{ version }}'],
+      'LDFLAGS': ['-s', '-w', '-X github.com/dagger/dagger/engine.Version={{version}}'],
     },
   },
 }

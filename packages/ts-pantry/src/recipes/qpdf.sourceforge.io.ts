@@ -32,7 +32,7 @@ export const recipe: Recipe = {
       'python -m venv venv',
       'source venv/bin/activate',
       'pip install pyyaml',
-      'cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -DMAINTAINER_MODE=1 -DBUILD_STATIC_LIBS=0 -DCMAKE_INSTALL_PREFIX={{ prefix }} -DCMAKE_BUILD_TYPE=Release -DBUILD_DOC=0 -DCMAKE_CXX_STANDARD=20 -DCMAKE_CXX_STANDARD_REQUIRED=ON ..',
+      'cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -DMAINTAINER_MODE=1 -DBUILD_STATIC_LIBS=0 -DCMAKE_INSTALL_PREFIX={{prefix}} -DCMAKE_BUILD_TYPE=Release -DBUILD_DOC=0 -DCMAKE_CXX_STANDARD=20 -DCMAKE_CXX_STANDARD_REQUIRED=ON ..',
       'cmake --build .',
       'cmake --install .',
     ],

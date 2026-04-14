@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'GyulyVGC/sniffnet',
   },
   distributable: {
-    url: 'https://github.com/GyulyVGC/sniffnet/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/GyulyVGC/sniffnet/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

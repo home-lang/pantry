@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'openinterpreter.com',
   name: 'open-interpreter',
   description: 'A natural language interface for computers',
-  homepage: 'http://openinterpreter.com/',
+  homepage: 'https://openinterpreter.com/',
   github: 'https://github.com/KillianLucas/open-interpreter',
   programs: ['interpreter'],
   versionSource: {

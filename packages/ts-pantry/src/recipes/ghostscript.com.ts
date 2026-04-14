@@ -43,7 +43,7 @@ export const recipe: Recipe = {
       'rm -rf expat freetype jbig2dec lcms2mt libpng openjpeg zlib',
       'sed -i -e\'s/-mfpu=neon//g\' tesseract/CMakeLists.txt tesseract/configure.ac configure.ac configure',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
       'CC': 'clang',

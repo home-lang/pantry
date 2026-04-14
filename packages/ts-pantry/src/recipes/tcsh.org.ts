@@ -7,7 +7,7 @@ export const recipe: Recipe = {
   homepage: 'https://www.tcsh.org/',
   programs: ['csh', 'tcsh'],
   distributable: {
-    url: 'https://astron.com/pub/tcsh/tcsh-{{ version.raw }}.tar.gz',
+    url: 'https://astron.com/pub/tcsh/tcsh-{{version.raw}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

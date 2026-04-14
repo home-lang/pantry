@@ -32,8 +32,8 @@ export const recipe: Recipe = {
     script: [
       'make',
       'cd "openresty-{{version}}"',
-      './configure --prefix={{ prefix }}',
-      'make -j {{ hw.concurrency }}',
+      './configure --prefix={{prefix}}',
+      'make -j {{hw.concurrency}}',
       'make install',
       'cd "${{prefix}}/bin"',
       'ln -sf ../nginx/sbin/nginx openresty',

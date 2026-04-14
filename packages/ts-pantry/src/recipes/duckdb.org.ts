@@ -29,7 +29,7 @@ export const recipe: Recipe = {
       'git commit --allow-empty -mnil',
       'git tag v{{version}}',
       'cmake ..',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'mkdir -p "{{prefix}}"/bin',
       'mv duckdb "{{prefix}}"/bin',
     ],

@@ -46,7 +46,7 @@ export const recipe: Recipe = {
       'export MACOSX_DEPLOYMENT_TARGET=13.4',
       './autogen.sh',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       'cd "{{prefix}}/lib"',
       'ln -s python{{deps.python.org.version.marketing}} python{{deps.python.org.version.major}} || true',
       'cd "{{prefix}}/lib/pkgconfig"',

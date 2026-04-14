@@ -19,6 +19,9 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'echo "Build not yet configured for yt-dlp.org"',    ],
+      'mkdir -p {{prefix}}/bin',
+      'cp yt-dlp {{prefix}}/bin/yt-dlp',
+      'chmod +x {{prefix}}/bin/yt-dlp',
+    ],
   },
 }

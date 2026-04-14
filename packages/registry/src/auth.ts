@@ -11,7 +11,7 @@
  * - Passwords are hashed with Argon2id (Bun.password.hash)
  * - API tokens are stored as SHA-256 hashes (raw token shown only once at creation)
  * - Session tokens are stored as SHA-256 hashes
- * - All tokens use crypto.randomUUID for generation
+ * - All tokens use crypto.randomBytes(32) for generation (256-bit entropy)
  */
 
 import * as crypto from 'node:crypto'
@@ -189,6 +189,9 @@ export class AuthService {
   ): Promise<{ token: string, info: ApiTokenInfo }> {
     if (!name || name.trim().length === 0) {
       throw new AuthError('Token name is required', 400)
+    }
+    if (name.length > 255) {
+      throw new AuthError('Token name must be 255 characters or fewer', 400)
     }
 
     const rawToken = generateApiToken()

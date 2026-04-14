@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'luajit.org',
   name: 'luajit',
   description: 'Mirror of the LuaJIT git repository',
-  homepage: 'http://luajit.org',
+  homepage: 'https://luajit.org',
   github: 'https://github.com/LuaJIT/LuaJIT',
   programs: ['luajit', 'luajit-{{version.marketing}}.'],
   versionSource: {

@@ -42,7 +42,7 @@ export const recipe: Recipe = {
       'fi',
       './autogen.sh',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       '',
     ],
     env: {

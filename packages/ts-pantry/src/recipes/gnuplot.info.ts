@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'gnuplot.info',
   name: 'gnuplot',
   description: 'Command-driven, interactive function plotting',
-  homepage: 'http://www.gnuplot.info/',
+  homepage: 'https://www.gnuplot.info/',
   programs: ['gnuplot'],
   distributable: {
     url: 'https://downloads.sourceforge.net/project/gnuplot/gnuplot/{{version}}/gnuplot-{{version}}.tar.gz',
@@ -23,7 +23,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       '',
     ],
     env: {

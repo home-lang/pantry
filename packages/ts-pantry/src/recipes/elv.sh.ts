@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/elves/elvish/archive/refs/tags/v{{ version }}.tar.gz',
+    url: 'https://github.com/elves/elvish/archive/refs/tags/v{{version}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {
@@ -22,7 +22,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build -ldflags="$LDFLAGS" -o "{{ prefix }}/bin/elvish" ./cmd/elvish',
+      'go build -ldflags="$LDFLAGS" -o "{{prefix}}/bin/elvish" ./cmd/elvish',
     ],
     env: {
       'LDFLAGS': ['-s', '-w', '-X', 'src.elv.sh/pkg/buildinfo.VersionSuffix='],

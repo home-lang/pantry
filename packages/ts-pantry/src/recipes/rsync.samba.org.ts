@@ -24,7 +24,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
       'ARGS': ['--disable-debug', '--prefix={{prefix}}', '--with-rsyncd-conf={{prefix}}/rsyncd.conf', '--with-included-popt=yes', '--with-included-zlib=no', '--disable-openssl', '--enable-ipv6', '--disable-xxhash'],

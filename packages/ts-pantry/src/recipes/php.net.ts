@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^php-(.+)$/,
   },
   distributable: {
-    url: 'https://www.php.net/distributions/php-{{ version }}.tar.gz',
+    url: 'https://www.php.net/distributions/php-{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

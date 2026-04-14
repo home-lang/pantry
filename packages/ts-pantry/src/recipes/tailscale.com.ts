@@ -18,8 +18,8 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/tailscale ./cmd/tailscale',
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/tailscaled ./cmd/tailscaled',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{prefix}}"/bin/tailscale ./cmd/tailscale',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{prefix}}"/bin/tailscaled ./cmd/tailscaled',
     ],
     env: {
       'GO_LDFLAGS': ['-s', '-w', '-X tailscale.com/version.longStamp={{version}}-pkgx', '-X tailscale.com/version.shortStamp={{version}}', '-X tailscale.com/version.gitCommitStamp=pkgx'],

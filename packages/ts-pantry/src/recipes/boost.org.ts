@@ -19,9 +19,9 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      './bootstrap.sh --prefix={{ prefix }}',
+      './bootstrap.sh --prefix={{prefix}}',
       './b2 $ARGS',
-      'run: |',
+      './b2 install',
     ],
   },
 }

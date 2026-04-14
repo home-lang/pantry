@@ -19,6 +19,9 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'echo "Build not yet configured for sphinx-doc.org"',    ],
+      'bkpyvenv stage {{prefix}} {{version}}',
+      '${{prefix}}/venv/bin/pip install .',
+      'bkpyvenv seal {{prefix}} sphinx-apidoc sphinx-autogen sphinx-build sphinx-quickstart',
+    ],
   },
 }

@@ -6,7 +6,7 @@
 #   download.sh --config deps.yaml
 #   download.sh --package php.net --version 8.4.17
 
-set -e
+set -euo pipefail
 
 # Config
 PANTRY_HOME="${PANTRY_HOME:-$HOME/.pantry}"
@@ -173,14 +173,15 @@ download_package() {
     fi
   fi
 
-  # Extract
+  # Extract (with safety flags)
   log "   Extracting..."
-  tar -xzf "$tarball_tmp" -C "$install_dir"
+  tar -xzf "$tarball_tmp" -C "$install_dir" --no-same-owner \
+    --exclude='../*' --exclude='*/../*'
   rm "$tarball_tmp"
 
-  # Make binaries executable
+  # Make binaries executable (safely)
   if [[ -d "$install_dir/bin" ]]; then
-    chmod +x "$install_dir/bin"/* 2>/dev/null || true
+    find "$install_dir/bin" -maxdepth 1 -type f -exec chmod +x {} + 2>/dev/null || true
   fi
 
   log "   ${GREEN}✓${NC} Installed to $install_dir"

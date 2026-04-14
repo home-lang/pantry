@@ -22,7 +22,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/depot ./cmd/depot',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{prefix}}"/bin/depot ./cmd/depot',
     ],
     env: {
       'GO_LDFLAGS': ['-s', '-w', '-X github.com/depot/cli/internal/build.Version={{version}}', '-X github.com/depot/cli/internal/build.Date="$(date +%F)"', '-X github.com/depot/cli/internal/build.SentryEnvironment=release'],

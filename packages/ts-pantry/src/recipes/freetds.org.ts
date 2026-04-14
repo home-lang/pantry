@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://www.freetds.org/files/stable/freetds-{{ version }}.tar.gz',
+    url: 'https://www.freetds.org/files/stable/freetds-{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {
@@ -33,7 +33,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install -i',
+      'make --jobs {{hw.concurrency}} install -i',
       'cmake -S . -B build $CMAKE_ARGS',
       'cmake --build build',
       'cmake --install build',

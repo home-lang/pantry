@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'bore.pub',
   name: 'bore',
   description: 'Modern, simple TCP tunnel in Rust that exposes local ports to a remote server',
-  homepage: 'http://bore.pub',
+  homepage: 'https://bore.pub',
   github: 'https://github.com/ekzhang/bore',
   programs: ['bore'],
   versionSource: {
@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/ekzhang/bore/archive/refs/tags/v{{ version }}.tar.gz',
+    url: 'https://github.com/ekzhang/bore/archive/refs/tags/v{{version}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {

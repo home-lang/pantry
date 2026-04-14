@@ -31,7 +31,7 @@ export const recipe: Recipe = {
     script: [
       'autoreconf -i',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
       'ARGS': ['--prefix="{{prefix}}"'],

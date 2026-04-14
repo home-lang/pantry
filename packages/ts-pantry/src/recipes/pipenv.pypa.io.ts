@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'pypa/pipenv',
   },
   distributable: {
-    url: 'https://github.com/pypa/pipenv/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/pypa/pipenv/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

@@ -34,7 +34,7 @@ export const recipe: Recipe = {
       'cargo install --locked --path . --root {{prefix}}',
     ],
     env: {
-      'PROTOC_INCLUDE': '{{ deps.protobuf.dev.prefix }}/include',
+      'PROTOC_INCLUDE': '{{deps.protobuf.dev.prefix}}/include',
     },
   },
 }

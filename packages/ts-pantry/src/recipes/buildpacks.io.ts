@@ -21,11 +21,11 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/pack ./cmd/pack',
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/pack .',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{prefix}}"/bin/pack ./cmd/pack',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{prefix}}"/bin/pack .',
     ],
     env: {
-      'GO_LDFLAGS': ['-s', '-w', '-X github.com/buildpacks/pack.Version={{ version }}', '-X github.com/buildpacks/pack/pkg/client.Version={{ version }}'],
+      'GO_LDFLAGS': ['-s', '-w', '-X github.com/buildpacks/pack.Version={{version}}', '-X github.com/buildpacks/pack/pkg/client.Version={{version}}'],
     },
   },
 }

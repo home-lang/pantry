@@ -19,6 +19,8 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'echo "Build not yet configured for youtube-dl.org"',    ],
+      'make PREFIX={{prefix}}',
+      'make install PREFIX={{prefix}}',
+    ],
   },
 }

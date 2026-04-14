@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'PaulJuliusMartinez/jless',
   },
   distributable: {
-    url: 'https://github.com/PaulJuliusMartinez/jless/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/PaulJuliusMartinez/jless/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {

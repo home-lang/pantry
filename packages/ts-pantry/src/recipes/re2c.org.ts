@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'skvadrik/re2c',
   },
   distributable: {
-    url: 'https://github.com/skvadrik/re2c/releases/download/{{ version.raw }}/re2c-{{ version.raw }}.tar.xz',
+    url: 'https://github.com/skvadrik/re2c/releases/download/{{version.raw}}/re2c-{{version.raw}}.tar.xz',
     stripComponents: 1,
   },
   buildDependencies: {
@@ -22,7 +22,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
       'ARGS': ['--prefix="{{prefix}}"'],

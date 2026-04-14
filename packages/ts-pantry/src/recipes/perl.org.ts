@@ -12,14 +12,14 @@ export const recipe: Recipe = {
     repo: 'perl/perl5',
   },
   distributable: {
-    url: 'https://www.cpan.org/src/{{ version.major }}.0/perl-{{ version }}.tar.xz',
+    url: 'https://www.cpan.org/src/{{version.major}}.0/perl-{{version}}.tar.xz',
     stripComponents: 1,
   },
 
   build: {
     script: [
       './Configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       '',
       'cd "{{prefix}}"/bin',
       'for x in *; do',

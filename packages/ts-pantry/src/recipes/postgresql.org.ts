@@ -36,7 +36,7 @@ export const recipe: Recipe = {
       'export CFLAGS="$(echo $CFLAGS | tr \' \' \'\\n\' | sed -e \'/^-w$/d\' | tr \'\\n\' \' \')"',
       'sed -i \'s|\\([^\\t]*sgml.*\\)$|#\\1|\' GNUmakefile.in doc/src/Makefile',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'make install-world',
     ],
     env: {

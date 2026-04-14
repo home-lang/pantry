@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'tmate-io/tmate',
   },
   distributable: {
-    url: 'https://github.com/tmate-io/tmate/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/tmate-io/tmate/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

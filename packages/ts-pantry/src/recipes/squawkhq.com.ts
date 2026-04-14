@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'sbdchd/squawk',
   },
   distributable: {
-    url: 'https://github.com/sbdchd/squawk/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/sbdchd/squawk/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {
@@ -25,7 +25,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'cd crates/squawk',
-      'sed -i \'1,/dependencies/s/version = ".*"/version = "{{ version }}"/\' Cargo.toml',
+      'sed -i \'1,/dependencies/s/version = ".*"/version = "{{version}}"/\' Cargo.toml',
       'cargo install --path . --root {{prefix}}',
     ],
   },

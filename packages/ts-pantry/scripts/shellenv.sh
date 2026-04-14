@@ -6,6 +6,10 @@
 # Or for a global install:
 #   eval "$(pantry shellenv)"
 
+# NOTE: Cannot use `set -u` here because this is sourced into users' shells —
+# strict-unset would break their interactive sessions. All variables must be
+# defensively quoted and defaulted instead.
+
 PANTRY_HOME="${PANTRY_HOME:-$HOME/.pantry}"
 PANTRY_SCRIPT_DIR="${PANTRY_SCRIPT_DIR:-$(dirname "${BASH_SOURCE[0]:-$0}")}"
 PANTRY_BUCKET="${PANTRY_BUCKET:-pantry-registry}"
@@ -324,10 +328,10 @@ pantry() {
             fi
           fi
 
-          tar -xzf "$tmp" -C "$install_dir" 2>/dev/null
+          tar -xzf "$tmp" -C "$install_dir" --no-same-owner --exclude='../*' --exclude='*/../*' 2>/dev/null
           rm -f "$tmp"
-          [[ -d "$install_dir/bin" ]] && chmod +x "$install_dir/bin"/* 2>/dev/null
-          [[ -d "$install_dir/sbin" ]] && chmod +x "$install_dir/sbin"/* 2>/dev/null
+          [[ -d "$install_dir/bin" ]] && find "$install_dir/bin" -maxdepth 1 -type f -exec chmod +x {} + 2>/dev/null
+          [[ -d "$install_dir/sbin" ]] && find "$install_dir/sbin" -maxdepth 1 -type f -exec chmod +x {} + 2>/dev/null
 
           ver="$version"
           echo -e "  ${_pantry_green}installed${_pantry_reset}  ${pkg}@${version}"

@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'jenv.be',
   name: 'jenv',
   description: 'Manage your Java environment ',
-  homepage: 'http://www.jenv.be',
+  homepage: 'https://www.jenv.be',
   github: 'https://github.com/jenv/jenv',
   programs: ['jenv'],
   versionSource: {

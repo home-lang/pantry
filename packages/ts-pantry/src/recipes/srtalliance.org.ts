@@ -26,7 +26,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'cmake . $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
       'ARGS': ['-DWITH_OPENSSL_INCLUDEDIR={{deps.openssl.prefix}}/include', '-DWITH_OPENSSL_LIBDIR={{deps.openssl.prefix}}/lib', '-DCMAKE_INSTALL_BINDIR=bin', '-DCMAKE_INSTALL_LIBDIR=lib', '-DCMAKE_INSTALL_INCLUDEDIR=include', '-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF'],

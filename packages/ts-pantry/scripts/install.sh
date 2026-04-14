@@ -9,7 +9,7 @@
 #
 # NO DEPENDENCIES REQUIRED - just bash and curl (pre-installed on Mac/Linux)
 
-set -e
+set -euo pipefail
 
 # Colors
 GREEN='\033[0;32m'
@@ -130,13 +130,16 @@ download_package() {
     return 1
   fi
 
-  # Extract
+  # Extract (with safety flags to prevent zip-slip / absolute path attacks)
   log "   Extracting..."
-  tar -xzf "$tmp" -C "$install_dir"
+  tar -xzf "$tmp" -C "$install_dir" --no-same-owner \
+    --exclude='../*' --exclude='*/../*'
   rm "$tmp"
 
-  # Make executable
-  [[ -d "$install_dir/bin" ]] && chmod +x "$install_dir/bin"/* 2>/dev/null || true
+  # Make executable (safely — handles names with spaces/globs)
+  if [[ -d "$install_dir/bin" ]]; then
+    find "$install_dir/bin" -maxdepth 1 -type f -exec chmod +x {} + 2>/dev/null || true
+  fi
 
   log "   ${GREEN}✓${NC} Installed"
   return 0

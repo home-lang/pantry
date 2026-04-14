@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'lavv17/lftp',
   },
   distributable: {
-    url: 'http://ftp.st.ryukoku.ac.jp/pub/network/ftp/lftp/lftp-{{ version }}.tar.xz',
+    url: 'http://ftp.st.ryukoku.ac.jp/pub/network/ftp/lftp/lftp-{{version}}.tar.xz',
     stripComponents: 1,
   },
   dependencies: {
@@ -28,7 +28,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
       'ARGS': ['--prefix="{{prefix}}"', '--with-openssl="{{deps.openssl.org.prefix}}"', '--with-readline="{{deps.gnu.org/readline.prefix}}"', '--with-libidn2="{{deps.gnu.org/libidn2.prefix}}"'],

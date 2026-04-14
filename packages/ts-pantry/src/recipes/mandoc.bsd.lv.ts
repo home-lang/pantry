@@ -23,8 +23,8 @@ export const recipe: Recipe = {
       'cat $PROP >configure.local',
       '',
       './configure',
-      'make --jobs {{ hw.concurrency }}',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}}',
+      'make --jobs {{hw.concurrency}} install',
     ],
   },
 }

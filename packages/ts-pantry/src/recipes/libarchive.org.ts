@@ -29,7 +29,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'make install',
       'cd "{{prefix}}/lib/pkgconfig"',
       'perl -ni -e \'print unless /Requires\\.private:.*iconv/\' libarchive.pc',

@@ -29,7 +29,7 @@ export const recipe: Recipe = {
       'cd "../cmake"',
       'sed -i \'/libprotobuf PRIVATE atomic/s/^/#/\' protobuf-configure-target.cmake',
       'cmake .. $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
       'ARGS': ['-Dprotobuf_BUILD_LIBPROTOC=ON', '-Dprotobuf_BUILD_SHARED_LIBS=ON', '-Dprotobuf_INSTALL_EXAMPLES=OFF', '-Dprotobuf_BUILD_TESTS=OFF', '-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release', '-Dprotobuf_ABSL_PROVIDER=package', '-DCMAKE_PREFIX_PATH={{deps.abseil.io.prefix}}', '-Dprotobuf_FORCE_FETCH_DEPENDENCIES=OFF', '-Dprotobuf_LOCAL_DEPENDENCIES_ONLY=ON'],

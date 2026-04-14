@@ -21,7 +21,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       'sed -i\'\' -e \'s|#!/.* -s|#!/usr/bin/env python|g\' {{prefix}}/bin/itstool',
     ],
     env: {

@@ -11,7 +11,7 @@ export const recipe: Recipe = {
     repo: 'vlang/v',
   },
   distributable: {
-    url: 'https://github.com/vlang/v/archive/refs/tags/{{ version.raw }}.tar.gz',
+    url: 'https://github.com/vlang/v/archive/refs/tags/{{version.raw}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {

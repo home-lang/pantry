@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'zlib.net',
   name: 'zlib',
   description: 'A massively spiffy yet delicately unobtrusive compression library.',
-  homepage: 'http://zlib.net/',
+  homepage: 'https://zlib.net/',
   github: 'https://github.com/madler/zlib',
   programs: [],
   versionSource: {
@@ -19,7 +19,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure --prefix="{{prefix}}"',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
     ],
   },
 }

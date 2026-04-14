@@ -20,13 +20,6 @@ export const recipe: Recipe = {
     script: [
       'mvn clean package -Dmaven.javadoc.skip=true',
       'install -D modules/openapi-generator-cli/target/openapi-generator-cli.jar {{prefix}}/libexec/lib/openapi-generator-cli.jar',
-      'run: |',
-      'cp $FIXTURE minimal.yaml',
-      'openapi-generator generate -i minimal.yaml -g openapi -o out',
-      'openapi-generator generate -i minimal.yaml -g python -o out',
-      'ls out | grep openapi.json',
-      'ls out | grep setup.py',
-      'openapi-generator --version | grep {{version}}',
     ],
   },
 }

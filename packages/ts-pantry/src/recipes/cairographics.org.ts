@@ -7,7 +7,7 @@ export const recipe: Recipe = {
   homepage: 'https://cairographics.org/',
   programs: ['cairo-trace'],
   distributable: {
-    url: 'https://cairographics.org/releases/cairo-{{ version }}.tar.xz',
+    url: 'https://cairographics.org/releases/cairo-{{version}}.tar.xz',
     stripComponents: 1,
   },
   dependencies: {
@@ -34,16 +34,16 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      './configure --prefix={{ prefix }} --disable-dependency-tracking',
-      'make --jobs {{ hw.concurrency }}',
+      './configure --prefix={{prefix}} --disable-dependency-tracking',
+      'make --jobs {{hw.concurrency}}',
       'make install',
       '',
-      'meson setup build --prefix={{ prefix }} --buildtype=release $ARGS',
+      'meson setup build --prefix={{prefix}} --buildtype=release $ARGS',
       'ninja -C build',
       'ninja -C build install',
       '',
       'rm -rf {{prefix}}/share',
-      'cd "${{ prefix }}/lib"',
+      'cd "${{prefix}}/lib"',
       'if [ -d cairo ]; then',
       '  tmp_dir=cairo',
       'else',

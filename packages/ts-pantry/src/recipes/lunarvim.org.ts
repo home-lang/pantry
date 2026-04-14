@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'LunarVim/LunarVim',
   },
   distributable: {
-    url: 'https://github.com/LunarVim/LunarVim/archive/{{ version }}.tar.gz',
+    url: 'https://github.com/LunarVim/LunarVim/archive/{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {
@@ -41,11 +41,11 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'INSTALL_PREFIX': '{{ prefix }}',
-      'LV_INSTALL_PREFIX': '{{ prefix }}',
-      'XDG_DATA_HOME': '{{ prefix }}/share',
-      'XDG_CACHE_HOME': '{{ prefix }}/.cache',
-      'XDG_CONFIG_HOME': '{{ prefix }}/.config',
+      'INSTALL_PREFIX': '{{prefix}}',
+      'LV_INSTALL_PREFIX': '{{prefix}}',
+      'XDG_DATA_HOME': '{{prefix}}/share',
+      'XDG_CACHE_HOME': '{{prefix}}/.cache',
+      'XDG_CONFIG_HOME': '{{prefix}}/.config',
     },
   },
 }

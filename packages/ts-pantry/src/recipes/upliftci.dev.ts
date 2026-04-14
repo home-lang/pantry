@@ -22,7 +22,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go mod download',
-      'mkdir -p "{{ prefix }}"/bin',
+      'mkdir -p "{{prefix}}"/bin',
       'go build -v -trimpath -ldflags="$LDFLAGS" -o $BUILDLOC ./cmd/uplift',
       '',
     ],

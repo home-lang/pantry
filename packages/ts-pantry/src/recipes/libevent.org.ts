@@ -30,7 +30,7 @@ export const recipe: Recipe = {
     script: [
       './autogen.sh',
       './configure $ARGS',
-      'make V=1 --jobs {{ hw.concurrency }}',
+      'make V=1 --jobs {{hw.concurrency}}',
       'make install',
       'cd "{{prefix}}/lib/pkgconfig"',
       'sed -i -e \'s|{{deps.openssl.org.prefix}}|\\${pcfiledir}/../../../../openssl.org/v{{deps.openssl.org.version.major}}|g\' *.pc',

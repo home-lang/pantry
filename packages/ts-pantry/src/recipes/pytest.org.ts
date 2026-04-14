@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/pytest-dev/pytest/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/pytest-dev/pytest/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^OTP (.+)$/,
   },
   distributable: {
-    url: 'https://github.com/erlang/otp/releases/download/OTP-{{ version.raw }}/otp_src_{{ version.raw }}.tar.gz',
+    url: 'https://github.com/erlang/otp/releases/download/OTP-{{version.raw}}/otp_src_{{version.raw}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

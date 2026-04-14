@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^aria2 (.+)$/,
   },
   distributable: {
-    url: 'https://github.com/aria2/aria2/releases/download/release-{{ version }}/aria2-{{ version }}.tar.xz',
+    url: 'https://github.com/aria2/aria2/releases/download/release-{{version}}/aria2-{{version}}.tar.xz',
     stripComponents: 1,
   },
   dependencies: {

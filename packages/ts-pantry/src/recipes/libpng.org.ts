@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'libpng.org',
   name: 'libpng',
   description: 'LIBPNG: Portable Network Graphics support, official libpng repository',
-  homepage: 'http://www.libpng.org/pub/png/libpng.html',
+  homepage: 'https://www.libpng.org/pub/png/libpng.html',
   github: 'https://github.com/glennrp/libpng',
   programs: ['libpng-config', 'libpng16-config', 'png-fix-itxt', 'pngfix'],
   versionSource: {
@@ -19,6 +19,9 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'echo "Build not yet configured for libpng.org"',    ],
+      './configure --prefix={{prefix}}',
+      'make --jobs {{hw.concurrency}}',
+      'make install',
+    ],
   },
 }

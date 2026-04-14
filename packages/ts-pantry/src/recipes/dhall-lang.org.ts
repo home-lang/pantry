@@ -13,7 +13,6 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'run: |',
       'cabal v2-update',
       'mkdir -p {{prefix}}/bin',
       'cabal v2-install $ARGS',

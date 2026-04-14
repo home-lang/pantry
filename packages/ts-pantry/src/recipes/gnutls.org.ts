@@ -5,7 +5,7 @@ export const recipe: Recipe = {
   name: 'gnutls',
   programs: ['certtool', 'danetool', 'gnutls-cli', 'gnutls-cli-debug', 'gnutls-serv', 'ocsptool', 'p11tool', 'psktool'],
   distributable: {
-    url: 'https://www.gnupg.org/ftp/gcrypt/gnutls/v{{ version.marketing }}/gnutls-{{ version.raw }}.tar.xz',
+    url: 'https://www.gnupg.org/ftp/gcrypt/gnutls/v{{version.marketing}}/gnutls-{{version.raw}}.tar.xz',
     stripComponents: 1,
   },
   dependencies: {
@@ -22,10 +22,10 @@ export const recipe: Recipe = {
       'cd "lib/accelerated/aarch64/"',
       'sed -i.bak -e \'s/-march=all/-mcpu=generic/\' Makefile.am Makefile.in',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
-      'ARGS': ['--prefix={{ prefix }}', '--disable-guile', '--disable-doc', '--with-included-unistring'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-guile', '--disable-doc', '--with-included-unistring'],
     },
   },
 }

@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'po4a.org',
   name: 'po4a',
   description: 'Maintain the translations of your documentation with ease  (PO for anything)',
-  homepage: 'http://po4a.org/',
+  homepage: 'https://po4a.org/',
   github: 'https://github.com/mquinson/po4a',
   programs: ['msguntypot', 'po4a', 'po4a-display-man', 'po4a-display-pod', 'po4a-gettextize', 'po4a-normalize', 'po4a-updatepo', 'podselect'],
   versionSource: {

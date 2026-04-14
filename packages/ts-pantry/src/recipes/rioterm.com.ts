@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'raphamorim/rio',
   },
   distributable: {
-    url: 'https://github.com/raphamorim/rio/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/raphamorim/rio/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {

@@ -5,7 +5,7 @@ export const recipe: Recipe = {
   name: 'pcsc-lite',
   programs: ['pcscd'],
   distributable: {
-    url: 'https://pcsclite.apdu.fr/files/pcsc-lite-{{ version }}.tar.xz',
+    url: 'https://pcsclite.apdu.fr/files/pcsc-lite-{{version}}.tar.xz',
     stripComponents: 1,
   },
   dependencies: {
@@ -58,7 +58,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--disable-dependency-tracking', '--disable-silent-rules', '--prefix={{ prefix }}', '--sysconfdir=/etc', '--disable-polkit'],
+      'ARGS': ['--disable-dependency-tracking', '--disable-silent-rules', '--prefix={{prefix}}', '--sysconfdir=/etc', '--disable-polkit'],
       'MESON_ARGS': ['--prefix={{prefix}}', '--sbindir={{prefix}}/sbin', '--buildtype=release', '-Dpolkit=false'],
     },
   },

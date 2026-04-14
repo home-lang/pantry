@@ -23,8 +23,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'goreleaser build --clean --single-target --skip=validate',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv dist/oras_$PLATFORM/oras "{{ prefix }}"/bin',
+      'mkdir -p "{{prefix}}"/bin',
+      'mv dist/oras_$PLATFORM/oras "{{prefix}}"/bin',
     ],
     env: {
       'CGO_ENABLED': '0',

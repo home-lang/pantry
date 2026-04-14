@@ -1,5 +1,6 @@
 import type { Dependency, DependencyResolutionResult, DependencyResolverOptions } from './dependency-resolver'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { deduplicateDependencies, parseDependencyFile, resolveDependencyFile, resolveTransitiveDependencies } from './dependency-resolver'
@@ -162,18 +163,18 @@ export async function resolveDependenciesFromYaml(
   yamlContent: string,
   options: PantryResolverOptions = {},
 ): Promise<PantryInstallResult> {
-  // Create a temporary file
-  const tempFile = path.join(process.cwd(), `.temp-deps-${Date.now()}.yaml`)
+  // Create a secure private temp directory so other processes can't tamper with the file
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pantry-deps-'))
+  const tempFile = path.join(tempDir, 'deps.yaml')
 
   try {
-    fs.writeFileSync(tempFile, yamlContent, 'utf-8')
+    fs.writeFileSync(tempFile, yamlContent, { encoding: 'utf-8', mode: 0o600 })
     return await resolveDependencies(tempFile, options)
   }
   finally {
-    // Clean up temp file
-    if (fs.existsSync(tempFile)) {
-      fs.unlinkSync(tempFile)
-    }
+    // Clean up temp dir (handles both file and dir cleanup atomically)
+    try { fs.rmSync(tempDir, { recursive: true, force: true }) }
+    catch { /* ignore */ }
   }
 }
 

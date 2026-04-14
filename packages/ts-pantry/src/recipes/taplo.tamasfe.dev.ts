@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'tamasfe/taplo',
   },
   distributable: {
-    url: 'https://github.com/tamasfe/taplo/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/tamasfe/taplo/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {

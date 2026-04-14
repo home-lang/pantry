@@ -5,7 +5,7 @@ export const recipe: Recipe = {
   name: 'libssh',
   programs: [],
   distributable: {
-    url: 'https://www.libssh.org/files/{{ version.major }}.{{ version.minor }}/libssh-{{ version }}.tar.xz',
+    url: 'https://www.libssh.org/files/{{version.major}}.{{version.minor}}/libssh-{{version}}.tar.xz',
     stripComponents: 1,
   },
   dependencies: {
@@ -20,7 +20,7 @@ export const recipe: Recipe = {
     script: [
       'cmake .. $ARGS',
       'make install',
-      'mv src/libssh.a {{ prefix }}/lib',
+      'mv src/libssh.a {{prefix}}/lib',
       '',
     ],
     env: {

@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'pkgxdev/pkgx',
   },
   distributable: {
-    url: 'https://github.com/pkgxdev/pkgx/releases/download/v{{ version }}/pkgx-{{ version }}.tar.xz',
+    url: 'https://github.com/pkgxdev/pkgx/releases/download/v{{version}}/pkgx-{{version}}.tar.xz',
     stripComponents: 1,
   },
   buildDependencies: {

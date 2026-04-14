@@ -22,8 +22,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'meson $ARGS ..',
-      'ninja -j {{ hw.concurrency }}',
-      'ninja -j {{ hw.concurrency }} install',
+      'ninja -j {{hw.concurrency}}',
+      'ninja -j {{hw.concurrency}} install',
     ],
     env: {
       'ARGS': ['--prefix="{{prefix}}"', '--libdir="{{prefix}}/lib"', '--buildtype=release', '--wrap-mode=nofallback'],

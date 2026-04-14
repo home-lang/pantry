@@ -22,7 +22,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'cmake $ARGS ..',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'make install',
     ],
     env: {

@@ -22,7 +22,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure --prefix="{{prefix}}" --with-swiglibdir={{prefix}}/lib',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'make install',
       '',
     ],

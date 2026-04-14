@@ -7,7 +7,7 @@ export const recipe: Recipe = {
   homepage: 'https://graphviz.org/',
   programs: ['acyclic', 'bcomps', 'ccomps', 'circo', 'cluster', 'dijkstra', 'dot', 'dot2gxl', 'dot_builtins', 'edgepaint', 'fdp', 'gc', 'gml2gv', 'graphml2gv', 'gv2gml', 'gv2gxl', 'gvcolor', 'gvgen', 'gvmap', 'gvmap.sh', 'gvpack', 'gvpr', 'gxl2dot', 'gxl2gv', 'mm2gv', 'neato', 'nop', 'osage', 'patchwork', 'prune', 'sccmap', 'sfdp', 'tred', 'twopi', 'unflatten'],
   distributable: {
-    url: 'https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/{{ version }}/graphviz-{{ version }}.tar.gz',
+    url: 'https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/{{version}}/graphviz-{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {
@@ -26,7 +26,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       'cd "${{prefix}}/lib"',
       'rm *.la',
     ],

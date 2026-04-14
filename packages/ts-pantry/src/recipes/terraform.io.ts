@@ -24,7 +24,7 @@ export const recipe: Recipe = {
       'EXTRA="-mod=mod"',
       'sed -i \'/tlskyber/s|^|// |\' go.mod',
       'go mod download',
-      'go build -v -ldflags="$LDFLAGS" $EXTRA -o "{{ prefix }}/bin/terraform"',
+      'go build -v -ldflags="$LDFLAGS" $EXTRA -o "{{prefix}}/bin/terraform"',
     ],
     env: {
       'GO111MODULE': 'on',

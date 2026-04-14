@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'k3d-io/k3d',
   },
   distributable: {
-    url: 'https://github.com/k3d-io/k3d/archive/refs/tags/v{{ version }}.tar.gz',
+    url: 'https://github.com/k3d-io/k3d/archive/refs/tags/v{{version}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {
@@ -21,7 +21,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'make build BINDIR={{ prefix }}/bin GIT_TAG_OVERRIDE={{ version }}',
+      'make build BINDIR={{prefix}}/bin GIT_TAG_OVERRIDE={{version}}',
       '',
     ],
   },

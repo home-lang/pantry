@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'openblas.net',
   name: 'openblas',
   description: 'OpenBLAS is an optimized BLAS library based on GotoBLAS2 1.13 BSD version. ',
-  homepage: 'http://www.openblas.net',
+  homepage: 'https://www.openblas.net',
   github: 'https://github.com/xianyi/OpenBLAS',
   programs: [],
   versionSource: {
@@ -22,7 +22,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'cmake .. $ARGS',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'make install',
       'cd "${{prefix}}/include"',
       'if test -d openblas/openblas; then rm -r openblas/openblas; fi',

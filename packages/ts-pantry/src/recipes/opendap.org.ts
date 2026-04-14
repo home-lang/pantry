@@ -33,9 +33,9 @@ export const recipe: Recipe = {
       'curl $PATCH | patch -p1 || true',
       'autoreconf --force --install --verbose',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }}',
-      'make --jobs {{ hw.concurrency }} check',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}}',
+      'make --jobs {{hw.concurrency}} check',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
       'ARGS': ['--prefix={{prefix}}', '--disable-dependency-tracking', '--disable-debug', '--with-included-regex'],

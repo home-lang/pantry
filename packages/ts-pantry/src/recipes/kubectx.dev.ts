@@ -23,8 +23,8 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build -o \'{{ prefix }}/bin/kubectx\' ./cmd/kubectx',
-      'go build -o \'{{ prefix }}/bin/kubens\' ./cmd/kubens',
+      'go build -o \'{{prefix}}/bin/kubectx\' ./cmd/kubectx',
+      'go build -o \'{{prefix}}/bin/kubens\' ./cmd/kubens',
     ],
     env: {
       'CGO_ENABLED': '0',

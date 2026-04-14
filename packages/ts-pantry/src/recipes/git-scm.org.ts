@@ -20,7 +20,7 @@ export const recipe: Recipe = {
     script: [
       'mv props/config.mak .',
       './configure',
-      'make install --jobs {{ hw.concurrency }} NO_TCLTK=1',
+      'make install --jobs {{hw.concurrency}} NO_TCLTK=1',
     ],
   },
 }

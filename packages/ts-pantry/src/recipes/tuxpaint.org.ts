@@ -34,7 +34,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'patch -p1 < props/relocatable.patch',
-      'make --jobs {{ hw.concurrency }} $ARGS ARCH_CFLAGS="-I{{deps.ferzkopp.net/SDL2_gfx.prefix}}/include/SDL2 -I{{deps.libsdl.org/SDL_image.prefix}}/include/SDL2 -I{{deps.libsdl.org/SDL_mixer.prefix}}/include/SDL2 -I{{deps.libsdl.org/SDL_ttf.prefix}}/include/SDL2"',
+      'make --jobs {{hw.concurrency}} $ARGS ARCH_CFLAGS="-I{{deps.ferzkopp.net/SDL2_gfx.prefix}}/include/SDL2 -I{{deps.libsdl.org/SDL_image.prefix}}/include/SDL2 -I{{deps.libsdl.org/SDL_mixer.prefix}}/include/SDL2 -I{{deps.libsdl.org/SDL_ttf.prefix}}/include/SDL2"',
       'make $ARGS install',
     ],
     env: {

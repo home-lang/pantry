@@ -26,7 +26,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'cmake $ARGS -G "Unix Makefiles" ..',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'make install',
     ],
     env: {

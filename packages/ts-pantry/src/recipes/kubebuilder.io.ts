@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'kubebuilder.io',
   name: 'kubebuilder',
   description: 'Kubebuilder - SDK for building Kubernetes APIs using CRDs',
-  homepage: 'http://book.kubebuilder.io',
+  homepage: 'https://book.kubebuilder.io',
   github: 'https://github.com/kubernetes-sigs/kubebuilder',
   programs: ['kubebuilder'],
   versionSource: {

@@ -24,9 +24,9 @@ export const recipe: Recipe = {
     script: [
       'autoreconf -fvi',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       '# FIXME: gts-config prevents relocatability with absolute paths',
-      'rm {{ prefix }}/bin/gts-config',
+      'rm {{prefix}}/bin/gts-config',
       '',
     ],
     env: {

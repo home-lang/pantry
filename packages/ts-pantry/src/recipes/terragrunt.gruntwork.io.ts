@@ -27,7 +27,7 @@ export const recipe: Recipe = {
       'go build -v -ldflags="$LDFLAGS" -o "{{prefix}}"/bin/terragrunt',
     ],
     env: {
-      'LDFLAGS': ['-s', '-w', '-X=main.VERSION={{ version }}', '-X=github.com/gruntwork-io/go-commons/version.Version={{ version }}'],
+      'LDFLAGS': ['-s', '-w', '-X=main.VERSION={{version}}', '-X=github.com/gruntwork-io/go-commons/version.Version={{version}}'],
     },
   },
 }

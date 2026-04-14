@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'pugixml.org',
   name: 'pugixml',
   description: 'Light-weight, simple and fast XML parser for C++ with XPath support',
-  homepage: 'http://pugixml.org/',
+  homepage: 'https://pugixml.org/',
   github: 'https://github.com/zeux/pugixml',
   programs: [],
   versionSource: {

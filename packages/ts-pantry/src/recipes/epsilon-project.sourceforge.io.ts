@@ -15,7 +15,7 @@ export const recipe: Recipe = {
     script: [
       'autoreconf --force --install --verbose',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       'epsilon --version | grep {{version}}',
     ],
   },

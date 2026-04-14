@@ -24,7 +24,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'cmake ../build/cmake -DCMAKE_INSTALL_PREFIX="{{prefix}}" -DCMAKE_BUILD_TYPE=Release',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       '',
     ],
   },

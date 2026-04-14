@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/libusb/libusb/releases/download/v{{ version }}/libusb-{{ version }}.tar.bz2',
+    url: 'https://github.com/libusb/libusb/releases/download/v{{version}}/libusb-{{version}}.tar.bz2',
     stripComponents: 1,
   },
   buildDependencies: {

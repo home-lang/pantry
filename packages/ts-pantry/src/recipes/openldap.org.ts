@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       'sed -i.bak -e \'s/SUBDIRS=\\(.*\\)\\bdoc\\b\\(.*\\)/SUBDIRS=\\1\\2/\' Makefile',
       'rm Makefile.bak',
       '',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       '',
     ],
     env: {

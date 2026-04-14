@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'pyyaml.org',
   name: 'pyyaml',
   description: 'Canonical source repository for LibYAML',
-  homepage: 'http://pyyaml.org/wiki/LibYAML',
+  homepage: 'https://pyyaml.org/wiki/LibYAML',
   github: 'https://github.com/yaml/libyaml',
   programs: [],
   versionSource: {

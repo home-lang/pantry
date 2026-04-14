@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'cpanmin.us',
   name: 'cpanm',
   description: 'cpanminus - get, unpack, build and install modules from CPAN ',
-  homepage: 'http://cpanmin.us',
+  homepage: 'https://cpanmin.us',
   github: 'https://github.com/miyagawa/cpanminus',
   programs: ['cpanm'],
   versionSource: {

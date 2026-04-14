@@ -15,7 +15,7 @@ export const recipe: Recipe = {
       '    rm -r docbook',
       'fi',
       'mkdir -p docbook/xml',
-      'VERSIONS=(4.1.2 4.2 4.3 4.4 4.5 5.0 5.1) #{{ versions }}',
+      'VERSIONS=(4.1.2 4.2 4.3 4.4 4.5 5.0 5.1) #{{versions}}',
       'for VERSION in "${VERSIONS[@]}"; do',
       '    case $VERSION in',
       '    4.1.2)',

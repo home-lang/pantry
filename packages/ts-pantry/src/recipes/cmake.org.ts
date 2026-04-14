@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'Kitware/CMake',
   },
   distributable: {
-    url: 'https://github.com/Kitware/CMake/releases/download/v{{ version }}/cmake-{{ version }}.tar.gz',
+    url: 'https://github.com/Kitware/CMake/releases/download/v{{version}}/cmake-{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {
@@ -23,12 +23,12 @@ export const recipe: Recipe = {
   build: {
     script: [
       './bootstrap $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       'rm -rf {{prefix}}/share/doc  # docs are online',
     ],
     env: {
       'V': '1',
-      'ARGS': ['--prefix={{ prefix }}', '--parallel=1', '--datadir=/var', '--docdir=/share/doc', '--mandir=/share/man', '--system-zlib', '--', '-DCMake_BUILD_LTO=ON', '-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON'],
+      'ARGS': ['--prefix={{prefix}}', '--parallel=1', '--datadir=/var', '--docdir=/share/doc', '--mandir=/share/man', '--system-zlib', '--', '-DCMake_BUILD_LTO=ON', '-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON'],
     },
   },
 }

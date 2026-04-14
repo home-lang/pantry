@@ -31,8 +31,8 @@ export const recipe: Recipe = {
     script: [
       './autogen.sh',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }}',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}}',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
       'ARGS': ['--disable-debug', '--disable-dependency-tracking', '--prefix={{prefix}}', '--libdir={{prefix}}/lib', 'RST2MAN=true'],

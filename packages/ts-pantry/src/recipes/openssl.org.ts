@@ -21,8 +21,8 @@ export const recipe: Recipe = {
     script: [
       'run: patch -p1 <props/x509_def.c.diff',
       'run: patch -p1 <props/x509_def.c.post3.4.0.diff',
-      './Configure --prefix={{ prefix }} $ARCH no-tests $ARGS --openssldir={{prefix}}/ssl',
-      'make --jobs {{ hw.concurrency }}',
+      './Configure --prefix={{prefix}} $ARCH no-tests $ARGS --openssldir={{prefix}}/ssl',
+      'make --jobs {{hw.concurrency}}',
       'make install_sw # `_sw` avoids installing docs',
       'cd "{{prefix}}"',
       'run: cp $SRCROOT/apps/openssl.cnf .',

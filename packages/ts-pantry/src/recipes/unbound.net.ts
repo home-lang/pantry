@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^release-(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/NLnetLabs/unbound/archive/refs/tags/release-{{ version }}.tar.gz',
+    url: 'https://github.com/NLnetLabs/unbound/archive/refs/tags/release-{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {
@@ -28,7 +28,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
-      'make -j {{ hw.concurrency }} install',
+      'make -j {{hw.concurrency}} install',
       '',
       'cd {{prefix}}/bin',
       'sed -i.bak -e "s|$PKGX_DIR/|\\$PKGX_DIR/|g" unbound-control-setup',
@@ -36,7 +36,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--prefix={{ prefix }}', '--sbindir={{ prefix }}/bin', '--with-ssl={{ deps.openssl.org.prefix }}', '--with-libexpat={{ deps.libexpat.github.io.prefix }}'],
+      'ARGS': ['--prefix={{prefix}}', '--sbindir={{prefix}}/bin', '--with-ssl={{deps.openssl.org.prefix}}', '--with-libexpat={{deps.libexpat.github.io.prefix}}'],
     },
   },
 }

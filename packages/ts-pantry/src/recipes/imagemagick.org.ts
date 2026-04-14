@@ -33,13 +33,13 @@ export const recipe: Recipe = {
       'sed -i -e \'s|${PACKAGE_NAME}-${PACKAGE_BASE_VERSION}|${PACKAGE_NAME}|g\' configure',
       'find . -type f -name \'*-config.in\' -exec sed -i\'\' -e \'s|@PKG_CONFIG@|pkg-config|g\' {} +',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       'cd "${{prefix}}/bin"',
       'sed -i -e \'s|^prefix=.*|prefix=${MAGICK_HOME}|g\' Magick++-config MagickCore-config MagickWand-config',
     ],
     env: {
       'LDFLAGS': [],
-      'ARGS': ['--prefix={{ prefix }}', '--libdir={{prefix}}/lib', '--enable-osx-universal-binary=no', '--disable-silent-rules', '--disable-opencl', '--enable-static', '--disable-installed', '--enable-shared', '--with-png=yes', '--with-tiff=yes', '--with-freetype=yes', '--with-gvc=no', '--with-modules', '--with-openjp2', '--with-webp=yes', '--without-lzma', '--without-djvu', '--without-fftw', '--without-pango', '--without-wmf', '--with-jxl=no', '--with-heic=no', '--with-lqr=no', '--without-openexr', '--with-zip=no', '--without-perl', '--disable-openmp', '--without-x'],
+      'ARGS': ['--prefix={{prefix}}', '--libdir={{prefix}}/lib', '--enable-osx-universal-binary=no', '--disable-silent-rules', '--disable-opencl', '--enable-static', '--disable-installed', '--enable-shared', '--with-png=yes', '--with-tiff=yes', '--with-freetype=yes', '--with-gvc=no', '--with-modules', '--with-openjp2', '--with-webp=yes', '--without-lzma', '--without-djvu', '--without-fftw', '--without-pango', '--without-wmf', '--with-jxl=no', '--with-heic=no', '--with-lqr=no', '--without-openexr', '--with-zip=no', '--without-perl', '--disable-openmp', '--without-x'],
     },
   },
 }

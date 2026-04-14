@@ -13,8 +13,14 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
 
+  distributable: {
+    url: 'https://github.com/golangci/golangci-lint/releases/download/v{{version}}/golangci-lint-{{version}}-darwin-arm64.tar.gz',
+  },
+
   build: {
     script: [
-      'echo "Build not yet configured for golangci-lint.run"',    ],
+      'mkdir -p {{prefix}}/bin',
+      'cp golangci-lint {{prefix}}/bin/',
+    ],
   },
 }

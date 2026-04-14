@@ -24,7 +24,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cmake -S . -B build -DCMAKE_INSTALL_PREFIX={{ prefix }} -DCMAKE_BUILD_TYPE=Release -Wno-dev',
+      'cmake -S . -B build -DCMAKE_INSTALL_PREFIX={{prefix}} -DCMAKE_BUILD_TYPE=Release -Wno-dev',
       'cmake --build build',
       'cmake --install build',
     ],

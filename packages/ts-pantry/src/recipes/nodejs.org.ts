@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'nodejs/node',
   },
   distributable: {
-    url: 'https://nodejs.org/dist/v{{ version }}/node-v{{ version }}.tar.xz',
+    url: 'https://nodejs.org/dist/v{{version}}/node-v{{version}}.tar.xz',
     stripComponents: 1,
   },
   dependencies: {
@@ -37,10 +37,10 @@ export const recipe: Recipe = {
       'export LDFLAGS="$(echo $LDFLAGS | sed \'s/-pie//\')"',
       'cd "deps/v8/src/builtins"',
       'sed -i -f $PROP builtins-typed-array.cc',
-      'make --jobs {{ hw.concurrency }} JOBS={{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} JOBS={{hw.concurrency}} install',
     ],
     env: {
-      'ARGS': ['--ninja', '--with-intl=system-icu', '--without-npm', '--prefix={{ prefix }}', '--shared-openssl', '--shared-zlib'],
+      'ARGS': ['--ninja', '--with-intl=system-icu', '--without-npm', '--prefix={{prefix}}', '--shared-openssl', '--shared-zlib'],
     },
   },
 }

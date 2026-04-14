@@ -74,8 +74,12 @@ async function pack(targetDir: string = process.cwd()): Promise<string> {
     process.exit(1)
   }
 
-  // Sanitize package name for filename (replace @ and / with safe chars)
-  const safeName = packageJson.name.replaceAll('@', '').replaceAll('/', '-')
+  // Sanitize package name for filename (replace @ and /, strip path-traversal, allow only safe chars)
+  const safeName = packageJson.name
+    .replaceAll('@', '')
+    .replaceAll('/', '-')
+    .replaceAll('..', '')
+    .replace(/[^\w.-]/g, '-')
   const tarballName = `${safeName}-${packageJson.version}.tgz`
 
   console.log(`📋 Package: ${packageJson.name}`)

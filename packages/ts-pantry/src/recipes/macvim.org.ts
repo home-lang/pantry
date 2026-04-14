@@ -31,7 +31,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'cd "${{prefix}}/libexec"',
       'cp -a $SRCROOT/src/MacVim/build/Release/MacVim.app .',
       'cd "${{prefix}}/bin"',

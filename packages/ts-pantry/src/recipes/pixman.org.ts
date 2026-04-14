@@ -11,14 +11,14 @@ export const recipe: Recipe = {
     tagPattern: /^pixman-(.+)$/,
   },
   distributable: {
-    url: 'https://cairographics.org/releases/pixman-{{ version }}.tar.gz',
+    url: 'https://cairographics.org/releases/pixman-{{version}}.tar.gz',
     stripComponents: 1,
   },
 
   build: {
     script: [
-      './configure --prefix={{ prefix }} --disable-debug',
-      'make --jobs {{ hw.concurrency }}',
+      './configure --prefix={{prefix}} --disable-debug',
+      'make --jobs {{hw.concurrency}}',
       'make install',
       '',
     ],

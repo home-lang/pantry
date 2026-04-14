@@ -19,6 +19,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'echo "Build not yet configured for oauth2-proxy.github.io"',    ],
+      'go build -ldflags="-s -w -X main.VERSION={{version}}" -o {{prefix}}/bin/oauth2-proxy .',
+    ],
   },
 }

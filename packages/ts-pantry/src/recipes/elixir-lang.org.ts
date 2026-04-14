@@ -19,6 +19,8 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'echo "Build not yet configured for elixir-lang.org"',    ],
+      'make --jobs {{hw.concurrency}}',
+      'make install PREFIX={{prefix}}',
+    ],
   },
 }

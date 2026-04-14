@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'mkdocs/mkdocs',
   },
   distributable: {
-    url: 'https://github.com/mkdocs/mkdocs/archive/refs/tags/{{ version.raw }}.tar.gz',
+    url: 'https://github.com/mkdocs/mkdocs/archive/refs/tags/{{version.raw}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

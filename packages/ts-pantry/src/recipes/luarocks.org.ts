@@ -26,7 +26,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       'cd "${{prefix}}/bin"',
       'fix-shebangs.ts luarocks-admin luarocks',
       'sed -i -e \'s|\\[\\[{{prefix}}|debug.getinfo(1).source:match("@?(.*/)") .. \\[\\[..|g\' luarocks-admin luarocks',

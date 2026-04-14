@@ -31,7 +31,7 @@ export const recipe: Recipe = {
       'cmake --install .',
     ],
     env: {
-      'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{ prefix }}', '-DCMAKE_BUILD_TYPE=Release', '-DARCH="default"', '-Wno-dev', '-DMANUAL_SUBMODULES=1'],
+      'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release', '-DARCH="default"', '-Wno-dev', '-DMANUAL_SUBMODULES=1'],
     },
   },
 }

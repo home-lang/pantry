@@ -36,7 +36,7 @@ export const recipe: Recipe = {
     script: [
       './autogen.sh',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
       'cd "build"',
       'cmake -B . -S .. $CMAKE_ARGS',
       'cmake --build .',

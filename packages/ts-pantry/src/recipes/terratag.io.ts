@@ -27,8 +27,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go build -v -ldflags="$LDFLAGS" -o terratag ./cmd/terratag',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv terratag "{{ prefix }}"/bin',
+      'mkdir -p "{{prefix}}"/bin',
+      'mv terratag "{{prefix}}"/bin',
     ],
     env: {
       'CGO_ENABLED': '0',

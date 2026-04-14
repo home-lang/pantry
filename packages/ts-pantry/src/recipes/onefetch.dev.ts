@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/o2sh/onefetch/archive/refs/tags/{{ version }}.tar.gz',
+    url: 'https://github.com/o2sh/onefetch/archive/refs/tags/{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

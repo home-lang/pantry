@@ -21,7 +21,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/juju ./cmd/juju/main.go',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{prefix}}"/bin/juju ./cmd/juju/main.go',
     ],
     env: {
       'CGO_ENABLED': '0',

@@ -189,6 +189,9 @@ function htmlResponse(html: string, status = 200): Response {
       'Cache-Control': 'public, max-age=60',
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'SAMEORIGIN',
+      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
     },
   })
 }
@@ -1130,8 +1133,17 @@ async function validateToken(authHeader: string | null): Promise<{ valid: boolea
     return result
   }
 
-  // Fall back to legacy admin token
-  if (!REGISTRY_TOKEN || token !== REGISTRY_TOKEN) {
+  // Fall back to legacy admin token (constant-time comparison to prevent timing attacks)
+  if (!REGISTRY_TOKEN) {
+    return { valid: false, error: 'Invalid token' }
+  }
+  const crypto = require('node:crypto')
+  const maxLen = Math.max(token.length, REGISTRY_TOKEN.length)
+  const tokenBuf = Buffer.alloc(maxLen)
+  const registryBuf = Buffer.alloc(maxLen)
+  Buffer.from(token).copy(tokenBuf)
+  Buffer.from(REGISTRY_TOKEN).copy(registryBuf)
+  if (!crypto.timingSafeEqual(tokenBuf, registryBuf) || token.length !== REGISTRY_TOKEN.length) {
     return { valid: false, error: 'Invalid token' }
   }
 
@@ -1660,8 +1672,9 @@ async function handleSiteAuth(
           },
         })
       }
-      catch (err: any) {
-        const html = await renderSitePage('login.stx', { error: escapeHtml(err.message || 'Login failed'), title: 'Log In' })
+      catch {
+        // Generic error message to prevent user enumeration via timing/messaging differences
+        const html = await renderSitePage('login.stx', { error: 'Invalid email or password', title: 'Log In' })
         return new Response(html, { status: 401, headers: htmlHeaders })
       }
     }
@@ -2401,6 +2414,16 @@ async function handleBinaryProxy(
  */
 const DASHBOARD_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN
 
+function constantTimeEquals(a: string, b: string): boolean {
+  const crypto = require('node:crypto')
+  const maxLen = Math.max(a.length, b.length)
+  const bufA = Buffer.alloc(maxLen)
+  const bufB = Buffer.alloc(maxLen)
+  Buffer.from(a).copy(bufA)
+  Buffer.from(b).copy(bufB)
+  return crypto.timingSafeEqual(bufA, bufB) && a.length === b.length
+}
+
 function getDashboardAuth(req: Request, url?: URL): boolean {
   if (!DASHBOARD_TOKEN) return false
 
@@ -2408,17 +2431,17 @@ function getDashboardAuth(req: Request, url?: URL): boolean {
   const cookieHeader = req.headers.get('cookie') || ''
   // eslint-disable-next-line max-statements-per-line -- semicolon is inside regex, not a statement separator
   const cookieMatch = cookieHeader.match(/pantry_token=([^;]+)/)
-  if (cookieMatch && cookieMatch[1] === DASHBOARD_TOKEN)
+  if (cookieMatch && constantTimeEquals(cookieMatch[1], DASHBOARD_TOKEN))
     return true
 
   // Check Authorization header (CloudFront forwards this)
   const authHeader = req.headers.get('authorization') || ''
-  if (authHeader.startsWith('Bearer ') && authHeader.slice(7) === DASHBOARD_TOKEN) return true
+  if (authHeader.startsWith('Bearer ') && constantTimeEquals(authHeader.slice(7), DASHBOARD_TOKEN)) return true
 
   // Check query parameter (CloudFront forwards query strings)
   if (url) {
     const tokenParam = url.searchParams.get('token')
-    if (tokenParam === DASHBOARD_TOKEN) return true
+    if (tokenParam && constantTimeEquals(tokenParam, DASHBOARD_TOKEN)) return true
   }
 
   return false
@@ -3283,7 +3306,7 @@ async function handleSiteCompare(
   const html = await renderSitePage('compare.stx', {
     comparePackages,
     hasPackages: comparePackages.length > 0,
-    packagesQuery: packagesParam,
+    packagesQuery: encodeURIComponent(packagesParam),
     multiLineChart,
     downloadsBarChart,
     title: `Compare: ${packageNames.map(escapeHtml).join(' vs ')}`,
@@ -3436,11 +3459,13 @@ async function handleBadge(
   })
 }
 
-/** Lazily built set of doc page paths for link rewriting */
+/** Lazily built set of doc page paths for link rewriting (TTL-based to allow updates) */
 let docsPageCache: Set<string> | null = null
+let docsPageCacheAt = 0
+const DOCS_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
 async function getDocsPages(docsDir: string): Promise<Set<string>> {
-  if (docsPageCache) return docsPageCache
+  if (docsPageCache && Date.now() - docsPageCacheAt < DOCS_CACHE_TTL_MS) return docsPageCache
   const pages = new Set<string>(['/'])
   const { readdir } = await import('node:fs/promises')
 
@@ -3462,6 +3487,7 @@ async function getDocsPages(docsDir: string): Promise<Set<string>> {
 
   await scan(docsDir, '')
   docsPageCache = pages
+  docsPageCacheAt = Date.now()
   return pages
 }
 

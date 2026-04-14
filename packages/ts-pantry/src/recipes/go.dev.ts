@@ -28,7 +28,7 @@ export const recipe: Recipe = {
     script: [
       './make.bash',
       'rm *.{bash,bat,rc} Make.dist',
-      'cd "${{ prefix }}"',
+      'cd "${{prefix}}"',
       'find . -mindepth 1 -delete',
       'cd "$SRCROOT"',
       'cp -a api bin doc lib misc pkg src test "{{prefix}}"',
@@ -39,8 +39,8 @@ export const recipe: Recipe = {
     ],
     env: {
       'GOCACHE': '$SRCROOT/.gocache',
-      'GOROOT_FINAL': '${{ prefix }}',
-      'GOROOT_BOOTSTRAP': '${{ deps.go.dev.prefix }}',
+      'GOROOT_FINAL': '${{prefix}}',
+      'GOROOT_BOOTSTRAP': '${{deps.go.dev.prefix}}',
     },
     skip: ['fix-patchelf'],
   },

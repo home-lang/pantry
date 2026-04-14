@@ -23,9 +23,7 @@ export const recipe: Recipe = {
       './bin/nim c koch',
       './koch boot -d:release',
       './koch tools',
-      './install.sh {{ prefix }}',
-      'run: |',
-      'run: cp $BINS {{ prefix }}/bin/',
+      './install.sh {{prefix}}',
     ],
   },
 }

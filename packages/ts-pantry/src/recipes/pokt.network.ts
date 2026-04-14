@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'pokt.network',
   name: 'pocket',
   description: 'Official implementation of the Pocket Network Protocol',
-  homepage: 'http://www.pokt.network',
+  homepage: 'https://www.pokt.network',
   github: 'https://github.com/pokt-network/pocket-core',
   programs: ['pocket'],
   versionSource: {

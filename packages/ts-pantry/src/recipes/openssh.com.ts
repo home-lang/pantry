@@ -33,7 +33,7 @@ export const recipe: Recipe = {
       'sed -i "s|-fzero-call-used-regs=all|-fzero-call-used-regs=used|g" configure',
       './configure $CONFIGURE_ARGS',
       'sed -i "s|prefix=/usr/local|prefix={{prefix}}|g" Makefile',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'make --jobs 1 install',
       'cd "{{prefix}}/bin"',
       'ln -s ssh slogin',

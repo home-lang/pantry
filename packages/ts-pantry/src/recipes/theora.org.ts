@@ -26,7 +26,7 @@ export const recipe: Recipe = {
       'wget -O config.sub \'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD\'',
       './autogen.sh',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
       'ARGS': ['--prefix="{{prefix}}"', '--disable-dependency-tracking', '--disable-oggtest', '--disable-vorbistest', '--disable-examples'],

@@ -5,7 +5,7 @@ export const recipe: Recipe = {
   name: 'freetype',
   programs: [],
   distributable: {
-    url: 'https://download.savannah.gnu.org/releases/freetype/freetype-{{ version }}.tar.gz',
+    url: 'https://download.savannah.gnu.org/releases/freetype/freetype-{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {
@@ -21,10 +21,10 @@ export const recipe: Recipe = {
   build: {
     script: [
       'cmake .. $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
-      'ARGS': ['-DBUILD_SHARED_LIBS=true', '-DCMAKE_INSTALL_PREFIX="{{ prefix }}"', '-DCMAKE_BUILD_TYPE=Release'],
+      'ARGS': ['-DBUILD_SHARED_LIBS=true', '-DCMAKE_INSTALL_PREFIX="{{prefix}}"', '-DCMAKE_BUILD_TYPE=Release'],
     },
   },
 }

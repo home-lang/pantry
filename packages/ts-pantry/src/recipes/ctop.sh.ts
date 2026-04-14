@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'bcicen/ctop',
   },
   distributable: {
-    url: 'https://github.com/bcicen/ctop/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/bcicen/ctop/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {

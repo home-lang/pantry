@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'dprint/dprint',
   },
   distributable: {
-    url: 'https://github.com/dprint/dprint/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/dprint/dprint/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {

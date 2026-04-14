@@ -21,7 +21,7 @@ export const recipe: Recipe = {
     script: [
       './autogen.sh',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }}',
+      'make --jobs {{hw.concurrency}}',
       'make install',
     ],
   },

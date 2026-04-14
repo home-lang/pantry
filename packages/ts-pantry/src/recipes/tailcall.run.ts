@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://tailcall.gateway.scarf.sh/archive/refs/tags/tailcall-v{{ version }}.tar.gz',
+    url: 'https://tailcall.gateway.scarf.sh/archive/refs/tags/tailcall-v{{version}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {
@@ -28,7 +28,7 @@ export const recipe: Recipe = {
       'cargo install --locked --path . --root {{prefix}}',
     ],
     env: {
-      'APP_VERSION': '{{ version }}',
+      'APP_VERSION': '{{version}}',
     },
   },
 }

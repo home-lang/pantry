@@ -26,7 +26,7 @@ export const recipe: Recipe = {
       'rm -rf {{prefix}}/Info.plist',
       'cd "${{prefix}}/bin"',
       'ln -sh ../usr/bin/* {{prefix}}/bin',
-      'curl -SfL "$DOWNLOAD_URL" | tar xzf - -C {{ prefix }} --strip-components=2',
+      'curl -SfL "$DOWNLOAD_URL" | tar xzf - -C {{prefix}} --strip-components=2',
     ],
   },
 }

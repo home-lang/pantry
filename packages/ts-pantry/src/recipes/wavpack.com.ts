@@ -23,7 +23,7 @@ export const recipe: Recipe = {
     script: [
       'patch -p1 < props/5.8.0.patch',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }} install',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
       'ARGS': ['--prefix="{{prefix}}"'],

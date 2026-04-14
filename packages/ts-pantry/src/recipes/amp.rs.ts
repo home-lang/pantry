@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'jmacdonald/amp',
   },
   distributable: {
-    url: 'https://github.com/jmacdonald/amp/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/jmacdonald/amp/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'sunny0826/kubecm',
   },
   distributable: {
-    url: 'https://github.com/sunny0826/kubecm/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/sunny0826/kubecm/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {
@@ -21,7 +21,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'make build  BUILD_TARGET_PKG_DIR="{{ prefix }}/bin" TAG={{ version }} KUBECM_VERSION={{ version }}',
+      'make build  BUILD_TARGET_PKG_DIR="{{prefix}}/bin" TAG={{version}} KUBECM_VERSION={{version}}',
     ],
     env: {
       'CGO_ENABLED': '0',

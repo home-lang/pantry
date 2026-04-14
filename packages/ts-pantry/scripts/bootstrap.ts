@@ -4,7 +4,7 @@
 // Resolves dependency tree, builds in correct order, uploads to S3
 
 import { existsSync, mkdirSync, rmSync } from 'node:fs'
-import { execSync } from 'node:child_process'
+import { execFileSync, execSync } from 'node:child_process'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { homedir } from 'node:os'
@@ -300,25 +300,45 @@ async function bootstrap(options: BootstrapOptions): Promise<void> {
       mkdirSync(artifactDir, { recursive: true })
       mkdirSync(depsDir, { recursive: true })
 
-      // Build (with S3 deps download)
-      console.log(`Building...`)
-      execSync(
-        `bun scripts/build-package.ts --package "${pkg.domain}" --version "${version}" --platform "${platform}" --build-dir "${buildDir}" --prefix "${installDir}" --deps-dir "${depsDir}" --bucket "${bucket}" --region "${region}"`,
-        { stdio: 'inherit', cwd: process.cwd() }
-      )
+      // Validate inputs before passing to shell to prevent command injection
+      if (!/^[a-z0-9.\-/_]+$/i.test(pkg.domain)) {
+        throw new Error(`Invalid domain for shell argument: ${pkg.domain}`)
+      }
+      if (!/^[\w.+\-]+$/.test(version)) {
+        throw new Error(`Invalid version for shell argument: ${version}`)
+      }
 
-      // Create tarball
+      // Build (with S3 deps download) — use execFileSync to avoid shell interpolation
+      console.log(`Building...`)
+      execFileSync('bun', [
+        'scripts/build-package.ts',
+        '--package', pkg.domain,
+        '--version', version,
+        '--platform', platform,
+        '--build-dir', buildDir,
+        '--prefix', installDir,
+        '--deps-dir', depsDir,
+        '--bucket', bucket,
+        '--region', region,
+      ], { stdio: 'inherit', cwd: process.cwd() })
+
+      // Create tarball (use execFileSync with cwd to avoid shell cd interpolation)
       console.log(`Packaging...`)
       const tarball = `${pkg.domain.replace(/\//g, '-')}-${version}.tar.gz`
-      execSync(`cd "${installDir}" && tar -czf "${join(artifactDir, tarball)}" .`)
-      execSync(`cd "${artifactDir}" && shasum -a 256 "${tarball}" > "${tarball}.sha256"`)
+      const tarballPath = join(artifactDir, tarball)
+      execFileSync('tar', ['-czf', tarballPath, '.'], { cwd: installDir, stdio: 'inherit' })
+      execSync(`shasum -a 256 "${tarball}" > "${tarball}.sha256"`, { cwd: artifactDir })
 
       // Upload
       console.log(`Uploading...`)
-      execSync(
-        `bun scripts/upload-to-s3.ts --package "${pkg.domain}" --version "${version}" --artifacts-dir "${artifactsDir}" --bucket "${bucket}" --region "${region}"`,
-        { stdio: 'inherit', cwd: process.cwd() }
-      )
+      execFileSync('bun', [
+        'scripts/upload-to-s3.ts',
+        '--package', pkg.domain,
+        '--version', version,
+        '--artifacts-dir', artifactsDir,
+        '--bucket', bucket,
+        '--region', region,
+      ], { stdio: 'inherit', cwd: process.cwd() })
 
       // Cleanup
       rmSync(buildDir, { recursive: true, force: true })

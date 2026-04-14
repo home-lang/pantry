@@ -26,8 +26,8 @@ export const recipe: Recipe = {
       'npm install',
       'npm run package',
       'go build -ldflags="$GO_LDFLAGS" -o mailpit',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv mailpit "{{ prefix }}"/bin',
+      'mkdir -p "{{prefix}}"/bin',
+      'mv mailpit "{{prefix}}"/bin',
     ],
     env: {
       'CGO_ENABLED': '0',

@@ -22,14 +22,14 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build -v -ldflags="$LDFLAGS" -o "{{ prefix }}"/bin/flyctl .',
-      'cd "{{ prefix }}"/bin',
+      'go build -v -ldflags="$LDFLAGS" -o "{{prefix}}"/bin/flyctl .',
+      'cd "{{prefix}}"/bin',
       'ln -s flyctl fly',
       '',
     ],
     env: {
       'CGO_ENABLED': '0',
-      'LDFLAGS': ['-s', '-w', '-X github.com/superfly/flyctl/internal/buildinfo.environment=production', '-X github.com/superfly/flyctl/internal/buildinfo.buildDate=$(date -u +"%Y-%m-%dT%H:%M:%SZ")', '-X github.com/superfly/flyctl/internal/buildinfo.version={{ version }}', '-X github.com/superfly/flyctl/internal/buildinfo.commit=tea'],
+      'LDFLAGS': ['-s', '-w', '-X github.com/superfly/flyctl/internal/buildinfo.environment=production', '-X github.com/superfly/flyctl/internal/buildinfo.buildDate=$(date -u +"%Y-%m-%dT%H:%M:%SZ")', '-X github.com/superfly/flyctl/internal/buildinfo.version={{version}}', '-X github.com/superfly/flyctl/internal/buildinfo.commit=tea'],
     },
   },
 }

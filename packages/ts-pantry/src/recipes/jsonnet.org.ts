@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'jsonnet.org',
   name: 'jsonnet',
   description: 'Jsonnet - The data templating language',
-  homepage: 'http://jsonnet.org',
+  homepage: 'https://jsonnet.org',
   github: 'https://github.com/google/jsonnet',
   programs: ['jsonnet', 'jsonnetfmt'],
   versionSource: {

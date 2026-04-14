@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'rapidjson.org',
   name: 'rapidjson',
   description: 'A fast JSON parser/generator for C++ with both SAX/DOM style API',
-  homepage: 'http://rapidjson.org/',
+  homepage: 'https://rapidjson.org/',
   github: 'https://github.com/Tencent/rapidjson',
   programs: [],
   versionSource: {
