@@ -77,6 +77,7 @@ export const getcomposerorgPackage = {
   */
   versions: [
     '2.10.0-RC1',
+    '2.9.7',
     '2.9.6',
     '2.9.5',
     '2.9.4',
