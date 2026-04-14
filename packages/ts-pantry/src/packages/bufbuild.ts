@@ -68,6 +68,7 @@ export const bufbuildPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.68.0',
     '1.67.0',
     '1.66.1',
     '1.66.0',

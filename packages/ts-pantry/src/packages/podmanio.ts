@@ -81,6 +81,7 @@ export const podmanioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.8.2',
     '5.8.1',
     '5.8.0',
     '5.7.1',
