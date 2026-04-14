@@ -73,6 +73,7 @@ export const vaultprojectioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.0.0',
     '1.21.4',
     '1.21.3',
     '1.21.2',
