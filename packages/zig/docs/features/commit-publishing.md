@@ -35,7 +35,7 @@ npm install https://registry.pantry.dev/commits/abc1234/@scope/package/tarball
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--registry <url>` | Registry URL | `https://registry.pantry.dev` |
-| `--token <token>` | Auth token (or `PANTRY_TOKEN` env) | |
+| `--token <token>` | Auth token (or `PANTRY*TOKEN` env) | |
 | `--dry-run` | Preview without publishing | `false` |
 | `--compact` | Minimal CI output | `false` |
 
@@ -45,12 +45,15 @@ Replace `pkg-pr-new` in GitHub Actions:
 
 ```yaml
 # Before
+
 - run: bunx pkg-pr-new publish './packages/*'
 
 # After
+
 - run: pantry publish:commit './packages/*'
+
   env:
-    PANTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
+    PANTRY*TOKEN: ${{ secrets.PANTRY_TOKEN }}
 ```
 
 ## Storage

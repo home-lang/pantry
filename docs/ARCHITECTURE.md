@@ -283,14 +283,18 @@ Shell integration enables automatic environment activation when you `cd` into a 
 ### Integration Flow
 
 ```
+
 1. User runs: pantry shell:integrate
+
    -> Appends hook to ~/.zshrc or ~/.bashrc
 
 2. Shell startup:
+
    -> eval "$(pantry dev:shellcode)"
       -> Zig binary outputs shell functions and hooks
 
 3. User runs: cd /path/to/project
+
    -> Triggers __pantry_chpwd (zsh) or __pantry_prompt_command (bash)
       -> Calls __pantry_switch_environment
           +-> Cache lookup (instant if cached)
@@ -501,26 +505,33 @@ Action handlers extract arguments/options from the `ParseContext`, call into the
 **Files**: `packages/zig/src/env/manager.zig`, `packages/zig/src/env/scanner.zig`
 
 ```
+
 1. PROJECT DETECTION
+
    -> deps/detector.zig finds dependency file
 
 2. ENVIRONMENT CREATION
+
    -> Computes environment hash (FNV-1a of project path)
    -> Creates directory: ~/.local/share/pantry/envs/<hash>/
 
 3. DEPENDENCY INSTALLATION
+
    -> Installs packages to environment directory
    -> Creates binary wrappers in env/bin/
 
 4. CACHE REGISTRATION
+
    -> Adds entry to environment cache
    -> Maps project directory -> environment directory
 
 5. ENVIRONMENT ACTIVATION (automatic on cd)
+
    -> Modifies PATH to prioritize environment binaries
    -> Sets environment variables
 
 6. ENVIRONMENT DEACTIVATION (automatic on cd out)
+
    -> Removes environment paths from PATH
    -> Clears environment variables
 ```
@@ -596,10 +607,12 @@ Services with Java/Erlang dependencies use `WithContext` variants that resolve `
 ### Platform-Specific Service Files
 
 **macOS (launchd)**: `~/Library/LaunchAgents/com.pantry.<service>.plist`
+
 - Start: `launchctl start com.pantry.<service>`
 - Stop: `launchctl stop com.pantry.<service>`
 
 **Linux (systemd)**: `~/.config/systemd/user/<service>.service`
+
 - Start: `systemctl --user start <service>`
 - Stop: `systemctl --user stop <service>`
 
@@ -624,6 +637,7 @@ Beyond start/stop/restart/status, pantry supports:
 A Bun.serve HTTP server with these endpoint groups:
 
 **Package endpoints**:
+
 - `GET /packages/{name}` -- Latest package metadata
 - `GET /packages/{name}/{version}` -- Specific version metadata
 - `GET /packages/{name}/{version}/tarball` -- Download tarball
@@ -632,17 +646,20 @@ A Bun.serve HTTP server with these endpoint groups:
 - `POST /publish` -- Publish package (multipart/form-data)
 
 **Analytics endpoints**:
+
 - `GET /analytics/{name}` -- Download stats
 - `GET /analytics/{name}/timeline` -- 30-day download timeline
 - `GET /analytics/top` -- Top downloaded packages
 - `POST /analytics/events` -- Report analytics events
 
 **Commit publish endpoints** (pkg-pr-new equivalent):
+
 - `POST /publish/commit` -- Publish from a commit
 - `GET /commits/{sha}` -- List packages for a commit
 - `GET /commits/{sha}/{name}/tarball` -- Download commit tarball
 
 **Zig package endpoints**:
+
 - `GET /zig/packages/{name}` -- Zig package metadata
 - `POST /zig/publish` -- Publish Zig package
 
@@ -724,10 +741,10 @@ The `audit` command checks installed packages against known vulnerability databa
     env_cache             Project -> env mapping
 
 ~/Library/LaunchAgents/   macOS service plists
-  com.pantry.*.plist
+  com.pantry._.plist
 
 ~/.config/systemd/user/   Linux service units
-  *.service
+  _.service
 ```
 
 ### Project Configuration
@@ -742,7 +759,7 @@ linker = "isolated"      # "isolated" or "hoisted"
 modules_dir = "pantry"   # default install directory name
 ```
 
-**pantry.json** / **package.json** (dependencies):
+**pantry.json**/**package.json** (dependencies):
 
 ```json
 {
@@ -774,15 +791,18 @@ Compile-time platform and architecture detection via `builtin.os.tag` and `built
 ### Platform-Specific Behavior
 
 **macOS**:
+
 - Library path fixing via `install_name_tool` (`install/libfixer.zig`)
 - Uses `DYLD_LIBRARY_PATH` / `DYLD_FALLBACK_LIBRARY_PATH`
 - Services via launchd (`~/Library/LaunchAgents/`)
 
 **Linux**:
+
 - Uses `LD_LIBRARY_PATH`
 - Services via systemd user units (`~/.config/systemd/user/`)
 
 **FreeBSD**:
+
 - Services via rc.d (`~/.config/pantry/services/`)
 
 ---

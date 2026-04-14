@@ -73,6 +73,7 @@ You can define custom services directly in `deps.yaml`. Custom services are proj
 services:
   enabled: true
   autoStart:
+
     - postgres
     - redis
     - my-worker
@@ -136,12 +137,16 @@ services:
 
   groups:
     backend:
+
       - postgres
       - redis
       - my-worker
+
     frontend:
+
       - nginx
       - caddy
+
 ```
 
 Then use them with any service command:
@@ -842,7 +847,7 @@ Services are automatically initialized on first start:
 
    ```bash
    pantry logs postgres
-   # or directly:
+# or directly
    tail -f ~/.local/share/pantry/logs/postgres.log
    ```
 
@@ -974,6 +979,7 @@ dependencies:
 services:
   enabled: true
   autoStart:
+
     - postgres
     - redis
 
@@ -994,6 +1000,7 @@ dependencies:
 services:
   enabled: true
   autoStart:
+
     - db          # starts postgres, redis, mysql, mariadb, mongodb
     - my-worker
 
@@ -1006,9 +1013,11 @@ services:
 
   groups:
     backend:
+
       - postgres
       - redis
       - my-worker
+
 ```
 
 ### Database Development

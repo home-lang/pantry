@@ -67,7 +67,7 @@ Private packages (those with `"private": true` in `package.json`) are automatica
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--registry <url>` | Registry URL to publish to | `https://registry.pantry.dev` |
-| `--token <token>` | Authentication token | `PANTRY_TOKEN` env var |
+| `--token <token>` | Authentication token | `PANTRY*TOKEN` env var |
 | `--dry-run` | Preview what would be published without uploading | `false` |
 | `--compact` | Minimal output suitable for CI environments | `false` |
 
@@ -95,14 +95,18 @@ Replace `pkg-pr-new` in your workflows:
 
 ```yaml
 # Before (using pkg-pr-new)
+
 - name: Publish Commit
+
   run: bunx pkg-pr-new publish './storage/framework/core/*'
 
 # After (using pantry)
+
 - name: Publish Commit
+
   run: pantry publish:commit './storage/framework/core/*'
   env:
-    PANTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
+    PANTRY*TOKEN: ${{ secrets.PANTRY*TOKEN }}
 ```
 
 ### Full Workflow Example
@@ -111,22 +115,25 @@ Replace `pkg-pr-new` in your workflows:
 name: Publish Commit Packages
 
 on:
-  pull_request:
+  pull*request:
     branches: [main]
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
+
       - uses: actions/checkout@v4
 
       - name: Install Dependencies
+
         uses: home-lang/pantry-installer@v1
 
       - name: Publish Commit Packages
+
         run: pantry publish:commit './packages/*'
         env:
-          PANTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
+          PANTRY*TOKEN: ${{ secrets.PANTRY*TOKEN }}
 ```
 
 ## Installing Commit Packages
@@ -169,7 +176,7 @@ curl https://registry.pantry.dev/commits/abc1234/@scope/my-package
 - **Tarballs**: Stored in S3 under `commits/{sha}/{safeName}/{safeName}.tgz`
 - **Metadata**: DynamoDB with dual key patterns:
   - `COMMIT#{sha}` / `PACKAGE#{name}` — look up packages by commit
-  - `COMMIT_PACKAGE#{name}` / `SHA#{sha}` — look up commits by package
+  - `COMMIT*PACKAGE#{name}` / `SHA#{sha}` — look up commits by package
 - **Expiry**: Commit packages automatically expire after 90 days via S3 lifecycle rules
 
 ### Package Name Sanitization
@@ -199,7 +206,7 @@ Scoped package names are sanitized for S3 keys:
 Ensure your token is set:
 
 ```bash
-export PANTRY_TOKEN=your-token
+export PANTRY*TOKEN=your-token
 pantry publish:commit './packages/*'
 
 # Or pass directly

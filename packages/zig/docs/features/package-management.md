@@ -196,10 +196,13 @@ Replace `pkg-pr-new` in your GitHub Actions:
 
 ```yaml
 # Before
+
 - run: bunx pkg-pr-new publish './packages/*'
 
 # After
+
 - run: pantry publish:commit './packages/*'
+
 ```
 
 ### Options
@@ -207,7 +210,7 @@ Replace `pkg-pr-new` in your GitHub Actions:
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--registry` | Registry URL | `https://registry.pantry.dev` |
-| `--token` | Auth token (or `PANTRY_TOKEN` env) | |
+| `--token` | Auth token (or `PANTRY*TOKEN` env) | |
 | `--dry-run` | Preview without publishing | `false` |
 | `--compact` | Minimal CI-friendly output | `false` |
 
@@ -278,7 +281,7 @@ pantry why lodash
 # Check for security vulnerabilities
 pantry audit
 
-# Clean node_modules
+# Clean node*modules
 pantry clean
 
 # Initialize new project

@@ -838,19 +838,19 @@ Publish packages directly from git commits without version bumps. This is pantry
 
 ```bash
 # Publish all packages matching a glob pattern
-pantry publish:commit './packages/*'
+pantry publish:commit './packages/_'
 
 # Publish a single package directory
 pantry publish:commit ./my-package
 
 # Preview what would be published
-pantry publish:commit './packages/*' --dry-run
+pantry publish:commit './packages/_' --dry-run
 
 # Use a custom registry
-pantry publish:commit './packages/*' --registry https://registry.example.com
+pantry publish:commit './packages/_' --registry https://registry.example.com
 
 # Compact output (useful in CI)
-pantry publish:commit './packages/*' --compact
+pantry publish:commit './packages/_' --compact
 ```
 
 ### How It Works
@@ -877,10 +877,13 @@ Replace `pkg-pr-new` in your GitHub Actions:
 
 ```yaml
 # Before
-- run: bunx pkg-pr-new publish './packages/*'
+
+- run: bunx pkg-pr-new publish './packages/_'
 
 # After
-- run: pantry publish:commit './packages/*'
+
+- run: pantry publish:commit './packages/_'
+
 ```
 
 ### Options

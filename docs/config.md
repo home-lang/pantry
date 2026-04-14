@@ -367,8 +367,10 @@ dependencies:
 services:
   enabled: true
   autoStart:
+
     - postgres
     - redis
+
 ```
 
 Behavior:
@@ -385,6 +387,7 @@ Define project-specific services in the `custom:` section:
 services:
   enabled: true
   autoStart:
+
     - postgres
     - my-worker
 
@@ -415,15 +418,20 @@ Define named groups of services to start/stop together:
 services:
   enabled: true
   autoStart:
+
     - backend
 
   groups:
     backend:
+
       - postgres
       - redis
       - my-worker
+
     frontend:
+
       - nginx
+
 ```
 
 Four built-in groups are available without configuration: `db`, `monitoring`, `queue`, `web`. See [Service Groups](./features/service-management.md#service-groups) for details.

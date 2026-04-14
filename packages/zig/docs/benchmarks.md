@@ -6,15 +6,15 @@ Pantry is **20-50x faster** than npm, yarn, pnpm, and even Bun for package manag
 
 | Operation | Pantry | Bun | npm | yarn | pnpm | Composer |
 |-----------|--------|-----|-----|------|------|----------|
-| **Install (cold, medium)** | **1,200ms** | 2,800ms | 8,500ms | 9,200ms | 6,800ms | 11,230ms |
-| **Install (warm, small)** | **99ms** | 120ms | 1,200ms | 980ms | 750ms | 1,110ms |
+| **Install (cold, medium)**|**1,200ms** | 2,800ms | 8,500ms | 9,200ms | 6,800ms | 11,230ms |
+| **Install (warm, small)**|**99ms** | 120ms | 1,200ms | 980ms | 750ms | 1,110ms |
 | **Add package** | 85ms | 1,500ms | 5,200ms | 4,800ms | 3,900ms | — |
 | **Remove package** | 12ms | 420ms | 2,100ms | 1,950ms | 1,600ms | — |
-| **Reinstall (no-op)** | **7ms** | — | — | — | — | 348ms |
+| **Reinstall (no-op)**|**7ms** | — | — | — | — | 348ms |
 
 *Composer benchmarks measured with PHP 8.4 / Composer 2.9 on Apple M3 Pro. See [Pantry vs Composer](#pantry-vs-composer-php) for the full PHP-specific comparison.*
 
-**Result**: Pantry is **15-60x faster** depending on operation.
+**Result**: Pantry is**15-60x faster** depending on operation.
 
 ## Pantry vs Composer (PHP)
 
@@ -26,25 +26,25 @@ Composer is the standard PHP dependency manager. Both tools install identical PH
 
 | Fixture | Pantry | Composer | Result |
 |---------|--------|----------|--------|
-| **small** (3 deps) | 101ms | 3.34s | **Pantry 33x faster** |
-| **medium** (8 deps) | 1.24s | 11.20s | **Pantry 9x faster** |
-| **large** (18 deps) | 1.87s | 14.29s | **Pantry 7.6x faster** |
+| **small**(3 deps) | 101ms | 3.34s |**Pantry 33x faster** |
+| **medium**(8 deps) | 1.24s | 11.20s |**Pantry 9x faster** |
+| **large**(18 deps) | 1.87s | 14.29s |**Pantry 7.6x faster** |
 
 ### Warm Install (cache exists, no vendor/)
 
 | Fixture | Pantry | Composer | Result |
 |---------|--------|----------|--------|
-| **small** (3 deps) | 99ms | 1.13s | **Pantry 11x faster** |
-| **medium** (8 deps) | 1.27s | 5.41s | **Pantry 4.3x faster** |
-| **large** (18 deps) | 1.88s | 6.51s | **Pantry 3.5x faster** |
+| **small**(3 deps) | 99ms | 1.13s |**Pantry 11x faster** |
+| **medium**(8 deps) | 1.27s | 5.41s |**Pantry 4.3x faster** |
+| **large**(18 deps) | 1.88s | 6.51s |**Pantry 3.5x faster** |
 
 ### Reinstall / no-op (everything in place)
 
 | Fixture | Pantry | Composer | Result |
 |---------|--------|----------|--------|
-| **small** (3 deps) | 7.6ms | 368ms | **Pantry 49x faster** |
-| **medium** (8 deps) | 7.6ms | 1.69s | **Pantry 222x faster** |
-| **large** (18 deps) | 6.9ms | 2.05s | **Pantry 297x faster** |
+| **small**(3 deps) | 7.6ms | 368ms |**Pantry 49x faster** |
+| **medium**(8 deps) | 7.6ms | 1.69s |**Pantry 222x faster** |
+| **large**(18 deps) | 6.9ms | 2.05s |**Pantry 297x faster** |
 
 ### Analysis
 

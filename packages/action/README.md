@@ -242,10 +242,10 @@ jobs:
 
       - name: Publish Commit Packages
 
-        run: pantry publish:commit './packages/*'
+        run: pantry publish:commit './packages/_'
         env:
           PANTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
-# Replaces: bunx pkg-pr-new publish './packages/*'
+# Replaces: bunx pkg-pr-new publish './packages/_'
 # Each package gets an install URL tied to the commit SHA
 ```
 

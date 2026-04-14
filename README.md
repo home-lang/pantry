@@ -342,13 +342,13 @@ Publish packages directly from git commits — a built-in replacement for `pkg-p
 
 ```bash
 # Publish all packages in a monorepo from the current commit
-pantry publish:commit './packages/*'
+pantry publish:commit './packages/_'
 
 # Publish a single package
 pantry publish:commit ./my-package
 
 # Dry run to see what would be published
-pantry publish:commit './packages/*' --dry-run
+pantry publish:commit './packages/_' --dry-run
 
 # Use a custom registry
 pantry publish:commit './packages/*' --registry https://registry.example.com
@@ -365,10 +365,13 @@ npm install https://registry.pantry.dev/commits/abc1234/@scope/my-package/tarbal
 
 ```yaml
 # Before (pkg-pr-new)
-- run: bunx pkg-pr-new publish './packages/*'
+
+- run: bunx pkg-pr-new publish './packages/_'
 
 # After (pantry)
-- run: pantry publish:commit './packages/*'
+
+- run: pantry publish:commit './packages/_'
+
 ```
 
 ### Desktop Apps

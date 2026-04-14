@@ -123,6 +123,7 @@ API tokens are stored as **SHA-256 hashes**. The raw token is returned only once
 ### Session Management
 
 Web sessions use HTTP-only cookies with the following attributes:
+
 - `HttpOnly` — Not accessible via JavaScript
 - `SameSite=Lax` — CSRF protection
 - 30-day expiration
@@ -247,7 +248,9 @@ HTTP/1.1 201 Created
 ### GitHub Actions
 
 ```yaml
+
 - name: Publish to pantry
+
   env:
     PANTRY_TOKEN: ${{ secrets.PANTRY_API_TOKEN }}
   run: pantry publish --npm --access public

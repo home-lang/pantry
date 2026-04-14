@@ -191,19 +191,19 @@ pantry verify package.tar.gz --keyring ~/.pantry/keyring.json
 
 ```bash
 # Publish all packages from current commit
-pantry publish:commit './packages/*'
+pantry publish:commit './packages/_'
 
 # Publish a single package
 pantry publish:commit ./my-package
 
 # Preview what would be published
-pantry publish:commit './packages/*' --dry-run
+pantry publish:commit './packages/_' --dry-run
 
 # Use a custom registry
-pantry publish:commit './packages/*' --registry https://registry.example.com
+pantry publish:commit './packages/_' --registry https://registry.example.com
 
 # Compact output for CI
-pantry publish:commit './packages/*' --compact
+pantry publish:commit './packages/_' --compact
 ```
 
 Published packages get install URLs tied to the commit SHA:
@@ -216,10 +216,13 @@ Replace `pkg-pr-new` in CI:
 
 ```yaml
 # Before
-- run: bunx pkg-pr-new publish './packages/*'
+
+- run: bunx pkg-pr-new publish './packages/_'
 
 # After
-- run: pantry publish:commit './packages/*'
+
+- run: pantry publish:commit './packages/_'
+
 ```
 
 ### Offline Mode & Proxy Support

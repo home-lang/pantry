@@ -528,10 +528,14 @@ Override default service ports in `deps.yaml` using map-style entries:
 services:
   enabled: true
   autoStart:
+
     - postgres
     - name: redis
+
       port: 6380
+
     - name: mysql
+
       port: 3307
 ```
 
@@ -545,16 +549,20 @@ Custom services can declare dependencies using `dependsOn`. Services are started
 services:
   enabled: true
   autoStart:
+
     - postgres
     - redis
     - my-api
+
   custom:
     my-api:
       command: "node api.js"
       port: 3000
       dependsOn:
+
         - postgres
         - redis
+
 ```
 
 Postgres and Redis start first. After their health checks pass, `my-api` starts.

@@ -317,13 +317,13 @@ pantry includes a built-in `publish:commit` command that publishes packages from
 
 ```bash
 # Publish all packages matching a glob pattern
-pantry publish:commit './packages/*'
+pantry publish:commit './packages/_'
 
 # Publish a single package
 pantry publish:commit ./my-package
 
 # Preview without publishing
-pantry publish:commit './packages/*' --dry-run
+pantry publish:commit './packages/_' --dry-run
 ```
 
 ### Monorepo Support
@@ -349,17 +349,17 @@ npm install https://registry.pantry.dev/commits/abc1234/@scope/package/tarball
 
 ```bash
 # Custom registry
-pantry publish:commit './packages/*' --registry https://registry.example.com
+pantry publish:commit './packages/_' --registry https://registry.example.com
 
 # Authenticate with a token
-pantry publish:commit './packages/*' --token my-secret-token
+pantry publish:commit './packages/_' --token my-secret-token
 
 # Or use the PANTRY_TOKEN environment variable
 export PANTRY_TOKEN=my-secret-token
-pantry publish:commit './packages/*'
+pantry publish:commit './packages/_'
 
 # Compact output for CI
-pantry publish:commit './packages/*' --compact
+pantry publish:commit './packages/_' --compact
 ```
 
 ### CI/CD Integration
@@ -368,12 +368,16 @@ Replace `pkg-pr-new` in your GitHub Actions workflows:
 
 ```yaml
 # Before (using pkg-pr-new)
+
 - name: Publish Commit
-  run: bunx pkg-pr-new publish './storage/framework/core/*'
+
+  run: bunx pkg-pr-new publish './storage/framework/core/_'
 
 # After (using pantry)
+
 - name: Publish Commit
-  run: pantry publish:commit './storage/framework/core/*'
+
+  run: pantry publish:commit './storage/framework/core/_'
 ```
 
 ### How It Works

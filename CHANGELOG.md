@@ -221,7 +221,7 @@
 - resolve detectPlatform export conflict in ts-pantry ([0c1fd27](https://github.com/home-lang/pantry/commit/0c1fd27)) _(by Chris <chrisbreuer93@gmail.com>)_
 - improve install flow and fix update-packages workflow ([118e2e0](https://github.com/home-lang/pantry/commit/118e2e0)) _(by Chris <chrisbreuer93@gmail.com>)_
 - handle empty version in installSystemPackage, fix bunx symlink ([640e862](https://github.com/home-lang/pantry/commit/640e862)) _(by Chris <chrisbreuer93@gmail.com>)_
-- **action**: resolve * and semver ranges in system dep versions ([8db6253](https://github.com/home-lang/pantry/commit/8db6253)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **action**: resolve _ and semver ranges in system dep versions ([8db6253](https://github.com/home-lang/pantry/commit/8db6253)) _(by Chris <chrisbreuer93@gmail.com>)_
 
 ### 🧹 Chores
 
@@ -259,7 +259,7 @@
 - use zig 0.16-dev in fallback (matches build.zig API) ([d962614](https://github.com/home-lang/pantry/commit/d962614)) _(by Chris <chrisbreuer93@gmail.com>)_
 - use runtime check for zig availability, not hashFiles ([7aa1349](https://github.com/home-lang/pantry/commit/7aa1349)) _(by Chris <chrisbreuer93@gmail.com>)_
 - add zig fallback + use pantry action for releases ([a88d37d](https://github.com/home-lang/pantry/commit/a88d37d)) _(by Chris <chrisbreuer93@gmail.com>)_
-- resolve ziglang.org@* and @latest to latest stable version ([d12e357](https://github.com/home-lang/pantry/commit/d12e357)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve ziglang.org@_ and @latest to latest stable version ([d12e357](https://github.com/home-lang/pantry/commit/d12e357)) _(by Chris <chrisbreuer93@gmail.com>)_
 
 ### 🧹 Chores
 
@@ -290,7 +290,7 @@
 ### 🐛 Bug Fixes
 
 - add zig fallback + use pantry action for releases ([a88d37d](https://github.com/home-lang/pantry/commit/a88d37d)) _(by Chris <chrisbreuer93@gmail.com>)_
-- resolve ziglang.org@* and @latest to latest stable version ([d12e357](https://github.com/home-lang/pantry/commit/d12e357)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve ziglang.org@_ and @latest to latest stable version ([d12e357](https://github.com/home-lang/pantry/commit/d12e357)) _(by Chris <chrisbreuer93@gmail.com>)_
 
 ### 🧹 Chores
 
@@ -304,7 +304,7 @@
 
 ### 🐛 Bug Fixes
 
-- resolve ziglang.org@* and @latest to latest stable version ([d12e357](https://github.com/home-lang/pantry/commit/d12e357)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve ziglang.org@_ and @latest to latest stable version ([d12e357](https://github.com/home-lang/pantry/commit/d12e357)) _(by Chris <chrisbreuer93@gmail.com>)_
 
 ### 🧹 Chores
 
@@ -847,7 +847,7 @@
 - strip STX-injected default meta tags to prevent OG duplicates ([d7e5000](https://github.com/home-lang/pantry/commit/d7e5000)) _(by Chris <chrisbreuer93@gmail.com>)_
 - 5 issues — script client tags, dynamic pkg count, meta dedup, copy buttons ([03150a3](https://github.com/home-lang/pantry/commit/03150a3)) _(by Chris <chrisbreuer93@gmail.com>)_
 - search page defaults to HTML, limit download enrichment to 20 results ([31ef859](https://github.com/home-lang/pantry/commit/31ef859)) _(by Chris <chrisbreuer93@gmail.com>)_
-- use published @ts-charts/* v0.2.0 for server-side chart generation ([6775784](https://github.com/home-lang/pantry/commit/6775784)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use published @ts-charts/_ v0.2.0 for server-side chart generation ([6775784](https://github.com/home-lang/pantry/commit/6775784)) _(by Chris <chrisbreuer93@gmail.com>)_
 - improve GitHub release version resolution in action ([f3f94fc](https://github.com/home-lang/pantry/commit/f3f94fc)) _(by Chris <chrisbreuer93@gmail.com>)_
 - use project-local bunpress for docs build so crosswind resolves ([10b72e9](https://github.com/home-lang/pantry/commit/10b72e9)) _(by Chris <chrisbreuer93@gmail.com>)_
 - add crosswind dep so bunpress generates utility CSS for docs ([33aaf28](https://github.com/home-lang/pantry/commit/33aaf28)) _(by Chris <chrisbreuer93@gmail.com>)_
@@ -1120,7 +1120,7 @@
 - strip STX-injected default meta tags to prevent OG duplicates ([d7e5000](https://github.com/home-lang/pantry/commit/d7e5000)) _(by Chris <chrisbreuer93@gmail.com>)_
 - 5 issues — script client tags, dynamic pkg count, meta dedup, copy buttons ([03150a3](https://github.com/home-lang/pantry/commit/03150a3)) _(by Chris <chrisbreuer93@gmail.com>)_
 - search page defaults to HTML, limit download enrichment to 20 results ([31ef859](https://github.com/home-lang/pantry/commit/31ef859)) _(by Chris <chrisbreuer93@gmail.com>)_
-- use published @ts-charts/* v0.2.0 for server-side chart generation ([6775784](https://github.com/home-lang/pantry/commit/6775784)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use published @ts-charts/_ v0.2.0 for server-side chart generation ([6775784](https://github.com/home-lang/pantry/commit/6775784)) _(by Chris <chrisbreuer93@gmail.com>)_
 - improve GitHub release version resolution in action ([f3f94fc](https://github.com/home-lang/pantry/commit/f3f94fc)) _(by Chris <chrisbreuer93@gmail.com>)_
 - use project-local bunpress for docs build so crosswind resolves ([10b72e9](https://github.com/home-lang/pantry/commit/10b72e9)) _(by Chris <chrisbreuer93@gmail.com>)_
 - add crosswind dep so bunpress generates utility CSS for docs ([33aaf28](https://github.com/home-lang/pantry/commit/33aaf28)) _(by Chris <chrisbreuer93@gmail.com>)_
@@ -2467,7 +2467,7 @@
 
 ### 📄 Miscellaneous
 
--  ([  with ](https://github.com/home-lang/pantry/commit/  with )) _(by  in the replacement string (readlink -f  <>)_
+- ([  with ](https://github.com/home-lang/pantry/commit/  with )) _(by  in the replacement string (readlink -f  <>)_
 
 ### Contributors
 
@@ -3065,7 +3065,7 @@
 
 ### 📄 Miscellaneous
 
--  ([  with ](https://github.com/home-lang/pantry/commit/  with )) _(by  in the replacement string (readlink -f  <>)_
+- ([  with ](https://github.com/home-lang/pantry/commit/  with )) _(by  in the replacement string (readlink -f  <>)_
 
 ### Contributors
 
@@ -3432,7 +3432,7 @@
 - wip ([691682f](https://github.com/home-lang/pantry/commit/691682f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - wip ([a2ca701](https://github.com/home-lang/pantry/commit/a2ca701)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - update erlang, edencommon, fb303, thrift1 and 9 other deps ([3eb3ae8](https://github.com/home-lang/pantry/commit/3eb3ae8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
--  Compare version strings numerically (newest first) ([edc1002](https://github.com/home-lang/pantry/commit/edc1002)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Compare version strings numerically (newest first) ([edc1002](https://github.com/home-lang/pantry/commit/edc1002)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - update dart, libaec, watchexec ([ddeed9c](https://github.com/home-lang/pantry/commit/ddeed9c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
 - update LLaMA.cpp, oci ([baed76f](https://github.com/home-lang/pantry/commit/baed76f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
 - update depot, thrift1 ([d697eba](https://github.com/home-lang/pantry/commit/d697eba)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
@@ -3930,7 +3930,7 @@
 - wip ([691682f](https://github.com/home-lang/pantry/commit/691682f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - wip ([a2ca701](https://github.com/home-lang/pantry/commit/a2ca701)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - update erlang, edencommon, fb303, thrift1 and 9 other deps ([3eb3ae8](https://github.com/home-lang/pantry/commit/3eb3ae8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
--  Compare version strings numerically (newest first) ([edc1002](https://github.com/home-lang/pantry/commit/edc1002)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Compare version strings numerically (newest first) ([edc1002](https://github.com/home-lang/pantry/commit/edc1002)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - update dart, libaec, watchexec ([ddeed9c](https://github.com/home-lang/pantry/commit/ddeed9c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
 - update LLaMA.cpp, oci ([baed76f](https://github.com/home-lang/pantry/commit/baed76f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
 - update depot, thrift1 ([d697eba](https://github.com/home-lang/pantry/commit/d697eba)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_

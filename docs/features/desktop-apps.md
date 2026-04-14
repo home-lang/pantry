@@ -22,6 +22,7 @@ curl https://registry.pantry.dev/desktop-apps?category=Development | jq
 ## Available Apps
 
 ### Development
+
 | App | Domain | Install |
 |-----|--------|---------|
 | Visual Studio Code | `code.visualstudio.com` | `pantry install code.visualstudio.com` |
@@ -38,6 +39,7 @@ curl https://registry.pantry.dev/desktop-apps?category=Development | jq
 | Bruno | `bruno.app` | `pantry install bruno.app` |
 
 ### Browsers
+
 | App | Domain | Install |
 |-----|--------|---------|
 | Firefox | `firefox.org` | `pantry install firefox.org` |
@@ -45,6 +47,7 @@ curl https://registry.pantry.dev/desktop-apps?category=Development | jq
 | Arc | `arc.net` | `pantry install arc.net` |
 
 ### Communication
+
 | App | Domain | Install |
 |-----|--------|---------|
 | Discord | `discord.com` | `pantry install discord.com` |
@@ -55,12 +58,14 @@ curl https://registry.pantry.dev/desktop-apps?category=Development | jq
 | Element | `element.io` | `pantry install element.io` |
 
 ### AI
+
 | App | Domain | Install |
 |-----|--------|---------|
 | Ollama | `ollama.com` | `pantry install ollama.com` |
 | LM Studio | `lmstudio.ai` | `pantry install lmstudio.ai` |
 
 ### Productivity
+
 | App | Domain | Install |
 |-----|--------|---------|
 | Obsidian | `obsidian.md` | `pantry install obsidian.md` |
@@ -69,6 +74,7 @@ curl https://registry.pantry.dev/desktop-apps?category=Development | jq
 | Raycast | `raycast.com` | `pantry install raycast.com` |
 
 ### Security
+
 | App | Domain | Install |
 |-----|--------|---------|
 | 1Password | `1password.com` | `pantry install 1password.com` |
@@ -76,6 +82,7 @@ curl https://registry.pantry.dev/desktop-apps?category=Development | jq
 | KeePassXC | `keepassxc.org` | `pantry install keepassxc.org` |
 
 ### Media
+
 | App | Domain | Install |
 |-----|--------|---------|
 | Spotify | `spotify.com` | `pantry install spotify.com` |
@@ -84,6 +91,7 @@ curl https://registry.pantry.dev/desktop-apps?category=Development | jq
 | HandBrake | `handbrake.fr` | `pantry install handbrake.fr` |
 
 ### Design
+
 | App | Domain | Install |
 |-----|--------|---------|
 | Figma | `figma.com` | `pantry install figma.com` |
@@ -92,6 +100,7 @@ curl https://registry.pantry.dev/desktop-apps?category=Development | jq
 | Blender | `blender.org` | `pantry install blender.org` |
 
 ### Utilities
+
 | App | Domain | Install |
 |-----|--------|---------|
 | Rectangle | `rectangle.app` | `pantry install rectangle.app` |
@@ -106,11 +115,13 @@ curl https://registry.pantry.dev/desktop-apps?category=Development | jq
 | Keka | `keka.io` | `pantry install keka.io` |
 
 ### Office
+
 | App | Domain | Install |
 |-----|--------|---------|
 | LibreOffice | `libreoffice.org` | `pantry install libreoffice.org` |
 
 ### VPN
+
 | App | Domain | Install |
 |-----|--------|---------|
 | Tunnelblick | `tunnelblick.net` | `pantry install tunnelblick.net` |
@@ -118,11 +129,13 @@ curl https://registry.pantry.dev/desktop-apps?category=Development | jq
 ## Registry API
 
 ### List all desktop apps
+
 ```
 GET https://registry.pantry.dev/desktop-apps
 ```
 
 Returns all desktop apps with current version info from S3:
+
 ```json
 {
   "apps": [
@@ -142,11 +155,13 @@ Returns all desktop apps with current version info from S3:
 ```
 
 ### Filter by category
+
 ```
 GET https://registry.pantry.dev/desktop-apps?category=Development
 ```
 
 ### Check a specific app
+
 ```
 GET https://registry.pantry.dev/binaries/obsidian.md/metadata.json
 ```
@@ -164,6 +179,7 @@ Desktop apps flow through the exact same pipeline as system packages:
 ## Adding a New Desktop App
 
 1. Create `packages/ts-pantry/src/recipes/{domain}.ts`:
+
 ```typescript
 import type { RecipeDefinition } from '../../scripts/recipe-types'
 
@@ -193,7 +209,9 @@ export const recipe: RecipeDefinition = {
 ```
 
 2. Create `packages/ts-pantry/src/packages/{domainkey}.ts` with the package definition
+
 },
+
 ```
 
 4. Add the domain to `darwinOnlyDomains` in `build-all-packages.ts`
