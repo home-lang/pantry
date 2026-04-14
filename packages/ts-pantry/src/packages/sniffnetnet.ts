@@ -72,6 +72,7 @@ export const sniffnetnetPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.5.0',
     '1.4.2',
     '1.4.1',
     '1.4.0',

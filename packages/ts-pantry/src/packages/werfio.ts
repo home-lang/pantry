@@ -73,6 +73,7 @@ export const werfioPackage = {
   versions: [
     '2.66.1',
     '2.66.0',
+    '2.65.3',
     '2.65.2',
     '2.65.1',
     '2.65.0',
