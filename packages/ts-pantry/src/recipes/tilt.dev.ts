@@ -19,7 +19,6 @@ export const recipe: Recipe = {
     'go.dev': '~1.21',
     'nodejs.org': '^20',
     'classic.yarnpkg.com': '*',
-    'linux/aarch64': '[object Object]',
   },
 
   build: {

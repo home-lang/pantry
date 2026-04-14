@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'mobile-shell/mosh',
-    tagPattern: /\/mosh-\//,
+    tagPattern: /^mosh-(.+)$/,
   },
   distributable: {
     url: 'https://github.com/mobile-shell/mosh/releases/download/{{version.tag}}/{{version.tag}}.tar.gz',

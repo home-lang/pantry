@@ -6,8 +6,8 @@ export const recipe: Recipe = {
   programs: ['memcached'],
   versionSource: {
     type: 'github-releases',
-    repo: 'memcached/memcached/tags',
-    tagPattern: /\/^v\//,
+    repo: 'memcached/memcached',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://memcached.org/files/memcached-{{ version }}.tar.gz',

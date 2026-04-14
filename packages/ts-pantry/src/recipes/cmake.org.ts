@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['cmake', 'ccmake', 'cpack', 'ctest'],
   versionSource: {
     type: 'github-releases',
-    repo: 'Kitware/CMake/releases/tags',
+    repo: 'Kitware/CMake',
   },
   distributable: {
     url: 'https://github.com/Kitware/CMake/releases/download/v{{ version }}/cmake-{{ version }}.tar.gz',

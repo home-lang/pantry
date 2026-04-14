@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['cue'],
   versionSource: {
     type: 'github-releases',
-    repo: 'cue-lang/cue/tags',
+    repo: 'cue-lang/cue',
   },
   distributable: {
     url: 'https://github.com/cue-lang/cue/archive/refs/tags/v{{version}}.tar.gz',

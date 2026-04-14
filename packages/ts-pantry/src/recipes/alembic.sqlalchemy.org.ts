@@ -8,7 +8,7 @@ export const recipe: Recipe = {
   programs: ['alembic'],
   versionSource: {
     type: 'github-releases',
-    repo: 'sqlalchemy/alembic/releases',
+    repo: 'sqlalchemy/alembic',
   },
   dependencies: {
     'pkgx.sh': '>=1',

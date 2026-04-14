@@ -26,7 +26,6 @@ export const recipe: Recipe = {
     'sourceware.org/bzip2': '*',
     'gnome.org/libxml2': '*',
     'zlib.net': '^1',
-    'linux/x86-64': '[object Object]',
   },
 
   build: {

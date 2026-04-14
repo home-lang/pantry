@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'xkbcommon/libxkbcommon',
-    tagPattern: /\/^xkbcommon-\//,
+    tagPattern: /^xkbcommon-(.+)$/,
   },
   distributable: {
     url: 'https://github.com/xkbcommon/libxkbcommon/archive/refs/tags/{{version.tag}}.tar.gz',

@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['python', 'python{{ version.major }}', 'python{{ version.marketing }}'],
   versionSource: {
     type: 'github-releases',
-    repo: 'python/cpython/tags',
+    repo: 'python/cpython',
   },
   distributable: {
     url: 'https://www.python.org/ftp/python/{{ version.raw }}/Python-{{ version.raw }}.tar.xz',

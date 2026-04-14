@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'jdx/mise',
-    tagPattern: /\/v\//,
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/jdx/mise/archive/refs/tags/{{version.tag}}.tar.gz',

@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: [],
   versionSource: {
     type: 'github-releases',
-    repo: 'gflags/gflags/tags',
+    repo: 'gflags/gflags',
   },
   distributable: {
     url: 'https://github.com/gflags/gflags/archive/refs/tags/{{version.tag}}.tar.gz',

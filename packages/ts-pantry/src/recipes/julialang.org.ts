@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['julia'],
   versionSource: {
     type: 'github-releases',
-    repo: 'JuliaLang/julia/tags',
-    tagPattern: /\/v\//,
+    repo: 'JuliaLang/julia',
+    tagPattern: /^v(.+)$/,
   },
   distributable: null,
   buildDependencies: {

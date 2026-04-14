@@ -103,8 +103,12 @@ export function parseComposerJson(content: string): ComposerManifest {
     throw new Error('Invalid composer.json: malformed JSON')
   }
 
+  // Composer packages must have a name in vendor/package format
+  if (!parsed.name || typeof parsed.name !== 'string' || !parsed.name.includes('/')) {
+    throw new Error('Invalid composer.json: missing or invalid name (must be vendor/package format)')
+  }
   const manifest: ComposerManifest = {
-    name: parsed.name || '',
+    name: parsed.name,
   }
 
   if (parsed.version) manifest.version = parsed.version
@@ -153,6 +157,27 @@ export interface PhpPackageStorage {
 export class InMemoryPhpStorage implements PhpPackageStorage {
   private packages: Map<string, PhpPackageRecord> = new Map()
   private tarballs: Map<string, ArrayBuffer> = new Map()
+
+  /** Compare two versions: returns true if `a` is newer than `b`. Handles prereleases. */
+  private isNewerPhpVersion(a: string, b: string): boolean {
+    const parse = (v: string): { numeric: number[], prerelease: string | null } => {
+      const dashIdx = v.indexOf('-')
+      const numeric = (dashIdx === -1 ? v : v.slice(0, dashIdx))
+        .replace(/^v/, '').split('.').map(s => Number.parseInt(s, 10) || 0)
+      const prerelease = dashIdx === -1 ? null : v.slice(dashIdx + 1)
+      return { numeric, prerelease }
+    }
+    const pa = parse(a)
+    const pb = parse(b)
+    for (let i = 0; i < Math.max(pa.numeric.length, pb.numeric.length); i++) {
+      const av = pa.numeric[i] ?? 0
+      const bv = pb.numeric[i] ?? 0
+      if (av !== bv) return av > bv
+    }
+    if (pa.prerelease === null && pb.prerelease !== null) return true
+    if (pa.prerelease !== null && pb.prerelease === null) return false
+    return false
+  }
 
   async count(): Promise<number> {
     return this.packages.size
@@ -225,7 +250,10 @@ export class InMemoryPhpStorage implements PhpPackageStorage {
     }
 
     record.versions[version] = metadata
-    record.latest = version
+    // Only update latest if this version is actually newer
+    if (!record.latest || this.isNewerPhpVersion(version, record.latest)) {
+      record.latest = version
+    }
     record.updatedAt = new Date().toISOString()
 
     this.packages.set(name, record)
@@ -399,7 +427,9 @@ export class DynamoDBPhpStorage implements PhpPackageStorage {
     const key = this.s3Key(name, version)
     await this.s3.putObject({ bucket: this.bucket, key, body: Buffer.from(tarball), contentType: 'application/gzip' })
 
-    const tarballUrl = metadata.tarballUrl || `${this.baseUrl}/php/packages/${encodeURIComponent(name)}/${version}/tarball`
+    // PHP packages use vendor/package format — encode each segment separately to preserve slashes
+    const encodedName = name.split('/').map(encodeURIComponent).join('/')
+    const tarballUrl = metadata.tarballUrl || `${this.baseUrl}/php/packages/${encodedName}/${version}/tarball`
 
     // Store version record
     await this.db.putItem({

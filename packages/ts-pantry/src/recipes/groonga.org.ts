@@ -16,7 +16,6 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   dependencies: {
-    'linux/x86-64': '[object Object]',
     'msgpack.org': '*',
     'openssl.org': '*',
     'pcre.org/v2': '*',

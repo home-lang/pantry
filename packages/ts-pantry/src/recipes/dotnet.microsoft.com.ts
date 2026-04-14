@@ -3,14 +3,14 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'dotnet.microsoft.com',
   name: 'dotnet',
-  description: 'Home of .NET\\',
+  description: 'Home of the .NET platform',
   homepage: 'https://dotnet.microsoft.com/',
   github: 'https://github.com/dotnet/dotnet',
   programs: ['dotnet'],
   versionSource: {
     type: 'github-releases',
-    repo: 'dotnet/sdk/tags',
-    tagPattern: /\/v\//,
+    repo: 'dotnet/sdk',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/dotnet/sdk/archive/v{{version}}.tar.gz',

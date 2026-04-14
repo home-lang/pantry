@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: [],
   versionSource: {
     type: 'github-releases',
-    repo: 'zeromq/libzmq/releases/tags',
+    repo: 'zeromq/libzmq',
   },
   distributable: {
     url: 'https://github.com/zeromq/libzmq/releases/download/v{{version}}/zeromq-{{version}}.tar.gz',

@@ -19,14 +19,10 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'run: export ARGS="$ARGS --enable-optimize"',
-      'run: sed -i -e \\s/CiEnv::is_ci()/CiEnv::is_ci() \\&\\& config.rust_info.is_managed_git_subrepository()/\\ native.rs',
+      'export ARGS="$ARGS --enable-optimize"',
       './configure $ARGS',
       'make install',
-      '|',
       'rm -rf {{prefix}}/share/doc',
-      'run: rustc $FIXTURE -o hello --crate-name hello',
-      './hello',
     ],
   },
 }

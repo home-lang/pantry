@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   programs: [],
   versionSource: {
     type: 'github-releases',
-    repo: 'warmcat/libwebsockets/tags',
+    repo: 'warmcat/libwebsockets',
   },
   distributable: {
     url: 'https://github.com/warmcat/libwebsockets/archive/v{{version}}.tar.gz',

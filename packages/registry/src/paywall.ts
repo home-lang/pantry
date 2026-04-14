@@ -45,7 +45,9 @@ async function stripeRequest(method: string, path: string, body?: Record<string,
   const res = await fetch(url, { method, headers, body: fetchBody })
   if (!res.ok) {
     const err = await res.text()
-    throw new Error(`Stripe ${method} ${path} failed (${res.status}): ${err}`)
+    // Log full error for debugging, but throw a sanitized message
+    console.error(`Stripe ${method} ${path} failed (${res.status}):`, err)
+    throw new Error(`Payment service error (${res.status})`)
   }
   return res.json()
 }
@@ -179,6 +181,9 @@ export async function createCheckoutSession(
 // Handle Stripe webhook
 // ---------------------------------------------------------------------------
 
+const processedWebhookEvents = new Map<string, number>() // eventId -> timestamp
+const WEBHOOK_DEDUP_TTL = 10 * 60 * 1000 // 10 minutes
+
 export async function handleStripeWebhook(
   storage: MetadataStorage,
   rawBody: string,
@@ -190,6 +195,21 @@ export async function handleStripeWebhook(
 
   // Verify webhook signature
   const event = await verifyStripeWebhook(rawBody, signature)
+
+  // Deduplicate webhook events (Stripe may retry)
+  if (event.id) {
+    if (processedWebhookEvents.has(event.id)) {
+      return { processed: true }
+    }
+    processedWebhookEvents.set(event.id, Date.now())
+    // Evict expired entries periodically (every 100 events or when map is large)
+    if (processedWebhookEvents.size > 100) {
+      const now = Date.now()
+      for (const [id, ts] of processedWebhookEvents) {
+        if (now - ts > WEBHOOK_DEDUP_TTL) processedWebhookEvents.delete(id)
+      }
+    }
+  }
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object

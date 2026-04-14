@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['virtualenv'],
   versionSource: {
     type: 'github-releases',
-    repo: 'pypa/virtualenv/releases/tags',
-    tagPattern: /\/^v\//,
+    repo: 'pypa/virtualenv',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/pypa/virtualenv/archive/refs/tags/{{ version }}.tar.gz',

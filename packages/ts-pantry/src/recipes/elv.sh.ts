@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'elves/elvish',
-    tagPattern: /\/^v\//,
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/elves/elvish/archive/refs/tags/v{{ version }}.tar.gz',
@@ -18,7 +18,6 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'go.dev': '^1.19',
-    'linux/aarch64': '[object Object]',
   },
 
   build: {

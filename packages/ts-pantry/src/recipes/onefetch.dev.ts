@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'o2sh/onefetch',
-    tagPattern: /\/v\//,
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/o2sh/onefetch/archive/refs/tags/{{ version }}.tar.gz',

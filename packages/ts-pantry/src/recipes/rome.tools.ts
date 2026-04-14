@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'rome/tools',
-    tagPattern: /\/v\//,
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/rome/tools/archive/refs/tags/v{{ version }}.tar.gz',

@@ -39,8 +39,7 @@
   "module": "./dist/src/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "ts-pantry": "./dist/bin/cli.js",
-    "pantry-ts": "./scripts/pantry-cli.ts"
+    "ts-pantry": "./dist/bin/cli.js"
   },
   "files": [
     "README.md",
@@ -94,7 +93,7 @@
     "pantry:upload": "bun scripts/upload-to-s3.ts"
   },
   "dependencies": {
-    "@stacksjs/ts-cloud": "^0.1.2",
+    "@stacksjs/ts-cloud": "^0.2.3",
     "bunfig": "^0.15.6",
     "ts-web-scraper": "^0.1.1"
   },

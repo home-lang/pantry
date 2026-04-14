@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'lxml/lxml',
-    tagPattern: /\/^lxml-\//,
+    tagPattern: /^lxml-(.+)$/,
   },
   distributable: {
     url: 'https://github.com/lxml/lxml/releases/download/lxml-{{version}}/lxml-{{version}}.tar.gz',

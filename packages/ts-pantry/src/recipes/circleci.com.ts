@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['circleci'],
   versionSource: {
     type: 'github-releases',
-    repo: 'CircleCI-Public/circleci-cli/tags',
-    tagPattern: /\/^v\//,
+    repo: 'CircleCI-Public/circleci-cli',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/CircleCI-Public/circleci-cli/archive/refs/tags/v{{version}}.tar.gz',

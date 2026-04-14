@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['mako-render'],
   versionSource: {
     type: 'github-releases',
-    repo: 'sqlalchemy/mako/releases',
-    tagPattern: /\/rel_\//,
+    repo: 'sqlalchemy/mako',
+    tagPattern: /^rel_(.+)$/,
   },
   distributable: {
     url: 'https://github.com/sqlalchemy/mako/archive/rel_{{version.major}}_{{version.minor}}_{{version.patch}}.tar.gz',

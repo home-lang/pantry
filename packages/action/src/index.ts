@@ -58,18 +58,16 @@ async function resolveVersion(version: string): Promise<string> {
   if (tagMatch)
     return tagMatch[1].replace(/^v/, '')
 
-  // Last resort: GitHub API with auth
+  // Last resort: GitHub API with auth (use fetch instead of curl to avoid token exposure in process args)
   const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || ''
-  const curlArgs = ['-sL']
-  if (token)
-    curlArgs.push('-H', `Authorization: token ${token}`)
-  curlArgs.push(`https://api.github.com/repos/${REPO}/releases/latest`)
-
   let apiOutput = ''
-  await exec.exec('curl', curlArgs, {
-    listeners: { stdout: (data: Buffer) => { apiOutput += data.toString() } },
-    silent: true,
-  }).catch(() => { apiOutput = '' })
+  try {
+    const headers: Record<string, string> = { 'User-Agent': 'pantry-action' }
+    if (token) headers.Authorization = `token ${token}`
+    const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { headers })
+    if (res.ok) apiOutput = await res.text()
+  }
+  catch { apiOutput = '' }
 
   try {
     const release = JSON.parse(apiOutput)
@@ -535,7 +533,7 @@ export async function run(): Promise<void> {
     const resolvedVer = ver.trim().split(' ').pop()?.split('(')[0]?.trim() || resolvedVersion
     const lockHash = lockfile ? hashFile(lockfile) : 'no-lock'
     // Avoid hashing the same file twice when lockfile == depsFile
-    const depsHash = (depsFileForKey && depsFileForKey !== lockfile) ? hashFile(depsFileForKey) : ''
+    const depsHash = (depsFileForKey && depsFileForKey !== lockfile) ? hashFile(depsFileForKey) : 'none'
     const cacheKey = `pantry-v2-${resolvedVer}-${platform.os}-${platform.arch}-${lockHash}-${depsHash}-${inputs.packages || 'all'}`
     // Restore keys: try same OS/arch with any lock hash
     const restoreKeys = [
@@ -597,12 +595,13 @@ export async function run(): Promise<void> {
       if (systemDeps.length > 0) {
         core.startGroup(`Installing system packages: ${systemDeps.join(', ')}`)
         // Use the pantry TS installer SDK — works cross-platform via Node.js APIs
-        for (const dep of systemDeps) {
-          try {
-            await installSystemPackage(dep, pantryDir)
-          }
-          catch (e) {
-            core.warning(`${dep}: ${e instanceof Error ? e.message : 'install failed'}`)
+        const results = await Promise.allSettled(
+          systemDeps.map(dep => installSystemPackage(dep, pantryDir))
+        )
+        for (let i = 0; i < results.length; i++) {
+          if (results[i].status === 'rejected') {
+            const reason = (results[i] as PromiseRejectedResult).reason
+            core.warning(`${systemDeps[i]}: ${reason instanceof Error ? reason.message : 'install failed'}`)
           }
         }
         core.endGroup()
@@ -684,8 +683,9 @@ export async function run(): Promise<void> {
     const bunxPath = path.join(pantryBinDir, 'bunx')
     try {
       if (fs.existsSync(bunPath)) {
-        if (!fs.existsSync(bunxPath))
-          fs.symlinkSync(bunPath, bunxPath)
+        // Remove stale symlink before creating to avoid EEXIST race
+        try { fs.unlinkSync(bunxPath) } catch { /* doesn't exist */ }
+        fs.symlinkSync(bunPath, bunxPath)
         core.exportVariable('BUN_INSTALL', pantryDir)
       }
     }
@@ -762,7 +762,7 @@ async function publishZigPackage(registryUrl: string, token: string, cwd: string
     includePaths = pathsMatch[1]
       .split(',')
       .map(p => p.trim().replace(/^"/, '').replace(/"$/, '').trim())
-      .filter(p => p.length > 0 && !p.includes('..') && !p.startsWith('/'))
+      .filter(p => p.length > 0 && !p.includes('..') && !p.startsWith('/') && !p.startsWith('\\') && !/^[a-zA-Z]:/.test(p))
   }
 
   // Create tarball
@@ -779,6 +779,9 @@ async function publishZigPackage(registryUrl: string, token: string, cwd: string
     await exec.exec('tar', ['czf', tarballPath, 'build.zig', 'build.zig.zon', 'src'])
   }
 
+  if (!fs.existsSync(tarballPath)) {
+    throw new Error('Failed to create tarball — tar command may have failed')
+  }
   const stat = fs.statSync(tarballPath)
   core.info(`Tarball: ${tarballName} (${(stat.size / 1024).toFixed(1)} KB)`)
 
@@ -880,7 +883,7 @@ function extractChangelogForVersion(changelogPath: string, tag: string): string 
       }
 
       // Stop at the next version section
-      if (capturing && (lower.includes('[compare changes]') || /^#{1,3}\s+v?\d+\.\d+/.test(line)))
+      if (capturing && (lower.includes('[compare changes]') || /^#{1,3}\s+v?\d+\.\d+\.\d+/.test(line)))
         break
 
       if (capturing)
@@ -968,6 +971,9 @@ async function createGitHubRelease(inputs: ActionInputs): Promise<void> {
   const octokit = github.getOctokit(token)
   const { owner, repo } = github.context.repo
   const tag = inputs.releaseTag
+  if (!tag) {
+    throw new Error('Release tag is required (set release-tag input or push a tag)')
+  }
 
   // Resolve file patterns — auto-discover if no explicit files given
   let filePatterns = inputs.releaseFiles.split('\n').map(p => p.trim()).filter(Boolean)

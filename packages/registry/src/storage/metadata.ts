@@ -208,26 +208,37 @@ export class InMemoryMetadataStorage implements MetadataStorage {
     this.accessGrants.set(key, grant)
   }
 
-  private isNewerVersion(a: string, b: string): boolean {
-    const [aMajor, aMinor, aPatch] = a.split('.').map(Number)
-    const [bMajor, bMinor, bPatch] = b.split('.').map(Number)
+  private parseSemver(v: string): { numeric: number[], prerelease: string | null } {
+    const dashIdx = v.indexOf('-')
+    const numeric = (dashIdx === -1 ? v : v.slice(0, dashIdx))
+      .split('.').map(s => {
+        const n = Number.parseInt(s, 10)
+        return Number.isNaN(n) ? 0 : n
+      })
+    const prerelease = dashIdx === -1 ? null : v.slice(dashIdx + 1)
+    return { numeric, prerelease }
+  }
 
-    if (aMajor !== bMajor)
-      return aMajor > bMajor
-    if (aMinor !== bMinor)
-      return aMinor > bMinor
-    return aPatch > bPatch
+  private isNewerVersion(a: string, b: string): boolean {
+    const pa = this.parseSemver(a)
+    const pb = this.parseSemver(b)
+    const len = Math.max(pa.numeric.length, pb.numeric.length)
+    for (let i = 0; i < len; i++) {
+      const av = pa.numeric[i] ?? 0
+      const bv = pb.numeric[i] ?? 0
+      if (av !== bv) return av > bv
+    }
+    // Same numeric: release (no prerelease) is newer than prerelease
+    if (pa.prerelease === null && pb.prerelease !== null) return true
+    if (pa.prerelease !== null && pb.prerelease === null) return false
+    if (pa.prerelease !== null && pb.prerelease !== null) return pa.prerelease > pb.prerelease
+    return false
   }
 
   private compareSemver(a: string, b: string): number {
-    const [aMajor, aMinor, aPatch] = a.split('.').map(Number)
-    const [bMajor, bMinor, bPatch] = b.split('.').map(Number)
-
-    if (aMajor !== bMajor)
-      return bMajor - aMajor
-    if (aMinor !== bMinor)
-      return bMinor - aMinor
-    return bPatch - aPatch
+    if (this.isNewerVersion(a, b)) return -1
+    if (this.isNewerVersion(b, a)) return 1
+    return 0
   }
 
   /**
@@ -282,6 +293,7 @@ export class FileMetadataStorage extends InMemoryMetadataStorage {
       clearTimeout(this.saveTimeout)
 
     this.saveTimeout = setTimeout(() => {
+      this.saveTimeout = null
       this.save()
     }, 1000)
   }

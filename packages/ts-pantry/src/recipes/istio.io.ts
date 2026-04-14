@@ -16,7 +16,6 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'go.dev': '^1.21',
-    'linux/aarch64': '[object Object]',
   },
 
   build: {

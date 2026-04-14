@@ -108,7 +108,15 @@ export class AuthService {
       updatedAt: now,
     }
 
-    await this.storage.putUser(user)
+    try {
+      await this.storage.putUser(user)
+    }
+    catch (err: any) {
+      if (err.message?.includes('ConditionalCheckFailed')) {
+        throw new AuthError('An account with this email already exists', 409)
+      }
+      throw err
+    }
 
     return { email: user.email, name: user.name, createdAt: user.createdAt, updatedAt: user.updatedAt }
   }
@@ -122,6 +130,8 @@ export class AuthService {
 
     const user = await this.storage.getUser(normalizedEmail)
     if (!user) {
+      // Perform dummy hash to prevent user enumeration via timing
+      await hashPassword('dummy-password-for-timing-normalization')
       throw new AuthError('Invalid email or password', 401)
     }
 
@@ -235,8 +245,16 @@ export class AuthService {
    */
   async validatePublishToken(token: string, legacyToken: string): Promise<TokenValidationResult> {
     // Legacy admin token check (constant-time comparison to prevent timing attacks)
-    if (legacyToken && token.length === legacyToken.length && crypto.timingSafeEqual(Buffer.from(token), Buffer.from(legacyToken))) {
-      return { valid: true, userId: '_admin' }
+    if (legacyToken) {
+      // Pad both to same length to prevent length-based timing leaks
+      const maxLen = Math.max(token.length, legacyToken.length)
+      const tokenBuf = Buffer.alloc(maxLen)
+      const legacyBuf = Buffer.alloc(maxLen)
+      Buffer.from(token).copy(tokenBuf)
+      Buffer.from(legacyToken).copy(legacyBuf)
+      if (crypto.timingSafeEqual(tokenBuf, legacyBuf) && token.length === legacyToken.length) {
+        return { valid: true, userId: '_admin' }
+      }
     }
 
     // User API token
@@ -397,6 +415,7 @@ export class DynamoDBAuthStorage implements AuthStorage {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       }),
+      ConditionExpression: 'attribute_not_exists(PK)',
     })
   }
 
@@ -417,8 +436,8 @@ export class DynamoDBAuthStorage implements AuthStorage {
         tokenHash: token.tokenHash,
         permissions: token.permissions,
         createdAt: token.createdAt,
-        lastUsedAt: token.lastUsedAt || '',
-        expiresAt: token.expiresAt || '',
+        ...(token.lastUsedAt ? { lastUsedAt: token.lastUsedAt } : {}),
+        ...(token.expiresAt ? { expiresAt: token.expiresAt } : {}),
       }),
     })
 
@@ -434,8 +453,8 @@ export class DynamoDBAuthStorage implements AuthStorage {
         tokenHash: token.tokenHash,
         permissions: token.permissions,
         createdAt: token.createdAt,
-        lastUsedAt: token.lastUsedAt || '',
-        expiresAt: token.expiresAt || '',
+        ...(token.lastUsedAt ? { lastUsedAt: token.lastUsedAt } : {}),
+        ...(token.expiresAt ? { expiresAt: token.expiresAt } : {}),
       }),
     })
   }
@@ -501,16 +520,9 @@ export class DynamoDBAuthStorage implements AuthStorage {
     if (result.Item) {
       const data = DynamoDBClient.unmarshal(result.Item)
 
-      // Delete user record
-      await this.db.deleteItem({
-        TableName: this.tableName,
-        Key: {
-          PK: { S: `USER#${userId}` },
-          SK: { S: `API_TOKEN#${tokenId}` },
-        },
-      })
-
-      // Delete reverse lookup
+      // Delete reverse lookup first — disables token authentication immediately.
+      // If the process crashes after this but before deleting the user record,
+      // the token appears in the user's list but can no longer authenticate (safe).
       if (data.tokenHash) {
         await this.db.deleteItem({
           TableName: this.tableName,
@@ -520,6 +532,15 @@ export class DynamoDBAuthStorage implements AuthStorage {
           },
         })
       }
+
+      // Delete user record
+      await this.db.deleteItem({
+        TableName: this.tableName,
+        Key: {
+          PK: { S: `USER#${userId}` },
+          SK: { S: `API_TOKEN#${tokenId}` },
+        },
+      })
     }
   }
 

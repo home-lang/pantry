@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   platforms: ['darwin', 'linux/x86-64'],
   versionSource: {
     type: 'github-releases',
-    repo: 'flutter/flutter/tags',
+    repo: 'flutter/flutter',
   },
   dependencies: {
     'git-scm.org': '*',

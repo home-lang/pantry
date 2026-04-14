@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['bsdcat', 'bsdcpio', 'bsdtar'],
   versionSource: {
     type: 'github-releases',
-    repo: 'libarchive/libarchive/releases',
-    tagPattern: /\/^Libarchive \//,
+    repo: 'libarchive/libarchive',
+    tagPattern: /^Libarchive (.+)$/,
   },
   distributable: {
     url: 'https://github.com/libarchive/libarchive/releases/download/v{{version}}/libarchive-{{version}}.tar.gz',

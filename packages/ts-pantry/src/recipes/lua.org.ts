@@ -7,7 +7,7 @@ export const recipe: Recipe = {
   homepage: 'https://www.lua.org/',
   programs: ['lua', 'luac'],
   distributable: {
-    url: 'http://www.lua.org/ftp/lua-{{version}}.tar.gz',
+    url: 'https://www.lua.org/ftp/lua-{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

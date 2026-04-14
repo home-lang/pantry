@@ -125,7 +125,9 @@ export function buildTokens(
   depPaths: Record<string, string>,
   versionTag?: string,
 ): Token[] {
-  const [os, arch] = platform.split('-')
+  const dashIdx = platform.indexOf('-')
+  const os = dashIdx === -1 ? platform : platform.slice(0, dashIdx)
+  const arch = dashIdx === -1 ? 'x86-64' : platform.slice(dashIdx + 1)
   const osName = os === 'darwin' ? 'darwin' : 'linux'
   const archName = arch === 'arm64' ? 'aarch64' : 'x86-64'
   const versionParts = version.split('.')
@@ -206,7 +208,9 @@ export function evaluateCondition(
 ): boolean {
   if (!condition) return true
 
-  const [os, arch] = platform.split('-')
+  const dashIdx = platform.indexOf('-')
+  const os = dashIdx === -1 ? platform : platform.slice(0, dashIdx)
+  const arch = dashIdx === -1 ? 'x86-64' : platform.slice(dashIdx + 1)
   const osName = os === 'darwin' ? 'darwin' : 'linux'
   const archName = arch === 'arm64' ? 'aarch64' : 'x86-64'
 
@@ -245,7 +249,12 @@ export function evaluateCondition(
  * Evaluate version range conditions like ^2, ~3.9, >=3<3.12, <14
  */
 function evaluateVersionRange(range: string, version: string): boolean {
-  const vParts = version.split('.').map(Number)
+  // Strip prerelease suffix before comparing numeric parts
+  const numericVersion = version.includes('-') ? version.slice(0, version.indexOf('-')) : version
+  const vParts = numericVersion.split('.').map(s => {
+    const n = Number(s)
+    return Number.isNaN(n) ? 0 : n
+  })
 
   // Parse compound ranges (e.g. ">=3.8<3.8.4")
   const constraints: Array<{
@@ -319,7 +328,9 @@ export function platformReduce(
   env: Record<string, any>,
   platform: string,
 ): Record<string, any> {
-  const [os, arch] = platform.split('-')
+  const dashIdx = platform.indexOf('-')
+  const os = dashIdx === -1 ? platform : platform.slice(0, dashIdx)
+  const arch = dashIdx === -1 ? 'x86-64' : platform.slice(dashIdx + 1)
   const osName = os === 'darwin' ? 'darwin' : 'linux'
   const archName = arch === 'arm64' ? 'aarch64' : 'x86-64'
 
@@ -524,7 +535,9 @@ export function generateBuildScript(
   versionTag?: string,
 ): string {
   const tokens = buildTokens(pkg, version, platform, prefix, buildDir, depPaths, versionTag)
-  const [os, arch] = platform.split('-')
+  const dashIdx = platform.indexOf('-')
+  const os = dashIdx === -1 ? platform : platform.slice(0, dashIdx)
+  const arch = dashIdx === -1 ? 'x86-64' : platform.slice(dashIdx + 1)
   const osName = os === 'darwin' ? 'darwin' : 'linux'
   const archName = arch === 'arm64' ? 'aarch64' : 'x86-64'
 

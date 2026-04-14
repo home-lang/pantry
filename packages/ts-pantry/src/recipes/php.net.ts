@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['pear', 'pecl', 'phar', 'php', 'php-cgi', 'php-config', 'phpdbg', 'phpize'],
   versionSource: {
     type: 'github-releases',
-    repo: 'php/php-src/tags',
-    tagPattern: /\/^php-\//,
+    repo: 'php/php-src',
+    tagPattern: /^php-(.+)$/,
   },
   distributable: {
     url: 'https://www.php.net/distributions/php-{{ version }}.tar.gz',

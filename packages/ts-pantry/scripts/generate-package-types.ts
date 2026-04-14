@@ -72,12 +72,8 @@ function generateTypes(domainToVersions: Map<string, string[]>, aliases: Map<str
   lines.push(' * All package domain names as a union type')
   lines.push(' */')
   lines.push(`export type GeneratedPackageDomain =`)
-  for (let i = 0; i < sortedDomains.length; i++) {
-    const domain = sortedDomains[i]
-    const line = i === 0
-      ? `  | '${domain}'`
-      : `  | '${domain}'`
-    lines.push(line)
+  for (const domain of sortedDomains) {
+    lines.push(`  | '${domain}'`)
   }
   lines.push('')
 
@@ -87,12 +83,8 @@ function generateTypes(domainToVersions: Map<string, string[]>, aliases: Map<str
   lines.push(' * All package aliases as a union type')
   lines.push(' */')
   lines.push(`export type GeneratedPackageAlias =`)
-  for (let i = 0; i < sortedAliases.length; i++) {
-    const alias = sortedAliases[i]
-    const line = i === 0
-      ? `  | '${alias}'`
-      : `  | '${alias}'`
-    lines.push(line)
+  for (const alias of sortedAliases) {
+    lines.push(`  | '${alias}'`)
   }
   lines.push('')
 

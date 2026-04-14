@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: [],
   versionSource: {
     type: 'github-releases',
-    repo: 'pyca/cryptography/tags',
+    repo: 'pyca/cryptography',
   },
   distributable: {
     url: 'git+https://github.com/pyca/cryptography.git',

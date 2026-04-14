@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['ct_run', 'dialyzer', 'epmd', 'erl', 'erlc', 'escript', 'run_erl', 'to_erl', 'typer'],
   versionSource: {
     type: 'github-releases',
-    repo: 'erlang/otp/releases',
-    tagPattern: /\/^OTP \//,
+    repo: 'erlang/otp',
+    tagPattern: /^OTP (.+)$/,
   },
   distributable: {
     url: 'https://github.com/erlang/otp/releases/download/OTP-{{ version.raw }}/otp_src_{{ version.raw }}.tar.gz',
@@ -19,11 +19,9 @@ export const recipe: Recipe = {
   dependencies: {
     'openssl.org': '^1.1',
     'invisible-island.net/ncurses': '*',
-    'linux/x86-64': '[object Object]',
   },
   buildDependencies: {
     'perl.org': '>=5',
-    'linux/x86-64': '[object Object]',
   },
 
   build: {

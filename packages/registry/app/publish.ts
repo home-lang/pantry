@@ -131,7 +131,7 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
   const s3 = new S3Client(REGION)
 
   // Determine S3 key structure: packages/pantry/{name}/{version}/{tarball}
-  const safeName = packageJson.name.replace('@', '').replace('/', '-')
+  const safeName = packageJson.name.replaceAll('@', '').replaceAll('/', '-').replaceAll('..', '').replace(/[^\w.-]/g, '-')
   const s3Key = `packages/pantry/${safeName}/${packageJson.version}/${tarballName}`
 
   try {

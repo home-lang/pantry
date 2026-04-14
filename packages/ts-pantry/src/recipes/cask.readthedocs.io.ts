@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['cask'],
   versionSource: {
     type: 'github-releases',
-    repo: 'cask/cask/tags',
+    repo: 'cask/cask',
   },
   distributable: {
     url: 'https://github.com/cask/cask/archive/v{{version}}.tar.gz',

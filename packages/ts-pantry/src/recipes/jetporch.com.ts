@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'jetporch/jetporch',
-    tagPattern: /\/v\//,
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/jetporch/jetporch/archive/refs/tags/v{{version}}.tar.gz',

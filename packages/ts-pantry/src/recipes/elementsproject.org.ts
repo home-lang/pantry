@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'ElementsProject/elements',
-    tagPattern: /\/^elements-\//,
+    tagPattern: /^elements-(.+)$/,
   },
   distributable: {
     url: 'https://github.com/ElementsProject/elements/archive/refs/tags/elements-{{version}}.tar.gz',

@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: [],
   versionSource: {
     type: 'github-releases',
-    repo: 'Tencent/rapidjson/tags',
+    repo: 'Tencent/rapidjson',
   },
   distributable: {
     url: 'https://github.com/Tencent/rapidjson/archive/refs/tags/{{version.tag}}.tar.gz',

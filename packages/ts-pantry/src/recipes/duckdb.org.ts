@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['duckdb'],
   versionSource: {
     type: 'github-releases',
-    repo: 'duckdb/duckdb/releases/tags',
+    repo: 'duckdb/duckdb',
   },
   distributable: {
     url: 'https://github.com/duckdb/duckdb/archive/refs/tags/v{{version}}.tar.gz',

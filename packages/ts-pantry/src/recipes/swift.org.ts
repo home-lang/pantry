@@ -11,7 +11,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'apple/swift',
-    tagPattern: /\/^swift-\/,\/-RELEASE$\//,
+    tagPattern: /^swift-(.+?)-RELEASE$/,
   },
   buildDependencies: {
     'curl.se': '*',

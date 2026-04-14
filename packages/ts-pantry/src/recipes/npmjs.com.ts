@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['npm', 'npx'],
   versionSource: {
     type: 'github-releases',
-    repo: 'npm/cli/tags',
+    repo: 'npm/cli',
   },
   distributable: {
     url: 'https://github.com/npm/cli/archive/refs/tags/{{ version.tag }}.tar.gz',

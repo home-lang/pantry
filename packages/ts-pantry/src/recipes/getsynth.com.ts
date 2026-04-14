@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'shuttle-hq/synth',
-    tagPattern: /\/v\//,
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/shuttle-hq/synth/archive/refs/tags/v{{ version }}.tar.gz',

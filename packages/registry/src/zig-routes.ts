@@ -40,6 +40,9 @@ export async function handleZigRoutes(
   // GET /zig/search
   if (zigPath === '/search' && req.method === 'GET') {
     const query = url.searchParams.get('q') || ''
+    if (query.length > 256) {
+      return Response.json({ error: 'Search query too long' }, { status: 400, headers: corsHeaders })
+    }
     const limit = Math.min(Number.parseInt(url.searchParams.get('limit') || '20', 10), 100)
     const results = await storage.search(query, limit)
 
@@ -87,6 +90,9 @@ export async function handleZigRoutes(
       return Response.json({ error: authResult.error }, { status: 401, headers: corsHeaders })
     }
     const packageName = decodeURIComponent(deleteMatch[1])
+    if (packageName.includes('..') || /[\x00-\x1f]/.test(packageName)) {
+      return Response.json({ error: 'Invalid package name' }, { status: 400, headers: corsHeaders })
+    }
     await storage.deletePackage(packageName)
     return Response.json({ success: true, message: `Deleted ${packageName}` }, { headers: corsHeaders })
   }
@@ -95,6 +101,9 @@ export async function handleZigRoutes(
   const packageMatch = zigPath.match(/^\/packages\/([^/]+)(?:\/(.+))?$/)
   if (packageMatch) {
     const packageName = decodeURIComponent(packageMatch[1])
+    if (packageName.includes('..') || /[\x00-\x1f]/.test(packageName)) {
+      return Response.json({ error: 'Invalid package name' }, { status: 400, headers: corsHeaders })
+    }
     const rest = packageMatch[2]
 
     // GET /zig/packages/{name}/versions
@@ -190,7 +199,14 @@ function validateToken(authHeader: string | null): { valid: boolean, error?: str
     ? authHeader.slice(7)
     : authHeader
 
-  if (!REGISTRY_TOKEN || token.length !== REGISTRY_TOKEN.length || !require('node:crypto').timingSafeEqual(Buffer.from(token), Buffer.from(REGISTRY_TOKEN))) {
+  // Pad both to same length to prevent length-based timing leaks
+  const maxLen = Math.max(token.length, REGISTRY_TOKEN.length)
+  const tokenBuf = Buffer.alloc(maxLen)
+  const legacyBuf = Buffer.alloc(maxLen)
+  Buffer.from(token).copy(tokenBuf)
+  Buffer.from(REGISTRY_TOKEN).copy(legacyBuf)
+  const crypto = require('node:crypto')
+  if (!crypto.timingSafeEqual(tokenBuf, legacyBuf) || token.length !== REGISTRY_TOKEN.length) {
     return { valid: false, error: 'Invalid token' }
   }
 
@@ -230,6 +246,14 @@ async function handleZigPublish(
       return Response.json(
         { error: 'Missing tarball' },
         { status: 400, headers: corsHeaders },
+      )
+    }
+
+    // Enforce tarball size limit (50MB)
+    if (tarballFile.size > 50 * 1024 * 1024) {
+      return Response.json(
+        { error: 'Tarball exceeds maximum size of 50MB' },
+        { status: 413, headers: corsHeaders },
       )
     }
 
@@ -284,7 +308,7 @@ async function handleZigPublish(
     // Track publish event
     analytics?.trackEvent({
       packageName: name,
-      category: 'install' as any,
+      category: 'install_on_request',
       timestamp: new Date().toISOString(),
       version,
     }).catch(err => console.warn('Analytics tracking failed:', err))

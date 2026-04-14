@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['mupdf-gl', 'muraster', 'mutool'],
   versionSource: {
     type: 'github-releases',
-    repo: 'ArtifexSoftware/mupdf/tags',
+    repo: 'ArtifexSoftware/mupdf',
   },
   distributable: {
     url: 'git+https://github.com/ArtifexSoftware/mupdf',

@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['xmlwf'],
   versionSource: {
     type: 'github-releases',
-    repo: 'libexpat/libexpat/releases',
+    repo: 'libexpat/libexpat',
   },
   distributable: {
     url: 'https://github.com/libexpat/libexpat/releases/download/R_{{ version.major }}_{{ version.minor }}_{{ version.patch }}/expat-{{ version }}.tar.xz',

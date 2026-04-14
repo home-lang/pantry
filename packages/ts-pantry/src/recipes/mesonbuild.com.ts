@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['meson'],
   versionSource: {
     type: 'github-releases',
-    repo: 'mesonbuild/meson/tags',
+    repo: 'mesonbuild/meson',
   },
   distributable: {
     url: 'https://github.com/mesonbuild/meson/releases/download/{{version}}/meson-{{version}}.tar.gz',

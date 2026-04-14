@@ -8,7 +8,7 @@ export const recipe: Recipe = {
   programs: ['tldr'],
   versionSource: {
     type: 'github-releases',
-    repo: 'tldr-pages/tldr-c-client/releases/tags',
+    repo: 'tldr-pages/tldr-c-client',
   },
   distributable: {
     url: 'https://github.com/tldr-pages/tldr-c-client/archive/refs/tags/v{{version}}.tar.gz',

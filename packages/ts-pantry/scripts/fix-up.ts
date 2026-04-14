@@ -386,8 +386,13 @@ catch {
   }
 
   // Remove lib64 and replace with symlink
-  execSync(`rm -rf "${lib64}"`)
-  symlinkSync('lib', lib64)
+  try {
+    execSync(`rm -rf "${lib64}"`, { stdio: 'pipe' })
+    symlinkSync('lib', lib64)
+  }
+  catch (err) {
+    console.warn(`Warning: failed to replace lib64 with symlink: ${(err as Error).message}`)
+  }
 }
 
 // Recursively bundle build-path dependency libraries into the package's lib/.
@@ -574,12 +579,13 @@ else if (entry.isFile()) {
  * Check if a file is a Mach-O binary
  */
 function isMachO(filePath: string): boolean {
+  let file: number | undefined
   try {
-    // Quick check: read magic bytes
     const buffer = new Uint8Array(4)
-    const file = require('node:fs').openSync(filePath, 'r')
+    file = require('node:fs').openSync(filePath, 'r')
     require('node:fs').readSync(file, buffer, 0, 4, 0)
     require('node:fs').closeSync(file)
+    file = undefined
 
     // Mach-O magic: feedface, feedfacf, cafebabe (universal), bebafeca
     // Use >>> 0 to force unsigned 32-bit (JS << returns signed, causing overflow for 0xcf...)
@@ -588,8 +594,13 @@ function isMachO(filePath: string): boolean {
       || magic === 0xcafebabe || magic === 0xbebafeca
       || magic === 0xcffaedfe || magic === 0xcefaedfe
   }
-catch {
+  catch {
     return false
+  }
+  finally {
+    if (file !== undefined) {
+      try { require('node:fs').closeSync(file) } catch { /* already closed */ }
+    }
   }
 }
 
@@ -597,16 +608,23 @@ catch {
  * Check if a file is an ELF binary
  */
 function isELF(filePath: string): boolean {
+  let file: number | undefined
   try {
     const buffer = new Uint8Array(4)
-    const file = require('node:fs').openSync(filePath, 'r')
+    file = require('node:fs').openSync(filePath, 'r')
     require('node:fs').readSync(file, buffer, 0, 4, 0)
     require('node:fs').closeSync(file)
+    file = undefined
 
     // ELF magic: 7f454c46 (.ELF)
     return buffer[0] === 0x7f && buffer[1] === 0x45 && buffer[2] === 0x4c && buffer[3] === 0x46
   }
-catch {
+  catch {
     return false
+  }
+  finally {
+    if (file !== undefined) {
+      try { require('node:fs').closeSync(file) } catch { /* already closed */ }
+    }
   }
 }

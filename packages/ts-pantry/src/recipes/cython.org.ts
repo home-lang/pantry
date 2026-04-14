@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['cython'],
   versionSource: {
     type: 'github-releases',
-    repo: 'cython/cython/releases',
+    repo: 'cython/cython',
   },
   distributable: {
     url: 'https://github.com/cython/cython/archive/refs/tags/{{version}}.tar.gz',

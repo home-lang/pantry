@@ -150,8 +150,12 @@ export class DynamoDBClient {
     try {
       return await response.json() as T
     }
-    catch {
-      return {} as T
+    catch (err) {
+      // Some DynamoDB actions (PutItem, DeleteItem) return empty bodies on success
+      if (response.status === 200 && response.headers.get('content-length') === '0') {
+        return {} as T
+      }
+      throw new Error(`DynamoDB ${action}: failed to parse response JSON: ${(err as Error).message}`)
     }
   }
 
@@ -225,7 +229,7 @@ export class DynamoDBClient {
   }
 
   /**
-   * Scan items from a table
+   * Scan items from a table (paginates up to 10 pages)
    */
   async scan(params: {
     TableName: string
@@ -238,7 +242,25 @@ export class DynamoDBClient {
     Items: Array<Record<string, AttributeValue>>
     Count: number
   }> {
-    return this.request('Scan', params)
+    let allItems: Array<Record<string, AttributeValue>> = []
+    let lastKey: Record<string, AttributeValue> | undefined
+    let pages = 0
+    const maxPages = 10
+
+    do {
+      const scanParams = { ...params, ...(lastKey ? { ExclusiveStartKey: lastKey } : {}) }
+      const result = await this.request<{
+        Items?: Array<Record<string, AttributeValue>>
+        Count?: number
+        LastEvaluatedKey?: Record<string, AttributeValue>
+      }>('Scan', scanParams)
+
+      allItems = allItems.concat(result.Items || [])
+      lastKey = result.LastEvaluatedKey
+      pages++
+    } while (lastKey && pages < maxPages)
+
+    return { Items: allItems, Count: allItems.length }
   }
 
   /**

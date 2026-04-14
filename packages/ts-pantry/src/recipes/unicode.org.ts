@@ -19,7 +19,6 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'run:',
       './configure $ARGS',
       'make --jobs {{ hw.concurrency }}',
       'make install',

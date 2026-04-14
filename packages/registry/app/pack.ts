@@ -56,7 +56,13 @@ async function pack(targetDir: string = process.cwd()): Promise<string> {
   }
 
   // Read package.json
-  const packageJson: PackageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+  let packageJson: PackageJson
+  try {
+    packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+  }
+  catch {
+    throw new Error(`Failed to parse ${packageJsonPath}: invalid JSON`)
+  }
 
   if (!packageJson.name) {
     console.error('❌ package.json is missing "name" field')
@@ -69,7 +75,7 @@ async function pack(targetDir: string = process.cwd()): Promise<string> {
   }
 
   // Sanitize package name for filename (replace @ and / with safe chars)
-  const safeName = packageJson.name.replace('@', '').replace('/', '-')
+  const safeName = packageJson.name.replaceAll('@', '').replaceAll('/', '-')
   const tarballName = `${safeName}-${packageJson.version}.tgz`
 
   console.log(`📋 Package: ${packageJson.name}`)
@@ -175,6 +181,8 @@ else {
     for (const binPath of binPaths) {
       // Normalize path (remove leading ./)
       const normalizedPath = binPath.replace(/^\.\//, '')
+      // Prevent path traversal
+      if (normalizedPath.includes('..') || normalizedPath.startsWith('/')) continue
       if (existsSync(join(dir, normalizedPath)) && !files.includes(normalizedPath)) {
         files.push(normalizedPath)
         console.log(`   + Including bin: ${normalizedPath}`)
@@ -195,6 +203,8 @@ else {
 }
 
 async function globFiles(baseDir: string, pattern: string, applyIgnore: boolean = true): Promise<string[]> {
+  // Prevent path traversal
+  if (pattern.includes('..') || pattern.startsWith('/')) return []
   const fullPath = join(baseDir, pattern)
 
   // If it's a directory, include all files in it
@@ -207,8 +217,23 @@ async function globFiles(baseDir: string, pattern: string, applyIgnore: boolean 
     return [pattern]
   }
 
-  // TODO: Handle glob patterns like "dist/**"
-  return []
+  // Handle glob patterns (e.g., "dist/**", "src/*.js")
+  try {
+    const { Glob } = require('bun')
+    const glob = new Glob(pattern)
+    const results: string[] = []
+    for (const match of glob.scanSync({ cwd: baseDir, dot: false })) {
+      const rel = typeof match === 'string' ? match : match.path
+      if (!applyIgnore || !shouldIgnore(basename(rel), rel)) {
+        results.push(rel)
+      }
+    }
+    return results
+  }
+  catch {
+    console.warn(`  Warning: Could not resolve glob pattern "${pattern}", skipping`)
+    return []
+  }
 }
 
 async function walkDir(dir: string, baseDir: string, applyIgnore: boolean = true): Promise<string[]> {

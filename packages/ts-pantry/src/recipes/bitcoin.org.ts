@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'bitcoin/bitcoin',
-    tagPattern: /\/^Bitcoin Core \//,
+    tagPattern: /^Bitcoin Core (.+)$/,
   },
   distributable: {
     url: 'https://bitcoincore.org/bin/bitcoin-core-{{version.raw}}/bitcoin-{{version.raw}}.tar.gz',

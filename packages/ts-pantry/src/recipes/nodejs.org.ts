@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['node'],
   versionSource: {
     type: 'github-releases',
-    repo: 'nodejs/node/tags',
+    repo: 'nodejs/node',
   },
   distributable: {
     url: 'https://nodejs.org/dist/v{{ version }}/node-v{{ version }}.tar.xz',

@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['shellcheck'],
   versionSource: {
     type: 'github-releases',
-    repo: 'koalaman/shellcheck/tags',
+    repo: 'koalaman/shellcheck',
   },
 
   build: {

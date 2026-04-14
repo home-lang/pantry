@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['podman', 'podman-remote', 'podman-mac-helper'],
   versionSource: {
     type: 'github-releases',
-    repo: 'containers/podman/releases/tags',
+    repo: 'containers/podman',
   },
   distributable: {
     url: 'https://github.com/containers/podman/archive/refs/tags/{{version.tag}}.tar.gz',

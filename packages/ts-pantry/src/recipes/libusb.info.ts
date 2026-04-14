@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'libusb/libusb',
-    tagPattern: /\/^v\//,
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/libusb/libusb/releases/download/v{{ version }}/libusb-{{ version }}.tar.bz2',

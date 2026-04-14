@@ -123,21 +123,36 @@ async function syncToDynamoDB(pkgName: string, version: string, availableVersion
   }, region)
 }
 
-function parseVersionPart(s: string): number {
-  const n = Number.parseInt(s, 10)
-  return Number.isNaN(n) ? 0 : n
-}
-
 function isNewerVersion(a: string, b: string): boolean {
-  const aParts = a.split(/[._-]/).map(parseVersionPart)
-  const bParts = b.split(/[._-]/).map(parseVersionPart)
-  const len = Math.max(aParts.length, bParts.length)
+  const parse = (v: string) => {
+    const dashIdx = v.indexOf('-')
+    const numeric = (dashIdx === -1 ? v : v.slice(0, dashIdx)).split('.').map(s => {
+      const n = Number.parseInt(s, 10)
+      return Number.isNaN(n) ? 0 : n
+    })
+    const prerelease = dashIdx === -1 ? null : v.slice(dashIdx + 1)
+    return { numeric, prerelease }
+  }
+  const pa = parse(a)
+  const pb = parse(b)
+  const len = Math.max(pa.numeric.length, pb.numeric.length)
   for (let i = 0; i < len; i++) {
-    const av = aParts[i] ?? 0
-    const bv = bParts[i] ?? 0
+    const av = pa.numeric[i] ?? 0
+    const bv = pb.numeric[i] ?? 0
     if (av !== bv) return av > bv
   }
+  // Same numeric: release (no prerelease) is newer than prerelease
+  if (pa.prerelease === null && pb.prerelease !== null) return true
+  if (pa.prerelease !== null && pb.prerelease === null) return false
+  // Both have prerelease: compare lexicographically
+  if (pa.prerelease !== null && pb.prerelease !== null) return pa.prerelease > pb.prerelease
   return false
+}
+
+function compareSemverDesc(a: string, b: string): number {
+  if (isNewerVersion(a, b)) return -1
+  if (isNewerVersion(b, a)) return 1
+  return 0
 }
 
 export async function uploadToS3(options: UploadOptions): Promise<void> {
@@ -298,9 +313,7 @@ catch {
   console.log(`\n📊 Syncing to DynamoDB registry...`)
   try {
     const availableVersions = Object.keys(metadata.versions).sort((a, b) => {
-      const [aM, am, ap] = a.split('.').map(Number)
-      const [bM, bm, bp] = b.split('.').map(Number)
-      return bM - aM || bm - am || (bp || 0) - (ap || 0)
+      return compareSemverDesc(a, b)
     })
     await syncToDynamoDB(pkgName, metadata.latestVersion, availableVersions, region)
     console.log(`   ✓ Updated DynamoDB (${DYNAMO_TABLE}) — ${availableVersions.length} versions`)

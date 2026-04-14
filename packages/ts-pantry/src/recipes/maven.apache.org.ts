@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['mvn', 'mvnDebug', 'mvnyjp'],
   versionSource: {
     type: 'github-releases',
-    repo: 'apache/maven/tags',
-    tagPattern: /\/^maven-\//,
+    repo: 'apache/maven',
+    tagPattern: /^maven-(.+)$/,
   },
   distributable: {
     url: 'https://archive.apache.org/dist/maven/maven-{{version.major}}/{{version}}/binaries/apache-maven-{{version}}-bin.tar.gz',

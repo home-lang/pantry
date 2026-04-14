@@ -15,6 +15,11 @@ import { execSync } from 'node:child_process'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 
+// Process-unique temp dirs to avoid race conditions between concurrent instances
+const syncId = `${process.pid}-${Date.now()}`
+const syncInstallDir = `/tmp/bulk-sync-install-${syncId}`
+const syncArtifactsDir = `/tmp/bulk-sync-artifacts-${syncId}`
+
 interface PackageInfo {
   domain: string
   name: string
@@ -180,11 +185,11 @@ else {
       try {
         execSync(`curl -fsSL -o "${tarball}" "${url}"`, { stdio: 'pipe' })
 
-        // Verify we got a real file (not an XML error)
+        // Verify we got a real file (not an XML/HTML error page)
         const fileSize = statSync(tarball).size
-        if (fileSize < 1000) {
+        if (fileSize < 5000) {
           const content = require('fs').readFileSync(tarball, 'utf-8')
-          if (content.includes('<?xml') || content.includes('NoSuchKey') || content.includes('Error')) {
+          if (content.includes('<?xml') || content.includes('NoSuchKey') || content.includes('Error') || content.includes('<!DOCTYPE') || content.includes('AccessDenied')) {
             rmSync(tarball, { force: true })
             continue
           }
@@ -381,8 +386,7 @@ catch (e) {
 }
 
 async function uploadToS3(destDir: string, domain: string, version: string, platform: string, bucket: string, region: string): Promise<void> {
-  const artifactsDir = '/tmp/bulk-sync-artifacts'
-  const artifactDir = join(artifactsDir, `${domain}-${version}-${platform}`)
+  const artifactDir = join(syncArtifactsDir, `${domain}-${version}-${platform}`)
 
   mkdirSync(artifactDir, { recursive: true })
 
@@ -393,7 +397,7 @@ async function uploadToS3(destDir: string, domain: string, version: string, plat
 
   // Upload using the existing upload script
   execSync(
-    `bun scripts/upload-to-s3.ts --package "${domain}" --version "${version}" --artifacts-dir "${artifactsDir}" --bucket "${bucket}" --region "${region}"`,
+    `bun scripts/upload-to-s3.ts --package "${domain}" --version "${version}" --artifacts-dir "${syncArtifactsDir}" --bucket "${bucket}" --region "${region}"`,
     { stdio: 'pipe', cwd: process.cwd() }
   )
 
@@ -457,9 +461,9 @@ Examples:
   console.log(`   Range: ${start} to ${start + count - 1}`)
   console.log(`   Dry run: ${values['dry-run']}`)
 
-  // Clean up any leftovers from previous runs
-  rmSync('/tmp/bulk-sync-install', { recursive: true, force: true })
-  rmSync('/tmp/bulk-sync-artifacts', { recursive: true, force: true })
+  // Create process-unique temp dirs
+  mkdirSync(syncInstallDir, { recursive: true })
+  mkdirSync(syncArtifactsDir, { recursive: true })
 
   // Get packages
   console.log(`\n📋 Loading packages...`)
@@ -494,7 +498,7 @@ Examples:
     }
 
     // Download from pkgx (primary) -> GitHub releases (fallback)
-    const installDir = `/tmp/bulk-sync-install/${pkg.domain}`
+    const installDir = join(syncInstallDir, pkg.domain)
     rmSync(installDir, { recursive: true, force: true })
 
     let result = await downloadFromPkgx(pkg.domain, version, installDir)
@@ -546,14 +550,14 @@ catch (e: any) {
   }
 
   // Final cleanup
-  rmSync('/tmp/bulk-sync-install', { recursive: true, force: true })
-  rmSync('/tmp/bulk-sync-artifacts', { recursive: true, force: true })
+  rmSync(syncInstallDir, { recursive: true, force: true })
+  rmSync(syncArtifactsDir, { recursive: true, force: true })
 }
 
 main().catch(e => {
   console.error('Error:', e.message)
   // Cleanup even on error
-  rmSync('/tmp/bulk-sync-install', { recursive: true, force: true })
-  rmSync('/tmp/bulk-sync-artifacts', { recursive: true, force: true })
+  rmSync(syncInstallDir, { recursive: true, force: true })
+  rmSync(syncArtifactsDir, { recursive: true, force: true })
   process.exit(1)
 })

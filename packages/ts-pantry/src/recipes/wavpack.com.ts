@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['wavpack', 'wvunpack', 'wvtag', 'wvgain'],
   versionSource: {
     type: 'github-releases',
-    repo: 'dbry/WavPack/tags',
+    repo: 'dbry/WavPack',
   },
   distributable: {
     url: 'https://www.wavpack.com/wavpack-{{version}}.tar.xz',

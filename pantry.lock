@@ -61,7 +61,7 @@
       "name": "ts-pantry",
       "version": "0.9.20",
       "dependencies": {
-        "@stacksjs/ts-cloud": "^0.1.2",
+        "@stacksjs/ts-cloud": "^0.2.3",
         "bunfig": "^0.15.6",
         "ts-web-scraper": "^0.1.1"
       },
@@ -169,12 +169,10 @@
         "stx": "./dist/cli.js"
       }
     },
-    "@stacksjs/ts-cloud@0.1.14": {
+    "@stacksjs/ts-cloud@^0.2.3": {
       "name": "@stacksjs/ts-cloud",
-      "version": "0.1.14",
+      "version": "^0.2.3",
       "source": "npm",
-      "resolved": "https://registry.npmjs.org/@stacksjs/ts-cloud/-/ts-cloud-0.1.14.tgz",
-      "integrity": "sha512-/uIJSR9QJm6WvaMxWx8OAC4kMdkamgpFiIG0J2+Qs+EPMoQXEJHI2wujhTrJFgwnf7ucuqd+qHU6Er4klEW8Cg==",
       "dependencies": {
         "@stacksjs/ts-cloud-aws-types": "0.1.7",
         "@stacksjs/ts-cloud-core": "0.1.7",

@@ -13,18 +13,12 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'run:',
-      'run: ln -s tclsh{{version.marketing}} tclsh',
-      'run:',
-      'run:',
-      'run: ln -s wish{{version.marketing}} wish',
-      'run:',
-      'run:',
-      'run:',
-      'run:',
-      'rm {{prefix}}/bin/sqlite3_analyzer',
-      'run: sed -i -f $PROP *.sh',
-      'run: sed -i -f $PROP */*.sh',
+      'cd unix',
+      './configure --prefix={{prefix}}',
+      'make --jobs {{hw.concurrency}}',
+      'make install',
+      'ln -s tclsh{{version.marketing}} {{prefix}}/bin/tclsh',
+      'rm -f {{prefix}}/bin/sqlite3_analyzer',
     ],
   },
 }

@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['exr2aces', 'exrenvmap', 'exrheader', 'exrmakepreview', 'exrmaketiled', 'exrmultipart', 'exrmultiview', 'exrstdattr'],
   versionSource: {
     type: 'github-releases',
-    repo: 'AcademySoftwareFoundation/openexr/tags',
-    tagPattern: /\/^v\//,
+    repo: 'AcademySoftwareFoundation/openexr',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/AcademySoftwareFoundation/openexr/archive/refs/tags/v{{version}}.tar.gz',

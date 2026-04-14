@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'biomejs/biome',
-    tagPattern: /\/(cli\/v|@biomejs\/biome@)\//,
+    tagPattern: /(cli\/v|@biomejs\/biome@)(.+)$/,
   },
   distributable: {
     url: 'https://github.com/biomejs/biome/archive/refs/tags/{{ version.tag }}.tar.gz',

@@ -3,7 +3,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'cfssl.org',
   name: 'cfssl',
-  description: 'CFSSL: Cloudflare\\',
+  description: 'CFSSL: PKI and TLS toolkit from Cloudflare',
   homepage: 'https://cfssl.org/',
   github: 'https://github.com/cloudflare/cfssl',
   programs: ['cfssl', 'cfssl-bundle', 'cfssl-certinfo', 'cfssl-newkey', 'cfssl-scan', 'cfssljson', 'mkbundle', 'multirootca'],

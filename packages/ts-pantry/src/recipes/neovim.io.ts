@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['nvim'],
   versionSource: {
     type: 'github-releases',
-    repo: 'neovim/neovim/releases/tags',
+    repo: 'neovim/neovim',
   },
   distributable: {
     url: 'https://github.com/neovim/neovim/archive/refs/tags/v{{version}}.tar.gz',

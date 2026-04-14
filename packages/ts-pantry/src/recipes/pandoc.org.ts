@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'jgm/pandoc',
-    tagPattern: /\/^pandoc \//,
+    tagPattern: /^pandoc (.+)$/,
   },
 
   build: {

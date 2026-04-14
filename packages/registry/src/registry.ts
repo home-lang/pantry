@@ -12,6 +12,21 @@ import { FileMetadataStorage } from './storage/metadata'
 import { DynamoDBMetadataStorage } from './storage/dynamodb-metadata'
 import { LocalStorage, S3Storage } from './storage/s3'
 
+function isBlockedHost(hostname: string): boolean {
+  const lower = hostname.toLowerCase()
+  // Exact matches
+  if (['localhost', '0.0.0.0', '[::1]', '[::]'].includes(lower)) return true
+  // IPv4 loopback and private ranges
+  if (/^127\./.test(lower)) return true
+  if (/^10\./.test(lower)) return true
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(lower)) return true
+  if (/^192\.168\./.test(lower)) return true
+  if (/^169\.254\./.test(lower)) return true
+  // IPv6 private
+  if (lower.startsWith('[fc') || lower.startsWith('[fd') || lower === '[::1]') return true
+  return false
+}
+
 /**
  * Pantry Registry - Main registry class
  */
@@ -141,7 +156,7 @@ export class Registry {
 
         // Otherwise, fetch from the URL (validate HTTPS to prevent SSRF)
         const tarballUrlObj = new URL(metadata.tarballUrl)
-        if (tarballUrlObj.protocol !== 'https:' || ['localhost', '127.0.0.1', '0.0.0.0', '169.254.169.254'].includes(tarballUrlObj.hostname)) {
+        if (tarballUrlObj.protocol !== 'https:' || isBlockedHost(tarballUrlObj.hostname)) {
           throw new Error(`Blocked tarball URL: ${tarballUrlObj.hostname}`)
         }
         const response = await fetch(metadata.tarballUrl)
@@ -168,6 +183,9 @@ export class Registry {
   async publish(metadata: PackageMetadata, tarball: ArrayBuffer): Promise<void> {
     // Generate tarball key
     const safeName = metadata.name.replaceAll('@', '').replaceAll('/', '-').replace(/[^a-z0-9._-]/gi, '')
+    if (!safeName || safeName.includes('..') || /^[.\-]|[.\-]$/.test(safeName)) {
+      throw new Error(`Invalid package name: ${metadata.name}`)
+    }
     const key = `packages/pantry/${safeName}/${metadata.version}/${safeName}-${metadata.version}.tgz`
 
     // Upload tarball
@@ -204,7 +222,13 @@ export class Registry {
     tarball: ArrayBuffer,
     options?: { repository?: string, packageDir?: string, version?: string },
   ): Promise<CommitPublish> {
-    const safeName = name.replaceAll('@', '').replaceAll('/', '-')
+    const safeName = name.replaceAll('@', '').replaceAll('/', '-').replace(/[^a-z0-9._-]/gi, '')
+    if (!safeName || safeName.includes('..') || /^[.\-]|[.\-]$/.test(safeName)) {
+      throw new Error(`Invalid package name: ${name}`)
+    }
+    if (!/^[a-f0-9]{7,40}$/i.test(sha)) {
+      throw new Error(`Invalid commit SHA: ${sha}`)
+    }
     const key = `commits/${sha}/${safeName}/${safeName}.tgz`
 
     // Upload tarball

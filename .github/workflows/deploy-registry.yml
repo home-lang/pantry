@@ -12,10 +12,15 @@ on:
       - '.config/bunpress.ts'
   workflow_dispatch:
 
+concurrency:
+  group: deploy-registry
+  cancel-in-progress: false
+
 jobs:
   deploy:
     name: ec2
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
 
@@ -25,7 +30,7 @@ jobs:
       - name: Deploy to registry server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.REGISTRY_SSH_KEY }}
-          REGISTRY_HOST: ${{ secrets.REGISTRY_HOST || '54.243.196.101' }}
+          REGISTRY_HOST: ${{ secrets.REGISTRY_HOST }}
         run: |
           mkdir -p ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
@@ -65,7 +70,8 @@ jobs:
             --max-time 15 2>/dev/null) || true
           echo "Health check: HTTP $HTTP_CODE"
           if [ "$HTTP_CODE" != "200" ]; then
-            echo "::warning::Health check returned $HTTP_CODE"
+            echo "::error::Health check returned $HTTP_CODE — deployment may have failed"
+            exit 1
           fi
 
   notify:

@@ -674,7 +674,15 @@ export function getValidCachedPackage(
     }
 
     // Read and parse the cached data
-    const cachedData = JSON.parse(fs.readFileSync(cacheFilePath, 'utf-8')) as PkgxPackage
+    let cachedData: PkgxPackage
+    try {
+      cachedData = JSON.parse(fs.readFileSync(cacheFilePath, 'utf-8')) as PkgxPackage
+    }
+    catch {
+      // Corrupt cache file — remove it and return null
+      try { fs.unlinkSync(cacheFilePath) } catch { /* ignore */ }
+      return null
+    }
 
     // Check if the cached data has a fetchedAt timestamp
     if (!cachedData.fetchedAt) {
@@ -1064,49 +1072,53 @@ export function setupCleanupHandlers(): void {
   })
 }
 
-// Initialize handlers
-setupCleanupHandlers()
+// Only register process-level handlers when running as the main module,
+// not when imported as a library (which would pollute the host process)
+if (typeof Bun !== 'undefined' && Bun.main === import.meta.path) {
+  // Initialize handlers
+  setupCleanupHandlers()
 
-// Add global error handlers to prevent crashes
-process.on('uncaughtException', (error) => {
-  const errorString = String(error)
-  console.error('Uncaught exception caught:', error.message)
-  if (error.message.includes('No target found for targetId')
-    || error.message.includes('Assertion error')
-    || error.message.includes('Target page, context or browser has been closed')
-    || error.message.includes('Failed to connect')
-    || error.message.includes('Connection closed')
-    || error.message.includes('Protocol error')
-    || errorString.includes('WebSocket connection closed')
-    || error.message.includes('Browser has been closed')) {
-    console.error('Browser/network connection error detected, continuing execution...')
-    // Don't exit the process for browser/network errors
-    return
-  }
-  // For other uncaught exceptions, still exit
-  console.error('Non-browser error, exiting...')
-  process.exit(1)
-})
+  // Add global error handlers to prevent crashes
+  process.on('uncaughtException', (error) => {
+    const errorString = String(error)
+    console.error('Uncaught exception caught:', error.message)
+    if (error.message.includes('No target found for targetId')
+      || error.message.includes('Assertion error')
+      || error.message.includes('Target page, context or browser has been closed')
+      || error.message.includes('Failed to connect')
+      || error.message.includes('Connection closed')
+      || error.message.includes('Protocol error')
+      || errorString.includes('WebSocket connection closed')
+      || error.message.includes('Browser has been closed')) {
+      console.error('Browser/network connection error detected, continuing execution...')
+      // Don't exit the process for browser/network errors
+      return
+    }
+    // For other uncaught exceptions, still exit
+    console.error('Non-browser error, exiting...')
+    process.exit(1)
+  })
 
-process.on('unhandledRejection', (reason, _promise) => {
-  const errorString = String(reason)
-  console.error('Unhandled rejection caught:', errorString)
-  if (errorString.includes('No target found for targetId')
-    || errorString.includes('Assertion error')
-    || errorString.includes('Target page, context or browser has been closed')
-    || errorString.includes('Failed to connect')
-    || errorString.includes('Connection closed')
-    || errorString.includes('Protocol error')
-    || errorString.includes('WebSocket connection closed')
-    || errorString.includes('Browser has been closed')) {
-    console.error('Browser/network connection error in promise, continuing execution...')
-    // Don't exit the process for browser/network errors
-    return
-  }
-  // For other unhandled rejections, still exit
-  console.error('Non-browser promise rejection, exiting...')
-  process.exit(1)
-})
+  process.on('unhandledRejection', (reason, _promise) => {
+    const errorString = String(reason)
+    console.error('Unhandled rejection caught:', errorString)
+    if (errorString.includes('No target found for targetId')
+      || errorString.includes('Assertion error')
+      || errorString.includes('Target page, context or browser has been closed')
+      || errorString.includes('Failed to connect')
+      || errorString.includes('Connection closed')
+      || errorString.includes('Protocol error')
+      || errorString.includes('WebSocket connection closed')
+      || errorString.includes('Browser has been closed')) {
+      console.error('Browser/network connection error in promise, continuing execution...')
+      // Don't exit the process for browser/network errors
+      return
+    }
+    // For other unhandled rejections, still exit
+    console.error('Non-browser promise rejection, exiting...')
+    process.exit(1)
+  })
+}
 
 // Start a periodic cleanup task
 export function startPeriodicCleanup(): void {
@@ -1551,8 +1563,9 @@ export async function fetchAndSavePackage(
     // Set an overall operation timeout to prevent hanging the entire process
     // This is different from the browser navigation timeout
     const operationTimeout = actualTimeout // Use the same timeout
+    let timeoutId: ReturnType<typeof setTimeout>
     const operationTimeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         console.error(`Operation timeout for ${packageName} after ${operationTimeout}ms`)
         reject(new Error(`Operation timeout after ${operationTimeout}ms`))
       }, operationTimeout)
@@ -1575,6 +1588,7 @@ export async function fetchAndSavePackage(
         })
 
         const fetchResult = await Promise.race([fetchPromise, operationTimeoutPromise])
+        clearTimeout(timeoutId!)
 
         // The timeout promise will reject if it times out, so we can directly use the result
         const { packageInfo, originalName, fullDomainName } = fetchResult
@@ -1667,6 +1681,7 @@ export async function fetchAndSavePackage(
         }
       }
       catch (error: any) {
+        clearTimeout(timeoutId!)
         if (error.toString().includes('404') || error.toString().includes('Not Found')) {
           console.error(`Package ${packageName} returned 404 Not Found.`)
           // Don't retry on 404 errors, skip to avoid overwriting existing files
@@ -1686,6 +1701,7 @@ export async function fetchAndSavePackage(
         })
 
         const fetchResult = await Promise.race([fetchPromise, operationTimeoutPromise])
+        clearTimeout(timeoutId!)
 
         // The timeout promise will reject if it times out, so we can directly use the result
         const { packageInfo, originalName, fullDomainName } = fetchResult
@@ -1842,6 +1858,7 @@ export async function fetchAndSavePackage(
         }
       }
       catch (error: any) {
+        clearTimeout(timeoutId!)
         if (error.toString().includes('404') || error.toString().includes('Not Found')) {
           console.error(`Package ${packageName} returned 404 Not Found. Skipping to avoid overwriting existing files.`)
           return { success: false, fullDomainName: packageName }

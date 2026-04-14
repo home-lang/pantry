@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'vapoursynth/vapoursynth',
-    tagPattern: /\/^R\//,
+    tagPattern: /^R(.+)$/,
   },
   distributable: {
     url: 'https://github.com/vapoursynth/vapoursynth/archive/R{{version.major}}.tar.gz',

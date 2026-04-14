@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: [],
   versionSource: {
     type: 'github-releases',
-    repo: 'libuv/libuv/tags',
+    repo: 'libuv/libuv',
   },
   distributable: {
     url: 'https://dist.libuv.org/dist/v{{version}}/libuv-v{{version}}-dist.tar.gz',

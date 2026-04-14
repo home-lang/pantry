@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: [],
   versionSource: {
     type: 'github-releases',
-    repo: 'xianyi/OpenBLAS/releases/tags',
+    repo: 'xianyi/OpenBLAS',
   },
   distributable: {
     url: 'https://github.com/xianyi/OpenBLAS/releases/download/{{version.tag}}/OpenBLAS-{{version}}.tar.gz',
@@ -17,7 +17,6 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'cmake.org': '*',
-    'linux/x86-64': '[object Object]',
   },
 
   build: {

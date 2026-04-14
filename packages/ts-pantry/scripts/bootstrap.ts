@@ -354,6 +354,10 @@ catch (error: any) {
   if (built.length > 0 && !dryRun) {
     console.log(`\n✓ Packages uploaded to s3://${bucket}/binaries/`)
   }
+
+  if (failed.length > 0) {
+    process.exit(1)
+  }
 }
 
 // CLI

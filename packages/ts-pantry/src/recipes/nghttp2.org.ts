@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'nghttp2/nghttp2',
-    tagPattern: /\/^nghttp2 v\//,
+    tagPattern: /^nghttp2 v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/nghttp2/nghttp2/releases/download/v{{ version }}/nghttp2-{{ version }}.tar.gz',

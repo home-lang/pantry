@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['yadm'],
   versionSource: {
     type: 'github-releases',
-    repo: 'TheLocehiliosan/yadm/tags',
+    repo: 'TheLocehiliosan/yadm',
   },
   distributable: {
     url: 'https://github.com/TheLocehiliosan/yadm/archive/refs/tags/{{ version }}.tar.gz',

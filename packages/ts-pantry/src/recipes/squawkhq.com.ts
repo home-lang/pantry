@@ -24,8 +24,6 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cd cli',
-      'cd crates/cli',
       'cd crates/squawk',
       'sed -i \'1,/dependencies/s/version = ".*"/version = "{{ version }}"/\' Cargo.toml',
       'cargo install --path . --root {{prefix}}',

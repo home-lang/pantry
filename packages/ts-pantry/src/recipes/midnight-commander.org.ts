@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'http://ftp.midnight-commander.org/mc-{{version}}.tar.xz',
+    url: 'https://ftp.midnight-commander.org/mc-{{version}}.tar.xz',
     stripComponents: 1,
   },
 

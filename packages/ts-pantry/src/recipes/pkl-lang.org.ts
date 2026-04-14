@@ -19,11 +19,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'run: |',
-      'run: |',
       './gradlew -DreleaseBuild=true $TARGETS',
-      'run:',
-      'run:',
     ],
   },
 }

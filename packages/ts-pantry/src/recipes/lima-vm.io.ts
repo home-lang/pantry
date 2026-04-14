@@ -19,7 +19,6 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'run:',
       'make $ARGS binaries',
       'mkdir -p {{prefix}}',
       'mv ./_output/* {{prefix}}/',

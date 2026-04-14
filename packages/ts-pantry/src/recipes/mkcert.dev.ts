@@ -3,13 +3,13 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'mkcert.dev',
   name: 'mkcert',
-  description: 'A simple zero-config tool to make locally trusted development certificates with any names you\\',
+  description: 'A simple zero-config tool to make locally trusted development certificates',
   homepage: 'https://mkcert.dev',
   github: 'https://github.com/FiloSottile/mkcert',
   programs: ['mkcert'],
   versionSource: {
     type: 'github-releases',
-    repo: 'FiloSottile/mkcert/tags',
+    repo: 'FiloSottile/mkcert',
   },
   distributable: {
     url: 'https://github.com/FiloSottile/mkcert/archive/refs/tags/v{{version}}.tar.gz',

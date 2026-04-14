@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     repo: 'openresty/openresty',
   },
   distributable: {
-    url: 'https://github.com/openresty/openresty/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/openresty/openresty/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

@@ -3,10 +3,10 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'ceres-solver.org',
   name: 'ceres-solver',
-  description: '',
+  description: 'A large-scale non-linear optimization library',
   programs: ['ceres-solver'],
   distributable: {
-    url: 'http://ceres-solver.org/ceres-solver-{{version}}.tar.gz',
+    url: 'https://ceres-solver.org/ceres-solver-{{version}}.tar.gz',
     stripComponents: 1,
   },
 

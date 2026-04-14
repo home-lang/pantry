@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['xc'],
   versionSource: {
     type: 'github-releases',
-    repo: 'joerdav/xc/tags',
-    tagPattern: /\/v\//,
+    repo: 'joerdav/xc',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/joerdav/xc/archive/refs/tags/v{{ version }}.tar.gz',

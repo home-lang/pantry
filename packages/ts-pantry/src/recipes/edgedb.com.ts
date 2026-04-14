@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['edgedb'],
   versionSource: {
     type: 'github-releases',
-    repo: 'edgedb/edgedb-cli/tags',
-    tagPattern: /\/v\//,
+    repo: 'edgedb/edgedb-cli',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/edgedb/edgedb-cli/archive/refs/tags/v{{version.raw}}.tar.gz',

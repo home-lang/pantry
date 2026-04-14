@@ -3,7 +3,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'certbot.eff.org',
   name: 'certbot',
-  description: 'Certbot is EFF\\',
+  description: 'Certbot - automatically enable HTTPS on your website',
   homepage: 'https://certbot.eff.org/',
   github: 'https://github.com/certbot/certbot',
   programs: ['certbot'],

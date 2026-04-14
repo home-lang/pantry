@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'hercules-team/augeas',
-    tagPattern: /\/^release-\//,
+    tagPattern: /^release-(.+)$/,
   },
   distributable: {
     url: 'https://github.com/hercules-team/augeas/releases/download/release-{{version}}/augeas-{{version}}.tar.gz',

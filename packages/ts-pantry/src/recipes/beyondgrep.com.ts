@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['ack'],
   versionSource: {
     type: 'github-releases',
-    repo: 'beyondgrep/ack3/tags',
+    repo: 'beyondgrep/ack3',
   },
   dependencies: {
     'perl.org': '*',

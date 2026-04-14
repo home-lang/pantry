@@ -37,7 +37,26 @@ function getCredentials(): AWSCredentials {
   return { accessKeyId, secretAccessKey, sessionToken }
 }
 
-async function dynamoRequest(action: string, params: Record<string, unknown>): Promise<unknown> {
+async function dynamoRequest(action: string, params: Record<string, unknown>, retries = 3): Promise<unknown> {
+  let lastError: Error | null = null
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await dynamoRequestOnce(action, params)
+    }
+    catch (err) {
+      lastError = err as Error
+      const msg = lastError.message
+      // Only retry on transient errors (5xx, throttling, network)
+      const isRetryable = msg.includes('500') || msg.includes('503') || msg.includes('ProvisionedThroughputExceeded') || msg.includes('ThrottlingException') || msg.includes('ENOTFOUND') || msg.includes('ECONNRESET')
+      if (!isRetryable || attempt === retries) throw lastError
+      // Exponential backoff: 500ms, 1000ms, 2000ms
+      await new Promise(r => setTimeout(r, 500 * 2 ** attempt))
+    }
+  }
+  throw lastError
+}
+
+async function dynamoRequestOnce(action: string, params: Record<string, unknown>): Promise<unknown> {
   const credentials = getCredentials()
   const host = `dynamodb.${AWS_REGION}.amazonaws.com`
   const now = new Date()

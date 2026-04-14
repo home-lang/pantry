@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['solc', 'yul-phaser'],
   versionSource: {
     type: 'github-releases',
-    repo: 'ethereum/solidity/releases/tags',
+    repo: 'ethereum/solidity',
   },
   distributable: {
     url: 'https://github.com/ethereum/solidity/releases/download//v{{version}}/solidity_{{version}}.tar.gz',

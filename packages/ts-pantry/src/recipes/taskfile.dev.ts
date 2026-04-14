@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['task'],
   versionSource: {
     type: 'github-releases',
-    repo: 'go-task/task/releases/tags',
+    repo: 'go-task/task',
   },
   distributable: {
     url: 'https://github.com/go-task/task/archive/refs/tags/v{{version}}.tar.gz',

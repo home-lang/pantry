@@ -363,6 +363,7 @@ export function getCaskToken(appName: string): string | null {
  * Scan /Applications for installed apps and read their versions from Info.plist.
  */
 export function scanInstalledApps(applicationsDir = '/Applications'): InstalledApp[] {
+  if (process.platform !== 'darwin') return []
   const apps: InstalledApp[] = []
 
   if (!fs.existsSync(applicationsDir)) return apps
@@ -405,6 +406,7 @@ export function scanInstalledApps(applicationsDir = '/Applications'): InstalledA
  * Query Homebrew for latest cask versions in batch.
  * Pass an array of cask tokens, returns a map of token → info.
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export function queryBrewCaskVersions(tokens: string[]): Map<string, BrewCaskInfo> {
   const result = new Map<string, BrewCaskInfo>()
   if (tokens.length === 0) return result
@@ -415,8 +417,8 @@ export function queryBrewCaskVersions(tokens: string[]): Map<string, BrewCaskInf
     const batch = tokens.slice(i, i + batchSize)
     try {
       const raw = execSync(
-        `brew info --cask --json=v2 ${batch.join(' ')} 2>/dev/null`,
-        { timeout: 60000, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 },
+        ['brew', 'info', '--cask', '--json=v2', ...batch].map(s => `'${s.replace(/'/g, `'\\''`)}'`).join(' '),
+        { timeout: 60000, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024, shell: '/bin/sh' },
       )
 
       if (!raw) continue
@@ -575,13 +577,14 @@ export async function updateApp(caskToken: string): Promise<{
     // Try upgrade first (for brew-managed casks)
     try {
       execSync(
-        `brew upgrade --cask ${caskToken} 2>&1`,
+        `brew upgrade --cask '${caskToken.replace(/'/g, `'\\''`)}' 2>&1`,
         { timeout: 120000, encoding: 'utf-8' },
       )
 
       // Get new version
+      const safeCaskToken = caskToken.replace(/'/g, `'\\''`)
       const verOutput = execSync(
-        `brew info --cask --json=v2 ${caskToken} 2>/dev/null`,
+        `brew info --cask --json=v2 '${safeCaskToken}' 2>/dev/null`,
         { timeout: 15000, encoding: 'utf-8' },
       )
       const data = JSON.parse(verOutput)
@@ -593,14 +596,15 @@ export async function updateApp(caskToken: string): Promise<{
       const errMsg = upgradeErr.stderr?.toString() || upgradeErr.message || ''
 
       // If not installed via brew, try fresh install
+      const safeCaskToken = caskToken.replace(/'/g, `'\\''`)
       if (errMsg.includes('not installed') || errMsg.includes('No available')) {
         execSync(
-          `brew install --cask ${caskToken} 2>&1`,
+          `brew install --cask '${safeCaskToken}' 2>&1`,
           { timeout: 120000, encoding: 'utf-8' },
         )
 
         const verOutput = execSync(
-          `brew info --cask --json=v2 ${caskToken} 2>/dev/null`,
+          `brew info --cask --json=v2 '${safeCaskToken}' 2>/dev/null`,
           { timeout: 15000, encoding: 'utf-8' },
         )
         const data = JSON.parse(verOutput)

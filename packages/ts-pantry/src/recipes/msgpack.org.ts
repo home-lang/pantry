@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'msgpack/msgpack-c',
-    tagPattern: /\/^c-\//,
+    tagPattern: /^c-(.+)$/,
   },
   distributable: {
     url: 'https://github.com/msgpack/msgpack-c/releases/download/{{version.tag}}/msgpack-{{version.tag}}.tar.gz',

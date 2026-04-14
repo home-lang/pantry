@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['gr2fonttest'],
   versionSource: {
     type: 'github-releases',
-    repo: 'silnrsi/graphite/releases/tags',
+    repo: 'silnrsi/graphite',
   },
   distributable: {
     url: 'https://github.com/silnrsi/graphite/releases/download/{{version}}/graphite2-{{version}}.tgz',

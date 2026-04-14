@@ -315,7 +315,7 @@ else {
 catch {
       // Fallback: use curl with public URL (if bucket is public)
       const publicUrl = `https://${bucket}.s3.${region}.amazonaws.com/${platformInfo.tarball}`
-      execSync(`curl -L -o "${tarballPath}" "${publicUrl}"`, { stdio: 'pipe' })
+      execSync(`curl -fSL -o "${tarballPath}" "${publicUrl}"`, { stdio: 'pipe' })
     }
 
     // Verify SHA256

@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['packer'],
   versionSource: {
     type: 'github-releases',
-    repo: 'hashicorp/packer/tags',
-    tagPattern: /\/^v\//,
+    repo: 'hashicorp/packer',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/hashicorp/packer/archive/refs/tags/v{{version}}.tar.gz',

@@ -3,7 +3,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'protobuf.dev',
   name: 'Protocol Buffers',
-  description: 'Protocol Buffers - Google\\',
+  description: 'Protocol Buffers - data interchange format',
   homepage: 'https://protobuf.dev/',
   github: 'https://github.com/protocolbuffers/protobuf',
   programs: ['protoc'],

@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['pinniped'],
   versionSource: {
     type: 'github-releases',
-    repo: 'vmware-tanzu/pinniped/releases/tags',
+    repo: 'vmware-tanzu/pinniped',
   },
   distributable: {
     url: 'https://github.com/vmware-tanzu/pinniped/archive/refs/tags/v{{version}}.tar.gz',

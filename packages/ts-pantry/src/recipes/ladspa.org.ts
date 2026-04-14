@@ -3,7 +3,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'ladspa.org',
   name: 'ladspa',
-  description: 'Linux Audio Developer\\',
+  description: 'Linux Audio Developer Simple Plugin API',
   homepage: 'https://www.ladspa.org',
   programs: ['analyseplugin', 'applyplugin', 'listplugins'],
   platforms: ['linux'],

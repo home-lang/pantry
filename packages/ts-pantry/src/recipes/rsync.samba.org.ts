@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['rsync', 'rsync-ssl'],
   versionSource: {
     type: 'github-releases',
-    repo: 'WayneD/rsync/tags',
+    repo: 'WayneD/rsync',
   },
   distributable: {
     url: 'https://rsync.samba.org/ftp/rsync/rsync-{{version}}.tar.gz',

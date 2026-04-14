@@ -1021,8 +1021,8 @@ else {
 
   const buildDir = `/tmp/buildkit-${domain.replace(/\//g, '-')}`
   const installDir = `/tmp/buildkit-install-${domain.replace(/\//g, '-')}`
-  const artifactsDir = `/tmp/buildkit-artifacts`
-  const depsDir = `/tmp/buildkit-deps`
+  const artifactsDir = `/tmp/buildkit-artifacts-${domain.replace(/\//g, '-')}`
+  const depsDir = `/tmp/buildkit-deps-${domain.replace(/\//g, '-')}`
 
   mkdirSync(artifactsDir, { recursive: true })
   mkdirSync(depsDir, { recursive: true })
@@ -1906,7 +1906,8 @@ else {
         if (elapsed2 > BATCH_TIME_BUDGET_MS) break
 
         // Clean artifacts dir between iterations to prevent stale tarballs leaking
-        try { execSync('rm -rf /tmp/buildkit-artifacts/*', { stdio: 'pipe' }) }
+        const pkgArtifactsDir = `/tmp/buildkit-artifacts-${pkg.domain.replace(/\//g, '-')}`
+        try { execSync(`rm -rf "${pkgArtifactsDir}"/*`, { stdio: 'pipe' }) }
         catch (e) { console.warn(`Warning: failed to clean artifacts dir: ${(e as Error).message}`) }
 
         // Create a modified package with ONLY this version (prevent fallback to other versions)

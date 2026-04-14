@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['typst'],
   versionSource: {
     type: 'github-releases',
-    repo: 'typst/typst/releases/tags',
-    tagPattern: /\/^v\d\d-\d\d-\d\d(-\d)?\//,
+    repo: 'typst/typst',
+    tagPattern: /^v(\d\d-\d\d-\d\d(?:-\d)?)$/,
   },
   distributable: {
     url: 'https://github.com/typst/typst/archive/refs/tags/v{{ version }}.tar.gz',

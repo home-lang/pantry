@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'env0/terratag',
-    tagPattern: /\/^v\//,
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/env0/terratag/archive/refs/tags/v{{version}}.tar.gz',

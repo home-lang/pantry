@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['skaffold'],
   versionSource: {
     type: 'github-releases',
-    repo: 'GoogleContainerTools/skaffold/tags',
+    repo: 'GoogleContainerTools/skaffold',
   },
   distributable: null,
   buildDependencies: {

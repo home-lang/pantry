@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: [],
   versionSource: {
     type: 'github-releases',
-    repo: 'libevent/libevent/tags',
-    tagPattern: /\/^release-\/,\/-stable$\//,
+    repo: 'libevent/libevent',
+    tagPattern: /^release-(.+?)(?:-stable)?$/,
   },
   distributable: {
     url: 'https://github.com/libevent/libevent/releases/download/release-{{version}}-stable/libevent-{{version}}-stable.tar.gz',

@@ -11,7 +11,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'Xpra-org/xpra',
-    tagPattern: /\/^xpra \//,
+    tagPattern: /^xpra (.+)$/,
   },
   distributable: {
     url: 'https://github.com/Xpra-org/xpra/archive/refs/tags/{{version.tag}}.tar.gz',

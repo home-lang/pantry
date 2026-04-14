@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['nu'],
   versionSource: {
     type: 'github-releases',
-    repo: 'nushell/nushell/tags',
+    repo: 'nushell/nushell',
   },
   distributable: {
     url: 'https://github.com/nushell/nushell/archive/refs/tags/{{version}}.tar.gz',

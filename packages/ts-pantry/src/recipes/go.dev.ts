@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['go', 'gofmt'],
   versionSource: {
     type: 'github-releases',
-    repo: 'golang/go/tags',
-    tagPattern: /\/^go\//,
+    repo: 'golang/go',
+    tagPattern: /^go(.+)$/,
   },
   distributable: {
     url: 'https://go.dev/dl/go{{version.raw}}.src.tar.gz',

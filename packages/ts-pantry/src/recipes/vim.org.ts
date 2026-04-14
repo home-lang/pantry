@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['vim', 'vi'],
   versionSource: {
     type: 'github-releases',
-    repo: 'vim/vim/tags',
+    repo: 'vim/vim',
   },
   distributable: {
     url: 'https://github.com/vim/vim/archive/refs/tags/v{{version.raw}}.tar.gz',

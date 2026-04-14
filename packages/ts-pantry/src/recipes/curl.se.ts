@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['curl', 'curl-config'],
   versionSource: {
     type: 'github-releases',
-    repo: 'curl/curl/releases',
-    tagPattern: /\/^curl \//,
+    repo: 'curl/curl',
+    tagPattern: /^curl (.+)$/,
   },
   distributable: {
     url: 'https://curl.se/download/curl-{{version}}.tar.bz2',

@@ -73,10 +73,15 @@ permissions:
   checks: read
   statuses: read
 
+concurrency:
+  group: buddy-bot-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   # Job to determine which jobs should run based on trigger
   determine-jobs:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     outputs:
       run_check: ${{ steps.determine.outputs.run_check }}
       run_update: ${{ steps.determine.outputs.run_update }}
@@ -115,6 +120,7 @@ jobs:
   # Shared setup job for common dependencies
   setup:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: determine-jobs
     if: ${{ needs.determine-jobs.outputs.run_check == 'true' || needs.determine-jobs.outputs.run_update == 'true' || needs.determine-jobs.outputs.run_dashboard == 'true' }}
     steps:
@@ -151,6 +157,7 @@ jobs:
   # Check job (handles both rebase requests and auto-closing PRs)
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [determine-jobs, setup]
     if: ${{ needs.determine-jobs.outputs.run_check == 'true' }}
 
@@ -232,6 +239,7 @@ jobs:
   # Dependency update job
   dependency-update:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [determine-jobs, setup]
     if: ${{ needs.determine-jobs.outputs.run_update == 'true' }}
 
@@ -341,6 +349,7 @@ jobs:
   # Dashboard update job
   dashboard-update:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [determine-jobs, setup, dependency-update]
     if: ${{ needs.determine-jobs.outputs.run_dashboard == 'true' && always() }}
 

@@ -15,7 +15,7 @@ import * as path from 'node:path'
 import * as os from 'node:os'
 import * as https from 'node:https'
 import * as http from 'node:http'
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 
 // ── Types ──
 
@@ -124,7 +124,10 @@ const resolvers: Record<string, PackageResolver> = {
         'linux-x86_64': 'bun-linux-x64',
         'windows-x86_64': 'bun-windows-x64',
       }
-      return platformMap[`${platform.os}-${platform.arch}`] || 'bun-linux-x64'
+      const key = `${platform.os}-${platform.arch}`
+      const prefix = platformMap[key]
+      if (!prefix) throw new Error(`Unsupported platform for bun: ${key}`)
+      return prefix
     },
   },
 
@@ -189,7 +192,8 @@ export async function installPackage(
     throw new Error(`No binaries defined for ${domain} on ${platform.os}-${platform.arch}`)
   }
   const firstBin = path.join(pkgDir, binaries[0])
-  if (fs.existsSync(firstBin)) {
+  const firstBinInSubdir = path.join(pkgDir, 'bin', binaries[0])
+  if (fs.existsSync(firstBin) || fs.existsSync(firstBinInSubdir)) {
     if (!options.quiet) console.log(`  ✓ ${domain}@${version} (cached)`)
     return { name: domain, version, installPath: pkgDir, binaries }
   }
@@ -369,7 +373,8 @@ async function resolveVersionConstraint(domain: string, constraint: string): Pro
   }
 
   // Parse constraint: ^0.15.1, ~0.15.1, >=0.15.1, etc.
-  const match = constraint.match(/^([~^>=<]+)(\d+(?:\.\d+)*)/)
+  // eslint-disable-next-line no-super-linear-backtracking
+  const match = constraint.match(/^([~^>=<]+)(\d+(?:\.\d+){0,10})/)
   if (!match) return resolveLatestVersion(domain)
 
   const op = match[1]
@@ -377,26 +382,26 @@ async function resolveVersionConstraint(domain: string, constraint: string): Pro
 
   for (const ver of availableVersions) {
     // Skip dev/pre-release versions for stable constraints
-    if (ver.includes('-')) continue
+    if (ver.includes('-') && !match[2].includes('-')) continue
     const parts = ver.split('.').map(Number)
 
     if (op === '^') {
       // ^0.15.1 means >=0.15.1 and <0.16.0 (or <1.0.0 if major is 0 and minor is the "major")
       if (target[0] === 0) {
         // ^0.x.y: same major AND minor, patch >= target patch
-        if (parts[0] === target[0] && parts[1] === target[1] && parts[2] >= (target[2] || 0)) return ver
+        if (parts[0] === target[0] && parts[1] === target[1] && (parts[2] || 0) >= (target[2] || 0)) return ver
       }
       else {
         // ^x.y.z: same major, minor.patch >= target
-        if (parts[0] === target[0] && (parts[1] > target[1] || (parts[1] === target[1] && parts[2] >= (target[2] || 0)))) return ver
+        if (parts[0] === target[0] && (parts[1] > target[1] || (parts[1] === target[1] && (parts[2] || 0) >= (target[2] || 0)))) return ver
       }
     }
     else if (op === '~') {
       // ~0.15.1 means >=0.15.1 and <0.16.0
-      if (parts[0] === target[0] && parts[1] === target[1] && parts[2] >= (target[2] || 0)) return ver
+      if (parts[0] === target[0] && parts[1] === target[1] && (parts[2] || 0) >= (target[2] || 0)) return ver
     }
     else if (op === '>=') {
-      if (parts[0] > target[0] || (parts[0] === target[0] && parts[1] > target[1]) || (parts[0] === target[0] && parts[1] === target[1] && parts[2] >= (target[2] || 0))) return ver
+      if (parts[0] > target[0] || (parts[0] === target[0] && parts[1] > target[1]) || (parts[0] === target[0] && parts[1] === target[1] && (parts[2] || 0) >= (target[2] || 0))) return ver
     }
   }
 
@@ -407,7 +412,7 @@ async function resolveVersionConstraint(domain: string, constraint: string): Pro
 
 // ── Helpers ──
 
-function downloadFile(url: string, dest: string): Promise<void> {
+function downloadFile(url: string, dest: string, maxRedirects = 10): Promise<void> {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest)
     const get = url.startsWith('https') ? https.get : http.get
@@ -416,20 +421,34 @@ function downloadFile(url: string, dest: string): Promise<void> {
       // Handle redirects
       if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         file.close()
-        fs.unlinkSync(dest)
-        return downloadFile(res.headers.location, dest).then(resolve, reject)
+        try { fs.unlinkSync(dest) } catch { /* ignore */ }
+        if (maxRedirects <= 0) return reject(new Error(`Too many redirects for ${url}`))
+        return downloadFile(res.headers.location, dest, maxRedirects - 1).then(resolve, reject)
       }
 
       if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
         file.close()
+        try { fs.unlinkSync(dest) } catch { /* ignore */ }
         return reject(new Error(`HTTP ${res.statusCode || 'unknown'} downloading ${url}`))
       }
 
       res.pipe(file)
-      file.on('finish', () => { file.close(); resolve() })
-      file.on('error', reject)
+      res.on('error', (err) => {
+        file.close()
+        try { fs.unlinkSync(dest) } catch { /* ignore */ }
+        reject(err)
+      })
+      file.on('finish', () => {
+        file.close()
+        resolve()
+      })
+      file.on('error', (err) => {
+        try { fs.unlinkSync(dest) } catch { /* ignore */ }
+        reject(err)
+      })
     }).on('error', (err) => {
       file.close()
+      try { fs.unlinkSync(dest) } catch { /* ignore */ }
       reject(err)
     })
   })
@@ -439,17 +458,17 @@ async function extractArchive(archivePath: string, destDir: string, format: stri
   if (format === 'zip') {
     // Use system unzip (available on all platforms)
     if (process.platform === 'win32') {
-      execSync(`powershell -NoProfile -Command "Expand-Archive -Path '${archivePath}' -DestinationPath '${destDir}' -Force"`, { stdio: 'pipe' })
+      execFileSync('powershell', ['-NoProfile', '-Command', 'Expand-Archive', '-Path', archivePath, '-DestinationPath', destDir, '-Force'], { stdio: 'pipe' })
     }
     else {
-      execSync(`unzip -o -q "${archivePath}" -d "${destDir}"`, { stdio: 'pipe' })
+      execFileSync('unzip', ['-o', '-q', archivePath, '-d', destDir], { stdio: 'pipe' })
     }
   }
   else if (format === 'tar.xz') {
-    execSync(`tar xf "${archivePath}" -C "${destDir}"`, { stdio: 'pipe' })
+    execFileSync('tar', ['xJf', archivePath, '-C', destDir], { stdio: 'pipe' })
   }
   else if (format === 'tar.gz') {
-    execSync(`tar xzf "${archivePath}" -C "${destDir}"`, { stdio: 'pipe' })
+    execFileSync('tar', ['xzf', archivePath, '-C', destDir], { stdio: 'pipe' })
   }
   else {
     throw new Error(`Unsupported archive format: ${format}`)
@@ -460,12 +479,13 @@ function copyDirRecursive(src: string, dest: string): void {
   fs.cpSync(src, dest, { recursive: true })
 }
 
-function fetchJSON(url: string): Promise<unknown> {
+function fetchJSON(url: string, maxRedirects = 5): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const get = url.startsWith('https') ? https.get : http.get
-    get(url, { headers: { 'User-Agent': 'pantry-installer' } }, (res) => {
+    const req = get(url, { headers: { 'User-Agent': 'pantry-installer' }, timeout: 30000 }, (res) => {
       if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return fetchJSON(res.headers.location).then(resolve, reject)
+        if (maxRedirects <= 0) return reject(new Error(`Too many redirects for ${url}`))
+        return fetchJSON(res.headers.location, maxRedirects - 1).then(resolve, reject)
       }
       if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
         return reject(new Error(`HTTP ${res.statusCode || 'unknown'} fetching ${url}`))
@@ -476,7 +496,12 @@ function fetchJSON(url: string): Promise<unknown> {
         try { resolve(JSON.parse(data)) }
         catch (e) { reject(e) }
       })
-    }).on('error', reject)
+    })
+    req.on('error', reject)
+    req.on('timeout', () => {
+      req.destroy()
+      reject(new Error(`Request timed out: ${url}`))
+    })
   })
 }
 

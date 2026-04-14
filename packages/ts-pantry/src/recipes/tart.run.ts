@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   platforms: ['darwin'],
   versionSource: {
     type: 'github-releases',
-    repo: 'cirruslabs/tart/releases',
+    repo: 'cirruslabs/tart',
   },
   buildDependencies: {
     'curl.se': '*',

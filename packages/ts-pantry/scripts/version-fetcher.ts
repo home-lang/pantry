@@ -30,7 +30,7 @@ async function fetchGitHubReleases(repo: string, tagPattern?: RegExp, stable = t
   if (GITHUB_TOKEN) headers.Authorization = `token ${GITHUB_TOKEN}`
 
   const url = `https://api.github.com/repos/${repo}/releases?per_page=50`
-  const resp = await fetch(url, { headers })
+  const resp = await fetch(url, { headers, signal: AbortSignal.timeout(30000) })
   if (!resp.ok) {
     console.error(`  GitHub API error for ${repo}: ${resp.status}`)
     return []
@@ -68,7 +68,7 @@ async function fetchGitHubTags(repo: string, tagPattern?: RegExp): Promise<strin
   if (GITHUB_TOKEN) headers.Authorization = `token ${GITHUB_TOKEN}`
 
   const url = `https://api.github.com/repos/${repo}/tags?per_page=50`
-  const resp = await fetch(url, { headers })
+  const resp = await fetch(url, { headers, signal: AbortSignal.timeout(30000) })
   if (!resp.ok) return []
 
   const tags = await resp.json() as Array<{ name: string }>
@@ -163,11 +163,27 @@ function updatePackageVersions(domain: string, newVersions: string[]): boolean {
   const allVersions = [...new Set([...newVersions, ...currentVersions])]
   // Sort semantically (newest first)
   allVersions.sort((a, b) => {
-    const ap = a.split('.').map(Number)
-    const bp = b.split('.').map(Number)
-    for (let i = 0; i < Math.max(ap.length, bp.length); i++) {
-      const diff = (bp[i] || 0) - (ap[i] || 0)
+    const parse = (v: string) => {
+      const dashIdx = v.indexOf('-')
+      const numeric = (dashIdx === -1 ? v : v.slice(0, dashIdx)).split('.').map(s => {
+        const n = Number.parseInt(s, 10)
+        return Number.isNaN(n) ? 0 : n
+      })
+      const prerelease = dashIdx === -1 ? null : v.slice(dashIdx + 1)
+      return { numeric, prerelease }
+    }
+    const pa = parse(a)
+    const pb = parse(b)
+    const len = Math.max(pa.numeric.length, pb.numeric.length)
+    for (let i = 0; i < len; i++) {
+      const diff = (pb.numeric[i] ?? 0) - (pa.numeric[i] ?? 0)
       if (diff !== 0) return diff
+    }
+    // Same numeric: release (no prerelease) sorts before prerelease (newest first)
+    if (pa.prerelease === null && pb.prerelease !== null) return -1
+    if (pa.prerelease !== null && pb.prerelease === null) return 1
+    if (pa.prerelease !== null && pb.prerelease !== null) {
+      return pa.prerelease < pb.prerelease ? 1 : pa.prerelease > pb.prerelease ? -1 : 0
     }
     return 0
   })

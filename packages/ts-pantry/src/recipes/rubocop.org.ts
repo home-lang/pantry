@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['rubocop'],
   versionSource: {
     type: 'github-releases',
-    repo: 'rubocop/rubocop/tags',
+    repo: 'rubocop/rubocop',
   },
   distributable: {
     url: 'https://github.com/rubocop/rubocop/archive/refs/tags/{{ version.tag }}.tar.gz',

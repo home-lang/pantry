@@ -7,7 +7,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'meilisearch/meilisearch',
-    tagPattern: /\/^v\//,
+    tagPattern: /^v(.+)$/,
   },
   distributable: null,
 

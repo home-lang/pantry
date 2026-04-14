@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['pygmentize'],
   versionSource: {
     type: 'github-releases',
-    repo: 'pygments/pygments/tags',
+    repo: 'pygments/pygments',
   },
   distributable: {
     url: 'https://github.com/pygments/pygments/archive/refs/tags/{{version}}.tar.gz',

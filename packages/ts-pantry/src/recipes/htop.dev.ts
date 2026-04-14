@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['htop'],
   versionSource: {
     type: 'github-releases',
-    repo: 'htop-dev/htop/tags',
+    repo: 'htop-dev/htop',
   },
   distributable: {
     url: 'https://github.com/htop-dev/htop/releases/download/{{version}}/htop-{{version}}.tar.xz',

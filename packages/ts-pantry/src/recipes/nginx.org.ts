@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['nginx'],
   versionSource: {
     type: 'github-releases',
-    repo: 'nginx/nginx/tags',
-    tagPattern: /\/^release-\//,
+    repo: 'nginx/nginx',
+    tagPattern: /^release-(.+)$/,
   },
   distributable: {
     url: 'https://nginx.org/download/nginx-{{version}}.tar.gz',

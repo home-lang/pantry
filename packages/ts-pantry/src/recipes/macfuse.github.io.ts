@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'macfuse/macfuse',
-    tagPattern: /\/^macfuse-\//,
+    tagPattern: /^macfuse-(.+)$/,
   },
   distributable: {
     url: 'git+https://github.com/macfuse/macfuse.git',

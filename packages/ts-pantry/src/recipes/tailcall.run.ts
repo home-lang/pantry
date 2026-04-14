@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'tailcallhq/tailcall',
-    tagPattern: /\/v\//,
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://tailcall.gateway.scarf.sh/archive/refs/tags/tailcall-v{{ version }}.tar.gz',

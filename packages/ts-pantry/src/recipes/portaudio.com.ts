@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'PortAudio/portaudio',
-    tagPattern: /\/^v\//,
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/PortAudio/portaudio/archive/refs/tags/v{{version}}.tar.gz',

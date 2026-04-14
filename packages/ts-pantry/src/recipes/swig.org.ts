@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['swig', 'ccache-swig'],
   versionSource: {
     type: 'github-releases',
-    repo: 'swig/swig/tags',
+    repo: 'swig/swig',
   },
   distributable: {
     url: 'https://downloads.sourceforge.net/project/swig/swig/swig-{{version}}/swig-{{version}}.tar.gz',

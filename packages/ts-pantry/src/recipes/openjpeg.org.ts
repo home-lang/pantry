@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['opj_compress', 'opj_decompress', 'opj_dump'],
   versionSource: {
     type: 'github-releases',
-    repo: 'uclouvain/openjpeg/tags',
+    repo: 'uclouvain/openjpeg',
   },
   distributable: {
     url: 'https://github.com/uclouvain/openjpeg/archive/v{{version}}.tar.gz',

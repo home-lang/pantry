@@ -76,7 +76,7 @@ export class S3Client {
     const dateStamp = amzDate.slice(0, 8)
 
     const payloadHash = crypto.createHash('sha256')
-      .update(typeof payload === 'string' ? payload : payload)
+      .update(payload)
       .digest('hex')
 
     const signedHeaders: Record<string, string> = {

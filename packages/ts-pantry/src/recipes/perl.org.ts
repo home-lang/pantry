@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['corelist', 'cpan', 'enc2xs', 'encguess', 'h2ph', 'h2xs', 'instmodsh', 'json_pp', 'libnetcfg', 'perl', 'perlbug', 'perldoc', 'perlivp', 'perlthanks', 'piconv', 'pl2pm', 'pod2html', 'pod2man', 'pod2text', 'pod2usage', 'podchecker', 'prove', 'ptar', 'ptardiff', 'ptargrep', 'shasum', 'splain', 'streamzip', 'xsubpp', 'zipdetails'],
   versionSource: {
     type: 'github-releases',
-    repo: 'perl/perl5/tags',
+    repo: 'perl/perl5',
   },
   distributable: {
     url: 'https://www.cpan.org/src/{{ version.major }}.0/perl-{{ version }}.tar.xz',

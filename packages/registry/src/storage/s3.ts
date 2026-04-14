@@ -25,7 +25,7 @@ export class S3Storage implements TarballStorage {
    */
   private getKey(packageName: string, version: string): string {
     // Handle scoped packages (@scope/name -> scope-name)
-    const safeName = packageName.replaceAll('@', '').replaceAll('/', '-')
+    const safeName = packageName.replaceAll('@', '').replaceAll('/', '-').replaceAll('..', '')
     return `packages/pantry/${safeName}/${version}/${safeName}-${version}.tgz`
   }
 
@@ -102,7 +102,7 @@ export class S3Storage implements TarballStorage {
    * List all versions of a package
    */
   async listPackageVersions(name: string): Promise<string[]> {
-    const safeName = name.replace('@', '').replace('/', '-')
+    const safeName = name.replaceAll('@', '').replaceAll('/', '-')
     const prefix = `packages/pantry/${safeName}/`
 
     const objects = await this.s3.list({
@@ -168,6 +168,9 @@ export class LocalStorage implements TarballStorage {
   }
 
   private getFilePath(key: string): string {
+    if (/[\x00-\x1f]/.test(key)) {
+      throw new Error(`Invalid characters in key: ${key}`)
+    }
     const resolved = resolve(this.basePath, key)
     if (relative(this.basePath, resolved).startsWith('..')) {
       throw new Error(`Path traversal detected: ${key}`)

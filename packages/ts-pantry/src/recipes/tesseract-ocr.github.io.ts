@@ -23,9 +23,6 @@ export const recipe: Recipe = {
       './configure $ARGS',
       'make --jobs {{ hw.concurrency }}',
       'make install',
-      'run:',
-      'wget https://raw.githubusercontent.com/tesseract-ocr/test/6dd816cdaf3e76153271daf773e562e24c928bf5/testing/eurotext.tif',
-      'tesseract eurotext.tif stdout -l eng',
     ],
   },
 }

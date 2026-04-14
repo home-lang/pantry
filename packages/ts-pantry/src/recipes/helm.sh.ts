@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['helm'],
   versionSource: {
     type: 'github-releases',
-    repo: 'helm/helm/releases/tags',
+    repo: 'helm/helm',
   },
   distributable: {
     url: 'https://github.com/helm/helm/archive/refs/tags/{{version.tag}}.tar.gz',

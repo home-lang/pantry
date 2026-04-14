@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['fly', 'flyctl'],
   versionSource: {
     type: 'github-releases',
-    repo: 'superfly/flyctl/releases/tags',
-    tagPattern: /\/^v\//,
+    repo: 'superfly/flyctl',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/superfly/flyctl/archive/refs/tags/v{{version}}.tar.gz',

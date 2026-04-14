@@ -21,9 +21,7 @@ export const recipe: Recipe = {
     'nodejs.org': '^10.13.0 || ^12 || ^14 || ^16 || ^18 || ^20',
     'openjdk.org': '*',
   },
-  buildDependencies: {
-    'linux/x86-64': '[object Object]',
-  },
+  buildDependencies: {},
 
   build: {
     script: [

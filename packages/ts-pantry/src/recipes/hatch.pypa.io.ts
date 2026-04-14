@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['hatch'],
   versionSource: {
     type: 'github-releases',
-    repo: 'pypa/hatch/releases/tags',
-    tagPattern: /\/^hatch-v\//,
+    repo: 'pypa/hatch',
+    tagPattern: /^hatch-v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/pypa/hatch/archive/refs/tags/hatch-v{{version}}.tar.gz',

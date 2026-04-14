@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: [],
   versionSource: {
     type: 'github-releases',
-    repo: 'modal-labs/modal-client/tags',
+    repo: 'modal-labs/modal-client',
   },
   distributable: {
     url: 'https://github.com/modal-labs/modal-client/archive/{{version.tag}}.tar.gz',
@@ -21,7 +21,6 @@ export const recipe: Recipe = {
   buildDependencies: {
     'python.org': '>=3.9<3.13',
     'protobuf.dev': '*',
-    'linux/aarch64': '[object Object]',
   },
 
   build: {

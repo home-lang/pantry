@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['dart', 'dartaotruntime'],
   versionSource: {
     type: 'github-releases',
-    repo: 'dart-lang/sdk/tags',
+    repo: 'dart-lang/sdk',
   },
 
   build: {

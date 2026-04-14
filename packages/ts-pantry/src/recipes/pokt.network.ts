@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['pocket'],
   versionSource: {
     type: 'github-releases',
-    repo: 'pokt-network/pocket-core/tags',
-    tagPattern: /\/^RC-\//,
+    repo: 'pokt-network/pocket-core',
+    tagPattern: /^RC-(.+)$/,
   },
   distributable: {
     url: 'https://github.com/pokt-network/pocket-core/archive/refs/tags/RC-{{version}}.tar.gz',

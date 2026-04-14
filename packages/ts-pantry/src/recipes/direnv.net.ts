@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['direnv'],
   versionSource: {
     type: 'github-releases',
-    repo: 'direnv/direnv/releases/tags',
+    repo: 'direnv/direnv',
   },
   distributable: {
     url: 'https://github.com/direnv/direnv/archive/refs/tags/v{{version}}.tar.gz',

@@ -3,7 +3,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'vitejs.dev',
   name: 'vite',
-  description: 'Next generation frontend tooling. It\\',
+  description: 'Next generation frontend tooling',
   homepage: 'https://vitejs.dev/',
   programs: ['vite'],
   distributable: {

@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'libssh2/libssh2',
-    tagPattern: /\/^libssh2-\//,
+    tagPattern: /^libssh2-(.+)$/,
   },
   distributable: {
     url: 'https://www.libssh2.org/download/libssh2-{{version}}.tar.gz',

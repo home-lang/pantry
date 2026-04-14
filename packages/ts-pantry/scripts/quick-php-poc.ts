@@ -126,7 +126,7 @@ async function buildPhp(options: BuildOptions): Promise<string> {
   // Download PHP source
   const sourceUrl = `https://www.php.net/distributions/php-${version}.tar.gz`
   console.log(`\n📥 Downloading PHP ${version}...`)
-  execSync(`curl -L -o "${buildDir}/php.tar.gz" "${sourceUrl}"`, { stdio: 'inherit' })
+  execSync(`curl -fSL -o "${buildDir}/php.tar.gz" "${sourceUrl}"`, { stdio: 'inherit' })
 
   console.log(`📦 Extracting...`)
   execSync(`tar -xf "${buildDir}/php.tar.gz" -C "${buildDir}" --strip-components=1`, { stdio: 'inherit' })

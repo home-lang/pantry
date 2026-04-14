@@ -3,7 +3,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'bytebase.com',
   name: 'bytebase',
-  description: 'World\\',
+  description: 'Database DevOps and CI/CD tool',
   homepage: 'https://www.bytebase.com',
   github: 'https://github.com/bytebase/bytebase',
   programs: ['bytebase'],

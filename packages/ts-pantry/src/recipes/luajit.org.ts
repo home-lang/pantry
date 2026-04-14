@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['luajit', 'luajit-{{version.marketing}}.'],
   versionSource: {
     type: 'github-releases',
-    repo: 'LuaJIT/LuaJIT/tags',
-    tagPattern: /\/^v\/,\/\.ROLLING\//,
+    repo: 'LuaJIT/LuaJIT',
+    tagPattern: /^v(.+?)(?:\.ROLLING)?$/,
   },
   distributable: {
     url: 'https://github.com/LuaJIT/LuaJIT/archive/v{{version.raw}}.ROLLING.tar.gz',

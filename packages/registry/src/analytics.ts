@@ -485,6 +485,10 @@ export class InMemoryAnalytics implements AnalyticsStorage {
 
   async trackDownload(event: DownloadEvent): Promise<void> {
     this.downloads.push(event)
+    // Cap in-memory storage to prevent unbounded growth
+    if (this.downloads.length > 10000) {
+      this.downloads = this.downloads.slice(-5000)
+    }
 
     // Update package stats
     const stats = this.packageStats.get(event.packageName) || { total: 0, versions: {} }
@@ -597,6 +601,14 @@ else {
         lastRequestedAt: new Date().toISOString(),
         isKnownVersion: isKnownVersion ?? false,
       })
+    }
+    // Cap missing version tracking
+    if (this.missingVersionRequests.size > 5000) {
+      // Remove oldest entries (first inserted)
+      const entries = [...this.missingVersionRequests.entries()]
+      for (let i = 0; i < 1000; i++) {
+        this.missingVersionRequests.delete(entries[i][0])
+      }
     }
   }
 

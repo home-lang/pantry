@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/ytdl-org/youtube-dl/archive/86e3cf5e58.tar.gz',
+    url: 'https://github.com/ytdl-org/youtube-dl/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
 

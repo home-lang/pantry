@@ -10,8 +10,8 @@ export const recipe: Recipe = {
   platforms: ['darwin'],
   versionSource: {
     type: 'github-releases',
-    repo: 'macvim-dev/macvim/tags',
-    tagPattern: /\/^release-\//,
+    repo: 'macvim-dev/macvim',
+    tagPattern: /^release-(.+)$/,
   },
   distributable: {
     url: 'https://github.com/macvim-dev/macvim/archive/release-{{version.major}}.tar.gz',

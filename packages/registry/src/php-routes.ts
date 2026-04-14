@@ -168,7 +168,14 @@ function validateToken(authHeader: string | null): { valid: boolean, error?: str
     ? authHeader.slice(7)
     : authHeader
 
-  if (!REGISTRY_TOKEN || token.length !== REGISTRY_TOKEN.length || !require('node:crypto').timingSafeEqual(Buffer.from(token), Buffer.from(REGISTRY_TOKEN))) {
+  // Pad both to same length to prevent length-based timing leaks
+  const crypto = require('node:crypto')
+  const maxLen = Math.max(token.length, REGISTRY_TOKEN.length)
+  const tokenBuf = Buffer.alloc(maxLen)
+  const registryBuf = Buffer.alloc(maxLen)
+  Buffer.from(token).copy(tokenBuf)
+  Buffer.from(REGISTRY_TOKEN).copy(registryBuf)
+  if (!crypto.timingSafeEqual(tokenBuf, registryBuf) || token.length !== REGISTRY_TOKEN.length) {
     return { valid: false, error: 'Invalid token' }
   }
 
@@ -278,7 +285,7 @@ async function handlePhpPublish(
     // Track publish event
     analytics?.trackEvent({
       packageName: name,
-      category: 'install' as any,
+      category: 'install_on_request',
       timestamp: new Date().toISOString(),
       version,
     }).catch(err => console.warn('Analytics tracking failed:', err))

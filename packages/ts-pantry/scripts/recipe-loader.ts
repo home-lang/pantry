@@ -70,7 +70,7 @@ export async function loadRecipe(
   if (override) {
     source = 'yaml+override'
     if (override.modifyRecipe) {
-      override.modifyRecipe(normalized as NormalizedRecipe, platform)
+      override.modifyRecipe(normalized as NormalizedRecipe, _platform)
     }
     if (override.distributableUrl && normalized.distributable) {
       (normalized.distributable as any).url = override.distributableUrl

@@ -7,8 +7,8 @@ export const recipe: Recipe = {
   programs: [],
   versionSource: {
     type: 'github-releases',
-    repo: 'freedesktop/pixman/tags',
-    tagPattern: /\/^pixman-\//,
+    repo: 'freedesktop/pixman',
+    tagPattern: /^pixman-(.+)$/,
   },
   distributable: {
     url: 'https://cairographics.org/releases/pixman-{{ version }}.tar.gz',

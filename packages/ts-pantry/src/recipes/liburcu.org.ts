@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: [],
   versionSource: {
     type: 'github-releases',
-    repo: 'urcu/userspace-rcu/tags',
+    repo: 'urcu/userspace-rcu',
   },
   distributable: {
     url: 'https://lttng.org/files/urcu/userspace-rcu-{{version}}.tar.bz2',

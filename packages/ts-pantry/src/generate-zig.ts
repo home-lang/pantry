@@ -59,29 +59,32 @@ function compareVersions(a: string, b: string): number {
   const cleanA = a.startsWith('v') ? a.slice(1) : a
   const cleanB = b.startsWith('v') ? b.slice(1) : b
 
-  const partsA = cleanA.split(/[.-]/)
-  const partsB = cleanB.split(/[.-]/)
+  // Separate numeric portion from prerelease suffix
+  const dashA = cleanA.indexOf('-')
+  const numericA = dashA === -1 ? cleanA : cleanA.slice(0, dashA)
+  const preA = dashA === -1 ? null : cleanA.slice(dashA + 1)
+
+  const dashB = cleanB.indexOf('-')
+  const numericB = dashB === -1 ? cleanB : cleanB.slice(0, dashB)
+  const preB = dashB === -1 ? null : cleanB.slice(dashB + 1)
+
+  const partsA = numericA.split('.')
+  const partsB = numericB.split('.')
 
   for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
-    const partA = partsA[i] || '0'
-    const partB = partsB[i] || '0'
+    const numA = Number.parseInt(partsA[i] || '0', 10)
+    const numB = Number.parseInt(partsB[i] || '0', 10)
 
-    const numA = Number.parseInt(partA, 10)
-    const numB = Number.parseInt(partB, 10)
+    if (numA > numB) return -1 // a is newer
+    if (numA < numB) return 1  // b is newer
+  }
 
-    if (!Number.isNaN(numA) && !Number.isNaN(numB)) {
-      if (numA > numB)
-        return -1 // a is newer
-      if (numA < numB)
-        return 1 // b is newer
-    }
-    else {
-      // Lexical comparison for non-numeric parts
-      if (partA > partB)
-        return -1
-      if (partA < partB)
-        return 1
-    }
+  // Same numeric version: release (no prerelease) is newer than prerelease
+  if (preA === null && preB !== null) return -1
+  if (preA !== null && preB === null) return 1
+  if (preA !== null && preB !== null) {
+    if (preA > preB) return -1
+    if (preA < preB) return 1
   }
 
   return 0
@@ -381,7 +384,7 @@ ${aliasEntries}
 };
 
 /// Resolve an alias to a domain name
-pub fn resolvealias(alias: []const u8) ?[]const u8 {
+pub fn resolve_alias(alias: []const u8) ?[]const u8 {
     for (aliases) |entry| {
         if (std.mem.eql(u8, entry.alias, alias)) {
             return entry.domain;
@@ -391,7 +394,7 @@ pub fn resolvealias(alias: []const u8) ?[]const u8 {
 }
 
 test "Alias resolution works" {
-    const resolved = resolvealias("node");
+    const resolved = resolve_alias("node");
     if (resolved) |domain| {
         try std.testing.expectEqualStrings("nodejs.org", domain);
     }

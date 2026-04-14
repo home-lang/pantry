@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['yarn', 'yarnpkg'],
   versionSource: {
     type: 'github-releases',
-    repo: 'yarnpkg/berry/releases',
+    repo: 'yarnpkg/berry',
   },
   distributable: {
     url: 'https://github.com/yarnpkg/berry/archive/refs/tags/@yarnpkg/cli/{{version}}.tar.gz',

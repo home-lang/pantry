@@ -185,8 +185,17 @@ export async function resolveVersion(packageName: PackageName, versionSpec: Vers
 
   if (versionSpec.startsWith('>=')) {
     const minVersion = versionSpec.slice(2)
-    // Simple string comparison - in practice you'd want proper semver comparison
-    const matchingVersions = versions.filter(v => v >= minVersion)
+    const minParts = minVersion.split('.').map(Number)
+    const matchingVersions = versions.filter((v) => {
+      const vParts = v.split('.').map(Number)
+      for (let i = 0; i < Math.max(vParts.length, minParts.length); i++) {
+        const a = vParts[i] ?? 0
+        const b = minParts[i] ?? 0
+        if (a > b) return true
+        if (a < b) return false
+      }
+      return true // equal
+    })
     return matchingVersions[0] || null
   }
 
@@ -263,7 +272,7 @@ function convertDomainToVarName(domain: string): string {
   }
 
   // Regular domains like 'bun.sh' -> 'bunsh'
-  return domain.replace(/[.-]/g, '').toLowerCase()
+  return domain.replace(/[.\-_]/g, '').toLowerCase()
 }
 
 /**

@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['jlpm', 'jupyter', 'jupyter-bundlerextension', 'jupyter-dejavu', 'jupyter-events', 'jupyter-execute', 'jupyter-fileid', 'jupyter-kernel', 'jupyter-kernelspec', 'jupyter-lab', 'jupyter-labextension', 'jupyter-labhub', 'jupyter-migrate', 'jupyter-nbclassic', 'jupyter-nbclassic-bundlerextension', 'jupyter-nbclassic-extension', 'jupyter-nbclassic-serverextension', 'jupyter-nbconvert', 'jupyter-nbextension', 'jupyter-run', 'jupyter-server', 'jupyter-serverextension', 'jupyter-troubleshoot', 'jupyter-trust'],
   versionSource: {
     type: 'github-releases',
-    repo: 'jupyterlab/jupyterlab/releases/tags',
-    tagPattern: /\/^v\//,
+    repo: 'jupyterlab/jupyterlab',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/jupyterlab/jupyterlab/releases/download/v{{version}}/jupyterlab-{{version}}.tar.gz',

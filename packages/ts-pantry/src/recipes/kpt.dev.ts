@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['kpt'],
   versionSource: {
     type: 'github-releases',
-    repo: 'kptdev/kpt/tags',
+    repo: 'kptdev/kpt',
   },
   distributable: {
     url: 'https://github.com/kptdev/kpt/archive/refs/tags/v{{version}}.tar.gz',

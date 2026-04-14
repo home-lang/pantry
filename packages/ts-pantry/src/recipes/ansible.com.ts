@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['ansible', 'ansible-config', 'ansible-connection', 'ansible-console', 'ansible-doc', 'ansible-galaxy', 'ansible-inventory', 'ansible-playbook', 'ansible-pull', 'ansible-test', 'ansible-vault'],
   versionSource: {
     type: 'github-releases',
-    repo: 'ansible/ansible/tags',
+    repo: 'ansible/ansible',
   },
   distributable: {
     url: 'https://github.com/ansible/ansible/archive/{{version.tag}}.tar.gz',

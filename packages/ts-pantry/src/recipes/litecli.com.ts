@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['litecli'],
   versionSource: {
     type: 'github-releases',
-    repo: 'dbcli/litecli/tags',
+    repo: 'dbcli/litecli',
   },
   distributable: {
     url: 'https://github.com/dbcli/litecli/archive/v{{version}}.tar.gz',

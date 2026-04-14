@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'uriparser/uriparser',
-    tagPattern: /\/^uriparser-\//,
+    tagPattern: /^uriparser-(.+)$/,
   },
   distributable: {
     url: 'https://github.com/uriparser/uriparser/releases/download/uriparser-{{version}}/uriparser-{{version}}.tar.bz2',

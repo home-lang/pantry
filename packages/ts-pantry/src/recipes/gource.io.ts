@@ -11,7 +11,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'acaudwell/Gource',
-    tagPattern: /\/^gource-\//,
+    tagPattern: /^gource-(.+)$/,
   },
   distributable: {
     url: 'https://github.com/acaudwell/Gource/releases/download/{{version.tag}}/{{version.tag}}.tar.gz',

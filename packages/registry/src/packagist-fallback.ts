@@ -81,9 +81,19 @@ export async function fetchFromPackagist(name: string): Promise<{
     const pkg = data.package
     if (!pkg) return null
 
-    // Get latest stable version
+    // Get latest stable version (sort by semver descending)
     const versionKeys = Object.keys(pkg.versions || {})
-    const stableVersions = versionKeys.filter(v => !v.includes('dev') && !v.includes('alpha') && !v.includes('beta') && !v.includes('RC'))
+    const stableVersions = versionKeys
+      .filter(v => !v.includes('dev') && !v.includes('alpha') && !v.includes('beta') && !v.includes('RC'))
+      .sort((a, b) => {
+        const pa = a.replace(/^v/, '').split('.').map(Number)
+        const pb = b.replace(/^v/, '').split('.').map(Number)
+        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+          const diff = (pb[i] ?? 0) - (pa[i] ?? 0)
+          if (diff !== 0) return diff
+        }
+        return 0
+      })
     const latestKey = stableVersions[0] || versionKeys[0] || ''
     const latest = pkg.versions?.[latestKey] || {}
 

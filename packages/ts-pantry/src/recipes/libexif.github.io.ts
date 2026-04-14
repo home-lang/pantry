@@ -8,8 +8,8 @@ export const recipe: Recipe = {
   programs: [],
   versionSource: {
     type: 'github-releases',
-    repo: 'libexif/libexif/tags',
-    tagPattern: /\/^v\//,
+    repo: 'libexif/libexif',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/libexif/libexif/releases/download/v{{version}}/libexif-{{version}}.tar.bz2',

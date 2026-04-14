@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'sympy/sympy',
-    tagPattern: /\/^sympy-\//,
+    tagPattern: /^sympy-(.+)$/,
   },
   distributable: {
     url: 'git+https://github.com/sympy/sympy.git',

@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: [],
   versionSource: {
     type: 'github-releases',
-    repo: 'libsdl-org/SDL/releases',
+    repo: 'libsdl-org/SDL',
   },
   distributable: {
     url: 'https://github.com/libsdl-org/SDL/archive/refs/tags/release-{{version}}.tar.gz',

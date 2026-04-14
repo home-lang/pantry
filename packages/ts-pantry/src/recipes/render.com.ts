@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['render'],
   versionSource: {
     type: 'github-releases',
-    repo: 'render-oss/render-cli/tags',
-    tagPattern: /\/^v\//,
+    repo: 'render-oss/render-cli',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/render-oss/render-cli/archive/refs/tags/v{{version}}.tar.gz',

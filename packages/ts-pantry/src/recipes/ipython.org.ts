@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['ipython', 'ipython3'],
   versionSource: {
     type: 'github-releases',
-    repo: 'ipython/ipython/tags',
+    repo: 'ipython/ipython',
   },
   distributable: {
     url: 'https://github.com/ipython/ipython/archive/{{version}}.tar.gz',

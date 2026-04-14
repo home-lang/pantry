@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['http', 'httpie', 'https'],
   versionSource: {
     type: 'github-releases',
-    repo: 'httpie/httpie/releases/tags',
+    repo: 'httpie/httpie',
   },
   distributable: {
     url: 'https://github.com/httpie/httpie/archive/refs/tags/{{version}}.tar.gz',

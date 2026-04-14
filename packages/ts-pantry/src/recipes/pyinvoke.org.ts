@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['invoke'],
   versionSource: {
     type: 'github-releases',
-    repo: 'pyinvoke/invoke/tags',
+    repo: 'pyinvoke/invoke',
   },
   distributable: {
     url: 'https://github.com/pyinvoke/invoke/archive/refs/tags/{{version.tag}}.tar.gz',

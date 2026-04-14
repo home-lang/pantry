@@ -613,7 +613,7 @@ export async function resolveTransitiveDependencies(
       let version = 'latest'
       let constraint = '*'
 
-      const versionMatch = depName.match(/^([^@^~>=<]+)([@^~>=<].+)?$/)
+      const versionMatch = depName.match(/^(@?[^@^~>=<]+(?:\/[^@^~>=<]+)?)([@^~>=<].+)?$/)
       if (versionMatch) {
         pkgName = versionMatch[1]
         if (versionMatch[2]) {

@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['pip', 'pip3.8', 'pip3.9', 'pip3.10', 'pip3.11'],
   versionSource: {
     type: 'github-releases',
-    repo: 'pypa/pip/tags',
+    repo: 'pypa/pip',
   },
   distributable: {
     url: 'https://github.com/pypa/pip/archive/refs/tags/{{version.raw}}.tar.gz',

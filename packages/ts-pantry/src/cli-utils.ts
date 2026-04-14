@@ -98,7 +98,7 @@ export async function searchPackagesCommand(searchTerm: string): Promise<CLIResu
  */
 export async function listPopularPackages(limit: number = 20): Promise<CLIResult<PackageInfo[]>> {
   try {
-    const packages = await getPopularPackages(5)
+    const packages = await getPopularPackages(limit)
     const limitedPackages = packages.slice(0, limit)
 
     return {

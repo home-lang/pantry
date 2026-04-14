@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'llvm/llvm-project',
-    tagPattern: /\/^llvmorg-\//,
+    tagPattern: /^llvmorg-(.+)$/,
   },
   distributable: {
     url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-{{ version }}/llvm-project-{{ version }}.src.tar.xz',

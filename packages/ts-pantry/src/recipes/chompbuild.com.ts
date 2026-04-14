@@ -3,7 +3,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'chompbuild.com',
   name: 'chomp',
-  description: '\\',
+  description: 'Task runner and build tool',
   homepage: 'https://chompbuild.com',
   github: 'https://github.com/guybedford/chomp',
   programs: ['chomp'],

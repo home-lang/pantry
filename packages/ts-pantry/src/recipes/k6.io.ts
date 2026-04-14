@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['k6'],
   versionSource: {
     type: 'github-releases',
-    repo: 'grafana/k6/tags',
+    repo: 'grafana/k6',
   },
   distributable: {
     url: 'https://github.com/grafana/k6/archive/refs/tags/v{{ version }}.tar.gz',

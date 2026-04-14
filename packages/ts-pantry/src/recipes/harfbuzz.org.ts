@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['hb-ot-shape-closure', 'hb-shape', 'hb-subset', 'hb-view'],
   versionSource: {
     type: 'github-releases',
-    repo: 'harfbuzz/harfbuzz/tags',
+    repo: 'harfbuzz/harfbuzz',
   },
   distributable: {
     url: 'https://github.com/harfbuzz/harfbuzz/archive/{{ version }}.tar.gz',

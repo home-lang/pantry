@@ -314,7 +314,8 @@ function parseElement(html: string, startIndex: number, parent: ParsedElement | 
 
     // Look for closing tag
     if (!isSelfClosing) {
-      const closingPattern = new RegExp(`</${tagName}>`, 'i')
+      const escapedTag = tagName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const closingPattern = new RegExp(`</${escapedTag}>`, 'i')
       const closingMatch = closingPattern.exec(html.slice(lastIndex))
 
       if (closingMatch) {
@@ -375,7 +376,8 @@ function parseChildren(html: string, parent: ParsedElement): void {
     const attributes = parseAttributes(attributesStr)
     const isSelfClosing = selfClosingTags.has(tagName.toLowerCase()) || attributesStr.trim().endsWith('/')
 
-    const closingPattern = new RegExp(`</${tagName}>`, 'i')
+    const escapedTag = tagName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const closingPattern = new RegExp(`</${escapedTag}>`, 'i')
     const remainingHtml = html.slice(tagRegex.lastIndex)
     const closingMatch = closingPattern.exec(remainingHtml)
 
@@ -534,6 +536,7 @@ export async function waitFor(condition: () => boolean | Promise<boolean>, optio
  */
 export async function fetchMultiple(urls: string[], options: FetchHTMLOptions = {}): Promise<Map<string, Document>> {
   const results = new Map<string, Document>()
+  const errors = new Map<string, Error>()
 
   const promises = urls.map(async (url) => {
     try {
@@ -541,11 +544,18 @@ export async function fetchMultiple(urls: string[], options: FetchHTMLOptions = 
       results.set(url, doc)
     }
     catch (error) {
+      errors.set(url, error as Error)
       console.error(`Failed to fetch ${url}:`, error)
     }
   })
 
   await Promise.all(promises)
+
+  if (errors.size > 0 && errors.size === urls.length) {
+    // If ALL fetches failed, throw so caller can distinguish from "no results"
+    throw new Error(`All ${urls.length} URL fetches failed. First error: ${Array.from(errors.values())[0]?.message}`)
+  }
+
   return results
 }
 

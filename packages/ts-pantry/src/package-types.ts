@@ -91,9 +91,12 @@ export function isPackageAlias(name: string): name is PackageAlias {
 }
 
 export function isPackageDomain(name: string): name is PackageDomain {
-  // This would need to be implemented with the actual packages object
-  // For now, we'll use a simple check
-  return name.includes('.')
+  // A domain must contain a dot AND start with a letter/digit (not a dot)
+  // AND not look like a version number (e.g., "1.0.0" or "v1.2")
+  if (!name.includes('.') || name.startsWith('.') || name.endsWith('.')) return false
+  // eslint-disable-next-line no-super-linear-backtracking
+  if (/^v?\d+(\.\d+){0,10}$/.test(name)) return false // pure numeric versions
+  return /^[a-z0-9][\w.\-/]*$/i.test(name)
 }
 
 export function isValidPackageName(name: string): name is PackageName {

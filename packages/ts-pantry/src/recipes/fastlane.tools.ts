@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['fastlane'],
   versionSource: {
     type: 'github-releases',
-    repo: 'fastlane/fastlane/releases/tags',
+    repo: 'fastlane/fastlane',
   },
   distributable: {
     url: 'https://github.com/fastlane/fastlane/archive/{{version}}.tar.gz',

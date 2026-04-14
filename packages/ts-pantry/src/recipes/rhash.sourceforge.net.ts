@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['whirlpool-hash', 'tiger-hash', 'tth-hash', 'rhash', 'sfv-hash', 'magnet-link', 'has160-hash', 'gost12-256-hash', 'gost12-512-hash', 'edonr512-hash', 'edonr256-hash', 'ed2k-link'],
   versionSource: {
     type: 'github-releases',
-    repo: 'rhash/RHash/releases/tags',
+    repo: 'rhash/RHash',
   },
   distributable: {
     url: 'https://github.com/rhash/RHash/archive/refs/tags/v{{ version }}.tar.gz',

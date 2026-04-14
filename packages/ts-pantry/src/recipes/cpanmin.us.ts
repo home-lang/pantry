@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['cpanm'],
   versionSource: {
     type: 'github-releases',
-    repo: 'miyagawa/cpanminus/tags',
+    repo: 'miyagawa/cpanminus',
   },
   distributable: {
     url: 'https://cpan.metacpan.org/authors/id/M/MI/MIYAGAWA/App-cpanminus-{{version.raw}}.tar.gz',

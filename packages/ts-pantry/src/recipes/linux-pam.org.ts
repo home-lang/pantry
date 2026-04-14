@@ -18,14 +18,9 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'run: |',
-      'run:',
-      'run:',
-      'run: sed -i "s|{{prefix}}|\\$(dirname \\$0)/..|g" pam_namespace_helper',
-      'mkhomedir_helper || echo $? | grep 14',
-      'pkg-config --modversion pam | grep {{version}}',
-      'cc test.c -o test',
-      './test',
+      './configure --prefix={{prefix}}',
+      'make --jobs {{hw.concurrency}}',
+      'make install',
     ],
   },
 }

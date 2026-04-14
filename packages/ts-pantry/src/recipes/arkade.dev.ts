@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['arkade'],
   versionSource: {
     type: 'github-releases',
-    repo: 'alexellis/arkade/releases/tags',
+    repo: 'alexellis/arkade',
   },
   distributable: {
     url: 'git+https://github.com/alexellis/arkade',

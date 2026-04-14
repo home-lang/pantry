@@ -18,7 +18,6 @@ export const recipe: Recipe = {
   buildDependencies: {
     'rust-lang.org': '>=1.56',
     'rust-lang.org/cargo': '*',
-    'linux/aarch64': '[object Object]',
   },
 
   build: {

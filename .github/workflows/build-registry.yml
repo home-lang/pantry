@@ -26,10 +26,15 @@ env:
   AWS_REGION: us-east-1
   S3_BUCKET: pantry-registry
 
+concurrency:
+  group: build-registry-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   prepare:
     name: Prepare build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     outputs:
       version: ${{ steps.version.outputs.version }}
       matrix: ${{ steps.matrix.outputs.matrix }}
@@ -54,19 +59,25 @@ jobs:
           if [ -n "$INPUT_VERSION" ]; then
             VERSION="$INPUT_VERSION"
           else
-            # Convert package domain to filename
-            PACKAGE_FILE="packages/ts-pantry/src/packages/${PACKAGE//./}net.ts"
+            # Try various filename conversion patterns for package domain
+            # e.g., "php.net" might be phpnet.ts, php-net.ts, or php.net.ts
+            PACKAGE_FILE=""
+            for candidate in \
+              "packages/ts-pantry/src/packages/${PACKAGE//./}.ts" \
+              "packages/ts-pantry/src/packages/${PACKAGE//./-}.ts" \
+              "packages/ts-pantry/src/packages/${PACKAGE}.ts"; do
+              if [ -f "$candidate" ]; then
+                PACKAGE_FILE="$candidate"
+                break
+              fi
+            done
 
-            if [ ! -f "$PACKAGE_FILE" ]; then
-              PACKAGE_FILE="packages/ts-pantry/src/packages/${PACKAGE//./-}.ts"
-            fi
-            if [ ! -f "$PACKAGE_FILE" ]; then
-              PACKAGE_FILE="packages/ts-pantry/src/packages/${PACKAGE//./}.ts"
+            if [ -z "$PACKAGE_FILE" ]; then
+              echo "Could not find package file for $PACKAGE. Please specify version manually."
+              exit 1
             fi
 
-            if [ -f "$PACKAGE_FILE" ]; then
-              VERSION=$(grep -A1 "versions:" "$PACKAGE_FILE" | grep -oE "'[0-9]+\.[0-9]+\.[0-9]+'" | head -1 | tr -d "'")
-            fi
+            VERSION=$(grep -A1 "versions:" "$PACKAGE_FILE" | grep -oE "'[0-9]+\.[0-9]+\.[0-9]+'" | head -1 | tr -d "'")
 
             if [ -z "$VERSION" ]; then
               echo "Could not determine version from $PACKAGE_FILE, please specify manually"
@@ -221,6 +232,7 @@ jobs:
     name: Upload to S3
     needs: [prepare, build]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository

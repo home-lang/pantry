@@ -170,13 +170,14 @@ async function renderDashboardPage(file: string, context: Record<string, unknown
 }
 
 function escapeHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 }
 
 function sanitizeUrl(url: string): string {
   if (!url) return ''
   const trimmed = url.trim()
-  if (trimmed.startsWith('javascript:') || trimmed.startsWith('data:') || trimmed.startsWith('vbscript:')) return ''
+  const lower = trimmed.toLowerCase()
+  if (lower.startsWith('javascript:') || lower.startsWith('data:') || lower.startsWith('vbscript:')) return ''
   return trimmed
 }
 
@@ -275,7 +276,7 @@ export function createHandler(
     // CORS headers for browser access
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     }
 
@@ -393,7 +394,8 @@ export function createHandler(
           return Response.json(result, { headers: corsHeaders })
         }
         catch (err: any) {
-          return Response.json({ error: err.message }, { status: 400, headers: corsHeaders })
+          console.error('Stripe webhook error:', err)
+          return Response.json({ error: 'Webhook processing failed' }, { status: 400, headers: corsHeaders })
         }
       }
 
@@ -429,8 +431,11 @@ export function createHandler(
       const shortCommitMatch = path.match(/^\/(@[^/]+\/[^@]+|[^@/][^@]*)@([a-f0-9]{7,40})$/)
       if (shortCommitMatch && req.method === 'GET') {
         const pkgName = decodeURIComponent(shortCommitMatch[1])
+        if (pkgName.includes('..') || /[\x00-\x1f]/.test(pkgName)) {
+          return Response.json({ error: 'Invalid package name' }, { status: 400, headers: corsHeaders })
+        }
         const sha = shortCommitMatch[2]
-        const safeName = pkgName.replaceAll('@', '').replaceAll('/', '-')
+        const safeName = pkgName.replaceAll('@', '').replaceAll('/', '-').replaceAll('..', '')
 
         // Strategy: list S3 objects under commits/{sha} prefix and find a matching package.
         // This handles full SHA, short SHA, exact names, and aliases (e.g., "craft" -> "craft-native-craft").
@@ -474,6 +479,7 @@ export function createHandler(
             headers: {
               ...corsHeaders,
               'Content-Type': 'application/gzip',
+              'Content-Length': String(tarball.byteLength),
               'Content-Disposition': `attachment; filename="${safeName}-${sha.slice(0, 7)}.tgz"`,
             },
           })
@@ -511,11 +517,12 @@ export function createHandler(
             timestamp: new Date().toISOString(),
             userAgent: req.headers.get('user-agent') || undefined,
           }).catch(err => console.warn('Analytics tracking failed:', err))
-          const safeName = packageName.replaceAll('@', '').replaceAll('/', '-')
+          const safeName = packageName.replaceAll('@', '').replaceAll('/', '-').replaceAll('..', '')
           return new Response(tarball, {
             headers: {
               ...corsHeaders,
               'Content-Type': 'application/gzip',
+              'Content-Length': String(tarball.byteLength),
               'Content-Disposition': `attachment; filename="${safeName}-${sha.slice(0, 7)}.tgz"`,
             },
           })
@@ -735,6 +742,7 @@ export function createHandler(
             headers: {
               ...corsHeaders,
               'Content-Type': 'application/gzip',
+              'Content-Length': String(tarball.byteLength),
               'Content-Disposition': `attachment; filename="${packageName}-${version}.tgz"`,
             },
           })
@@ -1180,6 +1188,21 @@ async function handlePublish(
         { status: 400, headers: corsHeaders },
       )
     }
+    if (!metadata.name || typeof metadata.name !== 'string' || !metadata.name.trim()) {
+      return Response.json({ error: 'Package name is required' }, { status: 400, headers: corsHeaders })
+    }
+    if (!metadata.version || typeof metadata.version !== 'string' || !metadata.version.trim()) {
+      return Response.json({ error: 'Package version is required' }, { status: 400, headers: corsHeaders })
+    }
+
+    // Enforce tarball size limit (50MB)
+    if (tarballFile.size > 50 * 1024 * 1024) {
+      return Response.json(
+        { error: 'Tarball exceeds maximum size of 50MB' },
+        { status: 413, headers: corsHeaders },
+      )
+    }
+
     const tarball = await tarballFile.arrayBuffer()
 
     // Check if version already exists
@@ -1438,8 +1461,12 @@ async function handleCommitPublish(
 function extractSessionToken(req: Request): string | null {
   // Check Authorization header first (works through CDN/CloudFront)
   const authHeader = req.headers.get('authorization') || ''
-  if (authHeader.startsWith('Bearer ') && !authHeader.slice(7).startsWith('ptry_')) {
-    return authHeader.slice(7)
+  if (authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice(7)
+    // Session tokens are 64-char hex strings; skip API tokens (ptry_ prefix)
+    if (token.length === 64 && /^[a-f0-9]+$/i.test(token)) {
+      return token
+    }
   }
   // Fall back to cookie
   const cookie = req.headers.get('cookie') || ''
@@ -1745,9 +1772,11 @@ async function fetchNpmMetadata(name: string): Promise<any> {
   // Evict stale entries when cache grows large
   if (npmMetadataCache.size > 500) {
     const now = Date.now()
+    const staleKeys: string[] = []
     for (const [key, val] of npmMetadataCache) {
-      if (now - val.ts > NPM_METADATA_TTL) npmMetadataCache.delete(key)
+      if (now - val.ts > NPM_METADATA_TTL) staleKeys.push(key)
     }
+    for (const key of staleKeys) npmMetadataCache.delete(key)
   }
   return data
 }
@@ -2077,7 +2106,8 @@ async function resolveNpmDeps(
         }
       }
 
-      resolved.set(actualName, entry)
+      resolved.set(name, entry)
+      visiting.delete(name)
     }
   }
 
@@ -2128,21 +2158,14 @@ async function handleNpmResolve(req: Request, corsHeaders: Record<string, string
     // Cache the result
     npmResolutionCache.set(cacheKey, { data: responseData, ts: Date.now() })
 
-    // Evict old cache entries periodically
-    if (npmResolutionCache.size > 1000) {
+    // Evict stale entries when cache grows large
+    if (npmResolutionCache.size > 200) {
       const now = Date.now()
+      const staleKeys: string[] = []
       for (const [key, val] of npmResolutionCache) {
-        if (now - val.ts > NPM_RESOLUTION_TTL) {
-          npmResolutionCache.delete(key)
-        }
+        if (now - val.ts > NPM_RESOLUTION_TTL) staleKeys.push(key)
       }
-      // Hard cap: if still over limit after TTL eviction, drop oldest entries
-      if (npmResolutionCache.size > 2000) {
-        const entries = [...npmResolutionCache.entries()].sort((a, b) => a[1].ts - b[1].ts)
-        for (let i = 0; i < entries.length - 1000; i++) {
-          npmResolutionCache.delete(entries[i][0])
-        }
-      }
+      for (const key of staleKeys) npmResolutionCache.delete(key)
     }
 
     return Response.json(responseData, {
@@ -2224,20 +2247,14 @@ else {
 
     npmResolutionCache.set(cacheKey, { data: responseData, ts: Date.now() })
 
-    // Evict old cache entries (same logic as POST endpoint)
-    if (npmResolutionCache.size > 1000) {
+    // Evict stale entries when cache grows large
+    if (npmResolutionCache.size > 200) {
       const now = Date.now()
+      const staleKeys: string[] = []
       for (const [key, val] of npmResolutionCache) {
-        if (now - val.ts > NPM_RESOLUTION_TTL) {
-          npmResolutionCache.delete(key)
-        }
+        if (now - val.ts > NPM_RESOLUTION_TTL) staleKeys.push(key)
       }
-      if (npmResolutionCache.size > 2000) {
-        const entries = [...npmResolutionCache.entries()].sort((a, b) => a[1].ts - b[1].ts)
-        for (let i = 0; i < entries.length - 1000; i++) {
-          npmResolutionCache.delete(entries[i][0])
-        }
-      }
+      for (const key of staleKeys) npmResolutionCache.delete(key)
     }
 
     return Response.json(responseData, {
@@ -2256,6 +2273,7 @@ else {
 /**
  * Handle binary proxy requests — stream tarballs/metadata/checksums from S3
  */
+let _defaultBinaryStorage: BinaryStorage | undefined
 async function handleBinaryProxy(
   path: string,
   req: Request,
@@ -2291,12 +2309,13 @@ async function handleBinaryProxy(
       ? 'public, max-age=86400, immutable'
       : 'public, max-age=300'
 
-  // Use injected storage or fall back to S3
-  const binaryStore: BinaryStorage = storage || (() => {
+  // Use injected storage or fall back to S3 (cached singleton to avoid re-creating client per request)
+  const binaryStore: BinaryStorage = storage || _defaultBinaryStorage || (() => {
     const s3Bucket = process.env.S3_BUCKET || 'pantry-registry'
     const s3Region = process.env.AWS_REGION || 'us-east-1'
     const s3 = new S3Client(s3Region)
-    return { getObject: (key: string) => s3.getObjectBuffer(s3Bucket, key) }
+    _defaultBinaryStorage = { getObject: (key: string) => s3.getObjectBuffer(s3Bucket, key) }
+    return _defaultBinaryStorage
   })()
 
   try {
@@ -2490,10 +2509,11 @@ async function handleDashboard(
 
   // Package detail page
   if (path.startsWith('/dashboard/package/')) {
-    const packageName = escapeHtml(decodeURIComponent(path.replace('/dashboard/package/', '')))
+    const rawPackageName = decodeURIComponent(path.replace('/dashboard/package/', ''))
+    const packageName = escapeHtml(rawPackageName)
     const [stats, timeline] = await Promise.all([
-      analytics.getPackageStats(packageName),
-      analytics.getDownloadTimeline(packageName, 30),
+      analytics.getPackageStats(rawPackageName),
+      analytics.getDownloadTimeline(rawPackageName, 30),
     ])
 
     // Generate charts via ts-charts
@@ -2941,9 +2961,9 @@ async function handleSitePackage(
       platformLabels: [],
       formattedDownloads: chartFormatCount(zigStats.totalDownloads),
       formattedWeekly: chartFormatCount(zigStats.weeklyDownloads),
-      pkgDescription: zigPkg.description || '',
-      homepage: zigPkg.homepage || '',
-      source: zigPkg.repository || '',
+      pkgDescription: escapeHtml(zigPkg.description || ''),
+      homepage: sanitizeUrl(zigPkg.homepage || ''),
+      source: sanitizeUrl(zigPkg.repository || ''),
       depList: [],
       hasDeps: false,
       depCount: 0,
@@ -2953,8 +2973,8 @@ async function handleSitePackage(
       remainingCount: Math.max(0, zigVersions.length - 10),
       lineChart: zigLineChart,
       versionDistribution: { bars: [] },
-      title: name,
-      metaDescription: `${zigPkg.description || name} — A Zig package on pantry.dev`,
+      title: escapeHtml(name),
+      metaDescription: escapeHtml(`${zigPkg.description || name} — A Zig package on pantry.dev`),
       canonicalUrl: `https://pantry.dev/package/${name}`,
     })
     return htmlResponse(html)
@@ -2980,9 +3000,9 @@ async function handleSitePackage(
       platformLabels: [],
       formattedDownloads: chartFormatCount(phpStats.totalDownloads),
       formattedWeekly: chartFormatCount(phpStats.weeklyDownloads),
-      pkgDescription: phpPkg.description || '',
-      homepage: phpPkg.homepage || '',
-      source: phpPkg.repository || '',
+      pkgDescription: escapeHtml(phpPkg.description || ''),
+      homepage: sanitizeUrl(phpPkg.homepage || ''),
+      source: sanitizeUrl(phpPkg.repository || ''),
       depList: phpDeps,
       hasDeps: phpDeps.length > 0,
       depCount: phpDeps.length,
@@ -2992,8 +3012,8 @@ async function handleSitePackage(
       remainingCount: Math.max(0, phpVersions.length - 10),
       lineChart: phpLineChart,
       versionDistribution: { bars: [] },
-      title: name,
-      metaDescription: `${phpPkg.description || name} — A PHP/Composer package on pantry.dev`,
+      title: escapeHtml(name),
+      metaDescription: escapeHtml(`${phpPkg.description || name} — A PHP/Composer package on pantry.dev`),
       canonicalUrl: `https://pantry.dev/package/${name}`,
     })
     return htmlResponse(html)
@@ -3019,9 +3039,9 @@ async function handleSitePackage(
       platformLabels: [],
       formattedDownloads: chartFormatCount(packagistPkg.downloads || pkgStats.totalDownloads),
       formattedWeekly: chartFormatCount(pkgStats.weeklyDownloads),
-      pkgDescription: packagistPkg.description || '',
-      homepage: packagistPkg.homepage || '',
-      source: packagistPkg.repository || '',
+      pkgDescription: escapeHtml(packagistPkg.description || ''),
+      homepage: sanitizeUrl(packagistPkg.homepage || ''),
+      source: sanitizeUrl(packagistPkg.repository || ''),
       depList: pkgDeps,
       hasDeps: pkgDeps.length > 0,
       depCount: pkgDeps.length,
@@ -3031,8 +3051,8 @@ async function handleSitePackage(
       remainingCount: Math.max(0, pkgVersions.length - 10),
       lineChart: pkgLineChart,
       versionDistribution: { bars: [] },
-      title: name,
-      metaDescription: `${packagistPkg.description || name} — A PHP/Composer package on pantry.dev`,
+      title: escapeHtml(name),
+      metaDescription: escapeHtml(`${packagistPkg.description || name} — A PHP/Composer package on pantry.dev`),
       canonicalUrl: `https://pantry.dev/package/${name}`,
     })
     return htmlResponse(html)
@@ -3092,7 +3112,7 @@ async function handleSitePackage(
       platformLabels,
       formattedDownloads: chartFormatCount(pkgStats.totalDownloads),
       formattedWeekly: chartFormatCount(pkgStats.weeklyDownloads),
-      pkgDescription: meta.description || '',
+      pkgDescription: escapeHtml(meta.description || ''),
       homepage: sanitizeUrl(meta.homepage || ''),
       source: sanitizeUrl(meta.source || meta.repository || ''),
       depList,
@@ -3104,8 +3124,8 @@ async function handleSitePackage(
       remainingCount,
       lineChart,
       versionDistribution,
-      title: name,
-      metaDescription: `${pkgDescription} — Install with pantry.`,
+      title: escapeHtml(name),
+      metaDescription: escapeHtml(`${pkgDescription} — Install with pantry.`),
       canonicalUrl: `https://pantry.dev/package/${name}`,
     })
     return htmlResponse(html)
@@ -3142,8 +3162,8 @@ async function handleSitePackage(
     remainingCount: 0,
     lineChart: fbLineChart,
     versionDistribution: { bars: [] },
-    title: name,
-    metaDescription: `${name} — Install with pantry.`,
+    title: escapeHtml(name),
+    metaDescription: escapeHtml(`${name} — Install with pantry.`),
     canonicalUrl: `https://pantry.dev/package/${name}`,
   })
   return htmlResponse(html)
@@ -3348,6 +3368,8 @@ async function handleSiteStats(
 // ============================================================================
 // Badge API handler
 // ============================================================================
+const escapeXml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+
 async function handleBadge(
   type: string,
   packageName: string,
@@ -3389,8 +3411,8 @@ async function handleBadge(
   const labelWidth = label.length * 7 + 12
   const valueWidth = value.length * 7 + 12
   const totalWidth = labelWidth + valueWidth
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" role="img" aria-label="${label}: ${value}">
-  <title>${label}: ${value}</title>
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" role="img" aria-label="${escapeXml(label)}: ${escapeXml(value)}">
+  <title>${escapeXml(label)}: ${escapeXml(value)}</title>
   <linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient>
   <clipPath id="r"><rect width="${totalWidth}" height="20" rx="3" fill="#fff"/></clipPath>
   <g clip-path="url(#r)">
@@ -3399,10 +3421,10 @@ async function handleBadge(
     <rect width="${totalWidth}" height="20" fill="url(#s)"/>
   </g>
   <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="11">
-    <text x="${labelWidth / 2}" y="15" fill="#010101" fill-opacity=".3">${label}</text>
-    <text x="${labelWidth / 2}" y="14">${label}</text>
-    <text x="${labelWidth + valueWidth / 2}" y="15" fill="#010101" fill-opacity=".3">${value}</text>
-    <text x="${labelWidth + valueWidth / 2}" y="14">${value}</text>
+    <text x="${labelWidth / 2}" y="15" fill="#010101" fill-opacity=".3">${escapeXml(label)}</text>
+    <text x="${labelWidth / 2}" y="14">${escapeXml(label)}</text>
+    <text x="${labelWidth + valueWidth / 2}" y="15" fill="#010101" fill-opacity=".3">${escapeXml(value)}</text>
+    <text x="${labelWidth + valueWidth / 2}" y="14">${escapeXml(value)}</text>
   </g>
 </svg>`
 

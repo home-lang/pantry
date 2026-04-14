@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['just'],
   versionSource: {
     type: 'github-releases',
-    repo: 'casey/just/tags',
-    tagPattern: /\/v\//,
+    repo: 'casey/just',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/casey/just/archive/refs/tags/{{version}}.tar.gz',

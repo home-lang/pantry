@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['luarocks', 'luarocks-admin'],
   versionSource: {
     type: 'github-releases',
-    repo: 'luarocks/luarocks/tags',
+    repo: 'luarocks/luarocks',
   },
   distributable: {
     url: 'https://github.com/luarocks/luarocks/archive/refs/tags/{{version.tag}}.tar.gz',

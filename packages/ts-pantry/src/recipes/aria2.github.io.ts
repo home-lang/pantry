@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['aria2c'],
   versionSource: {
     type: 'github-releases',
-    repo: 'aria2/aria2/releases',
-    tagPattern: /\/^aria2 \//,
+    repo: 'aria2/aria2',
+    tagPattern: /^aria2 (.+)$/,
   },
   distributable: {
     url: 'https://github.com/aria2/aria2/releases/download/release-{{ version }}/aria2-{{ version }}.tar.xz',

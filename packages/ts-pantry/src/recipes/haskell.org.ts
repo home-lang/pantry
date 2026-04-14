@@ -3,14 +3,14 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'haskell.org',
   name: 'haskell',
-  description: 'Mirror of the Glasgow Haskell Compiler. Please submit issues and patches to GHC\\',
+  description: 'The Glasgow Haskell Compiler',
   homepage: 'http://www.haskell.org/ghc/',
   github: 'https://github.com/ghc/ghc',
   programs: ['ghc', 'ghc-{{version.marketing}}', 'ghc-{{version}}', 'ghc-pkg', 'ghc-pkg-{{version.marketing}}', 'ghc-pkg-{{version}}', 'ghci', 'ghci-{{version.marketing}}', 'ghci-{{version}}', 'ghcup', 'haddock', 'haddock-{{version.marketing}}', 'haddock-{{version}}', 'hp2ps', 'hp2ps-{{version.marketing}}', 'hp2ps-{{version}}', 'hpc', 'hpc-{{version.marketing}}', 'hpc-{{version}}', 'hsc2hs', 'hsc2hs-{{version.marketing}}', 'hsc2hs-{{version}}', 'runghc', 'runghc-{{version.marketing}}', 'runghc-{{version}}', 'runhaskell', 'runhaskell-{{version.marketing}}', 'runhaskell-{{version}}'],
   versionSource: {
     type: 'github-releases',
-    repo: 'ghc/ghc/tags',
-    tagPattern: /\/^ghc-\/,\/-release$\//,
+    repo: 'ghc/ghc',
+    tagPattern: /^ghc-(.+?)-release$/,
   },
   distributable: null,
   dependencies: {

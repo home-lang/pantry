@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   platforms: ['linux/x86-64'],
   versionSource: {
     type: 'github-releases',
-    repo: 'strace/strace/releases/tags',
+    repo: 'strace/strace',
   },
   distributable: {
     url: 'https://github.com/strace/strace/releases/download/v{{version.raw}}/strace-{{version.raw}}.tar.xz',

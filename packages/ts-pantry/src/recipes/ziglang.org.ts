@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['zig'],
   versionSource: {
     type: 'github-releases',
-    repo: 'ziglang/zig/tags',
+    repo: 'ziglang/zig',
   },
 
   build: {

@@ -4,7 +4,7 @@ export const recipe: Recipe = {
   domain: 'yt-dlp.org',
   name: 'yt-dlp',
   description: 'A feature-rich command-line audio/video downloader',
-  homepage: 'https://discord.gg/H5MNcFW63r',
+  homepage: 'https://github.com/yt-dlp/yt-dlp',
   github: 'https://github.com/yt-dlp/yt-dlp',
   programs: ['yt-dlp'],
   versionSource: {

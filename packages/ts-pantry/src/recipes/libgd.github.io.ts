@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'libgd/libgd',
-    tagPattern: /\/^gd-\//,
+    tagPattern: /^gd-(.+)$/,
   },
   distributable: {
     url: 'https://github.com/libgd/libgd/releases/download/gd-{{ version }}/libgd-{{ version }}.tar.gz',

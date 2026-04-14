@@ -8,7 +8,7 @@ export const recipe: Recipe = {
   programs: [],
   versionSource: {
     type: 'github-releases',
-    repo: 'carlobaldassi/liblqr/tags',
+    repo: 'carlobaldassi/liblqr',
   },
   distributable: {
     url: 'https://github.com/carlobaldassi/liblqr/archive/refs/tags/v{{version}}.tar.gz',

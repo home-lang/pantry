@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['dvipdf', 'eps2eps', 'gpcl6', 'gpcl6c', 'gpdlc', 'gs', 'gsbj', 'gsc', 'gsdj', 'gsdj500', 'gslj', 'gslp', 'gsnd', 'gsx', 'gxps', 'gxpsc', 'lprsetup.sh', 'pdf2dsc', 'pdf2ps', 'pf2afm', 'pfbtopfa', 'pphs', 'printafm', 'ps2ascii', 'ps2epsi', 'ps2pdf', 'ps2pdf12', 'ps2pdf13', 'ps2pdf14', 'ps2pdfwr', 'ps2ps', 'ps2ps2', 'unix-lpr.sh'],
   versionSource: {
     type: 'github-releases',
-    repo: 'ArtifexSoftware/ghostpdl-downloads/releases',
+    repo: 'ArtifexSoftware/ghostpdl-downloads',
     tagPattern: /^gs(.+)$/,
   },
   dependencies: {

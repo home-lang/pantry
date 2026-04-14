@@ -3,7 +3,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'postgresql.org',
   name: 'postgresql',
-  description: 'Mirror of the official PostgreSQL GIT repository. Note that this is just a *mirror* - we don\\',
+  description: 'Mirror of the official PostgreSQL GIT repository',
   homepage: 'https://www.postgresql.org/',
   github: 'https://github.com/postgres/postgres',
   programs: ['clusterdb', 'createdb', 'dropdb', 'dropuser', 'ecpg', 'initdb', 'pg_archivecleanup', 'pg_basebackup', 'pg_config', 'pg_controldata', 'pg_ctl', 'pg_dump', 'pg_dumpall', 'pg_isready', 'pg_receivewal', 'pg_recvlogical', 'pg_resetwal', 'pg_restore', 'pg_rewind', 'pg_test_fsync', 'pg_test_timing', 'pg_upgrade', 'pg_waldump', 'pgbench', 'postgres', 'psql', 'reindexdb', 'vacuumdb'],

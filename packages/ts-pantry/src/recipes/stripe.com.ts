@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['stripe'],
   versionSource: {
     type: 'github-releases',
-    repo: 'stripe/stripe-cli/releases/tags',
-    tagPattern: /\/^v\//,
+    repo: 'stripe/stripe-cli',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/stripe/stripe-cli/archive/refs/tags/v{{version}}.tar.gz',

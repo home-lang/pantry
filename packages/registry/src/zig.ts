@@ -140,6 +140,13 @@ export function parseZigZon(content: string): ZigManifest {
     }
   }
 
+  if (!manifest.name) {
+    throw new Error('Invalid build.zig.zon: missing .name field')
+  }
+  if (!manifest.version) {
+    throw new Error('Invalid build.zig.zon: missing .version field')
+  }
+
   return manifest
 }
 
@@ -210,13 +217,28 @@ export class InMemoryZigStorage implements ZigPackageStorage {
       return []
 
     return Object.keys(record.versions).sort((a, b) => {
-      const [aMajor, aMinor, aPatch] = a.split('.').map(Number)
-      const [bMajor, bMinor, bPatch] = b.split('.').map(Number)
-      if (aMajor !== bMajor)
-        return bMajor - aMajor
-      if (aMinor !== bMinor)
-        return bMinor - aMinor
-      return bPatch - aPatch
+      const parse = (v: string) => {
+        const dashIdx = v.indexOf('-')
+        const numeric = (dashIdx === -1 ? v : v.slice(0, dashIdx)).split('.').map(s => {
+          const n = Number.parseInt(s, 10)
+          return Number.isNaN(n) ? 0 : n
+        })
+        const prerelease = dashIdx === -1 ? null : v.slice(dashIdx + 1)
+        return { numeric, prerelease }
+      }
+      const pa = parse(a)
+      const pb = parse(b)
+      const len = Math.max(pa.numeric.length, pb.numeric.length)
+      for (let i = 0; i < len; i++) {
+        const diff = (pb.numeric[i] ?? 0) - (pa.numeric[i] ?? 0)
+        if (diff !== 0) return diff
+      }
+      if (pa.prerelease === null && pb.prerelease !== null) return -1
+      if (pa.prerelease !== null && pb.prerelease === null) return 1
+      if (pa.prerelease !== null && pb.prerelease !== null) {
+        return pa.prerelease < pb.prerelease ? 1 : pa.prerelease > pb.prerelease ? -1 : 0
+      }
+      return 0
     })
   }
 
@@ -344,6 +366,9 @@ export class DynamoDBZigStorage implements ZigPackageStorage {
 
   private s3Key(name: string, version: string): string {
     const safeName = name.replaceAll('@', '').replaceAll('/', '-')
+    if (!/^[a-zA-Z0-9._\-]+$/.test(safeName) || safeName.includes('..')) {
+      throw new Error(`Invalid package name: ${name}`)
+    }
     return `zig-packages/${safeName}/${version}/${safeName}-${version}.tar.gz`
   }
 
@@ -396,9 +421,28 @@ export class DynamoDBZigStorage implements ZigPackageStorage {
       const d = this.unmarshal(item)
       return d.version as string
     }).sort((a: string, b: string) => {
-      const [am, ai, ap] = a.split('.').map(Number)
-      const [bm, bi, bp] = b.split('.').map(Number)
-      return bm !== am ? bm - am : bi !== ai ? bi - ai : bp - ap
+      const parse = (v: string) => {
+        const dashIdx = v.indexOf('-')
+        const numeric = (dashIdx === -1 ? v : v.slice(0, dashIdx)).split('.').map(s => {
+          const n = Number.parseInt(s, 10)
+          return Number.isNaN(n) ? 0 : n
+        })
+        const prerelease = dashIdx === -1 ? null : v.slice(dashIdx + 1)
+        return { numeric, prerelease }
+      }
+      const pa = parse(a)
+      const pb = parse(b)
+      const len = Math.max(pa.numeric.length, pb.numeric.length)
+      for (let i = 0; i < len; i++) {
+        const diff = (pb.numeric[i] ?? 0) - (pa.numeric[i] ?? 0)
+        if (diff !== 0) return diff
+      }
+      if (pa.prerelease === null && pb.prerelease !== null) return -1
+      if (pa.prerelease !== null && pb.prerelease === null) return 1
+      if (pa.prerelease !== null && pb.prerelease !== null) {
+        return pa.prerelease < pb.prerelease ? 1 : pa.prerelease > pb.prerelease ? -1 : 0
+      }
+      return 0
     })
   }
 

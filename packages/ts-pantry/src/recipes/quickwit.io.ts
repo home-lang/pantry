@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'quickwit-oss/quickwit',
-    tagPattern: /\/v\//,
+    tagPattern: /^v(.+)$/,
   },
 
   build: {

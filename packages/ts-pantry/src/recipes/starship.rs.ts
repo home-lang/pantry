@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['starship'],
   versionSource: {
     type: 'github-releases',
-    repo: 'starship/starship/tags',
-    tagPattern: /\/v\//,
+    repo: 'starship/starship',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/starship/starship/archive/refs/tags/v{{ version }}.tar.gz',

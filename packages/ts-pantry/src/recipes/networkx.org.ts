@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'networkx/networkx',
-    tagPattern: /\/^networkx-\//,
+    tagPattern: /^networkx-(.+)$/,
   },
   distributable: {
     url: 'git+https://github.com/networkx/networkx.git',

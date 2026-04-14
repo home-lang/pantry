@@ -70,6 +70,8 @@ jobs:
           cd packages/ts-pantry
 
           PKGS="${{ github.event.inputs.packages || '' }}"
+          # Validate package input (only allow safe characters — no whitespace)
+          PKGS=$(echo "$PKGS" | tr -cd 'a-zA-Z0-9._\-/,')
           FORCE="${{ github.event.inputs.force || 'false' }}"
           MULTI="${{ github.event.inputs.multi-version || 'false' }}"
 
@@ -101,6 +103,7 @@ jobs:
     name: Discover buildable packages
     if: github.event.inputs.packages == ''
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     outputs:
       batches: ${{ steps.discover.outputs.batches }}
       total: ${{ steps.discover.outputs.total }}
@@ -303,7 +306,9 @@ jobs:
           cd packages/ts-pantry
 
           FORCE="${{ github.event.inputs.force || 'false' }}"
-          ARGS="-b $S3_BUCKET -r $AWS_REGION --platform ${{ matrix.platform.name }} -p ${{ github.event.inputs.packages }}"
+          # Validate package input (only allow safe characters)
+          VALIDATED_PKGS=$(echo "${{ github.event.inputs.packages }}" | tr -cd 'a-zA-Z0-9._\-/,')
+          ARGS="-b $S3_BUCKET -r $AWS_REGION --platform ${{ matrix.platform.name }} -p $VALIDATED_PKGS"
 
           if [ "$FORCE" = "true" ]; then
             ARGS="$ARGS --force"

@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['unbound', 'unbound-anchor', 'unbound-checkconf', 'unbound-control', 'unbound-control-setup', 'unbound-host'],
   versionSource: {
     type: 'github-releases',
-    repo: 'NLnetLabs/unbound/tags',
-    tagPattern: /\/^release-\//,
+    repo: 'NLnetLabs/unbound',
+    tagPattern: /^release-(.+)$/,
   },
   distributable: {
     url: 'https://github.com/NLnetLabs/unbound/archive/refs/tags/release-{{ version }}.tar.gz',

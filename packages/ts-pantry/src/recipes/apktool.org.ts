@@ -22,10 +22,10 @@ export const recipe: Recipe = {
     script: [
       'cd "${{prefix}}"',
       'mkdir -p bin libexec/lib',
-      'cp apktool.org-{{version}}.jar {{prefix}}/libexec/lib/',
+      'cp apktool_{{version}}.jar {{prefix}}/libexec/lib/',
       'cd "${{prefix}}/bin"',
       'echo \'#!/bin/sh\' > apktool',
-      'echo \'java -jar $(dirname $0)/../libexec/lib/apktool.org-{{version}}.jar "$@"\' >> apktool',
+      'echo \'java -jar $(dirname $0)/../libexec/lib/apktool_{{version}}.jar "$@"\' >> apktool',
       'chmod +x apktool',
       '',
     ],

@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: [],
   versionSource: {
     type: 'github-releases',
-    repo: 'yaml/libyaml/tags',
+    repo: 'yaml/libyaml',
   },
   distributable: {
     url: 'https://pyyaml.org/download/libyaml/yaml-{{version}}.tar.gz',

@@ -3,7 +3,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'vcluster.com',
   name: 'vcluster',
-  description: 'vCluster - Create fully functional virtual Kubernetes clusters - Each vcluster runs inside a namespace of the underlying k8s cluster. It\\',
+  description: 'vCluster - Create fully functional virtual Kubernetes clusters',
   homepage: 'https://www.vcluster.com',
   github: 'https://github.com/loft-sh/vcluster',
   programs: ['vcluster'],

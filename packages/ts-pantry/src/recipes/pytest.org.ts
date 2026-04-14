@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['pytest'],
   versionSource: {
     type: 'github-releases',
-    repo: 'pytest-dev/pytest/releases/tags',
-    tagPattern: /\/^v\//,
+    repo: 'pytest-dev/pytest',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/pytest-dev/pytest/archive/refs/tags/{{ version.tag }}.tar.gz',

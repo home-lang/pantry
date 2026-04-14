@@ -13,12 +13,8 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'run:',
       'make install-bin PREFIX={{prefix}}',
       'make -C contrib/chg install PREFIX={{prefix}} HGPATH={{prefix}}/bin/hg HG={{prefix}}/bin/hg',
-      'run: cat $PROP >hgrc',
-      'run:',
-      'run: sed -i \\1s|.*|#!/usr/bin/env python3|\\ hg',
     ],
   },
 }

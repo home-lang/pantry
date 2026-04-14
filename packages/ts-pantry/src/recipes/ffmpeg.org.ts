@@ -23,9 +23,7 @@ export const recipe: Recipe = {
     'opus-codec.org': '^1',
     'google.com/webp': '^1',
   },
-  buildDependencies: {
-    'x86-64': '[object Object]',
-  },
+  buildDependencies: {},
 
   build: {
     script: [

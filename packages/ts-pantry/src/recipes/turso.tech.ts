@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['turso'],
   versionSource: {
     type: 'github-releases',
-    repo: 'tursodatabase/turso-cli/tags',
-    tagPattern: /\/^v\//,
+    repo: 'tursodatabase/turso-cli',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'git+https://github.com/tursodatabase/turso-cli',

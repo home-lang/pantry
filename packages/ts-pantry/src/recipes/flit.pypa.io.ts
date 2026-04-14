@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   programs: ['flit'],
   versionSource: {
     type: 'github-releases',
-    repo: 'pypa/flit/tags',
+    repo: 'pypa/flit',
   },
   distributable: {
     url: 'https://github.com/pypa/flit/archive/refs/tags/{{version}}.tar.gz',

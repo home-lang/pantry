@@ -9,8 +9,8 @@ export const recipe: Recipe = {
   programs: ['chezmoi'],
   versionSource: {
     type: 'github-releases',
-    repo: 'twpayne/chezmoi/tags',
-    tagPattern: /\/v\//,
+    repo: 'twpayne/chezmoi',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/twpayne/chezmoi/archive/refs/tags/v{{ version }}.tar.gz',

@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'oven-sh/bun',
-    tagPattern: /\/^bun-\//,
+    tagPattern: /^bun-(.+)$/,
   },
   buildDependencies: {
     'curl.se': '*',
