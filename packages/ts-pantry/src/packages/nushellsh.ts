@@ -68,6 +68,7 @@ export const nushellshPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.112.1',
     '0.111.0',
     '0.110.0',
     '0.109.1',

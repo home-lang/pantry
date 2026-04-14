@@ -79,6 +79,7 @@ export const xkbcommonorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.13.1',
     '1.13.0',
     '1.12.4',
     '1.12.3',
@@ -95,6 +96,10 @@ export const xkbcommonorgPackage = {
     '1.7.0',
     '1.6.0',
     '1.5.0',
+    '1.4.1',
+    '1.4.0',
+    '1.3.1',
+    '1.1.0',
   ] as const,
   aliases: [] as const,
 }

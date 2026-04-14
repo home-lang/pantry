@@ -72,6 +72,10 @@ export const libuvorgPackage = {
     '1.46.0',
     '1.45.0',
     '1.44.2',
+    '1.44.1',
+    '1.44.0',
+    '1.43.0',
+    '1.42.0',
   ] as const,
   aliases: [] as const,
 }

@@ -66,8 +66,10 @@ export const libexifgithubioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.6.26',
     '0.6.25',
     '0.6.24',
+    '0.6.23',
   ] as const,
   aliases: [] as const,
 }

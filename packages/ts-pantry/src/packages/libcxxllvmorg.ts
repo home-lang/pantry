@@ -62,6 +62,8 @@ export const libcxxllvmorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '22.1.3',
+    '22.1.2',
     '22.1.1',
     '22.1.0',
     '21.1.8',
@@ -93,6 +95,7 @@ export const libcxxllvmorgPackage = {
     '18.1.8',
     '18.1.7',
     '18.1.6',
+    '18.1.5',
     '18.1.4',
     '18.1.3',
     '18.1.2',

@@ -91,6 +91,8 @@ export const llvmorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '22.1.3',
+    '22.1.2',
     '22.1.1',
     '22.1.0',
     '21.1.8',
@@ -113,6 +115,7 @@ export const llvmorgPackage = {
     '20.1.0',
     '19.1.7',
     '19.1.6',
+    '19.1.5',
     '19.1.4',
     '19.1.3',
     '19.1.2',

@@ -83,6 +83,12 @@ export const openjpegorgPackage = {
     '2.5.2',
     '2.5.1',
     '2.5.0',
+    '2.4.0',
+    '2.3.1',
+    '2.3.0',
+    '2.2.0',
+    '2.1.2',
+    '2.1.1',
   ] as const,
   aliases: [] as const,
 }

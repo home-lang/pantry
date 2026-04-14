@@ -68,6 +68,8 @@ export const k6ioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.7.1',
+    '1.7.0',
     '1.6.1',
     '1.6.0',
     '1.5.0',
@@ -81,6 +83,8 @@ export const k6ioPackage = {
     '1.2.0',
     '1.1.0',
     '1.0.0',
+    '1.0.0-rc2',
+    '1.0.0-rc1',
     '0.59.0',
     '0.58.0',
     '0.57.0',
@@ -104,6 +108,16 @@ export const k6ioPackage = {
     '0.43.1',
     '0.43.0',
     '0.42.0',
+    '0.41.0',
+    '0.40.0',
+    '0.39.0',
+    '0.38.3',
+    '0.38.2',
+    '0.38.1',
+    '0.38.0',
+    '0.37.0',
+    '0.36.0',
+    '0.35.0',
   ] as const,
   aliases: [] as const,
 }

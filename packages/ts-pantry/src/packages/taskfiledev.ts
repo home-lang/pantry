@@ -68,6 +68,7 @@ export const taskfiledevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.50.0',
     '3.49.1',
     '3.49.0',
     '3.48.0',
@@ -111,6 +112,11 @@ export const taskfiledevPackage = {
     '3.28.0',
     '3.27.1',
     '3.27.0',
+    '3.26.0',
+    '3.25.0',
+    '3.24.0',
+    '3.23.0',
+    '3.22.0',
   ] as const,
   aliases: [] as const,
 }

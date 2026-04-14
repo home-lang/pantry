@@ -92,12 +92,21 @@ export const macvimorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '183',
+    '182',
     '182.0.0',
+    '181',
     '181.0.0',
+    '180',
     '180.0.0',
+    '179',
     '179.0.0',
+    '178',
     '178.0.0',
+    '177',
     '177.0.0',
+    '176',
+    '174',
   ] as const,
   aliases: [] as const,
 }

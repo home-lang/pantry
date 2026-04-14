@@ -69,6 +69,7 @@ export const rubocoporgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.86.1',
     '1.86.0',
     '1.85.1',
     '1.85.0',
@@ -116,6 +117,8 @@ export const rubocoporgPackage = {
     '1.69.1',
     '1.69.0',
     '1.68.0',
+    '1.67.0',
+    '1.66.1',
   ] as const,
   aliases: [] as const,
 }

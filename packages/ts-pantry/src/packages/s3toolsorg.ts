@@ -75,6 +75,14 @@ export const s3cmdPackage = {
   versions: [
     '2.4.0',
     '2.3.0',
+    '2.2.0',
+    '2.1.0',
+    '2.0.2',
+    '2.0.1',
+    '2.0.0',
+    '1.6.1',
+    '1.6.0',
+    '1.5.2',
   ] as const,
   /**
   * Alternative names for this package.
