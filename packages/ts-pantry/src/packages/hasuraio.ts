@@ -71,6 +71,7 @@ export const hasuraioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.48.16',
     '2.48.15',
     '2.48.14',
     '2.48.13',
@@ -84,8 +85,8 @@ export const hasuraioPackage = {
     '2.48.3',
     '2.48.2',
     '2.48.1',
-    '2.48.0-beta.1',
     '2.48.0',
+    '2.48.0-beta.1',
     '2.47.0',
     '2.46.0',
     '2.45.3',
@@ -107,13 +108,13 @@ export const hasuraioPackage = {
     '2.38.1',
     '2.36.12',
     '2.36.10',
+    '2.36.10-2',
     '2.36.9',
     '2.36.8',
     '2.36.7',
     '2.36.6',
     '2.36.5',
     '2.36.4',
-    '2.36.10-2',
   ] as const,
   aliases: [] as const,
 }
