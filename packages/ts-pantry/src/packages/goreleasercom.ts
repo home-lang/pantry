@@ -68,6 +68,7 @@ export const goreleasercomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.15.3',
     '2.15.2',
     '2.15.1',
     '2.15.0',
