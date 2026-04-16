@@ -78,6 +78,7 @@ export const misejdxdevPackage = {
   */
   versions: [
     '2026.4.14',
+    '2026.4.13',
     '2026.4.12',
     '2026.4.11',
     '2026.4.10',
