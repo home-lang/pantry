@@ -70,6 +70,7 @@ export const opencodeaiPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.4.7',
     '1.4.6',
     '1.4.5',
     '1.4.4',
