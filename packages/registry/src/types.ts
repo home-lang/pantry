@@ -16,6 +16,7 @@ export interface PackageMetadata {
   tarballUrl?: string
   checksum?: string
   publishedAt: string
+  size?: number
   downloads?: number
 }
 

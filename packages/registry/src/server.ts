@@ -630,7 +630,7 @@ export function createHandler(
 
           let body: { price: number, currency?: string, freeVersions?: string[], trialDays?: number }
           try {
-            body = await req.json()
+            body = await req.json() as typeof body
           }
           catch {
             return Response.json({ error: 'Invalid JSON body' }, { status: 400, headers: corsHeaders })
@@ -1129,7 +1129,7 @@ async function validateToken(authHeader: string | null): Promise<{ valid: boolea
 
   // Try user API token first if AuthService is available
   if (_authService && isUserApiToken(token)) {
-    const result = await _authService.validatePublishToken(token, REGISTRY_TOKEN)
+    const result = await _authService.validatePublishToken(token, REGISTRY_TOKEN!)
     return result
   }
 
@@ -1238,7 +1238,7 @@ async function handlePublish(
   if (contentType.includes('application/json')) {
     let body: { metadata?: any, tarball?: string }
     try {
-      body = await req.json()
+      body = await req.json() as typeof body
     }
     catch {
       return Response.json(
@@ -1398,7 +1398,7 @@ async function handleCommitPublish(
       packages: Array<{ name: string, tarball: string, packageDir?: string, version?: string }>
     }
     try {
-      body = await req.json()
+      body = await req.json() as typeof body
     }
     catch {
       return Response.json(
