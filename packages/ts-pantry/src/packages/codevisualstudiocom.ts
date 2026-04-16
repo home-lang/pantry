@@ -21,7 +21,12 @@ export const codevisualstudiocomPackage = {
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,
-  versions: ['1.96.4', '1.96.3', '1.96.2'] as const,
+  versions: [
+    '1.96.4',
+    '1.96.3',
+    '1.96.2',
+    '0.44.1',
+  ] as const,
   aliases: ['vscode', 'code'] as const,
 }
 export type CodevisualstudiocomPackage = typeof codevisualstudiocomPackage
