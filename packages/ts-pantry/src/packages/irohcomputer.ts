@@ -69,6 +69,7 @@ export const irohcomputerPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.98.0',
     '0.97.0',
     '0.96.1',
     '0.96.0',
