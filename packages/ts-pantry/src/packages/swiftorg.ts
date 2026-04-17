@@ -107,6 +107,7 @@ export const swiftorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '6.3.1',
     '6.3',
     '6.2.4',
     '6.2.3',
