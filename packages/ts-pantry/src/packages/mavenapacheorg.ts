@@ -76,6 +76,7 @@ export const mavenPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.9.15',
     '3.9.14',
     '3.9.13',
     '3.9.12',
