@@ -78,6 +78,7 @@ export const ollamaaiPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.21.0',
     '0.20.7',
     '0.20.6',
     '0.20.5',
@@ -86,11 +87,12 @@ export const ollamaaiPackage = {
     '0.20.2',
     '0.20.0',
     '0.19.0',
+    '0.18.4-rc0',
     '0.18.3',
     '0.18.2',
     '0.18.1',
-    '0.18.4-rc0',
     '0.18.0',
+    '0.17.8-rc4',
     '0.17.7',
     '0.17.6',
     '0.17.5',
@@ -98,7 +100,6 @@ export const ollamaaiPackage = {
     '0.17.3',
     '0.17.2',
     '0.17.1',
-    '0.17.8-rc4',
     '0.17.0',
     '0.16.3',
     '0.16.2',
