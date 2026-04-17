@@ -75,6 +75,7 @@ export const typescriptlangorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '6.0.3',
     '6.0.2',
     '5.9.3',
     '5.9.2',
