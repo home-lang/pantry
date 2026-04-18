@@ -508,10 +508,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         var checkpoint = recovery.InstallCheckpoint.loadFromDisk(allocator, proj_dir) catch null orelse recovery.InstallCheckpoint.init(allocator);
         defer checkpoint.deinit();
 
-        const resuming = checkpoint.installed_packages.count() > 0;
-        if (resuming) {
-            style.printResuming(checkpoint.installed_packages.count());
-        }
+        const resuming_count: usize = checkpoint.installed_packages.count();
 
         // Set checkpoint path for persistence (enables resume on interrupt)
         checkpoint.setCheckpointPath(proj_dir) catch |err| {
@@ -561,7 +558,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         }
 
         // Clean Bun-style output - just show what we're installing
-        style.printInstalling(deps_to_install.len);
+        style.printInstallingEx(deps_to_install.len, resuming_count);
 
         if (opts.verbose) {
             const setup_ts = io_helper.clockGettime();
@@ -1269,7 +1266,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             const error_msg = switch (err) {
                 error.PackageNotFound => "not found in pantry or npm registry",
                 error.NoTarballUrl => "npm package found but no tarball URL available",
-                else => @errorName(err),
+                else => style.friendlyErrorName(err),
             };
             style.printFailed(name, spec.version, error_msg);
 

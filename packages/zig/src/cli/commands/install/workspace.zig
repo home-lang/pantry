@@ -112,7 +112,7 @@ fn installSingleWorkspaceDep(
                     .name = clean_name,
                     .version = dep.version,
                     .success = false,
-                    .error_msg = std.fmt.allocPrint(allocator, "{any}", .{err}) catch null,
+                    .error_msg = allocator.dupe(u8, style.friendlyErrorName(err)) catch null,
                 };
             };
             const ver = allocator.dupe(u8, result.version) catch dep.version;
@@ -157,7 +157,7 @@ fn installSingleWorkspaceDep(
                 .name = clean_name,
                 .version = dep.version,
                 .success = false,
-                .error_msg = std.fmt.allocPrint(allocator, "{any}", .{err}) catch null,
+                .error_msg = allocator.dupe(u8, style.friendlyErrorName(err)) catch null,
             };
         };
         const ver = allocator.dupe(u8, result.version) catch dep.version;
@@ -263,7 +263,7 @@ fn installSingleWorkspaceDep(
                     .name = clean_name,
                     .version = dep.version,
                     .success = false,
-                    .error_msg = std.fmt.allocPrint(allocator, "{any}", .{err}) catch null,
+                    .error_msg = allocator.dupe(u8, style.friendlyErrorName(err)) catch null,
                 };
             };
             const ver = allocator.dupe(u8, fallback.version) catch dep.version;
@@ -274,7 +274,7 @@ fn installSingleWorkspaceDep(
             .name = clean_name,
             .version = dep.version,
             .success = false,
-            .error_msg = std.fmt.allocPrint(allocator, "{any}", .{err}) catch null,
+            .error_msg = allocator.dupe(u8, style.friendlyErrorName(err)) catch null,
         };
     };
     const ver = allocator.dupe(u8, result.version) catch dep.version;
@@ -423,10 +423,7 @@ pub fn installWorkspaceCommandWithOptions(
     var checkpoint = recovery.InstallCheckpoint.loadFromDisk(allocator, workspace_root) catch null orelse recovery.InstallCheckpoint.init(allocator);
     defer checkpoint.deinit();
 
-    const resuming = checkpoint.installed_packages.count() > 0;
-    if (resuming) {
-        style.print("{s}{s}{s} Resuming — {d} packages already installed\n", .{ style.green, style.check, style.reset, checkpoint.installed_packages.count() });
-    }
+    const resuming_count: usize = checkpoint.installed_packages.count();
 
     checkpoint.setCheckpointPath(workspace_root) catch {};
 
@@ -512,10 +509,11 @@ pub fn installWorkspaceCommandWithOptions(
         deps_seen.deinit(allocator);
     }
 
-    // Process root-level dependencies from the workspace file (system deps, root deps)
+    // Process root-level dependencies from the workspace file (system deps, root deps).
+    // Dedup by clean package name: flat pantry/ install can only have one version per
+    // package, so `name@^1.0.0` and `name@1.0.0` must collapse to a single install.
     {
         const detector = @import("../../../deps/detector.zig");
-        // Use the workspace file itself (package.json / pantry.jsonc) for root deps
         const root_deps_file = detector.DepsFile{
             .path = workspace_file_path,
             .format = detector.inferFormat(std.fs.path.basename(workspace_file_path)) orelse .package_json,
@@ -527,14 +525,8 @@ pub fn installWorkspaceCommandWithOptions(
                 if (std.mem.startsWith(u8, dep.version, "workspace:")) continue;
 
                 const clean_dep_name = helpers.resolvePackageAlias(helpers.normalizePackageName(dep.name));
-                var key_buf: [512]u8 = undefined;
-                const dep_key = std.fmt.bufPrint(&key_buf, "{s}@{s}", .{ clean_dep_name, dep.version }) catch
-                    try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_dep_name, dep.version });
-                const key_is_heap = dep_key.ptr != &key_buf;
-                defer if (key_is_heap) allocator.free(dep_key);
-
-                if (!deps_seen.contains(dep_key)) {
-                    try deps_seen.put(try allocator.dupe(u8, dep_key), {});
+                if (!deps_seen.contains(clean_dep_name)) {
+                    try deps_seen.put(try allocator.dupe(u8, clean_dep_name), {});
                     if (all_deps_count < all_deps_buffer.len) {
                         all_deps_buffer[all_deps_count] = try dep.clone(allocator);
                         all_deps_count += 1;
@@ -627,17 +619,11 @@ pub fn installWorkspaceCommandWithOptions(
                     }
                 }
 
-                // Create a unique key for this dependency (stack buffer to avoid heap alloc per dep)
+                // Dedup by clean package name only — flat pantry/ install resolves
+                // each package to a single version.
                 const clean_dep_name = helpers.resolvePackageAlias(helpers.normalizePackageName(resolved_dep.name));
-                var key_buf: [512]u8 = undefined;
-                const dep_key = std.fmt.bufPrint(&key_buf, "{s}@{s}", .{ clean_dep_name, resolved_dep.version }) catch
-                    try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_dep_name, resolved_dep.version });
-                const key_is_heap = dep_key.ptr != &key_buf;
-                defer if (key_is_heap) allocator.free(dep_key);
-
-                // Only add if we haven't seen this exact dep before
-                if (!deps_seen.contains(dep_key)) {
-                    try deps_seen.put(try allocator.dupe(u8, dep_key), {});
+                if (!deps_seen.contains(clean_dep_name)) {
+                    try deps_seen.put(try allocator.dupe(u8, clean_dep_name), {});
                     if (all_deps_count >= all_deps_buffer.len) {
                         return .{
                             .exit_code = 1,
@@ -674,7 +660,7 @@ pub fn installWorkspaceCommandWithOptions(
         }
     }
 
-    style.printInstalling(all_deps_count);
+    style.printInstallingEx(all_deps_count, resuming_count);
 
     const install_start_ts = io_helper.clockGettime();
     const install_start_ms = @as(i64, @intCast(install_start_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(install_start_ts.nsec)), 1_000_000);
@@ -768,6 +754,7 @@ pub fn installWorkspaceCommandWithOptions(
 
     var success_count: usize = 0;
     var failed_count: usize = 0;
+    var cached_count: usize = 0;
 
     // Read existing lockfile for incremental install skipping
     const lockfile_reader = @import("../../../packages/lockfile.zig");
@@ -978,6 +965,7 @@ pub fn installWorkspaceCommandWithOptions(
             if (result.success) {
                 style.printInstalled(result.name, result.version);
                 success_count += 1;
+                if (result.from_cache) cached_count += 1;
                 checkpoint.recordPackage(result.name) catch {};
             } else {
                 style.printFailed(result.name, result.version, result.error_msg);
@@ -1430,7 +1418,7 @@ pub fn installWorkspaceCommandWithOptions(
         io_helper.deleteFile(link_path) catch {};
         io_helper.deleteTree(link_path) catch {};
         io_helper.symLink(member.abs_path, link_path) catch |err| {
-            style.print("{s}  ! Failed to link {s}: {}{s}\n", .{ style.dim, pkg_name, err, style.reset });
+            style.print("{s}  ! Failed to link {s}: {s}{s}\n", .{ style.dim, pkg_name, style.friendlyErrorName(err), style.reset });
             continue;
         };
         linked_count += 1;
@@ -1516,7 +1504,7 @@ pub fn installWorkspaceCommandWithOptions(
     const install_end_ts = io_helper.clockGettime();
     const install_end_ms = @as(i64, @intCast(install_end_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(install_end_ts.nsec)), 1_000_000);
     const elapsed_ms: u64 = @intCast(@max(0, install_end_ms - install_start_ms));
-    style.printWorkspaceComplete(success_count, failed_count, elapsed_ms);
+    style.printWorkspaceCompleteEx(success_count, cached_count, failed_count, elapsed_ms);
 
     if (options.verbose) {
         std.debug.print("[verbose:timer] total install time: {d}ms\n", .{elapsed_ms});

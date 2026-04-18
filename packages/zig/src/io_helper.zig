@@ -1438,10 +1438,12 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
         if (status_code == 402) {
             return error.PaymentRequired;
         }
-        // Log non-200 status only in interactive mode (CI has too much noise)
+        // Log non-200 status only in interactive mode (CI has too much noise).
+        // 404s on the pantry registry are expected for packages without pre-built
+        // binaries — they fall back to npm/source silently. Only surface non-404s.
         const style = @import("cli/style.zig");
-        if (!style.isCI()) {
-            style.print("  {s}(http status: {d} for {s}){s}\n", .{ style.dim, status_code, url, style.reset });
+        if (!style.isCI() and status_code != 404) {
+            style.print("  {s}HTTP {d} from {s}{s}\n", .{ style.dim, status_code, url, style.reset });
         }
         return error.HttpRequestFailed;
     }

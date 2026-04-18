@@ -6,12 +6,13 @@ const std = @import("std");
 fn resolveDependencyPath(b: *std.Build, package_name: []const u8, entry_point: []const u8, fallback_path: []const u8) []const u8 {
     // pantry/ folder is at the workspace root (../../ from packages/zig/)
     const primary = b.fmt("../../pantry/{s}/{s}", .{ package_name, entry_point });
+    const io = b.graph.io;
     // Try primary path first, fall back to fallback
-    if (b.build_root.handle.access(primary, .{})) |_| {
+    if (b.build_root.handle.access(io, primary, .{})) |_| {
         return primary;
     } else |_| {}
     // Try fallback path
-    if (b.build_root.handle.access(fallback_path, .{})) |_| {
+    if (b.build_root.handle.access(io, fallback_path, .{})) |_| {
         return fallback_path;
     } else |_| {}
     // Neither exists - print helpful message and return primary (will fail at compile time with clear error)

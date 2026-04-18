@@ -241,17 +241,42 @@ pub fn printLockfileSaved() void {
     clearLine();
 }
 
-/// Print installing message
+/// Print installing message. If `resuming_count > 0`, annotates the line to
+/// indicate this is a continuation of a prior interrupted install.
 pub fn printInstalling(count: usize) void {
-    const label = if (count == 1) "package" else "packages";
-    print("{s}{s}{s} Installing {d} {s}...\n", .{ green, arrow, reset, count, label });
+    printInstallingEx(count, 0);
 }
 
-/// Print resume message
-pub fn printResuming(count: usize) void {
-    print("{s}  > Resuming from previous interrupted install ({d} packages already done){s}\n", .{
-        dim, count, reset,
-    });
+pub fn printInstallingEx(count: usize, resuming_count: usize) void {
+    const label = if (count == 1) "package" else "packages";
+    if (resuming_count > 0) {
+        print("{s}{s}{s} Installing {d} {s} {s}(resuming, {d} previously completed){s}...\n", .{
+            green, arrow,          reset,           count, label,
+            dim,   resuming_count, reset,
+        });
+    } else {
+        print("{s}{s}{s} Installing {d} {s}...\n", .{ green, arrow, reset, count, label });
+    }
+}
+
+/// Map common Zig error names to user-friendly messages. Falls back to a
+/// lowercased version of the error name for unknown errors.
+pub fn friendlyErrorName(err: anyerror) []const u8 {
+    return switch (err) {
+        error.DownloadFailed => "download failed",
+        error.HttpRequestFailed => "network error",
+        error.NetworkError => "network error",
+        error.InvalidUrl => "invalid URL",
+        error.PackageNotFound => "not found in registry",
+        error.PaymentRequired => "paywalled (HTTP 402)",
+        error.OutOfMemory => "out of memory",
+        error.FileNotFound => "file not found",
+        error.AccessDenied => "access denied",
+        error.ConnectionRefused => "connection refused",
+        error.ConnectionTimedOut => "connection timed out",
+        error.TlsInitializationFailed => "TLS error",
+        else => @errorName(err),
+    };
 }
 
 /// Print skip message
@@ -319,9 +344,17 @@ pub fn printWorkspaceLinked(count: usize) void {
 
 /// Print workspace complete summary with elapsed time
 pub fn printWorkspaceComplete(success: usize, failed: usize, elapsed_ms: u64) void {
+    printWorkspaceCompleteEx(success, 0, failed, elapsed_ms);
+}
+
+/// Print workspace complete summary with cached breakdown
+pub fn printWorkspaceCompleteEx(success: usize, cached: usize, failed: usize, elapsed_ms: u64) void {
     print("\n{s}{s}{s} Workspace setup complete! Installed {d} package(s)", .{
         green, check, reset, success,
     });
+    if (cached > 0) {
+        print(" {s}({d} cached){s}", .{ dim, cached, reset });
+    }
     if (failed > 0) {
         print(", {s}{d} failed{s}", .{ red, failed, reset });
     }
