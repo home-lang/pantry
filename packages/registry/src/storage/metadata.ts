@@ -127,7 +127,10 @@ export class InMemoryMetadataStorage implements MetadataStorage {
     if (!pkg)
       return []
 
-    return Object.keys(pkg.versions).sort(this.compareSemver)
+    // Bind the comparator explicitly — `.sort(this.compareSemver)` would
+    // invoke it with `this === undefined`, silently collapsing to a string
+    // compare and mis-ordering versions.
+    return Object.keys(pkg.versions).sort((a, b) => this.compareSemver(a, b))
   }
 
   async incrementDownloads(name: string, _version: string): Promise<void> {
@@ -276,15 +279,21 @@ export class FileMetadataStorage extends InMemoryMetadataStorage {
   }
 
   private async load(): Promise<void> {
+    const file = Bun.file(this.filePath)
+    if (!(await file.exists())) return
     try {
-      const file = Bun.file(this.filePath)
-      if (await file.exists()) {
-        const data = await file.json()
-        this.import(data)
+      const data = await file.json()
+      if (!data || typeof data !== 'object') {
+        console.warn(`FileMetadataStorage: ${this.filePath} is not an object; starting empty`)
+        return
       }
+      this.import(data)
     }
-    catch {
-      // File doesn't exist or is invalid, start fresh
+    catch (err) {
+      // Previously swallowed silently — a malformed metadata.json would cause
+      // invisible data loss. Log loudly but still start empty so a restart
+      // isn't blocked by a corrupt file.
+      console.error(`FileMetadataStorage: failed to load ${this.filePath}: ${(err as Error).message}. Starting empty; existing file NOT overwritten until next save.`)
     }
   }
 
@@ -294,13 +303,34 @@ export class FileMetadataStorage extends InMemoryMetadataStorage {
 
     this.saveTimeout = setTimeout(() => {
       this.saveTimeout = null
-      this.save()
+      this.save().catch(err => console.error('FileMetadataStorage save failed:', (err as Error).message))
     }, 1000)
   }
 
+  // Guard against concurrent saves overwriting each other.
+  private savePromise: Promise<void> | null = null
+
   private async save(): Promise<void> {
+    // Serialize saves so a long write can't be overtaken by a newer one.
+    while (this.savePromise) await this.savePromise
+    this.savePromise = this._doSave()
+    try {
+      await this.savePromise
+    }
+    finally {
+      this.savePromise = null
+    }
+  }
+
+  private async _doSave(): Promise<void> {
     const data = this.export()
-    await Bun.write(this.filePath, JSON.stringify(data, null, 2))
+    const payload = JSON.stringify(data, null, 2)
+    // Write to a temp file then rename — `rename(2)` is atomic on POSIX, so
+    // a crash during write can't leave a half-written metadata file.
+    const tmpPath = `${this.filePath}.tmp.${process.pid}.${Date.now()}`
+    await Bun.write(tmpPath, payload)
+    const fs = await import('node:fs/promises')
+    await fs.rename(tmpPath, this.filePath)
   }
 
   async putPackage(record: PackageRecord): Promise<void> {

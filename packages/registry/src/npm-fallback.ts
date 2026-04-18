@@ -3,6 +3,16 @@ import type { PackageMetadata, SearchResult } from './types'
 const NPM_REGISTRY = 'https://registry.npmjs.org'
 
 /**
+ * Allowlist of hostnames we'll follow for tarball downloads. Keeps SSRF
+ * surface narrow even if an attacker publishes a package pointing at an
+ * internal URL. Mirrored in registry.ts for consistency.
+ */
+const TARBALL_HOST_ALLOWLIST = new Set([
+  'registry.npmjs.org',
+  'registry.yarnpkg.com',
+])
+
+/**
  * Fetch package metadata from npm registry
  */
 export async function fetchFromNpm(name: string, version?: string): Promise<PackageMetadata | null> {
@@ -15,10 +25,7 @@ export async function fetchFromNpm(name: string, version?: string): Promise<Pack
       ? `${NPM_REGISTRY}/${encodedName}/${encodeURIComponent(version)}`
       : `${NPM_REGISTRY}/${encodedName}/latest`
 
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 30000)
-    const response = await fetch(url, { signal: controller.signal })
-    clearTimeout(timeout)
+    const response = await fetch(url, { signal: AbortSignal.timeout(30_000) })
     if (!response.ok) {
       return null
     }
@@ -52,13 +59,12 @@ export async function fetchFromNpm(name: string, version?: string): Promise<Pack
  */
 export async function listNpmVersions(name: string): Promise<string[]> {
   try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 30000)
     const encodedName = name.startsWith('@')
       ? `@${encodeURIComponent(name.slice(1))}`
       : encodeURIComponent(name)
-    const response = await fetch(`${NPM_REGISTRY}/${encodedName}`, { signal: controller.signal })
-    clearTimeout(timeout)
+    const response = await fetch(`${NPM_REGISTRY}/${encodedName}`, {
+      signal: AbortSignal.timeout(30_000),
+    })
     if (!response.ok) {
       return []
     }
@@ -100,13 +106,13 @@ export async function listNpmVersions(name: string): Promise<string[]> {
  */
 export async function searchNpm(query: string, limit = 20): Promise<SearchResult[]> {
   try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 30000)
+    // Cap at 50 to match the rest of the registry's search limits; 100 was an
+    // asymmetric ceiling that let upstream npm search dominate results.
+    const safeLimit = Math.min(Math.max(1, limit), 50)
     const response = await fetch(
-      `${NPM_REGISTRY}/-/v1/search?text=${encodeURIComponent(query)}&size=${Math.min(limit, 100)}`,
-      { signal: controller.signal },
+      `${NPM_REGISTRY}/-/v1/search?text=${encodeURIComponent(query)}&size=${safeLimit}`,
+      { signal: AbortSignal.timeout(30_000) },
     )
-    clearTimeout(timeout)
     if (!response.ok) {
       return []
     }
@@ -137,16 +143,18 @@ export async function downloadNpmTarball(name: string, version: string): Promise
       return null
     }
 
-    // Validate tarball URL is from expected registries (SSRF protection)
-    const tarballUrl = new URL(metadata.tarballUrl)
-    if (!['registry.npmjs.org', 'registry.yarnpkg.com'].includes(tarballUrl.hostname)) {
+    // Validate tarball URL is from expected registries (SSRF protection).
+    // Require https and a known hostname — any deviation means an attacker
+    // is trying to steer the fetch somewhere we don't audit.
+    let tarballUrl: URL
+    try { tarballUrl = new URL(metadata.tarballUrl) }
+    catch { return null }
+    if (tarballUrl.protocol !== 'https:' || !TARBALL_HOST_ALLOWLIST.has(tarballUrl.hostname)) {
+      console.warn(`npm fallback: rejecting tarball from ${tarballUrl.protocol}//${tarballUrl.hostname}`)
       return null
     }
 
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 60000)
-    const response = await fetch(metadata.tarballUrl, { signal: controller.signal })
-    clearTimeout(timeout)
+    const response = await fetch(metadata.tarballUrl, { signal: AbortSignal.timeout(60_000) })
     if (!response.ok) {
       return null
     }

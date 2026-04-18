@@ -30,6 +30,9 @@ concurrency:
   group: build-registry-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   prepare:
     name: Prepare build

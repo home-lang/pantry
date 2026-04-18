@@ -52,18 +52,26 @@ jobs:
         run: |
           TWO_HOURS_AGO=$(date -u -d '2 hours ago' '+%Y-%m-%dT%H:%M:%SZ')
 
-          # Count failures excluding health-monitor itself to avoid self-referential counting
-          # Use 2h window: workflows run every 20min, so 2h captures 6 runs per workflow
-          FAIL_COUNT=$(gh api \
-            "repos/${{ github.repository }}/actions/runs?status=failure&created=>=$TWO_HOURS_AGO&per_page=100" \
-            --jq '[.workflow_runs[] | select(.name != "Health Monitor")] | length' 2>/dev/null || echo "0")
+          # Use -i to capture headers so we can distinguish a real 0-failure
+          # response from a 403 rate-limit masquerading as "all green".
+          RESP=$(gh api -i \
+            "repos/${{ github.repository }}/actions/runs?status=failure&created=>=$TWO_HOURS_AGO&per_page=100" 2>/dev/null || true)
+          STATUS=$(printf '%s' "$RESP" | head -n1 | awk '{print $2}')
+          REMAINING=$(printf '%s' "$RESP" | awk 'BEGIN{IGNORECASE=1} /^x-ratelimit-remaining:/ {print $2}' | tr -d '\r')
 
-          echo "count=$FAIL_COUNT" >> "$GITHUB_OUTPUT"
-          # 2 workflows x 6 runs/2h = 12 total runs. Alert if >10 fail (sustained breakage)
-          if [ "$FAIL_COUNT" -gt 10 ]; then
-            echo "status=elevated" >> "$GITHUB_OUTPUT"
+          if [ "$STATUS" != "200" ]; then
+            echo "::warning::GitHub API returned $STATUS (remaining=$REMAINING) while checking failures — skipping this check"
+            echo "count=-1" >> "$GITHUB_OUTPUT"
+            echo "status=unknown" >> "$GITHUB_OUTPUT"
           else
-            echo "status=normal" >> "$GITHUB_OUTPUT"
+            BODY=$(printf '%s' "$RESP" | awk 'f;/^\r?$/{f=1}')
+            FAIL_COUNT=$(printf '%s' "$BODY" | jq '[.workflow_runs[] | select(.name != "Health Monitor")] | length' 2>/dev/null || echo "0")
+            echo "count=$FAIL_COUNT" >> "$GITHUB_OUTPUT"
+            if [ "$FAIL_COUNT" -gt 10 ]; then
+              echo "status=elevated" >> "$GITHUB_OUTPUT"
+            else
+              echo "status=normal" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
       - name: Check stale syncs

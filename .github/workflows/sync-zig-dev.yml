@@ -15,6 +15,9 @@ concurrency:
   group: sync-zig-dev
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   trigger:
     name: Dispatch build-versions for ziglang.org

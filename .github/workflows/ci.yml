@@ -9,6 +9,10 @@ on:
     branches:
       - main
 
+# Default to least-privilege GITHUB_TOKEN; jobs that need more elevate explicitly.
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -108,20 +112,13 @@ jobs:
       - name: Build TypeScript packages
         run: bun run build
 
-      - name: Configure AWS credentials
-        run: |
-          mkdir -p ~/.aws
-          cat > ~/.aws/credentials << 'EOC'
-          [default]
-          aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          EOC
-          cat > ~/.aws/config << 'EOC'
-          [default]
-          region = us-east-1
-          EOC
-
+      # Expose credentials as env vars only — no on-disk files that
+      # subsequent steps could read or leave behind after a failure.
       - name: Continuous Releases
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
         run: |
           # Revert any accidental changes to bun.lock from `bun install` during setup
           if [ -f bun.lock ] && ! git diff --quiet bun.lock; then

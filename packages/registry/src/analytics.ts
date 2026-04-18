@@ -287,27 +287,34 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
   }
 
   async getTopPackages(limit = 10): Promise<Array<{ name: string, downloads: number }>> {
-    // Scan for all package stats - in production, use a GSI for this
-    const result = await this.db.scan({
-      TableName: this.tableName,
-      FilterExpression: 'SK = :stats',
-      ExpressionAttributeValues: {
-        ':stats': { S: 'STATS' },
-      },
-    })
-
-    const packages = result.Items.map((item) => {
-      const data = DynamoDBClient.unmarshal(item)
-      return {
-        name: data.packageName,
-        downloads: data.totalDownloads || 0,
+    // Scan for all package stats. In production this should be backed by a
+    // GSI keyed by totalDownloads; until that exists we at least cap the
+    // per-page size and paginate via ExclusiveStartKey so we don't silently
+    // stop at the first 1 MB page boundary.
+    const safeLimit = Math.max(1, Math.min(limit, 1000))
+    const collected: Array<{ name: string, downloads: number }> = []
+    let lastKey: Record<string, any> | undefined
+    // Hard ceiling on pages so a misconfigured table can't loop forever.
+    for (let page = 0; page < 20; page++) {
+      const result: { Items: Array<Record<string, any>>, LastEvaluatedKey?: Record<string, any> } = await this.db.scan({
+        TableName: this.tableName,
+        FilterExpression: 'SK = :stats',
+        ExpressionAttributeValues: {
+          ':stats': { S: 'STATS' },
+        },
+        Limit: 100,
+        ExclusiveStartKey: lastKey,
+      } as any)
+      for (const item of result.Items) {
+        const data = DynamoDBClient.unmarshal(item)
+        collected.push({ name: data.packageName, downloads: data.totalDownloads || 0 })
       }
-    })
+      if (!result.LastEvaluatedKey) break
+      lastKey = result.LastEvaluatedKey
+    }
 
-    // Sort by downloads descending
-    packages.sort((a, b) => b.downloads - a.downloads)
-
-    return packages.slice(0, limit)
+    collected.sort((a, b) => b.downloads - a.downloads)
+    return collected.slice(0, safeLimit)
   }
 
   async getDownloadTimeline(packageName: string, days = 30): Promise<Array<{ date: string, count: number }>> {
@@ -433,29 +440,38 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
   }
 
   async getAllMissingVersionRequests(limit = 100): Promise<MissingVersionRequest[]> {
-    // Scan for all VERSION_REQUEST# items
-    const result = await this.db.scan({
-      TableName: this.tableName,
-      FilterExpression: 'begins_with(PK, :prefix)',
-      ExpressionAttributeValues: {
-        ':prefix': { S: 'VERSION_REQUEST#' },
-      },
-    })
-
-    const requests: MissingVersionRequest[] = result.Items.map((item) => {
-      const data = DynamoDBClient.unmarshal(item)
-      return {
-        packageName: data.packageName,
-        version: data.version,
-        requestCount: data.requestCount || 0,
-        lastRequestedAt: data.lastRequestedAt || '',
-        isKnownVersion: data.isKnownVersion ?? false,
+    // Cap scan pages to avoid silently truncating at DynamoDB's 1 MB response
+    // limit. 20 pages * 500 items ≈ 10k — far beyond any realistic UI need,
+    // and we still honor the caller's `limit` on the way out.
+    const safeLimit = Math.max(1, Math.min(limit, 1000))
+    const all: MissingVersionRequest[] = []
+    let lastKey: Record<string, any> | undefined
+    for (let page = 0; page < 20; page++) {
+      const result: { Items: Array<Record<string, any>>, LastEvaluatedKey?: Record<string, any> } = await this.db.scan({
+        TableName: this.tableName,
+        FilterExpression: 'begins_with(PK, :prefix)',
+        ExpressionAttributeValues: {
+          ':prefix': { S: 'VERSION_REQUEST#' },
+        },
+        Limit: 500,
+        ExclusiveStartKey: lastKey,
+      } as any)
+      for (const item of result.Items) {
+        const data = DynamoDBClient.unmarshal(item)
+        all.push({
+          packageName: data.packageName,
+          version: data.version,
+          requestCount: data.requestCount || 0,
+          lastRequestedAt: data.lastRequestedAt || '',
+          isKnownVersion: data.isKnownVersion ?? false,
+        })
       }
-    })
+      if (!result.LastEvaluatedKey) break
+      lastKey = result.LastEvaluatedKey
+    }
 
-    // Sort by request count descending
-    requests.sort((a, b) => b.requestCount - a.requestCount)
-    return requests.slice(0, limit)
+    all.sort((a, b) => b.requestCount - a.requestCount)
+    return all.slice(0, safeLimit)
   }
 
   async getInstallAnalytics(days: 30 | 90 | 365): Promise<InstallAnalyticsResult> {

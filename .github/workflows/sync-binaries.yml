@@ -29,6 +29,9 @@ env:
   AWS_REGION: us-east-1
   S3_BUCKET: pantry-registry
 
+permissions:
+  contents: read
+
 jobs:
   # Job 1: Sync the 12 pre-built binary packages (fast downloads, no compilation)
   sync-prebuilt:

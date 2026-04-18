@@ -20,24 +20,40 @@ import {
 } from './charts'
 import { AuthService, AuthError, createAuthStorage, isUserApiToken } from './auth'
 
-// Build domain→versions lookup from ts-pantry package metadata for version validation
+// Build domain→versions lookup from ts-pantry package metadata for version
+// validation. Exposed via reloadKnownVersions() so an operator can refresh
+// the map after a hot-deploy of only the package index without restarting
+// the service.
 const _knownVersions = new Map<string, Set<string>>()
-try {
-  const pantryPkgsPath = resolve(
-    typeof import.meta.dirname === 'string' ? import.meta.dirname : dirname(fileURLToPath(import.meta.url)),
-    '../../ts-pantry/src/packages/index.ts',
-  )
-  const { pantry: pantryPkgs } = await import(pantryPkgsPath)
-  for (const val of Object.values(pantryPkgs as Record<string, any>)) {
-    if (val && typeof val === 'object' && typeof val.domain === 'string' && Array.isArray(val.versions)) {
-      _knownVersions.set(val.domain, new Set(val.versions))
+async function loadKnownVersions(): Promise<void> {
+  try {
+    const pantryPkgsPath = resolve(
+      typeof import.meta.dirname === 'string' ? import.meta.dirname : dirname(fileURLToPath(import.meta.url)),
+      '../../ts-pantry/src/packages/index.ts',
+    )
+    // Cache-bust so a second call re-reads from disk.
+    const { pantry: pantryPkgs } = await import(`${pantryPkgsPath}?t=${Date.now()}`)
+    const next = new Map<string, Set<string>>()
+    for (const val of Object.values(pantryPkgs as Record<string, any>)) {
+      if (val && typeof val === 'object' && typeof val.domain === 'string' && Array.isArray(val.versions)) {
+        next.set(val.domain, new Set(val.versions))
+      }
     }
+    _knownVersions.clear()
+    for (const [k, v] of next) _knownVersions.set(k, v)
+    console.log(`Loaded ${_knownVersions.size} packages for version validation`)
   }
-  console.log(`Loaded ${_knownVersions.size} packages for version validation`)
+  catch (err) {
+    console.warn('Could not load ts-pantry package metadata for version validation:', err)
+  }
 }
-catch (err) {
-  console.warn('Could not load ts-pantry package metadata for version validation:', err)
-}
+await loadKnownVersions()
+// SIGUSR2 triggers a non-intrusive reload (SIGUSR1 is reserved by Bun for
+// internal use). Operators can `kill -SIGUSR2 $(pidof pantry-registry)`.
+process.on('SIGUSR2', () => {
+  console.log('SIGUSR2 received — reloading known versions map')
+  loadKnownVersions().catch(err => console.error('Reload failed:', err))
+})
 
 function isKnownVersion(domain: string, version: string): boolean {
   const versions = _knownVersions.get(domain)
@@ -171,6 +187,51 @@ async function renderDashboardPage(file: string, context: Record<string, unknown
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
+/**
+ * Publish-time name validation. Enforces npm's 214-char cap, the same charset
+ * our S3 keys assume, and blocks reserved names that could confuse clients.
+ */
+const RESERVED_PACKAGE_NAMES = new Set(['__proto__', 'constructor', 'prototype', 'node_modules', 'favicon.ico'])
+function validatePublishName(name: unknown): string | null {
+  if (!name || typeof name !== 'string' || !name.trim()) return 'Package name is required'
+  if (name.length > 214) return 'Package name exceeds 214 characters'
+  // Accept scoped (@scope/pkg) or plain names; reject anything with control
+  // chars, spaces, or shell metacharacters.
+  if (!/^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/i.test(name)) {
+    return 'Package name contains invalid characters'
+  }
+  if (RESERVED_PACKAGE_NAMES.has(name.toLowerCase())) return 'Package name is reserved'
+  return null
+}
+
+function validatePublishVersion(version: unknown): string | null {
+  if (!version || typeof version !== 'string' || !version.trim()) return 'Package version is required'
+  if (version.length > 64) return 'Version string exceeds 64 characters'
+  if (!/^[a-zA-Z0-9._+-]+$/.test(version)) return 'Version contains invalid characters'
+  return null
+}
+
+/**
+ * Bound metadata fields so a published package can't balloon storage with
+ * a 10 MB description or an unbounded keywords array.
+ */
+function validateMetadataLimits(metadata: any): string | null {
+  if (metadata.description && typeof metadata.description === 'string' && metadata.description.length > 2000) {
+    return 'Description exceeds 2000 characters'
+  }
+  if (metadata.keywords) {
+    if (!Array.isArray(metadata.keywords)) return 'keywords must be an array'
+    if (metadata.keywords.length > 50) return 'keywords array exceeds 50 entries'
+    for (const kw of metadata.keywords) {
+      if (typeof kw !== 'string' || kw.length > 50) return 'each keyword must be a string of at most 50 characters'
+    }
+  }
+  if (metadata.homepage && typeof metadata.homepage === 'string' && metadata.homepage.length > 512) {
+    return 'homepage URL exceeds 512 characters'
+  }
+  return null
 }
 
 function sanitizeUrl(url: string): string {
@@ -603,7 +664,24 @@ export function createHandler(
         // GET /packages/{name}/versions
         if (rest === 'versions' && req.method === 'GET') {
           const versions = await registry.listVersions(packageName)
-          return Response.json({ versions }, { headers: corsHeaders })
+          // Weak ETag over the version list: a publish changes the list and
+          // thus the hash; clients/CDNs can revalidate cheaply with If-None-Match.
+          const bodyJson = JSON.stringify({ versions })
+          const etagBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(bodyJson))
+          const etag = `W/"${Array.from(new Uint8Array(etagBuf)).slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')}"`
+          if (req.headers.get('if-none-match') === etag) {
+            return new Response(null, { status: 304, headers: { ...corsHeaders, ETag: etag, 'Cache-Control': 'public, max-age=60, must-revalidate' } })
+          }
+          return new Response(bodyJson, {
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json; charset=utf-8',
+              'ETag': etag,
+              // Short TTL + revalidate so a publish is visible within the minute
+              // rather than blocked for the previous 5-minute cache window.
+              'Cache-Control': 'public, max-age=60, must-revalidate',
+            },
+          })
         }
 
         // GET /packages/{name}/paywall — get paywall info
@@ -700,7 +778,10 @@ export function createHandler(
         // GET /packages/{name}/{version}/tarball
         if (rest?.endsWith('/tarball') && req.method === 'GET') {
           const version = rest.replace('/tarball', '')
-          if (!version || version.includes('..') || /[\x00-\x1f/\\]/.test(version)) {
+          // Whitelist version format — previously we only blocked control chars
+          // which still left shell metacharacters (`;`, `$()`, backticks) as a
+          // potential injection surface downstream.
+          if (!version || !/^[a-zA-Z0-9._+-]+$/.test(version) || version.length > 64) {
             return Response.json({ error: 'Invalid version' }, { status: 400, headers: corsHeaders })
           }
 
@@ -741,12 +822,24 @@ export function createHandler(
             userAgent: req.headers.get('user-agent') || undefined,
           })
 
+          // Compute ETag from the tarball bytes so clients and CDNs can
+          // short-circuit re-downloads via `If-None-Match`. The tarball is
+          // immutable for a given (name, version) so a content hash is stable.
+          const etagHash = await crypto.subtle.digest('SHA-256', tarball)
+          const etag = `"${Array.from(new Uint8Array(etagHash)).slice(0, 16).map(b => b.toString(16).padStart(2, '0')).join('')}"`
+          const ifNoneMatch = req.headers.get('if-none-match')
+          if (ifNoneMatch === etag) {
+            return new Response(null, { status: 304, headers: { ...corsHeaders, ETag: etag, 'Cache-Control': 'public, max-age=31536000, immutable' } })
+          }
           return new Response(tarball, {
             headers: {
               ...corsHeaders,
               'Content-Type': 'application/gzip',
               'Content-Length': String(tarball.byteLength),
               'Content-Disposition': `attachment; filename="${packageName}-${version}.tgz"`,
+              'ETag': etag,
+              // Immutable because (name, version) tarballs never change.
+              'Cache-Control': 'public, max-age=31536000, immutable',
             },
           })
         }
@@ -1200,12 +1293,12 @@ async function handlePublish(
         { status: 400, headers: corsHeaders },
       )
     }
-    if (!metadata.name || typeof metadata.name !== 'string' || !metadata.name.trim()) {
-      return Response.json({ error: 'Package name is required' }, { status: 400, headers: corsHeaders })
-    }
-    if (!metadata.version || typeof metadata.version !== 'string' || !metadata.version.trim()) {
-      return Response.json({ error: 'Package version is required' }, { status: 400, headers: corsHeaders })
-    }
+    const nameErr = validatePublishName(metadata.name)
+    if (nameErr) return Response.json({ error: nameErr }, { status: 400, headers: corsHeaders })
+    const versionErr = validatePublishVersion(metadata.version)
+    if (versionErr) return Response.json({ error: versionErr }, { status: 400, headers: corsHeaders })
+    const metaErr = validateMetadataLimits(metadata)
+    if (metaErr) return Response.json({ error: metaErr }, { status: 400, headers: corsHeaders })
 
     // Enforce tarball size limit (50MB)
     if (tarballFile.size > 50 * 1024 * 1024) {
@@ -1215,9 +1308,8 @@ async function handlePublish(
       )
     }
 
-    const tarball = await tarballFile.arrayBuffer()
-
-    // Check if version already exists
+    // Fail fast on duplicate publishes *before* buffering the tarball — saves
+    // 50 MB of wasted memory/IO when a CI job retries a published version.
     const exists = await registry.exists(metadata.name, metadata.version)
     if (exists) {
       return Response.json(
@@ -1225,6 +1317,8 @@ async function handlePublish(
         { status: 409, headers: corsHeaders },
       )
     }
+
+    const tarball = await tarballFile.arrayBuffer()
 
     await registry.publish(metadata, tarball)
 
@@ -1255,6 +1349,22 @@ async function handlePublish(
       )
     }
 
+    const jsonNameErr = validatePublishName(metadata.name)
+    if (jsonNameErr) return Response.json({ error: jsonNameErr }, { status: 400, headers: corsHeaders })
+    const jsonVersionErr = validatePublishVersion(metadata.version)
+    if (jsonVersionErr) return Response.json({ error: jsonVersionErr }, { status: 400, headers: corsHeaders })
+    const jsonMetaErr = validateMetadataLimits(metadata)
+    if (jsonMetaErr) return Response.json({ error: jsonMetaErr }, { status: 400, headers: corsHeaders })
+
+    // Fail fast before decoding potentially large base64 payload.
+    const exists = await registry.exists(metadata.name, metadata.version)
+    if (exists) {
+      return Response.json(
+        { error: 'Version already exists' },
+        { status: 409, headers: corsHeaders },
+      )
+    }
+
     let tarball: ArrayBuffer
     try {
       tarball = Uint8Array.from(atob(tarballBase64), c => c.charCodeAt(0)).buffer
@@ -1263,14 +1373,6 @@ async function handlePublish(
       return Response.json(
         { error: 'Invalid base64 tarball data' },
         { status: 400, headers: corsHeaders },
-      )
-    }
-
-    const exists = await registry.exists(metadata.name, metadata.version)
-    if (exists) {
-      return Response.json(
-        { error: 'Version already exists' },
-        { status: 409, headers: corsHeaders },
       )
     }
 

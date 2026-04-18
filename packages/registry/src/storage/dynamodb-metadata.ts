@@ -21,6 +21,16 @@ import type {
 } from '../types'
 import { DynamoDBClient } from './dynamodb-client'
 
+/**
+ * Build a bounded searchText field: dedupe keywords, cap array + total length
+ * so an attacker can't bloat a metadata item with a giant keywords list.
+ */
+function buildSearchText(name: string, description: string | undefined, keywords: string[] | undefined): string {
+  const cappedKeywords = Array.from(new Set((keywords || []).filter(k => typeof k === 'string' && k.length > 0))).slice(0, 50)
+  const raw = [name, description, ...cappedKeywords].filter(Boolean).join(' ').toLowerCase()
+  return raw.length > 1024 ? raw.slice(0, 1024) : raw
+}
+
 export class DynamoDBMetadataStorage implements MetadataStorage {
   private db: DynamoDBClient
   private tableName: string
@@ -148,11 +158,7 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
         updatedAt: record.updatedAt,
         totalDownloads: record.totalDownloads,
         // For search - store searchable text
-        searchText: [
-          record.name,
-          record.description,
-          ...(record.keywords || []),
-        ].filter(Boolean).join(' ').toLowerCase(),
+        searchText: buildSearchText(record.name, record.description, record.keywords),
       }),
     })
 
@@ -185,56 +191,95 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
       },
     })
 
-    if (!existing.Item) {
-      // Create new package
-      await this.db.putItem({
-        TableName: this.tableName,
-        Item: DynamoDBClient.marshal({
-          PK: `PACKAGE#${name}`,
-          SK: 'METADATA',
-          name,
-          description: metadata.description,
-          repository: metadata.repository,
-          homepage: metadata.homepage,
-          license: metadata.license,
-          author: metadata.author,
-          keywords: metadata.keywords,
-          latestVersion: version,
-          createdAt: now,
-          updatedAt: now,
-          totalDownloads: 0,
-          searchText: [
+    let existingItem = existing.Item
+    if (!existingItem) {
+      // Create new package with a condition so a racing publisher can't
+      // create the same package record twice.
+      try {
+        await this.db.putItem({
+          TableName: this.tableName,
+          Item: DynamoDBClient.marshal({
+            PK: `PACKAGE#${name}`,
+            SK: 'METADATA',
             name,
-            metadata.description,
-            ...(metadata.keywords || []),
-          ].filter(Boolean).join(' ').toLowerCase(),
-        }),
-      })
+            description: metadata.description,
+            repository: metadata.repository,
+            homepage: metadata.homepage,
+            license: metadata.license,
+            author: metadata.author,
+            keywords: metadata.keywords,
+            latestVersion: version,
+            createdAt: now,
+            updatedAt: now,
+            totalDownloads: 0,
+            searchText: buildSearchText(name, metadata.description, metadata.keywords),
+          }),
+          ConditionExpression: 'attribute_not_exists(PK)',
+        } as any)
+      }
+      catch (err) {
+        const awsType = (err as { awsType?: string })?.awsType || ''
+        if (!awsType.includes('ConditionalCheckFailed')) throw err
+        // Someone beat us — fall through to the update path.
+        const retry = await this.db.getItem({
+          TableName: this.tableName,
+          Key: { PK: { S: `PACKAGE#${name}` }, SK: { S: 'METADATA' } },
+        })
+        existingItem = retry.Item
+      }
     }
-    else {
-      // Update existing package
-      const existingData = DynamoDBClient.unmarshal(existing.Item)
+    if (existingItem) {
+      // Compare-and-set on updatedAt so concurrent publishes can't clobber
+      // each other's latestVersion/searchText. Retry once on contention.
+      const existingData = DynamoDBClient.unmarshal(existingItem)
+      const prevUpdatedAt = existingData.updatedAt || ''
 
-      await this.db.updateItem({
-        TableName: this.tableName,
-        Key: {
-          PK: { S: `PACKAGE#${name}` },
-          SK: { S: 'METADATA' },
-        },
-        UpdateExpression: 'SET updatedAt = :now, latestVersion = :ver, description = :desc, searchText = :search',
-        ExpressionAttributeValues: {
-          ':now': { S: now },
-          ':ver': { S: this.isNewerVersion(version, existingData.latestVersion) ? version : existingData.latestVersion },
-          ':desc': { S: metadata.description || existingData.description || '' },
-          ':search': {
-            S: [
-              name,
-              metadata.description || existingData.description,
-              ...(metadata.keywords || existingData.keywords || []),
-            ].filter(Boolean).join(' ').toLowerCase(),
+      try {
+        await this.db.updateItem({
+          TableName: this.tableName,
+          Key: {
+            PK: { S: `PACKAGE#${name}` },
+            SK: { S: 'METADATA' },
           },
-        },
-      })
+          UpdateExpression: 'SET updatedAt = :now, latestVersion = :ver, description = :desc, searchText = :search',
+          ConditionExpression: prevUpdatedAt ? 'updatedAt = :prev' : 'attribute_not_exists(updatedAt)',
+          ExpressionAttributeValues: {
+            ':now': { S: now },
+            ':ver': { S: this.isNewerVersion(version, existingData.latestVersion) ? version : existingData.latestVersion },
+            ':desc': { S: metadata.description || existingData.description || '' },
+            ':search': {
+              S: buildSearchText(name, metadata.description || existingData.description, metadata.keywords || existingData.keywords),
+            },
+            ...(prevUpdatedAt ? { ':prev': { S: prevUpdatedAt } } : {}),
+          },
+        } as any)
+      }
+      catch (err) {
+        const awsType = (err as { awsType?: string })?.awsType || ''
+        if (!awsType.includes('ConditionalCheckFailed')) throw err
+        console.warn(`putVersion: retrying ${name}@${version} after concurrent write`)
+        const retry = await this.db.getItem({
+          TableName: this.tableName,
+          Key: { PK: { S: `PACKAGE#${name}` }, SK: { S: 'METADATA' } },
+        })
+        if (retry.Item) {
+          const latest = DynamoDBClient.unmarshal(retry.Item)
+          await this.db.updateItem({
+            TableName: this.tableName,
+            Key: { PK: { S: `PACKAGE#${name}` }, SK: { S: 'METADATA' } },
+            UpdateExpression: 'SET updatedAt = :now, latestVersion = :ver, searchText = :search',
+            ConditionExpression: 'updatedAt = :prev',
+            ExpressionAttributeValues: {
+              ':now': { S: now },
+              ':ver': { S: this.isNewerVersion(version, latest.latestVersion) ? version : latest.latestVersion },
+              ':search': {
+                S: buildSearchText(name, metadata.description || latest.description, metadata.keywords || latest.keywords),
+              },
+              ':prev': { S: latest.updatedAt || '' },
+            },
+          } as any)
+        }
+      }
     }
 
     // Put version
@@ -254,34 +299,40 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
 
   async search(query: string, limit = 20): Promise<SearchResult[]> {
     const lowerQuery = query.toLowerCase()
+    const safeLimit = Math.max(1, Math.min(limit, 50))
 
-    // Scan for packages matching the query
-    // In production with lots of packages, use OpenSearch/Elasticsearch or a GSI
-    const result = await this.db.scan({
-      TableName: this.tableName,
-      FilterExpression: 'SK = :metadata AND contains(searchText, :query)',
-      ExpressionAttributeValues: {
-        ':metadata': { S: 'METADATA' },
-        ':query': { S: lowerQuery },
-      },
-      Limit: Math.min(limit, 100) * 2, // Get extra to account for filtering, cap at 200
-    })
-
-    const results: SearchResult[] = result.Items.map((item) => {
-      const data = DynamoDBClient.unmarshal(item)
-      return {
-        name: data.name,
-        version: data.latestVersion,
-        description: data.description,
-        keywords: data.keywords,
-        author: data.author,
-        downloads: data.totalDownloads || 0,
+    // Paginate the scan so results aren't silently truncated at the 1 MB
+    // response boundary. Cap total pages defensively.
+    const results: SearchResult[] = []
+    let lastKey: Record<string, any> | undefined
+    for (let page = 0; page < 10 && results.length < safeLimit * 4; page++) {
+      const result: { Items: Array<Record<string, any>>, LastEvaluatedKey?: Record<string, any> } = await this.db.scan({
+        TableName: this.tableName,
+        FilterExpression: 'SK = :metadata AND contains(searchText, :query)',
+        ExpressionAttributeValues: {
+          ':metadata': { S: 'METADATA' },
+          ':query': { S: lowerQuery },
+        },
+        Limit: 100,
+        ExclusiveStartKey: lastKey,
+      } as any)
+      for (const item of result.Items) {
+        const data = DynamoDBClient.unmarshal(item)
+        results.push({
+          name: data.name,
+          version: data.latestVersion,
+          description: data.description,
+          keywords: data.keywords,
+          author: data.author,
+          downloads: data.totalDownloads || 0,
+        })
       }
-    })
+      if (!result.LastEvaluatedKey) break
+      lastKey = result.LastEvaluatedKey
+    }
 
-    // Sort by downloads and limit
     results.sort((a, b) => b.downloads - a.downloads)
-    return results.slice(0, limit)
+    return results.slice(0, safeLimit)
   }
 
   async listVersions(name: string): Promise<string[]> {
@@ -299,7 +350,8 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
       return data.version as string
     }).filter(Boolean)
 
-    return versions.sort(this.compareSemver)
+    // Bind explicitly so `this` is preserved in the sort callback.
+    return versions.sort((a, b) => this.compareSemver(a, b))
   }
 
   async incrementDownloads(name: string, _version: string): Promise<void> {

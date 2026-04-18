@@ -229,49 +229,61 @@ export class S3Client {
   async list(options: S3ListOptions): Promise<S3Object[]> {
     const { bucket, prefix = '', maxKeys = 1000 } = options
     const host = this.getHost(bucket)
-    const queryParams = new URLSearchParams({
-      'list-type': '2',
-      'max-keys': String(maxKeys),
-      'prefix': prefix,
-    })
-    const path = `/?${queryParams.toString()}`
+    const results: S3Object[] = []
+    let continuationToken: string | undefined
+    // Follow pagination until `maxKeys` results are collected or the server
+    // reports there are no more pages. Previously we returned only the first
+    // response which silently truncated callers (e.g. short-SHA lookup).
+    const pageSize = Math.min(maxKeys, 1000)
 
-    // Sign with the full path including query string for S3 V4 signature
-    const headers = this.sign('GET', path, host, {}, '')
-
-    const response = await fetch(`https://${host}${path}`, {
-      method: 'GET',
-      headers,
-    })
-
-    if (!response.ok) {
-      throw new Error(`S3 LIST failed: ${response.status}`)
-    }
-
-    const text = await response.text()
-    const objects: S3Object[] = []
-
-    // Simple XML parsing for Contents elements
-    const contentsRegex = /<Contents>([\s\S]*?)<\/Contents>/g
-    let match
-    while ((match = contentsRegex.exec(text)) !== null) {
-      const content = match[1]
-      const keyMatch = content.match(/<Key>([^<]+)<\/Key>/)
-      const lastModifiedMatch = content.match(/<LastModified>([^<]+)<\/LastModified>/)
-      const sizeMatch = content.match(/<Size>([^<]+)<\/Size>/)
-      const etagMatch = content.match(/<ETag>([^<]+)<\/ETag>/)
-
-      if (keyMatch) {
-        objects.push({
-          Key: keyMatch[1],
-          LastModified: lastModifiedMatch?.[1],
-          Size: sizeMatch ? Number.parseInt(sizeMatch[1], 10) : undefined,
-          ETag: etagMatch?.[1]?.replace(/"/g, ''),
-        })
+    while (results.length < maxKeys) {
+      const params: Record<string, string> = {
+        'list-type': '2',
+        'max-keys': String(Math.min(pageSize, maxKeys - results.length)),
+        'prefix': prefix,
       }
+      if (continuationToken) params['continuation-token'] = continuationToken
+      const queryParams = new URLSearchParams(params)
+      const path = `/?${queryParams.toString()}`
+      const headers = this.sign('GET', path, host, {}, '')
+
+      const response = await fetch(`https://${host}${path}`, {
+        method: 'GET',
+        headers,
+      })
+
+      if (!response.ok) {
+        throw new Error(`S3 LIST failed: ${response.status}`)
+      }
+
+      const text = await response.text()
+
+      const contentsRegex = /<Contents>([\s\S]*?)<\/Contents>/g
+      let match: RegExpExecArray | null
+      while ((match = contentsRegex.exec(text)) !== null) {
+        const content = match[1]
+        const keyMatch = content.match(/<Key>([^<]+)<\/Key>/)
+        const lastModifiedMatch = content.match(/<LastModified>([^<]+)<\/LastModified>/)
+        const sizeMatch = content.match(/<Size>([^<]+)<\/Size>/)
+        const etagMatch = content.match(/<ETag>([^<]+)<\/ETag>/)
+
+        if (keyMatch) {
+          results.push({
+            Key: keyMatch[1],
+            LastModified: lastModifiedMatch?.[1],
+            Size: sizeMatch ? Number.parseInt(sizeMatch[1], 10) : undefined,
+            ETag: etagMatch?.[1]?.replace(/"/g, ''),
+          })
+        }
+      }
+
+      const isTruncated = /<IsTruncated>true<\/IsTruncated>/.test(text)
+      const tokenMatch = text.match(/<NextContinuationToken>([^<]+)<\/NextContinuationToken>/)
+      if (!isTruncated || !tokenMatch) break
+      continuationToken = tokenMatch[1]
     }
 
-    return objects
+    return results
   }
 
   generatePresignedGetUrl(bucket: string, key: string, expiresInSeconds = 900): string {

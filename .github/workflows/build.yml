@@ -37,6 +37,9 @@ env:
   AWS_REGION: us-east-1
   S3_BUCKET: pantry-registry
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build (${{ matrix.platform.name }})

@@ -201,6 +201,7 @@ export class DynamoDBClient {
     TableName: string
     Key: Record<string, AttributeValue>
     UpdateExpression: string
+    ConditionExpression?: string
     ExpressionAttributeNames?: Record<string, string>
     ExpressionAttributeValues?: Record<string, AttributeValue>
     ReturnValues?: 'NONE' | 'ALL_OLD' | 'UPDATED_OLD' | 'ALL_NEW' | 'UPDATED_NEW'
@@ -238,12 +239,15 @@ export class DynamoDBClient {
     ExpressionAttributeNames?: Record<string, string>
     ExpressionAttributeValues?: Record<string, AttributeValue>
     Limit?: number
+    ExclusiveStartKey?: Record<string, AttributeValue>
   }): Promise<{
     Items: Array<Record<string, AttributeValue>>
     Count: number
+    LastEvaluatedKey?: Record<string, AttributeValue>
   }> {
     let allItems: Array<Record<string, AttributeValue>> = []
-    let lastKey: Record<string, AttributeValue> | undefined
+    // Honor caller-supplied cursor; if absent, start fresh.
+    let lastKey: Record<string, AttributeValue> | undefined = params.ExclusiveStartKey
     let pages = 0
     const maxPages = 10
 
@@ -260,7 +264,9 @@ export class DynamoDBClient {
       pages++
     } while (lastKey && pages < maxPages)
 
-    return { Items: allItems, Count: allItems.length }
+    // Surface LastEvaluatedKey when we hit the page cap without exhausting
+    // results so callers can continue with another scan() call.
+    return { Items: allItems, Count: allItems.length, LastEvaluatedKey: lastKey }
   }
 
   /**

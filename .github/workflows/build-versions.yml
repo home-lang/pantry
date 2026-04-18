@@ -29,6 +29,9 @@ env:
   AWS_REGION: us-east-1
   S3_BUCKET: pantry-registry
 
+permissions:
+  contents: read
+
 jobs:
   # Discover how many buildable packages exist for batching
   discover:

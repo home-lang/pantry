@@ -10,7 +10,12 @@ import type {
 import { downloadNpmTarball, fetchFromNpm, listNpmVersions, searchNpm } from './npm-fallback'
 import { FileMetadataStorage } from './storage/metadata'
 import { DynamoDBMetadataStorage } from './storage/dynamodb-metadata'
-import { LocalStorage, S3Storage } from './storage/s3'
+import { LocalStorage, S3Storage, sanitizePackageName } from './storage/s3'
+
+/** Reject version strings containing shell-unsafe or path-unsafe characters. */
+function isSafeVersion(v: string): boolean {
+  return typeof v === 'string' && v.length > 0 && v.length <= 64 && /^[a-zA-Z0-9._+-]+$/.test(v)
+}
 
 function isBlockedHost(hostname: string): boolean {
   const lower = hostname.toLowerCase()
@@ -181,10 +186,9 @@ export class Registry {
    * Publish a package
    */
   async publish(metadata: PackageMetadata, tarball: ArrayBuffer): Promise<void> {
-    // Generate tarball key
-    const safeName = metadata.name.replaceAll('@', '').replaceAll('/', '-').replace(/[^a-z0-9._-]/gi, '')
-    if (!safeName || safeName.includes('..') || /^[.\-]|[.\-]$/.test(safeName)) {
-      throw new Error(`Invalid package name: ${metadata.name}`)
+    const safeName = sanitizePackageName(metadata.name)
+    if (!isSafeVersion(metadata.version)) {
+      throw new Error(`Invalid package version: ${metadata.version}`)
     }
     const key = `packages/pantry/${safeName}/${metadata.version}/${safeName}-${metadata.version}.tgz`
 
@@ -222,10 +226,7 @@ export class Registry {
     tarball: ArrayBuffer,
     options?: { repository?: string, packageDir?: string, version?: string },
   ): Promise<CommitPublish> {
-    const safeName = name.replaceAll('@', '').replaceAll('/', '-').replace(/[^a-z0-9._-]/gi, '')
-    if (!safeName || safeName.includes('..') || /^[.\-]|[.\-]$/.test(safeName)) {
-      throw new Error(`Invalid package name: ${name}`)
-    }
+    const safeName = sanitizePackageName(name)
     if (!/^[a-f0-9]{7,40}$/i.test(sha)) {
       throw new Error(`Invalid commit SHA: ${sha}`)
     }
@@ -272,9 +273,9 @@ export class Registry {
     }
 
     // If short SHA (< 40 chars), try prefix match via S3 listing
-    if (sha.length < 40 && sha.length >= 7) {
+    if (sha.length < 40 && sha.length >= 7 && /^[a-f0-9]+$/i.test(sha)) {
       try {
-        const safeName = name.replaceAll('@', '').replaceAll('/', '-')
+        const safeName = sanitizePackageName(name)
         const prefix = `commits/${sha}`
         const keys = await this.tarballStorage.list(prefix)
         // Find a key that matches our package
@@ -316,8 +317,9 @@ export class Registry {
     if (!publish)
       return null
 
-    const safeName = name.replaceAll('@', '').replaceAll('/', '-')
+    const safeName = sanitizePackageName(name)
     const resolvedSha = publish.sha || sha
+    if (!/^[a-f0-9]{7,40}$/i.test(resolvedSha)) return null
     const key = `commits/${resolvedSha}/${safeName}/${safeName}.tgz`
 
     try {

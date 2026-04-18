@@ -16,6 +16,9 @@ concurrency:
   group: deploy-registry
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     name: ec2
@@ -32,9 +35,11 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.REGISTRY_SSH_KEY }}
           REGISTRY_HOST: ${{ secrets.REGISTRY_HOST }}
         run: |
+          # Create the key file with a 0600 umask before writing so it is
+          # never readable by other users for any window of time, and use
+          # stdin + heredoc rather than passing the secret as an argument.
           mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          (umask 077 && cat > ~/.ssh/id_rsa <<< "$SSH_PRIVATE_KEY")
           ssh-keyscan -H "$REGISTRY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
 
           ssh -o StrictHostKeyChecking=no "ec2-user@${REGISTRY_HOST}" << 'EOF'

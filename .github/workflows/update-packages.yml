@@ -10,6 +10,9 @@ concurrency:
   group: update-packages
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   update-packages:
     name: Update packages and index

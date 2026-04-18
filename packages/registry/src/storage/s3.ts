@@ -5,6 +5,43 @@ import type { TarballStorage } from '../types'
 import { S3Client } from './aws-client'
 
 /**
+ * Semver descending comparator that handles prerelease suffixes.
+ * Shared between list-versions and S3-prefix listing.
+ */
+function compareSemverDesc(a: string, b: string): number {
+  const parse = (v: string) => {
+    const dash = v.indexOf('-')
+    const num = (dash === -1 ? v : v.slice(0, dash)).replace(/^v/, '')
+      .split('.').map(n => Number.parseInt(n, 10) || 0)
+    return { num, pre: dash === -1 ? null : v.slice(dash + 1) }
+  }
+  const pa = parse(a)
+  const pb = parse(b)
+  for (let i = 0; i < Math.max(pa.num.length, pb.num.length); i++) {
+    const av = pa.num[i] ?? 0
+    const bv = pb.num[i] ?? 0
+    if (av !== bv) return bv - av
+  }
+  if (pa.pre === null && pb.pre !== null) return -1
+  if (pa.pre !== null && pb.pre === null) return 1
+  return (pb.pre || '').localeCompare(pa.pre || '')
+}
+
+/**
+ * Validate and normalize a package name for use in S3 keys. Strips @ and /
+ * characters, then rejects anything that could still traverse or contain
+ * unsafe filesystem/URL characters. Shared entry point for every path that
+ * builds an S3 key from user input.
+ */
+export function sanitizePackageName(name: string): string {
+  const safe = name.replaceAll('@', '').replaceAll('/', '-')
+  if (!safe || safe.length > 214 || safe.includes('..') || /^[.\-]|[.\-]$/.test(safe) || !/^[a-zA-Z0-9._-]+$/.test(safe)) {
+    throw new Error(`Invalid package name: ${name}`)
+  }
+  return safe
+}
+
+/**
  * S3-based tarball storage using ts-cloud
  */
 export class S3Storage implements TarballStorage {
@@ -24,8 +61,10 @@ export class S3Storage implements TarballStorage {
    * Generate S3 key for a package tarball
    */
   private getKey(packageName: string, version: string): string {
-    // Handle scoped packages (@scope/name -> scope-name)
-    const safeName = packageName.replaceAll('@', '').replaceAll('/', '-').replaceAll('..', '')
+    const safeName = sanitizePackageName(packageName)
+    if (!/^[a-zA-Z0-9._+-]+$/.test(version)) {
+      throw new Error(`Invalid version: ${version}`)
+    }
     return `packages/pantry/${safeName}/${version}/${safeName}-${version}.tgz`
   }
 
@@ -119,15 +158,7 @@ export class S3Storage implements TarballStorage {
       }
     }
 
-    return Array.from(versions).sort((a, b) => {
-      const [aMajor, aMinor, aPatch] = a.split('.').map(Number)
-      const [bMajor, bMinor, bPatch] = b.split('.').map(Number)
-      if (aMajor !== bMajor)
-        return bMajor - aMajor
-      if (aMinor !== bMinor)
-        return bMinor - aMinor
-      return bPatch - aPatch
-    })
+    return Array.from(versions).sort(compareSemverDesc)
   }
 
   /**
@@ -150,7 +181,10 @@ export class S3Storage implements TarballStorage {
    * List object keys matching a prefix (used for short SHA resolution)
    */
   async list(prefix: string): Promise<string[]> {
-    const objects = await this.s3.list({ bucket: this.bucket, prefix, maxKeys: 10 })
+    // Raise the ceiling to 1000 (single S3 page) so callers like short-SHA
+    // resolution don't silently miss matches when >10 tarballs share a prefix.
+    // aws-client.ts handles continuation tokens automatically.
+    const objects = await this.s3.list({ bucket: this.bucket, prefix, maxKeys: 1000 })
     return objects.map((o: any) => o.Key).filter(Boolean)
   }
 }
