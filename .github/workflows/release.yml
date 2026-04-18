@@ -44,11 +44,11 @@ jobs:
             echo "zig not found, will use fallback"
           fi
 
-      - name: Setup Zig (fallback)
+      - name: Setup Zig (fallback — latest dev)
         if: steps.check-zig.outputs.available != 'true'
         uses: mlugg/setup-zig@v2
         with:
-          version: 0.16.0-dev.2962+08416b44f
+          version: master
 
       - name: Build for All Platforms
         run: |
