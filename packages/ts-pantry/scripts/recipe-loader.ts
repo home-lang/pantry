@@ -27,9 +27,9 @@ const tsPackagesDir = join(scriptsDir, '..', 'src')
  * 2. Fall back to src/pantry/{domain}/package.yml (or desktop-pantry/)
  * 3. Apply package-overrides.ts if loading from YAML
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function loadRecipe(
   domain: string,
-  // eslint-disable-next-line
   _platform?: string,
 ): Promise<LoadedRecipe & { yamlPath?: string }> {
   // 1. Try native TS recipe

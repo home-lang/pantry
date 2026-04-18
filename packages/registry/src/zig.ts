@@ -169,6 +169,7 @@ export function generateDependencyEntry(
 /**
  * Generate the zig fetch command for a package
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export function generateFetchCommand(tarballUrl: string): string {
   return `zig fetch --save '${tarballUrl.replace(/'/g, "'\\''")}'`
 }
