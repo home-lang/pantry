@@ -68,6 +68,7 @@ export const starshiprsPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.25.0',
     '1.24.2',
     '1.24.1',
     '1.24.0',
