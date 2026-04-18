@@ -114,11 +114,15 @@ jobs:
 
       # Expose credentials as env vars only — no on-disk files that
       # subsequent steps could read or leave behind after a failure.
+      # `publish:commit` tries AWS first (direct S3) and falls back to the
+      # registry token (HTTP upload) per CLAUDE.md.
       - name: Continuous Releases
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
+          PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
+          PANTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
         run: |
           # Revert any accidental changes to bun.lock from `bun install` during setup
           if [ -f bun.lock ] && ! git diff --quiet bun.lock; then
