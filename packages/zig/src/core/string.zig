@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 
 /// FNV-1a hash parameters
 const FNV_OFFSET_BASIS: u64 = 0xcbf29ce484222325;
@@ -67,19 +68,15 @@ pub fn hashDependencyFile(path: []const u8) [16]u8 {
 /// the path no longer exists) we fall back to the plain-path hash so callers
 /// keep working.
 pub fn hashProjectPath(path: []const u8) [16]u8 {
-    // Build the hash input: path || 0 || dev || 0 || inode || 0.
+    // Build the hash input: path || 0 || inode. posix.fstatat was removed in
+    // 0.17-dev; Io.Dir.statFile covers both dirs and files cross-platform.
     var hasher = std.crypto.hash.Md5.init(.{});
     hasher.update(path);
 
-    // We pull dev/inode via std.posix.stat if available.
-    const posix = std.posix;
-    var stat_buf: posix.Stat = undefined;
-    if (posix.fstatat(posix.AT.FDCWD, pathZ(path), &stat_buf, 0)) |_| {
+    if (io_helper.cwd().statFile(io_helper.io, path, .{})) |stat| {
         const sep: u8 = 0;
         hasher.update((&sep)[0..1]);
-        hasher.update(std.mem.asBytes(&stat_buf.dev));
-        hasher.update((&sep)[0..1]);
-        hasher.update(std.mem.asBytes(&stat_buf.ino));
+        hasher.update(std.mem.asBytes(&stat.inode));
     } else |_| {}
 
     var result: [16]u8 = undefined;

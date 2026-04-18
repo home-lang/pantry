@@ -36,7 +36,7 @@ pub const InstallCheckpoint = struct {
         while (it.next()) |key| {
             self.allocator.free(key.*);
         }
-        self.installed_packages.deinit(self.allocator);
+        self.installed_packages.deinit();
 
         for (self.created_files.items) |file| {
             self.allocator.free(file);

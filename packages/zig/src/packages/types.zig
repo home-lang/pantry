@@ -143,7 +143,7 @@ pub const LockfileEntry = struct {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            deps.deinit(allocator);
+            deps.deinit();
         }
         if (self.peer_dependencies) |*deps| {
             var it = deps.iterator();
@@ -151,7 +151,7 @@ pub const LockfileEntry = struct {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            deps.deinit(allocator);
+            deps.deinit();
         }
         if (self.bin) |*b| {
             var it = b.iterator();
@@ -159,14 +159,14 @@ pub const LockfileEntry = struct {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            b.deinit(allocator);
+            b.deinit();
         }
         if (self.optional_peers) |*op| {
             var it = op.iterator();
             while (it.next()) |entry| {
                 allocator.free(entry.key_ptr.*);
             }
-            op.deinit(allocator);
+            op.deinit();
         }
     }
 };
@@ -217,7 +217,7 @@ pub const WorkspaceLockEntry = struct {
                     allocator.free(entry.key_ptr.*);
                     allocator.free(entry.value_ptr.*);
                 }
-                deps.deinit(allocator);
+                deps.deinit();
             }
         }
     }
@@ -249,14 +249,14 @@ pub const Lockfile = struct {
             var ws_entry = entry.value_ptr.*;
             ws_entry.deinit(allocator);
         }
-        self.workspaces.deinit(allocator);
+        self.workspaces.deinit();
         var it = self.packages.iterator();
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
             var lock_entry = entry.value_ptr.*;
             lock_entry.deinit(allocator);
         }
-        self.packages.deinit(allocator);
+        self.packages.deinit();
     }
 
     pub fn addEntry(self: *Lockfile, allocator: std.mem.Allocator, key: []const u8, entry: LockfileEntry) !void {

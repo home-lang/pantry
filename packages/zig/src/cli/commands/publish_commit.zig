@@ -585,7 +585,8 @@ fn publishCommitPackage(
     } else {
         const auth_token = token orelse "";
         if (auth_token.len == 0) {
-            return CommandResult.err(allocator, "Error: PANTRY_REGISTRY_TOKEN is empty. Set a valid token for HTTP upload.");
+            style.printError("PANTRY_REGISTRY_TOKEN is empty. Set a valid token for HTTP upload.\n", .{});
+            return error.MissingRegistryToken;
         }
         return uploadCommitViaHttp(allocator, pkg.name, sha, tarball_data, repo_url, pkg.version, options, auth_token);
     }

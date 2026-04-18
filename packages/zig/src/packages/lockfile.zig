@@ -445,7 +445,7 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
                                     try map.put(duped_key, duped_val);
                                 }
                             }
-                            if (map.count() > 0) pair[1].* = map else map.deinit(allocator);
+                            if (map.count() > 0) pair[1].* = map else map.deinit();
                         }
                     }
                 }
@@ -532,7 +532,7 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
                                 );
                             }
                         }
-                        if (deps_map.count() > 0) pair[1].* = deps_map else deps_map.deinit(allocator);
+                        if (deps_map.count() > 0) pair[1].* = deps_map else deps_map.deinit();
                     }
                 }
             }
@@ -545,7 +545,7 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
                     errdefer {
                         var op_it = op_map.keyIterator();
                         while (op_it.next()) |k| allocator.free(k.*);
-                        op_map.deinit(allocator);
+                        op_map.deinit();
                     }
                     for (op_val.array.items) |item| {
                         if (item == .string) {
@@ -554,7 +554,7 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
                             try op_map.put(duped, true);
                         }
                     }
-                    if (op_map.count() > 0) optional_peers = op_map else op_map.deinit(allocator);
+                    if (op_map.count() > 0) optional_peers = op_map else op_map.deinit();
                 }
             }
 

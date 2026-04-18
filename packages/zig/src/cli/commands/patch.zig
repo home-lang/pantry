@@ -191,8 +191,9 @@ fn updatePatchedDeps(allocator: std.mem.Allocator, cwd: []const u8, pkg_name: []
         // Get or create patchedDependencies
         if (parsed.value.object.getPtr("patchedDependencies") == null) {
             try parsed.value.object.put(
+                allocator,
                 try allocator.dupe(u8, "patchedDependencies"),
-                .{ .object = std.json.ObjectMap.init(allocator) },
+                .{ .object = .empty },
             );
         }
 
@@ -201,6 +202,7 @@ fn updatePatchedDeps(allocator: std.mem.Allocator, cwd: []const u8, pkg_name: []
         // Make path relative
         const relative_path = try std.fmt.allocPrint(allocator, "patches/{s}", .{std.fs.path.basename(patch_file)});
         try patched.put(
+            allocator,
             try allocator.dupe(u8, pkg_name),
             .{ .string = relative_path },
         );

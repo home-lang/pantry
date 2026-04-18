@@ -71,7 +71,7 @@ pub const OverrideMap = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.overrides.deinit(self.allocator);
+        self.overrides.deinit();
     }
 
     /// Add an override for a package

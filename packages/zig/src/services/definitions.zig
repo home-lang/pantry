@@ -40,7 +40,7 @@ pub const ServiceConfig = struct {
             // Only free the values which are allocated
             allocator.free(entry.value_ptr.*);
         }
-        self.env_vars.deinit(allocator);
+        self.env_vars.deinit();
     }
 };
 

@@ -153,7 +153,7 @@ pub const OIDCProvider = struct {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            cm.deinit(allocator);
+            cm.deinit();
         }
     }
 };

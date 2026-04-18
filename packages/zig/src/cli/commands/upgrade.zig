@@ -228,7 +228,7 @@ pub fn upgradeCommand(allocator: std.mem.Allocator, _: []const []const u8, optio
 
     // Atomic replace: rename(2) into place so the binary swap is crash-safe.
     // The parent dir must exist; we stage alongside for same-filesystem rename.
-    const staging_final = try std.fmt.allocPrint(allocator, "{s}.pantry-upgrade-{d}", .{ install_path, std.time.milliTimestamp() });
+    const staging_final = try std.fmt.allocPrint(allocator, "{s}.pantry-upgrade-{d}", .{ install_path, @as(i64, @intCast(io_helper.clockGettime().sec)) * 1000 });
     defer allocator.free(staging_final);
 
     // Try cross-filesystem-safe copy-then-rename: copy to staging next to target, then rename.

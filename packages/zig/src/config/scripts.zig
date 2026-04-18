@@ -70,7 +70,7 @@ pub fn extractScripts(allocator: std.mem.Allocator, config: anytype) !?std.Strin
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        result.deinit(allocator);
+        result.deinit();
     }
 
     // Check if config is an object
@@ -111,7 +111,7 @@ pub fn extractScripts(allocator: std.mem.Allocator, config: anytype) !?std.Strin
     }
 
     if (result.count() == 0) {
-        result.deinit(allocator);
+        result.deinit();
         return null;
     }
 
@@ -146,7 +146,7 @@ fn parseScriptsFromContent(allocator: std.mem.Allocator, content: []const u8, is
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        result.deinit(allocator);
+        result.deinit();
     }
 
     var it = scripts_obj.iterator();
@@ -163,7 +163,7 @@ fn parseScriptsFromContent(allocator: std.mem.Allocator, content: []const u8, is
     }
 
     if (result.count() == 0) {
-        result.deinit(allocator);
+        result.deinit();
         return null;
     }
     return result;

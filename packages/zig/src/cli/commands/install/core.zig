@@ -163,9 +163,9 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
         if (checked_count == 0) return null;
     } else {
         var name_set = helpers.buildLockfileNameSet(&lockfile.packages, allocator);
-        defer name_set.deinit(allocator);
+        defer name_set.deinit();
         var constraint_map = helpers.buildConstraintMapFromWorkspaces(&lockfile.workspaces, allocator);
-        defer constraint_map.deinit(allocator);
+        defer constraint_map.deinit();
 
         var checked_count: usize = 0;
         for (deps) |dep| {

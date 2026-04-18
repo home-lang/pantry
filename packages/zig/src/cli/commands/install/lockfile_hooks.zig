@@ -86,7 +86,7 @@ pub fn executePreInstallHook(
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        scripts.deinit(allocator);
+        scripts.deinit();
     }
 
     const preinstall_cmd = scripts.get("preinstall") orelse return null;
@@ -137,7 +137,7 @@ pub fn executePostInstallHook(
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        scripts.deinit(allocator);
+        scripts.deinit();
     }
 
     const postinstall_cmd = scripts.get("postinstall") orelse return null;

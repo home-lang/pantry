@@ -733,7 +733,7 @@ pub const ShellCommands = struct {
                 self.allocator.free(entry.key_ptr.*);
                 entry.value_ptr.deinit(self.allocator);
             }
-            custom_configs.deinit(self.allocator);
+            custom_configs.deinit();
         }
         self.parseCustomServices(content, &custom_configs) catch {};
 
@@ -877,7 +877,7 @@ pub const ShellCommands = struct {
         // Topological sort: start services respecting dependsOn ordering
         // 1. Collect all services with their dependencies
         var started = std.StringHashMap(bool).init(self.allocator);
-        defer started.deinit(self.allocator);
+        defer started.deinit();
 
         // First pass: start services without dependencies
         for (auto_start_entries.items) |entry| {

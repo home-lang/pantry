@@ -43,7 +43,7 @@ pub const MetadataCache = struct {
             self.alloc.free(entry.key_ptr.*);
             self.alloc.free(entry.value_ptr.*);
         }
-        self.map.deinit(self.alloc);
+        self.map.deinit();
     }
 
     /// Atomic get-or-fetch. If URL is cached, returns a caller-owned copy of the
@@ -653,7 +653,7 @@ pub fn collectAllDeps(allocator: std.mem.Allocator, cwd: []const u8) ![]parser.P
     defer {
         var iter = seen.iterator();
         while (iter.next()) |entry| allocator.free(entry.key_ptr.*);
-        seen.deinit(allocator);
+        seen.deinit();
     }
 
     // Helper to add deps if not already seen

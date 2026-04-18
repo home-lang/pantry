@@ -48,7 +48,7 @@ pub fn removeCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
 
     // Track removed and not found packages — use HashMap for O(1) dedup
     var removed_set = std.StringHashMap(void).init(allocator);
-    defer removed_set.deinit(allocator);
+    defer removed_set.deinit();
     var removed_packages = try std.ArrayList([]const u8).initCapacity(allocator, args.len);
     defer removed_packages.deinit(allocator);
 
@@ -485,7 +485,7 @@ fn removeFromConfigFile(allocator: std.mem.Allocator, cwd: []const u8, packages:
 
     // Track which packages we found and need to remove
     var packages_to_remove = std.StringHashMap(void).init(allocator);
-    defer packages_to_remove.deinit(allocator);
+    defer packages_to_remove.deinit();
 
     for (packages) |pkg| {
         // Check if package is in dependencies
@@ -537,13 +537,13 @@ fn serializeJsonWithRemovals(
                 if (std.mem.eql(u8, key, "dependencies") or std.mem.eql(u8, key, "devDependencies")) {
                     if (val == .object) {
                         // Filter out packages to remove
-                        var filtered_deps = std.json.ObjectMap.init(allocator);
-                        defer filtered_deps.deinit();
+                        var filtered_deps: std.json.ObjectMap = .empty;
+                        defer filtered_deps.deinit(allocator);
 
                         var dep_iter = val.object.iterator();
                         while (dep_iter.next()) |dep_entry| {
                             if (!packages_to_remove.contains(dep_entry.key_ptr.*)) {
-                                try filtered_deps.put(dep_entry.key_ptr.*, dep_entry.value_ptr.*);
+                                try filtered_deps.put(allocator, dep_entry.key_ptr.*, dep_entry.value_ptr.*);
                             }
                         }
 
@@ -2033,7 +2033,7 @@ fn sortPackagesByDependencyOrder(
 
     // Map workspace package names to their index
     var name_to_idx = std.StringHashMap(usize).init(allocator);
-    defer name_to_idx.deinit(allocator);
+    defer name_to_idx.deinit();
     for (packages, 0..) |pkg, i| {
         name_to_idx.put(pkg.name, i) catch continue;
     }
@@ -2176,7 +2176,7 @@ fn resolveWorkspaceProtocol(allocator: std.mem.Allocator, content: []const u8, p
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        resolutions.deinit(allocator);
+        resolutions.deinit();
     }
 
     for (dep_sections) |section| {
@@ -2695,7 +2695,7 @@ pub fn whyCommand(allocator: std.mem.Allocator, args: []const []const u8, option
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
         }
-        deps_map.deinit(allocator);
+        deps_map.deinit();
     }
 
     // Find matching packages

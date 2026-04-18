@@ -35,6 +35,8 @@ pub fn shellIntegrateCommand(allocator: std.mem.Allocator) !CommandResult {
         .zsh => style.print("  source ~/.zshrc\n", .{}),
         .bash => style.print("  source ~/.bashrc\n", .{}),
         .fish => style.print("  source ~/.config/fish/config.fish\n", .{}),
+        .nushell => style.print("  source $nu.env-path\n", .{}),
+        .powershell => style.print("  . $PROFILE\n", .{}),
         .unknown => {},
     }
 

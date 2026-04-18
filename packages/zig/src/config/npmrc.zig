@@ -54,21 +54,21 @@ pub const NpmrcConfig = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.scoped_registries.deinit(self.allocator);
+        self.scoped_registries.deinit();
 
         var at_iter = self.auth_tokens.iterator();
         while (at_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.auth_tokens.deinit(self.allocator);
+        self.auth_tokens.deinit();
 
         var ba_iter = self.basic_auth.iterator();
         while (ba_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.basic_auth.deinit(self.allocator);
+        self.basic_auth.deinit();
     }
 
     /// Get the registry URL for a given package name.
@@ -158,7 +158,7 @@ test "lookupHostCredential rejects substring host attack" {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        map.deinit(allocator);
+        map.deinit();
     }
 
     try map.put(try allocator.dupe(u8, "registry.npmjs.org"), try allocator.dupe(u8, "secret"));
@@ -181,7 +181,7 @@ test "lookupHostCredential path-prefix key matches subpath" {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        map.deinit(allocator);
+        map.deinit();
     }
 
     // Key includes a path prefix
@@ -221,8 +221,6 @@ pub fn loadNpmrc(allocator: std.mem.Allocator, project_dir: ?[]const u8) !NpmrcC
     var config = NpmrcConfig.init(allocator);
     errdefer config.deinit();
 
-    const stderr = std.io.getStdErr().writer();
-
     // Load user-level ~/.npmrc first (lower priority)
     const home = @import("../core/platform.zig").Paths.home(allocator) catch null;
     if (home) |home_dir| {
@@ -231,7 +229,7 @@ pub fn loadNpmrc(allocator: std.mem.Allocator, project_dir: ?[]const u8) !NpmrcC
         defer allocator.free(user_npmrc);
         parseNpmrcFile(allocator, user_npmrc, &config) catch |err| {
             if (err != error.FileNotFound) {
-                stderr.print("pantry: warning: failed to parse {s} ({s}); continuing without user-level .npmrc\n", .{ user_npmrc, @errorName(err) }) catch {};
+                std.debug.print("pantry: warning: failed to parse {s} ({s}); continuing without user-level .npmrc\n", .{ user_npmrc, @errorName(err) });
             }
         };
     }
@@ -242,7 +240,7 @@ pub fn loadNpmrc(allocator: std.mem.Allocator, project_dir: ?[]const u8) !NpmrcC
         defer allocator.free(project_npmrc);
         parseNpmrcFile(allocator, project_npmrc, &config) catch |err| {
             if (err != error.FileNotFound) {
-                stderr.print("pantry: warning: failed to parse {s} ({s}); continuing without project .npmrc\n", .{ project_npmrc, @errorName(err) }) catch {};
+                std.debug.print("pantry: warning: failed to parse {s} ({s}); continuing without project .npmrc\n", .{ project_npmrc, @errorName(err) });
             }
         };
     }

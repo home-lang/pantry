@@ -131,9 +131,11 @@ fn parseUserGroup(allocator: std.mem.Allocator, content: []const u8, group_name:
 // ============================================================================
 
 pub fn servicesCommand(allocator: std.mem.Allocator) !CommandResult {
-    // Check for --json flag in process args
-    const args = std.process.argsAlloc(allocator) catch return servicesCommandHuman();
-    defer std.process.argsFree(allocator, args);
+    // Check for --json flag in process args. std.process.argsAlloc was removed
+    // in 0.17-dev; use the io_helper wrapper that pulls argv via libc.
+    const io_helper = @import("../../io_helper.zig");
+    const args = io_helper.argsAlloc(allocator) catch return servicesCommandHuman();
+    defer allocator.free(args);
     for (args) |arg| {
         if (std.mem.eql(u8, arg, "--json")) {
             return servicesCommandJson(allocator);

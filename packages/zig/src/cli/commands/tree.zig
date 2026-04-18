@@ -111,7 +111,7 @@ pub fn treeCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
 
     // Track visited packages to prevent infinite cycles
     var visited = std.StringHashMap(void).init(allocator);
-    defer visited.deinit(allocator);
+    defer visited.deinit();
 
     for (deps) |dep| {
         // Filter based on options

@@ -60,7 +60,7 @@ pub const Catalog = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.versions.deinit(self.allocator);
+        self.versions.deinit();
     }
 
     pub fn addVersion(self: *Catalog, package_name: []const u8, version: []const u8) !void {
@@ -107,7 +107,7 @@ pub const CatalogManager = struct {
             var catalog = entry.value_ptr.*;
             catalog.deinit();
         }
-        self.named_catalogs.deinit(self.allocator);
+        self.named_catalogs.deinit();
     }
 
     /// Add a default catalog

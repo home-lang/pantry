@@ -506,7 +506,7 @@ pub fn installWorkspaceCommandWithOptions(
         while (iter.next()) |entry| {
             allocator.free(entry.key_ptr.*);
         }
-        deps_seen.deinit(allocator);
+        deps_seen.deinit();
     }
 
     // Process root-level dependencies from the workspace file (system deps, root deps).
@@ -798,16 +798,16 @@ pub fn installWorkspaceCommandWithOptions(
             if (entry.value_ptr.tarball_url) |u| allocator.free(u);
             if (entry.value_ptr.integrity) |i| allocator.free(i);
         }
-        resolution_map.deinit(allocator);
+        resolution_map.deinit();
     }
 
     // Check if all packages can be skipped (lockfile + destination match + version constraint match)
     // Build name set once for O(1) lookups instead of O(n) iteration per dep
     var ws_skipped_count: usize = 0;
     var ws_name_set: ?helpers.LockfileNameSet = null;
-    defer if (ws_name_set) |*ns| ns.deinit(allocator);
+    defer if (ws_name_set) |*ns| ns.deinit();
     var ws_constraint_map: ?helpers.LockfileConstraintMap = null;
-    defer if (ws_constraint_map) |*cm| cm.deinit(allocator);
+    defer if (ws_constraint_map) |*cm| cm.deinit();
     if (existing_lockfile) |*lf| {
         ws_name_set = helpers.buildLockfileNameSet(&lf.packages, allocator);
         ws_constraint_map = helpers.buildConstraintMapFromWorkspaces(&lf.workspaces, allocator);
@@ -1025,7 +1025,7 @@ pub fn installWorkspaceCommandWithOptions(
                                         ) catch {};
                                     }
                                 }
-                                if (map.count() > 0) pair[1].* = map else map.deinit(allocator);
+                                if (map.count() > 0) pair[1].* = map else map.deinit();
                             }
                         }
                     }
@@ -1114,7 +1114,7 @@ pub fn installWorkspaceCommandWithOptions(
                                 ) catch {};
                             }
                         }
-                        if (map.count() > 0) pair[1].* = map else map.deinit(allocator);
+                        if (map.count() > 0) pair[1].* = map else map.deinit();
                     }
                 }
             }
@@ -1153,7 +1153,7 @@ pub fn installWorkspaceCommandWithOptions(
                             ) catch {};
                         }
                     }
-                    if (smap.count() > 0) m_system = smap else smap.deinit(allocator);
+                    if (smap.count() > 0) m_system = smap else smap.deinit();
                 }
             }
             // Also check pantry.system
@@ -1172,7 +1172,7 @@ pub fn installWorkspaceCommandWithOptions(
                                         ) catch {};
                                     }
                                 }
-                                if (smap.count() > 0) m_system = smap else smap.deinit(allocator);
+                                if (smap.count() > 0) m_system = smap else smap.deinit();
                             }
                         }
                     }
@@ -1251,7 +1251,7 @@ pub fn installWorkspaceCommandWithOptions(
                                         ) catch {};
                                     }
                                 }
-                                if (map.count() > 0) pkg_deps = map else map.deinit(allocator);
+                                if (map.count() > 0) pkg_deps = map else map.deinit();
                             }
                         }
 
@@ -1268,7 +1268,7 @@ pub fn installWorkspaceCommandWithOptions(
                                         ) catch {};
                                     }
                                 }
-                                if (map.count() > 0) pkg_peer_deps = map else map.deinit(allocator);
+                                if (map.count() > 0) pkg_peer_deps = map else map.deinit();
                             }
                         }
 
@@ -1289,7 +1289,7 @@ pub fn installWorkspaceCommandWithOptions(
                                         }
                                     }
                                 }
-                                if (omap.count() > 0) pkg_optional_peers = omap else omap.deinit(allocator);
+                                if (omap.count() > 0) pkg_optional_peers = omap else omap.deinit();
                             }
                         }
 
@@ -1306,7 +1306,7 @@ pub fn installWorkspaceCommandWithOptions(
                                     allocator.dupe(u8, bin_name) catch "",
                                     allocator.dupe(u8, bin_val.string) catch "",
                                 ) catch {};
-                                if (map.count() > 0) pkg_bin = map else map.deinit(allocator);
+                                if (map.count() > 0) pkg_bin = map else map.deinit();
                             } else if (bin_val == .object) {
                                 var map = std.StringHashMap([]const u8).init(allocator);
                                 var b_it = bin_val.object.iterator();
@@ -1318,7 +1318,7 @@ pub fn installWorkspaceCommandWithOptions(
                                         ) catch {};
                                     }
                                 }
-                                if (map.count() > 0) pkg_bin = map else map.deinit(allocator);
+                                if (map.count() > 0) pkg_bin = map else map.deinit();
                             }
                         }
                     }

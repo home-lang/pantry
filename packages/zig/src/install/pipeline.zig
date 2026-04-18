@@ -232,7 +232,7 @@ fn resolveFullTree(
 
     // Track resolved packages by name to deduplicate
     var seen = std.StringHashMap(void).init(allocator);
-    defer seen.deinit(allocator);
+    defer seen.deinit();
 
     // BFS wave queue: starts with top-level deps
     var current_wave = std.ArrayList(PipelineDep).empty;
@@ -386,7 +386,7 @@ fn resolveFullTree(
 
         // Deduplicate next wave by name
         var next_seen = std.StringHashMap(void).init(allocator);
-        defer next_seen.deinit(allocator);
+        defer next_seen.deinit();
         for (next_wave.items) |dep| {
             if (next_seen.contains(dep.name) or seen.contains(dep.name)) {
                 allocator.free(dep.name);
@@ -614,9 +614,8 @@ const DownloadThreadCtx = struct {
                 // Good — target doesn't exist, proceed
             };
             io_helper.deleteTree(install_dir) catch {};
-            io_helper.rename(partial_dir, install_dir) catch |ren_err| {
+            io_helper.rename(partial_dir, install_dir) catch {
                 // Best-effort recovery: fall back to moving by copy, then clean up.
-                _ = ren_err;
                 io_helper.makePath(install_dir) catch {};
                 // Leave a breadcrumb so partial contents are cleaned next run
                 io_helper.deleteTree(partial_dir) catch {};

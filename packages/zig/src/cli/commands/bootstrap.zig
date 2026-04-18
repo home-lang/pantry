@@ -217,6 +217,8 @@ fn configurePath(allocator: std.mem.Allocator, install_path: []const u8, verbose
         .zsh => try std.fmt.allocPrint(allocator, "{s}/.zshrc", .{home}),
         .bash => try std.fmt.allocPrint(allocator, "{s}/.bashrc", .{home}),
         .fish => try std.fmt.allocPrint(allocator, "{s}/.config/fish/config.fish", .{home}),
+        .nushell => try std.fmt.allocPrint(allocator, "{s}/.config/nushell/env.nu", .{home}),
+        .powershell => try std.fmt.allocPrint(allocator, "{s}/.config/powershell/profile.ps1", .{home}),
         .unknown => return error.UnknownShell,
     };
     defer allocator.free(rc_file);

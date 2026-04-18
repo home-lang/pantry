@@ -225,7 +225,7 @@ pub const AutoLinkResults = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.map.deinit(self.allocator);
+        self.map.deinit();
     }
 };
 
@@ -256,7 +256,7 @@ pub fn autoDiscoverAndLinkBatch(
     // Build lookup sets: full package name and unscoped basename
     // e.g., "@stacksjs/bun-router" → also match dir named "bun-router"
     var name_set = std.StringHashMap([]const u8).init(allocator);
-    defer name_set.deinit(allocator);
+    defer name_set.deinit();
 
     for (pkg_names) |name| {
         const base = unscopedName(name);

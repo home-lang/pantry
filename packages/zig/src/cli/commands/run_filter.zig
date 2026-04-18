@@ -306,7 +306,7 @@ pub fn runScriptWithFilter(
                     allocator.free(entry.key_ptr.*);
                     allocator.free(entry.value_ptr.*);
                 }
-                scripts.deinit(allocator);
+                scripts.deinit();
             }
 
             // Check if the script exists for this member
@@ -465,7 +465,7 @@ fn watchAndRerun(
             style.print("{s}Detected {d} file change(s):{s}\n", .{ style.blue, changes.len, style.reset });
 
             var affected_members = std.StringHashMap(void).init(allocator);
-            defer affected_members.deinit(allocator);
+            defer affected_members.deinit();
 
             for (changes[0..@min(5, changes.len)]) |event| {
                 const change_type = switch (event.change_type) {
@@ -623,7 +623,7 @@ fn executeScriptsInMembers(
                     allocator.free(entry.key_ptr.*);
                     allocator.free(entry.value_ptr.*);
                 }
-                scripts.deinit(allocator);
+                scripts.deinit();
             }
 
             const script_command = scripts.get(script_name) orelse {

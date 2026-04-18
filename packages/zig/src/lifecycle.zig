@@ -232,7 +232,7 @@ pub fn extractScripts(
     package_json: std.json.Parsed(std.json.Value),
 ) !std.StringHashMap([]const u8) {
     var scripts = std.StringHashMap([]const u8).init(allocator);
-    errdefer scripts.deinit(allocator);
+    errdefer scripts.deinit();
 
     const root = package_json.value.object;
 

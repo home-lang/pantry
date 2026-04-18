@@ -71,7 +71,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     style.print("Analyzing dependency tree...\n\n", .{});
 
     // Scan node_modules recursively and collect all package instances
-    var package_map: std.StringHashMap(std.ArrayList(PackageInstance)) = .empty;
+    var package_map = std.StringHashMap(std.ArrayList(PackageInstance)).init(allocator);
     defer {
         var map_iter = package_map.iterator();
         while (map_iter.next()) |entry| {
@@ -82,7 +82,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
             entry.value_ptr.deinit(allocator);
             allocator.free(entry.key_ptr.*);
         }
-        package_map.deinit(allocator);
+        package_map.deinit();
     }
 
     try scanNodeModules(allocator, effective_nm_path, &package_map);
@@ -102,11 +102,11 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
         if (instances.len < 2) continue;
 
         // Count unique versions
-        var unique_versions: std.StringHashMap(void) = .empty;
-        defer unique_versions.deinit(allocator);
+        var unique_versions = std.StringHashMap(void).init(allocator);
+        defer unique_versions.deinit();
 
         for (instances) |inst| {
-            unique_versions.put(allocator, inst.version, {}) catch continue;
+            unique_versions.put(inst.version, {}) catch continue;
         }
 
         if (unique_versions.count() < 2) continue;
@@ -302,7 +302,7 @@ fn recordPackage(
     } else {
         var list: std.ArrayList(PackageInstance) = .empty;
         try list.append(allocator, instance);
-        try package_map.put(allocator, key, list);
+        try package_map.put(key, list);
     }
 }
 

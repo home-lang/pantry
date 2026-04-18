@@ -36,7 +36,7 @@ pub const PackageMetadata = struct {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            deps.deinit(allocator);
+            deps.deinit();
         }
         if (self.publish_config) |*pc| {
             var mut_pc = pc.*;

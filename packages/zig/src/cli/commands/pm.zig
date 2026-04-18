@@ -466,6 +466,7 @@ fn pkgSet(allocator: std.mem.Allocator, assignments: []const []const u8) !Comman
 
             // Set value (top-level only for simplicity)
             try parsed.value.object.put(
+                allocator,
                 try allocator.dupe(u8, key),
                 std.json.Value{ .string = try allocator.dupe(u8, value) },
             );
@@ -627,7 +628,7 @@ pub fn untrustedCommand(allocator: std.mem.Allocator) !CommandResult {
 
     // Read trusted list
     var trusted = std.StringHashMap(void).init(allocator);
-    defer trusted.deinit(allocator);
+    defer trusted.deinit();
 
     const config_files = [_][]const u8{ "pantry.jsonc", "pantry.json", "package.json" };
     for (config_files) |config_path| {

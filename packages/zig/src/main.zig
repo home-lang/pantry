@@ -354,8 +354,8 @@ fn saveDependenciesToConfig(
         if (root_obj.getPtr(dep_field)) |existing| {
             break :blk existing;
         } else {
-            const new_deps = std.json.ObjectMap.init(allocator);
-            try root_obj.put(dep_field, .{ .object = new_deps });
+            const new_deps: std.json.ObjectMap = .empty;
+            try root_obj.put(allocator, dep_field, .{ .object = new_deps });
             break :blk root_obj.getPtr(dep_field).?;
         }
     };
@@ -392,7 +392,7 @@ fn saveDependenciesToConfig(
             try std.fmt.allocPrint(allocator, "^{s}", .{pkg_version});
 
         const version_value = std.json.Value{ .string = saved_version };
-        try deps_obj.put(try allocator.dupe(u8, pkg_name), version_value);
+        try deps_obj.put(allocator, try allocator.dupe(u8, pkg_name), version_value);
     }
 
     // Write back to file with pretty formatting
