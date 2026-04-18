@@ -232,6 +232,28 @@ function extractSystemDeps(): string[] {
   return []
 }
 
+/** Extract workspace (non-system) dependency names from package.json.
+ *  These are npm-like deps that pantry install places at `pantry/<name>/`
+ *  — e.g. zig-cli, zig-config, better-dx. Used to validate that a restored
+ *  cache actually contains all declared deps, not just system binaries. */
+function extractWorkspaceDeps(): string[] {
+  const pkgJsonPath = 'package.json'
+  if (!fs.existsSync(pkgJsonPath)) return []
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'))
+    const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) }
+    return Object.keys(deps)
+      // Skip system deps (domain-style names like ziglang.org, bun.sh) —
+      // those are validated via extractSystemDeps() / binary-presence checks.
+      .filter(name => !name.includes('.'))
+      // Skip workspace:* entries — resolved via symlinks, not installed.
+      .filter(name => typeof deps[name] === 'string' && !deps[name].startsWith('workspace:'))
+  }
+  catch {
+    return []
+  }
+}
+
 /** Find the primary deps file for cache key hashing */
 function findDepsFile(): string | null {
   const candidates = [
@@ -561,19 +583,21 @@ export async function run(): Promise<void> {
       // cache miss or unavailable
     }
 
-    // Even on cache hit, verify critical system deps exist and install if missing
+    // Even on cache hit, verify critical deps exist and install if missing.
+    // A stale cache may lack system binaries (zig, bun) OR workspace source deps
+    // (e.g. pantry/zig-cli/src/root.zig) needed by `zig build`. Validate both.
     if (cacheHit) {
       const installEnv = { ...process.env, CI: 'true', NO_COLOR: '1' }
       const systemDeps = extractSystemDeps()
       const isWin = platform.os === 'windows'
-      const missingDeps = systemDeps.filter(dep => {
+      const missingSystem = systemDeps.filter(dep => {
         const baseName = getBinName(dep)
         const binName = isWin ? `${baseName}.exe` : baseName
         return !fs.existsSync(path.join(pantryBinDir, binName)) && !fs.existsSync(path.join(pantryBinDir, baseName))
       })
-      if (missingDeps.length > 0) {
-        core.info(`Cache hit but missing: ${missingDeps.join(', ')} — installing`)
-        for (const dep of missingDeps) {
+      if (missingSystem.length > 0) {
+        core.info(`Cache hit but missing system deps: ${missingSystem.join(', ')} — installing`)
+        for (const dep of missingSystem) {
           try {
             await installSystemPackage(dep, pantryDir)
           }
@@ -581,6 +605,23 @@ export async function run(): Promise<void> {
             core.warning(`Failed to install ${dep}`)
           }
         }
+      }
+
+      // Validate workspace deps: pantry/<name>/ dirs exist for every non-system
+      // dep declared in package.json. A missing dir (e.g. zig-cli) means the
+      // cache was saved before `pantry install` completed; re-run to heal it.
+      const workspaceDeps = extractWorkspaceDeps()
+      const missingWorkspace = workspaceDeps.filter(dep => {
+        const depDir = path.join(pantryDir, dep)
+        return !fs.existsSync(depDir)
+      })
+      if (missingWorkspace.length > 0) {
+        core.info(`Cache hit but missing workspace deps: ${missingWorkspace.join(', ')} — running pantry install`)
+        await exec.exec('pantry', ['install', '--no-save'], {
+          env: installEnv as { [key: string]: string },
+        }).catch(() => {
+          core.warning('pantry workspace install failed')
+        })
       }
     }
 
