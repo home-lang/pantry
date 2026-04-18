@@ -301,7 +301,7 @@ describe('PHP routes (HTTP)', () => {
     expect(pubRes.status).toBe(201)
     const pubBody = await pubRes.json() as any
     expect(pubBody.success).toBe(true)
-    expect(pubBody.composerRequire).toContain('composer require test/example')
+    expect(pubBody.composerRequire).toContain(`composer require 'test/example`)
 
     // Retrieve
     const getRes = await fetch(`${baseUrl}/php/packages/test/example`)
