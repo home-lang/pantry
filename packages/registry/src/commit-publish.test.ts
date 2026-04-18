@@ -519,9 +519,9 @@ describe('commit publish', () => {
 
     it('downloadCommitTarball returns null for wrong package name', async () => {
       const tarball = new Uint8Array([0x1f, 0x8b]).buffer
-      await registry.publishCommit('right-name', 'aabb11223344556677889900aabbccddeeff001122', tarball)
+      await registry.publishCommit('right-name', 'aabb11223344556677889900aabbccddeeff0011', tarball)
 
-      const downloaded = await registry.downloadCommitTarball('aabb11223344556677889900aabbccddeeff001122', 'wrong-name')
+      const downloaded = await registry.downloadCommitTarball('aabb11223344556677889900aabbccddeeff0011', 'wrong-name')
       expect(downloaded).toBeNull()
     })
 
@@ -529,7 +529,7 @@ describe('commit publish', () => {
 
     it('tarball storage list returns keys with matching prefix', async () => {
       const tarball = new Uint8Array([0x1f, 0x8b]).buffer
-      await registry.publishCommit('list-pkg', 'aa11223344556677889900aabbccddeeff00112233', tarball)
+      await registry.publishCommit('list-pkg', 'aa11223344556677889900aabbccddeeff001122', tarball)
 
       const keys = await registry.tarball.list('commits/aa1122')
       expect(keys.length).toBeGreaterThanOrEqual(1)

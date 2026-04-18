@@ -149,14 +149,17 @@ export async function handlePhpRoutes(
   return null
 }
 
-// Token for authentication — must be set via environment variable
-const REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN
+// Token for authentication — read lazily so tests can set it in beforeEach.
+function getRegistryToken(): string | undefined {
+  return process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN
+}
 
 /**
  * Validate authorization token
  */
 function validateToken(authHeader: string | null): { valid: boolean, error?: string } {
-  if (!REGISTRY_TOKEN) {
+  const registryToken = getRegistryToken()
+  if (!registryToken) {
     return { valid: false, error: 'Server misconfigured — no registry token set' }
   }
 
@@ -170,12 +173,12 @@ function validateToken(authHeader: string | null): { valid: boolean, error?: str
 
   // Pad both to same length to prevent length-based timing leaks
   const crypto = require('node:crypto')
-  const maxLen = Math.max(token.length, REGISTRY_TOKEN.length)
+  const maxLen = Math.max(token.length, registryToken.length)
   const tokenBuf = Buffer.alloc(maxLen)
   const registryBuf = Buffer.alloc(maxLen)
   Buffer.from(token).copy(tokenBuf)
-  Buffer.from(REGISTRY_TOKEN).copy(registryBuf)
-  if (!crypto.timingSafeEqual(tokenBuf, registryBuf) || token.length !== REGISTRY_TOKEN.length) {
+  Buffer.from(registryToken).copy(registryBuf)
+  if (!crypto.timingSafeEqual(tokenBuf, registryBuf) || token.length !== registryToken.length) {
     return { valid: false, error: 'Invalid token' }
   }
 
