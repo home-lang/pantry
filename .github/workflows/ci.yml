@@ -99,6 +99,10 @@ jobs:
     needs: [lint, typecheck, test]
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Best-effort commit-preview publishing. Don't fail the whole workflow
+    # if the registry/S3 is unreachable or secrets are missing — the main
+    # pipeline (typecheck/lint/test) is what gates mergeability.
+    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v6
@@ -112,10 +116,6 @@ jobs:
       - name: Build TypeScript packages
         run: bun run build
 
-      # Expose credentials as env vars only — no on-disk files that
-      # subsequent steps could read or leave behind after a failure.
-      # `publish:commit` tries AWS first (direct S3) and falls back to the
-      # registry token (HTTP upload) per CLAUDE.md.
       - name: Continuous Releases
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -133,7 +133,8 @@ jobs:
   notify:
     name: discord-failure-alert
     needs: [lint, typecheck, test, continuous-release]
-    if: always() && (needs.lint.result == 'failure' || needs.typecheck.result == 'failure' || needs.test.result == 'failure' || needs.continuous-release.result == 'failure')
+    # continuous-release is best-effort; only alert on gating job failures.
+    if: always() && (needs.lint.result == 'failure' || needs.typecheck.result == 'failure' || needs.test.result == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
