@@ -1190,9 +1190,13 @@ async function handleAnalyticsEvent(
   }
 }
 
-// Legacy admin token for backward compatibility with CI workflows
-const REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN
-if (!REGISTRY_TOKEN) {
+// Legacy admin token for backward compatibility with CI workflows.
+// Read lazily at request time — tests mutate process.env in beforeEach, and a
+// module-load-time snapshot would lock in `undefined` before the env is set.
+function getRegistryToken(): string | undefined {
+  return process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN
+}
+if (!getRegistryToken()) {
   console.warn('WARNING: PANTRY_REGISTRY_TOKEN or PANTRY_TOKEN must be set — publish/admin endpoints will reject all requests')
 }
 
@@ -1220,23 +1224,25 @@ async function validateToken(authHeader: string | null): Promise<{ valid: boolea
     ? authHeader.slice(7)
     : authHeader
 
+  const registryToken = getRegistryToken()
+
   // Try user API token first if AuthService is available
   if (_authService && isUserApiToken(token)) {
-    const result = await _authService.validatePublishToken(token, REGISTRY_TOKEN!)
+    const result = await _authService.validatePublishToken(token, registryToken!)
     return result
   }
 
   // Fall back to legacy admin token (constant-time comparison to prevent timing attacks)
-  if (!REGISTRY_TOKEN) {
+  if (!registryToken) {
     return { valid: false, error: 'Invalid token' }
   }
   const crypto = require('node:crypto')
-  const maxLen = Math.max(token.length, REGISTRY_TOKEN.length)
+  const maxLen = Math.max(token.length, registryToken.length)
   const tokenBuf = Buffer.alloc(maxLen)
   const registryBuf = Buffer.alloc(maxLen)
   Buffer.from(token).copy(tokenBuf)
-  Buffer.from(REGISTRY_TOKEN).copy(registryBuf)
-  if (!crypto.timingSafeEqual(tokenBuf, registryBuf) || token.length !== REGISTRY_TOKEN.length) {
+  Buffer.from(registryToken).copy(registryBuf)
+  if (!crypto.timingSafeEqual(tokenBuf, registryBuf) || token.length !== registryToken.length) {
     return { valid: false, error: 'Invalid token' }
   }
 
@@ -2514,7 +2520,10 @@ async function handleBinaryProxy(
 /**
  * Handle dashboard routes — analytics UI (rendered via stx)
  */
-const DASHBOARD_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN
+// Read lazily (see getRegistryToken rationale above).
+function getDashboardToken(): string | undefined {
+  return process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN
+}
 
 function constantTimeEquals(a: string, b: string): boolean {
   const crypto = require('node:crypto')
@@ -2527,23 +2536,24 @@ function constantTimeEquals(a: string, b: string): boolean {
 }
 
 function getDashboardAuth(req: Request, url?: URL): boolean {
-  if (!DASHBOARD_TOKEN) return false
+  const dashboardToken = getDashboardToken()
+  if (!dashboardToken) return false
 
   // Check cookie first (direct access / cookie-forwarding CDN)
   const cookieHeader = req.headers.get('cookie') || ''
   // eslint-disable-next-line max-statements-per-line -- semicolon is inside regex, not a statement separator
   const cookieMatch = cookieHeader.match(/pantry_token=([^;]+)/)
-  if (cookieMatch && constantTimeEquals(cookieMatch[1], DASHBOARD_TOKEN))
+  if (cookieMatch && constantTimeEquals(cookieMatch[1], dashboardToken))
     return true
 
   // Check Authorization header (CloudFront forwards this)
   const authHeader = req.headers.get('authorization') || ''
-  if (authHeader.startsWith('Bearer ') && constantTimeEquals(authHeader.slice(7), DASHBOARD_TOKEN)) return true
+  if (authHeader.startsWith('Bearer ') && constantTimeEquals(authHeader.slice(7), dashboardToken)) return true
 
   // Check query parameter (CloudFront forwards query strings)
   if (url) {
     const tokenParam = url.searchParams.get('token')
-    if (tokenParam && constantTimeEquals(tokenParam, DASHBOARD_TOKEN)) return true
+    if (tokenParam && constantTimeEquals(tokenParam, dashboardToken)) return true
   }
 
   return false
@@ -2587,7 +2597,7 @@ async function handleDashboard(
     if (req.method === 'POST') {
       const formData = await req.formData()
       const token = formData.get('token') as string
-      if (token === DASHBOARD_TOKEN) {
+      if (token === getDashboardToken()) {
         return new Response(null, {
           status: 302,
           headers: {

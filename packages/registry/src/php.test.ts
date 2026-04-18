@@ -86,12 +86,12 @@ describe('PHP helpers', () => {
   describe('generateComposerRequire', () => {
     it('generates standard composer require command', () => {
       const cmd = generateComposerRequire('laravel/framework', '11.0.0')
-      expect(cmd).toBe('composer require laravel/framework:^11.0.0')
+      expect(cmd).toBe(`composer require 'laravel/framework:^11.0.0'`)
     })
 
     it('works with simple versions', () => {
       const cmd = generateComposerRequire('monolog/monolog', '3.5.0')
-      expect(cmd).toBe('composer require monolog/monolog:^3.5.0')
+      expect(cmd).toBe(`composer require 'monolog/monolog:^3.5.0'`)
     })
   })
 })
@@ -245,6 +245,8 @@ describe('PHP routes (HTTP)', () => {
   const TEST_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN || 'ABCD1234'
 
   beforeEach(async () => {
+    // Server reads PANTRY_REGISTRY_TOKEN lazily — pin the value tests send.
+    process.env.PANTRY_REGISTRY_TOKEN = TEST_TOKEN
     const { createServer } = await import('./server')
     const { createLocalRegistry } = await import('./registry')
     const { InMemoryAnalytics } = await import('./analytics')

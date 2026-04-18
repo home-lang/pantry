@@ -37,6 +37,9 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
   const TEST_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN || 'ABCD1234'
 
   beforeEach(() => {
+    // Server reads PANTRY_REGISTRY_TOKEN lazily — pin it so dashboard auth
+    // accepts `TEST_TOKEN` in these tests.
+    process.env.PANTRY_REGISTRY_TOKEN = TEST_TOKEN
     port = 4000 + Math.floor(Math.random() * 1000)
     baseUrl = `http://localhost:${port}`
     analytics = new InMemoryAnalytics()

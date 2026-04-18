@@ -8,6 +8,8 @@ describe('commit publish', () => {
   let port: number
 
   beforeEach(() => {
+    // Server reads PANTRY_REGISTRY_TOKEN lazily — pin the value tests send.
+    process.env.PANTRY_REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || 'ABCD1234'
     port = 3456 + Math.floor(Math.random() * 1000)
     baseUrl = `http://localhost:${port}`
     registry = createLocalRegistry(baseUrl)

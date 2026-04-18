@@ -308,6 +308,9 @@ describe('e2e: auth routes', () => {
   let authStorage: InMemoryAuthStorage
 
   beforeEach(() => {
+    // Pin the legacy token so the "legacy REGISTRY_TOKEN still works" test has
+    // a known value to send (the server reads PANTRY_REGISTRY_TOKEN lazily).
+    process.env.PANTRY_REGISTRY_TOKEN = 'ABCD1234'
     port = 5000 + Math.floor(Math.random() * 1000)
     baseUrl = `http://localhost:${port}`
     authStorage = new InMemoryAuthStorage()
