@@ -61,6 +61,7 @@ export const soldeerxyzPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.11.0',
     '0.10.1',
     '0.10.0',
     '0.9.0',
