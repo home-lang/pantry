@@ -125,7 +125,10 @@ pub fn publishBinaryCommand(allocator: std.mem.Allocator, args: []const []const 
         // Truncate stderr to avoid leaking credentials in error messages
         const safe_len = @min(upload_result.stderr.len, 500);
         const msg = try std.fmt.allocPrint(allocator, "Error: S3 upload failed (exit code {d}): {s}", .{
-            switch (upload_result.term) { .exited => |code| code, else => 1 },
+            switch (upload_result.term) {
+                .exited => |code| code,
+                else => 1,
+            },
             upload_result.stderr[0..safe_len],
         });
         return CommandResult.err(allocator, msg);

@@ -251,7 +251,7 @@ pub fn printInstallingEx(count: usize, resuming_count: usize) void {
     const label = if (count == 1) "package" else "packages";
     if (resuming_count > 0) {
         print("{s}{s}{s} Installing {d} {s} {s}(resuming, {d} previously completed){s}...\n", .{
-            green, arrow,          reset,           count, label,
+            green, arrow,          reset, count, label,
             dim,   resuming_count, reset,
         });
     } else {

@@ -249,7 +249,7 @@ pub fn autoDiscoverAndLinkBatch(
         .map = std.StringHashMap([]const u8).init(allocator),
         .allocator = allocator,
     };
-    errdefer results.deinit();  // struct deinit - calls map.deinit(allocator) internally
+    errdefer results.deinit(); // struct deinit - calls map.deinit(allocator) internally
 
     if (pkg_names.len == 0) return results;
 

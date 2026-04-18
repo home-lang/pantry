@@ -397,56 +397,56 @@ pub fn executeScriptSandboxed(
         .linux => {
             // Use bwrap (bubblewrap) for Linux sandboxing if available
             // This is a lightweight sandboxing tool similar to what Flatpak uses
-            try cmd_args.append(allocator,"bwrap");
+            try cmd_args.append(allocator, "bwrap");
 
             // Basic filesystem isolation
-            try cmd_args.append(allocator,"--unshare-all");
-            try cmd_args.append(allocator,"--share-net"); // Share network by default, can be restricted
-            try cmd_args.append(allocator,"--die-with-parent");
+            try cmd_args.append(allocator, "--unshare-all");
+            try cmd_args.append(allocator, "--share-net"); // Share network by default, can be restricted
+            try cmd_args.append(allocator, "--die-with-parent");
 
             // Mount essential directories read-only
-            try cmd_args.append(allocator,"--ro-bind");
-            try cmd_args.append(allocator,"/usr");
-            try cmd_args.append(allocator,"/usr");
+            try cmd_args.append(allocator, "--ro-bind");
+            try cmd_args.append(allocator, "/usr");
+            try cmd_args.append(allocator, "/usr");
 
-            try cmd_args.append(allocator,"--ro-bind");
-            try cmd_args.append(allocator,"/lib");
-            try cmd_args.append(allocator,"/lib");
+            try cmd_args.append(allocator, "--ro-bind");
+            try cmd_args.append(allocator, "/lib");
+            try cmd_args.append(allocator, "/lib");
 
-            try cmd_args.append(allocator,"--ro-bind");
-            try cmd_args.append(allocator,"/lib64");
-            try cmd_args.append(allocator,"/lib64");
+            try cmd_args.append(allocator, "--ro-bind");
+            try cmd_args.append(allocator, "/lib64");
+            try cmd_args.append(allocator, "/lib64");
 
-            try cmd_args.append(allocator,"--ro-bind");
-            try cmd_args.append(allocator,"/bin");
-            try cmd_args.append(allocator,"/bin");
+            try cmd_args.append(allocator, "--ro-bind");
+            try cmd_args.append(allocator, "/bin");
+            try cmd_args.append(allocator, "/bin");
 
             // Provide basic system files
-            try cmd_args.append(allocator,"--ro-bind");
-            try cmd_args.append(allocator,"/etc/resolv.conf");
-            try cmd_args.append(allocator,"/etc/resolv.conf");
+            try cmd_args.append(allocator, "--ro-bind");
+            try cmd_args.append(allocator, "/etc/resolv.conf");
+            try cmd_args.append(allocator, "/etc/resolv.conf");
 
-            try cmd_args.append(allocator,"--proc");
-            try cmd_args.append(allocator,"/proc");
+            try cmd_args.append(allocator, "--proc");
+            try cmd_args.append(allocator, "/proc");
 
-            try cmd_args.append(allocator,"--dev");
-            try cmd_args.append(allocator,"/dev");
+            try cmd_args.append(allocator, "--dev");
+            try cmd_args.append(allocator, "/dev");
 
-            try cmd_args.append(allocator,"--tmpfs");
-            try cmd_args.append(allocator,"/tmp");
+            try cmd_args.append(allocator, "--tmpfs");
+            try cmd_args.append(allocator, "/tmp");
 
             // Add read paths
             for (sandbox_config.read_paths) |path| {
-                try cmd_args.append(allocator,"--ro-bind");
-                try cmd_args.append(allocator,path);
-                try cmd_args.append(allocator,path);
+                try cmd_args.append(allocator, "--ro-bind");
+                try cmd_args.append(allocator, path);
+                try cmd_args.append(allocator, path);
             }
 
             // Add write paths
             for (sandbox_config.write_paths) |path| {
-                try cmd_args.append(allocator,"--bind");
-                try cmd_args.append(allocator,path);
-                try cmd_args.append(allocator,path);
+                try cmd_args.append(allocator, "--bind");
+                try cmd_args.append(allocator, path);
+                try cmd_args.append(allocator, path);
             }
 
             // Restrict network if configured
@@ -457,9 +457,9 @@ pub fn executeScriptSandboxed(
             }
 
             // Execute the actual command
-            try cmd_args.append(allocator,"sh");
-            try cmd_args.append(allocator,"-c");
-            try cmd_args.append(allocator,script_cmd);
+            try cmd_args.append(allocator, "sh");
+            try cmd_args.append(allocator, "-c");
+            try cmd_args.append(allocator, script_cmd);
         },
         .macos => {
             // macOS: Use sandbox-exec with a profile
@@ -509,12 +509,12 @@ pub fn executeScriptSandboxed(
             }
             try io_helper.writeAllToFile(profile_file, profile_with_paths.items);
 
-            try cmd_args.append(allocator,"sandbox-exec");
-            try cmd_args.append(allocator,"-f");
-            try cmd_args.append(allocator,profile_path);
-            try cmd_args.append(allocator,"sh");
-            try cmd_args.append(allocator,"-c");
-            try cmd_args.append(allocator,script_cmd);
+            try cmd_args.append(allocator, "sandbox-exec");
+            try cmd_args.append(allocator, "-f");
+            try cmd_args.append(allocator, profile_path);
+            try cmd_args.append(allocator, "sh");
+            try cmd_args.append(allocator, "-c");
+            try cmd_args.append(allocator, script_cmd);
         },
         .windows => {
             // Windows: AppContainer would require Win32 API calls

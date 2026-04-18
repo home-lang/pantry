@@ -285,8 +285,9 @@ fn extractZipArchive(allocator: std.mem.Allocator, archive_path: []const u8, des
     if (comptime builtin.os.tag == .windows) {
         // PowerShell: use separate arguments to avoid command injection
         _ = try io_helper.childRun(allocator, &[_][]const u8{
-            "powershell", "-NoProfile", "-Command",
-            "Expand-Archive", "-Path", archive_path, "-DestinationPath", dest_dir, "-Force",
+            "powershell",       "-NoProfile", "-Command",
+            "Expand-Archive",   "-Path",      archive_path,
+            "-DestinationPath", dest_dir,     "-Force",
         });
     } else {
         // Unix: unzip -o -q <zip> -d <dir>

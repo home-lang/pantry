@@ -78,7 +78,7 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
         const answer = std.mem.trim(u8, buf[0..bytes_read], &std.ascii.whitespace);
         const accepted = (answer.len > 0) and
             ((answer[0] == 'y' or answer[0] == 'Y') or
-            std.ascii.eqlIgnoreCase(answer, "yes"));
+                std.ascii.eqlIgnoreCase(answer, "yes"));
         if (!accepted) {
             return .{
                 .exit_code = 0,

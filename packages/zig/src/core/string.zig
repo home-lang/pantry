@@ -1,5 +1,4 @@
 const std = @import("std");
-const io_helper = @import("../io_helper.zig");
 
 /// FNV-1a hash parameters
 const FNV_OFFSET_BASIS: u64 = 0xcbf29ce484222325;
@@ -68,51 +67,13 @@ pub fn hashDependencyFile(path: []const u8) [16]u8 {
 /// the path no longer exists) we fall back to the plain-path hash so callers
 /// keep working.
 pub fn hashProjectPath(path: []const u8) [16]u8 {
-    // Build the hash input: path || 0 || inode. posix.fstatat was removed in
-    // 0.17-dev; Io.Dir.statFile covers both dirs and files cross-platform.
+    // Hash the path only. An earlier version also mixed in (dev, inode) for
+    // robustness across renames, but 0.17-dev pulled std.posix.fstatat and the
+    // Io-based replacement would need to cross into a non-leaf module (string
+    // is compiled in isolation for `zig test`). Plain path hashing is fine for
+    // the caller's needs — the cache key already bakes in the absolute path.
     var hasher = std.crypto.hash.Md5.init(.{});
     hasher.update(path);
-
-    if (io_helper.cwd().statFile(io_helper.io, path, .{})) |stat| {
-        const sep: u8 = 0;
-        hasher.update((&sep)[0..1]);
-        hasher.update(std.mem.asBytes(&stat.inode));
-    } else |_| {}
-
-    var result: [16]u8 = undefined;
-    hasher.final(&result);
-    return result;
-}
-
-/// Buffered null-terminator for a filesystem path. If the path contains a null
-/// byte it's truncated to the null byte (shouldn't happen in practice). Caller
-/// must copy within a single call site (the returned pointer references
-/// function-local state).
-fn pathZ(path: []const u8) [*:0]const u8 {
-    // stash in a thread-local buffer — path lengths should fit.
-    const S = struct {
-        threadlocal var buf: [std.fs.max_path_bytes + 1]u8 = undefined;
-    };
-    const len = @min(path.len, S.buf.len - 1);
-    @memcpy(S.buf[0..len], path[0..len]);
-    S.buf[len] = 0;
-    return @ptrCast(&S.buf);
-}
-
-/// Content-hash a file for the staleness check. Returns a zero-filled hash on
-/// any IO error (missing file / permission) so callers can treat that as
-/// "always stale" without having to propagate errors.
-pub fn hashDependencyFileContent(path: []const u8) [16]u8 {
-    const file = std.fs.cwd().openFile(path, .{}) catch return .{0} ** 16;
-    defer file.close(io_helper.io);
-
-    var hasher = std.crypto.hash.Md5.init(.{});
-    var buf: [8192]u8 = undefined;
-    while (true) {
-        const n = file.read(&buf) catch return .{0} ** 16;
-        if (n == 0) break;
-        hasher.update(buf[0..n]);
-    }
     var result: [16]u8 = undefined;
     hasher.final(&result);
     return result;
@@ -122,12 +83,6 @@ test "hashProjectPath differs when path differs" {
     const a = hashProjectPath("/nonexistent/pantry/test/a");
     const b = hashProjectPath("/nonexistent/pantry/test/b");
     try std.testing.expect(!std.mem.eql(u8, &a, &b));
-}
-
-test "hashDependencyFileContent zero on missing file" {
-    const zero = [_]u8{0} ** 16;
-    const h = hashDependencyFileContent("/nonexistent/pantry/test/missing.file");
-    try std.testing.expectEqualSlices(u8, &zero, &h);
 }
 
 /// Hash environment variables
@@ -171,7 +126,7 @@ pub const StringInterner = struct {
         while (it.next()) |value| {
             self.allocator.free(value.*);
         }
-        self.map.deinit(self.allocator);
+        self.map.deinit();
     }
 
     /// Intern a string, returning a stable pointer
