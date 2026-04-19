@@ -70,6 +70,7 @@ export const zotregistrydevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.1.16',
     '2.1.15',
     '2.1.14',
     '2.1.13',
