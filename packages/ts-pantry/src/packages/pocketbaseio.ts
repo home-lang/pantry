@@ -68,6 +68,7 @@ export const pocketbaseioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.37.1',
     '0.37.0',
     '0.36.9',
     '0.36.8',
