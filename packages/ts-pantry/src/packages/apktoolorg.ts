@@ -75,6 +75,7 @@ export const apktoolorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.0.2',
     '3.0.1',
     '2.12.1',
     '2.12.0',

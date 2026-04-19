@@ -79,6 +79,7 @@ export const ccachedevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.13.4',
     '4.13.3',
     '4.13.2',
     '4.13.1',
