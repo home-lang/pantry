@@ -68,6 +68,7 @@ export const sqlcdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.31.0',
     '1.30.0',
     '1.29.0',
     '1.28.0',
