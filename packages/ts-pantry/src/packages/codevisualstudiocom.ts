@@ -25,6 +25,7 @@ export const codevisualstudiocomPackage = {
     '1.96.4',
     '1.96.3',
     '1.96.2',
+    '0.44.2',
     '0.44.1',
   ] as const,
   aliases: ['vscode', 'code'] as const,

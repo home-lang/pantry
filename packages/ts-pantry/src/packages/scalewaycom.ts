@@ -68,6 +68,7 @@ export const scalewaycomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.55.0',
     '2.54.0',
     '2.53.0',
     '2.52.0',
