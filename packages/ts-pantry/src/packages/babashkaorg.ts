@@ -66,6 +66,7 @@ export const babashkaorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.12.218',
     '1.12.217',
     '1.12.216',
     '1.12.215',
