@@ -2465,6 +2465,10 @@
 
 - add diagnostic output for lunarvim libiconv issue ([a44ecb2](https://github.com/home-lang/pantry/commit/a44ecb2)) _(by Chris <chrisbreuer93@gmail.com>)_
 
+### 📄 Miscellaneous
+
+- ([with](https://github.com/home-lang/pantry/commit/  with )) _(by  in the replacement string (readlink -f  <>)_
+
 ### Contributors
 
 - _ in the replacement string (readlink -f  <>_
@@ -3058,6 +3062,10 @@
 ### debug
 
 - add diagnostic output for lunarvim libiconv issue ([a44ecb2](https://github.com/home-lang/pantry/commit/a44ecb2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📄 Miscellaneous
+
+- ([with](https://github.com/home-lang/pantry/commit/  with )) _(by  in the replacement string (readlink -f  <>)_
 
 ### Contributors
 
