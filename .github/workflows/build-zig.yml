@@ -1,0 +1,61 @@
+name: Build Zig (All Platforms)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/zig/**'
+      - '.github/workflows/build-zig.yml'
+  pull_request:
+    paths:
+      - 'packages/zig/**'
+      - '.github/workflows/build-zig.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: build-zig-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compile-all:
+    name: compile-all
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Zig (pinned 0.17-dev)
+        uses: mlugg/setup-zig@v2
+        with:
+          version: '0.17.0-dev.56+a8226cd53'
+
+      - name: Clone zig deps
+        run: |
+          # Pantry install isn't available on PRs from forks, so clone
+          # zig-cli / zig-config / zig-test-framework from upstream directly.
+          mkdir -p pantry
+          for repo in zig-cli zig-config zig-test-framework; do
+            if [ ! -d "pantry/$repo" ]; then
+              git clone --depth 1 "https://github.com/zig-utils/$repo.git" "pantry/$repo"
+            fi
+          done
+
+      - name: Build for All Platforms
+        run: |
+          set -e
+          cd packages/zig
+          zig build compile-all
+
+      - name: Verify critical targets
+        run: |
+          set -e
+          cd packages/zig/zig-out/bin
+          echo "Built binaries:"
+          ls -la
+          for required in linux-x86_64 macos-aarch64; do
+            if [ ! -d "$required" ]; then
+              echo "::error::Required target $required not found"
+              exit 1
+            fi
+          done

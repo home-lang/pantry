@@ -35,8 +35,9 @@ jobs:
       - name: Ensure zig deps are present
         run: |
           # pantry install may skip registry-hosted zig-cli / zig-config /
-          # zig-test-framework; clone sources directly as a reliable fallback
-          # so the build always has dependency sources on disk.
+          # zig-test-framework; clone sources directly from upstream so the
+          # build always has the latest dep sources on disk. Upstream tracks
+          # the same zig-dev API we build against, so no patching is needed.
           mkdir -p pantry
           for repo in zig-cli zig-config zig-test-framework; do
             if [ ! -f "pantry/$repo/src/root.zig" ] && [ ! -f "pantry/$repo/src/lib.zig" ] && [ ! -f "pantry/$repo/src/zig-config.zig" ]; then
@@ -47,20 +48,6 @@ jobs:
               echo "$repo already present"
             fi
           done
-
-      - name: Fix zig deps compat
-        run: |
-          # Patches external zig-cli / zig-config sources for zig-0.17-dev API drift.
-          # Upstream hasn't migrated yet; we rewrite on each CI run until they do.
-          find pantry/zig-cli/src pantry/zig-config/src -name '*.zig' 2>/dev/null | while read f; do
-            # ArrayList empty init
-            perl -pi -e 's/std\.ArrayList\(([^)]*)\)\{\}/std.ArrayList($1){ .items = \&.{}, .capacity = 0 }/g' "$f"
-          done
-          # ObjectMap became unmanaged in 0.17-dev. zig-config has one site; patch it precisely.
-          UTILS="pantry/zig-config/src/utils.zig"
-          if [ -f "$UTILS" ]; then
-            perl -0777 -pi -e 's/var new_obj = std\.json\.ObjectMap\.init\(allocator\);\n(\s+)var iter = obj\.iterator\(\);\n(\s+)while \(iter\.next\(\)\) \|entry\| \{\n(\s+)try new_obj\.put\(\n(\s+)try allocator\.dupe/var new_obj: std.json.ObjectMap = .empty;\n$1var iter = obj.iterator();\n$2while (iter.next()) |entry| {\n$3try new_obj.put(\n$4allocator,\n$4try allocator.dupe/' "$UTILS"
-          fi
 
       - name: Build for All Platforms
         run: |
