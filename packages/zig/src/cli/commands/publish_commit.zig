@@ -581,7 +581,23 @@ fn publishCommitPackage(
 
     // Upload
     if (has_aws_creds) {
-        return uploadCommitToS3(allocator, pkg.name, sha, tarball_data, repo_url, pkg.version, options);
+        const s3_result = uploadCommitToS3(allocator, pkg.name, sha, tarball_data, repo_url, pkg.version, options) catch |err| {
+            // S3 auth errors (credentials not found, rotated keys, profile
+            // misconfig) commonly happen when CI secrets are set but invalid.
+            // Fall back to HTTP if a registry token is available.
+            if (token) |tok| if (tok.len > 0) {
+                style.print("  S3 upload errored ({any}), falling back to registry HTTP upload...\n", .{err});
+                return uploadCommitViaHttp(allocator, pkg.name, sha, tarball_data, repo_url, pkg.version, options, tok);
+            };
+            return err;
+        };
+        if (!s3_result.success) {
+            if (token) |tok| if (tok.len > 0) {
+                style.print("  Falling back to registry HTTP upload...\n", .{});
+                return uploadCommitViaHttp(allocator, pkg.name, sha, tarball_data, repo_url, pkg.version, options, tok);
+            };
+        }
+        return s3_result;
     } else {
         const auth_token = token orelse "";
         if (auth_token.len == 0) {
