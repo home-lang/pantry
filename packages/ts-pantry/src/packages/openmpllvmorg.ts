@@ -65,6 +65,7 @@ export const openmpllvmorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '22.1.4',
     '22.1.3',
     '22.1.2',
     '22.1.1',
