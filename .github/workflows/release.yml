@@ -27,6 +27,27 @@ jobs:
       - name: Setup Pantry
         uses: ./packages/action
 
+      - name: Setup Zig (pinned 0.17-dev)
+        uses: mlugg/setup-zig@v2
+        with:
+          version: '0.17.0-dev.56+a8226cd53'
+
+      - name: Ensure zig deps are present
+        run: |
+          # pantry install may skip registry-hosted zig-cli / zig-config /
+          # zig-test-framework; clone sources directly as a reliable fallback
+          # so the build always has dependency sources on disk.
+          mkdir -p pantry
+          for repo in zig-cli zig-config zig-test-framework; do
+            if [ ! -f "pantry/$repo/src/root.zig" ] && [ ! -f "pantry/$repo/src/lib.zig" ] && [ ! -f "pantry/$repo/src/zig-config.zig" ]; then
+              echo "Cloning $repo ..."
+              rm -rf "pantry/$repo"
+              git clone --depth 1 "https://github.com/zig-utils/$repo.git" "pantry/$repo"
+            else
+              echo "$repo already present"
+            fi
+          done
+
       - name: Fix zig deps compat
         run: |
           # Patches external zig-cli / zig-config sources for zig-0.17-dev API drift.
@@ -40,23 +61,6 @@ jobs:
           if [ -f "$UTILS" ]; then
             perl -0777 -pi -e 's/var new_obj = std\.json\.ObjectMap\.init\(allocator\);\n(\s+)var iter = obj\.iterator\(\);\n(\s+)while \(iter\.next\(\)\) \|entry\| \{\n(\s+)try new_obj\.put\(\n(\s+)try allocator\.dupe/var new_obj: std.json.ObjectMap = .empty;\n$1var iter = obj.iterator();\n$2while (iter.next()) |entry| {\n$3try new_obj.put(\n$4allocator,\n$4try allocator.dupe/' "$UTILS"
           fi
-
-      - name: Check zig availability
-        id: check-zig
-        run: |
-          if command -v zig &>/dev/null; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-            zig version
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "zig not found, will use fallback"
-          fi
-
-      - name: Setup Zig (fallback — latest dev)
-        if: steps.check-zig.outputs.available != 'true'
-        uses: mlugg/setup-zig@v2
-        with:
-          version: master
 
       - name: Build for All Platforms
         run: |
