@@ -95,44 +95,38 @@ jobs:
           echo "Building pantry..."
           zig build || echo "Zig build failed (non-fatal in CI — full build requires all deps)"
 
-  continuous-release:
-    needs: [lint, typecheck, test]
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    # Best-effort commit-preview publishing. Don't fail the whole workflow
-    # if the registry/S3 is unreachable or secrets are missing — the main
-    # pipeline (typecheck/lint/test) is what gates mergeability.
-    continue-on-error: true
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup Pantry
-        uses: ./packages/action
-
-      - name: Install Dependencies
-        run: bun install
-
-      - name: Build TypeScript packages
-        run: bun run build
-
-      - name: Continuous Releases
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
-          PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
-          PANTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
-        run: |
-          # Revert any accidental changes to bun.lock from `bun install` during setup
-          if [ -f bun.lock ] && ! git diff --quiet bun.lock; then
-            git checkout -- bun.lock
-          fi
-          pantry publish:commit './packages/*'
+  # continuous-release disabled until AWS creds are rotated / a new pantry
+  # binary with the S3->HTTP fallback is released. Re-enable once the
+  # commit-preview publisher is reliably working again.
+  # continuous-release:
+  #   needs: [lint, typecheck, test]
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 15
+  #   continue-on-error: true
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - name: Setup Pantry
+  #       uses: ./packages/action
+  #     - name: Install Dependencies
+  #       run: bun install
+  #     - name: Build TypeScript packages
+  #       run: bun run build
+  #     - name: Continuous Releases
+  #       env:
+  #         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         AWS_DEFAULT_REGION: us-east-1
+  #         PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
+  #         PANTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
+  #       run: |
+  #         if [ -f bun.lock ] && ! git diff --quiet bun.lock; then
+  #           git checkout -- bun.lock
+  #         fi
+  #         pantry publish:commit './packages/*'
 
   notify:
     name: discord-failure-alert
-    needs: [lint, typecheck, test, continuous-release]
+    needs: [lint, typecheck, test]
     # continuous-release is best-effort; only alert on gating job failures.
     if: always() && (needs.lint.result == 'failure' || needs.typecheck.result == 'failure' || needs.test.result == 'failure')
     runs-on: ubuntu-latest
