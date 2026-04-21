@@ -85,11 +85,13 @@ export const ansiblecomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.20.5',
     '2.20.4',
     '2.20.3',
     '2.20.2',
     '2.20.1',
     '2.20.0',
+    '2.19.9',
     '2.19.8',
     '2.19.7',
     '2.19.6',
