@@ -76,6 +76,7 @@ export const neovimioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.12.2',
     '0.12.1',
     '0.12.0',
     '0.11.7',
