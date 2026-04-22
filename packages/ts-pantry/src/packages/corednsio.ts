@@ -68,6 +68,7 @@ export const corednsioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.14.3',
     '1.14.2',
     '1.14.1',
     '1.14.0',
