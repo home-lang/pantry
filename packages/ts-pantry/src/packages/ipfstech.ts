@@ -69,6 +69,7 @@ export const ipfstechPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.41.0',
     '0.40.1',
     '0.40.0',
     '0.39.0',
