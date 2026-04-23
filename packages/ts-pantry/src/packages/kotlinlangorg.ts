@@ -77,6 +77,7 @@ export const kotlinPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.3.21',
     '2.3.20',
     '2.3.10',
     '2.3.0',
