@@ -702,26 +702,28 @@ export async function run(): Promise<void> {
     core.addPath(pantryBinDir)
     core.addPath(path.join(homeDir, '.pantry', 'bin'))
 
-    // Even on cache hit, verify critical deps exist and install if missing.
-    // A stale cache may lack system binaries (zig, bun) OR workspace source deps
-    // (e.g. pantry/zig-cli/src/root.zig) needed by `zig build`. Validate both.
+    // Even on cache hit, reconcile critical deps. A stale cache may lack
+    // system binaries (zig, bun) OR workspace source deps (e.g.
+    // pantry/zig-cli/src/root.zig) needed by `zig build`. Validate both.
+    //
+    // We always call `installSystemPackage` instead of gating on a cheap
+    // bin-existence check: the SDK's own "already installed" short-circuit
+    // makes it a no-op when the correct version is on disk, and otherwise it
+    // installs the right one. The cheap bin-existence check is unsafe because
+    // a restore-key cache hit can bring in the right *binary name* at the
+    // *wrong version* (e.g. cache has bun@1.3.11, deps/lock now say 1.3.13)
+    // — the symlink exists so the check passes, and the stale version stays.
     if (cacheHit) {
       const installEnv = { ...process.env, CI: 'true', NO_COLOR: '1' }
       const systemDeps = extractSystemDeps()
-      const isWin = platform.os === 'windows'
-      const missingSystem = systemDeps.filter(dep => {
-        const baseName = getBinName(dep)
-        const binName = isWin ? `${baseName}.exe` : baseName
-        return !fs.existsSync(path.join(pantryBinDir, binName)) && !fs.existsSync(path.join(pantryBinDir, baseName))
-      })
-      if (missingSystem.length > 0) {
-        core.info(`Cache hit but missing system deps: ${missingSystem.join(', ')} — installing`)
-        for (const dep of missingSystem) {
+      if (systemDeps.length > 0) {
+        core.info(`Cache hit — reconciling system deps against lock/spec: ${systemDeps.join(', ')}`)
+        for (const dep of systemDeps) {
           try {
             await installSystemPackage(dep, pantryDir, lockedVersions)
           }
-          catch {
-            core.warning(`Failed to install ${dep}`)
+          catch (err) {
+            core.warning(`${dep}: ${err instanceof Error ? err.message : 'install failed'}`)
           }
         }
       }
