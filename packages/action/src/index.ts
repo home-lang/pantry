@@ -162,14 +162,66 @@ function getBinName(dep: string): string {
 }
 
 /**
+ * Lightweight "does this concrete version satisfy this spec?" check. Covers
+ * the operators deps files actually use in the wild (`^`, `~`, `>=`, `>`,
+ * `<=`, `<`, exact), plus sentinels (`*`, `latest`, empty). Good enough for
+ * the lock-compatibility check in `installSystemPackage`; we deliberately
+ * don't depend on a full semver library inside a small action bundle.
+ */
+function versionSatisfiesSpec(version: string, spec: string): boolean {
+  if (!spec || spec === 'latest' || spec === '*')
+    return true
+  const parse = (v: string) => v.replace(/^v/, '').split('.').map(n => Number.parseInt(n, 10) || 0)
+  const cmp = (a: number[], b: number[]) => {
+    for (let i = 0; i < 3; i++) {
+      if ((a[i] ?? 0) !== (b[i] ?? 0))
+        return (a[i] ?? 0) - (b[i] ?? 0)
+    }
+    return 0
+  }
+  const v = parse(version)
+  const match = spec.match(/^([~^>=<]+)?(\d[\d.]*)/)
+  if (!match) return false
+  const op = match[1] || ''
+  const t = parse(match[2])
+
+  if (!op || op === '=' || op === '==') return cmp(v, t) === 0
+  if (op === '>=') return cmp(v, t) >= 0
+  if (op === '>') return cmp(v, t) > 0
+  if (op === '<=') return cmp(v, t) <= 0
+  if (op === '<') return cmp(v, t) < 0
+  if (op === '~')
+    // ~1.2.3 → >=1.2.3 <1.3.0
+    return v[0] === t[0] && v[1] === t[1] && (v[2] ?? 0) >= (t[2] ?? 0)
+  if (op === '^') {
+    // ^1.2.3 → >=1.2.3 <2.0.0
+    // ^0.2.3 → >=0.2.3 <0.3.0 (npm semantics: zero major pins minor)
+    // ^0.0.3 → =0.0.3 (zero major+minor pins patch)
+    if (t[0] === 0 && t[1] === 0)
+      return cmp(v, t) === 0
+    if (t[0] === 0)
+      return v[0] === 0 && v[1] === t[1] && (v[2] ?? 0) >= (t[2] ?? 0)
+    return v[0] === t[0] && cmp(v, t) >= 0
+  }
+  return false
+}
+
+/**
  * Install a system package using the pantry TS installer SDK.
  * Works cross-platform (macOS, Linux, Windows) using Node.js APIs.
  * Supports: ziglang.org, bun.sh, nodejs.org (and all 1700+ aliases from ts-pantry)
  *
  * Version resolution precedence: explicit `@x.y.z` in spec > pantry.lock pin
- * > deps file spec (handled by caller) > latest. Semver ranges (`^`, `~`, etc.)
- * and `latest`/`*`/empty are passed through to `installPackage`, which resolves
- * them against the package's known-version list.
+ * *if it satisfies the spec* > deps file spec > latest. Semver ranges (`^`,
+ * `~`, etc.) and `latest`/`*`/empty are passed through to `installPackage`,
+ * which resolves them against the package's known-version list.
+ *
+ * A lock pin that doesn't satisfy the declared spec (e.g. deps bumped from
+ * ^1.3.11 to ^1.3.13 while lockfile still pins 1.3.11) is treated as stale
+ * and ignored — we log a warning so it's visible in CI and resolve the spec
+ * normally. Writing back to pantry.lock from inside the action isn't safe in
+ * CI (immutable checkout), so the user needs to re-run `pantry install`
+ * locally to refresh the lock.
  */
 async function installSystemPackage(spec: string, pantryDir: string, lockedVersions: Map<string, string>): Promise<void> {
   // Import from the pantry TS installer SDK
@@ -184,12 +236,25 @@ async function installSystemPackage(spec: string, pantryDir: string, lockedVersi
     return
   }
 
-  // Prefer a lockfile-pinned concrete version over any semver range from the
-  // deps file — this keeps CI reproducible and avoids colliding with the
-  // follow-up `pantry install --no-save` that also reads the lockfile.
   const pinned = lockedVersions.get(domain)
-  const version = pinned || rawVersion || 'latest'
-  core.info(`Installing ${domain}@${version} via pantry SDK${pinned ? ' (from pantry.lock)' : ''}`)
+  let version: string
+  let source: string
+  if (pinned && versionSatisfiesSpec(pinned, rawVersion)) {
+    version = pinned
+    source = ' (from pantry.lock)'
+  }
+  else {
+    if (pinned && rawVersion) {
+      core.warning(
+        `${domain}: pantry.lock pins ${pinned} but deps spec is ${rawVersion} — `
+        + `lockfile is stale, resolving spec instead. Run \`pantry install\` locally to refresh.`,
+      )
+    }
+    version = rawVersion || 'latest'
+    source = rawVersion ? ' (from deps spec)' : ' (defaulted to latest)'
+  }
+
+  core.info(`Installing ${domain}@${version} via pantry SDK${source}`)
   // `installPackage` handles "latest", "*", empty, semver ranges, and concrete
   // versions — don't pre-resolve here or semver ranges get flattened to latest.
   await installPackage(domain, version, { installDir: pantryDir, quiet: true })
