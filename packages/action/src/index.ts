@@ -627,6 +627,16 @@ export async function run(): Promise<void> {
     // packages, so the action stays in lockstep with `pantry install`.
     const lockedVersions = readLockedVersions()
 
+    // Put `pantry/.bin` (and `~/.pantry/bin`) on PATH *before* any install
+    // branch runs. `core.addPath` mutates `process.env.PATH` in-process in
+    // addition to writing GITHUB_PATH, so `pantry install --no-save` — which
+    // runs inside this step and may shell out to bun/zig/node installed by
+    // the SDK moments earlier — can find them. Calling this after the install
+    // branch (as it used to be) meant the child pantry couldn't see bun yet,
+    // even though the final workflow step could.
+    core.addPath(pantryBinDir)
+    core.addPath(path.join(homeDir, '.pantry', 'bin'))
+
     // Even on cache hit, verify critical deps exist and install if missing.
     // A stale cache may lack system binaries (zig, bun) OR workspace source deps
     // (e.g. pantry/zig-cli/src/root.zig) needed by `zig build`. Validate both.
@@ -737,10 +747,9 @@ export async function run(): Promise<void> {
       catch { /* .bin dir may not exist yet */ }
     }
 
-    // ── Configure PATH ──
-    core.addPath(pantryBinDir)
-    core.addPath(path.join(homeDir, '.pantry', 'bin'))
-
+    // ── Configure PATH for zig install directories ──
+    // (pantry/.bin and ~/.pantry/bin were added earlier so `pantry install`
+    // could already see them; here we only handle zig's versioned layout.)
     // Also add any zig install directories to PATH (zig is installed into
     // pantry/zig/<version>/ or ~/.pantry/global/packages/ziglang.org/v<version>/)
     const zigDirs = [
