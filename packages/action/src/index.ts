@@ -165,25 +165,52 @@ function getBinName(dep: string): string {
  * Install a system package using the pantry TS installer SDK.
  * Works cross-platform (macOS, Linux, Windows) using Node.js APIs.
  * Supports: ziglang.org, bun.sh, nodejs.org (and all 1700+ aliases from ts-pantry)
+ *
+ * Version resolution precedence: explicit `@x.y.z` in spec > pantry.lock pin
+ * > deps file spec (handled by caller) > latest. Semver ranges (`^`, `~`, etc.)
+ * and `latest`/`*`/empty are passed through to `installPackage`, which resolves
+ * them against the package's known-version list.
  */
-async function installSystemPackage(spec: string, pantryDir: string): Promise<void> {
+async function installSystemPackage(spec: string, pantryDir: string, lockedVersions: Map<string, string>): Promise<void> {
   // Import from the pantry TS installer SDK
   const installer = await import('../../ts-pantry/src/installer')
 
-  const { installPackage, isSupported, resolveLatestVersion } = installer
+  const { installPackage, isSupported } = installer
 
-  const [rawName, rawVersion = ''] = spec.includes('@') ? spec.split('@', 2) : [spec, 'latest']
+  const [rawName, rawVersion = ''] = spec.includes('@') ? spec.split('@', 2) : [spec, '']
   const domain = resolvePackageDomain(rawName)
   if (!isSupported(domain)) {
     core.warning(`${rawName} (resolved to ${domain}): not supported by TS installer SDK, skipping`)
     return
   }
 
-  // Resolve wildcards, "latest", empty, and semver ranges to concrete versions
-  const needsResolve = !rawVersion || rawVersion === 'latest' || rawVersion === '*' || /^[\^~>=<]/.test(rawVersion)
-  const version = needsResolve ? await resolveLatestVersion(domain) : rawVersion
-  core.info(`Installing ${domain}@${version} via pantry SDK`)
+  // Prefer a lockfile-pinned concrete version over any semver range from the
+  // deps file — this keeps CI reproducible and avoids colliding with the
+  // follow-up `pantry install --no-save` that also reads the lockfile.
+  const pinned = lockedVersions.get(domain)
+  const version = pinned || rawVersion || 'latest'
+  core.info(`Installing ${domain}@${version} via pantry SDK${pinned ? ' (from pantry.lock)' : ''}`)
+  // `installPackage` handles "latest", "*", empty, semver ranges, and concrete
+  // versions — don't pre-resolve here or semver ranges get flattened to latest.
   await installPackage(domain, version, { installDir: pantryDir, quiet: true })
+}
+
+/** Parse pantry.lock and return a map of `domain` → concrete `version`. */
+function readLockedVersions(): Map<string, string> {
+  const locked = new Map<string, string>()
+  if (!fs.existsSync('pantry.lock')) return locked
+  try {
+    const parsed = JSON.parse(fs.readFileSync('pantry.lock', 'utf-8'))
+    const pkgs = parsed?.packages || {}
+    for (const entry of Object.values(pkgs) as Array<{ name?: string, version?: string }>) {
+      if (entry?.name && entry?.version)
+        locked.set(entry.name, entry.version)
+    }
+  }
+  catch {
+    // lockfile unreadable — fall through, caller uses spec version
+  }
+  return locked
 }
 
 /** Extract system dependency names from the project's deps file.
@@ -211,14 +238,26 @@ function extractSystemDeps(): string[] {
       const deps: string[] = []
       let inDeps = false
       for (const line of content.split('\n')) {
+        // Skip comments/blank lines without flipping state
+        if (!line.trim() || line.trim().startsWith('#')) continue
         // Match top-level `dependencies:` key (not indented)
         if (/^dependencies:\s*$/.test(line)) {
           inDeps = true
           continue
         }
         if (inDeps && /^\s+\S/.test(line)) {
-          const name = line.trim().split(':')[0].trim()
-          if (name) deps.push(name)
+          // Capture `  name: version` (or `  name:` with no version).
+          // Strip surrounding quotes from the version since YAML tolerates
+          // both `bun.sh: "^1.3.11"` and `bun.sh: ^1.3.11`.
+          const colon = line.indexOf(':')
+          if (colon === -1) {
+            const name = line.trim()
+            if (name) deps.push(name)
+            continue
+          }
+          const name = line.slice(0, colon).trim()
+          const version = line.slice(colon + 1).trim().replace(/^["']|["']$/g, '')
+          if (name) deps.push(version ? `${name}@${version}` : name)
         }
         else if (inDeps && /^\S/.test(line)) {
           inDeps = false
@@ -583,6 +622,11 @@ export async function run(): Promise<void> {
       // cache miss or unavailable
     }
 
+    // Lockfile-pinned versions (map of domain → concrete version). Consulted
+    // before falling back to the deps file / "latest" when installing system
+    // packages, so the action stays in lockstep with `pantry install`.
+    const lockedVersions = readLockedVersions()
+
     // Even on cache hit, verify critical deps exist and install if missing.
     // A stale cache may lack system binaries (zig, bun) OR workspace source deps
     // (e.g. pantry/zig-cli/src/root.zig) needed by `zig build`. Validate both.
@@ -599,7 +643,7 @@ export async function run(): Promise<void> {
         core.info(`Cache hit but missing system deps: ${missingSystem.join(', ')} — installing`)
         for (const dep of missingSystem) {
           try {
-            await installSystemPackage(dep, pantryDir)
+            await installSystemPackage(dep, pantryDir, lockedVersions)
           }
           catch {
             core.warning(`Failed to install ${dep}`)
@@ -637,7 +681,7 @@ export async function run(): Promise<void> {
         core.startGroup(`Installing system packages: ${systemDeps.join(', ')}`)
         // Use the pantry TS installer SDK — works cross-platform via Node.js APIs
         const results = await Promise.allSettled(
-          systemDeps.map(dep => installSystemPackage(dep, pantryDir))
+          systemDeps.map(dep => installSystemPackage(dep, pantryDir, lockedVersions))
         )
         for (let i = 0; i < results.length; i++) {
           if (results[i].status === 'rejected') {
