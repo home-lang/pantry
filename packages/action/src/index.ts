@@ -876,15 +876,17 @@ export async function run(): Promise<void> {
  * - "npm": runs `pantry publish --npm --access public`
  */
 async function publishPackage(type: string, registryUrl: string, cwd: string): Promise<void> {
-  const token = process.env.PANTRY_TOKEN || process.env.PANTRY_REGISTRY_TOKEN || ''
-  if (!token) {
-    throw new Error('PANTRY_TOKEN environment variable is required for publishing')
-  }
-
   if (type === 'zig') {
+    const token = process.env.PANTRY_TOKEN || process.env.PANTRY_REGISTRY_TOKEN || ''
+    if (!token) {
+      throw new Error('PANTRY_TOKEN environment variable is required for publishing to the pantry registry')
+    }
     await publishZigPackage(registryUrl, token, cwd)
   }
   else if (type === 'npm') {
+    if (!process.env.NPM_TOKEN && !process.env.NODE_AUTH_TOKEN) {
+      core.warning('NPM_TOKEN is not set — pantry will fall back to OIDC trusted publishing.')
+    }
     core.startGroup('Publishing to npm via pantry')
     await exec.exec('pantry', ['publish', '--npm', '--access', 'public'])
     core.endGroup()
