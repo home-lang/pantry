@@ -1,3 +1,27 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.22...v0.9.23)
+
+### 🐛 Bug Fixes
+
+- **publish**: std.time.sleep + bump zig dev to .131 ([a835cd7](https://github.com/home-lang/pantry/commit/a835cd7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.23 ([f8d407d](https://github.com/home-lang/pantry/commit/f8d407d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.22...HEAD)
+
+### 🐛 Bug Fixes
+
+- **publish**: std.time.sleep + bump zig dev to .131 ([a835cd7](https://github.com/home-lang/pantry/commit/a835cd7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.21...v0.9.22)
 
 ### 🐛 Bug Fixes
