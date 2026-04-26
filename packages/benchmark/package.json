@@ -1,7 +1,7 @@
 {
   "name": "@pantry/benchmark",
   "type": "module",
-  "version": "0.9.23",
+  "version": "0.9.24",
   "private": true,
   "description": "Performance benchmarks for pantry",
   "scripts": {
