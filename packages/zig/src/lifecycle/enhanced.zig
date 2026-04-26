@@ -195,7 +195,7 @@ fn waitWithTimeout(child: *std.process.Child, timeout_ms: u64) !WaitResult {
         const term = io_helper.wait(child) catch |err| {
             if (err == error.WouldBlock) {
                 // Still running, sleep briefly
-                std.time.sleep(100 * std.time.ns_per_ms);
+                io_helper.sleepMs(100);
                 continue;
             }
             return err;
@@ -220,7 +220,7 @@ pub fn executeScriptWithRetry(
             if (options.base.verbose) {
                 style.print("  Retry attempt {d}/{d}\n", .{ attempts, options.retry_attempts });
             }
-            std.time.sleep(options.retry_delay_ms * std.time.ns_per_ms);
+            io_helper.sleepMs(options.retry_delay_ms);
         }
 
         const result = try executeScriptWithTimeout(

@@ -734,7 +734,7 @@ pub fn downloadFileWithRetry(allocator: std.mem.Allocator, url: []const u8, dest
 
         if (attempt > 1) {
             style.printRetry(attempt - 1, options.max_retries - 1, delay_ms);
-            std.time.sleep(delay_ms * std.time.ns_per_ms);
+            io_helper.sleepMs(delay_ms);
         }
 
         downloadFile(allocator, url, dest_path) catch |err| {

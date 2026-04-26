@@ -98,6 +98,14 @@ pub fn getIo() Io {
 /// In test mode this returns std.testing.io, otherwise the global io_instance
 pub const io: Io = if (@import("builtin").is_test) std.testing.io else io_instance.io();
 
+/// Sleep for the given milliseconds. Wraps the new std.Io sleep API
+/// (std.Thread.sleep / std.time.sleep were removed in Zig 0.16+).
+pub fn sleepMs(ms: u64) void {
+    const ns: i96 = @intCast(@as(u128, ms) * @as(u128, std.time.ns_per_ms));
+    const duration: Io.Duration = .{ .nanoseconds = ns };
+    getIo().sleep(duration, .awake) catch {};
+}
+
 /// Get the current working directory as an Io.Dir
 pub fn cwd() Dir {
     return Dir.cwd();
