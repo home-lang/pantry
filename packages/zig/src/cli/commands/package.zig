@@ -892,6 +892,24 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
     return publishSingleToNpm(allocator, cwd, config_path, options);
 }
 
+/// Whether an error from the registry HTTP client should be treated as
+/// transient — caller should back off and retry rather than failing the
+/// publish. Covers the socket-level write failures we've observed when
+/// publishing 200+ packages back-to-back to registry.npmjs.org.
+fn isTransientNetworkError(err: anyerror) bool {
+    return switch (err) {
+        error.WriteFailed,
+        error.ConnectionResetByPeer,
+        error.ConnectionTimedOut,
+        error.EndOfStream,
+        error.NetworkUnreachable,
+        error.TemporaryNameServerFailure,
+        error.UnknownHostName,
+        => true,
+        else => false,
+    };
+}
+
 /// Publish a single package directory to npm.
 fn publishSingleToNpm(
     allocator: std.mem.Allocator,
@@ -1131,12 +1149,33 @@ fn publishSingleToNpm(
             tarball_info.path,
             auth_token,
         ) catch |err| {
+            // Transient network errors (WriteFailed, ConnectionResetByPeer,
+            // EndOfStream, etc.) — treat like a retryable HTTP failure and
+            // back off exponentially before reattempting. Without this we
+            // give up on a single flaky socket and the package never lands.
+            if (publish_attempt < max_publish_attempts and isTransientNetworkError(err)) {
+                const backoff_ms: u64 = @as(u64, 5_000) << @as(u6, @intCast(publish_attempt - 1));
+                style.print(
+                    "  {s}⚠{s} Network error: {any} (attempt {d}/{d}); retrying in {d}s...\n",
+                    .{ style.yellow, style.reset, err, publish_attempt, max_publish_attempts, backoff_ms / 1000 },
+                );
+                io_helper.sleepMs(backoff_ms);
+                continue;
+            }
+            // Final / non-transient failure — surface as a rate-limited-ish
+            // result so the monorepo loop applies the cooldown (the npm
+            // endpoint may be unhealthy more broadly).
             const err_msg = try std.fmt.allocPrint(
                 allocator,
                 "Error: Failed to publish package: {any}",
                 .{err},
             );
-            return CommandResult.err(allocator, err_msg);
+            return .{
+                .exit_code = 1,
+                .message = err_msg,
+                .rate_limited = isTransientNetworkError(err),
+                .retry_after_seconds = 0,
+            };
         };
         if (r.success or !r.isRetryable() or publish_attempt >= max_publish_attempts) {
             break :blk r;
