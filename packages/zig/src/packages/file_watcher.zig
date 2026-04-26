@@ -104,7 +104,7 @@ pub const FileWatcher = struct {
                 self.last_change_time.store(now, .release);
 
                 // Wait for debounce period
-                std.Thread.sleep(self.options.debounce_ms * std.time.ns_per_ms);
+                std.time.sleep(self.options.debounce_ms * std.time.ns_per_ms);
 
                 // Check if more changes occurred during debounce
                 const last_change = self.last_change_time.load(.acquire);
@@ -117,7 +117,7 @@ pub const FileWatcher = struct {
             }
 
             // Sleep for poll interval
-            std.Thread.sleep(self.options.poll_interval_ms * std.time.ns_per_ms);
+            std.time.sleep(self.options.poll_interval_ms * std.time.ns_per_ms);
         }
     }
 

@@ -838,7 +838,7 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
             // Smooth out request rate so Cloudflare in front of registry.npmjs.org
             // doesn't 429 us mid-loop. 750ms gives ~80 publishes/min, well under
             // the burst threshold (~10 publishes per 30s observed in 1015 errors).
-            std.Thread.sleep(750 * std.time.ns_per_ms);
+            std.time.sleep(750 * std.time.ns_per_ms);
         }
 
         style.print("\nPublished {d}/{d} packages", .{ succeeded, succeeded + failed });
@@ -1123,7 +1123,7 @@ fn publishSingleToNpm(
             .{ style.yellow, style.reset, r.status_code, publish_attempt, max_publish_attempts, wait_ms / 1000 },
         );
         mut_r.deinit(allocator);
-        std.Thread.sleep(@as(u64, wait_ms) * std.time.ns_per_ms);
+        std.time.sleep(@as(u64, wait_ms) * std.time.ns_per_ms);
     };
     defer {
         var mut_response = response;
@@ -1440,7 +1440,7 @@ fn attemptOIDCPublish(
             .{ style.yellow, style.reset, r.status_code, oidc_attempt, max_oidc_attempts, wait_ms / 1000 },
         );
         mut_r.deinit(allocator);
-        std.Thread.sleep(@as(u64, wait_ms) * std.time.ns_per_ms);
+        std.time.sleep(@as(u64, wait_ms) * std.time.ns_per_ms);
     };
     defer {
         var mut_response = response;
@@ -1563,7 +1563,7 @@ fn attemptOIDCPublishUnverified(
             .{ style.yellow, style.reset, r.status_code, oidc_unverified_attempt, max_oidc_unverified_attempts, wait_ms / 1000 },
         );
         mut_r.deinit(allocator);
-        std.Thread.sleep(@as(u64, wait_ms) * std.time.ns_per_ms);
+        std.time.sleep(@as(u64, wait_ms) * std.time.ns_per_ms);
     };
     defer {
         var mut_response = response;
