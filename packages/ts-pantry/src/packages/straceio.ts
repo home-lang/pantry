@@ -61,6 +61,7 @@ export const straceioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '7.0',
     '6.19',
     '6.18',
     '6.17',
