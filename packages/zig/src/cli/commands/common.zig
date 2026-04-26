@@ -30,6 +30,11 @@ pub const CommandResult = struct {
     /// the 429 response body). The loop honors this when present, with a
     /// floor so we always wait at least a few seconds.
     retry_after_seconds: u32 = 0,
+    /// Internal signal — publishSingleToNpm sets this when the target
+    /// (name@version) is already on the registry, so the monorepo publish
+    /// loop can count it separately and skip the inter-package throttle
+    /// (we never hit the network for the actual publish).
+    skipped: bool = false,
 
     pub fn deinit(self: *CommandResult, allocator: std.mem.Allocator) void {
         if (self.message) |msg| {

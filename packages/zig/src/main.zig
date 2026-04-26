@@ -683,6 +683,7 @@ fn publishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const skip_val = ctx.getOption("skip");
     const github_release = ctx.hasOption("github-release");
     const release_files = ctx.getOption("files");
+    const force_republish = ctx.hasOption("force-republish");
 
     const options = lib.commands.PublishOptions{
         .access = access_val,
@@ -691,6 +692,7 @@ fn publishAction(ctx: *cli.BaseCommand.ParseContext) !void {
         .skip = skip_val,
         .github_release = github_release,
         .release_files = release_files,
+        .skip_existing = !force_republish,
     };
 
     const result = try lib.commands.publishCommand(allocator, &[_][]const u8{}, options);
@@ -826,6 +828,7 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const skip_val = ctx.getOption("skip");
     const github_release = ctx.hasOption("github-release");
     const release_files = ctx.getOption("files");
+    const force_republish = ctx.hasOption("force-republish");
 
     // Route --npm or --registry npm to the npm publish flow
     if (use_npm or std.mem.eql(u8, registry, "npm")) {
@@ -836,6 +839,7 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
             .skip = skip_val,
             .github_release = github_release,
             .release_files = release_files,
+            .skip_existing = !force_republish,
         };
 
         const result = try lib.commands.publishCommand(allocator, &[_][]const u8{}, npm_options);
@@ -2728,6 +2732,9 @@ pub fn main() !void {
     const npm_files_opt = cli.Option.init("files", "files", "Comma-separated file paths to attach to the GitHub release", .string);
     _ = try npm_publish_cmd.addOption(npm_files_opt);
 
+    const npm_force_republish_opt = cli.Option.init("force-republish", "force-republish", "Re-publish even if (name@version) is already on the registry (default: skip)", .bool);
+    _ = try npm_publish_cmd.addOption(npm_force_republish_opt);
+
     _ = npm_publish_cmd.setAction(publishAction);
     _ = try root.addCommand(npm_publish_cmd);
 
@@ -3473,6 +3480,9 @@ pub fn main() !void {
 
     const pub_files_opt = cli.Option.init("files", "files", "Comma-separated file paths to attach to the GitHub release", .string);
     _ = try publish_cmd.addOption(pub_files_opt);
+
+    const pub_force_republish_opt = cli.Option.init("force-republish", "force-republish", "Re-publish even if (name@version) is already on the registry (default: skip)", .bool);
+    _ = try publish_cmd.addOption(pub_force_republish_opt);
 
     _ = publish_cmd.setAction(registryPublishAction);
     _ = try root.addCommand(publish_cmd);

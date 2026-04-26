@@ -845,6 +845,52 @@ pub const RegistryClient = struct {
         }
     }
 
+    /// Check whether a specific (name, version) is already published.
+    /// Returns true if the version exists on the registry, false if 404.
+    /// Network errors propagate up — callers decide whether to skip the
+    /// pre-check or fail. Designed for monorepo publishes where most
+    /// packages are unchanged release-to-release; skipping their re-publish
+    /// avoids both wasted requests and Cloudflare 429 rate-limiting.
+    pub fn versionExists(
+        self: *RegistryClient,
+        package_name: []const u8,
+        version: []const u8,
+    ) !bool {
+        const encoded_name = try urlEncodePackageName(self.allocator, package_name);
+        defer self.allocator.free(encoded_name);
+
+        const url = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/{s}/{s}",
+            .{ self.registry_url, encoded_name, version },
+        );
+        defer self.allocator.free(url);
+
+        const uri = try std.Uri.parse(url);
+
+        var req = try self.http_client.request(.GET, uri, .{});
+        defer req.deinit();
+
+        try req.sendBodiless();
+
+        var redirect_buffer: [4096]u8 = undefined;
+        var response = try req.receiveHead(&redirect_buffer);
+
+        // Drain body so the underlying connection can be reused for the
+        // next call. We don't care about the contents — only the status.
+        const body_reader = response.reader(&.{});
+        if (body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(64 * 1024))) |raw_body| {
+            self.allocator.free(raw_body);
+        } else |_| {}
+
+        const status = @intFromEnum(response.head.status);
+        if (status == 200) return true;
+        if (status == 404) return false;
+        // Treat other statuses as "unknown" — caller will fall through to a
+        // real publish attempt rather than incorrectly skipping.
+        return error.RegistryError;
+    }
+
     // Private helper methods
 
     fn createPackageMetadata(

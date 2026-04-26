@@ -725,6 +725,12 @@ pub const PublishOptions = struct {
     skip: ?[]const u8 = null, // Comma-separated list of package directory names to skip
     github_release: bool = false, // Create a GitHub release after publishing
     release_files: ?[]const u8 = null, // Comma-separated file paths to attach to release
+    /// Skip publishing a package whose target (name@version) is already on
+    /// the registry. Massive speedup for monorepo releases that bump every
+    /// package's version uniformly — most icon/leaf packages are unchanged
+    /// and re-publishing them just wastes time and risks 429s. Currently
+    /// honored for npm only (`--npm`).
+    skip_existing: bool = true,
 };
 
 /// Publish a package to the registry (npm).
@@ -781,6 +787,7 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
 
         var failed: usize = 0;
         var succeeded: usize = 0;
+        var skipped: usize = 0;
 
         for (pkgs) |pkg| {
             style.print("\nPublishing {s}...\n", .{pkg.name});
@@ -824,9 +831,15 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
             // inter-package cooldown before processing the result data.
             var rate_limited = false;
             var server_retry_after_ms: u64 = 0;
+            var was_skipped = false;
             if (result) |r| {
                 if (r.exit_code == 0) {
-                    succeeded += 1;
+                    if (r.skipped) {
+                        skipped += 1;
+                        was_skipped = true;
+                    } else {
+                        succeeded += 1;
+                    }
                 } else {
                     failed += 1;
                     if (r.message) |msg| style.print("  Error: {s}\n", .{msg});
@@ -855,6 +868,11 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
             // cooldown stays sticky after each 429, so going straight into
             // the next package guarantees more 429s until the cooldown
             // clears.
+            //
+            // Skipped packages cost us only one cheap GET (no PUT, no
+            // tarball upload) so we don't need the publish throttle at
+            // all — small fixed delay is enough to be polite to the
+            // registry without serializing the no-op path.
             if (rate_limited) {
                 const cooldown_ms: u64 = @max(server_retry_after_ms, @as(u64, 60_000));
                 style.print(
@@ -862,12 +880,17 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
                     .{ style.yellow, style.reset, cooldown_ms / 1000 },
                 );
                 io_helper.sleepMs(cooldown_ms);
+            } else if (was_skipped) {
+                io_helper.sleepMs(50);
             } else {
                 io_helper.sleepMs(2000);
             }
         }
 
-        style.print("\nPublished {d}/{d} packages", .{ succeeded, succeeded + failed });
+        style.print("\nPublished {d}/{d} packages", .{ succeeded, pkgs.len });
+        if (skipped > 0) {
+            style.print(" ({d} skipped — already on registry)", .{skipped});
+        }
         if (failed > 0) {
             style.print(" ({d} failed)", .{failed});
         }
@@ -953,6 +976,29 @@ fn publishSingleToNpm(
         pc.registry orelse options.registry // Use publishConfig if available
     else
         options.registry; // Fall back to default
+
+    // Skip-if-already-published pre-check.
+    //
+    // Workspace releases bump every package's version even when the package
+    // itself didn't change. Without this check, every release republishes
+    // ~all N packages serially — burning ~1h of CI time and tripping
+    // Cloudflare's 1015 rate-limit on registry.npmjs.org. A cheap GET to
+    // `/{pkg}/{version}` lets us short-circuit on packages whose target
+    // version is already on the registry.
+    //
+    // Off by default for non-npm registries (we only know the npm response
+    // semantics — Pantry's own registry uses a different shape). Network
+    // failures here fall through to a real publish attempt; we'd rather
+    // double-publish-attempt than incorrectly skip.
+    if (options.skip_existing) blk: {
+        var precheck_client = registry.RegistryClient.init(allocator, registry_url) catch break :blk;
+        defer precheck_client.deinit();
+        const exists = precheck_client.versionExists(metadata.name, metadata.version) catch break :blk;
+        if (exists) {
+            style.print("\n{s}↷{s} {s}@{s} already published — skipping\n", .{ style.dim, style.reset, metadata.name, metadata.version });
+            return .{ .exit_code = 0, .skipped = true };
+        }
+    }
 
     // Parse package.json for lifecycle scripts
     const config_content = io_helper.readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch null;
