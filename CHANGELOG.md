@@ -1,3 +1,34 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.24...v0.9.25)
+
+### 🐛 Bug Fixes
+
+- **publish**: honor retry_after, raise attempt cap, post-429 cooldown ([577d4ca](https://github.com/home-lang/pantry/commit/577d4ca)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.25 ([0247524](https://github.com/home-lang/pantry/commit/0247524)) _(by Chris <chrisbreuer93@gmail.com>)_
+- declare zig dep in deps.yaml so the action auto-installs it ([92d5302](https://github.com/home-lang/pantry/commit/92d5302)) _(by Chris <chrisbreuer93@gmail.com>)_
+- install zig via pantry's own action instead of mlugg/setup-zig ([456d31d](https://github.com/home-lang/pantry/commit/456d31d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.24...HEAD)
+
+### 🐛 Bug Fixes
+
+- **publish**: honor retry_after, raise attempt cap, post-429 cooldown ([577d4ca](https://github.com/home-lang/pantry/commit/577d4ca)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- declare zig dep in deps.yaml so the action auto-installs it ([92d5302](https://github.com/home-lang/pantry/commit/92d5302)) _(by Chris <chrisbreuer93@gmail.com>)_
+- install zig via pantry's own action instead of mlugg/setup-zig ([456d31d](https://github.com/home-lang/pantry/commit/456d31d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.23...v0.9.24)
 
 ### 🐛 Bug Fixes

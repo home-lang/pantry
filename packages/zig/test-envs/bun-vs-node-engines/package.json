@@ -1,6 +1,6 @@
 {
   "name": "bun-vs-node-engines",
-  "version": "0.9.24",
+  "version": "0.9.25",
   "packageManager": "bun",
   "description": "Test environment for Bun package manager with conflicting Node.js engines",
   "engines": {
