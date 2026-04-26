@@ -2348,6 +2348,85 @@ fn autoIncludeEntry(allocator: std.mem.Allocator, package_dir: []const u8, stagi
     // Already exists in staging (copied from files array) — skip
 }
 
+/// Walk up from `start_dir` looking for a package.json that declares a
+/// `workspaces` field. Returns the directory containing that package.json
+/// (caller-owned), or null if none found before hitting the filesystem root.
+fn findWorkspaceRoot(allocator: std.mem.Allocator, start_dir: []const u8) ?[]const u8 {
+    var current = std.fs.path.dirname(start_dir) orelse return null;
+    var depth: u8 = 0;
+    while (depth < 12) : (depth += 1) {
+        const pkg_path = std.fs.path.join(allocator, &[_][]const u8{ current, "package.json" }) catch return null;
+        defer allocator.free(pkg_path);
+
+        const content = io_helper.readFileAlloc(allocator, pkg_path, 1024 * 1024) catch null;
+        if (content) |c| {
+            defer allocator.free(c);
+            // Cheap text check first to avoid parsing every package.json on the
+            // walk; only parse when we see the workspaces key at all.
+            if (std.mem.indexOf(u8, c, "\"workspaces\"") != null) {
+                const parsed = std.json.parseFromSlice(std.json.Value, allocator, c, .{}) catch break;
+                defer parsed.deinit();
+                if (parsed.value == .object and parsed.value.object.get("workspaces") != null) {
+                    return allocator.dupe(u8, current) catch null;
+                }
+            }
+        }
+
+        const parent = std.fs.path.dirname(current) orelse break;
+        if (std.mem.eql(u8, parent, current)) break;
+        current = parent;
+    }
+    return null;
+}
+
+/// Recursively scan `root` for a package.json with `name == dep_name`, and
+/// return its `version` string (caller-owned) or null if not found. Skips
+/// node_modules and dotfiles to avoid traversing the dep graph.
+fn findSiblingVersion(allocator: std.mem.Allocator, root: []const u8, dep_name: []const u8) !?[]const u8 {
+    var dir = io_helper.openDirForIteration(root) catch return null;
+    defer dir.close();
+
+    var iter = dir.iterate();
+    while (iter.next() catch null) |entry| {
+        if (entry.kind != .directory) continue;
+        if (std.mem.startsWith(u8, entry.name, ".")) continue;
+        if (std.mem.eql(u8, entry.name, "node_modules")) continue;
+        if (std.mem.eql(u8, entry.name, "dist")) continue;
+        if (std.mem.eql(u8, entry.name, "build")) continue;
+
+        const sub_path = std.fs.path.join(allocator, &[_][]const u8{ root, entry.name }) catch continue;
+        defer allocator.free(sub_path);
+
+        // Try this directory's package.json
+        const pkg_path = std.fs.path.join(allocator, &[_][]const u8{ sub_path, "package.json" }) catch continue;
+        defer allocator.free(pkg_path);
+
+        const sib_content = io_helper.readFileAlloc(allocator, pkg_path, 64 * 1024) catch null;
+        if (sib_content) |sc| {
+            defer allocator.free(sc);
+            const sib_parsed = std.json.parseFromSlice(std.json.Value, allocator, sc, .{}) catch null;
+            if (sib_parsed) |sp| {
+                defer sp.deinit();
+                if (sp.value == .object) {
+                    const name_val = sp.value.object.get("name");
+                    const version_val = sp.value.object.get("version");
+                    if (name_val != null and name_val.? == .string and
+                        version_val != null and version_val.? == .string and
+                        std.mem.eql(u8, name_val.?.string, dep_name))
+                    {
+                        return try allocator.dupe(u8, version_val.?.string);
+                    }
+                }
+            }
+        }
+
+        // Recurse into subdirectories
+        if (try findSiblingVersion(allocator, sub_path, dep_name)) |v| return v;
+    }
+
+    return null;
+}
+
 /// Resolve workspace: protocol dependencies in package.json content.
 /// Returns a new allocation with resolved versions, or the original content if nothing to resolve.
 /// Caller must free the result if it differs from the input (check ptr equality).
@@ -2355,7 +2434,17 @@ fn resolveWorkspaceProtocol(allocator: std.mem.Allocator, content: []const u8, p
     // Quick check: if no workspace: refs, return original content
     if (std.mem.indexOf(u8, content, "\"workspace:") == null) return content;
 
-    const packages_parent = std.fs.path.dirname(package_dir) orelse return content;
+    // Find the workspace root by walking up from package_dir until we hit a
+    // package.json with a `workspaces` field. Falls back to the immediate
+    // parent directory if no workspace root is found, preserving the old
+    // behavior for non-workspace monorepo layouts.
+    //
+    // Without this, nested package layouts (e.g. `packages/collections/foo`
+    // depending on `packages/bar`) silently ship `workspace:*` to npm —
+    // because the immediate parent dir scan only sees `packages/collections/`,
+    // not the sibling `packages/bar/`.
+    const workspace_root = findWorkspaceRoot(allocator, package_dir) orelse std.fs.path.dirname(package_dir) orelse return content;
+    defer if (workspace_root.ptr != package_dir.ptr) allocator.free(workspace_root);
 
     // Parse the package.json properly with std.json
     const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch return content;
@@ -2382,36 +2471,23 @@ fn resolveWorkspaceProtocol(allocator: std.mem.Allocator, content: []const u8, p
             if (!std.mem.startsWith(u8, dep_ver.string, "workspace:")) continue;
             const ws_spec = dep_ver.string["workspace:".len..];
 
-            // Look up the actual version from sibling package
-            var dir_iter = io_helper.openDirForIteration(packages_parent) catch continue;
-            defer dir_iter.close();
-            var iter = dir_iter.iterate();
-            while (iter.next() catch null) |entry| {
-                if (entry.kind != .directory) continue;
-                const sibling_path = std.fs.path.join(allocator, &[_][]const u8{ packages_parent, entry.name, "package.json" }) catch continue;
-                defer allocator.free(sibling_path);
-                const sib_content = io_helper.readFileAlloc(allocator, sibling_path, 64 * 1024) catch continue;
-                defer allocator.free(sib_content);
-                const sib_parsed = std.json.parseFromSlice(std.json.Value, allocator, sib_content, .{}) catch continue;
-                defer sib_parsed.deinit();
-                if (sib_parsed.value != .object) continue;
-                const sib_name = if (sib_parsed.value.object.get("name")) |n| (if (n == .string) n.string else null) else null;
-                const sib_version = if (sib_parsed.value.object.get("version")) |v| (if (v == .string) v.string else null) else null;
-                if (sib_name != null and sib_version != null and std.mem.eql(u8, sib_name.?, dep_name)) {
-                    // Determine version prefix based on workspace spec
-                    const prefix: []const u8 = if (std.mem.eql(u8, ws_spec, "^")) "^" else if (std.mem.eql(u8, ws_spec, "~")) "~" else "";
-                    const resolved_ver = std.fmt.allocPrint(allocator, "{s}{s}", .{ prefix, sib_version.? }) catch continue;
-                    const key_dup = allocator.dupe(u8, dep_name) catch {
-                        allocator.free(resolved_ver);
-                        continue;
-                    };
-                    resolutions.put(key_dup, resolved_ver) catch {
-                        allocator.free(key_dup);
-                        allocator.free(resolved_ver);
-                    };
-                    style.print("  Resolved {s}: workspace:{s} → {s}{s}\n", .{ dep_name, ws_spec, prefix, sib_version.? });
-                    break;
-                }
+            // Look up the actual version from a sibling package — recursively
+            // scan the workspace root so deeply nested layouts resolve too.
+            const found = findSiblingVersion(allocator, workspace_root, dep_name) catch null;
+            if (found) |sib_version| {
+                defer allocator.free(sib_version);
+                // Determine version prefix based on workspace spec
+                const prefix: []const u8 = if (std.mem.eql(u8, ws_spec, "^")) "^" else if (std.mem.eql(u8, ws_spec, "~")) "~" else "";
+                const resolved_ver = std.fmt.allocPrint(allocator, "{s}{s}", .{ prefix, sib_version }) catch continue;
+                const key_dup = allocator.dupe(u8, dep_name) catch {
+                    allocator.free(resolved_ver);
+                    continue;
+                };
+                resolutions.put(key_dup, resolved_ver) catch {
+                    allocator.free(key_dup);
+                    allocator.free(resolved_ver);
+                };
+                style.print("  Resolved {s}: workspace:{s} → {s}{s}\n", .{ dep_name, ws_spec, prefix, sib_version });
             }
         }
     }
