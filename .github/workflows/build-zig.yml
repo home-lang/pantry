@@ -25,10 +25,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup Pantry & install Zig (latest 0.17-dev)
+      - name: Setup Pantry & install deps (zig from deps.yaml)
         uses: ./packages/action
-        with:
-          packages: zig@0.17.0-dev
 
       - name: Clone zig deps
         run: |
