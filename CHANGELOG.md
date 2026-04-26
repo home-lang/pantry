@@ -1,3 +1,27 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.25...v0.9.26)
+
+### 🐛 Bug Fixes
+
+- **publish**: retry transient network errors (WriteFailed et al.) ([93c003c](https://github.com/home-lang/pantry/commit/93c003c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.26 ([876fe4e](https://github.com/home-lang/pantry/commit/876fe4e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.25...HEAD)
+
+### 🐛 Bug Fixes
+
+- **publish**: retry transient network errors (WriteFailed et al.) ([93c003c](https://github.com/home-lang/pantry/commit/93c003c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.24...v0.9.25)
 
 ### 🐛 Bug Fixes
