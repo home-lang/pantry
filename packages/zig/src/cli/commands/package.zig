@@ -834,6 +834,11 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
                 style.print("  Error: {any}\n", .{err});
             }
             style.print("----------------------------------------\n", .{});
+
+            // Smooth out request rate so Cloudflare in front of registry.npmjs.org
+            // doesn't 429 us mid-loop. 750ms gives ~80 publishes/min, well under
+            // the burst threshold (~10 publishes per 30s observed in 1015 errors).
+            std.Thread.sleep(750 * std.time.ns_per_ms);
         }
 
         style.print("\nPublished {d}/{d} packages", .{ succeeded, succeeded + failed });
@@ -1086,18 +1091,39 @@ fn publishSingleToNpm(
     };
     defer allocator.free(auth_token);
 
-    const response = registry_client.publishWithToken(
-        metadata.name,
-        metadata.version,
-        tarball_info.path,
-        auth_token,
-    ) catch |err| {
-        const err_msg = try std.fmt.allocPrint(
-            allocator,
-            "Error: Failed to publish package: {any}",
-            .{err},
+    // Publish with retry-on-rate-limit. Cloudflare in front of registry.npmjs.org
+    // returns 429 on burst publishes (a real risk in monorepo mode publishing
+    // hundreds of packages in a row). Retry transient failures with exponential
+    // backoff: 5s → 10s → 20s → 40s → 80s, then give up. 5xx is treated the same.
+    const max_publish_attempts: u8 = 5;
+    var publish_attempt: u8 = 0;
+    const response = blk: while (true) {
+        publish_attempt += 1;
+        const r = registry_client.publishWithToken(
+            metadata.name,
+            metadata.version,
+            tarball_info.path,
+            auth_token,
+        ) catch |err| {
+            const err_msg = try std.fmt.allocPrint(
+                allocator,
+                "Error: Failed to publish package: {any}",
+                .{err},
+            );
+            return CommandResult.err(allocator, err_msg);
+        };
+        if (r.success or !r.isRetryable() or publish_attempt >= max_publish_attempts) {
+            break :blk r;
+        }
+        // Free the retryable failure response before sleeping + retrying.
+        var mut_r = r;
+        const wait_ms: u64 = @as(u64, 5_000) << @as(u6, @intCast(publish_attempt - 1));
+        style.print(
+            "  {s}⚠{s} Registry returned {d} (attempt {d}/{d}); retrying in {d}s...\n",
+            .{ style.yellow, style.reset, r.status_code, publish_attempt, max_publish_attempts, wait_ms / 1000 },
         );
-        return CommandResult.err(allocator, err_msg);
+        mut_r.deinit(allocator);
+        std.Thread.sleep(@as(u64, wait_ms) * std.time.ns_per_ms);
     };
     defer {
         var mut_response = response;
@@ -1392,14 +1418,30 @@ fn attemptOIDCPublish(
         ) catch null;
     }
 
-    // Publish package with provenance bundle
-    const response = try registry_client.publishWithOIDCAndProvenance(
-        package_name,
-        version,
-        tarball_path,
-        &token,
-        sigstore_bundle,
-    );
+    // Publish package with provenance bundle, retrying on rate-limit / 5xx.
+    const max_oidc_attempts: u8 = 5;
+    var oidc_attempt: u8 = 0;
+    const response = blk: while (true) {
+        oidc_attempt += 1;
+        const r = try registry_client.publishWithOIDCAndProvenance(
+            package_name,
+            version,
+            tarball_path,
+            &token,
+            sigstore_bundle,
+        );
+        if (r.success or !r.isRetryable() or oidc_attempt >= max_oidc_attempts) {
+            break :blk r;
+        }
+        var mut_r = r;
+        const wait_ms: u64 = @as(u64, 5_000) << @as(u6, @intCast(oidc_attempt - 1));
+        style.print(
+            "  {s}⚠{s} Registry returned {d} (attempt {d}/{d}); retrying in {d}s...\n",
+            .{ style.yellow, style.reset, r.status_code, oidc_attempt, max_oidc_attempts, wait_ms / 1000 },
+        );
+        mut_r.deinit(allocator);
+        std.Thread.sleep(@as(u64, wait_ms) * std.time.ns_per_ms);
+    };
     defer {
         var mut_response = response;
         mut_response.deinit(allocator);
@@ -1499,14 +1541,30 @@ fn attemptOIDCPublishUnverified(
         } else |_| {}
     }
 
-    // Publish with provenance - registry will validate token
-    const response = try registry_client.publishWithOIDCAndProvenance(
-        package_name,
-        version,
-        tarball_path,
-        &token,
-        sigstore_bundle,
-    );
+    // Publish with provenance - registry will validate token. Retry on 429/5xx.
+    const max_oidc_unverified_attempts: u8 = 5;
+    var oidc_unverified_attempt: u8 = 0;
+    const response = blk: while (true) {
+        oidc_unverified_attempt += 1;
+        const r = try registry_client.publishWithOIDCAndProvenance(
+            package_name,
+            version,
+            tarball_path,
+            &token,
+            sigstore_bundle,
+        );
+        if (r.success or !r.isRetryable() or oidc_unverified_attempt >= max_oidc_unverified_attempts) {
+            break :blk r;
+        }
+        var mut_r = r;
+        const wait_ms: u64 = @as(u64, 5_000) << @as(u6, @intCast(oidc_unverified_attempt - 1));
+        style.print(
+            "  {s}⚠{s} Registry returned {d} (attempt {d}/{d}); retrying in {d}s...\n",
+            .{ style.yellow, style.reset, r.status_code, oidc_unverified_attempt, max_oidc_unverified_attempts, wait_ms / 1000 },
+        );
+        mut_r.deinit(allocator);
+        std.Thread.sleep(@as(u64, wait_ms) * std.time.ns_per_ms);
+    };
     defer {
         var mut_response = response;
         mut_response.deinit(allocator);
