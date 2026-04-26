@@ -1,3 +1,50 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.26...v0.9.27)
+
+### 🚀 Features
+
+- **publish**: skip packages whose target version is already on the registry ([039a25e](https://github.com/home-lang/pantry/commit/039a25e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **publish**: retry transient network errors (WriteFailed et al.) ([2510c9b](https://github.com/home-lang/pantry/commit/2510c9b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.27 ([0c08984](https://github.com/home-lang/pantry/commit/0c08984)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update strace ([c93fbcc](https://github.com/home-lang/pantry/commit/c93fbcc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update odigos ([0b92b72](https://github.com/home-lang/pantry/commit/0b92b72)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ccache ([a2e7aaf](https://github.com/home-lang/pantry/commit/a2e7aaf)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update Stats ([d5c1205](https://github.com/home-lang/pantry/commit/d5c1205)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- release v0.9.26 ([24f6808](https://github.com/home-lang/pantry/commit/24f6808)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update casdoor ([84c7557](https://github.com/home-lang/pantry/commit/84c7557)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.25...HEAD)
+
+### 🚀 Features
+
+- **publish**: skip packages whose target version is already on the registry ([039a25e](https://github.com/home-lang/pantry/commit/039a25e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **publish**: retry transient network errors (WriteFailed et al.) ([2510c9b](https://github.com/home-lang/pantry/commit/2510c9b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- update strace ([c93fbcc](https://github.com/home-lang/pantry/commit/c93fbcc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update odigos ([0b92b72](https://github.com/home-lang/pantry/commit/0b92b72)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ccache ([a2e7aaf](https://github.com/home-lang/pantry/commit/a2e7aaf)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update Stats ([d5c1205](https://github.com/home-lang/pantry/commit/d5c1205)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- release v0.9.26 ([24f6808](https://github.com/home-lang/pantry/commit/24f6808)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update casdoor ([84c7557](https://github.com/home-lang/pantry/commit/84c7557)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.25...v0.9.26)
 
 ### 🐛 Bug Fixes
