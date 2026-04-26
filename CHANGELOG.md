@@ -1,3 +1,27 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.27...v0.9.28)
+
+### 🐛 Bug Fixes
+
+- **publish**: resolve workspace: deps across nested workspace layouts ([3357ab2](https://github.com/home-lang/pantry/commit/3357ab2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.28 ([6a25d56](https://github.com/home-lang/pantry/commit/6a25d56)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.27...HEAD)
+
+### 🐛 Bug Fixes
+
+- **publish**: resolve workspace: deps across nested workspace layouts ([3357ab2](https://github.com/home-lang/pantry/commit/3357ab2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.26...v0.9.27)
 
 ### 🚀 Features
