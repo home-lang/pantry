@@ -21,6 +21,15 @@ pub const ERROR_NO_PACKAGES = "Error: No packages specified";
 pub const CommandResult = struct {
     exit_code: u8,
     message: ?[]const u8 = null,
+    /// Internal signal — set by publishSingleToNpm when the failure was a
+    /// retryable rate-limit / 5xx (status 408/429/500/502/503/504). The
+    /// monorepo publish loop uses this to extend the inter-package
+    /// throttle so we don't keep hammering an already-limited registry.
+    rate_limited: bool = false,
+    /// Server-suggested cooldown in seconds (from `retry_after` field of
+    /// the 429 response body). The loop honors this when present, with a
+    /// floor so we always wait at least a few seconds.
+    retry_after_seconds: u32 = 0,
 
     pub fn deinit(self: *CommandResult, allocator: std.mem.Allocator) void {
         if (self.message) |msg| {

@@ -342,11 +342,18 @@ pub const RegistryClient = struct {
         else
             null;
 
+        // For retryable failures, see if the server told us how long to wait.
+        const retry_after_seconds = if (!success and body.len > 0)
+            parseRetryAfter(body)
+        else
+            null;
+
         return PublishResponse{
             .success = success,
             .status_code = status_code,
             .message = message,
             .error_details = error_details,
+            .retry_after_seconds = retry_after_seconds,
         };
     }
 
@@ -537,11 +544,18 @@ pub const RegistryClient = struct {
         else
             null;
 
+        // For retryable failures, see if the server told us how long to wait.
+        const retry_after_seconds = if (!success and body.len > 0)
+            parseRetryAfter(body)
+        else
+            null;
+
         return PublishResponse{
             .success = success,
             .status_code = status_code,
             .message = message,
             .error_details = error_details,
+            .retry_after_seconds = retry_after_seconds,
         };
     }
 
@@ -646,11 +660,18 @@ pub const RegistryClient = struct {
         else
             null;
 
+        // For retryable failures, see if the server told us how long to wait.
+        const retry_after_seconds = if (!success and body.len > 0)
+            parseRetryAfter(body)
+        else
+            null;
+
         return PublishResponse{
             .success = success,
             .status_code = status_code,
             .message = message,
             .error_details = error_details,
+            .retry_after_seconds = retry_after_seconds,
         };
     }
 
@@ -1107,6 +1128,10 @@ pub const PublishResponse = struct {
     message: ?[]const u8 = null,
     /// Detailed error information for debugging
     error_details: ?ErrorDetails = null,
+    /// Server-suggested retry delay in seconds (from `retry_after` field of
+    /// 429 / 503 response bodies, or the HTTP `Retry-After` header). Null
+    /// when the server didn't tell us how long to wait.
+    retry_after_seconds: ?u32 = null,
 
     pub const ErrorDetails = struct {
         /// Error code from registry (e.g., "E403", "ENEEDAUTH")
@@ -1191,6 +1216,33 @@ pub const RegistryError = error{
 ///   {"error": "Package name too similar to existing package..."}
 ///   {"error": "code E403", "reason": "..."}
 ///   Plain text error body (non-JSON)
+/// Parse `retry_after` (in seconds) from a 429 / 503 response body.
+/// Cloudflare's edge rate-limit (error 1015) returns a JSON body containing
+/// `"retry_after": <seconds>`. We honor that value when scheduling retries
+/// instead of using a fixed exponential backoff that may be too short.
+fn parseRetryAfter(body: []const u8) ?u32 {
+    // Quick bail: keys we don't expect to find → don't even parse
+    if (std.mem.indexOf(u8, body, "retry_after") == null) return null;
+
+    // Use a fixed buffer so this is allocation-free in the hot path.
+    var buf: [16 * 1024]u8 = undefined;
+    var fba = std.heap.FixedBufferAllocator.init(&buf);
+    const parsed = std.json.parseFromSlice(
+        std.json.Value,
+        fba.allocator(),
+        body,
+        .{},
+    ) catch return null;
+    defer parsed.deinit();
+    if (parsed.value != .object) return null;
+    const v = parsed.value.object.get("retry_after") orelse return null;
+    return switch (v) {
+        .integer => |i| if (i > 0 and i < std.math.maxInt(u32)) @intCast(i) else null,
+        .float => |f| if (f > 0 and f < std.math.maxInt(u32)) @intFromFloat(f) else null,
+        else => null,
+    };
+}
+
 fn parseErrorDetails(allocator: std.mem.Allocator, body: []const u8) ?PublishResponse.ErrorDetails {
     const parsed = std.json.parseFromSlice(
         std.json.Value,

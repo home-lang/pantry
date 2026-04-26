@@ -820,12 +820,20 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
                 }
             }
 
+            // Detect rate-limit failures up front so we can extend the
+            // inter-package cooldown before processing the result data.
+            var rate_limited = false;
+            var server_retry_after_ms: u64 = 0;
             if (result) |r| {
                 if (r.exit_code == 0) {
                     succeeded += 1;
                 } else {
                     failed += 1;
                     if (r.message) |msg| style.print("  Error: {s}\n", .{msg});
+                    if (r.rate_limited) {
+                        rate_limited = true;
+                        server_retry_after_ms = @as(u64, r.retry_after_seconds) * 1000;
+                    }
                 }
                 var res = r;
                 res.deinit(allocator);
@@ -835,10 +843,28 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
             }
             style.print("----------------------------------------\n", .{});
 
-            // Smooth out request rate so Cloudflare in front of registry.npmjs.org
-            // doesn't 429 us mid-loop. 750ms gives ~80 publishes/min, well under
-            // the burst threshold (~10 publishes per 30s observed in 1015 errors).
-            io_helper.sleepMs(750);
+            // Inter-package throttle: keeps us under Cloudflare's rolling
+            // burst threshold for registry.npmjs.org. We observed sustained
+            // publishes triggering 1015 errors after ~16 min at 750ms gap;
+            // doubling the gap to 2s means we hit fewer requests per window
+            // and at 220 packages we still finish in well under the
+            // observed limit window.
+            //
+            // After a rate-limited *failure*, sleep significantly longer
+            // (server retry_after with a 60s floor). Cloudflare's IP-level
+            // cooldown stays sticky after each 429, so going straight into
+            // the next package guarantees more 429s until the cooldown
+            // clears.
+            if (rate_limited) {
+                const cooldown_ms: u64 = @max(server_retry_after_ms, @as(u64, 60_000));
+                style.print(
+                    "  {s}⏸{s} Rate-limited; pausing {d}s before next package to let Cloudflare cooldown clear...\n",
+                    .{ style.yellow, style.reset, cooldown_ms / 1000 },
+                );
+                io_helper.sleepMs(cooldown_ms);
+            } else {
+                io_helper.sleepMs(2000);
+            }
         }
 
         style.print("\nPublished {d}/{d} packages", .{ succeeded, succeeded + failed });
@@ -1095,7 +1121,7 @@ fn publishSingleToNpm(
     // returns 429 on burst publishes (a real risk in monorepo mode publishing
     // hundreds of packages in a row). Retry transient failures with exponential
     // backoff: 5s → 10s → 20s → 40s → 80s, then give up. 5xx is treated the same.
-    const max_publish_attempts: u8 = 5;
+    const max_publish_attempts: u8 = 8;
     var publish_attempt: u8 = 0;
     const response = blk: while (true) {
         publish_attempt += 1;
@@ -1117,11 +1143,24 @@ fn publishSingleToNpm(
         }
         // Free the retryable failure response before sleeping + retrying.
         var mut_r = r;
-        const wait_ms: u64 = @as(u64, 5_000) << @as(u6, @intCast(publish_attempt - 1));
-        style.print(
-            "  {s}⚠{s} Registry returned {d} (attempt {d}/{d}); retrying in {d}s...\n",
-            .{ style.yellow, style.reset, r.status_code, publish_attempt, max_publish_attempts, wait_ms / 1000 },
-        );
+        // Exponential backoff floor (5s, 10s, 20s, 40s, 80s) raised to the
+        // server-suggested retry_after when present. Cloudflare's 429 body
+        // contains `retry_after: 30` and ignoring it means we keep retrying
+        // before the IP-level cooldown clears.
+        const backoff_ms: u64 = @as(u64, 5_000) << @as(u6, @intCast(publish_attempt - 1));
+        const server_ms: u64 = if (r.retry_after_seconds) |s| @as(u64, s) * 1000 else 0;
+        const wait_ms: u64 = @max(backoff_ms, server_ms);
+        if (server_ms > backoff_ms) {
+            style.print(
+                "  {s}⚠{s} Registry returned {d} (attempt {d}/{d}); honoring retry_after, waiting {d}s...\n",
+                .{ style.yellow, style.reset, r.status_code, publish_attempt, max_publish_attempts, wait_ms / 1000 },
+            );
+        } else {
+            style.print(
+                "  {s}⚠{s} Registry returned {d} (attempt {d}/{d}); retrying in {d}s...\n",
+                .{ style.yellow, style.reset, r.status_code, publish_attempt, max_publish_attempts, wait_ms / 1000 },
+            );
+        }
         mut_r.deinit(allocator);
         io_helper.sleepMs(wait_ms);
     };
@@ -1222,7 +1261,16 @@ fn publishSingleToNpm(
             "{d} {s}: {s}",
             .{ response.status_code, status_text, error_summary },
         );
-        return CommandResult.err(allocator, err_msg);
+        // Surface rate-limit / retry-after info to the monorepo loop so it
+        // can extend the inter-package throttle. Without this, every
+        // remaining package starts publishing immediately after this one
+        // gives up — and Cloudflare's IP-level cooldown is still active.
+        return .{
+            .exit_code = 1,
+            .message = err_msg,
+            .rate_limited = response.isRetryable(),
+            .retry_after_seconds = response.retry_after_seconds orelse 0,
+        };
     }
 }
 
@@ -1419,7 +1467,7 @@ fn attemptOIDCPublish(
     }
 
     // Publish package with provenance bundle, retrying on rate-limit / 5xx.
-    const max_oidc_attempts: u8 = 5;
+    const max_oidc_attempts: u8 = 8;
     var oidc_attempt: u8 = 0;
     const response = blk: while (true) {
         oidc_attempt += 1;
@@ -1434,7 +1482,9 @@ fn attemptOIDCPublish(
             break :blk r;
         }
         var mut_r = r;
-        const wait_ms: u64 = @as(u64, 5_000) << @as(u6, @intCast(oidc_attempt - 1));
+        const backoff_ms: u64 = @as(u64, 5_000) << @as(u6, @intCast(oidc_attempt - 1));
+        const server_ms: u64 = if (r.retry_after_seconds) |s| @as(u64, s) * 1000 else 0;
+        const wait_ms: u64 = @max(backoff_ms, server_ms);
         style.print(
             "  {s}⚠{s} Registry returned {d} (attempt {d}/{d}); retrying in {d}s...\n",
             .{ style.yellow, style.reset, r.status_code, oidc_attempt, max_oidc_attempts, wait_ms / 1000 },
@@ -1542,7 +1592,7 @@ fn attemptOIDCPublishUnverified(
     }
 
     // Publish with provenance - registry will validate token. Retry on 429/5xx.
-    const max_oidc_unverified_attempts: u8 = 5;
+    const max_oidc_unverified_attempts: u8 = 8;
     var oidc_unverified_attempt: u8 = 0;
     const response = blk: while (true) {
         oidc_unverified_attempt += 1;
@@ -1557,7 +1607,9 @@ fn attemptOIDCPublishUnverified(
             break :blk r;
         }
         var mut_r = r;
-        const wait_ms: u64 = @as(u64, 5_000) << @as(u6, @intCast(oidc_unverified_attempt - 1));
+        const backoff_ms: u64 = @as(u64, 5_000) << @as(u6, @intCast(oidc_unverified_attempt - 1));
+        const server_ms: u64 = if (r.retry_after_seconds) |s| @as(u64, s) * 1000 else 0;
+        const wait_ms: u64 = @max(backoff_ms, server_ms);
         style.print(
             "  {s}⚠{s} Registry returned {d} (attempt {d}/{d}); retrying in {d}s...\n",
             .{ style.yellow, style.reset, r.status_code, oidc_unverified_attempt, max_oidc_unverified_attempts, wait_ms / 1000 },
