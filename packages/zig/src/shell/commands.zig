@@ -420,14 +420,10 @@ pub const ShellCommands = struct {
         const runtime_paths = try self.getRuntimePaths(project_root);
         defer self.allocator.free(runtime_paths);
 
-        // Check if global bin directory exists
-        const home_dir = lib.core.Paths.home(self.allocator) catch null;
-        defer if (home_dir) |h| self.allocator.free(h);
-
-        const global_bin_path = if (home_dir) |h|
-            std.fmt.allocPrint(self.allocator, "{s}/.pantry/global/bin", .{h}) catch null
-        else
-            null;
+        // Resolve the canonical global bin dir (the same path the shell hook
+        // adds to PATH). Falling back to `null` here means the env-builder
+        // simply skips the entry — never emit a stale `~/.pantry/global/bin`.
+        const global_bin_path = lib.core.Paths.globalBinDir(self.allocator) catch null;
         defer if (global_bin_path) |p| self.allocator.free(p);
 
         const has_global_bin = if (global_bin_path) |p| blk: {
@@ -559,7 +555,8 @@ pub const ShellCommands = struct {
         return try std.mem.join(self.allocator, ":", runtime_paths.items);
     }
 
-    /// Install dependencies marked with global: true to ~/.pantry/global/
+    /// Install dependencies marked with `global: true` into the user-level
+    /// pantry data dir (the same root the shell hook adds to PATH).
     fn installGlobalDeps(self: *ShellCommands, project_root_path: []const u8) !void {
         const parser = @import("../deps/parser.zig");
 
@@ -613,17 +610,15 @@ pub const ShellCommands = struct {
         }
         if (!has_global) return;
 
-        // Determine global install directory
-        const home_dir = lib.core.Paths.home(self.allocator) catch return;
-        defer self.allocator.free(home_dir);
-
-        const global_dir = std.fmt.allocPrint(self.allocator, "{s}/.pantry/global", .{home_dir}) catch return;
+        // Resolve canonical global root + its `bin/` subdir. Both must exist
+        // before we run the installer so freshly created symlinks have a
+        // home that's already on PATH.
+        const global_dir = lib.core.Paths.globalDir(self.allocator) catch return;
         defer self.allocator.free(global_dir);
 
-        const global_bin = std.fmt.allocPrint(self.allocator, "{s}/bin", .{global_dir}) catch return;
+        const global_bin = lib.core.Paths.globalBinDir(self.allocator) catch return;
         defer self.allocator.free(global_bin);
 
-        // Create global directories
         io_helper.makePath(global_dir) catch return;
         io_helper.makePath(global_bin) catch return;
 
@@ -665,7 +660,7 @@ pub const ShellCommands = struct {
             });
         }
 
-        style.print("✅ Global packages available in ~/.pantry/global/bin\n", .{});
+        style.print("✅ Global packages available in {s}\n", .{global_bin});
     }
 
     /// Auto-start services configured in pantry.json or deps.yaml

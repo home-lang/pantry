@@ -167,6 +167,33 @@ pub const Paths = struct {
         };
     }
 
+    /// Get the user-level "global" install root.
+    ///
+    /// All commands that install user-level packages **must** use this so
+    /// the location stays in lock-step with the PATH entry the shell hook
+    /// installs (see `shell/templates/shell_integration.sh`). Mismatching
+    /// these paths means binaries land somewhere PATH never sees, which is
+    /// exactly the bug we hit historically (~/.pantry/global vs.
+    /// ~/.local/share/pantry/global).
+    ///
+    /// Layout:
+    ///   <data>/global/packages/<name>/v<version>/...   (versioned installs)
+    ///   <data>/global/bin/<name>                      (PATH-visible link)
+    pub fn globalDir(allocator: std.mem.Allocator) ![]const u8 {
+        const data_dir = try Paths.data(allocator);
+        defer allocator.free(data_dir);
+        return std.fmt.allocPrint(allocator, "{s}/global", .{data_dir});
+    }
+
+    /// Bin dir inside `globalDir` — the single location the shell hook puts
+    /// on PATH. Use this whenever you need to symlink a freshly installed
+    /// binary so users can actually run it.
+    pub fn globalBinDir(allocator: std.mem.Allocator) ![]const u8 {
+        const root = try Paths.globalDir(allocator);
+        defer allocator.free(root);
+        return std.fmt.allocPrint(allocator, "{s}/bin", .{root});
+    }
+
     /// Get config directory path
     pub fn config(allocator: std.mem.Allocator) ![]const u8 {
         const home_dir = try home(allocator);

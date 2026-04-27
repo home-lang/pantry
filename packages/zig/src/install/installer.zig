@@ -2542,12 +2542,12 @@ pub const Installer = struct {
         const install_dir = if (options.project_root) |project_root|
             try self.getProjectPackageDir(project_root, "ziglang.org", spec.version)
         else blk: {
-            const home = try Paths.home(self.allocator);
-            defer self.allocator.free(home);
+            const global = try Paths.globalDir(self.allocator);
+            defer self.allocator.free(global);
             break :blk try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/.pantry/global/packages/ziglang.org/v{s}",
-                .{ home, spec.version },
+                "{s}/packages/ziglang.org/v{s}",
+                .{ global, spec.version },
             );
         };
         errdefer self.allocator.free(install_dir);
@@ -2751,7 +2751,7 @@ pub const Installer = struct {
             break :blk try self.installFromNetwork(spec, options, s3_url);
         };
 
-        // Create symlinks in data_dir/bin (e.g., ~/.pantry/global/bin or /usr/local/bin)
+        // Create symlinks in data_dir/bin (e.g., Paths.globalBinDir() or /usr/local/bin)
         const symlink_mod = @import("symlink.zig");
         symlink_mod.createPackageSymlinks(
             self.allocator,
@@ -3007,9 +3007,12 @@ pub const Installer = struct {
         return try self.allocator.dupe(u8, global_pkg_dir);
     }
 
-    /// Get global package directory (shared across all environments)
-    /// Uses /usr/local/packages/ for system-wide global installations
-    /// Or ~/.pantry/global/packages/ for user-local installations
+    /// Get global package directory (shared across all environments).
+    /// Uses /usr/local/packages/ for system-wide global installations, or
+    /// the user-local pantry data dir (Paths.globalDir, e.g.
+    /// `~/.local/share/pantry/global/packages`) otherwise. The user-local
+    /// path is the same root the shell hook adds to PATH, so packages put
+    /// here are immediately discoverable.
     fn getGlobalPackageDir(self: *Installer, domain: []const u8, version: []const u8) ![]const u8 {
         // Check if we're using system-wide installation (/usr/local)
         if (std.mem.eql(u8, self.data_dir, "/usr/local")) {
@@ -3020,14 +3023,13 @@ pub const Installer = struct {
             );
         }
 
-        // Otherwise use user-local path (~/.pantry/global/packages/)
-        const home = try Paths.home(self.allocator);
-        defer self.allocator.free(home);
+        const global = try Paths.globalDir(self.allocator);
+        defer self.allocator.free(global);
 
         return std.fmt.allocPrint(
             self.allocator,
-            "{s}/.pantry/global/packages/{s}/v{s}",
-            .{ home, domain, version },
+            "{s}/packages/{s}/v{s}",
+            .{ global, domain, version },
         );
     }
 

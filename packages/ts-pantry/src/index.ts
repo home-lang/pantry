@@ -2,6 +2,21 @@ export * from './cli-utils'
 export * from './consts'
 export * from './dependency-resolver'
 export {
+  detectPlatform,
+  globalBinDir,
+  installPackage,
+  installPackages,
+  isSupported,
+  resolveLatestVersion,
+} from './installer'
+export {
+  detectShell,
+  installShellInit,
+  rcFileFor,
+  renderShellSnippet,
+  uninstallShellInit,
+} from './shell-init'
+export {
   cleanStaleOutputFiles,
   cleanupBrowserResources,
   fetchAndSaveAllPackages,

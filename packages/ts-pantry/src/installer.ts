@@ -31,6 +31,15 @@ export interface InstallOptions {
   createBinLinks?: boolean
   /** Quiet mode — suppress progress output (default: false) */
   quiet?: boolean
+  /**
+   * Mirror this package's binaries to a stable user-level directory so they
+   * appear on PATH after a one-time `pantry shell-init`. When `true` the
+   * default global bin dir (`globalBinDir()`) is used; pass a path to override.
+   *
+   * This is what makes `pantry install <foo>@<v>` actually put `foo` on the
+   * caller's PATH the same way Homebrew does.
+   */
+  globalBin?: boolean | string
 }
 
 export interface InstallResult {
@@ -38,6 +47,20 @@ export interface InstallResult {
   version: string
   installPath: string
   binaries: string[]
+  /** Symlinks created in the global bin dir, if `globalBin` was requested. */
+  globalLinks?: string[]
+}
+
+/**
+ * Stable user-level directory we expose on PATH via `pantry shell-init`.
+ * Mirrors the Zig CLI's `$HOME/.local/share/pantry/global/bin` convention so
+ * both installers can share a single location.
+ */
+export function globalBinDir(): string {
+  // Honour XDG_DATA_HOME first to be friendly to Linux/Nix-style users.
+  const xdg = process.env.XDG_DATA_HOME
+  const base = xdg && xdg.length > 0 ? xdg : path.join(os.homedir(), '.local', 'share')
+  return path.join(base, 'pantry', 'global', 'bin')
 }
 
 /**
@@ -58,7 +81,7 @@ interface PackageResolver {
 
 // ── Platform Detection ──
 
-function detectPlatform(): Platform {
+export function detectPlatform(): Platform {
   const osName = os.platform()
   const arch = os.arch()
 
@@ -195,7 +218,8 @@ export async function installPackage(
   const firstBinInSubdir = path.join(pkgDir, 'bin', binaries[0])
   if (fs.existsSync(firstBin) || fs.existsSync(firstBinInSubdir)) {
     if (!options.quiet) console.log(`  ✓ ${domain}@${version} (cached)`)
-    return { name: domain, version, installPath: pkgDir, binaries }
+    const globalLinks = maybeLinkToGlobalBin(pkgDir, binaries, platform, options)
+    return { name: domain, version, installPath: pkgDir, binaries, globalLinks }
   }
 
   const url = resolver.getDownloadUrl(version, platform)
@@ -293,12 +317,55 @@ export async function installPackage(
     }
 
     if (!options.quiet) console.log(`  ✓ ${domain}@${version}`)
-    return { name: domain, version, installPath: pkgDir, binaries }
+    const globalLinks = maybeLinkToGlobalBin(pkgDir, binaries, platform, options)
+    return { name: domain, version, installPath: pkgDir, binaries, globalLinks }
   }
   finally {
     // Clean up temp directory
     try { fs.rmSync(tmpDir, { recursive: true, force: true }) } catch { /* */ }
   }
+}
+
+/**
+ * If `options.globalBin` is set, mirror each freshly installed binary into the
+ * stable global bin dir so users can put a single dir on PATH and have every
+ * pantry-installed package show up there. Returns the list of created link
+ * paths (or an empty array when the option is off).
+ */
+function maybeLinkToGlobalBin(
+  pkgDir: string,
+  binaries: string[],
+  platform: Platform,
+  options: InstallOptions,
+): string[] {
+  if (!options.globalBin) return []
+
+  const targetDir = typeof options.globalBin === 'string' ? options.globalBin : globalBinDir()
+  fs.mkdirSync(targetDir, { recursive: true })
+
+  const created: string[] = []
+  for (const bin of binaries) {
+    let srcBin = path.join(pkgDir, bin)
+    if (!fs.existsSync(srcBin)) srcBin = path.join(pkgDir, 'bin', bin)
+    if (!fs.existsSync(srcBin)) continue
+
+    const dstBin = path.join(targetDir, bin)
+    try { fs.unlinkSync(dstBin) }
+    catch { /* missing is fine */ }
+
+    if (platform.os === 'windows') {
+      fs.copyFileSync(srcBin, dstBin)
+    }
+    else {
+      fs.symlinkSync(srcBin, dstBin)
+    }
+    created.push(dstBin)
+  }
+
+  if (!options.quiet && created.length > 0) {
+    console.log(`    → linked ${created.length} binary(ies) into ${targetDir}`)
+  }
+  return created
 }
 
 /**

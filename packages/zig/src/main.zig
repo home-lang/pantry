@@ -54,8 +54,15 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
         style.print("Note: Set PANTRY_OFFLINE=1 environment variable for full offline support\n\n", .{});
     }
 
-    // If global flag is set and no packages specified, install global dependencies
-    if (global and packages.items.len == 0) {
+    // `--user` semantically implies a global install into the user-level
+    // pantry data dir. Treating bare `--user pkg` as a local install was
+    // surprising — and meant `pkg` never landed on PATH. The flag now flips
+    // the routing the same way `--global --user` does.
+    const global_install = global or user;
+
+    // If a global install is requested without any packages, install everything
+    // marked `global: true` in deps.yaml (or system-wide when `--user` is absent).
+    if (global_install and packages.items.len == 0) {
         const result = if (user)
             try lib.commands.installGlobalDepsCommandUserLocal(allocator)
         else
@@ -69,8 +76,10 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
         std.process.exit(result.exit_code);
     }
 
-    // If global flag is set WITH packages, install those packages globally
-    if (global and packages.items.len > 0) {
+    // Global install with explicit packages — these go straight into the
+    // user-level (or system-wide) global dir and are linked into the bin
+    // directory the shell hook puts on PATH.
+    if (global_install and packages.items.len > 0) {
         const result = try lib.commands.installPackagesGloballyCommand(allocator, packages.items);
         defer result.deinit(allocator);
 
@@ -2427,7 +2436,7 @@ pub fn main() !void {
         .withShort('g');
     _ = try install_cmd.addOption(global_opt);
 
-    const user_opt = cli.Option.init("user", "user", "Install to user directory (~/.pantry/global)", .bool)
+    const user_opt = cli.Option.init("user", "user", "Install to user directory (~/.local/share/pantry/global)", .bool)
         .withShort('u');
     _ = try install_cmd.addOption(user_opt);
 

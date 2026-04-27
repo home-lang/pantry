@@ -97,12 +97,14 @@ fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local:
 
     style.print("Found {d} global package(s).\n", .{global_deps.len});
 
-    // Determine installation directory
-    const global_dir = if (user_local) blk: {
-        const home = try lib.Paths.home(allocator);
-        defer allocator.free(home);
-        break :blk try std.fmt.allocPrint(allocator, "{s}/.pantry/global", .{home});
-    } else "/usr/local";
+    // Determine installation directory. User-local installs go into the
+    // canonical pantry data dir (the same one the shell hook adds to PATH);
+    // system-wide installs go into /usr/local. See Paths.globalDir for why
+    // these must be kept in lock-step.
+    const global_dir = if (user_local)
+        try lib.Paths.globalDir(allocator)
+    else
+        "/usr/local";
     defer if (user_local) allocator.free(global_dir);
 
     // Check if we need sudo for system-wide installation
@@ -111,7 +113,7 @@ fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local:
         io_helper.makePath(global_dir) catch |err| {
             if (err == error.AccessDenied or err == error.PermissionDenied) {
                 // No sudo privileges - automatically fallback to user-local
-                style.printWarn("No permission for system-wide install, using ~/.pantry/global instead\n\n", .{});
+                style.printWarn("No permission for system-wide install, using user-local pantry data dir instead\n\n", .{});
                 return installGlobalDepsCommandWithOptions(allocator, true);
             }
             return err;
@@ -193,18 +195,16 @@ fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local:
 
 /// Install specific packages globally
 pub fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []const []const u8) !types.CommandResult {
-    // Try system-wide first, fallback to user-local if no permissions
+    // Try system-wide first, fallback to user-local if no permissions.
+    // The user-local fallback path is the same dir the shell hook puts on
+    // PATH (`Paths.globalDir`), so packages are immediately discoverable.
     var global_dir_owned: ?[]const u8 = null;
     const global_dir = blk: {
-        // Try /usr/local first - test actual write permissions
         io_helper.makePath("/usr/local/packages") catch |err| {
             if (err == error.AccessDenied or err == error.PermissionDenied or err == error.MakePathFailed) {
-                // Fallback to ~/.pantry/global
-                const home = try lib.Paths.home(allocator);
-                defer allocator.free(home);
-                const user_dir = try std.fmt.allocPrint(allocator, "{s}/.pantry/global", .{home});
+                const user_dir = try lib.Paths.globalDir(allocator);
                 global_dir_owned = user_dir;
-                style.printWarn("No permission for system-wide install, using ~/.pantry/global\n\n", .{});
+                style.printWarn("No permission for system-wide install, falling back to user-local pantry data dir\n\n", .{});
                 try io_helper.makePath(user_dir);
                 break :blk user_dir;
             }

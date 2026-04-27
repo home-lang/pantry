@@ -1,6 +1,7 @@
 //! Shell integration commands
 
 const std = @import("std");
+const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
 const style = @import("../style.zig");
@@ -30,6 +31,14 @@ pub fn shellIntegrateCommand(allocator: std.mem.Allocator) !CommandResult {
         };
     };
 
+    // Mirror the running pantry executable into the global bin dir so that
+    // after a single `pantry shell:integrate` (and a shell restart), pantry
+    // itself remains on PATH — even if the user installed it from a one-off
+    // location like `~/Code/Tools/...`.
+    selfLinkIntoGlobalBin(allocator) catch |err| {
+        style.printWarn("Could not self-link pantry into global bin dir: {s}\n", .{@errorName(err)});
+    };
+
     style.print("Done! Restart your shell or run:\n", .{});
     switch (detected_shell) {
         .zsh => style.print("  source ~/.zshrc\n", .{}),
@@ -41,6 +50,35 @@ pub fn shellIntegrateCommand(allocator: std.mem.Allocator) !CommandResult {
     }
 
     return .{ .exit_code = 0 };
+}
+
+/// Symlink the currently running `pantry` executable into the global bin dir
+/// (the one the shell hook adds to PATH). No-op when the running binary is
+/// already inside that dir or the OS doesn't expose an executable path.
+/// Delegates to `install/symlink.zig` so we share the cross-platform
+/// (Windows-copy / Unix-symlink) behaviour with every other binary linker.
+fn selfLinkIntoGlobalBin(allocator: std.mem.Allocator) !void {
+    // Zig 0.17 moved the exe-path API onto `std.process` and routed it
+    // through the Io vtable.
+    const exe_path_z = try std.process.executablePathAlloc(io_helper.io, allocator);
+    defer allocator.free(exe_path_z);
+    const exe_path: []const u8 = exe_path_z;
+
+    const global_bin = try lib.core.Paths.globalBinDir(allocator);
+    defer allocator.free(global_bin);
+
+    // Already inside the global bin dir? Nothing to do.
+    if (std.mem.startsWith(u8, exe_path, global_bin)) return;
+
+    try io_helper.makePath(global_bin);
+
+    const link_path = try std.fmt.allocPrint(allocator, "{s}/pantry", .{global_bin});
+    defer allocator.free(link_path);
+
+    // The shared helper handles "already exists" by deleting and retrying.
+    const symlink_mod = @import("../../install/symlink.zig");
+    try symlink_mod.createSymlinkCrossPlatform(exe_path, link_path);
+    style.print("✓ Linked pantry into {s}\n", .{global_bin});
 }
 
 pub fn shellCodeCommand(allocator: std.mem.Allocator) !CommandResult {

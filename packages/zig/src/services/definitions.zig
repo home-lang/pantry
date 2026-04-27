@@ -1,4 +1,5 @@
 const std = @import("std");
+const Paths = @import("../core/platform.zig").Paths;
 
 /// Service configuration
 pub const ServiceConfig = struct {
@@ -91,8 +92,10 @@ fn resolveJavaHome(allocator: std.mem.Allocator, project_root: ?[]const u8, home
     }
 
     // Check global pantry
-    if (home) |h| {
-        const global_openjdk = try std.fmt.allocPrint(allocator, "{s}/.pantry/global/packages/openjdk.org", .{h});
+    if (home) |_| {
+        const global_dir = Paths.globalDir(allocator) catch return null;
+        defer allocator.free(global_dir);
+        const global_openjdk = try std.fmt.allocPrint(allocator, "{s}/packages/openjdk.org", .{global_dir});
         defer allocator.free(global_openjdk);
         if (io_helper.accessAbsolute(global_openjdk, .{})) |_| {
             if (try findVersionDirIn(allocator, global_openjdk)) |java_home| return java_home;
@@ -107,19 +110,26 @@ fn resolveJavaHome(allocator: std.mem.Allocator, project_root: ?[]const u8, home
 fn resolveServicePath(allocator: std.mem.Allocator, project_root: ?[]const u8, home: ?[]const u8) ![]const u8 {
     const system_path = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
 
-    if (project_root != null and home != null) {
-        return try std.fmt.allocPrint(allocator, "{s}/pantry/.bin:{s}/.pantry/global/bin:{s}", .{ project_root.?, home.?, system_path });
+    // Resolve canonical pantry global bin (lazy — only when we need it).
+    const global_bin: ?[]const u8 = if (home != null)
+        Paths.globalBinDir(allocator) catch null
+    else
+        null;
+    defer if (global_bin) |g| allocator.free(g);
+
+    if (project_root != null and global_bin != null) {
+        return try std.fmt.allocPrint(allocator, "{s}/pantry/.bin:{s}:{s}", .{ project_root.?, global_bin.?, system_path });
     } else if (project_root) |pr| {
         return try std.fmt.allocPrint(allocator, "{s}/pantry/.bin:{s}", .{ pr, system_path });
-    } else if (home) |h| {
-        return try std.fmt.allocPrint(allocator, "{s}/.pantry/global/bin:{s}", .{ h, system_path });
+    } else if (global_bin) |g| {
+        return try std.fmt.allocPrint(allocator, "{s}:{s}", .{ g, system_path });
     } else {
         return try allocator.dupe(u8, system_path);
     }
 }
 
 /// Resolve a package's installation root directory (e.g. pantry/kafka.apache.org/v4.2.0)
-/// Searches project-local pantry/ then global ~/.pantry/global/packages/
+/// Searches project-local pantry/ then the global pantry data dir (Paths.globalDir).
 fn resolvePackageHome(allocator: std.mem.Allocator, package_domain: []const u8, project_root: ?[]const u8, home: ?[]const u8) !?[]const u8 {
     const io_helper = @import("../io_helper.zig");
 
@@ -140,8 +150,10 @@ fn resolvePackageHome(allocator: std.mem.Allocator, package_domain: []const u8, 
     }
 
     // Check global pantry
-    if (home) |h| {
-        const global_pkg = try std.fmt.allocPrint(allocator, "{s}/.pantry/global/packages/{s}", .{ h, package_domain });
+    if (home) |_| {
+        const global_dir = Paths.globalDir(allocator) catch return null;
+        defer allocator.free(global_dir);
+        const global_pkg = try std.fmt.allocPrint(allocator, "{s}/packages/{s}", .{ global_dir, package_domain });
         defer allocator.free(global_pkg);
         if (io_helper.accessAbsolute(global_pkg, .{})) |_| {
             var dir = io_helper.openDirAbsoluteForIteration(global_pkg) catch return null;
@@ -159,7 +171,7 @@ fn resolvePackageHome(allocator: std.mem.Allocator, package_domain: []const u8, 
 }
 
 /// Resolve a service binary path by searching pantry install locations
-/// Tries: project-local pantry/.bin, global ~/.pantry/global/bin, then falls back to bare name
+/// Tries: project-local pantry/.bin, global Paths.globalBinDir(), then falls back to bare name.
 fn resolveServiceBinary(allocator: std.mem.Allocator, binary_name: []const u8, project_root: ?[]const u8, home: ?[]const u8) ![]const u8 {
     const io_helper = @import("../io_helper.zig");
 
@@ -180,9 +192,11 @@ fn resolveServiceBinary(allocator: std.mem.Allocator, binary_name: []const u8, p
 fn resolveServiceBinaryGlobal(allocator: std.mem.Allocator, binary_name: []const u8, home: ?[]const u8) ![]const u8 {
     const io_helper = @import("../io_helper.zig");
 
-    // 2. Global ~/.pantry/global/bin
-    if (home) |h| {
-        const global_bin = try std.fmt.allocPrint(allocator, "{s}/.pantry/global/bin/{s}", .{ h, binary_name });
+    // 2. Global pantry bin (Paths.globalBinDir, the same dir the shell hook puts on PATH).
+    if (home) |_| {
+        const global_bin_dir = Paths.globalBinDir(allocator) catch return allocator.dupe(u8, binary_name);
+        defer allocator.free(global_bin_dir);
+        const global_bin = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ global_bin_dir, binary_name });
         io_helper.accessAbsolute(global_bin, .{}) catch {
             allocator.free(global_bin);
             return allocator.dupe(u8, binary_name);

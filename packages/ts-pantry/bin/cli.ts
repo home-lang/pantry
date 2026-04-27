@@ -20,7 +20,9 @@ import {
   savePackageAsTypeScript,
   saveToCacheAndOutput,
 } from '../src/index'
+import { globalBinDir, installPackage } from '../src/installer'
 import { aliases as PACKAGE_ALIASES } from '../src/packages/aliases'
+import { detectShell, installShellInit, rcFileFor, renderShellSnippet, uninstallShellInit } from '../src/shell-init'
 
 // Helper functions for consts generation
 
@@ -1357,6 +1359,106 @@ cli
     }
     catch (error) {
       console.error('Error updating app:', error)
+      process.exit(1)
+    }
+  })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// install — install a system package and (optionally) put its binaries on PATH
+// ─────────────────────────────────────────────────────────────────────────────
+cli
+  .command('install <pkg>', 'Install a system package (e.g. ziglang.org@0.17.0-dev)')
+  .option('--global', 'Link binaries into the user-level global bin so they appear on PATH')
+  .option('--install-dir <dir>', 'Where to download into (default: ./pantry)')
+  .option('--no-bin-links', 'Skip creating local .bin/ symlinks')
+  .option('--quiet', 'Suppress progress output')
+  .action(async (pkg: string, options: {
+    global?: boolean
+    installDir?: string
+    binLinks?: boolean
+    quiet?: boolean
+  }) => {
+    // Accept `domain@version`, falling back to `latest`.
+    const atIdx = pkg.lastIndexOf('@')
+    // A leading '@' is part of the domain (none of pantry's known packages
+    // start with '@', but be defensive against future scoped names).
+    const hasVersion = atIdx > 0
+    const domain = hasVersion ? pkg.slice(0, atIdx) : pkg
+    const requestedVersion = hasVersion ? pkg.slice(atIdx + 1) : 'latest'
+
+    try {
+      const result = await installPackage(domain, requestedVersion, {
+        installDir: options.installDir,
+        createBinLinks: options.binLinks !== false,
+        quiet: options.quiet,
+        globalBin: options.global ? true : undefined,
+      })
+
+      if (!options.quiet) {
+        console.log(`\n✓ ${result.name}@${result.version}`)
+        console.log(`  installed to: ${result.installPath}`)
+        if (result.globalLinks && result.globalLinks.length > 0) {
+          console.log(`  linked into: ${path.dirname(result.globalLinks[0])}`)
+          if (!process.env.PATH?.split(path.delimiter).includes(path.dirname(result.globalLinks[0]))) {
+            console.log(`\n  ⚠ ${path.dirname(result.globalLinks[0])} is not on your PATH yet.`)
+            console.log(`    Run \`ts-pantry shell-init --install\` once to fix that.`)
+          }
+        }
+      }
+      process.exit(0)
+    }
+    catch (error) {
+      console.error(`Error installing ${pkg}:`, error instanceof Error ? error.message : error)
+      process.exit(1)
+    }
+  })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// shell-init — print or install the PATH snippet for the global bin dir
+// ─────────────────────────────────────────────────────────────────────────────
+cli
+  .command('shell-init', 'Print the shell snippet that puts pantry-installed packages on PATH')
+  .option('--install', `Append the snippet to your shell rc file (idempotent)`)
+  .option('--uninstall', 'Remove a previously installed snippet')
+  .option('--shell <shell>', 'Force a shell (zsh|bash|fish) instead of autodetect')
+  .action(async (options: { install?: boolean, uninstall?: boolean, shell?: string }) => {
+    const shell = (options.shell as ReturnType<typeof detectShell> | undefined) ?? detectShell()
+
+    try {
+      if (options.uninstall) {
+        const result = uninstallShellInit({ shell })
+        console.log(result.changed
+          ? `✓ Removed pantry shell-init from ${result.rcFile}`
+          : `Nothing to remove (no pantry shell-init block in ${result.rcFile})`)
+        process.exit(0)
+      }
+
+      if (options.install) {
+        const result = installShellInit({ shell })
+        if (result.changed) {
+          console.log(`✓ Added pantry shell-init to ${result.rcFile}`)
+          console.log(`  Restart your shell or run: source ${result.rcFile}`)
+        }
+        else {
+          console.log(`✓ Already integrated in ${result.rcFile}`)
+        }
+        process.exit(0)
+      }
+
+      // Print mode — meant to be `eval $(ts-pantry shell-init)` from a rc file.
+      const target = rcFileFor(shell)
+      if (process.stdout.isTTY) {
+        console.log(`# Detected shell: ${shell}`)
+        console.log(`# Global bin dir: ${globalBinDir()}`)
+        if (target) console.log(`# Append this to: ${target}`)
+        console.log(`# Or run: ts-pantry shell-init --install`)
+        console.log()
+      }
+      process.stdout.write(renderShellSnippet({ shell }))
+      process.exit(0)
+    }
+    catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error)
       process.exit(1)
     }
   })

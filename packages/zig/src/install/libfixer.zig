@@ -1,5 +1,6 @@
 const std = @import("std");
 const io_helper = @import("../io_helper.zig");
+const Paths = @import("../core/platform.zig").Paths;
 const style = @import("../cli/style.zig");
 
 /// Fix macOS library paths using install_name_tool
@@ -135,9 +136,11 @@ fn addRpathEntries(
     const builtin = @import("builtin");
     if (builtin.os.tag != .macos) return;
 
-    // Get home directory for global package location
-    const home = io_helper.getEnvVarOwned(allocator, "HOME") catch return;
-    defer allocator.free(home);
+    // Resolve the canonical user-level global dir so dynamic libs in
+    // `<global>/packages/<dep>/v<ver>/lib` (openssl.org, nodejs.org, etc.)
+    // remain reachable from a freshly installed binary's rpath.
+    const global = Paths.globalDir(allocator) catch return;
+    defer allocator.free(global);
 
     // Add rpath entries for:
     // 1. The package's own lib directory
@@ -145,7 +148,7 @@ fn addRpathEntries(
     var rp_buf1: [std.fs.max_path_bytes]u8 = undefined;
     var rp_buf2: [std.fs.max_path_bytes]u8 = undefined;
     const rp1 = std.fmt.bufPrint(&rp_buf1, "{s}/lib", .{package_dir}) catch return;
-    const rp2 = std.fmt.bufPrint(&rp_buf2, "{s}/.pantry/global", .{home}) catch return;
+    const rp2 = std.fmt.bufPrint(&rp_buf2, "{s}", .{global}) catch return;
     const rpath_entries = [_][]const u8{ rp1, rp2 };
 
     // Add each rpath entry (codesigning is done later by codesignDirectory)
