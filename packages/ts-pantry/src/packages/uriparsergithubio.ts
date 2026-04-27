@@ -68,6 +68,7 @@ export const uriparsergithubioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.0.1',
     '1.0.0',
     '0.9.9',
     '0.9.8',

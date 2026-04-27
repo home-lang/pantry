@@ -71,6 +71,7 @@ export const talosdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.13.0',
     '1.12.7',
     '1.12.6',
     '1.12.5',
