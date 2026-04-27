@@ -114,6 +114,7 @@ export const rebar3orgPackage = {
     '3.5.3',
     '3.5.2',
     '3.5.1',
+    '3.5.0',
   ] as const,
   aliases: [] as const,
 }

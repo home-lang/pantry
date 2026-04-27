@@ -76,6 +76,7 @@ export const redisPackage = {
   */
   versions: [
     '8.6.2',
+    '8.6.1',
     '8.6.0',
     '8.4.2',
     '8.4.1',
