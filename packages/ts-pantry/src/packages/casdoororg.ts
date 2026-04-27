@@ -69,6 +69,7 @@ export const casdoororgPackage = {
   */
   versions: [
     '3.47.0',
+    '3.46.0',
     '3.45.2',
     '3.45.1',
     '3.45.0',
