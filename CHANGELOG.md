@@ -1,3 +1,64 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.28...v0.9.29)
+
+### 🐛 Bug Fixes
+
+- **ci**: build-zig probes for actual source file, not just dir ([06c5f5e](https://github.com/home-lang/pantry/commit/06c5f5e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.29 ([08bcb14](https://github.com/home-lang/pantry/commit/08bcb14)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([6a21fab](https://github.com/home-lang/pantry/commit/6a21fab)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update pipenv ([109f016](https://github.com/home-lang/pantry/commit/109f016)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update vcluster ([c28c579](https://github.com/home-lang/pantry/commit/c28c579)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, railway, vcluster ([29d8299](https://github.com/home-lang/pantry/commit/29d8299)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, circleci, fly ([40ac4b5](https://github.com/home-lang/pantry/commit/40ac4b5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update daytona, vcluster ([45bda7b](https://github.com/home-lang/pantry/commit/45bda7b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([2b6d0c3](https://github.com/home-lang/pantry/commit/2b6d0c3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update odigos, terragrunt ([9fc4b8d](https://github.com/home-lang/pantry/commit/9fc4b8d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([524f359](https://github.com/home-lang/pantry/commit/524f359)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update mise, odigos, talosctl, uriparse ([e0d036c](https://github.com/home-lang/pantry/commit/e0d036c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update odigos, packer ([b76497c](https://github.com/home-lang/pantry/commit/b76497c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update juju, odigos, pocketbase and 2 others ([012083a](https://github.com/home-lang/pantry/commit/012083a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai, SeaweedFS, squawk ([34c0e9a](https://github.com/home-lang/pantry/commit/34c0e9a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, chomp, opencode.ai ([ab28858](https://github.com/home-lang/pantry/commit/ab28858)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update mise ([87b13e9](https://github.com/home-lang/pantry/commit/87b13e9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dozzle, opencode.ai ([29f9894](https://github.com/home-lang/pantry/commit/29f9894)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.28...HEAD)
+
+### 🐛 Bug Fixes
+
+- **ci**: build-zig probes for actual source file, not just dir ([06c5f5e](https://github.com/home-lang/pantry/commit/06c5f5e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- wip ([6a21fab](https://github.com/home-lang/pantry/commit/6a21fab)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update pipenv ([109f016](https://github.com/home-lang/pantry/commit/109f016)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update vcluster ([c28c579](https://github.com/home-lang/pantry/commit/c28c579)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, railway, vcluster ([29d8299](https://github.com/home-lang/pantry/commit/29d8299)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, circleci, fly ([40ac4b5](https://github.com/home-lang/pantry/commit/40ac4b5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update daytona, vcluster ([45bda7b](https://github.com/home-lang/pantry/commit/45bda7b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([2b6d0c3](https://github.com/home-lang/pantry/commit/2b6d0c3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update odigos, terragrunt ([9fc4b8d](https://github.com/home-lang/pantry/commit/9fc4b8d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([524f359](https://github.com/home-lang/pantry/commit/524f359)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update mise, odigos, talosctl, uriparse ([e0d036c](https://github.com/home-lang/pantry/commit/e0d036c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update odigos, packer ([b76497c](https://github.com/home-lang/pantry/commit/b76497c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update juju, odigos, pocketbase and 2 others ([012083a](https://github.com/home-lang/pantry/commit/012083a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai, SeaweedFS, squawk ([34c0e9a](https://github.com/home-lang/pantry/commit/34c0e9a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, chomp, opencode.ai ([ab28858](https://github.com/home-lang/pantry/commit/ab28858)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update mise ([87b13e9](https://github.com/home-lang/pantry/commit/87b13e9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dozzle, opencode.ai ([29f9894](https://github.com/home-lang/pantry/commit/29f9894)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.27...v0.9.28)
 
 ### 🐛 Bug Fixes
