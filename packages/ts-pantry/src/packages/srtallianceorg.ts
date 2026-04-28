@@ -78,6 +78,7 @@ export const srtallianceorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.5.5',
     '1.5.4',
     '1.5.3',
     '1.5.2',
