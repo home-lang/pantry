@@ -68,6 +68,7 @@ export const stripecomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.40.9',
     '1.40.8',
     '1.40.7',
     '1.40.6',
