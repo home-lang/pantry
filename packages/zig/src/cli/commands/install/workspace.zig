@@ -1448,6 +1448,21 @@ pub fn installWorkspaceCommandWithOptions(
         };
     }
 
+    // Delegate to bun for npm deps if package.json declares any (issue #200)
+    {
+        const bun_delegate = @import("../../../deps/bun_delegate.zig");
+        _ = bun_delegate.installNpmDeps(allocator, workspace_root, .{
+            .production = options.production,
+            .frozen_lockfile = options.frozen_lockfile,
+            .ignore_scripts = options.ignore_scripts,
+            .verbose = options.verbose,
+        }) catch |err| {
+            if (options.verbose) {
+                style.print("Warning: bun delegation failed: {}\n", .{err});
+            }
+        };
+    }
+
     // Flush batched analytics (single HTTP request in background thread)
     install.flushAnalytics(allocator);
 
