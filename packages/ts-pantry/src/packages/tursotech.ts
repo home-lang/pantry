@@ -68,6 +68,7 @@ export const tursotechPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.0.21',
     '1.0.20',
     '1.0.19',
     '1.0.18',
