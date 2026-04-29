@@ -431,7 +431,10 @@ async function latestFromPackageMetadata(domain: string): Promise<string> {
   try {
     const pkgKey = domain.replace(/[^a-z0-9]/gi, '').toLowerCase()
     const { packages } = await import('./packages/index.js').catch(() => import('./index.js'))
-    const pkg = (packages as Record<string, { versions?: readonly string[] }>)[pkgKey]
+    // The generated `Pantry` type is a closed object; the cast through
+    // `unknown` lets us look up by computed key without listing every
+    // domain explicitly here.
+    const pkg = (packages as unknown as Record<string, { versions?: readonly string[] }>)[pkgKey]
     const versions = pkg?.versions || []
     // Take the first stable (non-pre-release) version — the bundled list is
     // typically newest-first; fall back to any version if there are no stables.
