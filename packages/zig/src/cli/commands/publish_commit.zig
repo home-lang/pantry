@@ -14,6 +14,7 @@ const io_helper = @import("../../io_helper.zig");
 const style = @import("../style.zig");
 const common = @import("common.zig");
 const registry_commands = @import("registry.zig");
+const aws = @import("../../auth/aws.zig");
 
 const CommandResult = common.CommandResult;
 
@@ -129,9 +130,11 @@ pub fn publishCommitCommand(allocator: std.mem.Allocator, args: []const []const 
         return .{ .exit_code = 0 };
     }
 
-    // Check for authentication (ensure env vars are non-empty, not just set)
+    // Check for authentication (ensure env vars are non-empty, not just set).
+    // Env-based AWS creds only — `~/.aws/credentials` was relevant for the
+    // shelled-out `aws` CLI; the native SigV4 path uses env vars exclusively.
     const aws_key = io_helper.getenv("AWS_ACCESS_KEY_ID");
-    const has_aws_creds = (aws_key != null and aws_key.?.len > 0) or awsCredentialsFileExists();
+    const has_aws_creds = aws_key != null and aws_key.?.len > 0;
 
     var token: ?[]const u8 = if (options.token) |t| (if (t.len > 0) t else null) else null;
     var token_owned = false;
@@ -619,7 +622,6 @@ fn uploadCommitToS3(
     options: PublishCommitOptions,
 ) !CommitPublishResult {
     const bucket = io_helper.getenv("PANTRY_S3_BUCKET") orelse "pantry-registry";
-    const tmp_dir = io_helper.getTempDir();
 
     // Sanitize package name
     var sanitized_name = try allocator.alloc(u8, name.len);
@@ -633,32 +635,17 @@ fn uploadCommitToS3(
     const tarball_key = try std.fmt.allocPrint(allocator, "commits/{s}/{s}/{s}.tgz", .{ sha, clean_name, clean_name });
     defer allocator.free(tarball_key);
 
-    const tarball_filename = try std.fmt.allocPrint(allocator, "{s}-{s}.tgz", .{ clean_name, sha[0..7] });
-    defer allocator.free(tarball_filename);
-
-    // Write tarball to temp file
-    const tarball_tmp = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, tarball_filename });
-    defer allocator.free(tarball_tmp);
-
-    const file = try io_helper.cwd().createFile(io_helper.io, tarball_tmp, .{});
-    try io_helper.writeAllToFile(file, tarball_data);
-    file.close(io_helper.io);
-    defer io_helper.deleteFile(tarball_tmp) catch {};
-
-    // Upload tarball to S3
-    const s3_uri = try std.fmt.allocPrint(allocator, "s3://{s}/{s}", .{ bucket, tarball_key });
-    defer allocator.free(s3_uri);
-
-    const upload_result = try io_helper.childRun(allocator, &[_][]const u8{
-        "aws", "s3", "cp", tarball_tmp, s3_uri, "--content-type", "application/gzip",
-    });
-    defer allocator.free(upload_result.stdout);
-    defer allocator.free(upload_result.stderr);
-
-    if (upload_result.term != .exited or upload_result.term.exited != 0) {
-        style.print("  S3 upload failed: {s}\n", .{upload_result.stderr});
+    // Native S3 PUT via SigV4 — no `aws` CLI shell-out, no temp files.
+    const creds = aws.credentialsFromEnv() orelse {
+        style.print("  AWS credentials not in env\n", .{});
         return .{ .success = false, .url = "" };
-    }
+    };
+    const region = io_helper.getenv("AWS_REGION") orelse "us-east-1";
+
+    aws.s3PutObject(allocator, creds, region, bucket, tarball_key, tarball_data, "application/gzip") catch |err| {
+        style.print("  S3 upload failed: {s}\n", .{@errorName(err)});
+        return .{ .success = false, .url = "" };
+    };
 
     // Update DynamoDB with commit record
     try updateCommitDynamoDB(allocator, name, clean_name, sha, tarball_key, repo_url, version);
@@ -724,15 +711,16 @@ fn updateCommitDynamoDB(
     , .{ sha, name, name, sha, clean_name, s3_path, repo, ver, timestamp });
     defer allocator.free(item_json);
 
-    const result = try io_helper.childRun(allocator, &[_][]const u8{
-        "aws", "dynamodb", "put-item", "--table-name", table_name, "--item", item_json,
-    });
-    defer allocator.free(result.stdout);
-    defer allocator.free(result.stderr);
+    // Native DynamoDB PutItem — replaces `aws dynamodb put-item` shell-out.
+    const creds = aws.credentialsFromEnv() orelse {
+        style.print("  Warning: AWS credentials not in env; skipping DynamoDB update\n", .{});
+        return;
+    };
+    const region = io_helper.getenv("AWS_REGION") orelse "us-east-1";
 
-    if (result.term != .exited or result.term.exited != 0) {
-        style.print("  Warning: DynamoDB update failed: {s}\n", .{result.stderr});
-    }
+    aws.dynamoDbPutItem(allocator, creds, region, table_name, item_json) catch |err| {
+        style.print("  Warning: DynamoDB update failed: {s}\n", .{@errorName(err)});
+    };
 
     // Reverse lookup record: COMMIT_PACKAGE#{name} / SHA#{sha}
     const reverse_json = try std.fmt.allocPrint(allocator,
@@ -747,16 +735,10 @@ fn updateCommitDynamoDB(
     , .{ name, sha, name, sha, repo, timestamp });
     defer allocator.free(reverse_json);
 
-    const reverse_result = try io_helper.childRun(allocator, &[_][]const u8{
-        "aws", "dynamodb", "put-item", "--table-name", table_name, "--item", reverse_json,
-    });
-    defer allocator.free(reverse_result.stdout);
-    defer allocator.free(reverse_result.stderr);
-
-    // Don't fail on reverse lookup write failure
-    if (reverse_result.term != .exited or reverse_result.term.exited != 0) {
+    aws.dynamoDbPutItem(allocator, creds, region, table_name, reverse_json) catch {
+        // Don't fail on reverse lookup write failure
         style.print("  Warning: DynamoDB reverse index failed\n", .{});
-    }
+    };
 }
 
 /// Upload commit package via HTTP to registry server
@@ -867,13 +849,4 @@ fn uploadCommitViaHttp(
     });
 
     return .{ .success = true, .url = install_url };
-}
-
-/// Check if ~/.aws/credentials file exists
-fn awsCredentialsFileExists() bool {
-    const home = io_helper.getenv("HOME") orelse return false;
-    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const creds_path = std.fmt.bufPrint(&path_buf, "{s}/.aws/credentials", .{home}) catch return false;
-    io_helper.accessAbsolute(creds_path, .{}) catch return false;
-    return true;
 }

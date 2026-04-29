@@ -648,6 +648,73 @@ pub fn openDirAbsolute(path: []const u8, options: Dir.OpenOptions) !Dir {
     }
 }
 
+/// Create a file with an absolute path.
+///
+/// Mirrors `openFileAbsolute` for write/create. `Dir.cwd().createFile(abs)`
+/// is unreliable across Zig versions; using `openat(AT.FDCWD, abs, …)`
+/// directly works on every POSIX target.
+pub fn createFileAbsolute(path: []const u8, flags: File.CreateFlags) !File {
+    if (comptime is_windows) {
+        return cwd().createFile(io, path, flags) catch return error.FileNotFound;
+    }
+    var posix_flags: std.posix.O = .{
+        .ACCMODE = if (flags.read) .RDWR else .WRONLY,
+        .CREAT = true,
+        .TRUNC = flags.truncate,
+    };
+    if (flags.exclusive) posix_flags.EXCL = true;
+    // 0o666 matches std.fs's default; the umask further restricts at runtime.
+    const fd = try std.posix.openat(std.posix.AT.FDCWD, path, posix_flags, 0o666);
+    if (comptime hasField(File, "flags")) {
+        var result: File = std.mem.zeroes(File);
+        result.handle = fd;
+        return result;
+    } else {
+        return .{ .handle = fd };
+    }
+}
+
+/// Search PATH for `name`. Returns an allocator-owned absolute path, or
+/// `null` if the name isn't an executable on the PATH. The returned slice
+/// is owned by the caller and must be freed.
+///
+/// Bypasses `std.process.run`'s built-in PATH search (which has had subtle
+/// breakages across Zig dev versions and produces a generic FileNotFound
+/// when the binary can't be located, indistinguishable from other I/O
+/// errors). Resolving up-front lets callers emit a precise error message
+/// and lets us pass an absolute path to spawn so the runtime never has to
+/// search itself.
+pub fn findExecutable(allocator: std.mem.Allocator, name: []const u8) !?[]const u8 {
+    // Already absolute? Just verify it's executable.
+    if (name.len > 0 and name[0] == '/') {
+        if (isExecutable(name)) return try allocator.dupe(u8, name);
+        return null;
+    }
+
+    const path_env = getenv("PATH") orelse return null;
+    var it = std.mem.splitScalar(u8, path_env, ':');
+    while (it.next()) |dir| {
+        if (dir.len == 0) continue;
+        const candidate = try std.fs.path.join(allocator, &[_][]const u8{ dir, name });
+        if (isExecutable(candidate)) return candidate;
+        allocator.free(candidate);
+    }
+    return null;
+}
+
+/// Check if `path` exists and is regular-or-symlink with at least one
+/// execute bit set. Uses libc `access(path, X_OK)` for portability.
+fn isExecutable(path: []const u8) bool {
+    if (comptime is_windows) return true; // On Windows, lookup is by extension; defer to spawn.
+    var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+    if (path.len >= path_buf.len) return false;
+    @memcpy(path_buf[0..path.len], path);
+    path_buf[path.len] = 0;
+    // libc `access(path, X_OK)` returns 0 on success.
+    const X_OK: c_uint = 1;
+    return c.access(@ptrCast(&path_buf), X_OK) == 0;
+}
+
 /// Read from stdin
 pub fn readStdin(buffer: []u8) !usize {
     if (comptime is_windows) {

@@ -11,6 +11,7 @@ const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
 const style = @import("../style.zig");
+const aws = @import("../../auth/aws.zig");
 const http = std.http;
 
 const CommandResult = common.CommandResult;
@@ -45,6 +46,17 @@ pub fn searchCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
         }
     }
 
+    // Live-registry fallback: query registry.pantry.dev/search?format=json so
+    // user-published packages are discoverable even when the static catalog
+    // (regenerated only on pantry releases) doesn't yet know about them.
+    // Failure is non-fatal — we only emit what we got from the static list.
+    const live_count = searchLiveRegistry(allocator, search_term) catch |err| blk: {
+        if (err == error.NetworkUnavailable) break :blk 0;
+        // Any other error: silently ignore. The static catalog is authoritative.
+        break :blk 0;
+    };
+    found += live_count;
+
     if (found == 0) {
         style.print("No packages found.\n", .{});
     } else {
@@ -52,6 +64,108 @@ pub fn searchCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
     }
 
     return .{ .exit_code = 0 };
+}
+
+/// Query `GET /search?q=<query>&format=json` on the live registry and print
+/// each result as a "  name\n    Description: ...\n" block. Returns the
+/// number of results printed.
+fn searchLiveRegistry(allocator: std.mem.Allocator, query: []const u8) !usize {
+    const search_url = try std.fmt.allocPrint(allocator, "{s}/search?q={s}&format=json&limit=20", .{ PANTRY_REGISTRY_URL, query });
+    defer allocator.free(search_url);
+
+    const body = registryGet(allocator, search_url) catch |err| {
+        return err;
+    };
+    defer allocator.free(body);
+
+    // Parse: { "results": [{ "name": ..., "description": ..., ... }, ...] }
+    var parsed = std.json.parseFromSlice(std.json.Value, allocator, body, .{ .ignore_unknown_fields = true }) catch return 0;
+    defer parsed.deinit();
+
+    const root = parsed.value;
+    if (root != .object) return 0;
+    const results_node = root.object.get("results") orelse return 0;
+    if (results_node != .array) return 0;
+
+    var printed: usize = 0;
+    for (results_node.array.items) |item| {
+        if (item != .object) continue;
+        const name_v = item.object.get("name") orelse continue;
+        if (name_v != .string) continue;
+        const description = if (item.object.get("description")) |d| (if (d == .string) d.string else "") else "";
+
+        style.print("  {s}\n", .{name_v.string});
+        style.print("    Source: registry.pantry.dev\n", .{});
+        if (description.len > 0) style.print("    {s}\n\n", .{description}) else style.print("\n", .{});
+        printed += 1;
+    }
+    return printed;
+}
+
+/// Look up a single package by name on the live registry and print its
+/// metadata. Used by `infoCommand` as a fallback for packages that aren't
+/// in the static catalog (i.e. user-published packages, which the static
+/// `generated.zig` learns about only at the next pantry release).
+fn infoLiveRegistry(allocator: std.mem.Allocator, pkg_name: []const u8) !void {
+    const url = try std.fmt.allocPrint(allocator, "{s}/packages/{s}", .{ PANTRY_REGISTRY_URL, pkg_name });
+    defer allocator.free(url);
+
+    const body = try registryGet(allocator, url);
+    defer allocator.free(body);
+
+    var parsed = std.json.parseFromSlice(std.json.Value, allocator, body, .{ .ignore_unknown_fields = true }) catch return error.InvalidJson;
+    defer parsed.deinit();
+    const root = parsed.value;
+    if (root != .object) return error.InvalidJson;
+
+    const name_v = root.object.get("name") orelse return error.NotFound;
+    if (name_v != .string) return error.InvalidJson;
+
+    style.print("\n{s}\n", .{name_v.string});
+    style.print("  Source: registry.pantry.dev\n", .{});
+    if (root.object.get("version")) |v| if (v == .string) style.print("  Version: {s}\n", .{v.string});
+    if (root.object.get("description")) |d| if (d == .string and d.string.len > 0) style.print("  Description: {s}\n", .{d.string});
+    if (root.object.get("license")) |l| if (l == .string and l.string.len > 0) style.print("  License: {s}\n", .{l.string});
+    if (root.object.get("author")) |a| {
+        if (a == .string and a.string.len > 0) {
+            style.print("  Author: {s}\n", .{a.string});
+        }
+    }
+    if (root.object.get("homepage")) |h| if (h == .string and h.string.len > 0) style.print("  Homepage: {s}\n", .{h.string});
+    if (root.object.get("tarballUrl")) |t| if (t == .string) style.print("  Tarball: {s}\n", .{t.string});
+}
+
+/// HTTP GET against the registry; returns the response body as an allocator-
+/// owned slice. Non-2xx → `error.NotFound`. Network failure → bubbled up.
+fn registryGet(allocator: std.mem.Allocator, url: []const u8) ![]const u8 {
+    var client: http.Client = .{ .allocator = allocator, .io = io_helper.io };
+    defer client.deinit();
+
+    var alloc_writer = std.Io.Writer.Allocating.init(allocator);
+    errdefer alloc_writer.deinit();
+
+    var redirect_buf: [4096]u8 = undefined;
+    const result = try client.fetch(.{
+        .location = .{ .url = url },
+        .method = .GET,
+        .response_writer = &alloc_writer.writer,
+        .redirect_buffer = &redirect_buf,
+        .headers = .{ .accept_encoding = .{ .override = "identity" } },
+        .extra_headers = &[_]http.Header{
+            .{ .name = "accept", .value = "application/json" },
+        },
+    });
+
+    const status_int: u16 = @intFromEnum(result.status);
+    if (status_int < 200 or status_int >= 300) {
+        alloc_writer.deinit();
+        return error.NotFound;
+    }
+
+    const data = alloc_writer.writer.buffer[0..alloc_writer.writer.end];
+    const owned = try allocator.dupe(u8, data);
+    alloc_writer.deinit();
+    return owned;
 }
 
 /// Show detailed information about a package
@@ -77,6 +191,15 @@ pub fn infoCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     };
 
     if (pkg == null) {
+        // Live-registry fallback: hit GET /packages/{name} on registry.pantry.dev
+        // so user-published packages (not yet in the static catalog) are
+        // queryable via `pantry info`. The static catalog is regenerated
+        // only on pantry releases, so without this an end-user has no way
+        // to inspect their own published package via the CLI.
+        if (infoLiveRegistry(allocator, pkg_name)) |_| {
+            return .{ .exit_code = 0 };
+        } else |_| {}
+
         const msg = try std.fmt.allocPrint(
             allocator,
             "Package '{s}' not found. Try `pantry search {s}` to find similar packages.",
@@ -609,9 +732,10 @@ fn publishSingleToRegistry(
 
     style.print("Registry: {s}\n", .{options.registry});
 
-    // Check if we have AWS credentials for direct S3 upload
-    const aws_key = io_helper.getenv("AWS_ACCESS_KEY_ID");
-    const has_aws_creds = aws_key != null or awsCredentialsFileExists();
+    // Check if we have AWS credentials for direct S3 upload (env-based;
+    // we no longer parse `~/.aws/credentials` since the native SigV4 path
+    // only consumes env vars).
+    const has_aws_creds = io_helper.getenv("AWS_ACCESS_KEY_ID") != null;
 
     // Get auth token (from options, env, or ~/.pantry/credentials)
     // Token is optional if we have AWS credentials for direct S3 upload
@@ -1178,11 +1302,12 @@ fn uploadToRegistry(
     token: []const u8,
     metadata_json: []const u8,
 ) ![]const u8 {
-    // Check if we should use direct S3 upload (AWS credentials available)
-    const aws_key = io_helper.getenv("AWS_ACCESS_KEY_ID");
-    const has_aws_creds = aws_key != null or awsCredentialsFileExists();
-
-    if (has_aws_creds) {
+    // Direct S3 upload via SigV4 when env-based AWS credentials are present.
+    // (The legacy `~/.aws/credentials` file path was relevant when we shelled
+    // out to the `aws` CLI; with native SigV4 we only consume env vars.
+    // CI flows already use env-based creds, and local users can `source` an
+    // env file before publishing.)
+    if (io_helper.getenv("AWS_ACCESS_KEY_ID") != null) {
         return uploadToS3Direct(allocator, name, version, tarball_data, metadata_json);
     }
 
@@ -1190,16 +1315,9 @@ fn uploadToRegistry(
     return uploadViaHttp(allocator, registry_url, tarball_data, token, metadata_json);
 }
 
-/// Check if ~/.aws/credentials file exists
-fn awsCredentialsFileExists() bool {
-    const home = io_helper.getenv("HOME") orelse return false;
-    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const creds_path = std.fmt.bufPrint(&path_buf, "{s}/.aws/credentials", .{home}) catch return false;
-    io_helper.accessAbsolute(creds_path, .{}) catch return false;
-    return true;
-}
-
-/// Upload directly to S3 using AWS CLI
+/// Upload directly to S3 + DynamoDB using native SigV4. Replaces an earlier
+/// `aws s3 cp` / `aws dynamodb put-item` shell-out that pulled in the AWS
+/// CLI as a hidden dependency.
 fn uploadToS3Direct(
     allocator: std.mem.Allocator,
     name: []const u8,
@@ -1228,67 +1346,23 @@ fn uploadToS3Direct(
     const metadata_key = try std.fmt.allocPrint(allocator, "packages/pantry/{s}/metadata.json", .{clean_name});
     defer allocator.free(metadata_key);
 
-    // Write tarball to temp file
-    const tarball_tmp = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, tarball_filename });
-    defer allocator.free(tarball_tmp);
+    _ = tmp_dir; // No temp files needed — we sign and PUT in-process.
 
-    const file = try io_helper.cwd().createFile(io_helper.io, tarball_tmp, .{});
-    try io_helper.writeAllToFile(file, tarball_data);
-    file.close(io_helper.io);
-    defer io_helper.deleteFile(tarball_tmp) catch {};
-
-    // Write metadata to temp file
-    const metadata_tmp = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "metadata.json" });
-    defer allocator.free(metadata_tmp);
-
-    const meta_file = try io_helper.cwd().createFile(io_helper.io, metadata_tmp, .{});
-    try io_helper.writeAllToFile(meta_file, metadata_json);
-    meta_file.close(io_helper.io);
-    defer io_helper.deleteFile(metadata_tmp) catch {};
-
-    // Upload tarball to S3
-    const s3_tarball_uri = try std.fmt.allocPrint(allocator, "s3://{s}/{s}", .{ bucket, tarball_key });
-    defer allocator.free(s3_tarball_uri);
+    // Native S3 PUT via SigV4. No external `aws` CLI, no temp files.
+    const creds = aws.credentialsFromEnv() orelse return error.AwsCredentialsMissing;
+    const region = io_helper.getenv("AWS_REGION") orelse "us-east-1";
 
     style.print("  Uploading tarball to S3...\n", .{});
-    const tarball_result = try io_helper.childRun(allocator, &[_][]const u8{
-        "aws",
-        "s3",
-        "cp",
-        tarball_tmp,
-        s3_tarball_uri,
-        "--content-type",
-        "application/gzip",
-    });
-    defer allocator.free(tarball_result.stdout);
-    defer allocator.free(tarball_result.stderr);
-
-    if (tarball_result.term != .exited or tarball_result.term.exited != 0) {
-        style.print("S3 upload failed: {s}\n", .{tarball_result.stderr});
+    aws.s3PutObject(allocator, creds, region, bucket, tarball_key, tarball_data, "application/gzip") catch |err| {
+        style.print("S3 upload failed: {s}\n", .{@errorName(err)});
         return error.UploadFailed;
-    }
-
-    // Upload metadata to S3
-    const s3_metadata_uri = try std.fmt.allocPrint(allocator, "s3://{s}/{s}", .{ bucket, metadata_key });
-    defer allocator.free(s3_metadata_uri);
+    };
 
     style.print("  Uploading metadata to S3...\n", .{});
-    const metadata_result = try io_helper.childRun(allocator, &[_][]const u8{
-        "aws",
-        "s3",
-        "cp",
-        metadata_tmp,
-        s3_metadata_uri,
-        "--content-type",
-        "application/json",
-    });
-    defer allocator.free(metadata_result.stdout);
-    defer allocator.free(metadata_result.stderr);
-
-    if (metadata_result.term != .exited or metadata_result.term.exited != 0) {
-        style.print("S3 metadata upload failed: {s}\n", .{metadata_result.stderr});
+    aws.s3PutObject(allocator, creds, region, bucket, metadata_key, metadata_json, "application/json") catch |err| {
+        style.print("S3 metadata upload failed: {s}\n", .{@errorName(err)});
         return error.UploadFailed;
-    }
+    };
 
     // Update DynamoDB index
     style.print("  Updating DynamoDB index...\n", .{});
@@ -1489,34 +1563,19 @@ fn updateDynamoDBIndex(
     });
     defer allocator.free(item_json);
 
-    // Write JSON to temp file
-    const tmp_dir = io_helper.getTempDir();
-    const item_tmp = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "pantry-dynamodb-item.json" });
-    defer allocator.free(item_tmp);
-
-    const file = try io_helper.cwd().createFile(io_helper.io, item_tmp, .{});
-    try io_helper.writeAllToFile(file, item_json);
-    file.close(io_helper.io);
-    defer io_helper.deleteFile(item_tmp) catch {};
-
-    // Call AWS CLI to put item
-    const result = try io_helper.childRun(allocator, &[_][]const u8{
-        "aws",
-        "dynamodb",
-        "put-item",
-        "--table-name",
-        table_name,
-        "--item",
-        item_json,
-    });
-    defer allocator.free(result.stdout);
-    defer allocator.free(result.stderr);
-
-    if (result.term != .exited or result.term.exited != 0) {
-        style.print("DynamoDB update failed: {s}\n", .{result.stderr});
-        // Don't fail the whole publish, just warn
+    // Native DynamoDB PutItem via SigV4. The tarball is already on S3, so
+    // a missing/failed index update is recoverable — warn and return
+    // rather than fail the whole publish.
+    const creds = aws.credentialsFromEnv() orelse {
+        style.print("  Warning: AWS credentials not in env; skipping DynamoDB index update\n", .{});
         return;
-    }
+    };
+    const region = io_helper.getenv("AWS_REGION") orelse "us-east-1";
+
+    aws.dynamoDbPutItem(allocator, creds, region, table_name, item_json) catch |err| {
+        style.print("DynamoDB update failed: {s}\n", .{@errorName(err)});
+        return;
+    };
 
     style.print("  Updated DynamoDB index for {s}\n", .{name});
 }
