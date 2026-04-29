@@ -205,6 +205,14 @@ export async function installPackage(
     if (resolved) version = resolved
   }
 
+  // Catch every path where version resolution silently produced "". An
+  // empty version string used to slip through and become a `bun-v/...`-
+  // style 404 a few seconds later — a 5-step debug for what's really a
+  // resolver failure.
+  if (!version) {
+    throw new Error(`Could not resolve a concrete version for ${domain} (got empty string from resolver)`)
+  }
+
   const installDir = options.installDir || path.join(process.cwd(), 'pantry')
   const binDir = path.join(installDir, '.bin')
   const pkgDir = path.join(installDir, domain.replace(/\./g, '-'), version)
@@ -385,22 +393,53 @@ export async function installPackages(
  */
 export async function resolveLatestVersion(domain: string): Promise<string> {
   if (domain === 'bun.sh') {
-    // Try GitHub API first, fall back to known recent version
+    // Try GitHub API first, then fall back to the newest version in the
+    // bundled package metadata. The earlier code returned `""` on API
+    // failure, which produced a `bun-v/bun-linux-x64.zip` 404 — silently
+    // breaking CI installs for anyone whose runner pool was rate-limited
+    // (60 req/hr unauthenticated, easy to exhaust).
     const resp = await fetchJSON('https://api.github.com/repos/oven-sh/bun/releases/latest').catch(() => null)
-    const tag = (resp as { tag_name?: string } | null)?.tag_name || ''
-    return tag.replace(/^bun-v/, '')
+    const tag = (resp as { tag_name?: string } | null)?.tag_name?.replace(/^bun-v/, '') || ''
+    if (tag) return tag
+    const fallback = await latestFromPackageMetadata(domain)
+    if (fallback) return fallback
+    throw new Error('Failed to resolve latest bun.sh version (GitHub API unreachable, no bundled metadata)')
   }
   if (domain === 'ziglang.org') {
-    const resp = await fetchJSON('https://ziglang.org/download/index.json')
-    return (resp as { master?: { version?: string } }).master?.version || ''
+    const resp = await fetchJSON('https://ziglang.org/download/index.json').catch(() => null)
+    const v = (resp as { master?: { version?: string } } | null)?.master?.version
+    if (v) return v
+    const fallback = await latestFromPackageMetadata(domain)
+    if (fallback) return fallback
+    throw new Error('Failed to resolve latest ziglang.org version')
   }
   if (domain === 'nodejs.org') {
-    const resp = await fetchJSON('https://nodejs.org/dist/index.json')
-    const versions = resp as Array<{ version: string, lts: boolean | string }>
+    const resp = await fetchJSON('https://nodejs.org/dist/index.json').catch(() => null)
+    const versions = (resp as Array<{ version: string, lts: boolean | string }> | null) || []
     const lts = versions.find(v => v.lts)
-    return (lts?.version || versions[0]?.version || '').replace(/^v/, '')
+    const v = (lts?.version || versions[0]?.version || '').replace(/^v/, '')
+    if (v) return v
+    const fallback = await latestFromPackageMetadata(domain)
+    if (fallback) return fallback
+    throw new Error('Failed to resolve latest nodejs.org version')
   }
   throw new Error(`Cannot resolve latest version for ${domain}`)
+}
+
+/** Return the highest version from `packages/index.js` for `domain`, or "". */
+async function latestFromPackageMetadata(domain: string): Promise<string> {
+  try {
+    const pkgKey = domain.replace(/[^a-z0-9]/gi, '').toLowerCase()
+    const { packages } = await import('./packages/index.js').catch(() => import('./index.js'))
+    const pkg = (packages as Record<string, { versions?: readonly string[] }>)[pkgKey]
+    const versions = pkg?.versions || []
+    // Take the first stable (non-pre-release) version — the bundled list is
+    // typically newest-first; fall back to any version if there are no stables.
+    return versions.find(v => !v.includes('-')) || versions[0] || ''
+  }
+  catch {
+    return ''
+  }
 }
 
 /**
@@ -549,7 +588,20 @@ function copyDirRecursive(src: string, dest: string): void {
 function fetchJSON(url: string, maxRedirects = 5): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const get = url.startsWith('https') ? https.get : http.get
-    const req = get(url, { headers: { 'User-Agent': 'pantry-installer' }, timeout: 30000 }, (res) => {
+    const headers: Record<string, string> = {
+      'User-Agent': 'pantry-installer',
+      'Accept': 'application/json',
+    }
+    // Authenticate api.github.com calls when a GITHUB_TOKEN is available.
+    // Unauthenticated requests share a 60 req/hr quota across the entire
+    // runner pool's IP range, which is routinely exhausted on busy CI;
+    // an authenticated request gets 5000/hr per token. The token is set
+    // automatically on GitHub Actions runners — outside CI we just skip.
+    if (url.includes('api.github.com')) {
+      const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
+      if (token) headers.Authorization = `Bearer ${token}`
+    }
+    const req = get(url, { headers, timeout: 30000 }, (res) => {
       if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         if (maxRedirects <= 0) return reject(new Error(`Too many redirects for ${url}`))
         return fetchJSON(res.headers.location, maxRedirects - 1).then(resolve, reject)
