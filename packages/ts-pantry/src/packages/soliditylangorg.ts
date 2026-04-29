@@ -81,6 +81,7 @@ export const soliditylangorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.8.35',
     '0.8.34',
     '0.8.33',
     '0.8.32',
