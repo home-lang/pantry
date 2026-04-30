@@ -549,16 +549,29 @@ fn resolveGlobPattern(
             };
             if (ws_array) |patterns| {
                 if (patterns.items.len > 0) {
-                    style.print("  Expanding workspace root '{s}' ({d} pattern(s))\n", .{ clean_pattern, patterns.items.len });
-                    // We're done with the root pkg's strings — child resolution
-                    // allocates its own.
-                    allocator.free(config_path);
-                    allocator.free(pkg_path);
+                    // Workspace globs are resolved relative to the workspace
+                    // root (`pkg_path`), not the original caller cwd. Without
+                    // this, `publish:commit ./packages/foo` (where foo's own
+                    // package.json declares workspaces) would expand foo's
+                    // patterns against the OUTER repo, picking up sibling
+                    // packages instead of foo's children.
+                    const before_count = packages.items.len;
                     for (patterns.items) |p| {
                         if (p != .string) continue;
-                        try resolveGlobPattern(allocator, cwd, p.string, packages);
+                        try resolveGlobPattern(allocator, pkg_path, p.string, packages);
                     }
-                    return;
+                    const expanded_count = packages.items.len - before_count;
+                    if (expanded_count > 0) {
+                        style.print("  Expanding workspace root '{s}' ({d} pattern(s), {d} package(s) found)\n", .{ clean_pattern, patterns.items.len, expanded_count });
+                        allocator.free(config_path);
+                        allocator.free(pkg_path);
+                        return;
+                    }
+                    // workspaces declared but no children matched — fall
+                    // through to publishing the package itself. This handles
+                    // stale workspace declarations (the field was added once
+                    // and never cleaned up after the children were removed).
+                    style.print("  Note: '{s}' declares workspaces but no children matched; treating as a single package.\n", .{clean_pattern});
                 }
             }
         }
