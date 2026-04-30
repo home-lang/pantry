@@ -79,6 +79,7 @@ export const assimporgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '6.0.5',
     '6.0.4',
     '6.0.3',
     '6.0.2',
