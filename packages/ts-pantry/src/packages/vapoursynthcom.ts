@@ -84,6 +84,7 @@ export const vapoursynthcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '75',
     '74',
     '73',
     '73.0.0',
