@@ -70,6 +70,7 @@ export const tiltdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.37.3',
     '0.37.2',
     '0.37.1',
     '0.37.0',
