@@ -381,14 +381,14 @@ All features have been fully integrated into the codebase:
 
 ### Install Flow Integration
 
-**Offline Mode (src/cli/commands/install/core.zig:237-241)**
+#### Offline Mode (src/cli/commands/install/core.zig:237-241)
 
 - ✅ Environment variable check (`PANTRY_OFFLINE`)
 - ✅ User feedback when offline mode enabled
 - ✅ Cache-first installation in helpers.zig (lines 130-172)
 - ✅ Network fallback when cache miss
 
-**Recovery Checkpoints (src/cli/commands/install/core.zig:243-274)**
+#### Recovery Checkpoints (src/cli/commands/install/core.zig:243-274)
 
 - ✅ Checkpoint initialization
 - ✅ Backup creation before installs
@@ -396,7 +396,7 @@ All features have been fully integrated into the codebase:
 - ✅ Directory recording
 - ✅ Rollback on hook failures
 
-**Error Recovery (src/cli/commands/install/helpers.zig:185-195)**
+#### Error Recovery (src/cli/commands/install/helpers.zig:185-195)
 
 - ✅ Error classification (network, permission, disk, etc.)
 - ✅ Contextual recovery suggestions

@@ -855,7 +855,7 @@
 
 - Revert "chore: release v0.9.21" ([90e2465](https://github.com/home-lang/pantry/commit/90e2465)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - Revert "chore: release v0.9.21" ([809d706](https://github.com/home-lang/pantry/commit/809d706)) _(by glennmichael123 <gtorregosa@gmail.com>)_
--  ([- hashP](https://github.com/home-lang/pantry/commit/- hashP)) _(by  dev  <>)_
+- ([- hashP](https://github.com/home-lang/pantry/commit/- hashP)) _(by  dev  <>)_
 - Revert "perf: replace BFS wave resolution with concurrent work queue" ([9054be4](https://github.com/home-lang/pantry/commit/9054be4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 
 ### Contributors
@@ -1225,7 +1225,7 @@
 
 - Revert "chore: release v0.9.21" ([90e2465](https://github.com/home-lang/pantry/commit/90e2465)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 - Revert "chore: release v0.9.21" ([809d706](https://github.com/home-lang/pantry/commit/809d706)) _(by glennmichael123 <gtorregosa@gmail.com>)_
--  ([- hashP](https://github.com/home-lang/pantry/commit/- hashP)) _(by  dev  <>)_
+- ([- hashP](https://github.com/home-lang/pantry/commit/- hashP)) _(by  dev  <>)_
 - Revert "perf: replace BFS wave resolution with concurrent work queue" ([9054be4](https://github.com/home-lang/pantry/commit/9054be4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
 
 ### Contributors

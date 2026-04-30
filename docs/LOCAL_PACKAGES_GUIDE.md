@@ -383,7 +383,7 @@ pantry install
 
 ### Example 4: Using Link Registry
 
-**Step 1: Link packages**
+#### Step 1: Link packages
 
 ```bash
 cd ~/Code/zig-config && pantry link
@@ -391,7 +391,7 @@ cd ~/Code/zig-cli && pantry link
 cd ~/Code/zig-bump && pantry link
 ```
 
-**Step 2: Use in project**
+#### Step 2: Use in project
 
 ```jsonc
 {
