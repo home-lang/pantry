@@ -407,6 +407,19 @@ pub fn installWorkspaceCommandWithOptions(
                     if (options.verbose) {
                         std.debug.print("[verbose:ws] fast path: pantry.lock exists, {s}/ has {d}+ packages — skipping\n", .{ options.modules_dir, entry_count });
                     }
+
+                    // Delegate to bun for npm deps if package.json declares any (issue #200) —
+                    // pantry/ being populated says nothing about node_modules/.
+                    {
+                        const bun_delegate = @import("../../../deps/bun_delegate.zig");
+                        _ = bun_delegate.installNpmDeps(allocator, workspace_root, .{
+                            .production = options.production,
+                            .frozen_lockfile = options.frozen_lockfile,
+                            .ignore_scripts = options.ignore_scripts,
+                            .verbose = options.verbose,
+                        }) catch {};
+                    }
+
                     return .{ .exit_code = 0 };
                 }
             }

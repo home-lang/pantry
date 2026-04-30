@@ -489,8 +489,105 @@ fn resolveGlobPattern(
             return;
         }
 
-        const pkg_name = readPackageName(allocator, config_path) catch clean_pattern;
-        const pkg_version = readPackageVersion(allocator, config_path) catch null;
+        // Parse package.json so we can honor `private: true` and expand
+        // monorepo roots (`workspaces`) the same way the `/*` branch does.
+        const content = io_helper.readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch {
+            // If we can't read it, fall through to the dumb path append below
+            // so the existing behaviour is preserved on I/O failures.
+            const pkg_name = readPackageName(allocator, config_path) catch clean_pattern;
+            const pkg_version = readPackageVersion(allocator, config_path) catch null;
+            try packages.append(allocator, .{
+                .name = try allocator.dupe(u8, pkg_name),
+                .path = pkg_path,
+                .config_path = config_path,
+                .version = if (pkg_version) |v| try allocator.dupe(u8, v) else null,
+            });
+            return;
+        };
+        defer allocator.free(content);
+
+        const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch {
+            const pkg_name = readPackageName(allocator, config_path) catch clean_pattern;
+            const pkg_version = readPackageVersion(allocator, config_path) catch null;
+            try packages.append(allocator, .{
+                .name = try allocator.dupe(u8, pkg_name),
+                .path = pkg_path,
+                .config_path = config_path,
+                .version = if (pkg_version) |v| try allocator.dupe(u8, v) else null,
+            });
+            return;
+        };
+        defer parsed.deinit();
+
+        const root = parsed.value;
+        if (root != .object) {
+            const pkg_name = readPackageName(allocator, config_path) catch clean_pattern;
+            const pkg_version = readPackageVersion(allocator, config_path) catch null;
+            try packages.append(allocator, .{
+                .name = try allocator.dupe(u8, pkg_name),
+                .path = pkg_path,
+                .config_path = config_path,
+                .version = if (pkg_version) |v| try allocator.dupe(u8, v) else null,
+            });
+            return;
+        }
+
+        // Monorepo root: expand `workspaces` patterns so `pantry publish:commit '.'`
+        // from a workspace root publishes the child packages instead of tarring
+        // the whole repo (which previously hit the 50MB registry limit). This
+        // takes precedence over the `private: true` check below — a private
+        // root with workspaces is the typical monorepo shape, and we want to
+        // publish the children, not refuse outright.
+        if (root.object.get("workspaces")) |ws| {
+            const ws_array: ?std.json.Array = switch (ws) {
+                .array => |a| a,
+                .object => |o| if (o.get("packages")) |p|
+                    if (p == .array) p.array else null
+                else
+                    null,
+                else => null,
+            };
+            if (ws_array) |patterns| {
+                if (patterns.items.len > 0) {
+                    style.print("  Expanding workspace root '{s}' ({d} pattern(s))\n", .{ clean_pattern, patterns.items.len });
+                    // We're done with the root pkg's strings — child resolution
+                    // allocates its own.
+                    allocator.free(config_path);
+                    allocator.free(pkg_path);
+                    for (patterns.items) |p| {
+                        if (p != .string) continue;
+                        try resolveGlobPattern(allocator, cwd, p.string, packages);
+                    }
+                    return;
+                }
+            }
+        }
+
+        // Skip private packages (no workspaces to expand) — same rule as the /* branch.
+        const is_private = if (root.object.get("private")) |p|
+            if (p == .bool) p.bool else false
+        else
+            false;
+        if (is_private) {
+            const display = if (root.object.get("name")) |n|
+                if (n == .string) n.string else clean_pattern
+            else
+                clean_pattern;
+            style.print("  Skipping {s} (private)\n", .{display});
+            allocator.free(config_path);
+            allocator.free(pkg_path);
+            return;
+        }
+
+        const pkg_name = if (root.object.get("name")) |n|
+            if (n == .string) n.string else clean_pattern
+        else
+            clean_pattern;
+
+        const pkg_version = if (root.object.get("version")) |v|
+            if (v == .string) v.string else null
+        else
+            null;
 
         try packages.append(allocator, .{
             .name = try allocator.dupe(u8, pkg_name),

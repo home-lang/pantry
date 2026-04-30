@@ -191,8 +191,12 @@ const ResolveThreadCtx = struct {
 
             const dep = ctx.deps[i];
 
-            // Skip non-npm packages in resolution phase
-            if (dep.source != .npm and dep.source != .pantry) {
+            // Skip non-npm packages in resolution phase. .pantry-source
+            // (system) deps don't have npm metadata — they resolve via the
+            // pantry S3 registry inside the download phase. Routing them
+            // through resolveNpmPackageWithDeps would hit npmjs.org and find
+            // squatter packages (e.g. `bun.sh@0.0.0`).
+            if (dep.source != .npm) {
                 ctx.results[i] = null;
                 continue;
             }
@@ -357,9 +361,12 @@ fn resolveFullTree(
                 }
                 allocator.free(result.dependencies);
             } else {
-                // Resolution failed — add non-npm packages directly
+                // Resolution returned no result — add non-npm packages
+                // directly with their original source preserved. .pantry,
+                // .github, .git, .http, .ziglang, .local all install via
+                // their own paths in the download phase (or out-of-band).
                 const dep = current_wave.items[ri];
-                if (dep.source != .npm and dep.source != .pantry) {
+                if (dep.source != .npm) {
                     if (!seen.contains(dep.name)) {
                         try seen.put(try allocator.dupe(u8, dep.name), {});
                         try resolved.append(allocator, .{
@@ -443,7 +450,47 @@ const DownloadThreadCtx = struct {
             const owned_name = alloc.dupe(u8, pkg.name) catch "";
             const owned_version = alloc.dupe(u8, pkg.version) catch "";
 
-            // Skip non-npm packages
+            // .pantry source: system binaries from registry.pantry.dev.
+            // Delegate to installer.install() which handles S3 lookup,
+            // version resolution, download, and extraction for system deps.
+            if (pkg.source == .pantry) {
+                const spec = PackageSpec{
+                    .name = pkg.name,
+                    .version = pkg.version,
+                    .source = .pantry,
+                };
+                const opts = installer_mod.InstallOptions{
+                    .verbose = ctx.verbose,
+                    .project_root = ctx.project_root,
+                };
+                if (ctx.installer.install(spec, opts)) |install_result_| {
+                    var ir = install_result_;
+                    defer ir.deinit(alloc);
+                    ctx.results[i] = .{
+                        .name = owned_name,
+                        .version = alloc.dupe(u8, ir.version) catch owned_version,
+                        .success = true,
+                        .from_cache = ir.from_cache,
+                    };
+                    if (ctx.verbose) {
+                        std.debug.print("[verbose:pipeline:download] pantry-source installed: {s} @ {s}\n", .{ pkg.name, ir.version });
+                    }
+                } else |err| {
+                    const msg = std.fmt.allocPrint(alloc, "{s}", .{@errorName(err)}) catch null;
+                    ctx.results[i] = .{
+                        .name = owned_name,
+                        .version = owned_version,
+                        .success = false,
+                        .error_msg = msg,
+                    };
+                    if (ctx.verbose) {
+                        std.debug.print("[verbose:pipeline:download] pantry-source FAILED: {s} @ {s}: {s}\n", .{ pkg.name, pkg.version, @errorName(err) });
+                    }
+                }
+                continue;
+            }
+
+            // Skip other non-npm packages (handled out-of-band by caller)
             if (pkg.source != .npm) {
                 ctx.results[i] = .{
                     .name = owned_name,

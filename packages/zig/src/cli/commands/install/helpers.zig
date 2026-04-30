@@ -1264,6 +1264,38 @@ pub fn ensureBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, mod
     // Walk the pantry directory tree looking for bin/ and sbin/ directories.
     // Handles arbitrary nesting depth (e.g. php.net/v8.5.3/bin/ or github.com/org/pkg/v1.0.0/bin/).
     scanForBinDirs(allocator, pantry_dir, bin_link_dir, 0);
+
+    // Create alias symlinks for known multi-name binaries.
+    // bun.sh ships only `bin/bun`, but the binary dispatches to `bunx` behavior
+    // when invoked under that name. The upstream tarball doesn't include a
+    // bunx entry, so we create the symlink ourselves.
+    createBinAliases(allocator, bin_link_dir);
+}
+
+/// Create alias symlinks for known multi-name binaries.
+/// e.g. bun → bunx (same binary, different argv[0]).
+fn createBinAliases(allocator: std.mem.Allocator, bin_link_dir: []const u8) void {
+    const aliases = [_]struct {
+        primary: []const u8,
+        alias: []const u8,
+    }{
+        .{ .primary = "bun", .alias = "bunx" },
+    };
+
+    for (aliases) |a| {
+        const primary_path = std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_link_dir, a.primary }) catch continue;
+        defer allocator.free(primary_path);
+        // Only create the alias if the primary binary exists in .bin/
+        io_helper.accessAbsolute(primary_path, .{}) catch continue;
+
+        const alias_path = std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_link_dir, a.alias }) catch continue;
+        defer allocator.free(alias_path);
+        // Don't overwrite an existing alias — first-installed wins
+        io_helper.accessAbsolute(alias_path, .{}) catch {
+            io_helper.symLink(a.primary, alias_path) catch {};
+            continue;
+        };
+    }
 }
 
 /// Recursively scan a directory for bin/ and sbin/ subdirectories.

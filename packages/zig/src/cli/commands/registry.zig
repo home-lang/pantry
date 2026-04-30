@@ -50,10 +50,10 @@ pub fn searchCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
     // user-published packages are discoverable even when the static catalog
     // (regenerated only on pantry releases) doesn't yet know about them.
     // Failure is non-fatal — we only emit what we got from the static list.
-    const live_count = searchLiveRegistry(allocator, search_term) catch |err| blk: {
-        if (err == error.NetworkUnavailable) break :blk 0;
+    const live_count: usize = searchLiveRegistry(allocator, search_term) catch |err| blk: {
+        if (err == error.NetworkUnavailable) break :blk @as(usize, 0);
         // Any other error: silently ignore. The static catalog is authoritative.
-        break :blk 0;
+        break :blk @as(usize, 0);
     };
     found += live_count;
 

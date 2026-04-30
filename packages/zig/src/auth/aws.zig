@@ -164,7 +164,13 @@ fn signedRequest(allocator: std.mem.Allocator, params: RequestParams) !void {
     var payload_hash: [Sha256.digest_length]u8 = undefined;
     Sha256.hash(params.payload, &payload_hash, .{});
     var payload_hex: [Sha256.digest_length * 2]u8 = undefined;
-    _ = std.fmt.bufPrint(&payload_hex, "{x}", .{std.fmt.fmtSliceHexLower(&payload_hash)}) catch unreachable;
+    {
+        const hex_chars = "0123456789abcdef";
+        for (payload_hash, 0..) |b, i| {
+            payload_hex[i * 2] = hex_chars[b >> 4];
+            payload_hex[i * 2 + 1] = hex_chars[b & 0xF];
+        }
+    }
 
     // Headers we need to sign. Order matters for the canonical request
     // (lexicographic on lowercase name).
@@ -172,7 +178,7 @@ fn signedRequest(allocator: std.mem.Allocator, params: RequestParams) !void {
     defer headers_arena.deinit();
     const ha = headers_arena.allocator();
 
-    var signing_headers = std.ArrayList(Header){};
+    var signing_headers: std.ArrayList(Header) = .empty;
     try signing_headers.append(ha, .{ .name = "host", .value = params.host });
     try signing_headers.append(ha, .{ .name = "x-amz-content-sha256", .value = &payload_hex });
     try signing_headers.append(ha, .{ .name = "x-amz-date", .value = amz_date });
@@ -186,8 +192,8 @@ fn signedRequest(allocator: std.mem.Allocator, params: RequestParams) !void {
 
     // Build canonical headers string ("name:value\n") and signed headers
     // list ("name1;name2;…").
-    var canonical_headers = std.ArrayList(u8){};
-    var signed_headers_list = std.ArrayList(u8){};
+    var canonical_headers: std.ArrayList(u8) = .empty;
+    var signed_headers_list: std.ArrayList(u8) = .empty;
     for (signing_headers.items, 0..) |h, i| {
         try canonical_headers.appendSlice(ha, h.name);
         try canonical_headers.append(ha, ':');
@@ -198,7 +204,7 @@ fn signedRequest(allocator: std.mem.Allocator, params: RequestParams) !void {
     }
 
     // Canonical request — see SigV4 spec.
-    var canonical_request = std.ArrayList(u8){};
+    var canonical_request: std.ArrayList(u8) = .empty;
     try canonical_request.appendSlice(ha, params.method);
     try canonical_request.append(ha, '\n');
     try canonical_request.appendSlice(ha, params.path);
@@ -214,7 +220,13 @@ fn signedRequest(allocator: std.mem.Allocator, params: RequestParams) !void {
     var canonical_hash: [Sha256.digest_length]u8 = undefined;
     Sha256.hash(canonical_request.items, &canonical_hash, .{});
     var canonical_hex: [Sha256.digest_length * 2]u8 = undefined;
-    _ = std.fmt.bufPrint(&canonical_hex, "{x}", .{std.fmt.fmtSliceHexLower(&canonical_hash)}) catch unreachable;
+    {
+        const hex_chars = "0123456789abcdef";
+        for (canonical_hash, 0..) |b, i| {
+            canonical_hex[i * 2] = hex_chars[b >> 4];
+            canonical_hex[i * 2 + 1] = hex_chars[b & 0xF];
+        }
+    }
 
     // Credential scope: "{date}/{region}/{service}/aws4_request".
     const credential_scope = try std.fmt.allocPrint(ha, "{s}/{s}/{s}/aws4_request", .{
@@ -235,7 +247,13 @@ fn signedRequest(allocator: std.mem.Allocator, params: RequestParams) !void {
     const k_signing = hmac(&k_service, "aws4_request");
     const signature = hmac(&k_signing, string_to_sign);
     var signature_hex: [Sha256.digest_length * 2]u8 = undefined;
-    _ = std.fmt.bufPrint(&signature_hex, "{x}", .{std.fmt.fmtSliceHexLower(&signature)}) catch unreachable;
+    {
+        const hex_chars = "0123456789abcdef";
+        for (signature, 0..) |b, i| {
+            signature_hex[i * 2] = hex_chars[b >> 4];
+            signature_hex[i * 2 + 1] = hex_chars[b & 0xF];
+        }
+    }
 
     // Build the Authorization header value.
     const auth_value = try std.fmt.allocPrint(allocator, "AWS4-HMAC-SHA256 Credential={s}/{s}, SignedHeaders={s}, Signature={s}", .{
@@ -256,7 +274,7 @@ fn signedRequest(allocator: std.mem.Allocator, params: RequestParams) !void {
     // Build the wire headers we need to send. `host` is added by
     // std.http.Client itself; everything else has to be passed through
     // `extra_headers`.
-    var wire_headers = std.ArrayList(http.Header){};
+    var wire_headers: std.ArrayList(http.Header) = .empty;
     try wire_headers.append(ha, .{ .name = "x-amz-content-sha256", .value = &payload_hex });
     try wire_headers.append(ha, .{ .name = "x-amz-date", .value = amz_date });
     try wire_headers.append(ha, .{ .name = "authorization", .value = auth_value });
@@ -327,7 +345,7 @@ fn hmac(key: []const u8, msg: []const u8) [HmacSha256.mac_length]u8 {
 /// percent-encode everything else. Slashes are preserved because the caller
 /// passes a multi-segment key.
 fn uriEncodePath(allocator: std.mem.Allocator, path: []const u8) ![]u8 {
-    var buf = std.ArrayList(u8){};
+    var buf: std.ArrayList(u8) = .empty;
     for (path) |c| {
         const safe = (c >= 'A' and c <= 'Z') or
             (c >= 'a' and c <= 'z') or
@@ -336,7 +354,9 @@ fn uriEncodePath(allocator: std.mem.Allocator, path: []const u8) ![]u8 {
         if (safe) {
             try buf.append(allocator, c);
         } else {
-            try buf.writer(allocator).print("%{X:0>2}", .{c});
+            var enc_buf: [3]u8 = undefined;
+            const enc = try std.fmt.bufPrint(&enc_buf, "%{X:0>2}", .{c});
+            try buf.appendSlice(allocator, enc);
         }
     }
     return buf.toOwnedSlice(allocator);

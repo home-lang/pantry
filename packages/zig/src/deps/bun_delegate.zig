@@ -42,8 +42,21 @@ pub fn installNpmDeps(
     }
     const bun_exe = bun_path.?;
 
+    // Prepare PATH that includes pantry/.bin so postinstall scripts spawned
+    // by bun install (which run under /bin/bash) can find tools like `bunx`
+    // that pantry symlinked into pantry/.bin/. We invoke bun via
+    // /usr/bin/env PATH=... so the override is guaranteed to take effect on
+    // the child even though Zig snapshots the parent's environ at startup.
+    const local_bin = try std.fs.path.join(allocator, &.{ project_dir, "pantry", ".bin" });
+    defer allocator.free(local_bin);
+    const old_path = io_helper.getenv("PATH") orelse "";
+    const path_assign = try std.fmt.allocPrint(allocator, "PATH={s}:{s}", .{ local_bin, old_path });
+    defer allocator.free(path_assign);
+
     var argv = std.ArrayList([]const u8).empty;
     defer argv.deinit(allocator);
+    try argv.append(allocator, "/usr/bin/env");
+    try argv.append(allocator, path_assign);
     try argv.append(allocator, bun_exe);
     try argv.append(allocator, "install");
     if (opts.production) try argv.append(allocator, "--production");
