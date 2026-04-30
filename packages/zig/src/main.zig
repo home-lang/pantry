@@ -956,6 +956,34 @@ fn publishBinaryAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn publishCheckAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    var paths = std.ArrayList([]const u8).empty;
+    defer paths.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |arg| : (i += 1) {
+        try paths.append(allocator, arg);
+    }
+
+    const options = lib.commands.PublishCheckOptions{
+        .offline = ctx.hasOption("offline"),
+    };
+
+    const result = try lib.commands.publishCheckCommand(allocator, paths.items, options);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn publishCommitAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -3520,6 +3548,21 @@ pub fn main() !void {
 
     _ = publish_commit_cmd.setAction(publishCommitAction);
     _ = try root.addCommand(publish_commit_cmd);
+
+    // ========================================================================
+    // Publish Check Command (npm-style pre-publish validation)
+    // ========================================================================
+    var publish_check_cmd = try cli.BaseCommand.init(allocator, "publish:check", "Validate package name + check for collisions on npm before publishing");
+
+    const pchk_offline_opt = cli.Option.init("offline", "offline", "Skip npm registry network calls (syntactic checks only)", .bool);
+    _ = try publish_check_cmd.addOption(pchk_offline_opt);
+
+    const pchk_path_arg = cli.Argument.init("path", "Path to the package directory (default: current directory)", .string)
+        .withRequired(false);
+    _ = try publish_check_cmd.addArgument(pchk_path_arg);
+
+    _ = publish_check_cmd.setAction(publishCheckAction);
+    _ = try root.addCommand(publish_check_cmd);
 
     // ========================================================================
     // Publish Binary Command (native binary publishing to S3)

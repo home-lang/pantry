@@ -113,6 +113,14 @@ pub const PublishCommitOptions = publish_commit_commands.PublishCommitOptions;
 pub const publishCommitCommand = publish_commit_commands.publishCommitCommand;
 
 // ============================================================================
+// Re-export Publish Check Command (npm-style pre-publish validation)
+// ============================================================================
+
+pub const publish_check_commands = @import("commands/publish_check.zig");
+pub const PublishCheckOptions = publish_check_commands.PublishCheckOptions;
+pub const publishCheckCommand = publish_check_commands.publishCheckCommand;
+
+// ============================================================================
 // Re-export Publish Binary Command (native binary publishing to S3)
 // ============================================================================
 
