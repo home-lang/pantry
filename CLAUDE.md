@@ -74,6 +74,23 @@ To add more repos: `./scripts/rotate-registry-token.sh --repos "pickier/pickier,
 aws ssm get-parameter --name "/pantry/registry-token" --with-decryption --region us-east-1 --query "Parameter.Value" --output text
 ```
 
+### Site deployment secrets
+
+The `deploy-registry.yml` workflow SSHes from a GitHub runner into the registry EC2 box. It needs **two** repo secrets on `home-lang/pantry`:
+
+| Secret | Source of truth | Value |
+|--------|-----------------|-------|
+| `REGISTRY_SSH_KEY` | `~/.ssh/stacks-production.pem` | private key for `ec2-user@` |
+| `REGISTRY_HOST` | AWS SSM `/pantry/registry-host` (String) | `54.243.196.101` (instance `i-012d45877ad44d64b`) |
+
+If `REGISTRY_HOST` is missing the deploy silently SSHes to `ec2-user@` (empty host) and fails with exit 1 — the site keeps running on whatever was last deployed and slowly rots. Restore with:
+
+```bash
+HOST=$(aws ssm get-parameter --name /pantry/registry-host --region us-east-1 --query Parameter.Value --output text)
+echo -n "$HOST" | gh secret set REGISTRY_HOST --repo home-lang/pantry
+gh workflow run deploy-registry.yml --repo home-lang/pantry --ref main
+```
+
 ### Prerequisites
 
 - AWS CLI configured (account `923076644019`, region `us-east-1`)
