@@ -10,6 +10,11 @@ on:
       - 'public/install.sh'
       - 'docs/**'
       - '.config/bunpress.ts'
+      # Root deps: stx + crosswind transitively render the site, so any
+      # dependency bump can change what gets served. Re-deploy on lockfile
+      # changes too — see CLAUDE.md "Site CSS pinning" for the v0.2.0 incident.
+      - 'package.json'
+      - 'bun.lock'
   workflow_dispatch:
 
 concurrency:
