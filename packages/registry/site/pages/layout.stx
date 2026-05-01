@@ -354,8 +354,6 @@
   </style>
 </head>
 <body>
-  <a class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-md skip-link" style="color: var(--bg); background: var(--accent);" href="#main-content">Skip to main content</a>
-
   <!-- Header -->
   <header class="sticky top-0 z-50 backdrop-blur-xl border-b border-[var(--border)]" style="background: color-mix(in oklch, var(--bg), transparent 10%);">
     <div class="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
