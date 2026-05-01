@@ -44,4 +44,3 @@ features:
     icon: "🔧"
     details: "Comprehensive tools for listing, inspecting, cleaning, and managing development environments with human-readable, version-aware identifiers."
 ---
-
