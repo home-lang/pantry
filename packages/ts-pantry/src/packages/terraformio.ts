@@ -73,6 +73,7 @@ export const terraformPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.15.1',
     '1.15.0',
     '1.14.9',
     '1.14.8',
