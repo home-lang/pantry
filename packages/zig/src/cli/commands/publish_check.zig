@@ -377,15 +377,13 @@ fn validateName(name: []const u8) ValidationResult {
 
     // Node.js core module names — npm warns rather than errors
     const core_modules = [_][]const u8{
-        "assert",         "async_hooks",   "buffer",  "child_process", "cluster",   "console",
-        "constants",      "crypto",        "dgram",   "diagnostics_channel",        "dns",
-        "domain",         "events",        "fs",      "http",          "http2",     "https",
-        "inspector",      "module",        "net",     "os",            "path",      "perf_hooks",
-        "process",        "punycode",      "querystring",                           "readline",
-        "repl",           "stream",        "string_decoder",                        "sys",
-        "timers",         "tls",           "trace_events",                          "tty",
-        "url",            "util",          "v8",      "vm",            "wasi",      "worker_threads",
-        "zlib",
+        "assert",    "async_hooks", "buffer",   "child_process",       "cluster",        "console",
+        "constants", "crypto",      "dgram",    "diagnostics_channel", "dns",            "domain",
+        "events",    "fs",          "http",     "http2",               "https",          "inspector",
+        "module",    "net",         "os",       "path",                "perf_hooks",     "process",
+        "punycode",  "querystring", "readline", "repl",                "stream",         "string_decoder",
+        "sys",       "timers",      "tls",      "trace_events",        "tty",            "url",
+        "util",      "v8",          "vm",       "wasi",                "worker_threads", "zlib",
     };
     for (core_modules) |m| {
         if (asciiEqlIgnoreCase(name, m)) {
@@ -674,8 +672,8 @@ fn printSuggestions(allocator: std.mem.Allocator, name: []const u8, root: *const
             const lower = try toLowerOwned(allocator, u);
             defer allocator.free(lower);
             style.print("  - {s}@{s}/{s}{s}    {s}(your git user.name){s}\n", .{
-                style.cyan, lower, unscoped, style.reset,
-                style.dim, style.reset,
+                style.cyan, lower,       unscoped, style.reset,
+                style.dim,  style.reset,
             });
         }
     }
@@ -686,15 +684,15 @@ fn printSuggestions(allocator: std.mem.Allocator, name: []const u8, root: *const
             const lower = try toLowerOwned(allocator, h);
             defer allocator.free(lower);
             style.print("  - {s}@{s}/{s}{s}    {s}(from package.json author){s}\n", .{
-                style.cyan, lower, unscoped, style.reset,
-                style.dim, style.reset,
+                style.cyan, lower,       unscoped, style.reset,
+                style.dim,  style.reset,
             });
         }
     }
 
     style.print("  - {s}@yourorg/{s}{s}    {s}(generic scope placeholder){s}\n", .{
-        style.cyan, unscoped, style.reset,
-        style.dim, style.reset,
+        style.cyan, unscoped,    style.reset,
+        style.dim,  style.reset,
     });
 }
 
