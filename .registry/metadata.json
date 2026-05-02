@@ -15,5 +15,395 @@
     "createdAt": "2026-03-23T10:38:26.271Z",
     "updatedAt": "2026-03-23T10:38:26.271Z",
     "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777733547956": {
+    "name": "e2e-test-pkg-1777733547956",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5593/storage/packages/pantry/e2e-test-pkg-1777733547956/1.0.0/e2e-test-pkg-1777733547956-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T14:52:27.956Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T14:52:27.956Z",
+    "updatedAt": "2026-05-02T14:52:27.956Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777733584458": {
+    "name": "e2e-test-pkg-1777733584458",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5707/storage/packages/pantry/e2e-test-pkg-1777733584458/1.0.0/e2e-test-pkg-1777733584458-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T14:53:04.459Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T14:53:04.459Z",
+    "updatedAt": "2026-05-02T14:53:04.459Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777733620402": {
+    "name": "e2e-test-pkg-1777733620402",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5999/storage/packages/pantry/e2e-test-pkg-1777733620402/1.0.0/e2e-test-pkg-1777733620402-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T14:53:40.403Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T14:53:40.403Z",
+    "updatedAt": "2026-05-02T14:53:40.403Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777733656383": {
+    "name": "e2e-test-pkg-1777733656383",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5205/storage/packages/pantry/e2e-test-pkg-1777733656383/1.0.0/e2e-test-pkg-1777733656383-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T14:54:16.383Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T14:54:16.383Z",
+    "updatedAt": "2026-05-02T14:54:16.384Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777733688370": {
+    "name": "e2e-test-pkg-1777733688370",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5038/storage/packages/pantry/e2e-test-pkg-1777733688370/1.0.0/e2e-test-pkg-1777733688370-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T14:54:48.371Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T14:54:48.371Z",
+    "updatedAt": "2026-05-02T14:54:48.371Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777733724349": {
+    "name": "e2e-test-pkg-1777733724349",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5844/storage/packages/pantry/e2e-test-pkg-1777733724349/1.0.0/e2e-test-pkg-1777733724349-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T14:55:24.349Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T14:55:24.349Z",
+    "updatedAt": "2026-05-02T14:55:24.349Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777733824789": {
+    "name": "e2e-test-pkg-1777733824789",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5044/storage/packages/pantry/e2e-test-pkg-1777733824789/1.0.0/e2e-test-pkg-1777733824789-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T14:57:04.789Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T14:57:04.789Z",
+    "updatedAt": "2026-05-02T14:57:04.789Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777733857452": {
+    "name": "e2e-test-pkg-1777733857452",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5185/storage/packages/pantry/e2e-test-pkg-1777733857452/1.0.0/e2e-test-pkg-1777733857452-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T14:57:37.453Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T14:57:37.453Z",
+    "updatedAt": "2026-05-02T14:57:37.453Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777733889146": {
+    "name": "e2e-test-pkg-1777733889146",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5039/storage/packages/pantry/e2e-test-pkg-1777733889146/1.0.0/e2e-test-pkg-1777733889146-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T14:58:09.147Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T14:58:09.147Z",
+    "updatedAt": "2026-05-02T14:58:09.147Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777733926228": {
+    "name": "e2e-test-pkg-1777733926228",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5860/storage/packages/pantry/e2e-test-pkg-1777733926228/1.0.0/e2e-test-pkg-1777733926228-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T14:58:46.229Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T14:58:46.229Z",
+    "updatedAt": "2026-05-02T14:58:46.229Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777733963884": {
+    "name": "e2e-test-pkg-1777733963884",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5877/storage/packages/pantry/e2e-test-pkg-1777733963884/1.0.0/e2e-test-pkg-1777733963884-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T14:59:23.885Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T14:59:23.885Z",
+    "updatedAt": "2026-05-02T14:59:23.885Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777733995546": {
+    "name": "e2e-test-pkg-1777733995546",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5972/storage/packages/pantry/e2e-test-pkg-1777733995546/1.0.0/e2e-test-pkg-1777733995546-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T14:59:55.547Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T14:59:55.547Z",
+    "updatedAt": "2026-05-02T14:59:55.547Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777734027522": {
+    "name": "e2e-test-pkg-1777734027522",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5805/storage/packages/pantry/e2e-test-pkg-1777734027522/1.0.0/e2e-test-pkg-1777734027522-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T15:00:27.523Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T15:00:27.523Z",
+    "updatedAt": "2026-05-02T15:00:27.523Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777734059880": {
+    "name": "e2e-test-pkg-1777734059880",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5303/storage/packages/pantry/e2e-test-pkg-1777734059880/1.0.0/e2e-test-pkg-1777734059880-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T15:00:59.880Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T15:00:59.880Z",
+    "updatedAt": "2026-05-02T15:00:59.880Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777734091881": {
+    "name": "e2e-test-pkg-1777734091881",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5835/storage/packages/pantry/e2e-test-pkg-1777734091881/1.0.0/e2e-test-pkg-1777734091881-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T15:01:31.881Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T15:01:31.881Z",
+    "updatedAt": "2026-05-02T15:01:31.881Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777734101046": {
+    "name": "e2e-test-pkg-1777734101046",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5445/storage/packages/pantry/e2e-test-pkg-1777734101046/1.0.0/e2e-test-pkg-1777734101046-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T15:01:41.047Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T15:01:41.047Z",
+    "updatedAt": "2026-05-02T15:01:41.047Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777734133167": {
+    "name": "e2e-test-pkg-1777734133167",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5651/storage/packages/pantry/e2e-test-pkg-1777734133167/1.0.0/e2e-test-pkg-1777734133167-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T15:02:13.168Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T15:02:13.168Z",
+    "updatedAt": "2026-05-02T15:02:13.168Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777734165423": {
+    "name": "e2e-test-pkg-1777734165423",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5361/storage/packages/pantry/e2e-test-pkg-1777734165423/1.0.0/e2e-test-pkg-1777734165423-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T15:02:45.424Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T15:02:45.424Z",
+    "updatedAt": "2026-05-02T15:02:45.424Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777734202701": {
+    "name": "e2e-test-pkg-1777734202701",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5985/storage/packages/pantry/e2e-test-pkg-1777734202701/1.0.0/e2e-test-pkg-1777734202701-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T15:03:22.702Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T15:03:22.702Z",
+    "updatedAt": "2026-05-02T15:03:22.702Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777734239595": {
+    "name": "e2e-test-pkg-1777734239595",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5435/storage/packages/pantry/e2e-test-pkg-1777734239595/1.0.0/e2e-test-pkg-1777734239595-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T15:03:59.596Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T15:03:59.596Z",
+    "updatedAt": "2026-05-02T15:03:59.596Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777734271941": {
+    "name": "e2e-test-pkg-1777734271941",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5034/storage/packages/pantry/e2e-test-pkg-1777734271941/1.0.0/e2e-test-pkg-1777734271941-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T15:04:31.942Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T15:04:31.942Z",
+    "updatedAt": "2026-05-02T15:04:31.942Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1777734304113": {
+    "name": "e2e-test-pkg-1777734304113",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5203/storage/packages/pantry/e2e-test-pkg-1777734304113/1.0.0/e2e-test-pkg-1777734304113-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-05-02T15:05:04.113Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T15:05:04.113Z",
+    "updatedAt": "2026-05-02T15:05:04.113Z",
+    "totalDownloads": 0
+  },
+  "legacy-pkg-1777734335214": {
+    "name": "legacy-pkg-1777734335214",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5597/storage/packages/pantry/legacy-pkg-1777734335214/1.0.0/legacy-pkg-1777734335214-1.0.0.tgz",
+        "checksum": "sha256:fd72d30440b0bae1b1c6db6c8ad807f238ef3ca613aa7e8d5329e1e8ddf7da72",
+        "publishedAt": "2026-05-02T15:05:35.215Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-05-02T15:05:35.215Z",
+    "updatedAt": "2026-05-02T15:05:35.215Z",
+    "totalDownloads": 0
   }
 }

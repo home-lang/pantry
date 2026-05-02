@@ -1,3 +1,124 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.30...v0.9.31)
+
+### 🚀 Features
+
+- **publish:check**: npm-style pre-publish validation ([33d9b64](https://github.com/home-lang/pantry/commit/33d9b64)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **publish:commit**: soft-skip when no matching packages found ([76657ba](https://github.com/home-lang/pantry/commit/76657ba)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **site**: bump stx 0.2.24 + crosswind 0.2.4, drop fallback CSS block ([cc647a6](https://github.com/home-lang/pantry/commit/cc647a6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **site**: add crosswind fallback CSS for utilities the engine misses ([b95286b](https://github.com/home-lang/pantry/commit/b95286b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **site**: drop crosswind override + remove broken skip-link ([642ddb0](https://github.com/home-lang/pantry/commit/642ddb0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **site**: pin @cwcss/crosswind to 0.1.6 — 0.2.x ships broken exports ([5f018f9](https://github.com/home-lang/pantry/commit/5f018f9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **publish:commit**: expand workspace globs against workspace root ([9264f25](https://github.com/home-lang/pantry/commit/9264f25)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 📚 Documentation
+
+- **claude**: document REGISTRY_HOST secret and recovery steps ([b086a6b](https://github.com/home-lang/pantry/commit/b086a6b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 💅 Styles
+
+- **publish:check**: apply zig fmt ([d85a114](https://github.com/home-lang/pantry/commit/d85a114)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧪 Tests
+
+- **registry**: give port-randomized server tests non-overlapping ranges ([8ab78c3](https://github.com/home-lang/pantry/commit/8ab78c3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.31 ([9ee2d03](https://github.com/home-lang/pantry/commit/9ee2d03)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([0751005](https://github.com/home-lang/pantry/commit/0751005)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update gomplate ([639ea81](https://github.com/home-lang/pantry/commit/639ea81)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- refresh bun.lock and apply pickier --fix ([02ffd7d](https://github.com/home-lang/pantry/commit/02ffd7d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- refresh bun.lock ([af02f35](https://github.com/home-lang/pantry/commit/af02f35)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update tox ([fba1ce3](https://github.com/home-lang/pantry/commit/fba1ce3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pocketbase ([b9e1739](https://github.com/home-lang/pantry/commit/b9e1739)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update squawk ([dcaa6b3](https://github.com/home-lang/pantry/commit/dcaa6b3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update kubeshark ([609a172](https://github.com/home-lang/pantry/commit/609a172)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update coder, etcd ([52aea38](https://github.com/home-lang/pantry/commit/52aea38)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([70eacd0](https://github.com/home-lang/pantry/commit/70eacd0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update eksctl, terraform ([49d629e](https://github.com/home-lang/pantry/commit/49d629e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update rclone ([90c297e](https://github.com/home-lang/pantry/commit/90c297e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opa, pulumi ([e91aff0](https://github.com/home-lang/pantry/commit/e91aff0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai ([d9cae18](https://github.com/home-lang/pantry/commit/d9cae18)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly ([98b31cd](https://github.com/home-lang/pantry/commit/98b31cd)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ollama ([28f83e8](https://github.com/home-lang/pantry/commit/28f83e8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update depot ([fd68c2c](https://github.com/home-lang/pantry/commit/fd68c2c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update assimp, pnp ([5d6135f](https://github.com/home-lang/pantry/commit/5d6135f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly, starship ([c380955](https://github.com/home-lang/pantry/commit/c380955)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update zarf ([d11625a](https://github.com/home-lang/pantry/commit/d11625a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pulumi ([7fcdd17](https://github.com/home-lang/pantry/commit/7fcdd17)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- lint:fix ([e86bde7](https://github.com/home-lang/pantry/commit/e86bde7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- refresh bun.lock to pick up latest pickier ([67ec36e](https://github.com/home-lang/pantry/commit/67ec36e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update dozzle, pnp, vspipe ([b326e4c](https://github.com/home-lang/pantry/commit/b326e4c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update circleci, daytona, depot and 3 others ([1b1c4ff](https://github.com/home-lang/pantry/commit/1b1c4ff)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.30...HEAD)
+
+### 🚀 Features
+
+- **publish:check**: npm-style pre-publish validation ([33d9b64](https://github.com/home-lang/pantry/commit/33d9b64)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **publish:commit**: soft-skip when no matching packages found ([76657ba](https://github.com/home-lang/pantry/commit/76657ba)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **site**: bump stx 0.2.24 + crosswind 0.2.4, drop fallback CSS block ([cc647a6](https://github.com/home-lang/pantry/commit/cc647a6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **site**: add crosswind fallback CSS for utilities the engine misses ([b95286b](https://github.com/home-lang/pantry/commit/b95286b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **site**: drop crosswind override + remove broken skip-link ([642ddb0](https://github.com/home-lang/pantry/commit/642ddb0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **site**: pin @cwcss/crosswind to 0.1.6 — 0.2.x ships broken exports ([5f018f9](https://github.com/home-lang/pantry/commit/5f018f9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **publish:commit**: expand workspace globs against workspace root ([9264f25](https://github.com/home-lang/pantry/commit/9264f25)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 📚 Documentation
+
+- **claude**: document REGISTRY_HOST secret and recovery steps ([b086a6b](https://github.com/home-lang/pantry/commit/b086a6b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 💅 Styles
+
+- **publish:check**: apply zig fmt ([d85a114](https://github.com/home-lang/pantry/commit/d85a114)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧪 Tests
+
+- **registry**: give port-randomized server tests non-overlapping ranges ([8ab78c3](https://github.com/home-lang/pantry/commit/8ab78c3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- wip ([0751005](https://github.com/home-lang/pantry/commit/0751005)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update gomplate ([639ea81](https://github.com/home-lang/pantry/commit/639ea81)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- refresh bun.lock and apply pickier --fix ([02ffd7d](https://github.com/home-lang/pantry/commit/02ffd7d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- refresh bun.lock ([af02f35](https://github.com/home-lang/pantry/commit/af02f35)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update tox ([fba1ce3](https://github.com/home-lang/pantry/commit/fba1ce3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pocketbase ([b9e1739](https://github.com/home-lang/pantry/commit/b9e1739)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update squawk ([dcaa6b3](https://github.com/home-lang/pantry/commit/dcaa6b3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update kubeshark ([609a172](https://github.com/home-lang/pantry/commit/609a172)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update coder, etcd ([52aea38](https://github.com/home-lang/pantry/commit/52aea38)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([70eacd0](https://github.com/home-lang/pantry/commit/70eacd0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update eksctl, terraform ([49d629e](https://github.com/home-lang/pantry/commit/49d629e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update rclone ([90c297e](https://github.com/home-lang/pantry/commit/90c297e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opa, pulumi ([e91aff0](https://github.com/home-lang/pantry/commit/e91aff0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai ([d9cae18](https://github.com/home-lang/pantry/commit/d9cae18)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly ([98b31cd](https://github.com/home-lang/pantry/commit/98b31cd)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ollama ([28f83e8](https://github.com/home-lang/pantry/commit/28f83e8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update depot ([fd68c2c](https://github.com/home-lang/pantry/commit/fd68c2c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update assimp, pnp ([5d6135f](https://github.com/home-lang/pantry/commit/5d6135f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly, starship ([c380955](https://github.com/home-lang/pantry/commit/c380955)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update zarf ([d11625a](https://github.com/home-lang/pantry/commit/d11625a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pulumi ([7fcdd17](https://github.com/home-lang/pantry/commit/7fcdd17)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- lint:fix ([e86bde7](https://github.com/home-lang/pantry/commit/e86bde7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- refresh bun.lock to pick up latest pickier ([67ec36e](https://github.com/home-lang/pantry/commit/67ec36e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update dozzle, pnp, vspipe ([b326e4c](https://github.com/home-lang/pantry/commit/b326e4c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update circleci, daytona, depot and 3 others ([1b1c4ff](https://github.com/home-lang/pantry/commit/1b1c4ff)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.29...v0.9.30)
 
 ### 🚀 Features
