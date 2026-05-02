@@ -68,6 +68,7 @@ export const gomplatecaPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.1.0',
     '5.0.0',
     '4.3.3',
     '4.3.2',
