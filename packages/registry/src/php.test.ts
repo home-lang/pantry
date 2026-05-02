@@ -252,7 +252,10 @@ describe('PHP routes (HTTP)', () => {
     const { InMemoryAnalytics } = await import('./analytics')
     const { InMemoryPhpStorage } = await import('./php')
 
-    port = 5000 + Math.floor(Math.random() * 1000)
+    // Range 6000–6999 — kept non-overlapping with auth.test.ts (5000–5999)
+    // so the two suites don't randomly collide on the same port when run
+    // concurrently.
+    port = 6000 + Math.floor(Math.random() * 1000)
     baseUrl = `http://localhost:${port}`
 
     const registry = createLocalRegistry(baseUrl)

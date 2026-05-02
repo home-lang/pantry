@@ -10,7 +10,11 @@ describe('commit publish', () => {
   beforeEach(() => {
     // Server reads PANTRY_REGISTRY_TOKEN lazily — pin the value tests send.
     process.env.PANTRY_REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || 'ABCD1234'
-    port = 3456 + Math.floor(Math.random() * 1000)
+    // Range 3000–3999 — kept non-overlapping with e2e.test.ts (4000–4999),
+    // auth.test.ts (5000–5999), and php.test.ts (6000–6999) so parallel test
+    // files don't randomly collide on the same port and surface as a flaky
+    // "fetch failed" with no useful error.
+    port = 3000 + Math.floor(Math.random() * 1000)
     baseUrl = `http://localhost:${port}`
     registry = createLocalRegistry(baseUrl)
   })
