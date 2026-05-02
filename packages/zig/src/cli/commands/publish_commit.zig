@@ -112,7 +112,13 @@ pub fn publishCommitCommand(allocator: std.mem.Allocator, args: []const []const 
     }
 
     if (package_dirs.items.len == 0) {
-        return CommandResult.err(allocator, "Error: No packages found matching the provided patterns");
+        // Soft-skip: when chained in CI (`pantry publish:commit ./a && pantry
+        // publish:commit ./b`) one of the paths may simply not exist yet,
+        // and we don't want that to break the chain. The per-path "Warning:
+        // No package.json found at ..." log already records the miss, so
+        // here we just emit an info line and exit 0.
+        style.print("Nothing to publish (no matching packages).\n", .{});
+        return .{ .exit_code = 0 };
     }
 
     style.print("Found {d} package(s) to publish:\n", .{package_dirs.items.len});
