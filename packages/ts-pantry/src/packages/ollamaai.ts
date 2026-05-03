@@ -80,6 +80,7 @@ export const ollamaaiPackage = {
   versions: [
     '0.22.1',
     '0.22.0',
+    '0.21.3-rc0',
     '0.21.2',
     '0.21.1',
     '0.21.0',
