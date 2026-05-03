@@ -22,6 +22,7 @@ export const karabinerelementspqrsorgPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   versions: [
+    '16.0.0',
     '15.9.0',
     '15.8.0',
     '15.7.0',
