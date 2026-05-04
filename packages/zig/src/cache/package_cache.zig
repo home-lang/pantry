@@ -511,7 +511,7 @@ test "PackageCache basic operations" {
     const name = "node";
     const version = "20.0.0";
     const url = "https://example.com/node-20.0.0.tar.gz";
-    const checksum = [_]u8{0} ** 32;
+    const checksum: [32]u8 = @splat(0);
     const data = "test package data";
 
     // Put package

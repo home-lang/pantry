@@ -2185,8 +2185,8 @@ fn createTarball(
             .packed_size = packed_size,
             .unpacked_size = unpacked_size,
             .total_files = total_files,
-            .shasum = [_]u8{'0'} ** 40,
-            .integrity = [_]u8{'0'} ** 95,
+            .shasum = @splat('0'),
+            .integrity = @splat('0'),
         };
     };
     defer allocator.free(tarball_data);
