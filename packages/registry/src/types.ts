@@ -85,6 +85,8 @@ export interface RegistryConfig {
   npmFallback?: boolean
   /** Port to run the server on */
   port?: number
+  /** Local filesystem path for development/test storage */
+  localStoragePath?: string
 }
 
 /**

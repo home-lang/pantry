@@ -74,13 +74,14 @@ To add more repos: `./scripts/rotate-registry-token.sh --repos "pickier/pickier,
 aws ssm get-parameter --name "/pantry/registry-token" --with-decryption --region us-east-1 --query "Parameter.Value" --output text
 ```
 
-### Site CSS pinning (`@cwcss/crosswind`)
+### Site CSS validation (`@cwcss/crosswind`)
 
 The site relies on `@stacksjs/stx`'s `injectCSS: true` to scan templates and inject crosswind utility CSS at render time. **`@cwcss/crosswind@0.2.0` and `0.2.1` ship a broken `package.json` exports map** — they declare `./dist/index.js` but the tarball ships JS at `./dist/src/index.js`, so `import('@cwcss/crosswind')` fails. stx swallows the error in a `try/catch`, the page renders with no utility CSS, and the layout collapses (header in a column, no `max-w` container, etc.).
 
-The root `package.json` pins `@cwcss/crosswind` to `0.1.6` via `overrides` until the upstream package.json is fixed. Do not remove the override without first verifying with `bun pm pack @cwcss/crosswind@<new>` that `dist/index.js` exists at the path declared in `exports`.
+The root `package.json` currently uses `@cwcss/crosswind@^0.2.4`, whose package exports have been verified to include `dist/index.js`. Before bumping it again, verify with `bun pm pack @cwcss/crosswind@<new>` that `dist/index.js` exists at the path declared in `exports`.
 
 To validate locally before bumping:
+
 ```bash
 cd packages/registry && bun -e "
 import { renderTemplate } from '@stacksjs/stx';
@@ -93,6 +94,7 @@ const html = await renderTemplate(resolve('site/pages/about.stx'), {
 console.log('flex rule present:', /\.flex\s*\{/.test(html));
 "
 ```
+
 If `flex rule present: false`, crosswind isn't loading — investigate before deploying.
 
 ### Site deployment secrets

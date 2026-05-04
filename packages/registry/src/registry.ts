@@ -7,6 +7,9 @@ import type {
   SearchResult,
   TarballStorage,
 } from './types'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { downloadNpmTarball, fetchFromNpm, listNpmVersions, searchNpm } from './npm-fallback'
 import { FileMetadataStorage } from './storage/metadata'
 import { DynamoDBMetadataStorage } from './storage/dynamodb-metadata'
@@ -45,6 +48,8 @@ export class Registry {
 
   constructor(config: RegistryConfig) {
     this.config = config
+    const localStoragePath = config.localStoragePath
+      || (process.env.NODE_ENV === 'test' ? mkdtempSync(join(tmpdir(), 'pantry-registry-')) : './.registry')
 
     // Initialize storage backends
     if (config.s3Bucket && config.s3Bucket !== 'local') {
@@ -52,7 +57,7 @@ export class Registry {
     }
     else {
       // Use local storage for development
-      this.tarballStorage = new LocalStorage('./.registry/tarballs', config.baseUrl)
+      this.tarballStorage = new LocalStorage(join(localStoragePath, 'tarballs'), config.baseUrl)
     }
 
     if (config.dynamoTable && config.dynamoTable !== 'local') {
@@ -61,7 +66,7 @@ export class Registry {
     }
     else {
       // Use file-based storage for development
-      this.metadataStorage = new FileMetadataStorage('./.registry/metadata.json')
+      this.metadataStorage = new FileMetadataStorage(join(localStoragePath, 'metadata.json'))
     }
   }
 

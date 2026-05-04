@@ -1014,19 +1014,10 @@ export function toPackageVarName(moduleName: string, packagesDir?: string): stri
 export async function generateIndex(packagesDir?: string): Promise<string | null> {
   try {
     console.log('🔧 Generating package index...')
-    console.log(`DEBUG generateIndex START: packagesDir=${packagesDir}`)
-    console.log(`DEBUG generateIndex START: process.cwd()=${process.cwd()}`)
 
     // Use provided packages directory or default
     const targetPackagesDir = packagesDir || PACKAGES_DIR
     const targetIndexFile = path.resolve(targetPackagesDir, 'index.ts')
-
-    // Debug logging for GitHub Actions
-    console.log(`DEBUG generateIndex: packagesDir=${packagesDir}`)
-    console.log(`DEBUG generateIndex: PACKAGES_DIR=${PACKAGES_DIR}`)
-    console.log(`DEBUG generateIndex: targetPackagesDir=${targetPackagesDir}`)
-    console.log(`DEBUG generateIndex: targetIndexFile=${targetIndexFile}`)
-    console.log(`DEBUG generateIndex: path.isAbsolute(targetIndexFile)=${path.isAbsolute(targetIndexFile)}`)
 
     // Ensure the target directory exists
     if (!fs.existsSync(targetPackagesDir)) {
@@ -1270,11 +1261,6 @@ export const packages: Packages = pantry
       return null
     }
 
-    // Debug logging for return value
-    console.log(`DEBUG generateIndex: returning ${targetIndexFile}`)
-    console.log(`DEBUG generateIndex: return value isAbsolute=${path.isAbsolute(targetIndexFile)}`)
-    console.log(`DEBUG generateIndex: return value type=${typeof targetIndexFile}`)
-
     return targetIndexFile
   }
   catch (error) {
@@ -1450,19 +1436,12 @@ async function extractAllAliases(packagesDir?: string): Promise<Record<string, s
  */
 export async function generateAliases(packagesDir?: string): Promise<string> {
   try {
-    console.log(`DEBUG generateAliases START: packagesDir=${packagesDir}`)
-    console.log(`DEBUG generateAliases START: process.cwd()=${process.cwd()}`)
-
     // Extract all aliases
     const aliases = await extractAllAliases(packagesDir)
 
     // Use provided packages directory or default - always resolve to absolute path
     const targetPackagesDir = packagesDir ? path.resolve(packagesDir) : path.resolve(process.cwd(), 'src', 'packages')
     const aliasesFile = path.resolve(targetPackagesDir, 'aliases.ts')
-
-    console.log(`DEBUG generateAliases: targetPackagesDir=${targetPackagesDir}`)
-    console.log(`DEBUG generateAliases: aliasesFile=${aliasesFile}`)
-    console.log(`DEBUG generateAliases: path.isAbsolute(aliasesFile)=${path.isAbsolute(aliasesFile)}`)
 
     // Ensure the directory exists before writing the file
     const aliasesDir = path.dirname(aliasesFile)
@@ -1490,10 +1469,6 @@ export async function generateAliases(packagesDir?: string): Promise<string> {
     // Write the file
     fs.writeFileSync(aliasesFile, content)
     console.log(`Successfully generated ${aliasesFile} with ${sortedAliases.length} aliases`)
-
-    console.log(`DEBUG generateAliases: returning ${aliasesFile}`)
-    console.log(`DEBUG generateAliases: return value isAbsolute=${path.isAbsolute(aliasesFile)}`)
-    console.log(`DEBUG generateAliases: return value type=${typeof aliasesFile}`)
 
     return aliasesFile
   }
@@ -2881,9 +2856,10 @@ Examples:
   }
 }
 
-// Run the main function only when run directly (for both CommonJS and ES modules)
-// Check if this file is being run directly, not imported
-const isMainModule = import.meta.url === `file://${process.argv[1]}` || import.meta.url === `file:///${process.argv[1]}`
+// Run the main function only when run directly. Avoid comparing against
+// import.meta.url so bundled consumers do not bake local absolute paths.
+const entrypoint = process.argv[1]?.replace(/\\/g, '/')
+const isMainModule = entrypoint?.endsWith('/generate.ts') || entrypoint === 'generate.ts'
 if (require.main === module || isMainModule) {
   main()
 }

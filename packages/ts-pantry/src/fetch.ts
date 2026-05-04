@@ -900,6 +900,10 @@ export async function fetchPantryPackage(
       useClientSideScraper: true,
     })
 
+    if (!scrapedData || typeof scrapedData !== 'object') {
+      return createMinimalPackageInfo(packageName, originalName, fullDomainName)
+    }
+
     // Convert scraped data to PkgxPackage format
     const packageInfo: PkgxPackage = {
       name: scrapedData.displayName || scrapedData.name || packageName.split('/').pop() || packageName,
