@@ -1201,7 +1201,7 @@ Options:
   const preBuiltDomains = new Set([
     'bun.sh', 'nodejs.org', 'meilisearch.com', 'redis.io',
     'postgresql.org', 'mysql.com', 'getcomposer.org', 'pnpm.io',
-    'yarnpkg.com', 'go.dev', 'deno.land', 'python.org',
+    'yarnpkg.com', 'go.dev', 'deno.land', 'python.org', 'cmake.org',
   ])
 
   // Skip pre-built filter for targeted builds (-p) — allow building specific pre-built packages

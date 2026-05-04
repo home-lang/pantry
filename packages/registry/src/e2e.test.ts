@@ -123,6 +123,15 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
     })
   })
 
+  describe('package API: binary metadata fallback', () => {
+    it('GET /packages/{domain}/versions falls back to binary registry metadata', async () => {
+      const res = await fetch(`${baseUrl}/packages/curl.se/versions`)
+      expect(res.status).toBe(200)
+      const body = await res.json() as any
+      expect(body.versions).toEqual(['8.12.0'])
+    })
+  })
+
   describe('binary proxy: tarball', () => {
     it('GET tarball returns binary with 24h immutable cache', async () => {
       const res = await fetch(

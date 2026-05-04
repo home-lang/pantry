@@ -1016,7 +1016,7 @@ fn buildNpmBulkDownloadBody(
 fn createBulkDownloadTempDir(allocator: std.mem.Allocator, inst: *Installer) ![]const u8 {
     const now = io_helper.clockGettime();
     const stamp = @as(u64, @intCast(now.sec)) * std.time.ns_per_s + @as(u64, @intCast(now.nsec));
-    const temp_dir = try std.fmt.allocPrint(allocator, "{s}/npm-bulk-{d}", .{ inst.cache.cache_dir, stamp });
+    const temp_dir = try std.fmt.allocPrint(allocator, "{s}/registry-bulk-{d}", .{ inst.cache.cache_dir, stamp });
     errdefer allocator.free(temp_dir);
     try io_helper.makePath(temp_dir);
     return temp_dir;
@@ -1153,7 +1153,7 @@ fn prefetchNpmTarballsViaRegistry(
         break :blk 0;
     };
     if (verbose and cached > 0) {
-        std.debug.print("[verbose:pipeline:bulk-download] cached {d} npm tarballs from one registry stream\n", .{cached});
+        std.debug.print("[verbose:pipeline:bulk-download] cached {d} registry tarballs from one registry stream\n", .{cached});
     }
 }
 

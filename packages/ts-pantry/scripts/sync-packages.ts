@@ -16,7 +16,7 @@
  * - php: already handled by quick-php-poc.ts
  */
 
-import { existsSync, mkdirSync, rmSync, writeFileSync, chmodSync } from 'node:fs'
+import { existsSync, mkdirSync, rmSync, writeFileSync, chmodSync, readFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
@@ -95,6 +95,21 @@ async function githubLatestVersion(repo: string, prefix: string = 'v'): Promise<
   if (!response.ok) throw new Error(`GitHub API ${response.status}: ${await response.text()}`)
   const data = await response.json() as { tag_name: string }
   return data.tag_name.replace(new RegExp(`^${prefix}`), '')
+}
+
+function domainToPackageFileKey(domain: string): string {
+  return domain.replace(/[.\-/]/g, '').toLowerCase()
+}
+
+function readCatalogVersions(domain: string): string[] {
+  const packageFile = join(import.meta.dir, '..', 'src', 'packages', `${domainToPackageFileKey(domain)}.ts`)
+  if (!existsSync(packageFile)) return []
+
+  const content = readFileSync(packageFile, 'utf-8')
+  const versionsMatch = content.match(/versions:\s*\[([\s\S]*?)\]\s*as const/)
+  if (!versionsMatch) return []
+
+  return Array.from(versionsMatch[1].matchAll(/'([^']+)'/g), match => match[1])
 }
 
 // ============================================
@@ -222,6 +237,68 @@ const packages: Record<string, PackageConfig> = {
       }
 
       chmodSync(binPath, 0o755)
+    },
+  },
+
+  'cmake.org': {
+    domain: 'cmake.org',
+    name: 'cmake',
+    getLatestVersion: () => githubLatestVersion('Kitware/CMake'),
+    getImportantVersions: async () => {
+      const catalogVersions = readCatalogVersions('cmake.org')
+      if (catalogVersions.length > 0) return catalogVersions
+      return [await githubLatestVersion('Kitware/CMake')]
+    },
+    download: async (version, platform, destDir) => {
+      const { os, arch } = detectPlatform()
+      const buildDir = `/tmp/cmake-sync-${version}`
+      rmSync(buildDir, { recursive: true, force: true })
+      mkdirSync(buildDir, { recursive: true })
+
+      if (os === 'darwin') {
+        const asset = `cmake-${version}-macos-universal.tar.gz`
+        const fallbackAsset = `cmake-${version}-macos10.10-universal.tar.gz`
+        const urls = [
+          `https://github.com/Kitware/CMake/releases/download/v${version}/${asset}`,
+          `https://github.com/Kitware/CMake/releases/download/v${version}/${fallbackAsset}`,
+        ]
+
+        let downloaded = false
+        for (const url of urls) {
+          try {
+            console.log(`   Trying ${url}`)
+            execSync(`curl -fL --retry 3 --retry-delay 2 -o "${buildDir}/cmake.tar.gz" "${url}"`, { stdio: 'inherit' })
+            downloaded = true
+            break
+          }
+          catch { /* try next URL */ }
+        }
+        if (!downloaded) throw new Error(`Failed to download CMake ${version} for macOS`)
+
+        execSync(`cd "${buildDir}" && tar -xf cmake.tar.gz`, { stdio: 'pipe' })
+        const contentsDir = `${buildDir}/cmake-${version}-macos-universal/CMake.app/Contents`
+        const legacyContentsDir = `${buildDir}/cmake-${version}-macos10.10-universal/CMake.app/Contents`
+        const sourceContents = existsSync(contentsDir) ? contentsDir : legacyContentsDir
+        if (!existsSync(sourceContents)) {
+          throw new Error(`CMake ${version} macOS archive did not contain CMake.app/Contents`)
+        }
+        execSync(`cp -R "${sourceContents}/." "${destDir}/"`, { stdio: 'pipe' })
+      }
+      else {
+        const linuxArch = arch === 'arm64' ? 'aarch64' : 'x86_64'
+        const url = `https://github.com/Kitware/CMake/releases/download/v${version}/cmake-${version}-linux-${linuxArch}.tar.gz`
+
+        console.log(`   Downloading from ${url}`)
+        execSync(`curl -fL --retry 3 --retry-delay 2 -o "${buildDir}/cmake.tar.gz" "${url}"`, { stdio: 'inherit' })
+        execSync(`cd "${destDir}" && tar -xf "${buildDir}/cmake.tar.gz" --strip-components=1`, { stdio: 'pipe' })
+      }
+
+      for (const bin of ['cmake', 'ccmake', 'cpack', 'ctest']) {
+        const binPath = join(destDir, 'bin', bin)
+        if (existsSync(binPath)) chmodSync(binPath, 0o755)
+      }
+
+      rmSync(buildDir, { recursive: true, force: true })
     },
   },
 
@@ -445,7 +522,7 @@ catch { /* try next URL */ }
       const wrapper = `#!/bin/sh
 exec node "$(dirname "$0")/yarn.js" "$@"
 `
-      require('fs').writeFileSync(join(destDir, 'bin', 'yarn'), wrapper)
+      writeFileSync(join(destDir, 'bin', 'yarn'), wrapper)
       chmodSync(join(destDir, 'bin', 'yarn'), 0o755)
       chmodSync(join(destDir, 'bin', 'yarn.js'), 0o755)
     },
@@ -869,7 +946,7 @@ Options:
   -h, --help              Show this help
 
 Available packages:
-  bun.sh, nodejs.org, meilisearch.com, redis.io, postgresql.org, mysql.com,
+  bun.sh, nodejs.org, meilisearch.com, cmake.org, redis.io, postgresql.org, mysql.com,
   memcached.org, github.com/mail-os/mail, typesense.org, min.io, valkey.io,
   getcomposer.org, pnpm.io, yarnpkg.com, go.dev, deno.land, python.org
 

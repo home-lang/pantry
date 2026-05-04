@@ -98,7 +98,7 @@ jobs:
 
           echo "Running: bun scripts/sync-packages.ts $ARGS"
           bun scripts/sync-packages.ts $ARGS
-        timeout-minutes: 60
+        timeout-minutes: 240
 
   # Job 2: Discover how many buildable packages exist for batching
   # Skipped when specific packages are provided (targeted build)

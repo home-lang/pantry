@@ -671,7 +671,10 @@ export function createHandler(
 
         // GET /packages/{name}/versions
         if (rest === 'versions' && req.method === 'GET') {
-          const versions = await registry.listVersions(packageName)
+          let versions = await registry.listVersions(packageName)
+          if (versions.length === 0) {
+            versions = await listBinaryPackageVersions(packageName, binaryStorage)
+          }
           // Weak ETag over the version list: a publish changes the list and
           // thus the hash; clients/CDNs can revalidate cheaply with If-None-Match.
           const bodyJson = JSON.stringify({ versions })
@@ -2972,6 +2975,19 @@ async function fetchPackageMetadata(domain: string, storage?: BinaryStorage): Pr
     return JSON.parse(Buffer.from(buffer).toString('utf-8'))
   }
   catch { return null }
+}
+
+async function listBinaryPackageVersions(domain: string, storage?: BinaryStorage): Promise<string[]> {
+  const metadata = await fetchPackageMetadata(domain, storage)
+  const versions = metadata?.versions
+  if (!versions || typeof versions !== 'object') return []
+
+  return Object.keys(versions).sort((a, b) => {
+    const parsedA = parseSemver(a)
+    const parsedB = parseSemver(b)
+    if (parsedA && parsedB) return -compareSemver(parsedA, parsedB)
+    return b.localeCompare(a)
+  })
 }
 
 async function handleSiteHome(binaryStorage?: BinaryStorage, analyticsStorage?: AnalyticsStorage, zigStorage?: ZigPackageStorage): Promise<Response> {

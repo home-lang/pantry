@@ -540,49 +540,54 @@ pub fn lookupS3Registry(
         break :blk os_str ++ "-" ++ arch_str;
     };
 
-    // Find the best matching version (newest that satisfies constraint)
+    // Find the best matching version that also has a tarball for this platform.
+    // Some packages have partial historical coverage; choosing a newer version
+    // first and only then checking platform would skip usable older releases.
     var best_version: ?[]const u8 = null;
     var best_parsed: ?semver.Version = null;
+    var best_platform_info: ?std.json.Value = null;
     var it = versions_obj.object.iterator();
     while (it.next()) |entry| {
         const ver = entry.key_ptr.*;
-        if (is_any or semver.satisfiesConstraint(ver, constraint)) {
-            const parsed_ver = semver.parseVersion(ver) catch continue;
-            if (best_parsed) |best| {
-                // Compare: pick the newer version
-                if (parsed_ver.major > best.major or
-                    (parsed_ver.major == best.major and parsed_ver.minor > best.minor) or
-                    (parsed_ver.major == best.major and parsed_ver.minor == best.minor and parsed_ver.patch > best.patch))
-                {
-                    best_version = ver;
-                    best_parsed = parsed_ver;
-                }
-            } else {
+        if (!is_any and !semver.satisfiesConstraint(ver, constraint)) continue;
+
+        const version_info = entry.value_ptr.*;
+        if (version_info != .object) continue;
+        const platforms_obj = version_info.object.get("platforms") orelse continue;
+        if (platforms_obj != .object) continue;
+        const platform_info = platforms_obj.object.get(platform) orelse continue;
+        if (platform_info != .object) continue;
+
+        const parsed_ver = semver.parseVersion(ver) catch continue;
+        if (best_parsed) |best| {
+            // Compare: pick the newer version
+            if (parsed_ver.major > best.major or
+                (parsed_ver.major == best.major and parsed_ver.minor > best.minor) or
+                (parsed_ver.major == best.major and parsed_ver.minor == best.minor and parsed_ver.patch > best.patch))
+            {
                 best_version = ver;
                 best_parsed = parsed_ver;
+                best_platform_info = platform_info;
             }
+        } else {
+            best_version = ver;
+            best_parsed = parsed_ver;
+            best_platform_info = platform_info;
         }
     }
 
     const matched_version = best_version orelse return null;
-
-    // Get platform-specific tarball for matched version
-    const version_info = versions_obj.object.get(matched_version) orelse return null;
-    if (version_info != .object) return null;
-
-    const platforms_obj = version_info.object.get("platforms") orelse return null;
-    if (platforms_obj != .object) return null;
-
-    const platform_info = platforms_obj.object.get(platform) orelse return null;
-    if (platform_info != .object) return null;
+    const platform_info = best_platform_info orelse return null;
 
     const tarball_path_val = platform_info.object.get("tarball") orelse return null;
     const tarball_path = if (tarball_path_val == .string) tarball_path_val.string else return null;
 
-    // Download via registry (302 redirects to S3 for streaming)
+    // Download binary-registry artifacts directly from S3. The registry proxy
+    // buffers tarballs to set Content-Length, which can time out on large
+    // prebuilt archives like CMake's macOS bundle.
     const tarball_url = std.fmt.allocPrint(
         allocator,
-        "https://registry.pantry.dev/{s}",
+        "https://pantry-registry.s3.amazonaws.com/{s}",
         .{tarball_path},
     ) catch return null;
 
