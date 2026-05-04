@@ -27,6 +27,23 @@ __pantry_path_remove() {
     PATH="$p"
 }
 
+# Prepend a path component, removing any existing copies first so activation
+# can repair stale PATH order in already-integrated shells.
+__pantry_path_prepend() {
+    local dir="$1"
+    [[ -z "$dir" ]] && return 0
+    local p=":${PATH}:" remove=":$dir:"
+    while [[ "$p" == *"$remove"* ]]; do
+        p="${p//$remove/:}"
+    done
+    p="${p#:}"; p="${p%:}"
+    if [[ -n "$p" ]]; then
+        PATH="$dir:$p"
+    else
+        PATH="$dir"
+    fi
+}
+
 # Find dependency file in current directory only (fast single-dir check)
 __pantry_find_dep_here() {
     local dir="$1"
@@ -81,16 +98,32 @@ __pantry_activate() {
     export PANTRY_DEP_FILE="$dep_file"
     export PANTRY_DEP_MTIME="$(__pantry_mtime "$dep_file")"
 
-    # Add env bin to PATH (avoid duplicates)
-    [[ ":$PATH:" != *":$env_dir/bin:"* ]] && PATH="$env_dir/bin:$PATH"
+    # Add env bin to PATH, moving any existing copy to the front.
+    [[ -d "$env_dir/bin" ]] && __pantry_path_prepend "$env_dir/bin"
 
-    # Add pantry/.bin if it exists (project-local tool wrappers)
+    # Add pantry/.bin if it exists, moving any existing copy to the front.
     if [[ -d "$project_dir/pantry/.bin" ]]; then
         export PANTRY_BIN_PATH="$project_dir/pantry/.bin"
-        [[ ":$PATH:" != *":$PANTRY_BIN_PATH:"* ]] && PATH="$PANTRY_BIN_PATH:$PATH"
+        __pantry_path_prepend "$PANTRY_BIN_PATH"
     fi
 
     export PATH
+}
+
+__pantry_project_dir_from_dep_file() {
+    local dep_file="$1"
+    [[ -n "$dep_file" ]] || return 1
+    local project_dir="${dep_file%/*}"
+    [[ "$project_dir" == "$dep_file" ]] && project_dir="$PWD"
+    echo "$project_dir"
+}
+
+__pantry_activate_installed_project() {
+    local dep_file="$1"
+    local project_dir
+    project_dir=$(__pantry_project_dir_from_dep_file "$dep_file") || return 1
+    [[ -d "$project_dir/pantry/.bin" ]] || return 1
+    __pantry_activate "$project_dir/pantry" "$project_dir" "$dep_file"
 }
 
 # Deactivate current environment
@@ -164,6 +197,13 @@ __pantry_switch_environment() {
         fi
     fi
 
+    # If the regular env cache is cold but this project is already installed,
+    # activate project-local wrappers directly. A plain `pantry install` creates
+    # pantry/.bin but does not always populate the shell env cache.
+    if __pantry_activate_installed_project "${dep_file:-}"; then
+        return 0
+    fi
+
     # No env found but dep file exists - auto-install unless PANTRY_NO_AUTO_INSTALL is set
     if [[ -n "$dep_file" && -z "$PANTRY_NO_AUTO_INSTALL" ]]; then
         if pantry install 2>&1; then
@@ -179,6 +219,9 @@ __pantry_switch_environment() {
                     __pantry_activate "$env_dir" "${project_dir:-$PWD}" "$dep_file"
                     return 0
                 fi
+            fi
+            if __pantry_activate_installed_project "$dep_file"; then
+                return 0
             fi
         fi
     fi
@@ -215,8 +258,7 @@ fi
 
 # Add global packages to PATH
 [[ -d "$HOME/.local/share/pantry/global/bin" ]] && \
-    [[ ":$PATH:" != *":$HOME/.local/share/pantry/global/bin:"* ]] && \
-    PATH="$HOME/.local/share/pantry/global/bin:$PATH" && export PATH
+    __pantry_path_prepend "$HOME/.local/share/pantry/global/bin" && export PATH
 
 # Initial environment check on shell start
 __pantry_switch_environment

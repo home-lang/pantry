@@ -9,6 +9,26 @@ function today(): string {
   return new Date().toISOString().split('T')[0]
 }
 
+function parseTarEntries(bytes: Uint8Array): Map<string, Uint8Array> {
+  const entries = new Map<string, Uint8Array>()
+  const decoder = new TextDecoder()
+  let offset = 0
+
+  while (offset + 512 <= bytes.length) {
+    const header = bytes.slice(offset, offset + 512)
+    const name = decoder.decode(header.slice(0, 100)).replace(/\0.*$/, '')
+    if (!name) break
+
+    const sizeText = decoder.decode(header.slice(124, 136)).replace(/\0.*$/, '').trim()
+    const size = Number.parseInt(sizeText || '0', 8)
+    const dataStart = offset + 512
+    entries.set(name, bytes.slice(dataStart, dataStart + size))
+    offset = dataStart + Math.ceil(size / 512) * 512
+  }
+
+  return entries
+}
+
 /** Mock binary storage that serves test data from an in-memory map */
 class MockBinaryStorage implements BinaryStorage {
   private files = new Map<string, Buffer>()
@@ -153,6 +173,99 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
 
       const text = await res.text()
       expect(text).toContain('abc123def456')
+    })
+  })
+
+  describe('registry bulk download stream', () => {
+    it('POST /registry/download returns one tar stream containing npm and Pantry tarballs plus a manifest', async () => {
+      const realFetch = globalThis.fetch
+      const tarballs = new Map<string, Uint8Array>([
+        ['https://registry.npmjs.org/a/-/a-1.0.0.tgz', new Uint8Array([1, 2, 3])],
+        ['https://registry.npmjs.org/b/-/b-2.0.0.tgz', new Uint8Array([4, 5, 6, 7])],
+        ['https://registry.pantry.dev/packages/tool/3.0.0/tarball', new Uint8Array([8, 9])],
+        ['https://pantry-registry.s3.amazonaws.com/binaries/curl.se/8.12.0/darwin-arm64/curl.se-8.12.0.tar.gz', new Uint8Array([10, 11, 12])],
+      ])
+      let upstreamRequests = 0
+
+      globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
+        const href = typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url
+        const data = tarballs.get(href)
+        if (data) {
+          upstreamRequests += 1
+          return new Response(data, { status: 200, headers: { 'Content-Type': 'application/octet-stream' } })
+        }
+        return realFetch(input, init)
+      }) as typeof fetch
+
+      try {
+        const res = await realFetch(`${baseUrl}/registry/download`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            packages: [
+              { name: 'a', version: '1.0.0', tarball: 'https://registry.npmjs.org/a/-/a-1.0.0.tgz' },
+              { name: 'b', version: '2.0.0', tarball: 'https://registry.npmjs.org/b/-/b-2.0.0.tgz' },
+              { name: 'tool', version: '3.0.0', tarball: 'https://registry.pantry.dev/packages/tool/3.0.0/tarball' },
+              { name: 'curl.se', version: '8.12.0', tarball: 'https://pantry-registry.s3.amazonaws.com/binaries/curl.se/8.12.0/darwin-arm64/curl.se-8.12.0.tar.gz' },
+            ],
+          }),
+        })
+
+        expect(res.status).toBe(200)
+        expect(res.headers.get('content-type')).toBe('application/x-tar')
+        expect(res.headers.get('x-pantry-bulk-download')).toBe('1')
+
+        const entries = parseTarEntries(new Uint8Array(await res.arrayBuffer()))
+        expect(entries.get('packages/0.tgz')).toEqual(new Uint8Array([1, 2, 3]))
+        expect(entries.get('packages/1.tgz')).toEqual(new Uint8Array([4, 5, 6, 7]))
+        expect(entries.get('packages/2.tgz')).toEqual(new Uint8Array([8, 9]))
+        expect(entries.get('packages/3.tgz')).toEqual(new Uint8Array([10, 11, 12]))
+
+        const manifestBytes = entries.get('manifest.json')
+        expect(manifestBytes).toBeDefined()
+        const manifest = JSON.parse(new TextDecoder().decode(manifestBytes!))
+        expect(manifest.packages).toHaveLength(4)
+        expect(manifest.packages[0]).toMatchObject({ name: 'a', version: '1.0.0', file: 'packages/0.tgz' })
+        expect(manifest.packages[1]).toMatchObject({ name: 'b', version: '2.0.0', file: 'packages/1.tgz' })
+        expect(manifest.packages[2]).toMatchObject({ name: 'tool', version: '3.0.0', file: 'packages/2.tgz' })
+        expect(manifest.packages[3]).toMatchObject({ name: 'curl.se', version: '8.12.0', file: 'packages/3.tgz' })
+        expect(upstreamRequests).toBe(4)
+      }
+      finally {
+        globalThis.fetch = realFetch
+      }
+    })
+
+    it('POST /npm/download remains a compatibility alias for /registry/download', async () => {
+      const res = await fetch(`${baseUrl}/npm/download`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          packages: [
+            { name: 'bad', version: '1.0.0', tarball: 'https://example.com/bad.tgz' },
+          ],
+        }),
+      })
+
+      expect(res.status).toBe(400)
+    })
+
+    it('POST /registry/download rejects non-registry tarball URLs', async () => {
+      const res = await fetch(`${baseUrl}/registry/download`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          packages: [
+            { name: 'bad', version: '1.0.0', tarball: 'https://example.com/bad.tgz' },
+          ],
+        }),
+      })
+
+      expect(res.status).toBe(400)
     })
   })
 

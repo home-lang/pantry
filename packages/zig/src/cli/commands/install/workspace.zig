@@ -420,6 +420,8 @@ pub fn installWorkspaceCommandWithOptions(
                         }) catch {};
                     }
 
+                    helpers.ensureBinSymlinks(allocator, workspace_root, options.modules_dir);
+
                     return .{ .exit_code = 0 };
                 }
             }
@@ -742,27 +744,6 @@ pub fn installWorkspaceCommandWithOptions(
         }
     } else |_| {}
 
-    // ── PRE-RESOLVE: bulk npm resolution via pantry registry ──
-    // Single HTTP POST resolves ALL deps at once instead of N individual requests
-    // to registry.npmjs.org. Pre-populates the L2 npm cache so resolveNpmPackage()
-    // returns instantly from cache during parallel install.
-    {
-        var stack_bulk: [1024]install.Installer.BulkDep = undefined;
-        var bi: usize = 0;
-        for (all_deps_buffer[0..all_deps_count]) |dep| {
-            if (helpers.isLocalDependency(dep)) continue;
-            if (bi >= stack_bulk.len) break;
-            stack_bulk[bi] = .{
-                .name = helpers.normalizePackageName(dep.name),
-                .version = dep.version,
-            };
-            bi += 1;
-        }
-        if (bi > 0) {
-            shared_installer.bulkResolveViaPantryRegistry(stack_bulk[0..bi]);
-        }
-    }
-
     defer shared_installer.deinit();
 
     var success_count: usize = 0;
@@ -993,11 +974,9 @@ pub fn installWorkspaceCommandWithOptions(
         }
     }
 
-    // Ensure pantry/.bin has symlinks for all installed package binaries
-    // Only run if there were actual installs (skip expensive dir scan on cache hits)
-    if (success_count > 0) {
-        helpers.ensureBinSymlinks(allocator, workspace_root, options.modules_dir);
-    }
+    // Ensure pantry/.bin has symlinks for all installed package binaries. This
+    // also repairs stale or broken shell shims when every package was cached.
+    helpers.ensureBinSymlinks(allocator, workspace_root, options.modules_dir);
 
     // Generate workspace lockfile
     const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{workspace_root});

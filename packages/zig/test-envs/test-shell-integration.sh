@@ -48,7 +48,7 @@ run_test() {
 
     cd "$SCRIPT_DIR/$test_dir" 2>/dev/null || {
         echo -e "${RED}❌ Directory not found:${NC} $test_dir"
-        ((FAILED_TESTS++))
+        ((FAILED_TESTS += 1))
         return 1
     }
 
@@ -58,7 +58,7 @@ run_test() {
 
     if output=$(eval "$test_command" 2>&1); then
         echo -e "${GREEN}✅ Test passed:${NC} $test_name"
-        ((PASSED_TESTS++))
+        ((PASSED_TESTS += 1))
 
         # Check for specific patterns that shouldn't appear
         if echo "$output" | grep -q '\[dotenvx@'; then
@@ -75,7 +75,7 @@ run_test() {
         exit_code=$?
         echo -e "${RED}❌ Test failed:${NC} $test_name (exit code: $exit_code)"
         echo "Output: $output"
-        ((FAILED_TESTS++))
+        ((FAILED_TESTS += 1))
     fi
 
     return $exit_code
@@ -115,7 +115,7 @@ for env_config in "${test_environments[@]}"; do
     IFS=':' read -r env_name dep_file <<< "$env_config"
 
     if [[ -d "$SCRIPT_DIR/$env_name" ]]; then
-        run_test "Dry run: $env_name" "$env_name" "$pantry_BIN dev --dry-run"
+        run_test "Dry run: $env_name" "$env_name" "$pantry_BIN install --dry-run"
         run_test "Shell code: $env_name" "$env_name" "$pantry_BIN dev:shellcode | head -10 >/dev/null"
         run_test "Environment detection: $env_name" "$env_name" "test -f $dep_file"
     else
@@ -146,14 +146,14 @@ run_test "Dotenvx filtering with grep" "stacks-config" "printf 'normal line\\n[d
 # Combined integration command test
 echo -e "\n${BLUE}=== Full Integration Command Test ===${NC}"
 
-integration_cmd="pantry_SHELL_INTEGRATION=1 eval \"\$($pantry_BIN dev:shellcode 2>/dev/null | sed 's/\\\\x1b\\\\[[0-9;]*m//g' | grep -v '^\\\\[dotenvx@' | grep -v '^[[:space:]]*\$')\""
+integration_cmd="pantry_SHELL_INTEGRATION=1 eval \"\$($pantry_BIN dev:shellcode 2>/dev/null)\""
 run_test "Full integration command" "stacks-config" "bash -c '$integration_cmd && echo \"Full integration successful\"'"
 
 # Performance and edge case tests
 echo -e "\n${BLUE}=== Performance and Edge Case Tests ===${NC}"
 
 run_test "Empty environment handling" "." "cd /tmp && $pantry_BIN dev:shellcode >/dev/null"
-run_test "Nested directory handling" "deeply-nested/level1/level2/level3/level4/level5/level6/level7/level8/level9/level10/final-project" "$pantry_BIN dev --dry-run"
+run_test "Nested directory handling" "deeply-nested/level1/level2/level3/level4/level5/level6/level7/level8/level9/level10/final-project" "$pantry_BIN install --dry-run"
 run_test "Permission handling" "." "chmod +x \$TMPDIR/test-pantry-\$\$ 2>/dev/null || echo 'Permission test skipped'"
 
 # Results summary

@@ -300,8 +300,10 @@ const categorySlugMap: Record<string, AnalyticsCategory> = {
  * GET  /zig/search?q={query}                 - Search Zig packages
  * POST /zig/publish                          - Publish Zig package
  *
- * npm bulk resolution:
+ * npm/registry bulk operations:
  * POST /npm/resolve                    - Resolve all transitive deps from input constraints
+ * POST /registry/download              - Download registry tarballs as one tar stream
+ * POST /npm/download                   - Compatibility alias for /registry/download
  * GET  /npm/resolve/{specs}            - GET variant (comma-separated name@constraint pairs)
  *
  * Binary proxy (pantry CLI install):
@@ -633,7 +635,13 @@ export function createHandler(
         }
       }
 
-      // npm bulk resolution
+      // npm/registry bulk operations
+      if (path === '/registry/download' && req.method === 'POST') {
+        return handleRegistryDownload(req, corsHeaders)
+      }
+      if (path === '/npm/download' && req.method === 'POST') {
+        return handleRegistryDownload(req, corsHeaders)
+      }
       if (path === '/npm/resolve' && req.method === 'POST') {
         return handleNpmResolve(req, corsHeaders)
       }
@@ -1045,8 +1053,10 @@ export function createServer(
     console.log('  GET  /zig/search?q={query}      - Search Zig packages')
     console.log('  POST /zig/publish               - Publish Zig package')
     console.log('  GET  /health                    - Health check')
-    console.log('npm bulk resolution:')
+    console.log('npm/registry bulk operations:')
     console.log('  POST /npm/resolve               - Resolve transitive deps')
+    console.log('  POST /registry/download         - Download registry tarballs as one stream')
+    console.log('  POST /npm/download              - Compatibility alias for /registry/download')
     console.log('  GET  /npm/resolve/{specs}        - GET variant (name@constraint,...)')
     console.log('Binary proxy (pantry CLI):')
     console.log('  GET  /binaries/{domain}/metadata.json  - Package metadata')
@@ -2128,6 +2138,208 @@ interface ResolvedPackage {
   tarball: string
   integrity: string
   dependencies?: Record<string, string>
+}
+
+interface RegistryDownloadPackage {
+  name: string
+  version: string
+  tarball: string
+  integrity?: string
+}
+
+interface RegistryDownloadManifestEntry extends RegistryDownloadPackage {
+  file: string
+  size: number
+}
+
+const REGISTRY_DOWNLOAD_MAX_PACKAGES = 2000
+const REGISTRY_DOWNLOAD_FETCH_CONCURRENCY = 8
+const TAR_BLOCK_SIZE = 512
+
+function writeTarString(header: Uint8Array, offset: number, length: number, value: string): void {
+  const bytes = new TextEncoder().encode(value)
+  header.set(bytes.slice(0, length), offset)
+}
+
+function writeTarOctal(header: Uint8Array, offset: number, length: number, value: number): void {
+  const octal = Math.floor(value).toString(8).padStart(length - 1, '0')
+  writeTarString(header, offset, length, `${octal.slice(-(length - 1))}\0`)
+}
+
+function createTarHeader(name: string, size: number, typeflag = '0'): Uint8Array {
+  if (name.length > 100) {
+    throw new Error(`tar entry name too long: ${name}`)
+  }
+
+  const header = new Uint8Array(TAR_BLOCK_SIZE)
+  writeTarString(header, 0, 100, name)
+  writeTarOctal(header, 100, 8, 0o644)
+  writeTarOctal(header, 108, 8, 0)
+  writeTarOctal(header, 116, 8, 0)
+  writeTarOctal(header, 124, 12, size)
+  writeTarOctal(header, 136, 12, Math.floor(Date.now() / 1000))
+  header.fill(0x20, 148, 156)
+  writeTarString(header, 156, 1, typeflag)
+  writeTarString(header, 257, 6, 'ustar\0')
+  writeTarString(header, 263, 2, '00')
+
+  let checksum = 0
+  for (const byte of header) checksum += byte
+  const checksumOctal = checksum.toString(8).padStart(6, '0')
+  writeTarString(header, 148, 8, `${checksumOctal}\0 `)
+  return header
+}
+
+function tarPadding(size: number): Uint8Array | undefined {
+  const pad = (TAR_BLOCK_SIZE - (size % TAR_BLOCK_SIZE)) % TAR_BLOCK_SIZE
+  return pad > 0 ? new Uint8Array(pad) : undefined
+}
+
+function isAllowedBulkTarballUrl(value: string): boolean {
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'https:') return false
+
+    if (url.hostname === 'registry.npmjs.org' || url.hostname.endsWith('.npmjs.org')) {
+      return true
+    }
+
+    if (url.hostname === 'registry.pantry.dev') {
+      return url.pathname.startsWith('/binaries/')
+        || /^\/packages\/[^/]+\/[^/]+\/tarball$/.test(url.pathname)
+        || /^\/commits\/[^/]+\/[^/]+\/tarball$/.test(url.pathname)
+    }
+
+    if (url.hostname === 'pantry-registry.s3.amazonaws.com'
+      || url.hostname === 'pantry-registry.s3.us-east-1.amazonaws.com') {
+      return url.pathname.startsWith('/binaries/')
+        || url.pathname.startsWith('/packages/')
+        || url.pathname.startsWith('/commits/')
+    }
+
+    return false
+  }
+  catch {
+    return false
+  }
+}
+
+async function fetchRegistryTarballBytes(pkg: RegistryDownloadPackage): Promise<Uint8Array | null> {
+  if (!isAllowedBulkTarballUrl(pkg.tarball)) {
+    return null
+  }
+
+  const res = await fetch(pkg.tarball, {
+    headers: { 'Accept': 'application/octet-stream' },
+  })
+  if (!res.ok) return null
+  return new Uint8Array(await res.arrayBuffer())
+}
+
+function normalizeRegistryDownloadPackage(value: unknown): RegistryDownloadPackage | null {
+  if (!value || typeof value !== 'object') return null
+  const obj = value as Record<string, unknown>
+  if (typeof obj.name !== 'string' || typeof obj.version !== 'string' || typeof obj.tarball !== 'string') return null
+  if (!obj.name || !obj.version || !obj.tarball) return null
+  if (obj.name.includes('..') || obj.version.includes('..') || /[\x00-\x1f]/.test(obj.name + obj.version)) return null
+  if (!isAllowedBulkTarballUrl(obj.tarball)) return null
+  return {
+    name: obj.name,
+    version: obj.version,
+    tarball: obj.tarball,
+    integrity: typeof obj.integrity === 'string' ? obj.integrity : '',
+  }
+}
+
+function appendTarEntry(controller: ReadableStreamDefaultController<Uint8Array>, name: string, data: Uint8Array): void {
+  controller.enqueue(createTarHeader(name, data.byteLength))
+  controller.enqueue(data)
+  const padding = tarPadding(data.byteLength)
+  if (padding) controller.enqueue(padding)
+}
+
+async function handleRegistryDownload(req: Request, corsHeaders: Record<string, string>): Promise<Response> {
+  try {
+    const body = await req.json() as { packages?: unknown[] }
+    if (!Array.isArray(body?.packages) || body.packages.length === 0) {
+      return Response.json(
+        { error: 'Missing or empty "packages" array in request body' },
+        { status: 400, headers: corsHeaders },
+      )
+    }
+    if (body.packages.length > REGISTRY_DOWNLOAD_MAX_PACKAGES) {
+      return Response.json(
+        { error: `Too many packages requested; max is ${REGISTRY_DOWNLOAD_MAX_PACKAGES}` },
+        { status: 413, headers: corsHeaders },
+      )
+    }
+
+    const packages = body.packages
+      .map(normalizeRegistryDownloadPackage)
+      .filter((pkg): pkg is RegistryDownloadPackage => pkg !== null)
+
+    if (packages.length === 0) {
+      return Response.json(
+        { error: 'No valid registry tarballs requested' },
+        { status: 400, headers: corsHeaders },
+      )
+    }
+
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const manifest: RegistryDownloadManifestEntry[] = []
+
+        try {
+          for (let i = 0; i < packages.length; i += REGISTRY_DOWNLOAD_FETCH_CONCURRENCY) {
+            const batch = packages.slice(i, i + REGISTRY_DOWNLOAD_FETCH_CONCURRENCY)
+            const fetched = await Promise.all(batch.map(async (pkg, batchIndex) => ({
+              pkg,
+              index: i + batchIndex,
+              bytes: await fetchRegistryTarballBytes(pkg),
+            })))
+
+            for (const item of fetched) {
+              if (!item.bytes || item.bytes.byteLength === 0) continue
+              const file = `packages/${item.index}.tgz`
+              appendTarEntry(controller, file, item.bytes)
+              manifest.push({
+                name: item.pkg.name,
+                version: item.pkg.version,
+                tarball: item.pkg.tarball,
+                integrity: item.pkg.integrity || '',
+                file,
+                size: item.bytes.byteLength,
+              })
+            }
+          }
+
+          const manifestBytes = new TextEncoder().encode(JSON.stringify({ packages: manifest }))
+          appendTarEntry(controller, 'manifest.json', manifestBytes)
+          controller.enqueue(new Uint8Array(TAR_BLOCK_SIZE * 2))
+          controller.close()
+        }
+        catch (error) {
+          controller.error(error)
+        }
+      },
+    })
+
+    return new Response(stream, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/x-tar',
+        'Cache-Control': 'no-store',
+        'X-Pantry-Bulk-Download': '1',
+      },
+    })
+  }
+  catch (error) {
+    console.error('registry bulk download error:', error)
+    return Response.json(
+      { error: 'Failed to create registry download stream' },
+      { status: 500, headers: corsHeaders },
+    )
+  }
 }
 
 /**

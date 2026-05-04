@@ -135,6 +135,8 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
                 }) catch {};
             }
 
+            helpers.ensureBinSymlinks(allocator, effective_dir, modules_dir);
+
             const end_ts = io_helper.clockGettime();
             const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
             const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
@@ -219,6 +221,8 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
             .verbose = opts.verbose,
         }) catch {};
     }
+
+    helpers.ensureBinSymlinks(allocator, effective_dir, modules_dir);
 
     const end_ts = io_helper.clockGettime();
     const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
@@ -638,27 +642,6 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 }
             }
         } else |_| {}
-
-        // Pre-resolve all deps via pantry registry bulk endpoint (single HTTP request)
-        // This pre-populates the npm cache so individual resolveNpmPackage() calls
-        // return immediately instead of hitting registry.npmjs.org one by one.
-        if (deps_to_install.len > 0) {
-            // Perf: Use stack buffer for small dep lists (avoids heap alloc for typical projects)
-            var stack_bulk: [64]install.Installer.BulkDep = undefined;
-            const bulk_deps = if (deps_to_install.len <= 64)
-                stack_bulk[0..deps_to_install.len]
-            else
-                try allocator.alloc(install.Installer.BulkDep, deps_to_install.len);
-            defer if (deps_to_install.len > 64) allocator.free(bulk_deps);
-
-            for (deps_to_install, 0..) |dep, i| {
-                bulk_deps[i] = .{
-                    .name = helpers.normalizePackageName(dep.name),
-                    .version = dep.version,
-                };
-            }
-            shared_installer.bulkResolveViaPantryRegistry(bulk_deps);
-        }
 
         // ── Parallel pipeline: resolve tree → download → extract ──
         const pipeline = @import("../../../install/pipeline.zig");

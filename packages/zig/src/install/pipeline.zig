@@ -15,6 +15,7 @@ const packages = @import("../packages.zig");
 const style = @import("../cli/style.zig");
 const offline = @import("offline.zig");
 const patches_mod = @import("patches.zig");
+const downloader = @import("downloader.zig");
 
 const Installer = installer_mod.Installer;
 const PackageCache = cache_mod.PackageCache;
@@ -215,6 +216,42 @@ const ResolveThreadCtx = struct {
     }
 };
 
+fn resolvePantryRegistryTarball(
+    allocator: std.mem.Allocator,
+    name: []const u8,
+    version: []const u8,
+) ?ResolvedPackage {
+    if (downloader.lookupS3Registry(allocator, name, version)) |s3_result| {
+        return .{
+            .name = allocator.dupe(u8, name) catch {
+                allocator.free(s3_result.version);
+                allocator.free(s3_result.tarball_url);
+                return null;
+            },
+            .version = s3_result.version,
+            .tarball_url = s3_result.tarball_url,
+            .integrity = null,
+            .source = .pantry,
+        };
+    }
+
+    if (downloader.lookupPantryPublished(allocator, name, version)) |pub_result| {
+        return .{
+            .name = allocator.dupe(u8, name) catch {
+                allocator.free(pub_result.version);
+                allocator.free(pub_result.tarball_url);
+                return null;
+            },
+            .version = pub_result.version,
+            .tarball_url = pub_result.tarball_url,
+            .integrity = null,
+            .source = .pantry,
+        };
+    }
+
+    return null;
+}
+
 /// Resolve the full dependency tree from npm registry metadata.
 /// Returns a flat deduplicated list of all packages to install.
 fn resolveFullTree(
@@ -366,16 +403,43 @@ fn resolveFullTree(
                 // .github, .git, .http, .ziglang, .local all install via
                 // their own paths in the download phase (or out-of-band).
                 const dep = current_wave.items[ri];
-                if (dep.source != .npm) {
+                if (dep.source == .npm) {
+                    if (resolvePantryRegistryTarball(allocator, dep.name, dep.version)) |pantry_pkg| {
+                        if (!seen.contains(dep.name)) {
+                            try seen.put(try allocator.dupe(u8, dep.name), {});
+                            try resolved.append(allocator, pantry_pkg);
+                            inst.hoisted_versions.put(pantry_pkg.name, pantry_pkg.version);
+                        } else {
+                            allocator.free(pantry_pkg.name);
+                            allocator.free(pantry_pkg.version);
+                            allocator.free(pantry_pkg.tarball_url);
+                            if (pantry_pkg.integrity) |i| allocator.free(i);
+                        }
+                    }
+                } else {
                     if (!seen.contains(dep.name)) {
                         try seen.put(try allocator.dupe(u8, dep.name), {});
-                        try resolved.append(allocator, .{
-                            .name = try allocator.dupe(u8, dep.name),
-                            .version = try allocator.dupe(u8, dep.version),
-                            .tarball_url = try allocator.dupe(u8, ""),
-                            .integrity = null,
-                            .source = dep.source,
-                        });
+                        if (dep.source == .pantry) {
+                            if (resolvePantryRegistryTarball(allocator, dep.name, dep.version)) |pantry_pkg| {
+                                try resolved.append(allocator, pantry_pkg);
+                            } else {
+                                try resolved.append(allocator, .{
+                                    .name = try allocator.dupe(u8, dep.name),
+                                    .version = try allocator.dupe(u8, dep.version),
+                                    .tarball_url = try allocator.dupe(u8, ""),
+                                    .integrity = null,
+                                    .source = dep.source,
+                                });
+                            }
+                        } else {
+                            try resolved.append(allocator, .{
+                                .name = try allocator.dupe(u8, dep.name),
+                                .version = try allocator.dupe(u8, dep.version),
+                                .tarball_url = try allocator.dupe(u8, ""),
+                                .integrity = null,
+                                .source = dep.source,
+                            });
+                        }
                     }
                 }
             }
@@ -812,6 +876,13 @@ fn resolveViaRegistry(
             }
         }
         if (!found) {
+            if (resolvePantryRegistryTarball(allocator, dep.name, dep.version)) |pantry_pkg| {
+                try resolved.append(allocator, pantry_pkg);
+                inst.hoisted_versions.put(pantry_pkg.name, pantry_pkg.version);
+                missing_count += 1;
+                continue;
+            }
+
             // Try individual resolution
             const npm_info = inst.resolveNpmPackage(dep.name, dep.version) catch continue;
             defer allocator.free(npm_info.version);
@@ -837,6 +908,12 @@ fn resolveViaRegistry(
     // Add non-npm top-level deps (pantry/github/etc) that weren't sent to the server
     for (top_level_deps) |dep| {
         if (dep.source == .npm) continue;
+        if (dep.source == .pantry) {
+            if (resolvePantryRegistryTarball(allocator, dep.name, dep.version)) |pantry_pkg| {
+                try resolved.append(allocator, pantry_pkg);
+                continue;
+            }
+        }
         try resolved.append(allocator, .{
             .name = try allocator.dupe(u8, dep.name),
             .version = try allocator.dupe(u8, dep.version),
@@ -851,6 +928,233 @@ fn resolveViaRegistry(
     }
 
     return resolved;
+}
+
+fn appendJsonString(allocator: std.mem.Allocator, out: *std.ArrayList(u8), value: []const u8) !void {
+    try out.append(allocator, '"');
+    for (value) |c| {
+        switch (c) {
+            '"' => try out.appendSlice(allocator, "\\\""),
+            '\\' => try out.appendSlice(allocator, "\\\\"),
+            '\n' => try out.appendSlice(allocator, "\\n"),
+            '\r' => try out.appendSlice(allocator, "\\r"),
+            '\t' => try out.appendSlice(allocator, "\\t"),
+            else => {
+                if (c < 0x20) {
+                    const hex = "0123456789abcdef";
+                    try out.appendSlice(allocator, "\\u00");
+                    try out.append(allocator, hex[c >> 4]);
+                    try out.append(allocator, hex[c & 0x0f]);
+                } else {
+                    try out.append(allocator, c);
+                }
+            },
+        }
+    }
+    try out.append(allocator, '"');
+}
+
+fn isInstalledOrCached(
+    inst: *Installer,
+    project_root: []const u8,
+    modules_dir: []const u8,
+    pkg: ResolvedPackage,
+) bool {
+    var install_dir_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const install_dir = std.fmt.bufPrint(&install_dir_buf, "{s}/{s}/{s}", .{ project_root, modules_dir, pkg.name }) catch return false;
+    io_helper.accessAbsolute(install_dir, .{}) catch {
+        const cached = inst.cache.get(pkg.name, pkg.version) catch null;
+        return cached != null;
+    };
+    return true;
+}
+
+fn buildNpmBulkDownloadBody(
+    allocator: std.mem.Allocator,
+    inst: *Installer,
+    packages_to_download: []const ResolvedPackage,
+    project_root: []const u8,
+    modules_dir: []const u8,
+) !?[]u8 {
+    var body = try std.ArrayList(u8).initCapacity(allocator, packages_to_download.len * 160 + 32);
+    errdefer body.deinit(allocator);
+
+    try body.appendSlice(allocator, "{\"packages\":[");
+    var first = true;
+    var count: usize = 0;
+
+    for (packages_to_download) |pkg| {
+        if (pkg.source != .npm and pkg.source != .pantry) continue;
+        if (pkg.tarball_url.len == 0) continue;
+        if (isInstalledOrCached(inst, project_root, modules_dir, pkg)) continue;
+
+        if (!first) try body.append(allocator, ',');
+        first = false;
+        try body.append(allocator, '{');
+        try body.appendSlice(allocator, "\"name\":");
+        try appendJsonString(allocator, &body, pkg.name);
+        try body.appendSlice(allocator, ",\"version\":");
+        try appendJsonString(allocator, &body, pkg.version);
+        try body.appendSlice(allocator, ",\"tarball\":");
+        try appendJsonString(allocator, &body, pkg.tarball_url);
+        if (pkg.integrity) |integrity| {
+            try body.appendSlice(allocator, ",\"integrity\":");
+            try appendJsonString(allocator, &body, integrity);
+        }
+        try body.append(allocator, '}');
+        count += 1;
+    }
+
+    try body.appendSlice(allocator, "]}");
+    if (count == 0) {
+        body.deinit(allocator);
+        return null;
+    }
+    return try body.toOwnedSlice(allocator);
+}
+
+fn createBulkDownloadTempDir(allocator: std.mem.Allocator, inst: *Installer) ![]const u8 {
+    const now = io_helper.clockGettime();
+    const stamp = @as(u64, @intCast(now.sec)) * std.time.ns_per_s + @as(u64, @intCast(now.nsec));
+    const temp_dir = try std.fmt.allocPrint(allocator, "{s}/npm-bulk-{d}", .{ inst.cache.cache_dir, stamp });
+    errdefer allocator.free(temp_dir);
+    try io_helper.makePath(temp_dir);
+    return temp_dir;
+}
+
+fn extractBulkDownloadArchive(
+    allocator: std.mem.Allocator,
+    archive: []const u8,
+    temp_dir: []const u8,
+) !void {
+    var dest = io_helper.cwd().openDir(io_helper.io, temp_dir, .{}) catch return error.FileNotFound;
+    defer dest.close(io_helper.io);
+
+    var input_reader: std.Io.Reader = .fixed(archive);
+    var diagnostics: std.tar.Diagnostics = .{ .allocator = allocator };
+    defer diagnostics.deinit();
+    try std.tar.pipeToFileSystem(io_helper.io, dest, &input_reader, .{
+        .diagnostics = &diagnostics,
+    });
+}
+
+fn cacheBulkDownloadEntries(
+    allocator: std.mem.Allocator,
+    inst: *Installer,
+    temp_dir: []const u8,
+    verbose: bool,
+) !usize {
+    const manifest_path = try std.fmt.allocPrint(allocator, "{s}/manifest.json", .{temp_dir});
+    defer allocator.free(manifest_path);
+
+    const manifest_bytes = try io_helper.readFileAlloc(allocator, manifest_path, 16 * 1024 * 1024);
+    defer allocator.free(manifest_bytes);
+
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, manifest_bytes, .{});
+    defer parsed.deinit();
+
+    if (parsed.value != .object) return 0;
+    const packages_val = parsed.value.object.get("packages") orelse return 0;
+    if (packages_val != .array) return 0;
+
+    var cached_count: usize = 0;
+    for (packages_val.array.items) |pkg_val| {
+        if (pkg_val != .object) continue;
+        const name = if (pkg_val.object.get("name")) |v| (if (v == .string) v.string else continue) else continue;
+        const version = if (pkg_val.object.get("version")) |v| (if (v == .string) v.string else continue) else continue;
+        const tarball_url = if (pkg_val.object.get("tarball")) |v| (if (v == .string) v.string else continue) else continue;
+        const file = if (pkg_val.object.get("file")) |v| (if (v == .string) v.string else continue) else continue;
+        const integrity = if (pkg_val.object.get("integrity")) |v| (if (v == .string and v.string.len > 0) v.string else null) else null;
+
+        if (!std.mem.startsWith(u8, file, "packages/")) continue;
+        if (std.mem.indexOf(u8, file, "..") != null or std.mem.startsWith(u8, file, "/")) continue;
+
+        const tarball_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ temp_dir, file });
+        defer allocator.free(tarball_path);
+
+        const tarball_bytes = io_helper.readFileAlloc(allocator, tarball_path, 512 * 1024 * 1024) catch continue;
+        defer allocator.free(tarball_bytes);
+
+        if (integrity) |expected| {
+            if (!verifyIntegrity(allocator, tarball_bytes, expected)) {
+                if (verbose) std.debug.print("[verbose:pipeline:bulk-download] integrity mismatch for {s}@{s}\n", .{ name, version });
+                continue;
+            }
+        }
+
+        var checksum: [32]u8 = undefined;
+        std.crypto.hash.sha2.Sha256.hash(tarball_bytes, &checksum, .{});
+        inst.cache.put(name, version, tarball_url, checksum, tarball_bytes) catch |err| {
+            if (verbose) std.debug.print("[verbose:pipeline:bulk-download] cache put failed for {s}@{s}: {s}\n", .{ name, version, @errorName(err) });
+            continue;
+        };
+        cached_count += 1;
+    }
+
+    return cached_count;
+}
+
+/// Prefetch all missing registry tarballs through one Pantry registry response
+/// stream. The download endpoint returns an uncompressed tar containing package
+/// archives plus a manifest. We extract it into a temp directory, verify
+/// integrity when available, then seed the normal content-addressed cache so
+/// the installer below never fans out into one HTTP request per package.
+fn prefetchNpmTarballsViaRegistry(
+    allocator: std.mem.Allocator,
+    inst: *Installer,
+    resolved: []const ResolvedPackage,
+    project_root: []const u8,
+    modules_dir: []const u8,
+    verbose: bool,
+) void {
+    if (offline.isOfflineMode()) return;
+
+    const body = buildNpmBulkDownloadBody(allocator, inst, resolved, project_root, modules_dir) catch return;
+    const request_body = body orelse return;
+    defer allocator.free(request_body);
+
+    if (verbose) {
+        std.debug.print("[verbose:pipeline:bulk-download] POSTing registry tarball set to registry.pantry.dev/registry/download\n", .{});
+    }
+
+    const archive = io_helper.httpPostJsonWithClient(
+        inst.http_client,
+        allocator,
+        "https://registry.pantry.dev/registry/download",
+        request_body,
+    ) catch blk: {
+        if (verbose) std.debug.print("[verbose:pipeline:bulk-download] canonical endpoint unavailable; trying /npm/download compatibility alias\n", .{});
+        break :blk io_helper.httpPostJsonWithClient(
+            inst.http_client,
+            allocator,
+            "https://registry.pantry.dev/npm/download",
+            request_body,
+        ) catch {
+            if (verbose) std.debug.print("[verbose:pipeline:bulk-download] stream unavailable; falling back to per-package downloads\n", .{});
+            return;
+        };
+    };
+    defer allocator.free(archive);
+    if (archive.len == 0) return;
+
+    const temp_dir = createBulkDownloadTempDir(allocator, inst) catch return;
+    defer {
+        io_helper.deleteTree(temp_dir) catch {};
+        allocator.free(temp_dir);
+    }
+
+    extractBulkDownloadArchive(allocator, archive, temp_dir) catch |err| {
+        if (verbose) std.debug.print("[verbose:pipeline:bulk-download] extract failed: {s}\n", .{@errorName(err)});
+        return;
+    };
+
+    const cached = cacheBulkDownloadEntries(allocator, inst, temp_dir, verbose) catch |err| blk: {
+        if (verbose) std.debug.print("[verbose:pipeline:bulk-download] cache import failed: {s}\n", .{@errorName(err)});
+        break :blk 0;
+    };
+    if (verbose and cached > 0) {
+        std.debug.print("[verbose:pipeline:bulk-download] cached {d} npm tarballs from one registry stream\n", .{cached});
+    }
 }
 
 // ============================================================================
@@ -967,6 +1271,13 @@ pub fn run(
             .results = try allocator.alloc(PackageResult, 0),
         };
     }
+
+    // ── Phase 1.5: Bulk tarball prefetch through Pantry ──
+    // For large npm trees, this turns N individual tarball downloads into one
+    // registry response stream. The normal worker phase still handles cache
+    // hits, extraction, integrity checks, and fallback if the stream is
+    // unavailable or skips a tarball.
+    prefetchNpmTarballsViaRegistry(allocator, inst, resolved.items, project_root, inst.modules_dir, verbose);
 
     // ── Phase 2+3: Download + Extract in parallel ──
     // Combined into one phase since downloading and extracting per-package

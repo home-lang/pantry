@@ -2538,16 +2538,38 @@ pub const Installer = struct {
         const start_ts_ = io_helper.clockGettime();
         const start_time = @as(i64, @intCast(start_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(start_ts_.nsec)), 1_000_000);
 
+        // Resolve semver constraints (^, ~, >=, etc.) against known versions first.
+        const effective_version = blk: {
+            if (spec.version.len > 0 and (spec.version[0] == '^' or spec.version[0] == '~' or spec.version[0] == '>' or spec.version[0] == '<')) {
+                if (semver.resolveVersion("ziglang.org", spec.version)) |resolved| {
+                    if (!options.quiet) {
+                        style.print("  → Resolved {s} to {s}\n", .{ spec.version, resolved });
+                    }
+                    break :blk resolved;
+                }
+                if (!options.quiet) {
+                    style.print("  → No match for {s}, resolving latest\n", .{spec.version});
+                }
+                break :blk spec.version;
+            }
+            break :blk spec.version;
+        };
+
+        // Resolve short dev versions like "0.17.0-dev" before choosing the install path,
+        // so the on-disk package and .bin shim point at the concrete dev build.
+        const resolved_version = try downloader.resolveZigDevVersion(self.allocator, effective_version);
+        defer if (!std.mem.eql(u8, resolved_version, effective_version)) self.allocator.free(resolved_version);
+
         // Use standard install path — same as every other package: {modules_dir}/{domain}/v{version}
         const install_dir = if (options.project_root) |project_root|
-            try self.getProjectPackageDir(project_root, "ziglang.org", spec.version)
+            try self.getProjectPackageDir(project_root, "ziglang.org", resolved_version)
         else blk: {
             const global = try Paths.globalDir(self.allocator);
             defer self.allocator.free(global);
             break :blk try std.fmt.allocPrint(
                 self.allocator,
                 "{s}/packages/ziglang.org/v{s}",
-                .{ global, spec.version },
+                .{ global, resolved_version },
             );
         };
         errdefer self.allocator.free(install_dir);
@@ -2559,38 +2581,20 @@ pub const Installer = struct {
         };
 
         if (already_installed) {
+            if (options.project_root) |project_root| {
+                try self.createProjectSymlinks(project_root, "ziglang.org", resolved_version, install_dir);
+            }
+
             const end_ts_ = io_helper.clockGettime();
             const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
             return InstallResult{
                 .name = try self.allocator.dupe(u8, spec.name),
-                .version = try self.allocator.dupe(u8, spec.version),
+                .version = try self.allocator.dupe(u8, resolved_version),
                 .install_path = install_dir,
                 .from_cache = true,
                 .install_time_ms = @intCast(end_time - start_time),
             };
         }
-
-        // Resolve semver constraints (^, ~, >=, etc.) against known versions first
-        const effective_version = blk: {
-            if (spec.version.len > 0 and (spec.version[0] == '^' or spec.version[0] == '~' or spec.version[0] == '>' or spec.version[0] == '<')) {
-                if (semver.resolveVersion("ziglang.org", spec.version)) |resolved| {
-                    if (!options.quiet) {
-                        style.print("  → Resolved {s} to {s}\n", .{ spec.version, resolved });
-                    }
-                    break :blk resolved;
-                }
-                // If no match in generated.zig, fall back to latest
-                if (!options.quiet) {
-                    style.print("  → No match for {s}, resolving latest\n", .{spec.version});
-                }
-                break :blk spec.version;
-            }
-            break :blk spec.version;
-        };
-
-        // Resolve short dev versions like "0.16.0-dev" to full version, or "*"/"latest" to latest stable
-        const resolved_version = try downloader.resolveZigDevVersion(self.allocator, effective_version);
-        defer if (!std.mem.eql(u8, resolved_version, effective_version)) self.allocator.free(resolved_version);
 
         if (!options.quiet) {
             const is_dev = downloader.isZigDevVersion(resolved_version);
@@ -2615,7 +2619,7 @@ pub const Installer = struct {
         const temp_dir = try std.fmt.allocPrint(
             self.allocator,
             "{s}/.pantry/.tmp/zig-{s}",
-            .{ home, spec.version },
+            .{ home, resolved_version },
         );
         defer {
             self.allocator.free(temp_dir);
@@ -2697,7 +2701,7 @@ pub const Installer = struct {
         // Ensure zig binary is executable (not needed on Windows)
         if (comptime !is_windows) {
             var chmod_buf: [std.fs.max_path_bytes:0]u8 = undefined;
-            const zig_path = std.fmt.bufPrint(chmod_buf[0..std.fs.max_path_bytes], "{s}/zig", .{install_dir}) catch null;
+            const zig_path = std.fmt.bufPrint(chmod_buf[0..std.fs.max_path_bytes], "{s}/bin/zig", .{install_dir}) catch null;
             if (zig_path) |p| {
                 chmod_buf[p.len] = 0;
                 _ = std.c.chmod(&chmod_buf, 0o755);
@@ -2708,7 +2712,7 @@ pub const Installer = struct {
         // discoverBinaries now finds executables at the package root (e.g. zig binary),
         // so no special-case symlink logic is needed here.
         if (options.project_root) |project_root| {
-            try self.createProjectSymlinks(project_root, "ziglang.org", spec.version, install_dir);
+            try self.createProjectSymlinks(project_root, "ziglang.org", resolved_version, install_dir);
         }
 
         const end_ts_ = io_helper.clockGettime();
@@ -2893,6 +2897,22 @@ pub const Installer = struct {
             );
 
             const s3_ok = blk: {
+                const cached_meta = self.cache.get(domain, spec.version) catch blk_cache: {
+                    if (!std.mem.eql(u8, domain, spec.name)) {
+                        break :blk_cache self.cache.get(spec.name, spec.version) catch null;
+                    }
+                    break :blk_cache null;
+                };
+                if (cached_meta) |meta| {
+                    if (io_helper.readFileAlloc(self.allocator, meta.cache_path, 512 * 1024 * 1024)) |cached_bytes| {
+                        defer self.allocator.free(cached_bytes);
+                        const file = io_helper.cwd().createFile(io_helper.io, temp_archive_path, .{}) catch break :blk false;
+                        defer file.close(io_helper.io);
+                        io_helper.writeAllToFile(file, cached_bytes) catch break :blk false;
+                        break :blk true;
+                    } else |_| {}
+                }
+
                 if (options.inline_progress) |progress_opts| {
                     downloader.downloadFileInline(self.allocator, url, temp_archive_path, progress_opts) catch {
                         break :blk false;

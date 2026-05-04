@@ -1270,6 +1270,10 @@ pub fn ensureBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, mod
     // when invoked under that name. The upstream tarball doesn't include a
     // bunx entry, so we create the symlink ourselves.
     createBinAliases(allocator, bin_link_dir);
+
+    // If the project pins Zig, make sure the shell shim follows that request
+    // even when multiple Zig toolchains are already present in pantry/.
+    ensureConfiguredZigSymlink(allocator, proj_dir, pantry_dir, bin_link_dir);
 }
 
 /// Create alias symlinks for known multi-name binaries.
@@ -1340,14 +1344,154 @@ fn symlinkBinEntries(allocator: std.mem.Allocator, bin_dir: []const u8, bin_link
         const bin_dst = std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_link_dir, entry.name }) catch continue;
         defer allocator.free(bin_dst);
 
-        // Don't overwrite existing symlinks (first-installed wins)
+        // Don't overwrite valid existing links (first-installed wins), but do
+        // replace broken symlinks so fast install paths can repair pantry/.bin.
         io_helper.accessAbsolute(bin_dst, .{}) catch {
-            // Doesn't exist — create it
+            io_helper.deleteFile(bin_dst) catch {};
             makeExecutable(bin_src);
             io_helper.symLink(bin_src, bin_dst) catch {};
             continue;
         };
     }
+}
+
+fn ensureConfiguredZigSymlink(allocator: std.mem.Allocator, proj_dir: []const u8, pantry_dir: []const u8, bin_link_dir: []const u8) void {
+    const requested = readRequestedZigVersion(allocator, proj_dir) orelse return;
+    defer allocator.free(requested);
+
+    const zig_bin = findBestZigBinary(allocator, pantry_dir, requested) orelse return;
+    defer allocator.free(zig_bin);
+
+    const link_path = std.fmt.allocPrint(allocator, "{s}/zig", .{bin_link_dir}) catch return;
+    defer allocator.free(link_path);
+
+    makeExecutable(zig_bin);
+    io_helper.deleteFile(link_path) catch {};
+    io_helper.symLink(zig_bin, link_path) catch {};
+}
+
+fn readRequestedZigVersion(allocator: std.mem.Allocator, proj_dir: []const u8) ?[]u8 {
+    const deps_path = std.fmt.allocPrint(allocator, "{s}/deps.yaml", .{proj_dir}) catch return null;
+    defer allocator.free(deps_path);
+
+    const content = io_helper.readFileAlloc(allocator, deps_path, 1024 * 1024) catch return null;
+    defer allocator.free(content);
+
+    var lines = std.mem.splitScalar(u8, content, '\n');
+    while (lines.next()) |raw_line| {
+        const line = std.mem.trim(u8, raw_line, " \t\r\n");
+        if (line.len == 0 or line[0] == '#') continue;
+
+        if (std.mem.startsWith(u8, line, "zig:") or
+            std.mem.startsWith(u8, line, "ziglang:") or
+            std.mem.startsWith(u8, line, "ziglang.org:"))
+        {
+            const colon = std.mem.indexOfScalar(u8, line, ':') orelse continue;
+            var value = std.mem.trim(u8, line[colon + 1 ..], " \t\r\n\"'");
+            if (std.mem.indexOfScalar(u8, value, '#')) |comment| {
+                value = std.mem.trim(u8, value[0..comment], " \t\r\n\"'");
+            }
+            if (value.len > 0 and value[value.len - 1] == ',') {
+                value = std.mem.trim(u8, value[0 .. value.len - 1], " \t\r\n\"'");
+            }
+            if (value.len == 0) return null;
+            return allocator.dupe(u8, value) catch null;
+        }
+    }
+
+    return null;
+}
+
+fn findBestZigBinary(allocator: std.mem.Allocator, pantry_dir: []const u8, requested: []const u8) ?[]u8 {
+    const zig_root = std.fmt.allocPrint(allocator, "{s}/ziglang.org", .{pantry_dir}) catch return null;
+    defer allocator.free(zig_root);
+
+    var dir = io_helper.openDirAbsoluteForIteration(zig_root) catch return null;
+    defer dir.close();
+
+    var best_bin: ?[]u8 = null;
+    var best_rank: ?ZigVersionRank = null;
+
+    var iter = dir.iterate();
+    while (iter.next() catch null) |entry| {
+        if (entry.kind != .directory) continue;
+        if (!std.mem.startsWith(u8, entry.name, "v")) continue;
+        const version = entry.name[1..];
+        if (!zigVersionMatchesRequest(version, requested)) continue;
+
+        const bin_path = std.fmt.allocPrint(allocator, "{s}/{s}/bin/zig", .{ zig_root, entry.name }) catch continue;
+        io_helper.accessAbsolute(bin_path, .{}) catch {
+            allocator.free(bin_path);
+            continue;
+        };
+
+        const rank = parseZigVersionRank(version);
+        if (best_rank == null or rank.order(best_rank.?) == .gt) {
+            if (best_bin) |old| allocator.free(old);
+            best_bin = bin_path;
+            best_rank = rank;
+        } else {
+            allocator.free(bin_path);
+        }
+    }
+
+    return best_bin;
+}
+
+fn zigVersionMatchesRequest(version: []const u8, requested_raw: []const u8) bool {
+    const requested = if (std.mem.startsWith(u8, requested_raw, "v")) requested_raw[1..] else requested_raw;
+    if (std.mem.eql(u8, requested, "*") or std.mem.eql(u8, requested, "latest")) return true;
+    if (std.mem.endsWith(u8, requested, "-dev")) return std.mem.startsWith(u8, version, requested);
+
+    const requested_prefix = versionPrefixBeforeHash(requested);
+    const version_prefix = versionPrefixBeforeHash(version);
+    return std.mem.eql(u8, version_prefix, requested_prefix);
+}
+
+fn versionPrefixBeforeHash(version: []const u8) []const u8 {
+    for (version, 0..) |c, i| {
+        if (c == '+' or c == '_') return version[0..i];
+    }
+    return version;
+}
+
+const ZigVersionRank = struct {
+    major: u32 = 0,
+    minor: u32 = 0,
+    patch: u32 = 0,
+    stable: bool = false,
+    dev_build: u32 = 0,
+
+    fn order(self: ZigVersionRank, other: ZigVersionRank) std.math.Order {
+        if (self.major != other.major) return std.math.order(self.major, other.major);
+        if (self.minor != other.minor) return std.math.order(self.minor, other.minor);
+        if (self.patch != other.patch) return std.math.order(self.patch, other.patch);
+        if (self.stable != other.stable) return if (self.stable) .gt else .lt;
+        return std.math.order(self.dev_build, other.dev_build);
+    }
+};
+
+fn parseZigVersionRank(version: []const u8) ZigVersionRank {
+    const dev_pos = std.mem.indexOf(u8, version, "-dev");
+    const base = if (dev_pos) |pos| version[0..pos] else version;
+
+    var rank = ZigVersionRank{ .stable = dev_pos == null };
+    var parts = std.mem.splitScalar(u8, base, '.');
+    if (parts.next()) |part| rank.major = std.fmt.parseInt(u32, part, 10) catch 0;
+    if (parts.next()) |part| rank.minor = std.fmt.parseInt(u32, part, 10) catch 0;
+    if (parts.next()) |part| rank.patch = std.fmt.parseInt(u32, part, 10) catch 0;
+
+    if (dev_pos) |pos| {
+        const marker = "-dev.";
+        if (version.len > pos + marker.len and std.mem.startsWith(u8, version[pos..], marker)) {
+            const rest = version[pos + marker.len ..];
+            var end: usize = 0;
+            while (end < rest.len and rest[end] >= '0' and rest[end] <= '9') : (end += 1) {}
+            if (end > 0) rank.dev_build = std.fmt.parseInt(u32, rest[0..end], 10) catch 0;
+        }
+    }
+
+    return rank;
 }
 
 /// Update package.json with a new dependency
