@@ -547,7 +547,7 @@ test "PackageCache put triggers LRU eviction at size cap" {
     while (i < 15) : (i += 1) {
         var name_buf: [32]u8 = undefined;
         const name = try std.fmt.bufPrint(&name_buf, "pkg_{d}", .{i});
-        const checksum = [_]u8{0} ** 32;
+        const checksum: [32]u8 = @splat(0);
         try cache.put(name, "1.0.0", "http://test", checksum, "payload 10");
     }
 
@@ -569,7 +569,7 @@ test "PackageCache clear" {
     while (i < 5) : (i += 1) {
         var buf: [64]u8 = undefined;
         const name = try std.fmt.bufPrint(&buf, "pkg_{d}", .{i});
-        const checksum = [_]u8{0} ** 32;
+        const checksum: [32]u8 = @splat(0);
         try cache.put(name, "1.0.0", "http://test", checksum, "data");
     }
 
