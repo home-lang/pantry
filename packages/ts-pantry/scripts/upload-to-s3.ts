@@ -195,11 +195,16 @@ export async function uploadToS3(options: UploadOptions): Promise<void> {
     const files = readdirSync(artifactPath)
 
     // Find tarball and sha256 files
+    const expectedTarball = `${pkgName.replace(/\//g, '-')}-${version}.tar.gz`
     const tarball = files.find(f => f.endsWith('.tar.gz'))
-    const sha256File = files.find(f => f.endsWith('.sha256'))
+    const sha256File = files.find(f => f === `${expectedTarball}.sha256`)
 
     if (!tarball) {
       console.log(`⚠️  No tarball found in ${artifactDir}, skipping`)
+      continue
+    }
+    if (tarball !== expectedTarball) {
+      console.log(`⚠️  Expected ${expectedTarball} in ${artifactDir}, found ${tarball}; skipping stale artifact`)
       continue
     }
 
@@ -256,6 +261,10 @@ else {
       sha256: sha256Hash,
       size: tarballSize,
     }
+  }
+
+  if (Object.keys(uploadedPlatforms).length === 0) {
+    throw new Error(`No matching artifacts found for ${pkgName}@${version}`)
   }
 
   // Update metadata

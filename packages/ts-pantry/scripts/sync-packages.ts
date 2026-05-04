@@ -101,6 +101,10 @@ function domainToPackageFileKey(domain: string): string {
   return domain.replace(/[.\-/]/g, '').toLowerCase()
 }
 
+function safePathSegment(value: string): string {
+  return value.replace(/[^a-zA-Z0-9._-]/g, '-')
+}
+
 function readCatalogVersions(domain: string): string[] {
   const packageFile = join(import.meta.dir, '..', 'src', 'packages', `${domainToPackageFileKey(domain)}.ts`)
   if (!existsSync(packageFile)) return []
@@ -875,10 +879,12 @@ else {
     }
 
     // Download/build
-    const installDir = `/tmp/sync-${pkgKey}-install`
-    const artifactsDir = `/tmp/sync-artifacts`
+    const safePkgKey = safePathSegment(pkgKey)
+    const installDir = `/tmp/sync-${safePkgKey}-install`
+    const artifactsDir = `/tmp/sync-artifacts-${safePkgKey}-${safePathSegment(version)}-${platform}`
 
     rmSync(installDir, { recursive: true, force: true })
+    rmSync(artifactsDir, { recursive: true, force: true })
     mkdirSync(installDir, { recursive: true })
     mkdirSync(artifactsDir, { recursive: true })
 
@@ -895,7 +901,7 @@ else {
 
     // Cleanup
     rmSync(installDir, { recursive: true, force: true })
-    rmSync(join(artifactsDir, `${config.domain}-${version}-${platform}`), { recursive: true, force: true })
+    rmSync(artifactsDir, { recursive: true, force: true })
 
     console.log(`   ✅ Uploaded ${config.domain}@${version}`)
     return { status: 'uploaded', version }
