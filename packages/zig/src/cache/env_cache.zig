@@ -87,7 +87,7 @@ pub const EnvCache = struct {
     /// Main cache storage (hash -> entry)
     cache: std.AutoHashMap([16]u8, *Entry),
     /// Ring buffer for L1 cache optimization (8 entries)
-    fast_cache: [8]?*Entry align(64) = [_]?*Entry{null} ** 8,
+    fast_cache: [8]?*Entry align(64) = @splat(null),
     fast_cache_idx: std.atomic.Value(u8),
     /// Allocator
     allocator: std.mem.Allocator,

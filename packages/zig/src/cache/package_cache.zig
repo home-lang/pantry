@@ -187,7 +187,7 @@ pub const PackageCache = struct {
                 self.allocator.free(cache_path);
                 return null;
             },
-            .checksum = [_]u8{0} ** 32,
+            .checksum = @splat(0),
             .downloaded_at = now,
             .last_accessed = now,
             .size = real_size,

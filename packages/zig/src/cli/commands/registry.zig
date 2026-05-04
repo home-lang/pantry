@@ -603,7 +603,7 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
             style.print("\nPublishing {s}...\n", .{pkg.name});
 
             // Propagate root files (README, LICENSE) to package if missing
-            var copied_files: [root_files.len]?[]const u8 = .{null} ** root_files.len;
+            var copied_files: [root_files.len]?[]const u8 = @splat(null);
             for (root_files, 0..) |file_name, i| {
                 if (!has_root_file[i]) continue;
                 const pkg_file_path = std.fs.path.join(allocator, &[_][]const u8{ pkg.path, file_name }) catch continue;

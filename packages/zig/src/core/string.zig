@@ -191,7 +191,14 @@ test "md5Hash - small strings use FNV-1a" {
 }
 
 test "md5Hash - large strings use MD5" {
-    const large = "a" ** 100;
+    // 'a' repeated 100 times. Avoiding the `"a" ** 100` form because some
+    // older Zig 0.17-dev releases on CI tokenize `**` in a way that trips
+    // `zig fmt --check`. Comptime-constructed equivalent works everywhere.
+    const large: *const [100]u8 = &comptime blk: {
+        var buf: [100]u8 = undefined;
+        @memset(&buf, 'a');
+        break :blk buf;
+    };
     const hash1 = md5Hash(large);
     const hash2 = md5Hash(large);
 

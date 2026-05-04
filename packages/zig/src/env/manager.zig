@@ -24,7 +24,7 @@ pub const Environment = struct {
 
     pub fn init(allocator: std.mem.Allocator) Environment {
         return .{
-            .hash = [_]u8{0} ** 16,
+            .hash = @splat(0),
             .dep_file = "",
             .path = "",
             .env_vars = .empty,
