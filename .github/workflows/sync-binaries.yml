@@ -33,7 +33,35 @@ permissions:
   contents: read
 
 jobs:
-  # Job 1: Sync the 12 pre-built binary packages (fast downloads, no compilation)
+  classify-targets:
+    name: Classify requested packages
+    if: github.event.inputs.packages != ''
+    runs-on: ubuntu-latest
+    outputs:
+      has_source: ${{ steps.classify.outputs.has_source }}
+    steps:
+      - name: Classify package domains
+        id: classify
+        run: |
+          PKGS="${{ github.event.inputs.packages || '' }}"
+          PKGS=$(echo "$PKGS" | tr -cd 'a-zA-Z0-9._\-/,')
+          PREBUILT_LIST=",bun.sh,nodejs.org,meilisearch.com,cmake.org,redis.io,postgresql.org,mysql.com,getcomposer.org,pnpm.io,yarnpkg.com,go.dev,deno.land,python.org,"
+          HAS_SOURCE=false
+
+          IFS=',' read -ra DOMAINS <<< "$PKGS"
+          for d in "${DOMAINS[@]}"; do
+            d=$(echo "$d" | xargs)
+            [ -z "$d" ] && continue
+            if [[ "$PREBUILT_LIST" != *",$d,"* ]]; then
+              HAS_SOURCE=true
+              break
+            fi
+          done
+
+          echo "has_source=$HAS_SOURCE"
+          echo "has_source=$HAS_SOURCE" >> "$GITHUB_OUTPUT"
+
+  # Job 1: Sync pre-built binary packages (fast downloads, no compilation)
   sync-prebuilt:
     name: Sync pre-built (${{ matrix.platform }})
     strategy:
@@ -139,7 +167,8 @@ jobs:
   # Job 3a: Build specific packages (targeted — fast, no batching)
   build-targeted:
     name: Build targeted (${{ matrix.platform.name }})
-    if: github.event.inputs.packages != ''
+    needs: classify-targets
+    if: github.event.inputs.packages != '' && needs.classify-targets.outputs.has_source == 'true'
     strategy:
       fail-fast: false
       matrix:
