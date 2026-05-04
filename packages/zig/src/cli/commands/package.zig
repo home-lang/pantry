@@ -858,10 +858,12 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
 
             // Inter-package throttle: keeps us under Cloudflare's rolling
             // burst threshold for registry.npmjs.org. We observed sustained
-            // publishes triggering 1015 errors after ~16 min at 750ms gap;
-            // doubling the gap to 2s means we hit fewer requests per window
-            // and at 220 packages we still finish in well under the
-            // observed limit window.
+            // publishes triggering 1015 errors after ~16 min at 750ms gap.
+            // For a 220-package monorepo, 750ms × 220 = 165s of throttle —
+            // well under that 16 min ceiling, and combined with per-publish
+            // network time keeps full releases comfortably below it. Larger
+            // monorepos (or back-to-back releases that share the rolling
+            // window) auto-recover via the rate-limit handler below.
             //
             // After a rate-limited *failure*, sleep significantly longer
             // (server retry_after with a 60s floor). Cloudflare's IP-level
@@ -883,7 +885,7 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
             } else if (was_skipped) {
                 io_helper.sleepMs(50);
             } else {
-                io_helper.sleepMs(2000);
+                io_helper.sleepMs(750);
             }
         }
 
