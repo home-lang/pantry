@@ -22,5 +22,6 @@
   ],
   "requiredPlatforms": {
     "cmake.org": ["darwin-arm64", "linux-x86-64"]
-  }
+  },
+  "allowEmptyDomains": ["github.com/mail-os/mail"]
 }

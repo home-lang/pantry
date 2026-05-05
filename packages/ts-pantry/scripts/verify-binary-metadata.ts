@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { S3Client } from '@stacksjs/ts-cloud'
 import {
+  BINARY_SYNC_ALLOW_EMPTY_DOMAIN_SET,
   BINARY_SYNC_DOMAINS,
   BINARY_SYNC_REQUIRED_PLATFORMS,
   sanitizeDomainList,
@@ -320,6 +321,12 @@ export async function verifyBinaryMetadata(
   })
   const warnings: string[] = []
   const deletedStrays: string[] = []
+  const platformCount = Object.values(metadata.versions)
+    .reduce((sum, version) => sum + Object.keys(version.platforms).length, 0)
+
+  if (platformCount === 0 && !BINARY_SYNC_ALLOW_EMPTY_DOMAIN_SET.has(domain)) {
+    errors.push(`No binary tarballs found for ${domain}; refusing to rebuild metadata from an empty object listing`)
+  }
 
   if (options.deleteStrays && s3.deleteObject) {
     for (const key of strays) {
@@ -344,12 +351,14 @@ export async function verifyBinaryMetadata(
     warnings.push('metadata.json differs from S3 object state')
     if (options.repair) {
       if (!s3.putObject) throw new Error('S3 client does not support putObject repair')
-      await s3.putObject({
-        bucket,
-        key: metadataKey,
-        body: JSON.stringify(metadata, null, 2),
-        contentType: 'application/json',
-      })
+      if (errors.length === 0) {
+        await s3.putObject({
+          bucket,
+          key: metadataKey,
+          body: JSON.stringify(metadata, null, 2),
+          contentType: 'application/json',
+        })
+      }
     }
   }
 
@@ -358,8 +367,6 @@ export async function verifyBinaryMetadata(
     for (const item of missing) errors.push(`Missing required platform: ${domain} ${item}`)
   }
 
-  const platformCount = Object.values(metadata.versions)
-    .reduce((sum, version) => sum + Object.keys(version.platforms).length, 0)
   const ok = errors.length === 0 && (options.repair || !metadataChanged) && (options.deleteStrays || strays.length === 0)
   const repaired = Boolean(options.repair && (metadataChanged || repairedSha256.length > 0))
 

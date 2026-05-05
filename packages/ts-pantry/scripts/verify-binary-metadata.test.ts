@@ -120,4 +120,35 @@ describe('verify-binary-metadata', () => {
     const repaired = JSON.parse(await s3.getObject('bucket', 'binaries/meilisearch.com/metadata.json'))
     expect(repaired.versions['1.34.3'].platforms['darwin-arm64'].sha256).toBe(expectedSha)
   })
+
+  it('refuses to replace metadata with an empty object listing for active binary domains', async () => {
+    const s3 = new FakeS3()
+    s3.put('binaries/cmake.org/metadata.json', JSON.stringify({
+      name: 'cmake.org',
+      latestVersion: '3.24.2',
+      versions: {
+        '3.24.2': {
+          platforms: {
+            'darwin-arm64': {
+              tarball: 'binaries/cmake.org/3.24.2/darwin-arm64/cmake.org-3.24.2.tar.gz',
+              sha256: 'e'.repeat(64),
+              size: 123,
+              uploadedAt: '2026-05-04T00:00:00.000Z',
+            },
+          },
+        },
+      },
+      updatedAt: '2026-05-04T00:00:00.000Z',
+    }))
+
+    const result = await verifyBinaryMetadata(s3, 'bucket', 'cmake.org', {
+      repair: true,
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.errors).toContain('No binary tarballs found for cmake.org; refusing to rebuild metadata from an empty object listing')
+
+    const metadata = JSON.parse(await s3.getObject('bucket', 'binaries/cmake.org/metadata.json'))
+    expect(metadata.latestVersion).toBe('3.24.2')
+  })
 })
