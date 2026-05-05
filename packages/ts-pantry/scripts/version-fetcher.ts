@@ -7,7 +7,7 @@
  * Each recipe defines a versionSource that tells us where to check for new versions.
  *
  * Usage:
- *   bun scripts/version-fetcher.ts [--domain <domain>] [--dry-run]
+ *   bun scripts/version-fetcher.ts [--domain <domain>] [--dry-run] [--concurrency <N>]
  */
 
 import { existsSync, readdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs'
@@ -22,6 +22,10 @@ const dryRun = process.argv.includes('--dry-run')
 const targetDomain = process.argv.includes('--domain')
   ? process.argv[process.argv.indexOf('--domain') + 1]
   : null
+const concurrencyArg = process.argv.includes('--concurrency')
+  ? process.argv[process.argv.indexOf('--concurrency') + 1]
+  : process.env.VERSION_FETCHER_CONCURRENCY
+const concurrency = Math.max(1, Math.min(32, Number.parseInt(concurrencyArg || '16', 10) || 16))
 
 // ── GitHub API ────────────────────────────────────────────────────────
 
@@ -232,37 +236,53 @@ async function main() {
   }
   scan(recipesDir)
 
-  let updated = 0
-  let checked = 0
-  let errors = 0
-
-  for (const file of recipeFiles) {
+  async function processRecipeFile(file: string): Promise<{ checked: number, updated: number, errors: number }> {
     try {
       const mod = await import(file)
       const recipe: Recipe = mod.recipe || mod.default
-      if (!recipe?.domain || !recipe?.versionSource) continue
+      if (!recipe?.domain || !recipe?.versionSource) return { checked: 0, updated: 0, errors: 0 }
 
-      if (targetDomain && recipe.domain !== targetDomain) continue
+      if (targetDomain && recipe.domain !== targetDomain) return { checked: 0, updated: 0, errors: 0 }
 
-      checked++
       const versions = await fetchVersions(recipe.versionSource)
       if (versions.length === 0) {
         console.log(`  ${recipe.domain}: no versions found`)
-        continue
+        return { checked: 1, updated: 0, errors: 0 }
       }
 
       const changed = updatePackageVersions(recipe.domain, versions)
       if (changed) {
         console.log(`  ${recipe.domain}: updated to ${versions[0]} (${versions.length} versions)`)
-        updated++
+        return { checked: 1, updated: 1, errors: 0 }
       }
+
+      return { checked: 1, updated: 0, errors: 0 }
     }
     catch (err) {
       const basename = file.split('/').pop()
       console.error(`  ERROR loading ${basename}: ${(err as Error).message}`)
-      errors++
+      return { checked: 0, updated: 0, errors: 1 }
     }
   }
+
+  console.log(`Using concurrency: ${concurrency}\n`)
+
+  let updated = 0
+  let checked = 0
+  let errors = 0
+  let nextIndex = 0
+  const workers = Array.from({ length: Math.min(concurrency, recipeFiles.length) }, async () => {
+    while (true) {
+      const index = nextIndex++
+      if (index >= recipeFiles.length) return
+      const result = await processRecipeFile(recipeFiles[index])
+      checked += result.checked
+      updated += result.updated
+      errors += result.errors
+    }
+  })
+
+  await Promise.all(workers)
 
   console.log(`\nDone: ${checked} checked, ${updated} updated, ${errors} errors`)
 }
