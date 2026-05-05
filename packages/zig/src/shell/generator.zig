@@ -118,6 +118,7 @@ test "ShellCodeGenerator basic" {
 
     try std.testing.expect(code.len > 0);
     try std.testing.expect(std.mem.indexOf(u8, code, "# Pantry Shell Integration") != null);
+    try std.testing.expect(std.mem.indexOf(u8, code, "${__PANTRY_DEBUG:-}") != null);
     try std.testing.expect(std.mem.indexOf(u8, code, "__pantry_switch_environment") != null);
 }
 

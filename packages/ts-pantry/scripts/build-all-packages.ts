@@ -33,6 +33,7 @@ import { parseArgs } from 'node:util'
 import { createHash } from 'node:crypto'
 import { S3Client } from '@stacksjs/ts-cloud'
 import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
+import { BINARY_SYNC_DOMAIN_SET } from './binary-sync-packages.ts'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
 const packageOverrides: Record<string, any> = {}
 
@@ -1197,16 +1198,10 @@ Options:
   let allPackages = discoverPackages(discoveryPlatform)
 
   // Filter to packages with build scripts (compilable from source)
-  // Skip packages that are handled by sync-packages.ts (pre-built binaries)
-  const preBuiltDomains = new Set([
-    'bun.sh', 'nodejs.org', 'meilisearch.com', 'redis.io',
-    'postgresql.org', 'mysql.com', 'getcomposer.org', 'pnpm.io',
-    'yarnpkg.com', 'go.dev', 'deno.land', 'python.org', 'cmake.org',
-  ])
-
-  // Skip pre-built filter for targeted builds (-p) — allow building specific pre-built packages
+  // Skip packages that are handled by sync-packages.ts.
+  // Targeted builds still allow explicit source-build attempts for debugging.
   if (!values.package) {
-    allPackages = allPackages.filter(p => !preBuiltDomains.has(p.domain))
+    allPackages = allPackages.filter(p => !BINARY_SYNC_DOMAIN_SET.has(p.domain))
   }
 
   // Filter to packages that actually have build scripts (skip metadata-only packages)

@@ -40,26 +40,19 @@ jobs:
     outputs:
       has_source: ${{ steps.classify.outputs.has_source }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Pantry
+        uses: ./packages/action
+
       - name: Classify package domains
         id: classify
         run: |
           PKGS="${{ github.event.inputs.packages || '' }}"
-          PKGS=$(echo "$PKGS" | tr -cd 'a-zA-Z0-9._\-/,')
-          PREBUILT_LIST=",bun.sh,nodejs.org,meilisearch.com,cmake.org,redis.io,postgresql.org,mysql.com,getcomposer.org,pnpm.io,yarnpkg.com,go.dev,deno.land,python.org,"
-          HAS_SOURCE=false
-
-          IFS=',' read -ra DOMAINS <<< "$PKGS"
-          for d in "${DOMAINS[@]}"; do
-            d=$(echo "$d" | xargs)
-            [ -z "$d" ] && continue
-            if [[ "$PREBUILT_LIST" != *",$d,"* ]]; then
-              HAS_SOURCE=true
-              break
-            fi
-          done
-
-          echo "has_source=$HAS_SOURCE"
-          echo "has_source=$HAS_SOURCE" >> "$GITHUB_OUTPUT"
+          CLASSIFICATION=$(bun packages/ts-pantry/scripts/classify-packages.ts "$PKGS")
+          echo "$CLASSIFICATION"
+          echo "$CLASSIFICATION" >> "$GITHUB_OUTPUT"
 
   # Job 1: Sync pre-built binary packages (fast downloads, no compilation)
   sync-prebuilt:
@@ -103,6 +96,13 @@ jobs:
           PKGS="${{ github.event.inputs.packages || '' }}"
           # Validate package input (only allow safe characters — no whitespace)
           PKGS=$(echo "$PKGS" | tr -cd 'a-zA-Z0-9._\-/,')
+          if [ -n "$PKGS" ]; then
+            PKGS=$(bun scripts/classify-packages.ts "$PKGS" --field=binary)
+            if [ -z "$PKGS" ]; then
+              echo "No binary-sync packages requested; skipping pre-built sync"
+              exit 0
+            fi
+          fi
           FORCE="${{ github.event.inputs.force || 'false' }}"
           MULTI="${{ github.event.inputs.multi-version || 'false' }}"
 
@@ -127,6 +127,53 @@ jobs:
           echo "Running: bun scripts/sync-packages.ts $ARGS"
           bun scripts/sync-packages.ts $ARGS
         timeout-minutes: 240
+
+  verify-metadata:
+    name: Verify binary metadata
+    needs: sync-prebuilt
+    if: needs.sync-prebuilt.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Pantry
+        uses: ./packages/action
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Verify and repair binary metadata
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          cd packages/ts-pantry
+
+          PKGS="${{ github.event.inputs.packages || '' }}"
+          PKGS=$(echo "$PKGS" | tr -cd 'a-zA-Z0-9._\-/,')
+
+          ARGS="-b $S3_BUCKET -r $AWS_REGION --repair --delete-strays --require-configured-platforms"
+          if [ -n "$PKGS" ]; then
+            PKGS=$(bun scripts/classify-packages.ts "$PKGS" --field=binary)
+            if [ -z "$PKGS" ]; then
+              echo "No binary-sync packages requested; skipping metadata verification"
+              exit 0
+            fi
+            IFS=',' read -ra DOMAINS <<< "$PKGS"
+            for d in "${DOMAINS[@]}"; do
+              d=$(echo "$d" | xargs)
+              ARGS="$ARGS -p $d"
+            done
+          else
+            ARGS="$ARGS --all-binary-sync"
+          fi
+
+          echo "Running: bun scripts/verify-binary-metadata.ts $ARGS"
+          bun scripts/verify-binary-metadata.ts $ARGS
 
   # Job 2: Discover how many buildable packages exist for batching
   # Skipped when specific packages are provided (targeted build)
@@ -563,8 +610,8 @@ jobs:
 
   notify:
     name: discord-failure-alert
-    needs: [sync-prebuilt, build-targeted, build]
-    if: always() && (needs.sync-prebuilt.result == 'failure' || needs.build-targeted.result == 'failure' || needs.build.result == 'failure')
+    needs: [sync-prebuilt, verify-metadata, build-targeted, build]
+    if: always() && (needs.sync-prebuilt.result == 'failure' || needs.verify-metadata.result == 'failure' || needs.build-targeted.result == 'failure' || needs.build.result == 'failure')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -574,7 +621,7 @@ jobs:
           # Only include jobs that actually ran (not skipped)
           FIELDS="["
           FIRST=true
-          for pair in "Sync Pre-built:${{ needs.sync-prebuilt.result }}" "Build Targeted:${{ needs.build-targeted.result }}" "Build Batches:${{ needs.build.result }}"; do
+          for pair in "Sync Pre-built:${{ needs.sync-prebuilt.result }}" "Verify Metadata:${{ needs.verify-metadata.result }}" "Build Targeted:${{ needs.build-targeted.result }}" "Build Batches:${{ needs.build.result }}"; do
             NAME="${pair%%:*}"
             VAL="${pair##*:}"
             [ "$VAL" = "skipped" ] && continue

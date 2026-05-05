@@ -155,6 +155,31 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       expect(res.headers.get('content-length')).toBe('8')
     })
 
+    it('GET production tarball redirects directly to S3 instead of buffering through registry', async () => {
+      const directPort = port + 6000
+      const directBaseUrl = `http://localhost:${directPort}`
+      const directServer = createServer(createLocalRegistry(directBaseUrl), directPort, analytics)
+      directServer.start()
+
+      try {
+        const res = await fetch(
+          `${directBaseUrl}/binaries/cmake.org/3.24.2/darwin-arm64/cmake.org-3.24.2.tar.gz`,
+          { redirect: 'manual' },
+        )
+
+        expect(res.status).toBe(302)
+        const s3Bucket = process.env.S3_BUCKET || 'pantry-registry'
+        const s3Region = process.env.AWS_REGION || 'us-east-1'
+        expect(res.headers.get('location')).toBe(
+          `https://${s3Bucket}.s3.${s3Region}.amazonaws.com/binaries/cmake.org/3.24.2/darwin-arm64/cmake.org-3.24.2.tar.gz`,
+        )
+        expect(res.headers.get('cache-control')).toBe('public, max-age=86400, immutable')
+      }
+      finally {
+        directServer.stop()
+      }
+    })
+
     it('returns 404 for non-existent tarball', async () => {
       const res = await fetch(
         `${baseUrl}/binaries/curl.se/9.99.0/darwin-arm64/curl.se-9.99.0.tar.gz`,

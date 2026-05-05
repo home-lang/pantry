@@ -143,9 +143,6 @@ jobs:
           [ -z "$CHANGED" ] && exit 0
 
           DOMAINS=""
-          PREBUILT_DOMAINS=""
-          SOURCE_DOMAINS=""
-          PREBUILT_LIST=",bun.sh,nodejs.org,meilisearch.com,cmake.org,redis.io,postgresql.org,mysql.com,getcomposer.org,pnpm.io,yarnpkg.com,go.dev,deno.land,python.org,"
           while IFS= read -r filepath; do
             [ -z "$filepath" ] && continue
             [ -f "$filepath" ] || continue
@@ -153,17 +150,15 @@ jobs:
             DOMAIN=$(grep -m 1 "domain:" "$filepath" 2>/dev/null | sed "s/.*domain: '//" | sed "s/' as const.*//" | tr -d ' \n\r')
             [ -z "$DOMAIN" ] && continue
             DOMAINS="${DOMAINS:+$DOMAINS,}$DOMAIN"
-            if [[ "$PREBUILT_LIST" == *",$DOMAIN,"* ]]; then
-              PREBUILT_DOMAINS="${PREBUILT_DOMAINS:+$PREBUILT_DOMAINS,}$DOMAIN"
-            else
-              SOURCE_DOMAINS="${SOURCE_DOMAINS:+$SOURCE_DOMAINS,}$DOMAIN"
-            fi
           done <<< "$CHANGED"
 
           [ -z "$DOMAINS" ] && exit 0
-          if [ -n "$PREBUILT_DOMAINS" ]; then
-            echo "Triggering pre-built sync for: $PREBUILT_DOMAINS"
-            gh workflow run sync-binaries.yml -f packages="$PREBUILT_DOMAINS" -f force=false -f multi-version=true
+          BINARY_DOMAINS=$(bun packages/ts-pantry/scripts/classify-packages.ts "$DOMAINS" --field=binary)
+          SOURCE_DOMAINS=$(bun packages/ts-pantry/scripts/classify-packages.ts "$DOMAINS" --field=source)
+
+          if [ -n "$BINARY_DOMAINS" ]; then
+            echo "Triggering binary sync for: $BINARY_DOMAINS"
+            gh workflow run sync-binaries.yml -f packages="$BINARY_DOMAINS" -f force=false -f multi-version=true
           fi
           if [ -n "$SOURCE_DOMAINS" ]; then
             echo "Triggering source build for: $SOURCE_DOMAINS"

@@ -90,7 +90,7 @@ __pantry_cache_write() {
 # Activate an environment (set PATH + env vars)
 __pantry_activate() {
     local env_dir="$1" project_dir="$2" dep_file="$3"
-    [[ "$__PANTRY_DEBUG" == "1" ]] && echo "[PANTRY DEBUG] Activating: $env_dir for $project_dir" >&2
+    [[ "${__PANTRY_DEBUG:-}" == "1" ]] && echo "[PANTRY DEBUG] Activating: $env_dir for $project_dir" >&2
 
     export PANTRY_CURRENT_PROJECT="$project_dir"
     export PANTRY_ENV_BIN_PATH="$env_dir/bin"
@@ -104,7 +104,7 @@ __pantry_activate() {
     # Add pantry/.bin if it exists, moving any existing copy to the front.
     if [[ -d "$project_dir/pantry/.bin" ]]; then
         export PANTRY_BIN_PATH="$project_dir/pantry/.bin"
-        __pantry_path_prepend "$PANTRY_BIN_PATH"
+        __pantry_path_prepend "${PANTRY_BIN_PATH:-}"
     fi
 
     export PATH
@@ -128,27 +128,27 @@ __pantry_activate_installed_project() {
 
 # Deactivate current environment
 __pantry_deactivate() {
-    [[ "$__PANTRY_DEBUG" == "1" ]] && echo "[PANTRY DEBUG] Deactivating project" >&2
-    [[ -n "$PANTRY_ENV_BIN_PATH" ]] && __pantry_path_remove "$PANTRY_ENV_BIN_PATH"
-    [[ -n "$PANTRY_BIN_PATH" ]] && __pantry_path_remove "$PANTRY_BIN_PATH"
+    [[ "${__PANTRY_DEBUG:-}" == "1" ]] && echo "[PANTRY DEBUG] Deactivating project" >&2
+    [[ -n "${PANTRY_ENV_BIN_PATH:-}" ]] && __pantry_path_remove "${PANTRY_ENV_BIN_PATH:-}"
+    [[ -n "${PANTRY_BIN_PATH:-}" ]] && __pantry_path_remove "${PANTRY_BIN_PATH:-}"
     export PATH
     unset PANTRY_CURRENT_PROJECT PANTRY_ENV_BIN_PATH PANTRY_ENV_DIR PANTRY_BIN_PATH PANTRY_DEP_FILE PANTRY_DEP_MTIME __PANTRY_LAST_ACTIVATION_KEY
 }
 
 __pantry_switch_environment() {
-    [[ "$__PANTRY_DEBUG" == "1" ]] && echo "[PANTRY DEBUG] switch_environment called, PWD=$PWD" >&2
+    [[ "${__PANTRY_DEBUG:-}" == "1" ]] && echo "[PANTRY DEBUG] switch_environment called, PWD=$PWD" >&2
 
     # SUPER FAST PATH: PWD unchanged
-    [[ "$__PANTRY_LAST_PWD" == "$PWD" ]] && return 0
+    [[ "${__PANTRY_LAST_PWD:-}" == "$PWD" ]] && return 0
     __PANTRY_LAST_PWD="$PWD"
 
     # ULTRA FAST PATH: Still in same project (exact match or subdirectory)
-    if [[ -n "$PANTRY_CURRENT_PROJECT" ]]; then
-        if [[ "$PWD" == "$PANTRY_CURRENT_PROJECT" || "$PWD" == "$PANTRY_CURRENT_PROJECT/"* ]]; then
+    if [[ -n "${PANTRY_CURRENT_PROJECT:-}" ]]; then
+        if [[ "$PWD" == "${PANTRY_CURRENT_PROJECT:-}" || "$PWD" == "${PANTRY_CURRENT_PROJECT:-}/"* ]]; then
             # Still in project - check if dep file changed
-            if [[ -n "$PANTRY_DEP_FILE" && -f "$PANTRY_DEP_FILE" ]]; then
-                local m="$(__pantry_mtime "$PANTRY_DEP_FILE")"
-                [[ "$m" == "$PANTRY_DEP_MTIME" ]] && return 0
+            if [[ -n "${PANTRY_DEP_FILE:-}" && -f "${PANTRY_DEP_FILE:-}" ]]; then
+                local m="$(__pantry_mtime "${PANTRY_DEP_FILE:-}")"
+                [[ "$m" == "${PANTRY_DEP_MTIME:-}" ]] && return 0
                 # Dep file changed - deactivate and re-detect below
                 __pantry_deactivate
             else
@@ -175,11 +175,11 @@ __pantry_switch_environment() {
     if [[ $? -ne 0 ]]; then
         # No dep file in current dir - still check binary (walks parent dirs)
         # but only if we haven't already checked recently (avoid repeated lookups)
-        [[ "$__PANTRY_LAST_NO_ENV" == "$PWD" ]] && return 0
+        [[ "${__PANTRY_LAST_NO_ENV:-}" == "$PWD" ]] && return 0
     fi
 
     # BINARY LOOKUP: Walks up parent dirs, checks Zig-side cache (~50ms, first visit)
-    [[ "$__PANTRY_DEBUG" == "1" ]] && echo "[PANTRY DEBUG] Running shell:lookup for $PWD" >&2
+    [[ "${__PANTRY_DEBUG:-}" == "1" ]] && echo "[PANTRY DEBUG] Running shell:lookup for $PWD" >&2
     local lookup_result
     lookup_result=$(pantry shell:lookup "$PWD" 2>/dev/null)
 
@@ -205,7 +205,7 @@ __pantry_switch_environment() {
     fi
 
     # No env found but dep file exists - auto-install unless PANTRY_NO_AUTO_INSTALL is set
-    if [[ -n "$dep_file" && -z "$PANTRY_NO_AUTO_INSTALL" ]]; then
+    if [[ -n "$dep_file" && -z "${PANTRY_NO_AUTO_INSTALL:-}" ]]; then
         if pantry install 2>&1; then
             # Retry lookup after install
             lookup_result=$(pantry shell:lookup "$PWD" 2>/dev/null)
@@ -232,9 +232,9 @@ __pantry_switch_environment() {
 
 
 # Hook registration for Zsh
-if [[ -n "$ZSH_VERSION" ]]; then
+if [[ -n "${ZSH_VERSION:-}" ]]; then
     __pantry_chpwd() {
-        [[ "$__PANTRY_IN_HOOK" == "1" ]] && return 0
+        [[ "${__PANTRY_IN_HOOK:-}" == "1" ]] && return 0
         __PANTRY_IN_HOOK=1
         __pantry_switch_environment
         unset __PANTRY_IN_HOOK
@@ -244,16 +244,16 @@ if [[ -n "$ZSH_VERSION" ]]; then
     [[ ! " ${chpwd_functions[*]} " =~ " __pantry_chpwd " ]] && chpwd_functions+=(__pantry_chpwd)
 
 # Hook registration for Bash
-elif [[ -n "$BASH_VERSION" ]]; then
+elif [[ -n "${BASH_VERSION:-}" ]]; then
     __pantry_prompt_command() {
-        [[ "$__PANTRY_IN_HOOK" == "1" ]] && return 0
+        [[ "${__PANTRY_IN_HOOK:-}" == "1" ]] && return 0
         __PANTRY_IN_HOOK=1
         __pantry_switch_environment
         unset __PANTRY_IN_HOOK
     }
 
-    [[ "$PROMPT_COMMAND" != *"__pantry_prompt_command"* ]] && \
-        PROMPT_COMMAND="__pantry_prompt_command;$PROMPT_COMMAND"
+    [[ "${PROMPT_COMMAND:-}" != *"__pantry_prompt_command"* ]] && \
+        PROMPT_COMMAND="__pantry_prompt_command;${PROMPT_COMMAND:-}"
 fi
 
 # Add global packages to PATH

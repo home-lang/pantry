@@ -1,0 +1,26 @@
+{
+  "domains": [
+    "getcomposer.org",
+    "bun.sh",
+    "nodejs.org",
+    "meilisearch.com",
+    "cmake.org",
+    "redis.io",
+    "postgresql.org",
+    "mysql.com",
+    "pnpm.io",
+    "yarnpkg.com",
+    "go.dev",
+    "deno.land",
+    "den.sh",
+    "memcached.org",
+    "github.com/mail-os/mail",
+    "typesense.org",
+    "min.io",
+    "valkey.io",
+    "python.org"
+  ],
+  "requiredPlatforms": {
+    "cmake.org": ["darwin-arm64", "linux-x86-64"]
+  }
+}

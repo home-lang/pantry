@@ -23,6 +23,7 @@ import { parseArgs } from 'node:util'
 import { createHash } from 'node:crypto'
 import { S3Client } from '@stacksjs/ts-cloud'
 import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
+import { BINARY_SYNC_DOMAIN_SET } from './binary-sync-packages.ts'
 
 interface PackageConfig {
   domain: string
@@ -833,6 +834,19 @@ catch {}
   },
 }
 
+function validateBinarySyncDomainConfig(): void {
+  const configured = new Set(Object.keys(packages))
+  const missingFromManifest = [...configured].filter(domain => !BINARY_SYNC_DOMAIN_SET.has(domain))
+  const missingFromScript = [...BINARY_SYNC_DOMAIN_SET].filter(domain => !configured.has(domain))
+  if (missingFromManifest.length > 0 || missingFromScript.length > 0) {
+    throw new Error([
+      'binary-sync-packages.json does not match sync-packages.ts',
+      missingFromManifest.length > 0 ? `missing from manifest: ${missingFromManifest.join(', ')}` : '',
+      missingFromScript.length > 0 ? `missing from sync script: ${missingFromScript.join(', ')}` : '',
+    ].filter(Boolean).join('; '))
+  }
+}
+
 // ============================================
 // Main
 // ============================================
@@ -914,6 +928,8 @@ catch (error: any) {
 }
 
 async function main() {
+  validateBinarySyncDomainConfig()
+
   const { values, positionals: _positionals } = parseArgs({
     options: {
       bucket: { type: 'string', short: 'b' },

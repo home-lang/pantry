@@ -164,31 +164,31 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\  # Add pantry/.bin if it exists (project-local tool wrappers)
         \\  if [[ -d "$project_dir/pantry/.bin" ]]; then
         \\    export PANTRY_BIN_PATH="$project_dir/pantry/.bin"
-        \\    __pantry_path_prepend "$PANTRY_BIN_PATH"
+        \\    __pantry_path_prepend "${PANTRY_BIN_PATH:-}"
         \\  fi
         \\  export PATH
         \\}
         \\
         \\# Deactivate current environment
         \\__pantry_deactivate() {
-        \\  [[ -n "$PANTRY_ENV_BIN_PATH" ]] && __pantry_path_remove "$PANTRY_ENV_BIN_PATH"
-        \\  [[ -n "$PANTRY_BIN_PATH" ]] && __pantry_path_remove "$PANTRY_BIN_PATH"
+        \\  [[ -n "${PANTRY_ENV_BIN_PATH:-}" ]] && __pantry_path_remove "${PANTRY_ENV_BIN_PATH:-}"
+        \\  [[ -n "${PANTRY_BIN_PATH:-}" ]] && __pantry_path_remove "${PANTRY_BIN_PATH:-}"
         \\  export PATH
         \\  unset PANTRY_CURRENT_PROJECT PANTRY_ENV_BIN_PATH PANTRY_ENV_DIR PANTRY_BIN_PATH PANTRY_DEP_FILE PANTRY_DEP_MTIME
         \\}
         \\
         \\pantry_chpwd() {
         \\  # SUPER FAST: Skip if PWD hasn't changed
-        \\  [[ "$__PANTRY_LAST_PWD" == "$PWD" ]] && return 0
+        \\  [[ "${__PANTRY_LAST_PWD:-}" == "$PWD" ]] && return 0
         \\  __PANTRY_LAST_PWD="$PWD"
         \\
         \\  # ULTRA FAST: Still in same project (exact match or subdirectory)
-        \\  if [[ -n "$PANTRY_CURRENT_PROJECT" ]]; then
-        \\    if [[ "$PWD" == "$PANTRY_CURRENT_PROJECT" || "$PWD" == "$PANTRY_CURRENT_PROJECT/"* ]]; then
+        \\  if [[ -n "${PANTRY_CURRENT_PROJECT:-}" ]]; then
+        \\    if [[ "$PWD" == "${PANTRY_CURRENT_PROJECT:-}" || "$PWD" == "${PANTRY_CURRENT_PROJECT:-}/"* ]]; then
         \\      # Still in project - check if dep file changed
-        \\      if [[ -n "$PANTRY_DEP_FILE" && -f "$PANTRY_DEP_FILE" ]]; then
-        \\        local m="$(__pantry_mtime "$PANTRY_DEP_FILE")"
-        \\        [[ "$m" == "$PANTRY_DEP_MTIME" ]] && return 0
+        \\      if [[ -n "${PANTRY_DEP_FILE:-}" && -f "${PANTRY_DEP_FILE:-}" ]]; then
+        \\        local m="$(__pantry_mtime "${PANTRY_DEP_FILE:-}")"
+        \\        [[ "$m" == "${PANTRY_DEP_MTIME:-}" ]] && return 0
         \\        # Dep file changed - deactivate and re-detect below
         \\        __pantry_deactivate
         \\      else
@@ -215,7 +215,7 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\  if [[ $? -ne 0 ]]; then
         \\    # No dep file in current dir - still check binary (walks parent dirs)
         \\    # but skip if we already checked this dir
-        \\    [[ "$__PANTRY_LAST_NO_ENV" == "$PWD" ]] && return 0
+        \\    [[ "${__PANTRY_LAST_NO_ENV:-}" == "$PWD" ]] && return 0
         \\  fi
         \\
         \\  # BINARY LOOKUP: Walks up parent dirs, checks Zig-side cache (~50ms, first visit)
@@ -251,9 +251,9 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\  # Opt-out: PANTRY_NO_AUTO_INSTALL=1
         \\  # Background:  PANTRY_DEV_INSTALL_BG=1  (prompt returns immediately)
         \\  # Timeout:     PANTRY_DEV_INSTALL_TIMEOUT=<seconds>  (default 120, enforced via `timeout` if present)
-        \\  if [[ -n "$dep_file" && -z "$PANTRY_NO_AUTO_INSTALL" ]]; then
+        \\  if [[ -n "$dep_file" && -z "${PANTRY_NO_AUTO_INSTALL:-}" ]]; then
         \\    local __pantry_timeout="${PANTRY_DEV_INSTALL_TIMEOUT:-120}"
-        \\    if [[ -n "$PANTRY_DEV_INSTALL_BG" ]]; then
+        \\    if [[ -n "${PANTRY_DEV_INSTALL_BG:-}" ]]; then
         \\      # Background install: don't block the prompt. Write outcome to ~/.pantry/.auto-install.log
         \\      local __pantry_log="${HOME}/.pantry/.auto-install.log"
         \\      mkdir -p "${HOME}/.pantry" 2>/dev/null
@@ -300,12 +300,12 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\}
         \\
         \\# Hook registration
-        \\if [[ -n "$ZSH_VERSION" ]]; then
+        \\if [[ -n "${ZSH_VERSION:-}" ]]; then
         \\  if [[ -z "${chpwd_functions[(r)pantry_chpwd]}" ]]; then
         \\    chpwd_functions+=(pantry_chpwd)
         \\  fi
-        \\elif [[ -n "$BASH_VERSION" ]]; then
-        \\  [[ "$PROMPT_COMMAND" != *"pantry_chpwd"* ]] && PROMPT_COMMAND="pantry_chpwd;$PROMPT_COMMAND"
+        \\elif [[ -n "${BASH_VERSION:-}" ]]; then
+        \\  [[ "${PROMPT_COMMAND:-}" != *"pantry_chpwd"* ]] && PROMPT_COMMAND="pantry_chpwd;${PROMPT_COMMAND:-}"
         \\fi
         \\
         \\# Add global packages to PATH
