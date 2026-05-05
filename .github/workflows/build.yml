@@ -86,9 +86,41 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Preflight source build
+        id: source-preflight
+        if: runner.os != 'Windows' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        shell: bash
+        run: |
+          set -o pipefail
+          cd packages/ts-pantry
+
+          FORCE="${{ github.event.inputs.force || 'true' }}"
+          if [ "$FORCE" = "true" ]; then
+            echo "Force enabled; build tools are required"
+            echo "needs_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          ARGS="-b $S3_BUCKET -r $AWS_REGION --platform ${{ matrix.platform.name }}"
+          PACKAGES="${{ github.event.inputs.packages }}"
+          PACKAGES=$(echo "$PACKAGES" | tr -cd 'a-zA-Z0-9._\-/,')
+          if [ -n "$PACKAGES" ]; then
+            PACKAGES="${PACKAGES// /,}"
+            ARGS="$ARGS -p $PACKAGES"
+          fi
+
+          NEEDS_BUILD=$(bun scripts/build-all-packages.ts $ARGS --needs-build | tail -1)
+          echo "needs_build=$NEEDS_BUILD" >> "$GITHUB_OUTPUT"
+          if [ "$NEEDS_BUILD" = "false" ]; then
+            echo "All selected source artifacts already exist in S3; skipping toolchain setup"
+          fi
+
       # Heavy toolchain setup — skipped for apps-only builds (they just need curl/hdiutil/brew)
       - name: Install build tools (Linux)
-        if: runner.os == 'Linux' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true'
+        if: runner.os == 'Linux' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true' && steps.source-preflight.outputs.needs_build != 'false'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -156,7 +188,7 @@ jobs:
             doxygen xsltproc docbook-xsl xmlto
 
       - name: Setup Xcode (macOS)
-        if: runner.os == 'macOS' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true'
+        if: runner.os == 'macOS' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true' && steps.source-preflight.outputs.needs_build != 'false'
         run: |
           XCODE_PATH=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
           if [ -n "$XCODE_PATH" ]; then
@@ -169,7 +201,7 @@ jobs:
           xcodebuild -version
 
       - name: Cache Homebrew packages
-        if: runner.os == 'macOS' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true'
+        if: runner.os == 'macOS' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true' && steps.source-preflight.outputs.needs_build != 'false'
         uses: actions/cache@v4
         with:
           path: |
@@ -183,7 +215,7 @@ jobs:
             brew-build-tools-${{ runner.os }}-
 
       - name: Install build tools (macOS)
-        if: runner.os == 'macOS' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true'
+        if: runner.os == 'macOS' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true' && steps.source-preflight.outputs.needs_build != 'false'
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
           HOMEBREW_NO_INSTALL_CLEANUP: 1
@@ -200,7 +232,7 @@ jobs:
           brew link --force libtool autoconf automake meson gnu-sed scons 2>/dev/null || true
 
       - name: Fix Python setuptools (Linux)
-        if: runner.os == 'Linux' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true'
+        if: runner.os == 'Linux' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true' && steps.source-preflight.outputs.needs_build != 'false'
         run: |
           sudo rm -rf /usr/lib/python3/dist-packages/setuptools* \
                       /usr/lib/python3/dist-packages/wheel* \
@@ -209,7 +241,7 @@ jobs:
           sudo pip3 install --break-system-packages setuptools wheel 2>/dev/null || true
 
       - name: Setup Rust toolchain
-        if: runner.os != 'Windows' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true'
+        if: runner.os != 'Windows' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true' && steps.source-preflight.outputs.needs_build != 'false'
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
           source "$HOME/.cargo/env"
@@ -220,7 +252,7 @@ jobs:
           python3 -m pip install --break-system-packages setuptools meson 2>/dev/null || pip3 install --break-system-packages setuptools meson 2>/dev/null || true
 
       - name: Verify toolchains
-        if: runner.os != 'Windows' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true'
+        if: runner.os != 'Windows' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true' && steps.source-preflight.outputs.needs_build != 'false'
         run: |
           echo "=== Toolchain versions ==="
           cargo --version 2>/dev/null || echo "cargo: not found"
@@ -231,6 +263,7 @@ jobs:
           java -version 2>/dev/null || echo "java: not found"
 
       - name: Build packages
+        if: runner.os == 'Windows' || github.event_name == 'schedule' || github.event.inputs.apps-only == 'true' || steps.source-preflight.outputs.needs_build != 'false'
         shell: bash
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

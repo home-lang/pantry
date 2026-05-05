@@ -51,8 +51,13 @@ jobs:
       - name: Discover packages
         id: discover
         run: |
+          set -o pipefail
           cd packages/ts-pantry
           TOTAL=$(bun scripts/build-all-packages.ts --count-only 2>/dev/null | tail -1)
+          if [ -z "$TOTAL" ] || ! echo "$TOTAL" | grep -qE '^[0-9]+$'; then
+            echo "::error::Failed to discover package count (got: '$TOTAL')"
+            exit 1
+          fi
           echo "total=$TOTAL"
           echo "total=$TOTAL" >> $GITHUB_OUTPUT
 
@@ -90,8 +95,34 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Preflight source build
+        id: source-preflight
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          set -o pipefail
+          cd packages/ts-pantry
+
+          FORCE="${{ github.event.inputs.force || 'false' }}"
+          if [ "$FORCE" = "true" ]; then
+            echo "Force enabled; build tools are required"
+            echo "needs_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          MAX_VERSIONS="${{ github.event.inputs.max-versions || '5' }}"
+          PACKAGES="${{ github.event.inputs.packages }}"
+          PACKAGES="${PACKAGES// /,}"
+          ARGS="-b $S3_BUCKET -r $AWS_REGION --platform ${{ matrix.platform.name }} --multi-version --max-versions $MAX_VERSIONS -p $PACKAGES"
+          NEEDS_BUILD=$(bun scripts/build-all-packages.ts $ARGS --needs-build | tail -1)
+          echo "needs_build=$NEEDS_BUILD" >> "$GITHUB_OUTPUT"
+          if [ "$NEEDS_BUILD" = "false" ]; then
+            echo "All selected source artifacts already exist in S3; skipping toolchain setup"
+          fi
+
       - name: Install build tools (Linux)
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && steps.source-preflight.outputs.needs_build != 'false'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -159,7 +190,7 @@ jobs:
             doxygen xsltproc docbook-xsl xmlto
 
       - name: Setup Xcode (macOS)
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && steps.source-preflight.outputs.needs_build != 'false'
         run: |
           XCODE_PATH=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
           if [ -n "$XCODE_PATH" ]; then
@@ -172,7 +203,7 @@ jobs:
           xcodebuild -version
 
       - name: Cache Homebrew packages
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && steps.source-preflight.outputs.needs_build != 'false'
         uses: actions/cache@v4
         with:
           path: |
@@ -186,7 +217,7 @@ jobs:
             brew-build-tools-${{ runner.os }}-
 
       - name: Install build tools (macOS)
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && steps.source-preflight.outputs.needs_build != 'false'
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
           HOMEBREW_NO_INSTALL_CLEANUP: 1
@@ -202,7 +233,7 @@ jobs:
             doxygen docbook-xsl sdl2 sdl2_ttf sdl2_mixer sdl2_gfx || true
 
       - name: Fix Python setuptools (Linux)
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && steps.source-preflight.outputs.needs_build != 'false'
         run: |
           sudo rm -rf /usr/lib/python3/dist-packages/setuptools* \
                       /usr/lib/python3/dist-packages/wheel* \
@@ -211,6 +242,7 @@ jobs:
           sudo pip3 install --break-system-packages setuptools wheel 2>/dev/null || true
 
       - name: Setup Rust toolchain
+        if: steps.source-preflight.outputs.needs_build != 'false'
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
           source "$HOME/.cargo/env"
@@ -221,6 +253,7 @@ jobs:
           python3 -m pip install --break-system-packages setuptools meson 2>/dev/null || pip3 install --break-system-packages setuptools meson 2>/dev/null || true
 
       - name: Build multi-version packages
+        if: steps.source-preflight.outputs.needs_build != 'false'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -274,8 +307,32 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Preflight source build
+        id: source-preflight
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          set -o pipefail
+          cd packages/ts-pantry
+
+          FORCE="${{ github.event.inputs.force || 'false' }}"
+          if [ "$FORCE" = "true" ]; then
+            echo "Force enabled; build tools are required"
+            echo "needs_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          MAX_VERSIONS="${{ github.event.inputs.max-versions || '5' }}"
+          ARGS="-b $S3_BUCKET -r $AWS_REGION --batch ${{ matrix.batch }} --batch-size 25 --platform ${{ matrix.platform.name }} --multi-version --max-versions $MAX_VERSIONS"
+          NEEDS_BUILD=$(bun scripts/build-all-packages.ts $ARGS --needs-build | tail -1)
+          echo "needs_build=$NEEDS_BUILD" >> "$GITHUB_OUTPUT"
+          if [ "$NEEDS_BUILD" = "false" ]; then
+            echo "All selected source artifacts already exist in S3; skipping toolchain setup"
+          fi
+
       - name: Install build tools (Linux)
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && steps.source-preflight.outputs.needs_build != 'false'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -343,7 +400,7 @@ jobs:
             doxygen xsltproc docbook-xsl xmlto
 
       - name: Setup Xcode (macOS)
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && steps.source-preflight.outputs.needs_build != 'false'
         run: |
           XCODE_PATH=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
           if [ -n "$XCODE_PATH" ]; then
@@ -356,7 +413,7 @@ jobs:
           xcodebuild -version
 
       - name: Cache Homebrew packages
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && steps.source-preflight.outputs.needs_build != 'false'
         uses: actions/cache@v4
         with:
           path: |
@@ -370,7 +427,7 @@ jobs:
             brew-build-tools-${{ runner.os }}-
 
       - name: Install build tools (macOS)
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && steps.source-preflight.outputs.needs_build != 'false'
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
           HOMEBREW_NO_INSTALL_CLEANUP: 1
@@ -386,7 +443,7 @@ jobs:
             doxygen docbook-xsl sdl2 sdl2_ttf sdl2_mixer sdl2_gfx || true
 
       - name: Fix Python setuptools (Linux)
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && steps.source-preflight.outputs.needs_build != 'false'
         run: |
           sudo rm -rf /usr/lib/python3/dist-packages/setuptools* \
                       /usr/lib/python3/dist-packages/wheel* \
@@ -395,6 +452,7 @@ jobs:
           sudo pip3 install --break-system-packages setuptools wheel 2>/dev/null || true
 
       - name: Setup Rust toolchain
+        if: steps.source-preflight.outputs.needs_build != 'false'
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
           source "$HOME/.cargo/env"
@@ -405,6 +463,7 @@ jobs:
           python3 -m pip install --break-system-packages setuptools meson 2>/dev/null || pip3 install --break-system-packages setuptools meson 2>/dev/null || true
 
       - name: Build batch ${{ matrix.batch }} (multi-version)
+        if: steps.source-preflight.outputs.needs_build != 'false'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

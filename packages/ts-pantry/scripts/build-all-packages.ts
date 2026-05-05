@@ -892,6 +892,47 @@ function selectImportantVersions(pkg: BuildablePackage, maxVersions: number): st
   return validVersions.filter(v => selected.has(v))
 }
 
+async function selectVersionsForBuild(pkg: BuildablePackage, maxVersions: number): Promise<string[]> {
+  let versions = selectImportantVersions(pkg, maxVersions)
+
+  // For ziglang.org, build ALL versions >= 0.14.1 + latest dev from ziglang.org index.
+  if (pkg.domain === 'ziglang.org') {
+    versions = pkg.versions.filter(v => {
+      if (v === '999.999.999' || v === '0.0.0') return false
+      if (isVersionSkipped(pkg.domain, v)) return false
+      // Skip versions < 0.14.1 (different platform naming in URLs).
+      const parts = v.split('.').map(Number)
+      if (parts[0] === 0 && (parts[1] < 14 || (parts[1] === 14 && (parts[2] || 0) < 1))) return false
+      return true
+    })
+
+    try {
+      const resp = await fetch('https://ziglang.org/download/index.json')
+      if (resp.ok) {
+        const index = await resp.json() as Record<string, { version?: string }>
+        const devVersion = index.master?.version
+        if (devVersion) {
+          const sanitizedDev = devVersion.replace(/\+/g, '_')
+          if (!versions.includes(sanitizedDev)) {
+            versions.unshift(sanitizedDev)
+          }
+        }
+      }
+    }
+    catch { /* ignore fetch errors */ }
+
+    const extraVersions = process.env.ZIG_EXTRA_VERSIONS?.split(/\s+/).filter(Boolean) ?? []
+    for (const ev of extraVersions) {
+      const sanitized = ev.replace(/\+/g, '_')
+      if (!versions.includes(sanitized)) {
+        versions.unshift(sanitized)
+      }
+    }
+  }
+
+  return versions
+}
+
 // --- S3 Helpers ---
 
 async function checkExistsInS3(domain: string, version: string, platform: string, bucket: string, region: string): Promise<boolean> {
@@ -1154,6 +1195,7 @@ async function main() {
       'multi-version': { type: 'boolean', default: false },
       'max-versions': { type: 'string', default: '5' },
       'count-only': { type: 'boolean', default: false },
+      'needs-build': { type: 'boolean', default: false },
       list: { type: 'boolean', short: 'l', default: false },
       'dry-run': { type: 'boolean', default: false },
       'apps-only': { type: 'boolean', default: false },
@@ -1183,6 +1225,7 @@ Options:
   --multi-version          Build multiple important versions per package
   --max-versions <N>       Max versions per package (default: 5, requires --multi-version)
   --count-only             Print total buildable count and exit
+  --needs-build            Print true when at least one selected artifact is missing from S3
   -l, --list               List all buildable packages
   --dry-run                Show what would be built
   --apps-only           Only build apps (GUI applications)
@@ -1194,7 +1237,7 @@ Options:
   // Discover all buildable packages (pass platform for filtering)
   const { platform: detectedPlatformForDiscovery } = detectPlatform()
   const discoveryPlatform = values.platform || detectedPlatformForDiscovery
-  const logDiscovery = values['count-only'] ? console.error : console.log
+  const logDiscovery = values['count-only'] || values['needs-build'] ? console.error : console.log
   logDiscovery(`Discovering buildable packages for ${discoveryPlatform}...`)
   let allPackages = discoverPackages(discoveryPlatform)
 
@@ -1805,24 +1848,54 @@ Options:
     console.log(`Batch ${batchIndex}: packages ${start}-${Math.min(end, allPackages.length) - 1} of ${allPackages.length}`)
   }
 
+  if (packagesToBuild.length === 0 && values['needs-build']) {
+    console.error('No packages selected for build')
+    console.log('false')
+    process.exit(0)
+  }
+
   if (packagesToBuild.length === 0) {
     console.log('No packages to build in this batch')
     process.exit(0)
   }
 
-  console.log(`\n🚀 Building ${packagesToBuild.length} packages for ${platform}`)
-  console.log(`   Bucket: ${bucket}`)
-  console.log(`   Region: ${region}`)
-  console.log(`   Force: ${force}`)
+  const logRun = values['needs-build'] ? console.error : console.log
+  logRun(`\n🚀 Building ${packagesToBuild.length} packages for ${platform}`)
+  logRun(`   Bucket: ${bucket}`)
+  logRun(`   Region: ${region}`)
+  logRun(`   Force: ${force}`)
   if (multiVersion) {
-    console.log(`   Multi-version: up to ${maxVersions} versions per package`)
+    logRun(`   Multi-version: up to ${maxVersions} versions per package`)
+  }
+
+  if (values['needs-build']) {
+    let needsBuild = false
+
+    for (const pkg of packagesToBuild) {
+      if (multiVersion) {
+        const versions = await selectVersionsForBuild(pkg, maxVersions)
+        for (const v of versions) {
+          const exists = await checkExistsInS3(pkg.domain, v, platform, bucket, region)
+          console.error(`  - ${pkg.domain}@${v} ${exists ? '(already in S3)' : '(missing from S3)'}`)
+          if (!exists) needsBuild = true
+        }
+      }
+else {
+        const exists = await checkExistsInS3(pkg.domain, pkg.latestVersion, platform, bucket, region)
+        console.error(`  - ${pkg.domain}@${pkg.latestVersion} ${exists ? '(already in S3)' : '(missing from S3)'}`)
+        if (!exists) needsBuild = true
+      }
+    }
+
+    console.log(needsBuild ? 'true' : 'false')
+    process.exit(0)
   }
 
   if (values['dry-run']) {
     console.log('\n[DRY RUN] Would build:')
     for (const pkg of packagesToBuild) {
       if (multiVersion) {
-        const versions = selectImportantVersions(pkg, maxVersions)
+        const versions = await selectVersionsForBuild(pkg, maxVersions)
         console.log(`  - ${pkg.domain}:`)
         for (const v of versions) {
           const exists = await checkExistsInS3(pkg.domain, v, platform, bucket, region)
@@ -1852,48 +1925,7 @@ else {
 
     if (multiVersion) {
       // Multi-version mode: build multiple important versions per package
-      let versions = selectImportantVersions(pkg, maxVersions)
-
-      // For ziglang.org, build ALL versions >= 0.14.1 + latest dev from ziglang.org index
-      if (pkg.domain === 'ziglang.org') {
-        // Use stable versions >= 0.14.1 (older versions use different URL platform naming)
-        versions = pkg.versions.filter(v => {
-          if (v === '999.999.999' || v === '0.0.0') return false
-          if (isVersionSkipped(pkg.domain, v)) return false
-          // Skip versions < 0.14.1 (different platform naming in URLs)
-          const parts = v.split('.').map(Number)
-          if (parts[0] === 0 && (parts[1] < 14 || (parts[1] === 14 && (parts[2] || 0) < 1))) return false
-          return true
-        })
-        // Also fetch latest dev version from ziglang.org
-        try {
-          const resp = await fetch('https://ziglang.org/download/index.json')
-          if (resp.ok) {
-            const index = await resp.json() as Record<string, { version?: string }>
-            const devVersion = index.master?.version
-            if (devVersion && !versions.includes(devVersion)) {
-              // Sanitize + in dev versions for S3 compatibility (+ breaks S3 URL signing)
-              const sanitizedDev = devVersion.replace(/\+/g, '_')
-              versions.unshift(sanitizedDev)
-              console.log(`   Including dev version: ${devVersion} (as ${sanitizedDev})`)
-            }
-          }
-        }
-        catch { /* ignore fetch errors */ }
-
-        // Include pinned dev versions from ZIG_EXTRA_VERSIONS env var.
-        // Downstream projects (e.g. Craft) can request specific dev builds
-        // that are no longer the latest master but still have binaries on ziglang.org.
-        // Format: space-separated version strings, e.g. "0.16.0-dev.2962+08416b44f"
-        const extraVersions = process.env.ZIG_EXTRA_VERSIONS?.split(/\s+/).filter(Boolean) ?? []
-        for (const ev of extraVersions) {
-          const sanitized = ev.replace(/\+/g, '_')
-          if (!versions.includes(sanitized)) {
-            versions.unshift(sanitized)
-            console.log(`   Including pinned dev version: ${ev} (as ${sanitized})`)
-          }
-        }
-      }
+      const versions = await selectVersionsForBuild(pkg, maxVersions)
 
       console.log(`\n📦 ${pkg.domain}: building ${versions.length} versions [${versions.join(', ')}]`)
 
