@@ -99,7 +99,7 @@ interface BuildPlatformInfo {
 
 function detectPlatform(): BuildPlatformInfo {
   const os = process.platform === 'darwin' ? 'darwin' : process.platform === 'win32' ? 'windows' : 'linux'
-  if (process.arch !== 'arm64' && process.arch !== 'x64' && process.arch !== 'x86_64') {
+  if (process.arch !== 'arm64' && process.arch !== 'x64') {
     console.warn(`Warning: unexpected architecture '${process.arch}', defaulting to x86-64`)
   }
   const arch = process.arch === 'arm64' ? 'arm64' : 'x86-64'
@@ -1194,7 +1194,8 @@ Options:
   // Discover all buildable packages (pass platform for filtering)
   const { platform: detectedPlatformForDiscovery } = detectPlatform()
   const discoveryPlatform = values.platform || detectedPlatformForDiscovery
-  console.log(`Discovering buildable packages for ${discoveryPlatform}...`)
+  const logDiscovery = values['count-only'] ? console.error : console.log
+  logDiscovery(`Discovering buildable packages for ${discoveryPlatform}...`)
   let allPackages = discoverPackages(discoveryPlatform)
 
   // Filter to packages with build scripts (compilable from source)
@@ -1745,7 +1746,7 @@ Options:
     return true
   })
 
-  console.log(`Found ${allPackages.length} buildable packages (excluding ${preBuiltDomains.size} pre-built, ${withoutScript.length} without build scripts, ${platformSkipped} wrong platform, ${toolchainSkipped} missing toolchain, ${knownBrokenSkipped} known broken, ${propsSkipped} missing props)`)
+  logDiscovery(`Found ${allPackages.length} buildable packages (excluding ${BINARY_SYNC_DOMAIN_SET.size} binary-sync, ${withoutScript.length} without build scripts, ${platformSkipped} wrong platform, ${toolchainSkipped} missing toolchain, ${knownBrokenSkipped} known broken, ${propsSkipped} missing props)`)
 
   if (values['count-only']) {
     console.log(allPackages.length)
