@@ -34,6 +34,10 @@ class FakeS3 {
     this.put(options.key, options.body)
   }
 
+  async headObject(_bucket: string, key: string): Promise<boolean> {
+    return this.objects.has(key)
+  }
+
   async deleteObject(_bucket: string, key: string): Promise<void> {
     this.deleted.push(key)
     this.objects.delete(key)
@@ -123,6 +127,8 @@ describe('verify-binary-metadata', () => {
 
   it('refuses to replace metadata with an empty object listing for active binary domains', async () => {
     const s3 = new FakeS3()
+    s3.put('binaries/cmake.org/3.24.2/darwin-arm64/cmake.org-3.24.2.tar.gz', 'tarball', 123)
+    s3.put('binaries/cmake.org/3.24.2/darwin-arm64/cmake.org-3.24.2.tar.gz.sha256', `${'e'.repeat(64)}  cmake.org-3.24.2.tar.gz\n`)
     s3.put('binaries/cmake.org/metadata.json', JSON.stringify({
       name: 'cmake.org',
       latestVersion: '3.24.2',
@@ -140,13 +146,14 @@ describe('verify-binary-metadata', () => {
       },
       updatedAt: '2026-05-04T00:00:00.000Z',
     }))
+    s3.listObjects = async () => ({ objects: [{ Key: 'binaries/cmake.org/metadata.json', Size: 1, LastModified: '2026-05-04T00:00:00.000Z' }] })
 
     const result = await verifyBinaryMetadata(s3, 'bucket', 'cmake.org', {
       repair: true,
     })
 
-    expect(result.ok).toBe(false)
-    expect(result.errors).toContain('No binary tarballs found for cmake.org; refusing to rebuild metadata from an empty object listing')
+    expect(result.ok).toBe(true)
+    expect(result.warnings).toContain('S3 object listing returned no tarballs; verified existing metadata without rebuilding')
 
     const metadata = JSON.parse(await s3.getObject('bucket', 'binaries/cmake.org/metadata.json'))
     expect(metadata.latestVersion).toBe('3.24.2')

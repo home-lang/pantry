@@ -27,6 +27,7 @@ interface S3Like {
   }): Promise<{ objects: S3ObjectInfo[], nextContinuationToken?: string }>
   getObject(bucket: string, key: string): Promise<string>
   getObjectBytes?(bucket: string, key: string): Promise<Uint8Array>
+  headObject?(bucket: string, key: string): Promise<boolean>
   putObject?(options: { bucket: string, key: string, body: string, contentType?: string }): Promise<void>
   deleteObject?(bucket: string, key: string): Promise<void>
 }
@@ -307,6 +308,59 @@ function checkConfiguredPlatforms(domain: string, metadata: PackageMetadata): st
   return missing
 }
 
+function countPlatforms(metadata: PackageMetadata): number {
+  return Object.values(metadata.versions)
+    .reduce((sum, version) => sum + Object.keys(version.platforms).length, 0)
+}
+
+async function verifyExistingMetadataObjects(
+  s3: S3Like,
+  bucket: string,
+  metadata: PackageMetadata,
+  region: string,
+): Promise<string[]> {
+  const errors: string[] = []
+
+  for (const [version, versionMetadata] of Object.entries(metadata.versions)) {
+    for (const [platform, platformMetadata] of Object.entries(versionMetadata.platforms)) {
+      if (!/^[a-fA-F0-9]{64}$/.test(platformMetadata.sha256)) {
+        errors.push(`Invalid metadata sha256 for ${metadata.name} ${version} ${platform}`)
+        continue
+      }
+
+      try {
+        const shaKey = `${platformMetadata.tarball}.sha256`
+        const objectSha = parseSha256(await s3.getObject(bucket, shaKey), shaKey)
+        if (objectSha !== platformMetadata.sha256.toLowerCase()) {
+          errors.push(`sha256 mismatch for ${platformMetadata.tarball}`)
+        }
+      }
+      catch (error) {
+        errors.push(error instanceof Error ? error.message : String(error))
+      }
+
+      try {
+        if (s3.headObject) {
+          if (!await s3.headObject(bucket, platformMetadata.tarball)) {
+            errors.push(`Missing tarball ${platformMetadata.tarball}`)
+          }
+        }
+        else {
+          const response = await fetch(s3ObjectUrl(bucket, region, platformMetadata.tarball), { method: 'HEAD' })
+          if (!response.ok) {
+            errors.push(`Missing tarball ${platformMetadata.tarball}: HTTP ${response.status}`)
+          }
+        }
+      }
+      catch (error) {
+        errors.push(error instanceof Error ? error.message : String(error))
+      }
+    }
+  }
+
+  return errors
+}
+
 export async function verifyBinaryMetadata(
   s3: S3Like,
   bucket: string,
@@ -314,15 +368,44 @@ export async function verifyBinaryMetadata(
   options: VerifyOptions = {},
 ): Promise<VerifyResult> {
   const metadataKey = `binaries/${domain}/metadata.json`
+  const warnings: string[] = []
+  const deletedStrays: string[] = []
+  let existing: PackageMetadata | null = null
+  try {
+    existing = JSON.parse(await s3.getObject(bucket, metadataKey)) as PackageMetadata
+  }
+  catch {
+    warnings.push('metadata.json does not exist')
+  }
+
   const objects = await listAllObjects(s3, bucket, `binaries/${domain}/`)
   const { metadata, strays, errors, repairedSha256 } = await rebuildMetadataFromObjects(s3, bucket, domain, objects, {
     repairSha256: options.repair,
     region: options.region,
   })
-  const warnings: string[] = []
-  const deletedStrays: string[] = []
-  const platformCount = Object.values(metadata.versions)
-    .reduce((sum, version) => sum + Object.keys(version.platforms).length, 0)
+  const platformCount = countPlatforms(metadata)
+  const existingPlatformCount = existing ? countPlatforms(existing) : 0
+
+  if (platformCount === 0 && existing && existingPlatformCount > 0 && !BINARY_SYNC_ALLOW_EMPTY_DOMAIN_SET.has(domain)) {
+    warnings.push('S3 object listing returned no tarballs; verified existing metadata without rebuilding')
+    errors.push(...await verifyExistingMetadataObjects(s3, bucket, existing, options.region || 'us-east-1'))
+    if (options.requireConfiguredPlatforms) {
+      const missing = checkConfiguredPlatforms(domain, existing)
+      for (const item of missing) errors.push(`Missing required platform: ${domain} ${item}`)
+    }
+
+    return {
+      domain,
+      ok: errors.length === 0,
+      repaired: false,
+      deletedStrays,
+      repairedSha256,
+      errors,
+      warnings,
+      versionCount: Object.keys(existing.versions).length,
+      platformCount: existingPlatformCount,
+    }
+  }
 
   if (platformCount === 0 && !BINARY_SYNC_ALLOW_EMPTY_DOMAIN_SET.has(domain)) {
     errors.push(`No binary tarballs found for ${domain}; refusing to rebuild metadata from an empty object listing`)
@@ -336,14 +419,6 @@ export async function verifyBinaryMetadata(
   }
   else if (strays.length > 0) {
     warnings.push(`${strays.length} stale artifact object(s) found`)
-  }
-
-  let existing: PackageMetadata | null = null
-  try {
-    existing = JSON.parse(await s3.getObject(bucket, metadataKey)) as PackageMetadata
-  }
-  catch {
-    warnings.push('metadata.json does not exist')
   }
 
   const metadataChanged = !existing || normalizeMetadata(existing) !== normalizeMetadata(metadata)
