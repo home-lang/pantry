@@ -80,6 +80,7 @@ export const littlecmscomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.19.1',
     '2.19',
     '2.18',
     '2.18.0',
