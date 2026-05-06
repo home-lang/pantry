@@ -70,10 +70,12 @@ export const valkeyioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '9.0.4',
     '9.0.3',
     '9.0.2',
     '9.0.1',
     '9.0.0',
+    '8.1.7',
     '8.1.6',
     '8.1.5',
     '8.1.4',
@@ -81,6 +83,7 @@ export const valkeyioPackage = {
     '8.1.2',
     '8.1.1',
     '8.1.0',
+    '8.0.8',
     '8.0.7',
     '8.0.6',
     '8.0.5',
@@ -89,6 +92,7 @@ export const valkeyioPackage = {
     '8.0.2',
     '8.0.1',
     '8.0.0',
+    '7.2.13',
     '7.2.12',
     '7.2.11',
     '7.2.10',
