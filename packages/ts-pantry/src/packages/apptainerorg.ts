@@ -81,13 +81,14 @@ export const apptainerorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.5.0',
     '1.4.5',
     '1.4.4',
     '1.4.3',
     '1.4.2',
     '1.4.1',
-    '1.4.0-rc.2',
     '1.4.0',
+    '1.4.0-rc.2',
     '1.3.6',
     '1.3.5',
     '1.3.4',
