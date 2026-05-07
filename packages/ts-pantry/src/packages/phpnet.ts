@@ -121,6 +121,7 @@ export const phpPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '8.5.6',
     '8.5.5',
     '8.5.4',
     '8.5.3',
