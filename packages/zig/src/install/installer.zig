@@ -3316,7 +3316,7 @@ pub const Installer = struct {
                 bin_value.string,
                 shim_dir,
             ) catch |err| {
-                if (!style.isCI()) style.print("Warning: Failed to create shim: {}\n", .{err});
+                if (self.verbose) std.debug.print("[verbose:shims] failed to create shim for {s}: {s}\n", .{ package_name, @errorName(err) });
             };
         } else if (bin_value == .object) {
             // Multiple binaries
@@ -3326,7 +3326,7 @@ pub const Installer = struct {
                 bin_value,
                 shim_dir,
             ) catch |err| {
-                if (!style.isCI()) style.print("Warning: Failed to create shims: {}\n", .{err});
+                if (self.verbose) std.debug.print("[verbose:shims] failed to create shims for {s}: {s}\n", .{ package_name, @errorName(err) });
             };
         }
     }

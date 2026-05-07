@@ -22,7 +22,7 @@ const install = lib.install;
 /// Fast path: check if all packages are already installed without doing expensive
 /// workspace detection, config loading, hook execution, etc.
 /// Returns a CommandResult if everything is up-to-date, null otherwise.
-fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i64, modules_dir: []const u8, opts: types.InstallOptions) !?types.CommandResult {
+fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i64, modules_dir: []const u8) !?types.CommandResult {
     const detector = @import("../../../deps/detector.zig");
     const parser = @import("../../../deps/parser.zig");
     const lockfile_reader = @import("../../../packages/lockfile.zig");
@@ -123,18 +123,6 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
                 }
             }
 
-            // npm deps via bun (issue #200) — pantry's lockfile being up-to-date
-            // doesn't guarantee node_modules is, so always check.
-            {
-                const bun_delegate = @import("../../../deps/bun_delegate.zig");
-                _ = bun_delegate.installNpmDeps(allocator, effective_dir, .{
-                    .production = opts.production,
-                    .frozen_lockfile = opts.frozen_lockfile,
-                    .ignore_scripts = opts.ignore_scripts,
-                    .verbose = opts.verbose,
-                }) catch {};
-            }
-
             helpers.ensureBinSymlinks(allocator, effective_dir, modules_dir);
 
             const end_ts = io_helper.clockGettime();
@@ -210,18 +198,6 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
 
     // 5. All up-to-date!
 
-    // npm deps via bun (issue #200) — pantry's lockfile being up-to-date
-    // doesn't guarantee node_modules is, so always check.
-    {
-        const bun_delegate = @import("../../../deps/bun_delegate.zig");
-        _ = bun_delegate.installNpmDeps(allocator, cwd, .{
-            .production = opts.production,
-            .frozen_lockfile = opts.frozen_lockfile,
-            .ignore_scripts = opts.ignore_scripts,
-            .verbose = opts.verbose,
-        }) catch {};
-    }
-
     helpers.ensureBinSymlinks(allocator, effective_dir, modules_dir);
 
     const end_ts = io_helper.clockGettime();
@@ -291,7 +267,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // This avoids expensive workspace detection, config loading, hooks, etc.
         // Skipped when --force is set (user wants to re-download everything)
         if (!opts.force) {
-            if (try tryFastUpToDate(allocator, cwd, start_time, opts.modules_dir, opts)) |result| {
+            if (try tryFastUpToDate(allocator, cwd, start_time, opts.modules_dir)) |result| {
                 return result;
             }
         }
@@ -464,24 +440,6 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             {
                 const zig_zon_sync = @import("../../../deps/zig_zon_sync.zig");
                 zig_zon_sync.syncBuildZigZon(allocator, proj_dir_early, opts.modules_dir, opts.verbose) catch {};
-            }
-
-            // Delegate to bun for npm deps if package.json declares any (issue #200)
-            {
-                const bun_delegate = @import("../../../deps/bun_delegate.zig");
-                const npm_installed = bun_delegate.installNpmDeps(allocator, proj_dir_early, .{
-                    .production = opts.production,
-                    .frozen_lockfile = opts.frozen_lockfile,
-                    .ignore_scripts = opts.ignore_scripts,
-                    .verbose = opts.verbose,
-                }) catch false;
-                if (npm_installed) {
-                    const end_ts = io_helper.clockGettime();
-                    const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
-                    const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
-                    style.printSummary(0, 0, elapsed_ms);
-                    return .{ .exit_code = 0 };
-                }
             }
 
             if (deps_file_path) |path| {
@@ -1010,21 +968,6 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             _ = composer_delegate.installPhpDeps(allocator, proj_dir, opts.verbose) catch |err| {
                 if (opts.verbose) {
                     style.print("Warning: Composer delegation failed: {}\n", .{err});
-                }
-            };
-        }
-
-        // Delegate to bun for npm deps if package.json declares any (issue #200)
-        {
-            const bun_delegate = @import("../../../deps/bun_delegate.zig");
-            _ = bun_delegate.installNpmDeps(allocator, proj_dir, .{
-                .production = opts.production,
-                .frozen_lockfile = opts.frozen_lockfile,
-                .ignore_scripts = opts.ignore_scripts,
-                .verbose = opts.verbose,
-            }) catch |err| {
-                if (opts.verbose) {
-                    style.print("Warning: bun delegation failed: {}\n", .{err});
                 }
             };
         }

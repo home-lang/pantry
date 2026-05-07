@@ -408,18 +408,6 @@ pub fn installWorkspaceCommandWithOptions(
                         std.debug.print("[verbose:ws] fast path: pantry.lock exists, {s}/ has {d}+ packages — skipping\n", .{ options.modules_dir, entry_count });
                     }
 
-                    // Delegate to bun for npm deps if package.json declares any (issue #200) —
-                    // pantry/ being populated says nothing about node_modules/.
-                    {
-                        const bun_delegate = @import("../../../deps/bun_delegate.zig");
-                        _ = bun_delegate.installNpmDeps(allocator, workspace_root, .{
-                            .production = options.production,
-                            .frozen_lockfile = options.frozen_lockfile,
-                            .ignore_scripts = options.ignore_scripts,
-                            .verbose = options.verbose,
-                        }) catch {};
-                    }
-
                     helpers.ensureBinSymlinks(allocator, workspace_root, options.modules_dir);
 
                     return .{ .exit_code = 0 };
@@ -1436,21 +1424,6 @@ pub fn installWorkspaceCommandWithOptions(
         _ = composer_delegate.installPhpDeps(allocator, workspace_root, options.verbose) catch |err| {
             if (options.verbose) {
                 style.print("Warning: Composer delegation failed: {}\n", .{err});
-            }
-        };
-    }
-
-    // Delegate to bun for npm deps if package.json declares any (issue #200)
-    {
-        const bun_delegate = @import("../../../deps/bun_delegate.zig");
-        _ = bun_delegate.installNpmDeps(allocator, workspace_root, .{
-            .production = options.production,
-            .frozen_lockfile = options.frozen_lockfile,
-            .ignore_scripts = options.ignore_scripts,
-            .verbose = options.verbose,
-        }) catch |err| {
-            if (options.verbose) {
-                style.print("Warning: bun delegation failed: {}\n", .{err});
             }
         };
     }

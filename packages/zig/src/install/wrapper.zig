@@ -63,10 +63,7 @@ pub fn createBinaryWrapper(
     env_vars: ?std.StringHashMap([]const u8),
 ) !void {
     // Verify binary exists
-    io_helper.cwd().access(io_helper.io, binary_path, .{}) catch {
-        if (!style.isCI()) style.print("  ✗ Binary not found: {s}\n", .{binary_path});
-        return error.BinaryNotFound;
-    };
+    io_helper.cwd().access(io_helper.io, binary_path, .{}) catch return error.BinaryNotFound;
 
     // Generate wrapper content
     const wrapper_content = try generateShellWrapper(allocator, binary_path, env_vars);
@@ -94,7 +91,7 @@ pub fn createBinaryWrapper(
         return error.WrapperCreationFailed;
     };
 
-    style.print("  ✓ Created wrapper: {s}\n", .{wrapper_path});
+    if (!style.isCI()) style.print("  ✓ Created wrapper: {s}\n", .{wrapper_path});
 }
 
 /// Create wrappers for all binaries in a package

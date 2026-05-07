@@ -557,10 +557,7 @@ pub fn createShim(
     };
 
     // Verify target exists
-    io_helper.cwd().access(io_helper.io, target_path, .{}) catch {
-        if (!style.isCI()) style.print("  ✗ Binary not found: {s}\n", .{target_path});
-        return error.TargetNotFound;
-    };
+    io_helper.cwd().access(io_helper.io, target_path, .{}) catch return error.TargetNotFound;
 
     switch (shim_type) {
         .native => {
@@ -572,7 +569,6 @@ pub fn createShim(
             io_helper.deleteFile(shim_path) catch {};
 
             try createSymlinkCrossPlatform(target_path, shim_path);
-            if (!style.isCI()) style.print("  ✓ Linked: {s}\n", .{bin_name});
         },
         .node, .shell => {
             // For JS/shell files, create wrapper scripts
@@ -667,8 +663,20 @@ fn createScriptShim(
         };
         cmd_file.close(io_helper.io);
     }
+}
 
-    if (!style.isCI()) style.print("  ✓ Shim: {s}\n", .{bin_name});
+fn normalizeBinName(name: []const u8) []const u8 {
+    if (std.mem.lastIndexOfScalar(u8, name, '/')) |idx| {
+        if (idx + 1 < name.len) return name[idx + 1 ..];
+        return "";
+    }
+    return name;
+}
+
+test "normalizeBinName strips npm scope from executable names" {
+    try std.testing.expectEqualStrings("tool", normalizeBinName("@scope/tool"));
+    try std.testing.expectEqualStrings("tool", normalizeBinName("tool"));
+    try std.testing.expectEqualStrings("", normalizeBinName("@scope/"));
 }
 
 /// Create shims from a bin config (parsed from package.json)
@@ -683,7 +691,8 @@ pub fn createShimsFromBinConfig(
 
     var iter = bin_config.object.iterator();
     while (iter.next()) |entry| {
-        const bin_name = entry.key_ptr.*;
+        const bin_name = normalizeBinName(entry.key_ptr.*);
+        if (bin_name.len == 0) continue;
         if (entry.value_ptr.* != .string) continue;
         const bin_rel_path = entry.value_ptr.string;
 
@@ -692,9 +701,7 @@ pub fn createShimsFromBinConfig(
         defer allocator.free(bin_path);
 
         // Create shim
-        createShim(allocator, bin_name, bin_path, shim_dir) catch |err| {
-            if (!style.isCI()) style.print("  ! Failed to create shim for {s}: {}\n", .{ bin_name, err });
-        };
+        createShim(allocator, bin_name, bin_path, shim_dir) catch {};
     }
 }
 
@@ -707,10 +714,8 @@ pub fn createShimFromBinString(
     shim_dir: []const u8,
 ) !void {
     // Get just the package name without scope
-    const bin_name = if (std.mem.indexOf(u8, package_name, "/")) |idx|
-        package_name[idx + 1 ..]
-    else
-        package_name;
+    const bin_name = normalizeBinName(package_name);
+    if (bin_name.len == 0) return;
 
     // Build absolute path
     const full_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ package_dir, bin_path });
@@ -753,6 +758,40 @@ test "discoverBinaries" {
 
     try std.testing.expect(binaries.len == 1);
     try std.testing.expectEqualStrings("testbin", binaries[0].name);
+}
+
+test "createShimsFromBinConfig normalizes scoped bin object keys" {
+    const allocator = std.testing.allocator;
+    const test_dir = "test_scoped_npm_shim";
+
+    io_helper.deleteTree(test_dir) catch {};
+    defer io_helper.deleteTree(test_dir) catch {};
+
+    try io_helper.makePath(test_dir ++ "/pkg/bin");
+    try io_helper.makePath(test_dir ++ "/.bin");
+
+    const target_path = test_dir ++ "/pkg/bin/cli.js";
+    const file = try io_helper.cwd().createFile(io_helper.io, target_path, .{});
+    try io_helper.writeAllToFile(file, "#!/usr/bin/env bun\nconsole.log('ok')\n");
+    file.close(io_helper.io);
+
+    const parsed = try std.json.parseFromSlice(
+        std.json.Value,
+        allocator,
+        \\{"@scope/tool":"bin/cli.js"}
+    ,
+        .{},
+    );
+    defer parsed.deinit();
+
+    try createShimsFromBinConfig(
+        allocator,
+        test_dir ++ "/pkg",
+        parsed.value,
+        test_dir ++ "/.bin",
+    );
+
+    try io_helper.cwd().access(io_helper.io, test_dir ++ "/.bin/tool", .{});
 }
 
 test "createBinarySymlink" {
