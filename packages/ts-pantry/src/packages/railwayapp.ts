@@ -69,6 +69,7 @@ export const railwayappPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.52.1',
     '4.52.0',
     '4.51.2',
     '4.51.1',
