@@ -322,11 +322,11 @@ pub const DependencyGraph = struct {
             result.deinit(self.allocator);
         }
 
-        var visited: std.StringHashMap(bool) = .empty;
-        defer visited.deinit(self.allocator);
+        var visited = std.StringHashMap(bool).init(self.allocator);
+        defer visited.deinit();
 
-        var temp_mark: std.StringHashMap(bool) = .empty;
-        defer temp_mark.deinit(self.allocator);
+        var temp_mark = std.StringHashMap(bool).init(self.allocator);
+        defer temp_mark.deinit();
 
         var pkg_it = self.packages.keyIterator();
         while (pkg_it.next()) |name| {
@@ -353,7 +353,7 @@ pub const DependencyGraph = struct {
             return;
         }
 
-        try temp_mark.put(self.allocator, name, true);
+        try temp_mark.put(name, true);
 
         // Visit dependencies
         if (self.edges.get(name)) |deps| {
@@ -366,7 +366,7 @@ pub const DependencyGraph = struct {
         }
 
         _ = temp_mark.remove(name);
-        try visited.put(self.allocator, name, true);
+        try visited.put(name, true);
         try result.append(self.allocator, try self.allocator.dupe(u8, name));
     }
 

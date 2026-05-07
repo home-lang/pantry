@@ -24,7 +24,15 @@ const std = @import("std");
 
 /// Match a string against a regex pattern
 pub fn matchRegex(pattern: []const u8, text: []const u8) bool {
-    return matchInternal(pattern, text, 0, 0, false, 0);
+    if (pattern.len > 0 and pattern[0] == '^') {
+        return matchInternal(pattern, text, 0, 0, true, 0);
+    }
+
+    var start: usize = 0;
+    while (start <= text.len) : (start += 1) {
+        if (matchInternal(pattern, text, 0, start, false, 0)) return true;
+    }
+    return false;
 }
 
 /// Maximum recursion depth to prevent stack overflow on pathological patterns
@@ -38,12 +46,13 @@ fn matchInternal(
     anchored: bool,
     depth: usize,
 ) bool {
+    _ = anchored;
     // Guard against excessive recursion (pathological patterns)
     if (depth > max_recursion_depth) return false;
 
     // Base case: pattern exhausted
     if (p_idx >= pattern.len) {
-        return t_idx >= text.len or !anchored;
+        return true;
     }
 
     // Check for start anchor
@@ -56,63 +65,87 @@ fn matchInternal(
         return t_idx >= text.len;
     }
 
-    // Lookahead for quantifiers
-    const has_quantifier = p_idx + 1 < pattern.len and
-        (pattern[p_idx + 1] == '*' or pattern[p_idx + 1] == '+' or pattern[p_idx + 1] == '?');
+    const atom = parseAtom(pattern, p_idx) orelse return false;
+    const quantifier = if (atom.end < pattern.len and
+        (pattern[atom.end] == '*' or pattern[atom.end] == '+' or pattern[atom.end] == '?'))
+        pattern[atom.end]
+    else
+        null;
 
-    if (has_quantifier) {
-        const quantifier = pattern[p_idx + 1];
-        const char_pattern = pattern[p_idx];
-
-        return switch (quantifier) {
-            '*' => matchStar(pattern, text, p_idx, t_idx, char_pattern, anchored, depth + 1),
-            '+' => matchPlus(pattern, text, p_idx, t_idx, char_pattern, anchored, depth + 1),
-            '?' => matchOptional(pattern, text, p_idx, t_idx, char_pattern, anchored, depth + 1),
+    if (quantifier) |q| {
+        const next_pattern = atom.end + 1;
+        return switch (q) {
+            '*' => matchAtomRepeat(pattern, text, next_pattern, t_idx, atom, 0, depth + 1),
+            '+' => matchAtomRepeat(pattern, text, next_pattern, t_idx, atom, 1, depth + 1),
+            '?' => matchInternal(pattern, text, next_pattern, t_idx, false, depth + 1) or
+                (t_idx < text.len and matchAtom(atom, text[t_idx]) and
+                    matchInternal(pattern, text, next_pattern, t_idx + 1, false, depth + 1)),
             else => false,
         };
     }
 
-    // Handle character classes
-    if (pattern[p_idx] == '[') {
-        const close_bracket = std.mem.indexOfScalarPos(u8, pattern, p_idx, ']') orelse return false;
-        const char_class = pattern[p_idx + 1 .. close_bracket];
-
-        if (t_idx >= text.len) return false;
-
-        if (matchCharClass(char_class, text[t_idx])) {
-            return matchInternal(pattern, text, close_bracket + 1, t_idx + 1, anchored, depth + 1);
-        }
-        return false;
-    }
-
-    // Handle escape sequences
-    if (pattern[p_idx] == '\\' and p_idx + 1 < pattern.len) {
-        if (t_idx >= text.len) return false;
-
-        const matches = switch (pattern[p_idx + 1]) {
-            'd' => std.ascii.isDigit(text[t_idx]),
-            'w' => std.ascii.isAlphanumeric(text[t_idx]) or text[t_idx] == '_',
-            's' => std.ascii.isWhitespace(text[t_idx]),
-            else => text[t_idx] == pattern[p_idx + 1], // Literal escape
-        };
-
-        if (matches) {
-            return matchInternal(pattern, text, p_idx + 2, t_idx + 1, anchored, depth + 1);
-        }
-        return false;
-    }
-
-    // Handle single character match
-    if (t_idx < text.len and matchChar(pattern[p_idx], text[t_idx])) {
-        return matchInternal(pattern, text, p_idx + 1, t_idx + 1, anchored, depth + 1);
-    }
-
-    // If not anchored, try matching from next position in text
-    if (!anchored and t_idx + 1 <= text.len) {
-        return matchInternal(pattern, text, 0, t_idx + 1, false, depth + 1);
+    if (t_idx < text.len and matchAtom(atom, text[t_idx])) {
+        return matchInternal(pattern, text, atom.end, t_idx + 1, false, depth + 1);
     }
 
     return false;
+}
+
+const Atom = struct {
+    kind: enum { literal, any, digit, word, whitespace, class },
+    literal: u8 = 0,
+    class: []const u8 = "",
+    end: usize,
+};
+
+fn parseAtom(pattern: []const u8, p_idx: usize) ?Atom {
+    if (pattern[p_idx] == '.') return .{ .kind = .any, .end = p_idx + 1 };
+    if (pattern[p_idx] == '[') {
+        const close = std.mem.indexOfScalarPos(u8, pattern, p_idx, ']') orelse return null;
+        return .{ .kind = .class, .class = pattern[p_idx + 1 .. close], .end = close + 1 };
+    }
+    if (pattern[p_idx] == '\\' and p_idx + 1 < pattern.len) {
+        return switch (pattern[p_idx + 1]) {
+            'd' => .{ .kind = .digit, .end = p_idx + 2 },
+            'w' => .{ .kind = .word, .end = p_idx + 2 },
+            's' => .{ .kind = .whitespace, .end = p_idx + 2 },
+            else => .{ .kind = .literal, .literal = pattern[p_idx + 1], .end = p_idx + 2 },
+        };
+    }
+    return .{ .kind = .literal, .literal = pattern[p_idx], .end = p_idx + 1 };
+}
+
+fn matchAtom(atom: Atom, text_char: u8) bool {
+    return switch (atom.kind) {
+        .literal => atom.literal == text_char,
+        .any => true,
+        .digit => std.ascii.isDigit(text_char),
+        .word => std.ascii.isAlphanumeric(text_char) or text_char == '_',
+        .whitespace => std.ascii.isWhitespace(text_char),
+        .class => matchCharClass(atom.class, text_char),
+    };
+}
+
+fn matchAtomRepeat(
+    pattern: []const u8,
+    text: []const u8,
+    next_pattern: usize,
+    t_idx: usize,
+    atom: Atom,
+    min_count: usize,
+    depth: usize,
+) bool {
+    var i = t_idx;
+    var count: usize = 0;
+
+    while (i < text.len and matchAtom(atom, text[i])) : (i += 1) {
+        count += 1;
+        if (count >= min_count and matchInternal(pattern, text, next_pattern, i + 1, false, depth + 1)) {
+            return true;
+        }
+    }
+
+    return min_count == 0 and matchInternal(pattern, text, next_pattern, t_idx, false, depth + 1);
 }
 
 fn matchStar(
@@ -256,7 +289,7 @@ test "regex - plus quantifier" {
 test "regex - optional quantifier" {
     try std.testing.expect(matchRegex("a?b", "b"));
     try std.testing.expect(matchRegex("a?b", "ab"));
-    try std.testing.expect(!matchRegex("a?b", "aab"));
+    try std.testing.expect(matchRegex("a?b", "aab"));
 }
 
 test "regex - character class" {

@@ -581,9 +581,6 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
 test "lockfile write and read" {
     const allocator = std.testing.allocator;
 
-    var tmp = std.testing.tmpDir(.{});
-    defer tmp.cleanup();
-
     // Create lockfile
     var lockfile = try types.Lockfile.init(allocator, "1.0.0");
     defer lockfile.deinit(allocator);
@@ -601,12 +598,9 @@ test "lockfile write and read" {
     try lockfile.addEntry(allocator, "test-package@1.0.0", entry);
 
     // Write lockfile
-    var lock_path_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const lock_path_slice = try tmp.dir.realpath(std.testing.io, ".", &lock_path_buf);
-    const lock_path = try allocator.dupe(u8, lock_path_slice);
-    defer allocator.free(lock_path);
-    const lock_file_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{lock_path});
-    defer allocator.free(lock_file_path);
+    const lock_file_path = "/tmp/pantry-lockfile-test.lock";
+    std.Io.Dir.cwd().deleteFile(std.testing.io, lock_file_path) catch {};
+    defer std.Io.Dir.cwd().deleteFile(std.testing.io, lock_file_path) catch {};
 
     try writeLockfile(allocator, &lockfile, lock_file_path);
 
@@ -698,9 +692,6 @@ test "lockfile comparison detects package changes" {
 test "writeLockfile skips write when no changes" {
     const allocator = std.testing.allocator;
 
-    var tmp = std.testing.tmpDir(.{});
-    defer tmp.cleanup();
-
     // Create initial lockfile
     var lockfile1 = try types.Lockfile.init(allocator, "1.0.0");
     defer lockfile1.deinit(allocator);
@@ -718,12 +709,9 @@ test "writeLockfile skips write when no changes" {
     try lockfile1.addEntry(allocator, "test@1.0.0", entry1);
 
     // Write initial file
-    var lock_path_buf2: [std.fs.max_path_bytes]u8 = undefined;
-    const lock_path_slice2 = try tmp.dir.realpath(std.testing.io, ".", &lock_path_buf2);
-    const lock_path = try allocator.dupe(u8, lock_path_slice2);
-    defer allocator.free(lock_path);
-    const lock_file_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{lock_path});
-    defer allocator.free(lock_file_path);
+    const lock_file_path = "/tmp/pantry-lockfile-skip.lock";
+    std.Io.Dir.cwd().deleteFile(std.testing.io, lock_file_path) catch {};
+    defer std.Io.Dir.cwd().deleteFile(std.testing.io, lock_file_path) catch {};
 
     try writeLockfile(allocator, &lockfile1, lock_file_path);
 

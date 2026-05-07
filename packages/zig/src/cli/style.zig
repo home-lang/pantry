@@ -7,6 +7,7 @@
 //! - Bun-like clean, minimal aesthetic
 
 const std = @import("std");
+const builtin = @import("builtin");
 const io_helper = @import("../io_helper.zig");
 
 // ── Colors ──────────────────────────────────────────────────────────────────
@@ -57,6 +58,9 @@ pub fn isCI() bool {
 
 /// Print to stdout (user-facing output). Thread-safe via write() syscall.
 pub fn print(comptime fmt: []const u8, args: anytype) void {
+    if (builtin.is_test) {
+        return;
+    }
     var buf: [65536]u8 = undefined;
     const msg = std.fmt.bufPrint(&buf, fmt, args) catch {
         // Fallback for messages that exceed buffer

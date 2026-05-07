@@ -25,7 +25,7 @@ pub const DependencyGraph = struct {
     pub fn init(allocator: std.mem.Allocator) DependencyGraph {
         return .{
             .allocator = allocator,
-            .nodes = .empty,
+            .nodes = std.StringHashMap(DependencyNode).init(allocator),
         };
     }
 
@@ -42,7 +42,7 @@ pub const DependencyGraph = struct {
             self.allocator.free(key.*);
         }
 
-        self.nodes.deinit(self.allocator);
+        self.nodes.deinit();
     }
 
     /// Resolve all dependencies for a package list
@@ -86,7 +86,7 @@ pub const DependencyGraph = struct {
         pkg_spec: []const u8,
     ) error{ InvalidPackageSpec, PackageNotFound, OutOfMemory }!void {
         // Parse package spec (name@version or just name)
-        var iter = std.mem.split(u8, pkg_spec, "@");
+        var iter = std.mem.splitScalar(u8, pkg_spec, '@');
         const name = iter.next() orelse return error.InvalidPackageSpec;
         const constraint = iter.next();
 
@@ -130,7 +130,7 @@ pub const DependencyGraph = struct {
             .dependencies = deps,
         };
 
-        try self.nodes.put(self.allocator, key, node);
+        try self.nodes.put(key, node);
 
         // Recursively resolve transitive dependencies
         for (deps) |dep_spec| {
@@ -168,7 +168,7 @@ pub const DependencyGraph = struct {
             .dependencies = dep_list,
         };
 
-        try self.nodes.put(self.allocator, key, node);
+        try self.nodes.put(key, node);
     }
 
     /// Detect version conflicts
@@ -177,13 +177,13 @@ pub const DependencyGraph = struct {
         errdefer conflicts.deinit(self.allocator);
 
         // Group packages by name
-        var by_name: std.StringHashMap(std.ArrayList([]const u8)) = .empty;
+        var by_name = std.StringHashMap(std.ArrayList([]const u8)).init(self.allocator);
         defer {
             var deinit_it = by_name.valueIterator();
             while (deinit_it.next()) |list| {
                 list.deinit(self.allocator);
             }
-            by_name.deinit(self.allocator);
+            by_name.deinit();
         }
 
         var it = self.nodes.iterator();
@@ -192,12 +192,12 @@ pub const DependencyGraph = struct {
 
             var list = by_name.get(node.name) orelse blk: {
                 const new_list: std.ArrayList([]const u8) = .empty;
-                try by_name.put(self.allocator, node.name, new_list);
+                try by_name.put(node.name, new_list);
                 break :blk new_list;
             };
 
-            try list.append(self.allocator, node.version);
-            try by_name.put(self.allocator, node.name, list);
+            try list.append(self.allocator, try self.allocator.dupe(u8, node.version));
+            try by_name.put(node.name, list);
         }
 
         // Check for multiple versions of same package
@@ -254,13 +254,13 @@ test "DependencyGraph conflict detection" {
     defer graph.deinit();
 
     // Manually add conflicting versions
-    try graph.nodes.put(allocator, try allocator.dupe(u8, "pkg@1.0.0"), DependencyGraph.DependencyNode{
+    try graph.nodes.put(try allocator.dupe(u8, "pkg@1.0.0"), DependencyGraph.DependencyNode{
         .name = try allocator.dupe(u8, "pkg"),
         .version = try allocator.dupe(u8, "1.0.0"),
         .dependencies = try allocator.alloc([]const u8, 0),
     });
 
-    try graph.nodes.put(allocator, try allocator.dupe(u8, "pkg@2.0.0"), DependencyGraph.DependencyNode{
+    try graph.nodes.put(try allocator.dupe(u8, "pkg@2.0.0"), DependencyGraph.DependencyNode{
         .name = try allocator.dupe(u8, "pkg"),
         .version = try allocator.dupe(u8, "2.0.0"),
         .dependencies = try allocator.alloc([]const u8, 0),

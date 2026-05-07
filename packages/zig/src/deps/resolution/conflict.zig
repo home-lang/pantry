@@ -41,7 +41,7 @@ pub const Conflict = struct {
     pub fn init(allocator: std.mem.Allocator, package_name: []const u8) !Conflict {
         return .{
             .package_name = try allocator.dupe(u8, package_name),
-            .required_by = .{},
+            .required_by = .empty,
             .allocator = allocator,
         };
     }
@@ -82,7 +82,7 @@ pub const ConflictResolver = struct {
             var c = conflict.*;
             c.deinit();
         }
-        self.conflicts.deinit(self.allocator);
+        self.conflicts.deinit();
     }
 
     /// Record a dependency requirement
@@ -103,7 +103,7 @@ pub const ConflictResolver = struct {
     /// Resolve conflicts and return a map of package -> resolved version
     pub fn resolveAll(self: *ConflictResolver) !std.StringHashMap([]const u8) {
         var resolutions = std.StringHashMap([]const u8).init(self.allocator);
-        errdefer resolutions.deinit(self.allocator);
+        errdefer resolutions.deinit();
 
         var it = self.conflicts.iterator();
         while (it.next()) |entry| {

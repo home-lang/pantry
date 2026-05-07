@@ -729,20 +729,20 @@ test "discoverBinaries" {
 
     // Create test directory structure
     const test_dir = "test_pkg_bin";
-    io_helper.cwd().makeDir(io_helper.io, test_dir) catch {};
+    io_helper.makePath(test_dir) catch {};
     defer io_helper.deleteTree(test_dir) catch {};
 
     const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{test_dir});
     defer allocator.free(bin_dir);
 
-    io_helper.cwd().makeDir(io_helper.io, bin_dir) catch {};
+    io_helper.makePath(bin_dir) catch {};
 
     // Create test binary file
     {
         const test_bin = try std.fmt.allocPrint(allocator, "{s}/testbin", .{bin_dir});
         defer allocator.free(test_bin);
 
-        const file = try io_helper.cwd().createFile(io_helper.io, test_bin, .{ .mode = 0o755 });
+        const file = try io_helper.cwd().createFile(io_helper.io, test_bin, .{ .permissions = .executable_file });
         file.close(io_helper.io);
     }
 
@@ -798,12 +798,13 @@ test "createBinarySymlink" {
     const allocator = std.testing.allocator;
 
     // Create test structure
-    const install_base = "test_install";
-    io_helper.cwd().makeDir(io_helper.io, install_base) catch {};
+    const install_base = "/tmp/pantry_test_install";
+    io_helper.deleteTree(install_base) catch {};
+    io_helper.makePath(install_base) catch {};
     defer io_helper.deleteTree(install_base) catch {};
 
     // Create package directory
-    const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/testpkg/v1.0.0/bin", .{install_base});
+    const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/packages/testpkg/v1.0.0/bin", .{install_base});
     defer allocator.free(pkg_dir);
 
     io_helper.makePath(pkg_dir) catch {};
@@ -813,7 +814,7 @@ test "createBinarySymlink" {
     defer allocator.free(bin_path);
 
     {
-        const file = try io_helper.cwd().createFile(io_helper.io, bin_path, .{ .mode = 0o755 });
+        const file = try std.Io.Dir.createFileAbsolute(io_helper.io, bin_path, .{ .permissions = .executable_file });
         file.close(io_helper.io);
     }
 
@@ -824,6 +825,6 @@ test "createBinarySymlink" {
     const symlink_path = try std.fmt.allocPrint(allocator, "{s}/bin/testbin", .{install_base});
     defer allocator.free(symlink_path);
 
-    const stat = try io_helper.cwd().statPath(io_helper.io, symlink_path);
+    const stat = try io_helper.statFile(symlink_path);
     _ = stat;
 }

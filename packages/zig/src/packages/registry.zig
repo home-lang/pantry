@@ -18,13 +18,14 @@ pub const PackageRegistry = struct {
     /// Get package by name (comptime lookup, zero overhead)
     pub fn getPackage(self: *PackageRegistry, name: []const u8) ?generated.PackageInfo {
         _ = self;
-        return generated.getPackageByName(name);
+        const pkg = generated.getPackageByName(name) orelse return null;
+        return pkg.*;
     }
 
     /// Resolve alias to domain
     pub fn resolveAlias(self: *PackageRegistry, alias: []const u8) ?[]const u8 {
         _ = self;
-        return aliases.resolveAlias(alias);
+        return aliases.resolvealias(alias);
     }
 
     /// Get all versions for a package (stub - versions not in current generated.zig)
@@ -107,8 +108,8 @@ pub const PackageRegistry = struct {
 
 /// Compare two semantic versions
 pub fn compareVersions(a: []const u8, b: []const u8) !std.math.Order {
-    var a_parts = std.mem.split(u8, a, ".");
-    var b_parts = std.mem.split(u8, b, ".");
+    var a_parts = std.mem.splitScalar(u8, a, '.');
+    var b_parts = std.mem.splitScalar(u8, b, '.');
 
     // Compare major, minor, patch
     var i: usize = 0;
@@ -139,11 +140,11 @@ pub fn satisfiesConstraint(version: []const u8, constraint: []const u8) !bool {
             if (cmp == .lt) return false;
 
             // Check upper bound (major version)
-            var parts = std.mem.split(u8, min_version, ".");
+            var parts = std.mem.splitScalar(u8, min_version, '.');
             const major = parts.next() orelse return false;
             const upper = try std.fmt.parseInt(u32, major, 10) + 1;
 
-            var ver_parts = std.mem.split(u8, version, ".");
+            var ver_parts = std.mem.splitScalar(u8, version, '.');
             const ver_major = ver_parts.next() orelse return false;
             const ver_major_num = try std.fmt.parseInt(u32, ver_major, 10);
 
@@ -156,12 +157,12 @@ pub fn satisfiesConstraint(version: []const u8, constraint: []const u8) !bool {
             if (cmp == .lt) return false;
 
             // Check upper bound (minor version)
-            var parts = std.mem.split(u8, min_version, ".");
+            var parts = std.mem.splitScalar(u8, min_version, '.');
             const major = parts.next() orelse return false;
             const minor = parts.next() orelse return false;
             const minor_num = try std.fmt.parseInt(u32, minor, 10) + 1;
 
-            var ver_parts = std.mem.split(u8, version, ".");
+            var ver_parts = std.mem.splitScalar(u8, version, '.');
             _ = ver_parts.next(); // skip major
             const ver_minor = ver_parts.next() orelse return false;
             const ver_minor_num = try std.fmt.parseInt(u32, ver_minor, 10);

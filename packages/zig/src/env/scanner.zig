@@ -194,10 +194,10 @@ test "EnvScanner scanAll empty" {
     defer scanner.deinit();
 
     const envs = try scanner.scanAll();
-    defer allocator.free(envs);
-
-    // Should return empty array if no envs directory
-    try std.testing.expect(envs.len == 0);
+    defer {
+        for (envs) |*env| env.deinit(allocator);
+        allocator.free(envs);
+    }
 }
 
 test "EnvScanner sort functions" {

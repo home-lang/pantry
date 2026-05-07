@@ -2050,7 +2050,7 @@ test "canSkipFromLockfile - no matching entry" {
     const allocator = std.testing.allocator;
 
     var packages = std.StringHashMap(lib.packages.LockfileEntry).init(allocator);
-    defer packages.deinit(allocator);
+    defer packages.deinit();
 
     // No entries in lockfile -> should not skip
     try std.testing.expect(!canSkipFromLockfile(&packages, "foo", "1.0.0", "/nonexistent", allocator, "pantry"));
@@ -2067,7 +2067,7 @@ test "canSkipFromLockfile - matching entry but no dir" {
             var e = entry.value_ptr.*;
             e.deinit(allocator);
         }
-        packages.deinit(allocator);
+        packages.deinit();
     }
 
     // Add entry to lockfile

@@ -64,8 +64,8 @@ pub const OptionalDependencyManager = struct {
         const platform = try detectPlatform(allocator);
         return .{
             .allocator = allocator,
-            .optional_deps = .empty,
-            .results = .{},
+            .optional_deps = std.StringHashMap(OptionalDependency).init(allocator),
+            .results = .empty,
             .current_platform = platform,
         };
     }
@@ -79,7 +79,7 @@ pub const OptionalDependencyManager = struct {
             var dep = entry.value_ptr.*;
             dep.deinit(self.allocator);
         }
-        self.optional_deps.deinit(self.allocator);
+        self.optional_deps.deinit();
 
         for (self.results.items) |*result| {
             result.deinit(self.allocator);
@@ -93,7 +93,7 @@ pub const OptionalDependencyManager = struct {
         dep: OptionalDependency,
     ) !void {
         const name_copy = try self.allocator.dupe(u8, dep.name);
-        try self.optional_deps.put(self.allocator, name_copy, dep);
+        try self.optional_deps.put(name_copy, dep);
     }
 
     /// Check if a dependency should be installed on current platform

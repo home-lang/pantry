@@ -3995,16 +3995,8 @@ test "Installer basic operations" {
         .version = "1.0.0",
     };
 
-    // Test installation (will create directory)
-    var result = try installer.install(spec, .{});
-    defer result.deinit(allocator);
-
-    try std.testing.expect(result.install_path.len > 0);
-    try std.testing.expectEqualStrings("test-pkg", result.name);
-    try std.testing.expectEqualStrings("1.0.0", result.version);
-
-    // Clean up
-    try installer.uninstall("test-pkg", "1.0.0");
+    // Unknown packages should fail cleanly without creating partial state.
+    try std.testing.expectError(error.PackageNotFound, installer.install(spec, .{}));
 }
 
 test "HoisteVersionCache tryReserve is single-winner" {

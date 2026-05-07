@@ -75,7 +75,13 @@ pub const FilterConfigs = struct {
         errdefer all_patterns.deinit(self.allocator);
 
         var visited = std.StringHashMap(void).init(self.allocator);
-        defer visited.deinit();
+        defer {
+            var key_iter = visited.keyIterator();
+            while (key_iter.next()) |key| {
+                self.allocator.free(key.*);
+            }
+            visited.deinit();
+        }
 
         try self.collectPatternsRecursive(name, &all_patterns, &visited);
 

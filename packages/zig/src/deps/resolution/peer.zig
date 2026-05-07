@@ -96,8 +96,8 @@ pub const PeerDependencyManager = struct {
     pub fn init(allocator: std.mem.Allocator) PeerDependencyManager {
         return .{
             .allocator = allocator,
-            .installed = .empty,
-            .peers = .{},
+            .installed = std.StringHashMap([]const u8).init(allocator),
+            .peers = .empty,
         };
     }
 
@@ -108,7 +108,7 @@ pub const PeerDependencyManager = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.installed.deinit(self.allocator);
+        self.installed.deinit();
 
         // Free peers list
         for (self.peers.items) |*peer| {
@@ -125,7 +125,7 @@ pub const PeerDependencyManager = struct {
         const version_copy = try self.allocator.dupe(u8, version);
         errdefer self.allocator.free(version_copy);
 
-        try self.installed.put(self.allocator, name_copy, version_copy);
+        try self.installed.put(name_copy, version_copy);
     }
 
     /// Add a peer dependency requirement

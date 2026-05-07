@@ -136,7 +136,7 @@ pub fn createPackageWrappers(
             defer allocator.free(binary_path);
 
             // Check if executable
-            const stat = io_helper.cwd().statPath(io_helper.io, binary_path) catch continue;
+            const stat = io_helper.statFile(binary_path) catch continue;
             const is_executable = (stat.mode & 0o111) != 0;
 
             if (is_executable) {
@@ -266,6 +266,6 @@ test "createBinaryWrapper" {
     const wrapper_path = try std.fmt.allocPrint(allocator, "{s}/testbin", .{wrapper_dir});
     defer allocator.free(wrapper_path);
 
-    const stat = try io_helper.cwd().statPath(io_helper.io, wrapper_path);
+    const stat = try io_helper.statFile(wrapper_path);
     try std.testing.expect((stat.mode & 0o111) != 0);
 }

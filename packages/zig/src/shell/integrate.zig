@@ -147,7 +147,7 @@ pub const ShellIntegrator = struct {
         var lines: std.ArrayList([]const u8) = .empty;
         defer lines.deinit(self.allocator);
 
-        var iter = std.mem.split(u8, content, "\n");
+        var iter = std.mem.splitScalar(u8, content, '\n');
         var skip_next = false;
 
         while (iter.next()) |line| {
@@ -174,15 +174,15 @@ pub const ShellIntegrator = struct {
         const f = try io_helper.cwd().createFile(io_helper.io, file, .{ .truncate = true });
         defer f.close(io_helper.io);
 
-        var buffer: [4096]u8 = undefined;
-        var writer = f.writer(io_helper.io, &buffer);
+        var out: std.ArrayList(u8) = .empty;
+        defer out.deinit(self.allocator);
         for (lines.items, 0..) |line, i| {
-            try writer.writeAll(line);
+            try out.appendSlice(self.allocator, line);
             if (i < lines.items.len - 1) {
-                try writer.writeAll("\n");
+                try out.append(self.allocator, '\n');
             }
         }
-        try writer.flush();
+        try io_helper.writeAllToFile(f, out.items);
     }
 };
 

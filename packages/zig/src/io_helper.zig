@@ -116,7 +116,27 @@ pub fn cwd() Dir {
 pub fn readFileAlloc(allocator: std.mem.Allocator, path: []const u8, max_size: usize) ![]u8 {
     const file = cwd().openFile(io, path, .{ .mode = .read_only }) catch |err| return err;
     defer file.close(io);
+    return readFileAllocFromFile(allocator, file, max_size);
+}
 
+/// Read entire absolute-path file contents into an allocated buffer.
+pub fn readFileAllocAbsolute(allocator: std.mem.Allocator, path: []const u8, max_size: usize) ![]u8 {
+    if (comptime is_windows) {
+        const file = Dir.openFileAbsolute(io, path, .{ .mode = .read_only }) catch |err| return err;
+        defer file.close(io);
+        return readFileAllocFromFile(allocator, file, max_size);
+    }
+
+    const fd = try std.posix.openat(std.posix.AT.FDCWD, path, .{ .ACCMODE = .RDONLY }, 0);
+    defer _ = std.c.close(fd);
+    return readFileAllocFromFd(allocator, fd, max_size);
+}
+
+fn readFileAllocFromFile(allocator: std.mem.Allocator, file: File, max_size: usize) ![]u8 {
+    return readFileAllocFromFd(allocator, file.handle, max_size);
+}
+
+fn readFileAllocFromFd(allocator: std.mem.Allocator, fd: std.posix.fd_t, max_size: usize) ![]u8 {
     var total: usize = 0;
     var buffer = try allocator.alloc(u8, @min(max_size, 65536));
     errdefer allocator.free(buffer);
@@ -126,7 +146,7 @@ pub fn readFileAlloc(allocator: std.mem.Allocator, path: []const u8, max_size: u
             if (buffer.len > max_size) return error.BufferTooSmall;
             buffer = try allocator.realloc(buffer, @min(buffer.len *| 2, max_size + 1));
         }
-        const n = platformRead(file.handle, buffer[total..]) catch |err| {
+        const n = platformRead(fd, buffer[total..]) catch |err| {
             return err;
         };
         if (n == 0) break;

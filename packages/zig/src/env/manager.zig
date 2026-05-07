@@ -27,7 +27,7 @@ pub const Environment = struct {
             .hash = @splat(0),
             .dep_file = "",
             .path = "",
-            .env_vars = .empty,
+            .env_vars = std.StringHashMap([]const u8).init(allocator),
             .packages = .empty,
             ._allocator = allocator,
         };
@@ -42,7 +42,7 @@ pub const Environment = struct {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        self.env_vars.deinit(allocator);
+        self.env_vars.deinit();
 
         for (self.packages.items) |pkg| {
             allocator.free(pkg);
@@ -98,7 +98,7 @@ pub const EnvManager = struct {
         // Create environment directory
         const env_dir = try self.getEnvDir(env.hash);
         defer self.allocator.free(env_dir);
-        try io_helper.cwd().makePath(io_helper.io, env_dir);
+        try io_helper.makePath(env_dir);
 
         return env;
     }
@@ -173,10 +173,7 @@ test "EnvManager basic operations" {
     {
         const file = try std.Io.Dir.cwd().createFile(std.testing.io, tmp_file, .{});
         defer file.close(std.testing.io);
-        var buffer: [4096]u8 = undefined;
-        var writer = file.writer(std.testing.io, &buffer);
-        try writer.writeAll("node: 20.0.0");
-        try writer.flush();
+        try io_helper.writeAllToFile(file, "node: 20.0.0");
     }
     defer std.Io.Dir.cwd().deleteFile(std.testing.io, tmp_file) catch {};
 

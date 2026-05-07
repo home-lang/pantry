@@ -189,17 +189,17 @@ test "extractDependencies from object format" {
     const allocator = std.testing.allocator;
 
     // Create a mock config with dependencies object
-    var config_obj = std.json.ObjectMap.init(allocator);
-    defer config_obj.deinit();
+    var config_obj: std.json.ObjectMap = .empty;
+    defer config_obj.deinit(allocator);
 
-    var deps_obj = std.json.ObjectMap.init(allocator);
-    defer deps_obj.deinit();
+    var deps_obj: std.json.ObjectMap = .empty;
+    defer deps_obj.deinit(allocator);
 
-    try deps_obj.put("bun", .{ .string = "^1.2.19" });
-    try deps_obj.put("redis.io", .{ .string = "^8.0.0" });
+    try deps_obj.put(allocator, "bun", .{ .string = "^1.2.19" });
+    try deps_obj.put(allocator, "redis.io", .{ .string = "^8.0.0" });
 
-    try config_obj.put("dependencies", .{ .object = deps_obj });
-    try config_obj.put("global", .{ .bool = false });
+    try config_obj.put(allocator, "dependencies", .{ .object = deps_obj });
+    try config_obj.put(allocator, "global", .{ .bool = false });
 
     const config_result = zig_config.UntypedConfigResult{
         .config = .{ .object = config_obj },
@@ -232,8 +232,8 @@ test "extractDependencies from object format" {
 test "extractDependencies from array format" {
     const allocator = std.testing.allocator;
 
-    var config_obj = std.json.ObjectMap.init(allocator);
-    defer config_obj.deinit();
+    var config_obj: std.json.ObjectMap = .empty;
+    defer config_obj.deinit(allocator);
 
     var deps_array = std.json.Array.init(allocator);
     defer deps_array.deinit();
@@ -241,8 +241,8 @@ test "extractDependencies from array format" {
     try deps_array.append(.{ .string = "bun" });
     try deps_array.append(.{ .string = "redis.io" });
 
-    try config_obj.put("dependencies", .{ .array = deps_array });
-    try config_obj.put("global", .{ .bool = true });
+    try config_obj.put(allocator, "dependencies", .{ .array = deps_array });
+    try config_obj.put(allocator, "global", .{ .bool = true });
 
     const config_result = zig_config.UntypedConfigResult{
         .config = .{ .object = config_obj },
@@ -268,10 +268,10 @@ test "extractDependencies from array format" {
 test "extractDependencies from string format" {
     const allocator = std.testing.allocator;
 
-    var config_obj = std.json.ObjectMap.init(allocator);
-    defer config_obj.deinit();
+    var config_obj: std.json.ObjectMap = .empty;
+    defer config_obj.deinit(allocator);
 
-    try config_obj.put("dependencies", .{ .string = "bun redis.io postgresql.org" });
+    try config_obj.put(allocator, "dependencies", .{ .string = "bun redis.io postgresql.org" });
 
     const config_result = zig_config.UntypedConfigResult{
         .config = .{ .object = config_obj },

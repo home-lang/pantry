@@ -687,11 +687,7 @@ pub fn verifyChecksum(
     expected_checksum: []const u8,
 ) !bool {
     // Read file contents
-    const file = try io_helper.cwd().openFile(io_helper.io, file_path, .{});
-    defer file.close(io_helper.io);
-
-    const file_size = (try file.stat(io_helper.io)).size;
-    const contents = try file.readToEndAlloc(allocator, std.Io.Limit.limited(file_size));
+    const contents = try io_helper.readFileAlloc(allocator, file_path, 1024 * 1024 * 1024);
     defer allocator.free(contents);
 
     // Compute SHA256 hash
@@ -699,8 +695,8 @@ pub fn verifyChecksum(
     std.crypto.hash.sha2.Sha256.hash(contents, &hash, .{});
 
     // Convert to hex string
-    var hex_buf: [64]u8 = undefined;
-    const hex = try std.fmt.bufPrint(&hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&hash)});
+    const hex_buf = std.fmt.bytesToHex(hash, .lower);
+    const hex = hex_buf[0..];
 
     // Compare with expected
     if (!std.mem.eql(u8, hex, expected_checksum)) {

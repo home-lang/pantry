@@ -108,7 +108,7 @@ test "verifyIntegrity sha512 SRI happy path" {
     const allocator = std.testing.allocator;
     const body = "hello world";
     // node -e 'console.log("sha512-" + require("crypto").createHash("sha512").update("hello world").digest("base64"))'
-    const sri = "sha512-MJ7MSJwS1utMxA9QyQLytNDtd+5RGnx6m808qG1M2G+YndNbxf9JlnDaNh2EwjW9Cl3XUMEp76DKfIvi01d14Q==";
+    const sri = "sha512-MJ7MSJwS1utMxA9QyQLytNDtd+5RGnx6m808qG1M2G+YndNbxf9JlnDaNCVbRbDP2DDoH2Bdz33FVC6TrpzXbw==";
     try std.testing.expect(verifyIntegrity(allocator, body, sri));
 }
 

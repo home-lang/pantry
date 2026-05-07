@@ -1575,6 +1575,8 @@ pub const ShellCommands = struct {
         var db_host: []const u8 = "127.0.0.1";
         var db_port: []const u8 = "5432";
         var db_username: ?[]const u8 = null;
+        var env_content_owned: ?[]u8 = null;
+        defer if (env_content_owned) |content| self.allocator.free(content);
 
         // Source 1: pantry.config.ts services.database
         const db_config = self.loadDatabaseConfig(project_root) catch null;
@@ -1595,8 +1597,13 @@ pub const ShellCommands = struct {
         });
         defer self.allocator.free(env_path);
 
-        if (io_helper.readFileAlloc(self.allocator, env_path, 1 * 1024 * 1024)) |env_content| {
-            defer self.allocator.free(env_content);
+        const env_content_result = if (std.fs.path.isAbsolute(env_path))
+            io_helper.readFileAllocAbsolute(self.allocator, env_path, 1 * 1024 * 1024)
+        else
+            io_helper.readFileAlloc(self.allocator, env_path, 1 * 1024 * 1024);
+
+        if (env_content_result) |env_content| {
+            env_content_owned = env_content;
 
             var line_iter = std.mem.splitScalar(u8, env_content, '\n');
             while (line_iter.next()) |line| {
@@ -1845,7 +1852,7 @@ pub const ShellCommands = struct {
                 io_helper.makePath(parent) catch {};
             }
 
-            const file = io_helper.createFile(full_path, .{}) catch |err| return err;
+            const file = io_helper.createFileAbsolute(full_path, .{}) catch |err| return err;
             file.close(io_helper.io);
             style.print("  ✓ SQLite database initialized at {s}\n", .{sqlite_path});
             return;
@@ -2291,6 +2298,12 @@ pub const ShellCommands = struct {
         if (result.deps_file) |df| {
             defer self.allocator.free(df.path);
             const dir = std.fs.path.dirname(df.path) orelse return null;
+            if (std.mem.endsWith(u8, df.path, "/config/deps.ts") or
+                std.mem.endsWith(u8, df.path, "/config/deps.js"))
+            {
+                const root_dir = std.fs.path.dirname(dir) orelse return null;
+                return try self.allocator.dupe(u8, root_dir);
+            }
             return try self.allocator.dupe(u8, dir);
         }
 
@@ -2360,8 +2373,9 @@ test "ShellCommands detectProjectRoot" {
     defer commands.deinit();
 
     // Create test project structure
-    const test_dir = "test_project_detect";
-    io_helper.cwd().makeDir(io_helper.io, test_dir) catch {};
+    const test_dir = "/tmp/pantry_test_project_detect";
+    io_helper.deleteTree(test_dir) catch {};
+    io_helper.makePath(test_dir) catch {};
     defer io_helper.deleteTree(test_dir) catch {};
 
     const pkg_json = try std.fs.path.join(allocator, &[_][]const u8{ test_dir, "package.json" });
@@ -2387,10 +2401,11 @@ test "ShellCommands detectProjectRoot with config deps ts" {
     var commands = try ShellCommands.init(allocator);
     defer commands.deinit();
 
-    const test_dir = "test_project_config_deps";
-    io_helper.cwd().makeDir(io_helper.io, test_dir) catch {};
+    const test_dir = "/tmp/pantry_test_project_config_deps";
+    io_helper.deleteTree(test_dir) catch {};
+    io_helper.makePath(test_dir) catch {};
     defer io_helper.deleteTree(test_dir) catch {};
-    io_helper.cwd().makeDir(io_helper.io, "test_project_config_deps/config") catch {};
+    try io_helper.makePath("/tmp/pantry_test_project_config_deps/config");
 
     const deps_ts = try std.fs.path.join(allocator, &[_][]const u8{ test_dir, "config", "deps.ts" });
     defer allocator.free(deps_ts);
@@ -2419,7 +2434,7 @@ test "ShellCommands activate generates shell code" {
 
     // Create test project
     const test_dir = "test_project_activate";
-    io_helper.cwd().makeDir(io_helper.io, test_dir) catch {};
+    io_helper.makePath(test_dir) catch {};
     defer io_helper.deleteTree(test_dir) catch {};
 
     const pkg_json = try std.fs.path.join(allocator, &[_][]const u8{ test_dir, "package.json" });
@@ -2446,20 +2461,19 @@ test "ShellCommands autoCreateDatabase creates sqlite database from env" {
     var commands = try ShellCommands.init(allocator);
     defer commands.deinit();
 
-    const test_dir = "test_project_auto_create_sqlite";
-    io_helper.cwd().makeDir(io_helper.io, test_dir) catch {};
+    const test_dir = "/tmp/pantry_test_project_auto_create_sqlite";
+    io_helper.deleteTree(test_dir) catch {};
+    io_helper.makePath(test_dir) catch {};
     defer io_helper.deleteTree(test_dir) catch {};
 
     const env_path = try std.fs.path.join(allocator, &[_][]const u8{ test_dir, ".env" });
     defer allocator.free(env_path);
 
     {
-        const file = try io_helper.cwd().createFile(io_helper.io, env_path, .{});
+        const file = try io_helper.createFileAbsolute(env_path, .{});
         defer file.close(io_helper.io);
-        try io_helper.writeAllToFile(
-            file,
-            "DB_CONNECTION=sqlite\nDB_DATABASE_PATH=storage/framework/stacks.sqlite\n",
-        );
+        const env_bytes = "DB_CONNECTION=sqlite\nDB_DATABASE_PATH=storage/framework/stacks.sqlite\n";
+        try io_helper.writeAllToFile(file, env_bytes);
     }
 
     try commands.autoCreateDatabase(test_dir);
@@ -2477,7 +2491,7 @@ test "ShellCommands executePostSetupCommands runs config deps hooks" {
     defer commands.deinit();
 
     const test_dir = "test_project_post_setup_hooks";
-    io_helper.cwd().makeDir(io_helper.io, test_dir) catch {};
+    io_helper.makePath(test_dir) catch {};
     defer io_helper.deleteTree(test_dir) catch {};
 
     const config_dir = try std.fs.path.join(allocator, &[_][]const u8{ test_dir, "config" });

@@ -88,7 +88,7 @@ pub const ShellCodeGenerator = struct {
         try result.appendSlice(self.allocator, "\"\n\n");
 
         // Only the core function
-        var lines = std.mem.split(u8, shell_template, "\n");
+        var lines = std.mem.splitScalar(u8, shell_template, '\n');
         var in_function = false;
         while (lines.next()) |line| {
             if (std.mem.indexOf(u8, line, "__pantry_switch_environment()") != null) {

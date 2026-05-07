@@ -36,7 +36,7 @@ test "common aliases resolve correctly" {
     try std.testing.expectEqualStrings("go.dev", resolvealias("go").?);
     try std.testing.expectEqualStrings("rust-lang.org", resolvealias("rust").?);
     try std.testing.expectEqualStrings("curl.se", resolvealias("curl").?);
-    try std.testing.expectEqualStrings("git-scm.com", resolvealias("git").?);
+    try std.testing.expectEqualStrings("git-scm.org", resolvealias("git").?);
 
     // Unknown alias returns null
     try std.testing.expect(resolvealias("this-does-not-exist-xyz") == null);

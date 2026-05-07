@@ -65,18 +65,16 @@ fn matchGlobInternal(pattern: []const u8, text: []const u8, p_idx: usize, t_idx:
 
         // Try each alternative
         while (alternatives.next()) |alt| {
-            // Build pattern with this alternative
+            // Build the remaining pattern with this alternative. The prefix
+            // before the brace has already matched, so restart only the suffix
+            // against the current text index.
             var test_pattern_buf: [1024]u8 = undefined;
             var test_pattern_len: usize = 0;
 
-            // Copy prefix
             const alt_trimmed = std.mem.trim(u8, alt, " ");
             const suffix = pattern[close_brace + 1 ..];
-            const total_len = p_idx + alt_trimmed.len + suffix.len;
+            const total_len = alt_trimmed.len + suffix.len;
             if (total_len > test_pattern_buf.len) continue; // skip alternatives that exceed buffer
-
-            @memcpy(test_pattern_buf[0..p_idx], pattern[0..p_idx]);
-            test_pattern_len = p_idx;
 
             // Copy alternative
             @memcpy(test_pattern_buf[test_pattern_len .. test_pattern_len + alt_trimmed.len], alt_trimmed);

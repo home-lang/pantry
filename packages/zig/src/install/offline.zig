@@ -135,7 +135,7 @@ pub const ProxyConfig = struct {
         const no_proxy = self.no_proxy orelse return false;
 
         // Parse NO_PROXY comma-separated list
-        var it = std.mem.split(u8, no_proxy, ",");
+        var it = std.mem.splitScalar(u8, no_proxy, ',');
         while (it.next()) |pattern| {
             const trimmed = std.mem.trim(u8, pattern, &std.ascii.whitespace);
             if (std.mem.eql(u8, trimmed, "*")) return true;

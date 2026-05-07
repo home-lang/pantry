@@ -218,7 +218,7 @@ test "detectChangedMembers - no git repo" {
     const members = [_]types.WorkspaceMember{member};
 
     // This should fail or return empty since /tmp is not a git repo
-    const result = detectChangedMembers(
+    var result = detectChangedMembers(
         allocator,
         "/tmp",
         &members,
