@@ -84,6 +84,7 @@ export const lavinmqcomPackage = {
   */
   versions: [
     '2.8.0',
+    '2.7.3',
     '2.7.2',
     '2.7.1',
     '2.7.0',
