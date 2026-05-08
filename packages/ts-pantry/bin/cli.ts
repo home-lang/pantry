@@ -274,6 +274,35 @@ interface FetchOptions {
   outputJson?: boolean
 }
 
+function parseInstallPlatform(value?: string): { os: 'darwin' | 'linux' | 'windows', arch: 'x86_64' | 'aarch64' } | undefined {
+  if (!value) return undefined
+
+  const normalized = value.toLowerCase().replace(/_/g, '-')
+  const match = normalized.match(/^(darwin|macos|linux|windows|win32)-(x86-64|x64|amd64|aarch64|arm64)$/)
+  const osPart = match?.[1]
+  const archPart = match?.[2]
+
+  const os = osPart === 'macos' || osPart === 'darwin'
+    ? 'darwin'
+    : osPart === 'linux'
+      ? 'linux'
+      : osPart === 'windows' || osPart === 'win32'
+        ? 'windows'
+        : undefined
+
+  const arch = archPart === 'x64' || archPart === 'x86-64' || archPart === 'amd64'
+    ? 'x86_64'
+    : archPart === 'arm64' || archPart === 'aarch64'
+      ? 'aarch64'
+      : undefined
+
+  if (!os || !arch) {
+    throw new Error(`Invalid platform "${value}". Use linux-x86_64, linux-aarch64, macos-x86_64, macos-aarch64, or windows-x86_64.`)
+  }
+
+  return { os, arch }
+}
+
 const cli = new CLI('ts-pkgx')
 
 // Force exit after a maximum timeout to prevent hung processes
@@ -1370,11 +1399,13 @@ cli
   .command('install <pkg>', 'Install a system package (e.g. ziglang.org@0.17.0-dev)')
   .option('--global', 'Link binaries into the user-level global bin so they appear on PATH')
   .option('--install-dir <dir>', 'Where to download into (default: ./pantry)')
+  .option('--platform <target>', 'Install for a target platform (e.g. linux-x86_64)')
   .option('--no-bin-links', 'Skip creating local .bin/ symlinks')
   .option('--quiet', 'Suppress progress output')
   .action(async (pkg: string, options: {
     global?: boolean
     installDir?: string
+    platform?: string
     binLinks?: boolean
     quiet?: boolean
   }) => {
@@ -1389,6 +1420,7 @@ cli
     try {
       const result = await installPackage(domain, requestedVersion, {
         installDir: options.installDir,
+        platform: parseInstallPlatform(options.platform),
         createBinLinks: options.binLinks !== false,
         quiet: options.quiet,
         globalBin: options.global ? true : undefined,

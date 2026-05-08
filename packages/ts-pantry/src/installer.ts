@@ -27,6 +27,8 @@ export interface Platform {
 export interface InstallOptions {
   /** Directory to install into (default: ./pantry) */
   installDir?: string
+  /** Override the detected host platform, e.g. when fetching a Linux deploy binary from macOS. */
+  platform?: Platform
   /** Create .bin/ symlinks/copies (default: true) */
   createBinLinks?: boolean
   /** Quiet mode — suppress progress output (default: false) */
@@ -94,6 +96,24 @@ export function detectPlatform(): Platform {
 // ── Package Resolvers ──
 
 const resolvers: Record<string, PackageResolver> = {
+  'github.com/mail-os/mail': {
+    getDownloadUrl(version: string, platform: Platform): string {
+      if (platform.os !== 'linux' || platform.arch !== 'x86_64') {
+        throw new Error('github.com/mail-os/mail currently publishes linux-x86_64 release binaries')
+      }
+      const osMap: Record<string, string> = { darwin: 'macos', linux: 'linux', windows: 'windows' }
+      const artifact = `mail-${platform.arch}-${osMap[platform.os]}`
+      return `https://github.com/mail-os/mail/releases/download/v${version}/${artifact}.tar.gz`
+    },
+    getArchiveFormat() {
+      return 'tar.gz' as const
+    },
+    getBinaries(platform: Platform) {
+      const osMap: Record<string, string> = { darwin: 'macos', linux: 'linux', windows: 'windows' }
+      return [`mail-${platform.arch}-${osMap[platform.os]}`, 'mail']
+    },
+  },
+
   'ziglang.org': {
     getDownloadUrl(version: string, platform: Platform): string {
       const archMap: Record<string, string> = { x86_64: 'x86_64', aarch64: 'aarch64' }
@@ -186,7 +206,7 @@ export async function installPackage(
   version: string,
   options: InstallOptions = {},
 ): Promise<InstallResult> {
-  const platform = detectPlatform()
+  const platform = options.platform || detectPlatform()
   const resolver = resolvers[domain]
   if (!resolver) {
     throw new Error(`Unknown package: ${domain}. Supported: ${Object.keys(resolvers).join(', ')}`)
@@ -422,6 +442,19 @@ export async function resolveLatestVersion(domain: string): Promise<string> {
     const fallback = await latestFromPackageMetadata(domain)
     if (fallback) return fallback
     throw new Error('Failed to resolve latest nodejs.org version')
+  }
+  if (domain === 'github.com/mail-os/mail') {
+    const resp = await fetchJSON('https://api.github.com/repos/mail-os/mail/releases/latest').catch(() => null)
+    const releaseTag = (resp as { tag_name?: string } | null)?.tag_name?.replace(/^v/, '') || ''
+    if (releaseTag) return releaseTag
+
+    const tags = await fetchJSON('https://api.github.com/repos/mail-os/mail/tags?per_page=1').catch(() => null)
+    const tag = ((tags as Array<{ name?: string }> | null)?.[0]?.name || '').replace(/^v/, '')
+    if (tag) return tag
+
+    const fallback = await latestFromPackageMetadata(domain)
+    if (fallback) return fallback
+    throw new Error('Failed to resolve latest github.com/mail-os/mail version')
   }
   throw new Error(`Cannot resolve latest version for ${domain}`)
 }
