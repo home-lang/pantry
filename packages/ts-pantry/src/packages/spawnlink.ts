@@ -70,6 +70,7 @@ export const spawnlinkPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.42.0',
     '2.41.1',
     '2.41.0',
     '2.40.2',
