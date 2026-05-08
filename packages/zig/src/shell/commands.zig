@@ -27,16 +27,6 @@ pub const ShellCommands = struct {
     /// Returns: env_dir|project_dir or empty on cache miss
     /// Performance target: < 1ms
     pub fn lookup(self: *ShellCommands, pwd: []const u8) !?[]const u8 {
-        const start_time = io_helper.clockGettimeMonotonic();
-        defer {
-            const end_time = io_helper.clockGettimeMonotonic();
-            const elapsed_ns = (end_time.sec - start_time.sec) * std.time.ns_per_s + (end_time.nsec - start_time.nsec);
-            const elapsed_us = @divFloor(elapsed_ns, std.time.ns_per_us);
-            if (elapsed_us > 1000) {
-                style.print("! shell:lookup took {d}μs (> 1ms target)\n", .{elapsed_us});
-            }
-        }
-
         // Walk up directory tree checking cache
         var current_dir = try self.allocator.dupe(u8, pwd);
         defer self.allocator.free(current_dir);
@@ -108,16 +98,6 @@ pub const ShellCommands = struct {
     /// Returns: Shell code to eval (exports, PATH modifications)
     /// Performance target: < 50ms (cache hit), < 300ms (cache miss with install)
     pub fn activate(self: *ShellCommands, pwd: []const u8) ![]const u8 {
-        const start_time = io_helper.clockGettimeMonotonic();
-        defer {
-            const end_time = io_helper.clockGettimeMonotonic();
-            const elapsed_ns = (end_time.sec - start_time.sec) * std.time.ns_per_s + (end_time.nsec - start_time.nsec);
-            const elapsed_ms = @divFloor(elapsed_ns, std.time.ns_per_ms);
-            if (elapsed_ms > 50) {
-                style.print("⏱️  shell:activate took {d}ms\n", .{elapsed_ms});
-            }
-        }
-
         // 1. Detect project root
         const project_root = try self.detectProjectRoot(pwd) orelse {
             return try self.allocator.dupe(u8, ""); // No project found
@@ -155,9 +135,6 @@ pub const ShellCommands = struct {
             const size_ok = cached_entry.dep_size == 0 or current_dep_size == cached_entry.dep_size;
             if (mtime_ok and size_ok) {
                 cached_entry.last_validated = now;
-                const project_basename = std.fs.path.basename(project_root);
-                style.print("✓ Environment cached: {s}\n", .{project_basename});
-                style.print("  Dependencies already installed. Use --force to reinstall.\n", .{});
                 return try self.generateShellCode(project_root, cached_entry.path);
             }
             // File changed: invalidate cache and do full activation
@@ -217,21 +194,14 @@ pub const ShellCommands = struct {
         };
 
         if (!env_exists and dep_file != null) {
-            // 6. Install dependencies with progress feedback
-            style.print("🔧 Setting up environment for {s}...\n", .{project_basename});
-
             // Parse dependency file to detect version changes
             const dep_file_content = io_helper.readFileAlloc(self.allocator, dep_file.?, 10 * 1024 * 1024) catch { // 10MB max
-                style.print("⚠️  Could not read {s}\n", .{dep_file.?});
                 return try self.allocator.dupe(u8, "");
             };
             defer self.allocator.free(dep_file_content);
 
-            style.print("📦 Installing dependencies from {s}\n", .{std.fs.path.basename(dep_file.?)});
-
             // Create env directory
-            io_helper.makePath(env_dir) catch |err| {
-                style.print("❌ Failed to create environment: {s}\n", .{@errorName(err)});
+            io_helper.makePath(env_dir) catch {
                 return try self.allocator.dupe(u8, "");
             };
 
@@ -248,7 +218,6 @@ pub const ShellCommands = struct {
                 @memcpy(project_root_z[0..project_root.len], project_root);
                 project_root_z[project_root.len] = 0;
                 if (std.c.chdir(&project_root_z) != 0) {
-                    style.print("Failed to change to project directory: {s}\n", .{project_root});
                     return try self.allocator.dupe(u8, "");
                 }
             }
@@ -263,21 +232,15 @@ pub const ShellCommands = struct {
             var install_result = install_cmd.installCommandWithOptions(
                 self.allocator,
                 &[_][]const u8{},
-                install_types.InstallOptions{},
-            ) catch |err| {
-                style.print("❌ Installation failed: {s}\n", .{@errorName(err)});
+                install_types.InstallOptions{ .quiet = true },
+            ) catch {
                 return try self.allocator.dupe(u8, "");
             };
             defer install_result.deinit(self.allocator);
 
             if (install_result.exit_code != 0) {
-                if (install_result.message) |msg| {
-                    style.print("❌ {s}\n", .{msg});
-                }
                 return try self.allocator.dupe(u8, "");
             }
-
-            style.print("✅ Environment ready: {s}\n", .{env_name});
 
             // Install global dependencies (global: true in deps.yaml)
             try self.installGlobalDeps(project_root);
@@ -306,9 +269,6 @@ pub const ShellCommands = struct {
             // Check if dep file was modified recently (cache was invalidated)
             if (try self.env_cache.get(project_hash_quick)) |cached| {
                 if (current_dep_mtime != cached.dep_mtime) {
-                    style.print("🔄 Dependencies changed, updating environment...\n", .{});
-                    style.print("📦 Processing updates from {s}\n", .{std.fs.path.basename(dep_file.?)});
-
                     // Actually re-install dependencies
                     const install_cmd = @import("../cli/commands/install/core.zig");
                     const install_types = @import("../cli/commands/install/types.zig");
@@ -322,7 +282,6 @@ pub const ShellCommands = struct {
                         @memcpy(pr_buf[0..project_root.len], project_root);
                         pr_buf[project_root.len] = 0;
                         if (std.c.chdir(&pr_buf) != 0) {
-                            style.print("Failed to change to project directory: {s}\n", .{project_root});
                             return try self.allocator.dupe(u8, "");
                         }
                     }
@@ -337,21 +296,15 @@ pub const ShellCommands = struct {
                     var install_result = install_cmd.installCommandWithOptions(
                         self.allocator,
                         &[_][]const u8{},
-                        install_types.InstallOptions{},
-                    ) catch |err| {
-                        style.print("❌ Update failed: {s}\n", .{@errorName(err)});
+                        install_types.InstallOptions{ .quiet = true },
+                    ) catch {
                         return try self.allocator.dupe(u8, "");
                     };
                     defer install_result.deinit(self.allocator);
 
                     if (install_result.exit_code != 0) {
-                        if (install_result.message) |msg| {
-                            style.print("❌ {s}\n", .{msg});
-                        }
                         return try self.allocator.dupe(u8, "");
                     }
-
-                    style.print("✅ Environment updated\n", .{});
 
                     // Re-check global dependencies after update
                     try self.installGlobalDeps(project_root);
@@ -416,6 +369,13 @@ pub const ShellCommands = struct {
             break :blk true;
         };
 
+        // Get project dependency paths from pantry's own install layout.
+        // Project env bins must win over global bins so pinned toolchains
+        // such as ziglang.org/v0.17.0-dev are actually honored by
+        // `eval "$(pantry env)"`.
+        const project_package_paths = try self.getProjectPackagePaths(project_root);
+        defer self.allocator.free(project_package_paths);
+
         // Get runtime paths from ~/.pantry/runtimes
         const runtime_paths = try self.getRuntimePaths(project_root);
         defer self.allocator.free(runtime_paths);
@@ -436,23 +396,28 @@ pub const ShellCommands = struct {
         var path_components: std.ArrayList([]const u8) = .empty;
         defer path_components.deinit(self.allocator);
 
-        // 0. Global binaries (highest priority - always available)
-        if (has_global_bin) {
-            try path_components.append(self.allocator, global_bin_path.?);
+        // 0. Environment binaries
+        try path_components.append(self.allocator, env_bin);
+
+        // 1. Project-local package binaries and package roots
+        if (project_package_paths.len > 0) {
+            try path_components.append(self.allocator, project_package_paths);
         }
 
-        // 1. Runtime binaries
-        if (runtime_paths.len > 0) {
-            try path_components.append(self.allocator, runtime_paths);
-        }
-
-        // 2. Project-local binaries
+        // 2. Project-local npm-style binaries
         if (has_pantry) {
             try path_components.append(self.allocator, pantry_bin);
         }
 
-        // 3. Environment binaries
-        try path_components.append(self.allocator, env_bin);
+        // 3. Runtime binaries
+        if (runtime_paths.len > 0) {
+            try path_components.append(self.allocator, runtime_paths);
+        }
+
+        // 4. Global binaries (fallback)
+        if (has_global_bin) {
+            try path_components.append(self.allocator, global_bin_path.?);
+        }
 
         // Join all paths
         const new_path = try std.mem.join(self.allocator, ":", path_components.items);
@@ -482,6 +447,192 @@ pub const ShellCommands = struct {
             ,
                 .{ project_root, env_bin, env_dir, new_path },
             );
+        }
+    }
+
+    fn getProjectPackagePaths(self: *ShellCommands, project_root: []const u8) ![]const u8 {
+        const detector = @import("../deps/detector.zig");
+        const parser = @import("../deps/parser.zig");
+
+        const deps_file = (try detector.findDepsFile(self.allocator, project_root)) orelse {
+            return try self.allocator.dupe(u8, "");
+        };
+        defer self.allocator.free(deps_file.path);
+
+        const deps = try parser.inferDependencies(self.allocator, deps_file);
+        defer {
+            for (deps) |*dep| {
+                var d = dep.*;
+                d.deinit(self.allocator);
+            }
+            self.allocator.free(deps);
+        }
+
+        var path_parts: std.ArrayList([]const u8) = .empty;
+        defer {
+            for (path_parts.items) |path| self.allocator.free(path);
+            path_parts.deinit(self.allocator);
+        }
+
+        for (deps) |dep| {
+            const package_dir = try self.resolveProjectPackageDir(project_root, dep.name, dep.version) orelse continue;
+            errdefer self.allocator.free(package_dir);
+
+            const bin_dir = try std.fs.path.join(self.allocator, &[_][]const u8{ package_dir, "bin" });
+            if (self.pathIsDirectory(bin_dir)) {
+                try path_parts.append(self.allocator, bin_dir);
+            } else {
+                self.allocator.free(bin_dir);
+            }
+
+            try path_parts.append(self.allocator, package_dir);
+        }
+
+        if (path_parts.items.len == 0) {
+            return try self.allocator.dupe(u8, "");
+        }
+
+        return try std.mem.join(self.allocator, ":", path_parts.items);
+    }
+
+    fn resolveProjectPackageDir(
+        self: *ShellCommands,
+        project_root: []const u8,
+        name: []const u8,
+        version: []const u8,
+    ) !?[]const u8 {
+        const package_parent = try std.fs.path.join(self.allocator, &[_][]const u8{ project_root, "pantry", name });
+        defer self.allocator.free(package_parent);
+
+        const exact = try std.fs.path.join(self.allocator, &[_][]const u8{ package_parent, version });
+        if (self.pathExists(exact)) {
+            return exact;
+        }
+        self.allocator.free(exact);
+
+        var version_prefix = version;
+        while (version_prefix.len > 0 and
+            (version_prefix[0] == '^' or version_prefix[0] == '~' or version_prefix[0] == '>' or
+                version_prefix[0] == '<' or version_prefix[0] == '='))
+        {
+            version_prefix = version_prefix[1..];
+        }
+
+        var dir = io_helper.openDirForIteration(package_parent) catch return null;
+        defer dir.close();
+
+        var best: ?[]const u8 = null;
+        var it = dir.iterate();
+        while (it.next() catch null) |entry| {
+            if (entry.kind != .directory and entry.kind != .file and entry.kind != .sym_link) continue;
+
+            const matches = self.packageVersionMatches(entry.name, version_prefix);
+            if (!matches) continue;
+
+            if (best) |current| {
+                if (self.packageVersionLessThan(current, entry.name)) {
+                    self.allocator.free(current);
+                    best = try self.allocator.dupe(u8, entry.name);
+                }
+            } else {
+                best = try self.allocator.dupe(u8, entry.name);
+            }
+        }
+
+        const selected = best orelse return null;
+        defer self.allocator.free(selected);
+
+        return try std.fs.path.join(self.allocator, &[_][]const u8{ package_parent, selected });
+    }
+
+    fn packageVersionMatches(_: *ShellCommands, installed: []const u8, requested: []const u8) bool {
+        if (std.mem.eql(u8, requested, "*") or std.mem.eql(u8, requested, "latest")) return true;
+        if (requested.len == 0) return true;
+
+        const installed_no_v = if (std.mem.startsWith(u8, installed, "v")) installed[1..] else installed;
+        const requested_no_v = if (std.mem.startsWith(u8, requested, "v")) requested[1..] else requested;
+
+        if (std.mem.endsWith(u8, requested_no_v, "-dev")) {
+            return std.mem.startsWith(u8, installed_no_v, requested_no_v);
+        }
+
+        const installed_prefix = versionPrefixBeforeBuild(installed_no_v);
+        const requested_prefix = versionPrefixBeforeBuild(requested_no_v);
+        return std.mem.eql(u8, installed_prefix, requested_prefix) or
+            std.mem.startsWith(u8, installed_no_v, requested_no_v);
+    }
+
+    fn packageVersionLessThan(_: *ShellCommands, a: []const u8, b: []const u8) bool {
+        const a_no_v = if (std.mem.startsWith(u8, a, "v")) a[1..] else a;
+        const b_no_v = if (std.mem.startsWith(u8, b, "v")) b[1..] else b;
+        const a_rank = parseVersionRank(a_no_v);
+        const b_rank = parseVersionRank(b_no_v);
+        return a_rank.order(b_rank) == .lt;
+    }
+
+    fn versionPrefixBeforeBuild(version: []const u8) []const u8 {
+        for (version, 0..) |c, i| {
+            if (c == '+' or c == '_') return version[0..i];
+        }
+        return version;
+    }
+
+    const VersionRank = struct {
+        major: u32 = 0,
+        minor: u32 = 0,
+        patch: u32 = 0,
+        stable: bool = false,
+        dev_build: u32 = 0,
+
+        fn order(self: VersionRank, other: VersionRank) std.math.Order {
+            if (self.major != other.major) return std.math.order(self.major, other.major);
+            if (self.minor != other.minor) return std.math.order(self.minor, other.minor);
+            if (self.patch != other.patch) return std.math.order(self.patch, other.patch);
+            if (self.stable != other.stable) return if (self.stable) .gt else .lt;
+            return std.math.order(self.dev_build, other.dev_build);
+        }
+    };
+
+    fn parseVersionRank(version: []const u8) VersionRank {
+        const dev_pos = std.mem.indexOf(u8, version, "-dev");
+        const base = if (dev_pos) |pos| version[0..pos] else version;
+
+        var rank = VersionRank{ .stable = dev_pos == null };
+        var parts = std.mem.splitScalar(u8, base, '.');
+        if (parts.next()) |part| rank.major = std.fmt.parseInt(u32, part, 10) catch 0;
+        if (parts.next()) |part| rank.minor = std.fmt.parseInt(u32, part, 10) catch 0;
+        if (parts.next()) |part| rank.patch = std.fmt.parseInt(u32, part, 10) catch 0;
+
+        if (dev_pos) |pos| {
+            const marker = "-dev.";
+            if (version.len > pos + marker.len and std.mem.startsWith(u8, version[pos..], marker)) {
+                const rest = version[pos + marker.len ..];
+                var end: usize = 0;
+                while (end < rest.len and rest[end] >= '0' and rest[end] <= '9') : (end += 1) {}
+                if (end > 0) rank.dev_build = std.fmt.parseInt(u32, rest[0..end], 10) catch 0;
+            }
+        }
+
+        return rank;
+    }
+
+    fn pathExists(_: *ShellCommands, path: []const u8) bool {
+        if (io_helper.accessAbsolute(path, .{})) |_| return true else |_| {}
+        if (io_helper.openDirForIteration(path)) |dir| {
+            var mutable_dir = dir;
+            mutable_dir.close();
+            return true;
+        } else |_| {}
+        return false;
+    }
+
+    fn pathIsDirectory(_: *ShellCommands, path: []const u8) bool {
+        if (io_helper.openDirForIteration(path)) |dir| {
+            var mutable_dir = dir;
+            mutable_dir.close();
+            return true;
+        } else |_| {
+            return false;
         }
     }
 
@@ -622,15 +773,11 @@ pub const ShellCommands = struct {
         io_helper.makePath(global_dir) catch return;
         io_helper.makePath(global_bin) catch return;
 
-        style.print("🌐 Installing global dependencies...\n", .{});
-
         var pkg_cache = lib.cache.PackageCache.init(self.allocator) catch return;
         defer pkg_cache.deinit();
 
         for (deps) |dep| {
             if (!dep.global) continue;
-
-            style.print("  → {s}@{s} (global)", .{ dep.name, dep.version });
 
             const spec = lib.packages.PackageSpec{
                 .name = dep.name,
@@ -638,29 +785,20 @@ pub const ShellCommands = struct {
             };
 
             var installer = lib.install.Installer.init(self.allocator, &pkg_cache) catch {
-                style.print(" ... failed to init installer\n", .{});
                 continue;
             };
             // Override data_dir to global directory
             self.allocator.free(installer.data_dir);
             installer.data_dir = self.allocator.dupe(u8, global_dir) catch {
-                style.print(" ... failed\n", .{});
                 continue;
             };
             defer installer.deinit();
 
             var result = installer.install(spec, .{}) catch {
-                style.print(" ... failed\n", .{});
                 continue;
             };
             defer result.deinit(self.allocator);
-
-            style.print(" ... {s}\n", .{
-                if (result.from_cache) "cached" else "installed",
-            });
         }
-
-        style.print("✅ Global packages available in {s}\n", .{global_bin});
     }
 
     /// Auto-start services configured in pantry.json or deps.yaml
