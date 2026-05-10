@@ -68,6 +68,7 @@ export const templguidePackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.3.1020',
     '0.3.1001',
     '0.3.977',
     '0.3.960',
