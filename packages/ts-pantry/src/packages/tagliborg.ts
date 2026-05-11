@@ -78,6 +78,7 @@ export const tagliborgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.3',
     '2.2.1',
     '2.2',
     '2.2.0',
