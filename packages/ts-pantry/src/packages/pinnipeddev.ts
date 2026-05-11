@@ -68,6 +68,7 @@ export const pinnipeddevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.46.0',
     '0.45.0',
     '0.44.0',
     '0.43.0',
