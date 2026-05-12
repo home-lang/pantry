@@ -1,3 +1,27 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.33...v0.9.34)
+
+### 🐛 Bug Fixes
+
+- **action**: archive zig packages from package directory ([624245a](https://github.com/home-lang/pantry/commit/624245a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.34 ([114bdb4](https://github.com/home-lang/pantry/commit/114bdb4)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.33...HEAD)
+
+### 🐛 Bug Fixes
+
+- **action**: archive zig packages from package directory ([624245a](https://github.com/home-lang/pantry/commit/624245a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.32...v0.9.33)
 
 ### 🚀 Features
