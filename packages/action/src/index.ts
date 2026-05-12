@@ -951,11 +951,11 @@ async function publishZigPackage(registryUrl: string, token: string, cwd: string
   if (includePaths.length > 0) {
     // Use explicit paths from build.zig.zon
     core.info(`Including: ${includePaths.join(', ')}`)
-    await exec.exec('tar', ['czf', tarballPath, ...includePaths])
+    await exec.exec('tar', ['czf', tarballPath, ...includePaths], { cwd })
   }
   else {
     // Fallback: include common zig package files
-    await exec.exec('tar', ['czf', tarballPath, 'build.zig', 'build.zig.zon', 'src'])
+    await exec.exec('tar', ['czf', tarballPath, 'build.zig', 'build.zig.zon', 'src'], { cwd })
   }
 
   if (!fs.existsSync(tarballPath)) {
