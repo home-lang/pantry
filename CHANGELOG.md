@@ -1,3 +1,27 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.34...v0.9.35)
+
+### 🐛 Bug Fixes
+
+- **zig**: support Zig 0.17 file options ([b6ac879](https://github.com/home-lang/pantry/commit/b6ac879)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.35 ([86a5f17](https://github.com/home-lang/pantry/commit/86a5f17)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.34...HEAD)
+
+### 🐛 Bug Fixes
+
+- **zig**: support Zig 0.17 file options ([b6ac879](https://github.com/home-lang/pantry/commit/b6ac879)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.33...v0.9.34)
 
 ### 🐛 Bug Fixes
