@@ -578,6 +578,7 @@ export async function run(): Promise<void> {
       configPath: core.getInput('config-path') || 'pantry.config.ts',
       setupOnly: !core.getBooleanInput('install'),
       publish: core.getInput('publish') || '',
+      packageDir: core.getInput('package-dir') || '',
       registryUrl: core.getInput('registry-url') || 'https://registry.pantry.dev',
       token: core.getInput('token') || '',
       discordWebhook: core.getInput('discord-webhook') || '',
@@ -644,7 +645,7 @@ export async function run(): Promise<void> {
       core.addPath(path.join(homeDir, '.pantry', 'bin'))
 
       if (inputs.publish) {
-        await publishPackage(inputs.publish, inputs.registryUrl, cwd)
+        await publishPackage(inputs.publish, inputs.registryUrl, resolvePackageCwd(cwd, inputs.packageDir))
         await sendNotifications(inputs)
       }
       if (inputs.release)
@@ -854,7 +855,7 @@ export async function run(): Promise<void> {
 
     // ── Publish ──
     if (inputs.publish) {
-      await publishPackage(inputs.publish, inputs.registryUrl, cwd)
+      await publishPackage(inputs.publish, inputs.registryUrl, resolvePackageCwd(cwd, inputs.packageDir))
       await sendNotifications(inputs)
     }
 
@@ -896,12 +897,27 @@ async function publishPackage(type: string, registryUrl: string, cwd: string): P
   }
 }
 
+function resolvePackageCwd(root: string, packageDir: string): string {
+  if (!packageDir.trim())
+    return root
+
+  const resolved = path.resolve(root, packageDir)
+  const relative = path.relative(root, resolved)
+  if (relative.startsWith('..') || path.isAbsolute(relative))
+    throw new Error(`package-dir must stay inside the workspace: ${packageDir}`)
+
+  if (!fs.existsSync(resolved))
+    throw new Error(`package-dir does not exist: ${packageDir}`)
+
+  return resolved
+}
+
 async function publishZigPackage(registryUrl: string, token: string, cwd: string): Promise<void> {
   core.startGroup('Publishing Zig package')
 
   const zonPath = path.join(cwd, 'build.zig.zon')
   if (!fs.existsSync(zonPath)) {
-    throw new Error('build.zig.zon not found in current directory')
+    throw new Error(`build.zig.zon not found in ${cwd}`)
   }
 
   const zonContent = fs.readFileSync(zonPath, 'utf-8')

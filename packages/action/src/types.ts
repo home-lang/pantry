@@ -4,6 +4,7 @@ export interface ActionInputs {
   configPath: string
   setupOnly: boolean
   publish: string
+  packageDir: string
   registryUrl: string
   token: string
   discordWebhook: string

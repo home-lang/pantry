@@ -32,6 +32,7 @@ This action allows you to easily install dependencies with pantry in your GitHub
 |------------|---------------------------------------|----------|----------------------|
 | packages   | Space-separated list of packages to install (overrides auto-detection) | No  | (empty) - auto-detects from project files |
 | config-path | Path to pantry config file        | No       | `pantry.config.ts` |
+| package-dir | Directory to publish from for monorepo packages | No | (empty) - repository root |
 
 ## Features
 

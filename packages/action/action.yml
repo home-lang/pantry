@@ -27,6 +27,10 @@ inputs:
     description: Publish package to pantry registry. Set to "zig" for Zig packages (reads build.zig.zon) or "npm" for JS/TS packages.
     required: false
     default: ''
+  package-dir:
+    description: Directory to publish from. Useful for monorepos where build.zig.zon or package.json lives below the repository root.
+    required: false
+    default: ''
   registry-url:
     description: Pantry registry URL for publishing
     required: false
