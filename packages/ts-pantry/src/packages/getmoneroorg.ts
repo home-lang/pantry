@@ -93,6 +93,7 @@ export const getmoneroorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.18.5.0',
     '0.18.4.6',
     '0.18.4.5',
     '0.18.4.4',

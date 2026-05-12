@@ -77,6 +77,7 @@ export const dotnetmicrosoftcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '10.0.300',
     '10.0.201',
     '10.0.200',
     '10.0.105',
@@ -84,6 +85,7 @@ export const dotnetmicrosoftcomPackage = {
     '10.0.102',
     '10.0.101',
     '10.0.100',
+    '9.0.314',
     '9.0.313',
     '9.0.311',
     '9.0.310',
@@ -104,6 +106,7 @@ export const dotnetmicrosoftcomPackage = {
     '9.0.111',
     '9.0.102',
     '9.0.100',
+    '8.0.421',
     '8.0.418',
     '8.0.417',
     '8.0.416',
