@@ -67,6 +67,7 @@ export const koyebcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.10.2',
     '5.10.1',
     '5.10.0',
     '5.9.1',
