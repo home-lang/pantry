@@ -1,4 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'bun:test'
+import net from 'node:net'
 import { createServer, type BinaryStorage } from './server'
 import { createLocalRegistry } from './registry'
 import { InMemoryAnalytics } from './analytics'
@@ -301,17 +302,34 @@ describe('AuthService', () => {
 // E2E: Auth HTTP routes
 // ===========================================================================
 
+async function getAvailablePort(): Promise<number> {
+  return await new Promise((resolve, reject) => {
+    const probe = net.createServer()
+    probe.unref()
+    probe.on('error', reject)
+    probe.listen(0, () => {
+      const address = probe.address()
+      probe.close(() => {
+        if (typeof address === 'object' && address?.port)
+          resolve(address.port)
+        else
+          reject(new Error('Could not allocate a free test port'))
+      })
+    })
+  })
+}
+
 describe('e2e: auth routes', () => {
   let port: number
   let baseUrl: string
   let server: ReturnType<typeof createServer>
   let authStorage: InMemoryAuthStorage
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Pin the legacy token so the "legacy REGISTRY_TOKEN still works" test has
     // a known value to send (the server reads PANTRY_REGISTRY_TOKEN lazily).
     process.env.PANTRY_REGISTRY_TOKEN = 'ABCD1234'
-    port = 5000 + Math.floor(Math.random() * 1000)
+    port = await getAvailablePort()
     baseUrl = `http://localhost:${port}`
     authStorage = new InMemoryAuthStorage()
 
