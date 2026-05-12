@@ -14,8 +14,20 @@ pub const Io = std.Io;
 pub const Threaded = std.Io.Threaded;
 pub const Dir = std.Io.Dir;
 pub const File = std.Io.File;
+pub const CreateFileFlags = if (@hasDecl(File, "CreateFlags")) File.CreateFlags else Dir.CreateFileOptions;
+pub const OpenFileFlags = if (@hasDecl(File, "OpenFlags")) File.OpenFlags else Dir.OpenFileOptions;
 
 const is_windows = builtin.os.tag == .windows;
+
+/// Copy a slice into allocator-owned sentinel-terminated memory.
+///
+/// Zig 0.17 development builds removed `Allocator.dupeZ` as a method while
+/// keeping `allocSentinel`, so keep the compatibility point local.
+pub fn dupeZ(allocator: std.mem.Allocator, comptime T: type, slice: []const T) ![:0]T {
+    const buffer = try allocator.allocSentinel(T, slice.len, 0);
+    @memcpy(buffer[0..slice.len], slice);
+    return buffer;
+}
 
 /// Cross-platform timespec (c.timespec fields are void on Windows)
 pub const Timespec = struct {
@@ -219,12 +231,12 @@ pub fn statFile(path: []const u8) !StatResult {
 }
 
 /// Create a file in the current working directory
-pub fn createFile(path: []const u8, flags: File.CreateFlags) !File {
+pub fn createFile(path: []const u8, flags: CreateFileFlags) !File {
     return try cwd().createFile(io, path, flags);
 }
 
 /// Open a file in the current working directory
-pub fn openFile(path: []const u8, flags: File.OpenFlags) !File {
+pub fn openFile(path: []const u8, flags: OpenFileFlags) !File {
     return try cwd().openFile(io, path, flags);
 }
 
@@ -635,7 +647,7 @@ fn hasField(comptime T: type, comptime name: []const u8) bool {
 
 /// Open a file with absolute path
 /// Opens from root directory for absolute paths
-pub fn openFileAbsolute(path: []const u8, flags: File.OpenFlags) !File {
+pub fn openFileAbsolute(path: []const u8, flags: OpenFileFlags) !File {
     if (comptime is_windows) {
         return cwd().openFile(io, path, flags) catch return error.FileNotFound;
     }
@@ -673,7 +685,7 @@ pub fn openDirAbsolute(path: []const u8, options: Dir.OpenOptions) !Dir {
 /// Mirrors `openFileAbsolute` for write/create. `Dir.cwd().createFile(abs)`
 /// is unreliable across Zig versions; using `openat(AT.FDCWD, abs, …)`
 /// directly works on every POSIX target.
-pub fn createFileAbsolute(path: []const u8, flags: File.CreateFlags) !File {
+pub fn createFileAbsolute(path: []const u8, flags: CreateFileFlags) !File {
     if (comptime is_windows) {
         return cwd().createFile(io, path, flags) catch return error.FileNotFound;
     }
@@ -1241,7 +1253,7 @@ pub fn argsAlloc(allocator: std.mem.Allocator) ![]const [:0]const u8 {
         while (i < content.len and idx < count) {
             const start = i;
             while (i < content.len and content[i] != 0) : (i += 1) {}
-            const duped = try allocator.dupeZ(u8, content[start..i]);
+            const duped = try dupeZ(allocator, u8, content[start..i]);
             args[idx] = duped;
             idx += 1;
             i += 1;
