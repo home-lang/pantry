@@ -77,6 +77,7 @@ export const getcomposerorgPackage = {
   */
   versions: [
     '2.10.0-RC1',
+    '2.9.8',
     '2.9.7',
     '2.9.6',
     '2.9.5',
@@ -121,6 +122,7 @@ export const getcomposerorgPackage = {
     '2.5.5',
     '2.5.4',
     '2.5.3',
+    '2.2.28',
     '2.2.27',
     '2.2.26',
     '2.2.25',
@@ -128,6 +130,7 @@ export const getcomposerorgPackage = {
     '2.2.23',
     '2.2.22',
     '2.2.21',
+    '1.10.28',
     '1.10.27',
   ] as const,
   aliases: [] as const,
