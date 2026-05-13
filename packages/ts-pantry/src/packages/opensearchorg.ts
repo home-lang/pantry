@@ -94,6 +94,7 @@ export const opensearchorgPackage = {
     '3.0.0',
     '3.0.0-beta1',
     '3.0.0-alpha1',
+    '2.19.5',
     '2.19.4',
     '2.19.3',
     '2.19.2',
