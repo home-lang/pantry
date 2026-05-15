@@ -68,6 +68,7 @@ export const valeshPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.14.2',
     '3.14.1',
     '3.14.0',
     '3.13.1',
