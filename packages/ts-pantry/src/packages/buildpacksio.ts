@@ -68,6 +68,7 @@ export const buildpacksioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.40.6',
     '0.40.5',
     '0.40.4',
     '0.40.3',
