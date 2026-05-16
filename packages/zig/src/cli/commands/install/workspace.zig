@@ -1428,6 +1428,16 @@ pub fn installWorkspaceCommandWithOptions(
         };
     }
 
+    // Delegate to bun/pnpm/yarn/npm for JS deps if package.json is present
+    {
+        const js_delegate = @import("../../../deps/js_delegate.zig");
+        _ = js_delegate.installJsDeps(allocator, workspace_root, options.verbose) catch |err| {
+            if (options.verbose) {
+                style.print("Warning: JS delegation failed: {}\n", .{err});
+            }
+        };
+    }
+
     // Flush batched analytics (single HTTP request in background thread)
     install.flushAnalytics(allocator);
 

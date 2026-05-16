@@ -123,6 +123,16 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
                 }
             }
 
+            // Workspace fast path: same JS staleness check as non-workspace.
+            // The mtime check at the top of this block already invalidates
+            // the fast path when a member's package.json was touched, but a
+            // user can also leave node_modules untouched (e.g., manual rm)
+            // — the delegate's own no-op check keeps the cost bounded.
+            {
+                const js_delegate = @import("../../../deps/js_delegate.zig");
+                _ = js_delegate.installJsDeps(allocator, effective_dir, false) catch {};
+            }
+
             helpers.ensureBinSymlinks(allocator, effective_dir, modules_dir);
 
             const end_ts = io_helper.clockGettime();
@@ -197,6 +207,17 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
     }
 
     // 5. All up-to-date!
+
+    // Before declaring victory, give the JS delegate a chance to run if a
+    // package.json is present and its mtime indicates JS deps may be stale.
+    // Without this, editing package.json (without touching pantry.json) would
+    // leave `pantry install` falsely reporting "up to date" while node_modules
+    // is stale. The delegate has its own fast no-op check so the common case
+    // (nothing changed) stays cheap.
+    {
+        const js_delegate = @import("../../../deps/js_delegate.zig");
+        _ = js_delegate.installJsDeps(allocator, effective_dir, false) catch {};
+    }
 
     helpers.ensureBinSymlinks(allocator, effective_dir, modules_dir);
 
@@ -428,6 +449,19 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 const composer_delegate = @import("../../../deps/composer_delegate.zig");
                 const php_installed = composer_delegate.installPhpDeps(allocator, proj_dir_early, options.verbose) catch false;
                 if (php_installed) {
+                    const end_ts = io_helper.clockGettime();
+                    const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
+                    const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
+                    style.printSummary(0, 0, elapsed_ms);
+                    return .{ .exit_code = 0 };
+                }
+            }
+
+            // Run JS delegate for package.json deps
+            {
+                const js_delegate = @import("../../../deps/js_delegate.zig");
+                const js_installed = js_delegate.installJsDeps(allocator, proj_dir_early, options.verbose) catch false;
+                if (js_installed) {
                     const end_ts = io_helper.clockGettime();
                     const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
                     const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
@@ -968,6 +1002,16 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             _ = composer_delegate.installPhpDeps(allocator, proj_dir, opts.verbose) catch |err| {
                 if (opts.verbose) {
                     style.print("Warning: Composer delegation failed: {}\n", .{err});
+                }
+            };
+        }
+
+        // Delegate to bun/pnpm/yarn/npm for JS deps if package.json is present
+        {
+            const js_delegate = @import("../../../deps/js_delegate.zig");
+            _ = js_delegate.installJsDeps(allocator, proj_dir, opts.verbose) catch |err| {
+                if (opts.verbose) {
+                    style.print("Warning: JS delegation failed: {}\n", .{err});
                 }
             };
         }
