@@ -260,7 +260,7 @@ export async function installPackage(
   const archivePath = path.join(tmpDir, `archive.${format}`)
 
   try {
-    await downloadFile(url, archivePath)
+    await downloadFile(url, archivePath, 10, options.quiet ?? false)
 
     // Extract
     const extractDir = path.join(tmpDir, 'extracted')
@@ -554,18 +554,28 @@ async function resolveVersionConstraint(domain: string, constraint: string): Pro
 
 // ── Helpers ──
 
-function downloadFile(url: string, dest: string, maxRedirects = 10): Promise<void> {
+function downloadFile(url: string, dest: string, maxRedirects = 10, quiet = false): Promise<void> {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest)
     const get = url.startsWith('https') ? https.get : http.get
+    const showProgress = !quiet && process.stderr.isTTY
 
-    get(url, (res) => {
+    // Stall watchdog — abort if no bytes arrive for 60s. Without this,
+    // a hung TCP connection makes `pantry install` look like it's
+    // frozen forever instead of failing with a clear error.
+    let lastDataAt = Date.now()
+    let received = 0
+    let total = 0
+    let lastPrintAt = 0
+    const STALL_MS = 60_000
+
+    const req = get(url, (res) => {
       // Handle redirects
       if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         file.close()
         try { fs.unlinkSync(dest) } catch { /* ignore */ }
         if (maxRedirects <= 0) return reject(new Error(`Too many redirects for ${url}`))
-        return downloadFile(res.headers.location, dest, maxRedirects - 1).then(resolve, reject)
+        return downloadFile(res.headers.location, dest, maxRedirects - 1, quiet).then(resolve, reject)
       }
 
       if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
@@ -573,6 +583,26 @@ function downloadFile(url: string, dest: string, maxRedirects = 10): Promise<voi
         try { fs.unlinkSync(dest) } catch { /* ignore */ }
         return reject(new Error(`HTTP ${res.statusCode || 'unknown'} downloading ${url}`))
       }
+
+      const contentLength = res.headers['content-length']
+      if (contentLength) total = Number.parseInt(contentLength, 10) || 0
+
+      res.on('data', (chunk: Buffer) => {
+        lastDataAt = Date.now()
+        received += chunk.length
+        if (showProgress && lastDataAt - lastPrintAt > 200) {
+          lastPrintAt = lastDataAt
+          const mb = (received / 1_048_576).toFixed(1)
+          if (total > 0) {
+            const totalMb = (total / 1_048_576).toFixed(1)
+            const pct = Math.floor((received / total) * 100)
+            process.stderr.write(`\r    ${mb}/${totalMb} MB (${pct}%)`)
+          }
+          else {
+            process.stderr.write(`\r    ${mb} MB`)
+          }
+        }
+      })
 
       res.pipe(file)
       res.on('error', (err) => {
@@ -582,17 +612,34 @@ function downloadFile(url: string, dest: string, maxRedirects = 10): Promise<voi
       })
       file.on('finish', () => {
         file.close()
+        if (showProgress && lastPrintAt > 0) process.stderr.write('\r\x1b[K')
         resolve()
       })
       file.on('error', (err) => {
         try { fs.unlinkSync(dest) } catch { /* ignore */ }
         reject(err)
       })
-    }).on('error', (err) => {
+    })
+
+    req.on('error', (err) => {
       file.close()
       try { fs.unlinkSync(dest) } catch { /* ignore */ }
       reject(err)
     })
+
+    // Drive the stall timer off setInterval so we surface a clean
+    // error message instead of relying on the OS-level socket timeout
+    // (which on macOS can be 60+ seconds with no visible feedback).
+    const stallTimer = setInterval(() => {
+      if (Date.now() - lastDataAt > STALL_MS) {
+        clearInterval(stallTimer)
+        req.destroy(new Error(`Download stalled (no data for ${STALL_MS / 1000}s): ${url}`))
+      }
+    }, 5_000)
+    const clearStall = () => clearInterval(stallTimer)
+    file.once('finish', clearStall)
+    file.once('error', clearStall)
+    req.once('error', clearStall)
   })
 }
 
