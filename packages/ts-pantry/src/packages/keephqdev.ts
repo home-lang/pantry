@@ -68,6 +68,7 @@ export const keephqdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.52.0',
     '0.51.0',
     '0.50.0',
     '0.49.1',
