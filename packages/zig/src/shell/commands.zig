@@ -1336,15 +1336,26 @@ pub const ShellCommands = struct {
         return count;
     }
 
-    /// Parse a YAML value: strip leading/trailing whitespace and quotes
+    /// Parse a YAML value: strip leading/trailing whitespace, inline `#` comments,
+    /// and surrounding quotes. Comments are only stripped on unquoted values
+    /// (so a literal '#' inside a quoted string is preserved).
     fn parseYamlValue(raw: []const u8) []const u8 {
         var val = std.mem.trim(u8, raw, " \t\r");
-        // Strip surrounding quotes
+        // Strip surrounding quotes; if quoted, '#' is part of the value.
         if (val.len >= 2) {
             if ((val[0] == '"' and val[val.len - 1] == '"') or
                 (val[0] == '\'' and val[val.len - 1] == '\''))
             {
-                val = val[1 .. val.len - 1];
+                return val[1 .. val.len - 1];
+            }
+        }
+        // Unquoted: strip YAML inline comment ('#' preceded by whitespace).
+        if (val.len == 0) return val;
+        if (val[0] == '#') return "";
+        var i: usize = 1;
+        while (i < val.len) : (i += 1) {
+            if (val[i] == '#' and (val[i - 1] == ' ' or val[i - 1] == '\t')) {
+                return std.mem.trimEnd(u8, val[0..i], " \t");
             }
         }
         return val;

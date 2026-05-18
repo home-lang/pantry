@@ -318,10 +318,9 @@ pub const RecoverySuggestion = struct {
                 .error_type = .package_not_found,
                 .message = "Package not found in registry",
                 .suggestions = &[_][]const u8{
-                    "Check the package name or registry scope",
                     "Try 'pantry search <name>' to find available packages",
                     "Check spelling of the package name",
-                    "For npm packages, use: pantry add <package>",
+                    "If it's an npm package, 'pantry install <name>' falls through to the npm registry automatically",
                 },
             },
             .unknown => .{

@@ -411,6 +411,23 @@ pub fn inferDependencies(
     };
 }
 
+/// Strip a YAML-style inline comment from a scalar value.
+/// In YAML, '#' begins a comment when preceded by whitespace (or at start of value),
+/// extending to end of line. Returns the value with the comment removed and trailing
+/// whitespace trimmed. Quoted scalars are not handled here — callers that support
+/// quoting should unquote first.
+fn stripInlineComment(value: []const u8) []const u8 {
+    if (value.len == 0) return value;
+    if (value[0] == '#') return "";
+    var i: usize = 1;
+    while (i < value.len) : (i += 1) {
+        if (value[i] == '#' and (value[i - 1] == ' ' or value[i - 1] == '\t')) {
+            return std.mem.trimEnd(u8, value[0..i], " \t");
+        }
+    }
+    return value;
+}
+
 /// Parse a deps.yaml or similar file to extract package dependencies
 /// Handles both simple format and object format with global flags:
 /// global: true          # Top-level global flag
@@ -440,7 +457,7 @@ pub fn parseDepsFile(allocator: std.mem.Allocator, file_path: []const u8) ![]Pac
 
         // Check for top-level "global: true"
         if (std.mem.startsWith(u8, trimmed, "global:")) {
-            const value = std.mem.trim(u8, trimmed[7..], " \t");
+            const value = stripInlineComment(std.mem.trim(u8, trimmed[7..], " \t"));
             if (std.mem.eql(u8, value, "true")) {
                 top_level_global = true;
             }
@@ -497,7 +514,7 @@ pub fn parseDepsFile(allocator: std.mem.Allocator, file_path: []const u8) ![]Pac
 
             if (std.mem.indexOf(u8, trimmed, ":")) |colon_pos| {
                 const key = std.mem.trim(u8, trimmed[0..colon_pos], " \t");
-                const value = std.mem.trim(u8, trimmed[colon_pos + 1 ..], " \t");
+                const value = stripInlineComment(std.mem.trim(u8, trimmed[colon_pos + 1 ..], " \t"));
 
                 // Determine if this is a new package or a property of current package
                 // A property has greater indentation than its parent package
@@ -550,6 +567,17 @@ pub fn parseDepsFile(allocator: std.mem.Allocator, file_path: []const u8) ![]Pac
     }
 
     return deps.toOwnedSlice(allocator);
+}
+
+test "stripInlineComment strips YAML inline comments" {
+    const t = std.testing;
+    try t.expectEqualStrings("^24", stripInlineComment("^24 # LTS version (v25 is current but not LTS yet)"));
+    try t.expectEqualStrings("^24", stripInlineComment("^24\t# tab before hash"));
+    try t.expectEqualStrings("^24", stripInlineComment("^24"));
+    try t.expectEqualStrings("", stripInlineComment("# whole-line comment in value position"));
+    try t.expectEqualStrings("foo#bar", stripInlineComment("foo#bar")); // no whitespace before '#': part of value
+    try t.expectEqualStrings("1.2.3", stripInlineComment("1.2.3   #   trailing whitespace"));
+    try t.expectEqualStrings("", stripInlineComment(""));
 }
 
 test "parseDepsFile" {

@@ -53,22 +53,19 @@ pub fn addPackageToLockfile(
 }
 
 /// Execute pre-install hook (project-level)
+///
+/// Only reads `pantry.json` — `package.json` lifecycle scripts are bun/npm's
+/// domain and are run by `bun install` when it executes, so running them here
+/// would double-execute and (in a non-bun PATH context) typically fail.
 pub fn executePreInstallHook(
     allocator: std.mem.Allocator,
     cwd: []const u8,
     verbose: bool,
 ) !?lifecycle.ScriptResult {
-    // Perf: Stack buffers for config file paths (avoids 2 heap allocs)
     var pre_path_buf: [std.fs.max_path_bytes]u8 = undefined;
     const pantry_json_path = std.fmt.bufPrint(&pre_path_buf, "{s}/pantry.json", .{cwd}) catch return null;
 
-    const config_content = io_helper.readFileAlloc(allocator, pantry_json_path, 1024 * 1024) catch |err| blk: {
-        if (err == error.FileNotFound) {
-            const package_json_path = std.fmt.bufPrint(&pre_path_buf, "{s}/package.json", .{cwd}) catch return null;
-            break :blk io_helper.readFileAlloc(allocator, package_json_path, 1024 * 1024) catch return null;
-        }
-        return null;
-    };
+    const config_content = io_helper.readFileAlloc(allocator, pantry_json_path, 1024 * 1024) catch return null;
     defer allocator.free(config_content);
 
     // Quick check: skip full JSON parsing if "preinstall" doesn't appear in the file
@@ -103,23 +100,19 @@ pub fn executePreInstallHook(
 }
 
 /// Execute post-install hook (project-level)
+///
+/// Only reads `pantry.json` — `package.json` lifecycle scripts are bun/npm's
+/// domain and are run by `bun install` when it executes, so running them here
+/// would double-execute and (in a non-bun PATH context) typically fail.
 pub fn executePostInstallHook(
     allocator: std.mem.Allocator,
     cwd: []const u8,
     verbose: bool,
 ) !?lifecycle.ScriptResult {
-    // Perf: Stack buffers for config file paths (avoids 2 heap allocs per install)
     var path_buf: [std.fs.max_path_bytes]u8 = undefined;
     const pantry_json_path = std.fmt.bufPrint(&path_buf, "{s}/pantry.json", .{cwd}) catch return null;
 
-    // Try pantry.json first, then fall back to package.json
-    const config_content_post = io_helper.readFileAlloc(allocator, pantry_json_path, 1024 * 1024) catch |err| blk: {
-        if (err == error.FileNotFound) {
-            const package_json_path = std.fmt.bufPrint(&path_buf, "{s}/package.json", .{cwd}) catch return null;
-            break :blk io_helper.readFileAlloc(allocator, package_json_path, 1024 * 1024) catch return null;
-        }
-        return null;
-    };
+    const config_content_post = io_helper.readFileAlloc(allocator, pantry_json_path, 1024 * 1024) catch return null;
     defer allocator.free(config_content_post);
 
     // Quick check: skip full JSON parsing if "postinstall" doesn't appear in the file

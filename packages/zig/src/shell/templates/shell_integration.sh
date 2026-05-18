@@ -1,5 +1,12 @@
 # Pantry Shell Integration (Zig)
 # Optimized for instant cd with shell-side caching
+#
+# Routing rule: this integration ONLY ever invokes `pantry install`. It never
+# calls `bun install`, `npm install`, etc. directly. `pantry install` is the
+# router — it handles pantry system deps (zig, redis, etc.), workspaces, and
+# delegates to the appropriate JS package manager (bun/pnpm/yarn/npm) for npm
+# deps via deps/js_delegate.zig. If you see "bun install" running after a cd,
+# that is pantry's delegate, not this script.
 
 __PANTRY_CACHE_FILE="${HOME}/.pantry/cache/shell-env.cache"
 
