@@ -134,20 +134,58 @@ pub fn runScriptCommandWithOptions(
     const pantry_bin = try std.fmt.allocPrint(allocator, "{s}/{s}/.bin", .{ effective_root, pantry_config.install.modules_dir });
     defer allocator.free(pantry_bin);
 
-    // Get current PATH and prepend pantry/.bin
+    // Also walk up from cwd adding each node_modules/.bin so JS package
+    // binaries (nuxt, vite, eslint, …) installed by bun/pnpm/npm are
+    // findable. Mirrors lifecycle.zig's PATH walking — without this,
+    // `pantry run dev` (which shells out to e.g. `nuxt dev`) fails with
+    // "command not found" even though `bun install` populated
+    // node_modules/.bin/nuxt.
+    var nm_path_buf = std.ArrayList(u8).empty;
+    defer nm_path_buf.deinit(allocator);
+    {
+        var dir: []const u8 = cwd;
+        while (true) {
+            if (nm_path_buf.items.len > 0) try nm_path_buf.append(allocator, ':');
+            try nm_path_buf.appendSlice(allocator, dir);
+            try nm_path_buf.appendSlice(allocator, "/node_modules/.bin");
+            const parent = std.fs.path.dirname(dir) orelse break;
+            if (std.mem.eql(u8, parent, dir)) break;
+            dir = parent;
+        }
+    }
+
+    // Get current PATH and prepend pantry/.bin then node_modules/.bin chain
     const current_path = io_helper.getEnvVarOwned(allocator, "PATH") catch try allocator.dupe(u8, "/usr/bin:/bin");
     defer allocator.free(current_path);
     const wrapped_command = try std.fmt.allocPrint(
         allocator,
-        "export PATH=\"{s}:{s}\" && {s}",
-        .{ pantry_bin, current_path, display_command },
+        "export PATH=\"{s}:{s}:{s}\" && {s}",
+        .{ pantry_bin, nm_path_buf.items, current_path, display_command },
     );
     defer allocator.free(wrapped_command);
 
-    // Execute with timeout support
-    const result = io_helper.childRunWithOptions(allocator, &[_][]const u8{ "sh", "-c", wrapped_command }, .{
-        .cwd = cwd,
-        .timeout_ms = options.timeout_ms,
+    // Stream the child's stdout/stderr straight through to the user's
+    // terminal instead of buffering it in memory until exit. The
+    // previous implementation called io_helper.childRunWithOptions
+    // which, with timeout_ms == 0, falls through to std.process.run
+    // — that blocks until the child exits and captures stdout/stderr
+    // into allocated buffers, which only get printed below after the
+    // child has returned. That's fine for one-shot scripts (build,
+    // lint, test) but breaks every long-running script (dev servers,
+    // file watchers, `preview`): the URL banner and any progress
+    // output stay invisible until the user kills the process, at
+    // which point pantry finally flushes everything to the terminal
+    // — way too late to be useful. Spawning with inherited stdio
+    // hands the child the same FDs pantry itself has, so writes
+    // from the child appear immediately in the user's terminal.
+    //
+    // With inherited stdio we no longer capture output ourselves —
+    // result.stdout/stderr become empty regardless of timeout — so
+    // the post-exit "Print output" block below is gone too.
+    const argv = [_][]const u8{ "sh", "-c", wrapped_command };
+    var child = std.process.spawn(io_helper.getIo(), .{
+        .argv = &argv,
+        .cwd = io_helper.toCwd(cwd),
     }) catch |err| {
         const msg = try std.fmt.allocPrint(allocator, "Error executing script: {}", .{err});
         return .{
@@ -155,29 +193,29 @@ pub fn runScriptCommandWithOptions(
             .message = msg,
         };
     };
-    defer allocator.free(result.stdout);
-    defer allocator.free(result.stderr);
 
-    // Check for timeout
-    if (result.timed_out) {
-        style.print("{s}Error: Script '{s}' timed out after {d}ms{s}\n", .{
-            style.red,
-            script_name,
-            options.timeout_ms,
-            style.reset,
-        });
-        return .{ .exit_code = 1 };
-    }
+    const wait_result = io_helper.waitWithTimeout(&child, options.timeout_ms) catch |err| {
+        const msg = try std.fmt.allocPrint(allocator, "Error waiting for script: {}", .{err});
+        return .{
+            .exit_code = 1,
+            .message = msg,
+        };
+    };
 
-    // Print output
-    if (result.stdout.len > 0) {
-        style.print("{s}", .{result.stdout});
-    }
-    if (result.stderr.len > 0) {
-        style.print("{s}", .{result.stderr});
-    }
+    const term = switch (wait_result) {
+        .success => |t| t,
+        .timeout => {
+            style.print("{s}Error: Script '{s}' timed out after {d}ms{s}\n", .{
+                style.red,
+                script_name,
+                options.timeout_ms,
+                style.reset,
+            });
+            return .{ .exit_code = 1 };
+        },
+    };
 
-    const exit_code: u8 = switch (result.term) {
+    const exit_code: u8 = switch (term) {
         .exited => |code| if (code <= 255) @intCast(code) else 1,
         else => 1,
     };
