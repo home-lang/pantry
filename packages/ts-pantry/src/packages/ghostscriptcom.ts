@@ -110,6 +110,7 @@ export const ghostscriptcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '10071',
     '10070',
     '10060',
     '10051',
