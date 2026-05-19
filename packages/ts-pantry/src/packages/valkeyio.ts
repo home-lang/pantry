@@ -70,6 +70,7 @@ export const valkeyioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '9.1.0',
     '9.0.4',
     '9.0.3',
     '9.0.2',
