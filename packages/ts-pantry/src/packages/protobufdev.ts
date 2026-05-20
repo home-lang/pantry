@@ -78,6 +78,7 @@ export const protobufdevPackage = {
   */
   versions: [
     '35.0',
+    '34.2',
     '34.1',
     '34.1.0',
     '34.0',
