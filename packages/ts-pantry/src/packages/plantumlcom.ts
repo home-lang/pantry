@@ -77,6 +77,7 @@ export const plantumlcomPackage = {
   */
   versions: [
     '1.2026.4',
+    '1.2026.4-native',
     '1.2026.3',
     '1.2026.3-native',
     '1.2026.2',
