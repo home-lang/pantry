@@ -719,6 +719,7 @@ pub const PublishOptions = struct {
     tag: []const u8 = "latest",
     otp: ?[]const u8 = null,
     registry: []const u8 = "https://registry.pantry.dev", // Pantry registry (default)
+    dry_run: bool = false,
     use_oidc: bool = true, // Try OIDC first, fallback to token
     provenance: bool = true, // Generate provenance metadata
     use_npm: bool = false, // Set to true to publish to npm instead
@@ -1065,6 +1066,11 @@ fn publishSingleToNpm(
     style.print("Access: {s}\n", .{access_str});
     style.print("Registry: {s}\n", .{registry_url});
 
+    if (options.dry_run) {
+        style.print("\n{s}Dry run:{s} package prepared successfully; skipping npm authentication and upload.\n", .{ style.cyan, style.reset });
+        return .{ .exit_code = 0 };
+    }
+
     // Initialize registry client
     var registry_client = try registry.RegistryClient.init(allocator, registry_url);
     defer registry_client.deinit();
@@ -1138,48 +1144,42 @@ fn publishSingleToNpm(
         }
     }
 
-    // Fallback to token authentication
-    // Check NPM_TOKEN first, then NODE_AUTH_TOKEN (used by setup-node action), then ~/.pantry/credentials
-    const auth_token = io_helper.getEnvVarOwned(allocator, "NPM_TOKEN") catch blk: {
-        break :blk io_helper.getEnvVarOwned(allocator, "NODE_AUTH_TOKEN") catch blk2: {
-            break :blk2 readPantryCredential(allocator, "NPM_TOKEN") catch blk3: {
-                break :blk3 readPantryCredential(allocator, "npm_token") catch blk4: {
-                    break :blk4 promptAndSaveToken(allocator) catch |err| {
-                        if (err == error.EnvironmentVariableNotFound or err == error.FileNotFound or err == error.EndOfStream) {
-                            // Check if running in CI (non-interactive)
-                            const is_ci = io_helper.getEnvVarOwned(allocator, "CI") catch null;
-                            if (is_ci) |ci| {
-                                allocator.free(ci);
-                                return CommandResult.err(
-                                    allocator,
-                                    \\Error: No authentication method available in CI.
-                                    \\
-                                    \\Ensure NPM_TOKEN secret is set in your repository:
-                                    \\  gh secret set NPM_TOKEN
-                                    \\
-                                    \\Or configure OIDC trusted publishing on npm.
-                                    ,
-                                );
-                            }
-                            return CommandResult.err(
-                                allocator,
-                                \\Error: No authentication method available.
-                                \\
-                                \\To fix this, you can either:
-                                \\  1. Set NPM_TOKEN environment variable
-                                \\  2. Create ~/.pantry/credentials with your npm token:
-                                \\     NPM_TOKEN=npm_xxxxxxxxxxxx
-                                \\  3. Use OIDC authentication in GitHub Actions (recommended for CI)
-                                \\
-                                \\Get your npm token from: https://www.npmjs.com/settings/tokens
-                                ,
-                            );
-                        }
-                        return CommandResult.err(allocator, "Error: Failed to read auth token");
-                    };
-                };
-            };
-        };
+    // Fallback to token authentication. Accept the environment variable names
+    // used by npm, setup-node, and Bun so workflows do not need package-manager
+    // specific glue just to publish.
+    const auth_token = readNpmAuthToken(allocator, true) catch |err| {
+        if (err == error.EnvironmentVariableNotFound or err == error.FileNotFound or err == error.EndOfStream) {
+            // Check if running in CI (non-interactive)
+            const is_ci = io_helper.getEnvVarOwned(allocator, "CI") catch null;
+            if (is_ci) |ci| {
+                allocator.free(ci);
+                return CommandResult.err(
+                    allocator,
+                    \\Error: No authentication method available in CI.
+                    \\
+                    \\Ensure NPM_TOKEN is set in your repository:
+                    \\  gh secret set NPM_TOKEN
+                    \\
+                    \\Pantry also accepts NODE_AUTH_TOKEN and BUN_AUTH_TOKEN.
+                    \\Or configure OIDC trusted publishing on npm.
+                    ,
+                );
+            }
+            return CommandResult.err(
+                allocator,
+                \\Error: No authentication method available.
+                \\
+                \\To fix this, you can either:
+                \\  1. Set NPM_TOKEN, NODE_AUTH_TOKEN, or BUN_AUTH_TOKEN
+                \\  2. Create ~/.pantry/credentials with your npm token:
+                \\     NPM_TOKEN=npm_xxxxxxxxxxxx
+                \\  3. Use OIDC trusted publishing in GitHub Actions
+                \\
+                \\Get your npm token from: https://www.npmjs.com/settings/tokens
+                ,
+            );
+        }
+        return CommandResult.err(allocator, "Error: Failed to read auth token");
     };
     defer allocator.free(auth_token);
 
@@ -1335,10 +1335,14 @@ fn publishSingleToNpm(
         style.print("\n{d} {s}: {s}/{s}\n", .{ response.status_code, status_text, registry_url, metadata.name });
         style.print(" - {s}\n", .{error_summary});
 
-        // npm returns 404 for invalid or expired tokens — provide a helpful hint
-        if (response.status_code == 404) {
-            style.print("\nHint: npm returns 404 when your auth token is incorrect or has expired.\n", .{});
-            style.print("Verify your token at: https://www.npmjs.com/settings/tokens\n", .{});
+        // npm often returns 404 for token auth failures so private package
+        // names do not leak. Make the actionable path explicit.
+        if (response.status_code == 401 or response.status_code == 404) {
+            style.print("\nHint: npm token authentication failed for {s}.\n", .{metadata.name});
+            style.print("Create an npm Automation or granular access token with read/write access to this package, then store it as NPM_TOKEN.\n", .{});
+            style.print("You can also configure OIDC trusted publishing for this package with:\n", .{});
+            style.print("  pantry publisher:add --package {s} --owner <owner> --repository <repo> --workflow .github/workflows/release.yml\n", .{metadata.name});
+            style.print("Verify tokens at: https://www.npmjs.com/settings/tokens\n", .{});
         }
 
         style.print("Registry: {s}\n", .{registry_url});
@@ -2705,15 +2709,14 @@ pub fn trustedPublisherAddCommand(
         style.print("  Environment: {s}\n", .{e});
     }
 
-    // Get authentication token
-    const auth_token = io_helper.getEnvVarOwned(allocator, "NPM_TOKEN") catch |err| {
-        if (err == error.EnvironmentVariableNotFound) {
+    const auth_token = readNpmAuthToken(allocator, false) catch |err| {
+        if (err == error.EnvironmentVariableNotFound or err == error.FileNotFound) {
             return CommandResult.err(
                 allocator,
-                "Error: NPM_TOKEN environment variable not set. This is required to manage trusted publishers.",
+                "Error: No npm auth token found. Set NPM_TOKEN, NODE_AUTH_TOKEN, or BUN_AUTH_TOKEN, or add NPM_TOKEN to ~/.pantry/credentials.",
             );
         }
-        return CommandResult.err(allocator, "Error: Failed to read NPM_TOKEN");
+        return CommandResult.err(allocator, "Error: Failed to read npm auth token");
     };
     defer allocator.free(auth_token);
 
@@ -2771,15 +2774,14 @@ pub fn trustedPublisherListCommand(
 
     const registry = @import("../../auth/registry.zig");
 
-    // Get authentication token
-    const auth_token = io_helper.getEnvVarOwned(allocator, "NPM_TOKEN") catch |err| {
-        if (err == error.EnvironmentVariableNotFound) {
+    const auth_token = readNpmAuthToken(allocator, false) catch |err| {
+        if (err == error.EnvironmentVariableNotFound or err == error.FileNotFound) {
             return CommandResult.err(
                 allocator,
-                "Error: NPM_TOKEN environment variable not set",
+                "Error: No npm auth token found. Set NPM_TOKEN, NODE_AUTH_TOKEN, or BUN_AUTH_TOKEN, or add NPM_TOKEN to ~/.pantry/credentials.",
             );
         }
-        return CommandResult.err(allocator, "Error: Failed to read NPM_TOKEN");
+        return CommandResult.err(allocator, "Error: Failed to read npm auth token");
     };
     defer allocator.free(auth_token);
 
@@ -2832,7 +2834,7 @@ pub fn trustedPublisherListCommand(
         // Output table format
         if (publishers.len == 0) {
             style.print("No trusted publishers configured for {s}\n", .{options.package});
-            style.print("\nUse 'pantry publisher add' to add a trusted publisher.\n", .{});
+            style.print("\nUse 'pantry publisher:add' to add a trusted publisher.\n", .{});
         } else {
             style.print("Trusted Publishers for {s}:\n\n", .{options.package});
             for (publishers, 0..) |pub_item, i| {
@@ -2874,15 +2876,14 @@ pub fn trustedPublisherRemoveCommand(
         options.package,
     });
 
-    // Get authentication token
-    const auth_token = io_helper.getEnvVarOwned(allocator, "NPM_TOKEN") catch |err| {
-        if (err == error.EnvironmentVariableNotFound) {
+    const auth_token = readNpmAuthToken(allocator, false) catch |err| {
+        if (err == error.EnvironmentVariableNotFound or err == error.FileNotFound) {
             return CommandResult.err(
                 allocator,
-                "Error: NPM_TOKEN environment variable not set",
+                "Error: No npm auth token found. Set NPM_TOKEN, NODE_AUTH_TOKEN, or BUN_AUTH_TOKEN, or add NPM_TOKEN to ~/.pantry/credentials.",
             );
         }
-        return CommandResult.err(allocator, "Error: Failed to read NPM_TOKEN");
+        return CommandResult.err(allocator, "Error: Failed to read npm auth token");
     };
     defer allocator.free(auth_token);
 
@@ -3157,6 +3158,23 @@ fn readPantryCredential(allocator: std.mem.Allocator, key: []const u8) ![]u8 {
     }
 
     return error.EnvironmentVariableNotFound;
+}
+
+fn readNpmAuthToken(allocator: std.mem.Allocator, allow_prompt: bool) ![]u8 {
+    return io_helper.getEnvVarOwned(allocator, "NPM_TOKEN") catch blk: {
+        break :blk io_helper.getEnvVarOwned(allocator, "NODE_AUTH_TOKEN") catch blk2: {
+            break :blk2 io_helper.getEnvVarOwned(allocator, "BUN_AUTH_TOKEN") catch blk3: {
+                break :blk3 readPantryCredential(allocator, "NPM_TOKEN") catch blk4: {
+                    break :blk4 readPantryCredential(allocator, "npm_token") catch {
+                        if (allow_prompt) {
+                            return promptAndSaveToken(allocator);
+                        }
+                        return error.EnvironmentVariableNotFound;
+                    };
+                };
+            };
+        };
+    };
 }
 
 /// Save a credential to ~/.pantry/credentials file

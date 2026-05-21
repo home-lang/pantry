@@ -885,8 +885,8 @@ async function publishPackage(type: string, registryUrl: string, cwd: string): P
     await publishZigPackage(registryUrl, token, cwd)
   }
   else if (type === 'npm') {
-    if (!process.env.NPM_TOKEN && !process.env.NODE_AUTH_TOKEN) {
-      core.warning('NPM_TOKEN is not set — pantry will fall back to OIDC trusted publishing.')
+    if (!process.env.NPM_TOKEN && !process.env.NODE_AUTH_TOKEN && !process.env.BUN_AUTH_TOKEN) {
+      core.warning('NPM_TOKEN, NODE_AUTH_TOKEN, and BUN_AUTH_TOKEN are not set — pantry will fall back to OIDC trusted publishing.')
     }
     core.startGroup('Publishing to npm via pantry')
     await exec.exec('pantry', ['publish', '--npm', '--access', 'public'])

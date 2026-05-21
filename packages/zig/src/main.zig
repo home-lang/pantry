@@ -689,6 +689,7 @@ fn publishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const access_val = ctx.getOption("access") orelse "public";
     const tag = ctx.getOption("tag") orelse "latest";
     const registry_val = ctx.getOption("registry") orelse "https://registry.npmjs.org";
+    const dry_run = ctx.hasOption("dry-run");
     const skip_val = ctx.getOption("skip");
     const github_release = ctx.hasOption("github-release");
     const release_files = ctx.getOption("files");
@@ -698,6 +699,7 @@ fn publishAction(ctx: *cli.BaseCommand.ParseContext) !void {
         .access = access_val,
         .tag = tag,
         .registry = registry_val,
+        .dry_run = dry_run,
         .skip = skip_val,
         .github_release = github_release,
         .release_files = release_files,
@@ -845,6 +847,7 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
             .access = access,
             .tag = tag,
             .registry = "https://registry.npmjs.org",
+            .dry_run = dry_run,
             .skip = skip_val,
             .github_release = github_release,
             .release_files = release_files,
@@ -2759,6 +2762,9 @@ pub fn main() !void {
 
     const npm_registry_opt = cli.Option.init("registry", "registry", "Custom registry URL", .string);
     _ = try npm_publish_cmd.addOption(npm_registry_opt);
+
+    const npm_dry_run_opt = cli.Option.init("dry-run", "dry-run", "Prepare package without authenticating or uploading", .bool);
+    _ = try npm_publish_cmd.addOption(npm_dry_run_opt);
 
     const npm_skip_opt = cli.Option.init("skip", "skip", "Comma-separated package names or directory names to skip", .string);
     _ = try npm_publish_cmd.addOption(npm_skip_opt);
