@@ -6,15 +6,28 @@ const std = @import("std");
 fn resolveDependencyPath(b: *std.Build, package_name: []const u8, entry_point: []const u8, fallback_path: []const u8) []const u8 {
     // pantry/ folder is at the workspace root (../../ from packages/zig/)
     const primary = b.fmt("../../pantry/{s}/{s}", .{ package_name, entry_point });
-    const io = b.graph.io;
     // Try primary path first, fall back to fallback
-    if (b.build_root.handle.access(io, primary, .{})) |_| {
+    const primary_exists = if (@hasField(std.Build.Graph, "io")) blk: {
+        b.build_root.handle.access(b.graph.io, primary, .{}) catch break :blk false;
+        break :blk true;
+    } else blk: {
+        b.build_root.handle.access(primary, .{}) catch break :blk false;
+        break :blk true;
+    };
+    if (primary_exists) {
         return primary;
-    } else |_| {}
+    }
     // Try fallback path
-    if (b.build_root.handle.access(io, fallback_path, .{})) |_| {
+    const fallback_exists = if (@hasField(std.Build.Graph, "io")) blk: {
+        b.build_root.handle.access(b.graph.io, fallback_path, .{}) catch break :blk false;
+        break :blk true;
+    } else blk: {
+        b.build_root.handle.access(fallback_path, .{}) catch break :blk false;
+        break :blk true;
+    };
+    if (fallback_exists) {
         return fallback_path;
-    } else |_| {}
+    }
     // Neither exists - print helpful message and return primary (will fail at compile time with clear error)
     std.debug.print("Warning: dependency '{s}' not found at '{s}' or '{s}'. Run 'pantry install' first.\n", .{ package_name, primary, fallback_path });
     return primary;
@@ -535,8 +548,7 @@ pub fn build(b: *std.Build) void {
 /// Get package version from package.json
 fn getPackageVersion(b: *std.Build) ![]const u8 {
     // Read version directly from root package.json (../../ from packages/zig/)
-    // Compatible with both Zig 0.15 and 0.16-dev
-    const content = if (@hasField(std.Build, "graph"))
+    const content = if (@hasField(std.Build.Graph, "io"))
         b.build_root.handle.readFileAlloc(b.graph.io, "../../package.json", b.allocator, .limited(1024 * 1024)) catch return "0.0.0"
     else
         b.build_root.handle.readFileAlloc(b.allocator, "../../package.json", 1024 * 1024) catch return "0.0.0";
