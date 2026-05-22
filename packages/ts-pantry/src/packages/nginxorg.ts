@@ -70,7 +70,9 @@ export const nginxorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.31.1',
     '1.31.0',
+    '1.30.2',
     '1.30.1',
     '1.30.0',
     '1.29.8',
