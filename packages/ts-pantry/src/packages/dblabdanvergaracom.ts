@@ -67,6 +67,7 @@ export const dblabdanvergaracomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.39.0',
     '0.38.0',
     '0.37.1',
     '0.37.0',
