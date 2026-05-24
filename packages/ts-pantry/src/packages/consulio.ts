@@ -68,6 +68,7 @@ export const consulioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.0.0',
     '1.22.7',
     '1.22.6',
     '1.22.5',
