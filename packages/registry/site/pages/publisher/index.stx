@@ -59,7 +59,7 @@
       return
     }
 
-    fetch('/publisher/api/packages', { headers: authHeaders() })
+    fetch(window.pantryApiUrl('/publisher/api/packages'), { headers: authHeaders() })
       .then(function(r) {
         if (r.status === 401) { window.location.href = '/login?next=/publisher'; return null }
         return r.json()

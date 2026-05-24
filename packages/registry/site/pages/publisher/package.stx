@@ -113,7 +113,7 @@
       deprecMsg.style.display = deprecCb.checked ? 'block' : 'none'
     })
 
-    fetch('/publisher/api/packages/' + encodeURIComponent(pkgName), { headers: authHeaders() })
+    fetch(window.pantryApiUrl('/publisher/api/packages/' + encodeURIComponent(pkgName)), { headers: authHeaders() })
       .then(function(r) {
         if (r.status === 401) { window.location.href = '/login'; return null }
         if (r.status === 403 || r.status === 404) { throw new Error('Package not found or access denied') }
@@ -182,7 +182,7 @@
         },
       }
 
-      fetch('/publisher/api/packages/' + encodeURIComponent(pkgName), {
+      fetch(window.pantryApiUrl('/publisher/api/packages/' + encodeURIComponent(pkgName)), {
         method: 'PATCH',
         headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(body),

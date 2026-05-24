@@ -82,7 +82,7 @@
           var btn = document.getElementById('signup-btn')
           btn.textContent = 'Creating account...'
           btn.disabled = true
-          fetch('/auth/signup', {
+          fetch(window.pantryApiUrl('/auth/signup'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

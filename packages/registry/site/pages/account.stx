@@ -194,7 +194,7 @@
     var logoutBtn = document.getElementById('logout-btn')
     if (logoutBtn) {
       logoutBtn.addEventListener('click', function() {
-        fetch('/auth/logout', { method: 'POST', headers: authHeaders() })
+        fetch(window.pantryApiUrl('/auth/logout'), { method: 'POST', headers: authHeaders() })
           .then(function() {
             localStorage.removeItem('pantry_session')
             localStorage.removeItem('pantry_user')
@@ -230,7 +230,7 @@
         var body = { name: name, permissions: permissions }
         if (expiryVal) body.expiresInDays = parseInt(expiryVal, 10)
 
-        fetch('/auth/tokens', {
+        fetch(window.pantryApiUrl('/auth/tokens'), {
           method: 'POST',
           headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify(body),
@@ -261,7 +261,7 @@
     var tokenId = btn.getAttribute('data-delete-token')
     if (!confirm('Revoke this token? This cannot be undone.')) return
 
-    fetch('/auth/tokens/' + encodeURIComponent(tokenId), {
+    fetch(window.pantryApiUrl('/auth/tokens/' + encodeURIComponent(tokenId)), {
       method: 'DELETE',
       headers: authHeaders(),
     })
