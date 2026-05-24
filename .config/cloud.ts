@@ -77,9 +77,14 @@ const config: CloudConfig = {
 
     cdn: {
       'pantry-site': {
-        origin: 'pantry-dev-site.s3.us-east-1.amazonaws.com',
+        origin: 'pantry-dev-production-pantry-dev-site.s3.us-east-1.amazonaws.com',
         customDomain: 'pantry.dev',
+        routeCompute: true,
       },
+    },
+
+    ssl: {
+      enabled: true,
     },
   },
 
