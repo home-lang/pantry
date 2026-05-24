@@ -3,6 +3,8 @@ import type {
   CommitPublishSummary,
   MetadataStorage,
   PackageMetadata,
+  PackagePublisherSettings,
+  PackageRecord,
   RegistryConfig,
   SearchResult,
   TarballStorage,
@@ -190,7 +192,7 @@ export class Registry {
   /**
    * Publish a package
    */
-  async publish(metadata: PackageMetadata, tarball: ArrayBuffer): Promise<void> {
+  async publish(metadata: PackageMetadata, tarball: ArrayBuffer, publishedBy?: string): Promise<void> {
     const safeName = sanitizePackageName(metadata.name)
     if (!isSafeVersion(metadata.version)) {
       throw new Error(`Invalid package version: ${metadata.version}`)
@@ -212,6 +214,32 @@ export class Registry {
       checksum,
       publishedAt: new Date().toISOString(),
     })
+
+    if (publishedBy && publishedBy !== '_admin') {
+      await this.metadataStorage.setPackagePublisher(metadata.name, publishedBy)
+    }
+  }
+
+  /** List packages owned by a publisher account */
+  async listPublisherPackages(userId: string, limit = 50) {
+    return this.metadataStorage.listPackagesByPublisher(userId, limit)
+  }
+
+  /** Update package metadata/settings (publisher dashboard) */
+  async updatePublisherPackage(
+    name: string,
+    userId: string,
+    updates: Partial<PackageRecord> & { settings?: PackagePublisherSettings },
+  ) {
+    return this.metadataStorage.updatePublisherPackage(name, userId, updates)
+  }
+
+  async getPublisherPackageRecord(name: string) {
+    return this.metadataStorage.getPackage(name)
+  }
+
+  async claimPublisherPackage(name: string, userId: string) {
+    await this.metadataStorage.setPackagePublisher(name, userId)
   }
 
   /**
@@ -229,7 +257,7 @@ export class Registry {
     name: string,
     sha: string,
     tarball: ArrayBuffer,
-    options?: { repository?: string, packageDir?: string, version?: string },
+    options?: { repository?: string, packageDir?: string, version?: string, publishedBy?: string },
   ): Promise<CommitPublish> {
     const safeName = sanitizePackageName(name)
     if (!/^[a-f0-9]{7,40}$/i.test(sha)) {
@@ -255,10 +283,15 @@ export class Registry {
       packageDir: options?.packageDir,
       version: options?.version,
       size: tarball.byteLength,
+      publishedBy: options?.publishedBy,
     }
 
     // Store metadata
     await this.metadataStorage.putCommitPublish(publish)
+
+    if (options?.publishedBy && options.publishedBy !== '_admin') {
+      await this.metadataStorage.setCommitPublisher(name, sha, options.publishedBy)
+    }
 
     return publish
   }

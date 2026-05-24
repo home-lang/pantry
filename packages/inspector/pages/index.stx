@@ -1,116 +1,26 @@
 <script server>
-  const path = require('node:path')
-  const fs = require('node:fs')
-
-  const formatSize = (bytes) => {
-    if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB'
-    if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KB'
-    return bytes + ' B'
-  }
-
-  // Find the project root by looking for pantry.lock
-  let projectRoot = process.env.PANTRY_PROJECT_ROOT || process.cwd()
-  let searchDir = projectRoot
-  while (searchDir !== '/') {
-    if (fs.existsSync(path.join(searchDir, 'pantry.lock'))) {
-      projectRoot = searchDir
-      break
-    }
-    searchDir = path.dirname(searchDir)
-  }
-
-  const lockPath = path.join(projectRoot, 'pantry.lock')
-  let lockData = { version: '0', lockfileVersion: 0, workspaces: {}, packages: {} }
-  if (fs.existsSync(lockPath)) {
-    try { lockData = JSON.parse(fs.readFileSync(lockPath, 'utf-8')) } catch {}
-  }
-
-  const workspaces = Object.entries(lockData.workspaces || {})
-  const allPackages = Object.entries(lockData.packages || {})
-
-  // Categorize packages
-  const pantryPkgs = allPackages.filter(([, v]) => v.source === 'pantry')
-  const npmPkgs = allPackages.filter(([, v]) => v.source === 'npm')
-  const linkedPkgs = allPackages.filter(([, v]) => v.source === 'npm' && (v.version || '').startsWith('link:'))
-
-  // Build dependency graph
-  const depGraph = {}
-  const reverseDepGraph = {}
-  allPackages.forEach(([key, pkg]) => {
-    const deps = Object.keys(pkg.dependencies || {})
-    depGraph[pkg.name || key] = deps
-    deps.forEach(d => {
-      if (!reverseDepGraph[d]) reverseDepGraph[d] = []
-      reverseDepGraph[d].push(pkg.name || key)
-    })
-  })
-
-  // Compute depth for each package (BFS from workspace roots)
-  const depths = {}
-  const queue = []
-  workspaces.forEach(([wsPath, ws]) => {
-    const allDeps = { ...ws.dependencies, ...ws.devDependencies }
-    Object.keys(allDeps).forEach(d => {
-      if (depths[d] === undefined) {
-        depths[d] = 1
-        queue.push(d)
-      }
-    })
-  })
-  while (queue.length > 0) {
-    const current = queue.shift()
-    const pkg = allPackages.find(([, v]) => v.name === current)
-    if (pkg) {
-      const deps = Object.keys(pkg[1].dependencies || {})
-      deps.forEach(d => {
-        if (depths[d] === undefined) {
-          depths[d] = depths[current] + 1
-          queue.push(d)
-        }
-      })
-    }
-  }
-  const maxDepth = Math.max(...Object.values(depths).map(Number), 1)
-
-  // Get transitive dependency counts
-  const transitiveCounts = {}
-  function getTransitiveDeps(name, visited) {
-    if (visited.has(name)) return visited
-    visited.add(name)
-    const pkg = allPackages.find(([, v]) => v.name === name)
-    if (pkg) {
-      Object.keys(pkg[1].dependencies || {}).forEach(d => getTransitiveDeps(d, visited))
-    }
-    return visited
-  }
-
-  allPackages.forEach(([, pkg]) => {
-    const visited = new Set()
-    getTransitiveDeps(pkg.name, visited)
-    visited.delete(pkg.name)
-    transitiveCounts[pkg.name] = visited.size
-  })
-
-  // Most depended on
-  const mostDepended = Object.entries(reverseDepGraph).map(([name, dependents]) => ({ name, count: dependents.length, dependents })).sort((a, b) => b.count - a.count).slice(0, 10)
-
-  // Heaviest transitive dependency chains
-  const heaviestChains = Object.entries(transitiveCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 10)
-
-  // Depth distribution
-  const depthDist = {}
-  Object.values(depths).forEach(d => { depthDist[d] = (depthDist[d] || 0) + 1 })
-  const depthEntries = Object.entries(depthDist).sort((a, b) => Number(a[0]) - Number(b[0]))
-
-  // Source distribution
-  const sourceDistMap = { pantry: pantryPkgs.length, npm: npmPkgs.length - linkedPkgs.length, linked: linkedPkgs.length }
-  const sourceEntries = Object.entries(sourceDistMap).filter(([, v]) => v > 0)
-  const totalPkgs = allPackages.length
-
-  // Package list for grid
-  const packageList = allPackages.map(([key, pkg]) => ({ key, name: pkg.name || key, version: (pkg.version || '').replace(/^\^|~/, ''), source: pkg.source || 'unknown', depCount: Object.keys(pkg.dependencies || {}).length, transitive: transitiveCounts[pkg.name] || 0, depth: depths[pkg.name] || 0, dependents: (reverseDepGraph[pkg.name] || []).length, hasBin: !!pkg.bin, isLinked: (pkg.version || '').startsWith('link:'), peerDeps: Object.keys(pkg.peerDependencies || {}).length })).sort((a, b) => b.dependents - a.dependents || b.transitive - a.transitive)
-
-  const projectName = path.basename(projectRoot)
+  const { analyzeProject, formatSize } = require('../lib/analyze.ts')
+  const a = analyzeProject(process.env.PANTRY_PROJECT_ROOT || process.cwd())
+  const projectName = a.projectName
+  const projectRoot = a.projectRoot
+  const totalPkgs = a.totalPkgs
+  const workspaces = a.workspaces
+  const maxDepth = a.maxDepth
+  const pantryPkgs = a.pantryPkgs
+  const npmPkgs = a.npmPkgs
+  const linkedPkgs = a.linkedPkgs
+  const mostDepended = a.mostDepended
+  const heaviestChains = a.heaviestChains
+  const depthEntries = a.depthEntries
+  const depthDist = a.depthDist
+  const sourceEntries = a.sourceEntries
+  const packageList = a.packageList.map(p => ({
+    ...p,
+    diskFormatted: p.diskBytes ? formatSize(p.diskBytes) : '—',
+  }))
+  const diskTotalFormatted = a.diskTotalFormatted
+  const diskScanned = a.diskScanned
+  const duplicateVersions = a.duplicateVersions
 </script>
 
 <!DOCTYPE html>
@@ -180,6 +90,10 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             Report
           </a>
+          <a href="/workspaces" class="mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-transparent transition-colors" style="color: var(--fg-muted);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            Workspaces
+          </a>
         </nav>
       </div>
       <div class="mono text-xs" style="color: var(--fg-subtle);">{{ projectName }}</div>
@@ -188,7 +102,12 @@
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-16 fade-in">
     <!-- Stats row -->
-    <div class="grid grid-cols-5 gap-3 mb-6">
+    <div class="mono text-xs mb-4 px-3 py-2 rounded-lg border border-[var(--border)]" style="background: var(--bg-subtle); color: var(--fg-subtle);">
+      Project: <span style="color: var(--fg-muted);">{{ projectRoot }}</span>
+      · On disk: <span style="color: var(--accent);">{{ diskTotalFormatted }}</span> ({{ diskScanned }} packages scanned)
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
       <div class="rounded-lg p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
         <p class="mono text-xs uppercase tracking-wider font-medium mb-1" style="color: var(--fg-subtle);">Total Packages</p>
         <p class="text-2xl font-semibold mono leading-tight">{{ totalPkgs }}</p>
@@ -203,11 +122,15 @@
       </div>
       <div class="rounded-lg p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
         <p class="mono text-xs uppercase tracking-wider font-medium mb-1" style="color: var(--fg-subtle);">Pantry Packages</p>
-        <p class="text-2xl font-semibold mono leading-tight" style="color: var(--green);">{{ pantryPkgs.length }}</p>
+        <p class="text-2xl font-semibold mono leading-tight" style="color: var(--green);">{{ pantryPkgs }}</p>
       </div>
       <div class="rounded-lg p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
         <p class="mono text-xs uppercase tracking-wider font-medium mb-1" style="color: var(--fg-subtle);">npm Packages</p>
-        <p class="text-2xl font-semibold mono leading-tight" style="color: var(--amber);">{{ npmPkgs.length }}</p>
+        <p class="text-2xl font-semibold mono leading-tight" style="color: var(--amber);">{{ npmPkgs }}</p>
+      </div>
+      <div class="rounded-lg p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="mono text-xs uppercase tracking-wider font-medium mb-1" style="color: var(--fg-subtle);">Disk (sample)</p>
+        <p class="text-2xl font-semibold mono leading-tight" style="color: var(--purple);">{{ diskTotalFormatted }}</p>
       </div>
     </div>
 
@@ -299,19 +222,22 @@
         </div>
         <div class="p-3">
           <div class="flex flex-col gap-2">
-            @foreach (workspaces as ws)
+            @foreach (workspaces.slice(0, 8) as ws)
             <div class="flex items-center justify-between py-1 px-2 rounded-md" style="background: var(--bg-muted);">
-              <span class="mono text-xs" style="color: var(--fg-muted);">{{ ws[1].name || ws[0] || 'root' }}</span>
-              <div class="flex gap-2">
-                @if (ws[1].dependencies)
-                <span class="mono text-xs px-1.5 py-0.5 rounded" style="background: var(--green-subtle); color: var(--green);">{{ Object.keys(ws[1].dependencies).length }} deps</span>
+              <span class="mono text-xs truncate" style="color: var(--fg-muted); max-width: 10rem;">{{ ws.name }}</span>
+              <div class="flex gap-2 shrink-0">
+                @if (ws.depCount > 0)
+                <span class="mono text-xs px-1.5 py-0.5 rounded" style="background: var(--green-subtle); color: var(--green);">{{ ws.depCount }} deps</span>
                 @endif
-                @if (ws[1].devDependencies)
-                <span class="mono text-xs px-1.5 py-0.5 rounded" style="background: var(--amber-subtle); color: var(--amber);">{{ Object.keys(ws[1].devDependencies).length }} dev</span>
+                @if (ws.devCount > 0)
+                <span class="mono text-xs px-1.5 py-0.5 rounded" style="background: var(--amber-subtle); color: var(--amber);">{{ ws.devCount }} dev</span>
                 @endif
               </div>
             </div>
             @endforeach
+            @if (workspaces.length > 8)
+            <a href="/workspaces" class="mono text-xs text-center py-2" style="color: var(--accent);">View all {{ workspaces.length }} workspaces →</a>
+            @endif
           </div>
         </div>
       </div>

@@ -34,6 +34,23 @@ export interface PackageVersion {
 /**
  * Full package record with all versions
  */
+/** Per-package settings editable by the publisher on pantry.dev */
+export interface PackagePublisherSettings {
+  description?: string
+  homepage?: string
+  repository?: string
+  license?: string
+  keywords?: string[]
+  /** Publish future releases to npmjs (when using pantry publish --npm) */
+  npmPublish?: boolean
+  /** npm package name if different from registry name */
+  npmPackageName?: string
+  npmAccess?: 'public' | 'restricted'
+  visibility?: 'public' | 'unlisted'
+  deprecated?: boolean
+  deprecationMessage?: string
+}
+
 export interface PackageRecord {
   name: string
   description?: string
@@ -47,6 +64,20 @@ export interface PackageRecord {
   createdAt: string
   updatedAt: string
   totalDownloads: number
+  /** Email of the account that owns this package (set on first publish) */
+  publishedBy?: string
+  settings?: PackagePublisherSettings
+}
+
+/** Summary row for the publisher dashboard */
+export interface PublisherPackageSummary {
+  name: string
+  kind: 'registry' | 'commit'
+  latestVersion?: string
+  totalDownloads: number
+  updatedAt: string
+  commitCount: number
+  description?: string
 }
 
 /**
@@ -112,6 +143,8 @@ export interface CommitPublish {
   version?: string
   /** Tarball size in bytes */
   size?: number
+  /** Account that published this commit snapshot */
+  publishedBy?: string
 }
 
 /**
@@ -313,6 +346,16 @@ export interface MetadataStorage {
   getCommitPublish(sha: string, name: string): Promise<CommitPublish | null>
   getCommitPackages(sha: string): Promise<CommitPublish[]>
   getPackageCommits(name: string, limit?: number): Promise<CommitPublish[]>
+
+  // Publisher dashboard
+  listPackagesByPublisher(userId: string, limit?: number): Promise<PublisherPackageSummary[]>
+  updatePublisherPackage(
+    name: string,
+    userId: string,
+    updates: Partial<PackageRecord> & { settings?: PackagePublisherSettings },
+  ): Promise<PackageRecord>
+  setPackagePublisher(name: string, userId: string): Promise<void>
+  setCommitPublisher(name: string, sha: string, userId: string): Promise<void>
 
   // Paywall operations
   getPaywall(name: string): Promise<PackagePaywall | null>

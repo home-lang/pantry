@@ -106,6 +106,20 @@ Bun.serve({
       pathname = pathname.slice(0, -1)
     }
 
+    // JSON API for tooling / CI
+    if (pathname === '/api/project.json') {
+      try {
+        const { analyzeProject } = await import('./lib/analyze.ts')
+        const analysis = analyzeProject(process.env.PANTRY_PROJECT_ROOT || process.cwd())
+        return Response.json(analysis, {
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      catch (err: any) {
+        return Response.json({ error: err.message || String(err) }, { status: 500 })
+      }
+    }
+
     // Try to find matching route
     for (const route of routes) {
       const match = pathname.match(route.pattern)

@@ -384,6 +384,14 @@ export function createHandler(
         return handleSiteAuth(path, req, authService, corsHeaders)
       }
 
+      // Publisher dashboard (API + site)
+      if (authService) {
+        const publisherApi = await handlePublisherApi(path, req, registry, analyticsStorage, authService, corsHeaders)
+        if (publisherApi) return publisherApi
+        const publisherSite = await handlePublisherSite(path, req, authService, corsHeaders)
+        if (publisherSite) return publisherSite
+      }
+
       // Desktop apps listing — returns all desktop apps with live version info from S3
       if (path === '/desktop-apps' && req.method === 'GET') {
         const category = url.searchParams.get('category') || ''
@@ -1339,7 +1347,8 @@ async function handlePublish(
 
     const tarball = await tarballFile.arrayBuffer()
 
-    await registry.publish(metadata, tarball)
+    const publisherId = authResult.userId && authResult.userId !== '_admin' ? authResult.userId : undefined
+    await registry.publish(metadata, tarball, publisherId)
 
     return Response.json(
       { success: true, message: `Published ${metadata.name}@${metadata.version}` },
@@ -1395,7 +1404,8 @@ async function handlePublish(
       )
     }
 
-    await registry.publish(metadata, tarball)
+    const publisherIdJson = authResult.userId && authResult.userId !== '_admin' ? authResult.userId : undefined
+    await registry.publish(metadata, tarball, publisherIdJson)
 
     return Response.json(
       { success: true, message: `Published ${metadata.name}@${metadata.version}` },
@@ -1473,6 +1483,7 @@ async function handleCommitPublish(
     }
 
     const results: Array<{ name: string, url: string, sha: string }> = []
+    const publisherId = authResult.userId && authResult.userId !== '_admin' ? authResult.userId : undefined
 
     for (const pkg of metadata.packages) {
       const tarballFile = formData.get(`package:${pkg.name}`)
@@ -1492,6 +1503,7 @@ async function handleCommitPublish(
         repository: metadata.repository,
         packageDir: pkg.packageDir,
         version: pkg.version,
+        publishedBy: publisherId,
       })
 
       results.push({
@@ -1536,6 +1548,7 @@ async function handleCommitPublish(
     }
 
     const results: Array<{ name: string, url: string, sha: string }> = []
+    const publisherIdJson = authResult.userId && authResult.userId !== '_admin' ? authResult.userId : undefined
 
     for (const pkg of body.packages) {
       let tarball: ArrayBuffer
@@ -1560,6 +1573,7 @@ async function handleCommitPublish(
         repository: body.repository,
         packageDir: pkg.packageDir,
         version: pkg.version,
+        publishedBy: publisherIdJson,
       })
 
       results.push({
@@ -1874,6 +1888,157 @@ async function handleSiteAuth(
   }
 
   return htmlResponse(await renderSitePage('404.stx', { title: 'Not Found' }), 404)
+}
+
+// ---------------------------------------------------------------------------
+// Publisher dashboard (session-authenticated)
+// ---------------------------------------------------------------------------
+
+async function requireSessionUser(
+  req: Request,
+  auth: AuthService,
+): Promise<{ email: string, name: string } | Response> {
+  const sessionToken = extractSessionToken(req)
+  if (!sessionToken) {
+    return Response.json({ error: 'Authentication required' }, { status: 401 })
+  }
+  const user = await auth.validateSession(sessionToken)
+  if (!user) {
+    return Response.json({ error: 'Invalid or expired session' }, { status: 401 })
+  }
+  return user
+}
+
+function canManagePackage(pkg: { publishedBy?: string } | null, userId: string): boolean {
+  if (!pkg) return false
+  if (userId === '_admin') return true
+  if (!pkg.publishedBy) return true
+  return pkg.publishedBy === userId
+}
+
+async function handlePublisherApi(
+  path: string,
+  req: Request,
+  registry: Registry,
+  analyticsStorage: AnalyticsStorage,
+  auth: AuthService,
+  corsHeaders: Record<string, string>,
+): Promise<Response | null> {
+  if (!path.startsWith('/publisher/api/')) return null
+
+  const userResult = await requireSessionUser(req, auth)
+  if (userResult instanceof Response) {
+    const errBody = await userResult.text()
+    return new Response(errBody, {
+      status: userResult.status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+  const userId = userResult.email
+
+  if (path === '/publisher/api/packages' && req.method === 'GET') {
+    const packages = await registry.listPublisherPackages(userId)
+    return Response.json({ packages }, { headers: corsHeaders })
+  }
+
+  const pkgMatch = path.match(/^\/publisher\/api\/packages\/(.+)$/)
+  if (pkgMatch) {
+    const name = decodeURIComponent(pkgMatch[1])
+
+    if (req.method === 'GET') {
+      const record = await registry.getPublisherPackageRecord(name)
+      if (!record || !canManagePackage(record, userId)) {
+        return Response.json({ error: 'Package not found or access denied' }, { status: 403, headers: corsHeaders })
+      }
+      const stats = await analyticsStorage.getPackageStats(name)
+      const commits = await registry.getPackageCommits(name, 15)
+      return Response.json({
+        package: record,
+        stats: {
+          totalDownloads: stats?.totalDownloads ?? record.totalDownloads,
+          downloads30d: stats?.monthlyDownloads ?? 0,
+          weeklyDownloads: stats?.weeklyDownloads ?? 0,
+        },
+        commits,
+      }, { headers: corsHeaders })
+    }
+
+    if (req.method === 'PATCH') {
+      const record = await registry.getPublisherPackageRecord(name)
+      if (!record || !canManagePackage(record, userId)) {
+        return Response.json({ error: 'Package not found or access denied' }, { status: 403, headers: corsHeaders })
+      }
+      let body: {
+        description?: string
+        homepage?: string
+        repository?: string
+        license?: string
+        settings?: Record<string, unknown>
+      }
+      try {
+        body = await req.json() as typeof body
+      }
+      catch {
+        return Response.json({ error: 'Invalid JSON' }, { status: 400, headers: corsHeaders })
+      }
+      if (!record.publishedBy) {
+        await registry.claimPublisherPackage(name, userId)
+      }
+      const updated = await registry.updatePublisherPackage(name, userId, {
+        description: body.description,
+        homepage: body.homepage,
+        repository: body.repository,
+        license: body.license,
+        settings: body.settings as any,
+      })
+      return Response.json({ package: updated }, { headers: corsHeaders })
+    }
+  }
+
+  return Response.json({ error: 'Not found' }, { status: 404, headers: corsHeaders })
+}
+
+async function handlePublisherSite(
+  path: string,
+  req: Request,
+  auth: AuthService,
+  corsHeaders: Record<string, string>,
+): Promise<Response | null> {
+  if (path === '/publisher' || path.startsWith('/publisher/package/')) {
+    const sessionToken = extractSessionToken(req)
+    if (!sessionToken) {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: `/login?next=${encodeURIComponent(path)}`, ...corsHeaders },
+      })
+    }
+    const user = await auth.validateSession(sessionToken)
+    if (!user) {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: '/login', ...corsHeaders },
+      })
+    }
+
+    if (path === '/publisher') {
+      const html = await renderSitePage('publisher/index.stx', {
+        title: 'Publisher',
+        metaDescription: 'Manage your published packages on pantry.dev',
+        canonicalUrl: 'https://pantry.dev/publisher',
+      })
+      return htmlResponse(html)
+    }
+
+    const pkgMatch = path.match(/^\/publisher\/package\/(.+)$/)
+    if (pkgMatch) {
+      const html = await renderSitePage('publisher/package.stx', {
+        title: 'Package settings',
+        canonicalUrl: `https://pantry.dev/publisher/package/${encodeURIComponent(decodeURIComponent(pkgMatch[1]))}`,
+      })
+      return htmlResponse(html)
+    }
+  }
+  return null
 }
 
 // ---------------------------------------------------------------------------

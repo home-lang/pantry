@@ -16,7 +16,9 @@ import type {
   PackageAccessGrant,
   PackageMetadata,
   PackagePaywall,
+  PackagePublisherSettings,
   PackageRecord,
+  PublisherPackageSummary,
   SearchResult,
 } from '../types'
 import { DynamoDBClient } from './dynamodb-client'
@@ -91,6 +93,8 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
       totalDownloads: data.totalDownloads || 0,
+      publishedBy: data.publishedBy,
+      settings: data.settings,
     }
   }
 
@@ -406,8 +410,13 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
         packageDir: publish.packageDir || '',
         version: publish.version || '',
         size: publish.size || 0,
+        publishedBy: publish.publishedBy || '',
       }),
     })
+
+    if (publish.publishedBy) {
+      await this.putPublisherIndex(publish.publishedBy, publish.name, 'commit', publish.publishedAt || now)
+    }
 
     // Reverse lookup: COMMIT_PACKAGE#{name} / SHA#{sha}
     await this.db.putItem({
@@ -500,6 +509,113 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
         repository: data.repository,
       }
     })
+  }
+
+  // ===========================================================================
+  // Publisher dashboard
+  // ===========================================================================
+
+  private async putPublisherIndex(userId: string, name: string, kind: 'registry' | 'commit', updatedAt: string): Promise<void> {
+    await this.db.putItem({
+      TableName: this.tableName,
+      Item: DynamoDBClient.marshal({
+        PK: `PUBLISHER#${userId}`,
+        SK: `PACKAGE#${name}`,
+        name,
+        kind,
+        updatedAt,
+      }),
+    })
+  }
+
+  async setPackagePublisher(name: string, userId: string): Promise<void> {
+    const pkg = await this.getPackage(name)
+    if (!pkg) return
+    if (pkg.publishedBy) return
+    const now = new Date().toISOString()
+    await this.db.updateItem({
+      TableName: this.tableName,
+      Key: { PK: { S: `PACKAGE#${name}` }, SK: { S: 'METADATA' } },
+      UpdateExpression: 'SET publishedBy = :uid, updatedAt = :now',
+      ExpressionAttributeValues: { ':uid': { S: userId }, ':now': { S: now } },
+    } as any)
+    await this.putPublisherIndex(userId, name, 'registry', now)
+  }
+
+  async setCommitPublisher(name: string, sha: string, userId: string): Promise<void> {
+    await this.putPublisherIndex(userId, name, 'commit', new Date().toISOString())
+    try {
+      await this.db.updateItem({
+        TableName: this.tableName,
+        Key: { PK: { S: `COMMIT#${sha}` }, SK: { S: `PACKAGE#${name}` } },
+        UpdateExpression: 'SET publishedBy = :uid',
+        ExpressionAttributeValues: { ':uid': { S: userId } },
+      } as any)
+    }
+    catch {
+      // commit record may use different key layout — index is enough for dashboard
+    }
+  }
+
+  async listPackagesByPublisher(userId: string, limit = 50): Promise<PublisherPackageSummary[]> {
+    const result = await this.db.query({
+      TableName: this.tableName,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
+      ExpressionAttributeValues: {
+        ':pk': { S: `PUBLISHER#${userId}` },
+        ':prefix': { S: 'PACKAGE#' },
+      },
+      Limit: limit,
+    })
+
+    const summaries: PublisherPackageSummary[] = []
+    for (const item of result.Items) {
+      const data = DynamoDBClient.unmarshal(item)
+      const pkg = await this.getPackage(data.name)
+      const commits = await this.getPackageCommits(data.name, 20)
+      summaries.push({
+        name: data.name,
+        kind: pkg ? 'registry' : 'commit',
+        latestVersion: pkg?.latestVersion,
+        totalDownloads: pkg?.totalDownloads || 0,
+        updatedAt: pkg?.updatedAt || data.updatedAt,
+        commitCount: commits.length,
+        description: pkg?.description,
+      })
+    }
+    return summaries.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  }
+
+  async updatePublisherPackage(
+    name: string,
+    userId: string,
+    updates: Partial<PackageRecord> & { settings?: PackagePublisherSettings },
+  ): Promise<PackageRecord> {
+    const pkg = await this.getPackage(name)
+    if (!pkg) throw new Error('Package not found')
+    if (pkg.publishedBy && pkg.publishedBy !== userId && userId !== '_admin') {
+      throw new Error('Not authorized to update this package')
+    }
+
+    const now = new Date().toISOString()
+    const mergedSettings = updates.settings ? { ...pkg.settings, ...updates.settings } : pkg.settings
+
+    await this.db.updateItem({
+      TableName: this.tableName,
+      Key: { PK: { S: `PACKAGE#${name}` }, SK: { S: 'METADATA' } },
+      UpdateExpression: 'SET updatedAt = :now, description = :desc, homepage = :home, repository = :repo, license = :lic, keywords = :kw, settings = :settings',
+      ExpressionAttributeValues: {
+        ':now': { S: now },
+        ':desc': { S: updates.description ?? pkg.description ?? '' },
+        ':home': { S: updates.homepage ?? pkg.homepage ?? '' },
+        ':repo': { S: updates.repository ?? pkg.repository ?? '' },
+        ':lic': { S: updates.license ?? pkg.license ?? '' },
+        ':kw': { S: JSON.stringify(updates.keywords ?? pkg.keywords ?? []) },
+        ':settings': { S: JSON.stringify(mergedSettings || {}) },
+      },
+    } as any)
+
+    return (await this.getPackage(name))!
   }
 
   // ===========================================================================

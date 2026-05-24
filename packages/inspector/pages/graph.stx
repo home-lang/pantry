@@ -1,66 +1,9 @@
 <script server>
-  const path = require('node:path')
-  const fs = require('node:fs')
-
-  let projectRoot = process.env.PANTRY_PROJECT_ROOT || process.cwd()
-  let searchDir = projectRoot
-  while (searchDir !== '/') {
-    if (fs.existsSync(path.join(searchDir, 'pantry.lock'))) {
-      projectRoot = searchDir
-      break
-    }
-    searchDir = path.dirname(searchDir)
-  }
-
-  const lockPath = path.join(projectRoot, 'pantry.lock')
-  let lockData = { workspaces: {}, packages: {} }
-  if (fs.existsSync(lockPath)) {
-    try { lockData = JSON.parse(fs.readFileSync(lockPath, 'utf-8')) } catch {}
-  }
-
-  const workspaces = Object.entries(lockData.workspaces || {})
-  const allPackages = Object.entries(lockData.packages || {})
-
-  // Build nodes and edges for the dependency graph
-  const nodes = []
-  const edges = []
-  const nodeSet = new Set()
-
-  // Add workspace nodes
-  workspaces.forEach(([wsPath, ws]) => {
-    const name = ws.name || wsPath || 'root'
-    if (!nodeSet.has(name)) {
-      nodeSet.add(name)
-      nodes.push({ id: name, type: 'workspace', depCount: Object.keys({ ...ws.dependencies, ...ws.devDependencies }).length })
-    }
-    const allDeps = { ...ws.dependencies, ...ws.devDependencies }
-    Object.keys(allDeps).forEach(dep => {
-      edges.push({ from: name, to: dep, type: ws.devDependencies && ws.devDependencies[dep] ? 'dev' : 'prod' })
-    })
-  })
-
-  // Add package nodes
-  allPackages.forEach(([key, pkg]) => {
-    const name = pkg.name || key
-    if (!nodeSet.has(name)) {
-      nodeSet.add(name)
-      nodes.push({ id: name, type: pkg.source || 'unknown', depCount: Object.keys(pkg.dependencies || {}).length })
-    }
-    Object.keys(pkg.dependencies || {}).forEach(dep => {
-      edges.push({ from: name, to: dep, type: 'prod' })
-      if (!nodeSet.has(dep)) {
-        nodeSet.add(dep)
-        nodes.push({ id: dep, type: 'unknown', depCount: 0 })
-      }
-    })
-  })
-
-  // Compute in-degree for sizing
-  const inDegree = {}
-  edges.forEach(e => { inDegree[e.to] = (inDegree[e.to] || 0) + 1 })
-  nodes.forEach(n => { n.inDegree = inDegree[n.id] || 0 })
-
-  const projectName = path.basename(projectRoot)
+  const { analyzeProject } = require('../lib/analyze.ts')
+  const a = analyzeProject(process.env.PANTRY_PROJECT_ROOT || process.cwd())
+  const projectName = a.projectName
+  const nodes = a.graphNodes
+  const edges = a.graphEdges
   const nodesJSON = JSON.stringify(nodes)
   const edgesJSON = JSON.stringify(edges)
 </script>

@@ -1,0 +1,95 @@
+<!-- Publisher dashboard — list owned packages -->
+
+<section class="py-12 pb-20">
+  <div class="max-w-5xl mx-auto px-6">
+    <div class="flex items-center justify-between mb-8 animate-fade-in">
+      <div>
+        <h1 class="text-2xl font-semibold mb-1">Publisher dashboard</h1>
+        <p class="text-sm" style="color: var(--fg-muted);">
+          Manage packages you have published to pantry.dev
+        </p>
+      </div>
+      <a href="/account" class="text-sm hvr-fg transition-colors" style="color: var(--fg-subtle);">Account & tokens →</a>
+    </div>
+
+    <div id="publisher-loading" class="text-center py-16" style="color: var(--fg-subtle);">
+      <p class="text-sm">Loading your packages…</p>
+    </div>
+
+    <div id="publisher-empty" class="text-center py-16 border border-[var(--border)] rounded-lg" style="background: var(--bg-subtle); display: none;">
+      <p class="text-sm mb-4" style="color: var(--fg-muted);">No published packages yet.</p>
+      <p class="text-xs mb-6" style="color: var(--fg-subtle); max-width: 28rem; margin-left: auto; margin-right: auto;">
+        Publish from CI with <code class="font-mono px-1 py-0.5 rounded" style="background: var(--bg-muted);">pantry publish:commit './packages/*'</code>
+        or semver publish with your API token.
+      </p>
+      <a href="/docs" class="text-sm px-4 py-2 rounded-lg" style="background: var(--accent); color: var(--bg);">Read the docs</a>
+    </div>
+
+    <div id="publisher-list" style="display: none;">
+      <div class="border border-[var(--border)] rounded-lg overflow-hidden">
+        <table class="w-full">
+          <thead>
+            <tr style="background: var(--bg-subtle);">
+              <th class="text-left text-xs font-medium uppercase tracking-wider px-4 py-3" style="color: var(--fg-subtle);">Package</th>
+              <th class="text-left text-xs font-medium uppercase tracking-wider px-4 py-3" style="color: var(--fg-subtle);">Latest</th>
+              <th class="text-right text-xs font-medium uppercase tracking-wider px-4 py-3" style="color: var(--fg-subtle);">Downloads</th>
+              <th class="text-right text-xs font-medium uppercase tracking-wider px-4 py-3" style="color: var(--fg-subtle);">Commits</th>
+              <th class="text-right text-xs font-medium uppercase tracking-wider px-4 py-3" style="color: var(--fg-subtle);">Updated</th>
+              <th class="text-right text-xs font-medium uppercase tracking-wider px-4 py-3" style="color: var(--fg-subtle);"></th>
+            </tr>
+          </thead>
+          <tbody id="publisher-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script client>
+  function authHeaders(extra) {
+    var h = extra || {}
+    var s = localStorage.getItem('pantry_session')
+    if (s) h['Authorization'] = 'Bearer ' + s
+    return h
+  }
+
+  ;(function() {
+    if (!localStorage.getItem('pantry_session')) {
+      window.location.href = '/login?next=' + encodeURIComponent('/publisher')
+      return
+    }
+
+    fetch('/publisher/api/packages', { headers: authHeaders() })
+      .then(function(r) {
+        if (r.status === 401) { window.location.href = '/login?next=/publisher'; return null }
+        return r.json()
+      })
+      .then(function(data) {
+        document.getElementById('publisher-loading').style.display = 'none'
+        if (!data || !data.packages) return
+        if (data.packages.length === 0) {
+          document.getElementById('publisher-empty').style.display = 'block'
+          return
+        }
+        document.getElementById('publisher-list').style.display = 'block'
+        var tbody = document.getElementById('publisher-tbody')
+        data.packages.forEach(function(pkg) {
+          var tr = document.createElement('tr')
+          tr.className = 'border-t border-[var(--border)]'
+          var updated = (pkg.updatedAt || '').split('T')[0]
+          tr.innerHTML =
+            '<td class="px-4 py-3"><a href="/publisher/package/' + encodeURIComponent(pkg.name) + '" class="font-mono text-sm font-medium hvr-accent">' + pkg.name + '</a>' +
+            (pkg.description ? '<p class="text-xs mt-0.5 truncate max-w-xs" style="color: var(--fg-subtle);">' + pkg.description + '</p>' : '') + '</td>' +
+            '<td class="px-4 py-3 font-mono text-xs" style="color: var(--fg-muted);">' + (pkg.latestVersion || '—') + '</td>' +
+            '<td class="px-4 py-3 text-right font-mono text-xs" style="color: var(--fg-subtle);">' + (pkg.totalDownloads || 0).toLocaleString() + '</td>' +
+            '<td class="px-4 py-3 text-right font-mono text-xs" style="color: var(--fg-subtle);">' + (pkg.commitCount || 0) + '</td>' +
+            '<td class="px-4 py-3 text-right text-xs" style="color: var(--fg-subtle);">' + updated + '</td>' +
+            '<td class="px-4 py-3 text-right"><a href="/package/' + encodeURIComponent(pkg.name) + '" class="text-xs hvr-fg" style="color: var(--fg-muted);">public</a></td>'
+          tbody.appendChild(tr)
+        })
+      })
+      .catch(function() {
+        document.getElementById('publisher-loading').innerHTML = '<p class="text-sm" style="color: var(--red);">Failed to load packages.</p>'
+      })
+  })()
+</script>

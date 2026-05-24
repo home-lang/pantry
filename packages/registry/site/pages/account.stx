@@ -23,6 +23,17 @@
       </form>
     </div>
 
+    <!-- Publisher dashboard -->
+    <div class="mb-8 p-4 rounded-lg border border-[var(--border)] animate-fade-in" style="background: var(--bg-subtle);">
+      <h2 class="text-lg font-semibold mb-2">Published packages</h2>
+      <p class="text-sm mb-4" style="color: var(--fg-muted);">
+        View download stats, edit package metadata, and configure npm publishing settings.
+      </p>
+      <a href="/publisher" class="inline-block text-sm px-4 py-2 rounded-lg font-medium transition-colors" style="background: var(--accent); color: var(--bg);">
+        Open publisher dashboard
+      </a>
+    </div>
+
     <!-- API Tokens Section -->
     <div class="animate-fade-in-delay">
       <div class="flex items-center justify-between mb-4">

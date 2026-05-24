@@ -387,6 +387,7 @@
         </a>
 
         <!-- Account / Login -->
+        <a href="/publisher" class="hvr-fg transition-colors" style="color: var(--fg-muted);" data-tooltip="Publisher dashboard">Publish</a>
         <a href="/account" class="hvr-fg transition-colors" style="color: var(--fg-muted);" data-tooltip="Account" id="nav-account-link">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </a>

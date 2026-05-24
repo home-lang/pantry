@@ -4,7 +4,9 @@ import type {
   PackageAccessGrant,
   PackageMetadata,
   PackagePaywall,
+  PackagePublisherSettings,
   PackageRecord,
+  PublisherPackageSummary,
   SearchResult,
 } from '../types'
 
@@ -89,7 +91,6 @@ export class InMemoryMetadataStorage implements MetadataStorage {
     pkg.license = metadata.license || pkg.license
     pkg.author = metadata.author || pkg.author
     pkg.keywords = metadata.keywords || pkg.keywords
-
     this.packages.set(name, pkg)
   }
 
@@ -144,6 +145,90 @@ export class InMemoryMetadataStorage implements MetadataStorage {
   // Commit publish operations (in-memory)
   private commits: Map<string, CommitPublish[]> = new Map()
   private packageCommits: Map<string, CommitPublish[]> = new Map()
+  private publisherCommitNames: Map<string, Set<string>> = new Map()
+
+  async setPackagePublisher(name: string, userId: string): Promise<void> {
+    const pkg = this.packages.get(name)
+    if (pkg && !pkg.publishedBy) {
+      pkg.publishedBy = userId
+      pkg.updatedAt = new Date().toISOString()
+      this.packages.set(name, pkg)
+    }
+  }
+
+  async setCommitPublisher(name: string, sha: string, userId: string): Promise<void> {
+    const list = this.packageCommits.get(name) || []
+    const entry = list.find(p => p.sha === sha)
+    if (entry && !entry.publishedBy) {
+      entry.publishedBy = userId
+    }
+    if (!this.publisherCommitNames.has(userId)) {
+      this.publisherCommitNames.set(userId, new Set())
+    }
+    this.publisherCommitNames.get(userId)!.add(name)
+  }
+
+  async listPackagesByPublisher(userId: string, limit = 50): Promise<PublisherPackageSummary[]> {
+    const summaries = new Map<string, PublisherPackageSummary>()
+
+    for (const pkg of this.packages.values()) {
+      if (pkg.publishedBy !== userId) continue
+      const commits = this.packageCommits.get(pkg.name) || []
+      summaries.set(pkg.name, {
+        name: pkg.name,
+        kind: 'registry',
+        latestVersion: pkg.latestVersion,
+        totalDownloads: pkg.totalDownloads,
+        updatedAt: pkg.updatedAt,
+        commitCount: commits.length,
+        description: pkg.description,
+      })
+    }
+
+    const commitOnly = this.publisherCommitNames.get(userId) || new Set()
+    for (const name of commitOnly) {
+      if (summaries.has(name)) continue
+      const commits = (this.packageCommits.get(name) || []).filter(c => c.publishedBy === userId)
+      if (commits.length === 0) continue
+      const latest = commits[commits.length - 1]
+      summaries.set(name, {
+        name,
+        kind: 'commit',
+        totalDownloads: 0,
+        updatedAt: latest.publishedAt,
+        commitCount: commits.length,
+      })
+    }
+
+    return [...summaries.values()]
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .slice(0, limit)
+  }
+
+  async updatePublisherPackage(
+    name: string,
+    userId: string,
+    updates: Partial<PackageRecord> & { settings?: PackagePublisherSettings },
+  ): Promise<PackageRecord> {
+    const pkg = this.packages.get(name)
+    if (!pkg) throw new Error('Package not found')
+    if (pkg.publishedBy && pkg.publishedBy !== userId && userId !== '_admin') {
+      throw new Error('Not authorized to update this package')
+    }
+
+    if (updates.description !== undefined) pkg.description = updates.description
+    if (updates.homepage !== undefined) pkg.homepage = updates.homepage
+    if (updates.repository !== undefined) pkg.repository = updates.repository
+    if (updates.license !== undefined) pkg.license = updates.license
+    if (updates.keywords !== undefined) pkg.keywords = updates.keywords
+    if (updates.author !== undefined) pkg.author = updates.author
+    if (updates.settings) {
+      pkg.settings = { ...pkg.settings, ...updates.settings }
+    }
+    pkg.updatedAt = new Date().toISOString()
+    this.packages.set(name, pkg)
+    return pkg
+  }
 
   async putCommitPublish(publish: CommitPublish): Promise<void> {
     const key = publish.sha

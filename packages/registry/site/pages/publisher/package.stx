@@ -1,0 +1,206 @@
+<!-- Publisher package settings & stats -->
+
+<section class="py-12 pb-20">
+  <div class="max-w-3xl mx-auto px-6">
+    <a href="/publisher" class="inline-flex items-center gap-1.5 mb-6 hvr-fg transition-colors" style="font-size: 0.8125rem; color: var(--fg-subtle);">&larr; Publisher dashboard</a>
+
+    <div id="pkg-loading" class="text-center py-12" style="color: var(--fg-subtle);">
+      <p class="text-sm">Loading package…</p>
+    </div>
+
+    <div id="pkg-content" style="display: none;">
+      <div class="mb-8 animate-fade-in">
+        <h1 class="text-2xl font-semibold font-mono mb-2" id="pkg-title"></h1>
+        <div class="flex flex-wrap gap-4 text-sm" id="pkg-stats" style="color: var(--fg-muted);"></div>
+      </div>
+
+      <form id="pkg-settings-form" class="flex flex-col gap-6 animate-fade-in-delay">
+        <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+          <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Package info</h2>
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label for="description" class="text-sm font-medium" style="color: var(--fg-muted);">Description</label>
+              <textarea id="description" rows="3" class="bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)]" style="color: var(--fg);"></textarea>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label for="homepage" class="text-sm font-medium" style="color: var(--fg-muted);">Homepage</label>
+              <input type="url" id="homepage" class="bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm font-mono outline-none focus:border-[var(--accent)]" style="color: var(--fg);" />
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label for="repository" class="text-sm font-medium" style="color: var(--fg-muted);">Repository</label>
+              <input type="url" id="repository" class="bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm font-mono outline-none focus:border-[var(--accent)]" style="color: var(--fg);" />
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label for="license" class="text-sm font-medium" style="color: var(--fg-muted);">License</label>
+              <input type="text" id="license" class="bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm font-mono outline-none focus:border-[var(--accent)]" style="color: var(--fg);" />
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+          <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">npm publishing</h2>
+          <p class="text-xs mb-4" style="color: var(--fg-subtle);">Configure how this package is published to npm when you run <code class="font-mono">pantry publish --npm</code>.</p>
+          <div class="flex flex-col gap-4">
+            <label class="flex items-center gap-2 text-sm cursor-pointer" style="color: var(--fg-muted);">
+              <input type="checkbox" id="npm-publish" class="accent-[var(--accent)]" />
+              Enable npm publish for this package
+            </label>
+            <div class="flex flex-col gap-1.5">
+              <label for="npm-package-name" class="text-sm font-medium" style="color: var(--fg-muted);">npm package name (optional override)</label>
+              <input type="text" id="npm-package-name" placeholder="defaults to registry name" class="bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm font-mono outline-none focus:border-[var(--accent)]" style="color: var(--fg);" />
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label for="npm-access" class="text-sm font-medium" style="color: var(--fg-muted);">npm access</label>
+              <select id="npm-access" class="bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)]" style="color: var(--fg);">
+                <option value="public">public</option>
+                <option value="restricted">restricted</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+          <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Visibility</h2>
+          <div class="flex flex-col gap-1.5">
+            <label for="visibility" class="text-sm font-medium" style="color: var(--fg-muted);">pantry.dev listing</label>
+            <select id="visibility" class="bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)]" style="color: var(--fg);">
+              <option value="public">Public — listed in search</option>
+              <option value="unlisted">Unlisted — direct link only</option>
+            </select>
+          </div>
+          <label class="flex items-center gap-2 text-sm mt-4 cursor-pointer" style="color: var(--fg-muted);">
+            <input type="checkbox" id="deprecated" class="accent-[var(--accent)]" />
+            Mark package as deprecated
+          </label>
+          <input type="text" id="deprecation-message" placeholder="Deprecation message" class="mt-2 w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)]" style="color: var(--fg); display: none;" />
+        </div>
+
+        <div id="save-status" class="text-sm" style="display: none;"></div>
+
+        <button type="submit" class="rounded-lg px-4 py-2.5 font-medium text-sm transition-colors" style="background: var(--accent); color: var(--bg); cursor: pointer;">
+          Save changes
+        </button>
+      </form>
+
+      <div class="mt-10 border border-[var(--border)] rounded-lg p-5" id="commits-section" style="display: none; background: var(--bg-subtle);">
+        <h2 class="text-xs uppercase tracking-widest font-medium mb-3" style="color: var(--fg-subtle);">Recent commit publishes</h2>
+        <ul id="commits-list" class="font-mono text-xs flex flex-col gap-2" style="color: var(--fg-muted);"></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script client>
+  function authHeaders(extra) {
+    var h = extra || {}
+    var s = localStorage.getItem('pantry_session')
+    if (s) h['Authorization'] = 'Bearer ' + s
+    return h
+  }
+
+  ;(function() {
+    var match = window.location.pathname.match(/^\/publisher\/package\/(.+)$/)
+    var pkgName = match ? decodeURIComponent(match[1]) : ''
+    if (!pkgName) { window.location.href = '/publisher'; return }
+    if (!localStorage.getItem('pantry_session')) {
+      window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname)
+      return
+    }
+
+    var deprecCb = document.getElementById('deprecated')
+    var deprecMsg = document.getElementById('deprecation-message')
+    deprecCb.addEventListener('change', function() {
+      deprecMsg.style.display = deprecCb.checked ? 'block' : 'none'
+    })
+
+    fetch('/publisher/api/packages/' + encodeURIComponent(pkgName), { headers: authHeaders() })
+      .then(function(r) {
+        if (r.status === 401) { window.location.href = '/login'; return null }
+        if (r.status === 403 || r.status === 404) { throw new Error('Package not found or access denied') }
+        return r.json()
+      })
+      .then(function(data) {
+        if (!data) return
+        document.getElementById('pkg-loading').style.display = 'none'
+        document.getElementById('pkg-content').style.display = 'block'
+        document.getElementById('pkg-title').textContent = data.package.name
+
+        var stats = document.getElementById('pkg-stats')
+        stats.innerHTML =
+          '<span>Downloads: <strong>' + (data.stats?.totalDownloads || 0).toLocaleString() + '</strong></span>' +
+          (data.package.latestVersion ? '<span>Latest: <strong class="font-mono">' + data.package.latestVersion + '</strong></span>' : '') +
+          (data.stats?.downloads30d != null ? '<span>30d: <strong>' + data.stats.downloads30d.toLocaleString() + '</strong></span>' : '')
+
+        var p = data.package
+        var s = p.settings || {}
+        document.getElementById('description').value = p.description || ''
+        document.getElementById('homepage').value = p.homepage || ''
+        document.getElementById('repository').value = p.repository || ''
+        document.getElementById('license').value = p.license || ''
+        document.getElementById('npm-publish').checked = !!s.npmPublish
+        document.getElementById('npm-package-name').value = s.npmPackageName || ''
+        document.getElementById('npm-access').value = s.npmAccess || 'public'
+        document.getElementById('visibility').value = s.visibility || 'public'
+        document.getElementById('deprecated').checked = !!s.deprecated
+        document.getElementById('deprecation-message').value = s.deprecationMessage || ''
+        deprecMsg.style.display = s.deprecated ? 'block' : 'none'
+
+        if (data.commits && data.commits.length > 0) {
+          document.getElementById('commits-section').style.display = 'block'
+          var ul = document.getElementById('commits-list')
+          data.commits.forEach(function(c) {
+            var li = document.createElement('li')
+            var short = (c.sha || '').slice(0, 7)
+            li.innerHTML = '<a href="/commits/' + encodeURIComponent(c.sha) + '" class="hvr-accent" style="color: var(--accent);">' + short + '</a> · ' + (c.publishedAt || '').split('T')[0]
+            ul.appendChild(li)
+          })
+        }
+      })
+      .catch(function(err) {
+        document.getElementById('pkg-loading').innerHTML = '<p class="text-sm" style="color: var(--red);">' + (err.message || 'Failed to load') + '</p>'
+      })
+
+    document.getElementById('pkg-settings-form').addEventListener('submit', function(e) {
+      e.preventDefault()
+      var status = document.getElementById('save-status')
+      status.style.display = 'block'
+      status.style.color = 'var(--fg-muted)'
+      status.textContent = 'Saving…'
+
+      var body = {
+        description: document.getElementById('description').value,
+        homepage: document.getElementById('homepage').value,
+        repository: document.getElementById('repository').value,
+        license: document.getElementById('license').value,
+        settings: {
+          npmPublish: document.getElementById('npm-publish').checked,
+          npmPackageName: document.getElementById('npm-package-name').value || undefined,
+          npmAccess: document.getElementById('npm-access').value,
+          visibility: document.getElementById('visibility').value,
+          deprecated: document.getElementById('deprecated').checked,
+          deprecationMessage: document.getElementById('deprecation-message').value || undefined,
+        },
+      }
+
+      fetch('/publisher/api/packages/' + encodeURIComponent(pkgName), {
+        method: 'PATCH',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(body),
+      })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, d: d } }) })
+        .then(function(res) {
+          if (!res.ok) {
+            status.style.color = 'var(--red)'
+            status.textContent = res.d.error || 'Save failed'
+            return
+          }
+          status.style.color = 'oklch(0.85 0.1 155)'
+          status.textContent = 'Saved successfully.'
+        })
+        .catch(function() {
+          status.style.color = 'var(--red)'
+          status.textContent = 'Save failed'
+        })
+    })
+  })()
+</script>
