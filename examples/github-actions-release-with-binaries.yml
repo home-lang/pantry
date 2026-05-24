@@ -1,0 +1,48 @@
+# Example: npm publish via Pantry + cross-compiled CLI assets on GitHub Releases
+#
+# Do NOT commit compiled binaries under bin/ — add them to .gitignore and build
+# in CI (bun compile:all / zip), then attach zips with action-releaser or
+# `pantry publish --npm --github-release --files "bin/*.zip"`.
+
+name: Releaser
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: home-lang/pantry/packages/action@main
+
+      - run: bun install
+
+      - name: Publish to npm
+        run: pantry publish --npm --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Build platform binaries
+        run: bun run compile:all && bun run zip
+
+      - name: Attach binaries to GitHub Release
+        uses: stacksjs/action-releaser@v1.2.9
+        with:
+          files: |
+            bin/my-cli-linux-x64.zip
+            bin/my-cli-linux-arm64.zip
+            bin/my-cli-windows-x64.zip
+            bin/my-cli-darwin-x64.zip
+            bin/my-cli-darwin-arm64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
