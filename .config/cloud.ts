@@ -3,16 +3,13 @@ import type { CloudConfig } from '@ts-cloud/core'
 /**
  * Pantry AWS layout (production):
  *
- * | Resource              | Name / ID                         | Managed by              |
- * |-----------------------|-----------------------------------|-------------------------|
- * | Site stack (CFN)      | pantry-sh-main-static-site        | cloud deploy (ts-cloud) |
- * | S3 install assets     | pantry-dev-site                   | site stack              |
- * | CloudFront (pantry.dev)| E35L7VG3GQG66J                   | site stack (+ EC2 origin drift) |
- * | Registry EC2          | 54.243.196.101                    | deploy-registry.yml     |
- * | Binaries bucket       | pantry-binaries                   | manual / future stack   |
- *
- * Target naming (new resources): slug `pantry`, stacks `pantry-production-main-site`, etc.
- * Legacy stack/bucket names are pinned via `stackName` / `bucket` until migrated.
+ * | Resource        | Name                         | Managed by              |
+ * |-----------------|------------------------------|-------------------------|
+ * | Site stack      | pantry-production-main-site  | cloud deploy (ts-cloud) |
+ * | S3 install      | pantry-production-site       | site stack              |
+ * | CloudFront      | E35L7VG3GQG66J (pantry.dev)  | site stack              |
+ * | Registry EC2    | 54.243.196.101               | deploy-registry.yml     |
+ * | Binaries bucket | pantry-binaries              | manual                  |
  */
 const config: CloudConfig = {
   project: {
@@ -32,7 +29,7 @@ const config: CloudConfig = {
   },
 
   infrastructure: {
-    /** Registry EC2 is deployed via GitHub Actions, not this CloudFormation stack. */
+    /** Registry EC2 is deployed via GitHub Actions, not the project infrastructure stack. */
     deployStack: false,
 
     dns: {
@@ -40,7 +37,6 @@ const config: CloudConfig = {
       provider: 'porkbun',
     },
 
-    /** Registry server + CloudFront origin for pantry.dev (EC2 deployed via GitHub Actions). */
     compute: {
       cloudFrontOriginDomain: 'ec2-54-243-196-101.compute-1.amazonaws.com',
       cloudFrontOriginPort: 3000,
@@ -100,10 +96,6 @@ const config: CloudConfig = {
     main: {
       root: './public',
       domain: 'pantry.dev',
-      /** Legacy physical bucket (site stack). Target: pantry-production-site */
-      bucket: 'pantry-dev-site',
-      /** Legacy CFN stack. Target: pantry-production-main-site */
-      stackName: 'pantry-sh-main-static-site',
       installScript: './public/install.sh',
     },
   },

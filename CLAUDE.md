@@ -141,6 +141,21 @@ The Pantry action exports `PANTRY_TOKEN` and `PANTRY_REGISTRY_TOKEN` as env vars
 
 The pantry S3 registry (`registry.pantry.dev/binaries/`) hosts **system packages**(pre-built binaries like zig, curl, redis, bun) and**apps** (GUI applications like VS Code, Discord, Obsidian) uploaded via the `build.yml` / `sync-binaries.yml` workflows. JS/TS packages go to npm, not S3.
 
+## AWS / ts-cloud (`/.config/cloud.ts`)
+
+Production site infrastructure uses **ts-cloud** from `~/Code/Libraries/ts-cloud`:
+
+| Resource | Name | Deploy |
+|----------|------|--------|
+| Site CloudFormation stack | `pantry-production-main-site` | `cloud deploy --env production --skip-security-scan --yes` |
+| S3 install assets | `pantry-production-site` | same (site deploy path) |
+| Registry EC2 | `54.243.196.101` | `.github/workflows/deploy-registry.yml` |
+| Binaries S3 | `pantry-binaries` | manual |
+
+Naming conventions: `{slug}-{environment}-{siteKey}-site` for stacks, `{slug}-{environment}-site` for the main site bucket. `infrastructure.deployStack: false` skips the unused `pantry-production` VPC stack.
+
+One-time stack rename script: `bun scripts/migrate-production-site-stack.ts` (already run May 2026).
+
 ## GitHub Action (`packages/action/`)
 
 The Setup Pantry action (`home-lang/pantry/packages/action@main`):
