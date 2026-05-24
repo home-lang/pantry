@@ -3,7 +3,7 @@
  * Provision or update a pantry.dev admin account (DynamoDB).
  *
  * Usage:
- *   DYNAMODB_TABLE=pantry-registry-metadata bun run scripts/upsert-admin.ts chris@pantry.dev 'YourPassword' 'Chris'
+ *   DYNAMODB_TABLE=pantry-registry bun run scripts/upsert-admin.ts chris@pantry.dev 'YourPassword' 'Chris'
  */
 import { AuthService, createAuthStorage } from '../src/auth'
 
