@@ -2441,10 +2441,29 @@ fn upgradeAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 }
 
+fn warnIfInvokedAsLaunchpad() void {
+    const exe = io_helper.argsAlloc(std.heap.page_allocator) catch return;
+    defer std.heap.page_allocator.free(exe);
+    if (exe.len == 0) return;
+    const base = std.fs.path.basename(exe[0]);
+    if (!std.mem.eql(u8, base, "launchpad") and !std.mem.endsWith(u8, base, "/launchpad")) return;
+    style.printWarn(
+        "Launchpad was renamed to Pantry. This binary is a compatibility alias — use `pantry` instead.\n",
+        .{},
+    );
+    style.printWarn(
+        "Remove `eval \"$(launchpad dev:shellcode)\"` from your shell rc (keep only `pantry dev:shellcode`).\n",
+        .{},
+    );
+}
+
 pub fn main() !void {
     var debug_allocator = std.heap.DebugAllocator(.{}).init;
     defer _ = debug_allocator.deinit();
     const allocator = debug_allocator.allocator();
+
+    warnIfInvokedAsLaunchpad();
+    lib.migrate.launchpad.maybeMigrate(allocator);
 
     // Create root command
     var root = try cli.BaseCommand.init(allocator, "pantry", "Modern dependency manager");

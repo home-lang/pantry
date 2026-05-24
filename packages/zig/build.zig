@@ -121,7 +121,7 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(exe);
 
     // Package executor aliases (like npx/bunx) - symlinks to pantry binary
-    inline for (.{ "panx", "pnx" }) |alias_name| {
+    inline for (.{ "panx", "pnx", "launchpad" }) |alias_name| {
         const symlink_step = b.addInstallBinFile(exe.getEmittedBin(), alias_name);
         b.getInstallStep().dependOn(&symlink_step.step);
     }

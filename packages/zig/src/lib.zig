@@ -32,6 +32,9 @@ pub const registry = struct {
     pub const custom = @import("registry/custom.zig");
 };
 pub const workspace = @import("workspace.zig");
+pub const migrate = struct {
+    pub const launchpad = @import("migrate/launchpad.zig");
+};
 pub const io_helper = @import("io_helper.zig");
 pub const style = @import("cli/style.zig");
 

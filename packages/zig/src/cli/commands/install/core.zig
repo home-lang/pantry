@@ -301,13 +301,31 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         if (lookup.workspace_file) |ws_file| {
             const ws_result = workspace.installWorkspaceCommandWithOptions(allocator, ws_file.root_dir, ws_file.path, options);
             if (ws_result) |result| {
-                // Workspace install succeeded — free deps_file if we also found one
-                if (lookup.deps_file) |df| allocator.free(df.path);
+                var final_result = result;
+
+                // Monorepos often keep system/runtime deps in deps.yaml (or pantry.json)
+                // alongside package.json workspaces. Install that companion file too.
+                if (lookup.deps_file) |df| {
+                    if (!std.mem.eql(u8, df.path, ws_file.path)) {
+                        if (installCompanionDepsFile(allocator, df, ws_file.root_dir, options)) |companion_result| {
+                            var companion = companion_result;
+                            if (companion.exit_code != 0 and final_result.exit_code == 0) {
+                                final_result.exit_code = companion.exit_code;
+                                if (final_result.message) |m| allocator.free(m);
+                                final_result.message = companion.message;
+                                companion.message = null;
+                            }
+                            companion.deinit(allocator);
+                        } else |_| {}
+                    }
+                    allocator.free(df.path);
+                }
+
                 defer {
                     allocator.free(ws_file.path);
                     allocator.free(ws_file.root_dir);
                 }
-                return result;
+                return final_result;
             } else |err| {
                 // Workspace config couldn't be loaded (e.g. no valid workspaces patterns,
                 // JSON parse error, or "workspaces" was just a substring match).
@@ -515,15 +533,18 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const dep_hash_short = try std.fmt.allocPrint(allocator, "d{s}", .{dep_hash_hex[0..8]});
         defer allocator.free(dep_hash_short);
 
-        // Create environment directory
-        const home = try lib.Paths.home(allocator);
-        defer allocator.free(home);
+        // Create environment directory under the pantry data dir (same layout as shell integration)
+        const data_dir = try lib.Paths.data(allocator);
+        defer allocator.free(data_dir);
 
-        const env_dir = try std.fmt.allocPrint(
+        const env_name = try std.fmt.allocPrint(
             allocator,
-            "{s}/.pantry/envs/{s}_{s}-{s}",
-            .{ home, proj_basename, proj_hash_short, dep_hash_short },
+            "{s}_{s}-{s}",
+            .{ proj_basename, proj_hash_short, dep_hash_short },
         );
+        defer allocator.free(env_name);
+
+        const env_dir = try std.fs.path.join(allocator, &[_][]const u8{ data_dir, "envs", env_name });
         defer allocator.free(env_dir);
 
         // Create environment directory structure
@@ -1417,6 +1438,106 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     if (failed_count > 0) {
         style.printFailureCount(failed_count);
         return .{ .exit_code = 1 };
+    }
+
+    return .{ .exit_code = 0 };
+}
+
+/// Install a companion deps file (e.g. deps.yaml) when a workspace manifest (package.json)
+/// was already installed. Keeps system/runtime deps in sync for monorepos.
+fn installCompanionDepsFile(
+    allocator: std.mem.Allocator,
+    df: @import("../../../deps/detector.zig").DepsFile,
+    project_root: []const u8,
+    options: types.InstallOptions,
+) !types.CommandResult {
+    const parser = @import("../../../deps/parser.zig");
+    const pipeline = @import("../../../install/pipeline.zig");
+
+    const deps = parser.inferDependencies(allocator, df) catch return .{ .exit_code = 0 };
+    defer allocator.free(deps);
+    if (deps.len == 0) return .{ .exit_code = 0 };
+
+    const proj_basename = std.fs.path.basename(project_root);
+
+    var proj_hasher = std.crypto.hash.Md5.init(.{});
+    proj_hasher.update(project_root);
+    var proj_hash: [16]u8 = undefined;
+    proj_hasher.final(&proj_hash);
+    const proj_hash_short = try std.fmt.allocPrint(allocator, "{x:0>8}", .{std.mem.readInt(u32, proj_hash[0..4], .little)});
+    defer allocator.free(proj_hash_short);
+
+    var dep_hasher = std.crypto.hash.Md5.init(.{});
+    dep_hasher.update(df.path);
+    var dep_hash: [16]u8 = undefined;
+    dep_hasher.final(&dep_hash);
+    const dep_hash_hex = try string.hashToHex(dep_hash, allocator);
+    defer allocator.free(dep_hash_hex);
+    const dep_hash_short = try std.fmt.allocPrint(allocator, "d{s}", .{dep_hash_hex[0..8]});
+    defer allocator.free(dep_hash_short);
+
+    const data_dir = try lib.Paths.data(allocator);
+    defer allocator.free(data_dir);
+
+    const env_name = try std.fmt.allocPrint(allocator, "{s}_{s}-{s}", .{ proj_basename, proj_hash_short, dep_hash_short });
+    defer allocator.free(env_name);
+
+    const env_dir = try std.fs.path.join(allocator, &[_][]const u8{ data_dir, "envs", env_name });
+    defer allocator.free(env_dir);
+
+    try io_helper.makePath(env_dir);
+    const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{env_dir});
+    defer allocator.free(bin_dir);
+    try io_helper.makePath(bin_dir);
+
+    style.printInstalling(deps.len);
+
+    var pkg_cache = try cache.PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+
+    var shared_installer = try install.Installer.init(allocator, &pkg_cache);
+    allocator.free(shared_installer.data_dir);
+    shared_installer.data_dir = try allocator.dupe(u8, env_dir);
+    shared_installer.modules_dir = options.modules_dir;
+    shared_installer.verbose = options.verbose;
+    defer shared_installer.deinit();
+
+    var pipeline_deps = try allocator.alloc(pipeline.PipelineDep, deps.len);
+    defer allocator.free(pipeline_deps);
+    for (deps, 0..) |dep, di| {
+        const clean_name = helpers.resolvePackageAlias(helpers.normalizePackageName(dep.name));
+        const is_domain = std.mem.indexOfScalar(u8, clean_name, '.') != null;
+        pipeline_deps[di] = .{
+            .name = clean_name,
+            .version = dep.version,
+            .source = if (is_domain) .pantry else switch (dep.source) {
+                .registry => .npm,
+                .github => .github,
+                .git => .git,
+                .url => .http,
+            },
+        };
+    }
+
+    var pipeline_result = try pipeline.run(allocator, &shared_installer, pipeline_deps, project_root, options.verbose);
+    defer pipeline_result.deinit(allocator);
+
+    var failed_count: usize = 0;
+    for (pipeline_result.results) |result| {
+        if (result.name.len == 0) continue;
+        if (result.success) {
+            style.printInstalled(result.name, result.version);
+        } else {
+            style.printFailed(result.name, result.version, result.error_msg);
+            failed_count += 1;
+        }
+    }
+
+    if (failed_count > 0) {
+        return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "{d} system package(s) failed to install from {s}", .{ failed_count, std.fs.path.basename(df.path) }),
+        };
     }
 
     return .{ .exit_code = 0 };

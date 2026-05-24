@@ -428,6 +428,21 @@ fn stripInlineComment(value: []const u8) []const u8 {
     return value;
 }
 
+/// Remove optional YAML single/double quotes around a scalar (e.g. `">=1.3"` → `>=1.3`).
+fn stripYamlQuotes(value: []const u8) []const u8 {
+    if (value.len >= 2 and value[0] == '"' and value[value.len - 1] == '"') {
+        return value[1 .. value.len - 1];
+    }
+    if (value.len >= 2 and value[0] == '\'' and value[value.len - 1] == '\'') {
+        return value[1 .. value.len - 1];
+    }
+    return value;
+}
+
+fn parseDepsScalar(value: []const u8) []const u8 {
+    return stripYamlQuotes(stripInlineComment(value));
+}
+
 /// Parse a deps.yaml or similar file to extract package dependencies
 /// Handles both simple format and object format with global flags:
 /// global: true          # Top-level global flag
@@ -457,7 +472,7 @@ pub fn parseDepsFile(allocator: std.mem.Allocator, file_path: []const u8) ![]Pac
 
         // Check for top-level "global: true"
         if (std.mem.startsWith(u8, trimmed, "global:")) {
-            const value = stripInlineComment(std.mem.trim(u8, trimmed[7..], " \t"));
+            const value = parseDepsScalar(std.mem.trim(u8, trimmed[7..], " \t"));
             if (std.mem.eql(u8, value, "true")) {
                 top_level_global = true;
             }
@@ -514,7 +529,7 @@ pub fn parseDepsFile(allocator: std.mem.Allocator, file_path: []const u8) ![]Pac
 
             if (std.mem.indexOf(u8, trimmed, ":")) |colon_pos| {
                 const key = std.mem.trim(u8, trimmed[0..colon_pos], " \t");
-                const value = stripInlineComment(std.mem.trim(u8, trimmed[colon_pos + 1 ..], " \t"));
+                const value = parseDepsScalar(std.mem.trim(u8, trimmed[colon_pos + 1 ..], " \t"));
 
                 // Determine if this is a new package or a property of current package
                 // A property has greater indentation than its parent package

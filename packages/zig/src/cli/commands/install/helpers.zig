@@ -771,7 +771,9 @@ pub fn installSinglePackage(
                     dep.version[0] == '>' or dep.version[0] == '<' or
                     dep.version[0] == '=' or dep.version[0] == '*' or
                     (dep.version[0] >= '0' and dep.version[0] <= '9'));
-            const skip_pantry_lookup = is_scoped or version_is_semver;
+            // Domain packages (bun.sh, ziglang.org, …) use the pantry S3 registry with
+            // semver constraints — do not treat their version ranges as npm semver.
+            const skip_pantry_lookup = is_scoped or (version_is_semver and !is_domain_style);
 
             if (options.verbose) {
                 std.debug.print("[verbose:helper] pantry lookup: name={s}, is_scoped={}, is_domain={}, version_is_semver={}, skip={}\n", .{ lookup_name, is_scoped, is_domain_style, version_is_semver, skip_pantry_lookup });
@@ -802,7 +804,7 @@ pub fn installSinglePackage(
             // For domain-style packages (containing '.'), use pkgx source
             // which triggers S3 registry lookup in installer.zig.
             // Domain-style names like 'meilisearch.com' are pantry packages, not npm.
-            if (is_domain_style and !version_is_semver) {
+            if (is_domain_style) {
                 break :blk lib.packages.PackageSpec{
                     .name = lookup_name,
                     .version = dep.version,

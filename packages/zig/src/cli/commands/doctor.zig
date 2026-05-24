@@ -44,6 +44,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     try checks.append(allocator, try checkPermissions(allocator));
     try checks.append(allocator, try checkDiskSpace(allocator));
     try checks.append(allocator, try checkNetwork(allocator));
+    try checks.append(allocator, try checkLaunchpadLegacy(allocator));
 
     // Print results
     var passed: usize = 0;
@@ -443,5 +444,45 @@ fn checkNetwork(allocator: std.mem.Allocator) !CheckResult {
         .passed = false,
         .message = message,
         .suggestion = try allocator.dupe(u8, "Registry may be temporarily down; try again later"),
+    };
+}
+
+fn checkLaunchpadLegacy(allocator: std.mem.Allocator) !CheckResult {
+    const name = try allocator.dupe(u8, "Launchpad → Pantry migration");
+
+    const migrate = @import("../../migrate/launchpad.zig");
+    const has_legacy_data = migrate.hasLegacyDataDir(allocator);
+    const has_legacy_bin = migrate.hasLegacyBinaryOnPath(allocator);
+
+    if (!has_legacy_data and !has_legacy_bin) {
+        return .{
+            .name = name,
+            .passed = true,
+            .message = try allocator.dupe(u8, "No legacy Launchpad install detected"),
+        };
+    }
+
+    var parts = std.ArrayList(u8).empty;
+    defer parts.deinit(allocator);
+
+    if (has_legacy_data) {
+        const legacy = migrate.legacyDataPath(allocator) catch {
+            return .{ .name = name, .passed = false, .message = try allocator.dupe(u8, "Legacy data dir detected") };
+        };
+        defer allocator.free(legacy);
+        try parts.appendSlice(allocator, "Legacy data at ");
+        try parts.appendSlice(allocator, legacy);
+        try parts.appendSlice(allocator, " (migrated to ~/.local/share/pantry on next run)");
+    }
+    if (has_legacy_bin) {
+        if (parts.items.len > 0) try parts.appendSlice(allocator, "; ");
+        try parts.appendSlice(allocator, "~/.local/bin/launchpad is an old binary — remove it and drop `eval \"$(launchpad dev:shellcode)\"` from your shell rc");
+    }
+
+    return .{
+        .name = name,
+        .passed = false,
+        .message = try allocator.dupe(u8, parts.items),
+        .suggestion = try allocator.dupe(u8, "Keep only `eval \"$(pantry dev:shellcode)\"` in ~/.zshrc (or bash/fish equivalent)"),
     };
 }

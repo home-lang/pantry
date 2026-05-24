@@ -668,10 +668,6 @@ pub fn installWorkspaceCommandWithOptions(
     const install_start_ts = io_helper.clockGettime();
     const install_start_ms = @as(i64, @intCast(install_start_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(install_start_ts.nsec)), 1_000_000);
 
-    // Create workspace environment
-    const home = try lib.Paths.home(allocator);
-    defer allocator.free(home);
-
     // Hash workspace root for environment directory
     var workspace_hasher = std.crypto.hash.Md5.init(.{});
     workspace_hasher.update(workspace_root);
@@ -680,12 +676,13 @@ pub fn installWorkspaceCommandWithOptions(
     const workspace_hash_short = try std.fmt.allocPrint(allocator, "{x:0>8}", .{std.mem.readInt(u32, workspace_hash[0..4], .little)});
     defer allocator.free(workspace_hash_short);
 
-    // Create environment directory
-    const env_dir = try std.fmt.allocPrint(
-        allocator,
-        "{s}/.pantry/envs/{s}_{s}-workspace",
-        .{ home, workspace_config.name, workspace_hash_short },
-    );
+    const data_dir = try lib.Paths.data(allocator);
+    defer allocator.free(data_dir);
+
+    const env_name = try std.fmt.allocPrint(allocator, "{s}_{s}-workspace", .{ workspace_config.name, workspace_hash_short });
+    defer allocator.free(env_name);
+
+    const env_dir = try std.fs.path.join(allocator, &[_][]const u8{ data_dir, "envs", env_name });
     defer allocator.free(env_dir);
 
     // Create environment directory structure
