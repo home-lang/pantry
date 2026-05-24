@@ -1,9 +1,23 @@
 import type { CloudConfig } from '@ts-cloud/core'
 
+/**
+ * Pantry AWS layout (production):
+ *
+ * | Resource              | Name / ID                         | Managed by              |
+ * |-----------------------|-----------------------------------|-------------------------|
+ * | Site stack (CFN)      | pantry-sh-main-static-site        | cloud deploy (ts-cloud) |
+ * | S3 install assets     | pantry-dev-site                   | site stack              |
+ * | CloudFront (pantry.dev)| E35L7VG3GQG66J                   | site stack (+ EC2 origin drift) |
+ * | Registry EC2          | 54.243.196.101                    | deploy-registry.yml     |
+ * | Binaries bucket       | pantry-binaries                   | manual / future stack   |
+ *
+ * Target naming (new resources): slug `pantry`, stacks `pantry-production-main-site`, etc.
+ * Legacy stack/bucket names are pinned via `stackName` / `bucket` until migrated.
+ */
 const config: CloudConfig = {
   project: {
     name: 'pantry',
-    slug: 'pantry-dev',
+    slug: 'pantry',
     region: 'us-east-1',
   },
 
@@ -18,12 +32,19 @@ const config: CloudConfig = {
   },
 
   infrastructure: {
+    /** Registry EC2 is deployed via GitHub Actions, not this CloudFormation stack. */
+    deployStack: false,
+
     dns: {
       domain: 'pantry.dev',
       provider: 'porkbun',
     },
 
+    /** Registry server + CloudFront origin for pantry.dev (EC2 deployed via GitHub Actions). */
     compute: {
+      cloudFrontOriginDomain: 'ec2-54-243-196-101.compute-1.amazonaws.com',
+      cloudFrontOriginPort: 3000,
+      cloudFrontOriginId: 'pantry-site-ec2',
       mode: 'server',
       size: 'small',
 
@@ -62,24 +83,11 @@ const config: CloudConfig = {
     },
 
     storage: {
-      'pantry-dev-site': {
-        public: true,
-        website: true,
-        encryption: true,
-        versioning: false,
-      },
-      'pantry-binaries': {
+      binaries: {
+        bucket: 'pantry-binaries',
         public: true,
         encryption: true,
         versioning: false,
-      },
-    },
-
-    cdn: {
-      'pantry-site': {
-        origin: 'pantry-dev-production-pantry-dev-site.s3.us-east-1.amazonaws.com',
-        customDomain: 'pantry.dev',
-        routeCompute: true,
       },
     },
 
@@ -92,9 +100,11 @@ const config: CloudConfig = {
     main: {
       root: './public',
       domain: 'pantry.dev',
+      /** Legacy physical bucket (site stack). Target: pantry-production-site */
       bucket: 'pantry-dev-site',
-      installScript: './public/install.sh',
+      /** Legacy CFN stack. Target: pantry-production-main-site */
       stackName: 'pantry-sh-main-static-site',
+      installScript: './public/install.sh',
     },
   },
 
