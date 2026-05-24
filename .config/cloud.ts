@@ -94,6 +94,7 @@ const config: CloudConfig = {
       domain: 'pantry.dev',
       bucket: 'pantry-dev-site',
       installScript: './public/install.sh',
+      stackName: 'pantry-sh-main-static-site',
     },
   },
 
