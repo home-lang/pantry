@@ -205,6 +205,23 @@ export class InMemoryMetadataStorage implements MetadataStorage {
       .slice(0, limit)
   }
 
+  async listAllRegistryPackages(limit = 100): Promise<PublisherPackageSummary[]> {
+    const summaries: PublisherPackageSummary[] = []
+    for (const pkg of this.packages.values()) {
+      const commits = this.packageCommits.get(pkg.name) || []
+      summaries.push({
+        name: pkg.name,
+        kind: 'registry',
+        latestVersion: pkg.latestVersion,
+        totalDownloads: pkg.totalDownloads,
+        updatedAt: pkg.updatedAt,
+        commitCount: commits.length,
+        description: pkg.description,
+      })
+    }
+    return summaries.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, limit)
+  }
+
   async updatePublisherPackage(
     name: string,
     userId: string,
@@ -212,7 +229,7 @@ export class InMemoryMetadataStorage implements MetadataStorage {
   ): Promise<PackageRecord> {
     const pkg = this.packages.get(name)
     if (!pkg) throw new Error('Package not found')
-    if (pkg.publishedBy && pkg.publishedBy !== userId && userId !== '_admin') {
+    if (pkg.publishedBy && pkg.publishedBy !== userId) {
       throw new Error('Not authorized to update this package')
     }
 

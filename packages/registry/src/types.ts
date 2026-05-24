@@ -219,6 +219,8 @@ export interface PackageAccessGrant {
 /**
  * Registered user account
  */
+export type UserRole = 'admin' | 'user'
+
 export interface User {
   /** User's email address (unique identifier) */
   email: string
@@ -226,6 +228,8 @@ export interface User {
   name: string
   /** Argon2id password hash (via Bun.password) */
   passwordHash: string
+  /** Site-wide permissions (admin can manage all packages on pantry.dev) */
+  role?: UserRole
   /** ISO 8601 timestamp */
   createdAt: string
   /** ISO 8601 timestamp */
@@ -298,6 +302,8 @@ export interface AuthStorage {
   // User operations
   getUser(email: string): Promise<User | null>
   putUser(user: User): Promise<void>
+  /** Create or replace a user (no uniqueness condition — for admin provisioning) */
+  upsertUser(user: User): Promise<void>
   getUserByEmail(email: string): Promise<User | null>
 
   // API token operations
@@ -349,6 +355,7 @@ export interface MetadataStorage {
 
   // Publisher dashboard
   listPackagesByPublisher(userId: string, limit?: number): Promise<PublisherPackageSummary[]>
+  listAllRegistryPackages(limit?: number): Promise<PublisherPackageSummary[]>
   updatePublisherPackage(
     name: string,
     userId: string,

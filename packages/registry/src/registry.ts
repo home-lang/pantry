@@ -220,8 +220,11 @@ export class Registry {
     }
   }
 
-  /** List packages owned by a publisher account */
-  async listPublisherPackages(userId: string, limit = 50) {
+  /** List packages owned by a publisher account (admins see all registry packages) */
+  async listPublisherPackages(userId: string, limit = 50, isAdmin = false) {
+    if (isAdmin) {
+      return this.metadataStorage.listAllRegistryPackages(limit)
+    }
     return this.metadataStorage.listPackagesByPublisher(userId, limit)
   }
 
@@ -230,8 +233,10 @@ export class Registry {
     name: string,
     userId: string,
     updates: Partial<PackageRecord> & { settings?: PackagePublisherSettings },
+    isAdmin = false,
   ) {
-    return this.metadataStorage.updatePublisherPackage(name, userId, updates)
+    const effectiveUser = isAdmin ? '_admin' : userId
+    return this.metadataStorage.updatePublisherPackage(name, effectiveUser, updates)
   }
 
   async getPublisherPackageRecord(name: string) {

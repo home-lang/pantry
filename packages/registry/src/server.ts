@@ -1894,10 +1894,12 @@ async function handleSiteAuth(
 // Publisher dashboard (session-authenticated)
 // ---------------------------------------------------------------------------
 
+type SessionUser = { email: string, name: string, role?: 'admin' | 'user' }
+
 async function requireSessionUser(
   req: Request,
   auth: AuthService,
-): Promise<{ email: string, name: string } | Response> {
+): Promise<SessionUser | Response> {
   const sessionToken = extractSessionToken(req)
   if (!sessionToken) {
     return Response.json({ error: 'Authentication required' }, { status: 401 })
@@ -1909,11 +1911,15 @@ async function requireSessionUser(
   return user
 }
 
-function canManagePackage(pkg: { publishedBy?: string } | null, userId: string): boolean {
+function isSiteAdmin(user: SessionUser): boolean {
+  return user.role === 'admin'
+}
+
+function canManagePackage(pkg: { publishedBy?: string } | null, user: SessionUser): boolean {
   if (!pkg) return false
-  if (userId === '_admin') return true
+  if (isSiteAdmin(user)) return true
   if (!pkg.publishedBy) return true
-  return pkg.publishedBy === userId
+  return pkg.publishedBy === user.email
 }
 
 async function handlePublisherApi(
@@ -1934,11 +1940,12 @@ async function handlePublisherApi(
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
-  const userId = userResult.email
+  const user = userResult
+  const admin = isSiteAdmin(user)
 
   if (path === '/publisher/api/packages' && req.method === 'GET') {
-    const packages = await registry.listPublisherPackages(userId)
-    return Response.json({ packages }, { headers: corsHeaders })
+    const packages = await registry.listPublisherPackages(user.email, admin ? 200 : 50, admin)
+    return Response.json({ packages, admin }, { headers: corsHeaders })
   }
 
   const pkgMatch = path.match(/^\/publisher\/api\/packages\/(.+)$/)
@@ -1947,7 +1954,7 @@ async function handlePublisherApi(
 
     if (req.method === 'GET') {
       const record = await registry.getPublisherPackageRecord(name)
-      if (!record || !canManagePackage(record, userId)) {
+      if (!record || !canManagePackage(record, user)) {
         return Response.json({ error: 'Package not found or access denied' }, { status: 403, headers: corsHeaders })
       }
       const stats = await analyticsStorage.getPackageStats(name)
@@ -1965,7 +1972,7 @@ async function handlePublisherApi(
 
     if (req.method === 'PATCH') {
       const record = await registry.getPublisherPackageRecord(name)
-      if (!record || !canManagePackage(record, userId)) {
+      if (!record || !canManagePackage(record, user)) {
         return Response.json({ error: 'Package not found or access denied' }, { status: 403, headers: corsHeaders })
       }
       let body: {
@@ -1981,16 +1988,16 @@ async function handlePublisherApi(
       catch {
         return Response.json({ error: 'Invalid JSON' }, { status: 400, headers: corsHeaders })
       }
-      if (!record.publishedBy) {
-        await registry.claimPublisherPackage(name, userId)
+      if (!record.publishedBy && !admin) {
+        await registry.claimPublisherPackage(name, user.email)
       }
-      const updated = await registry.updatePublisherPackage(name, userId, {
+      const updated = await registry.updatePublisherPackage(name, user.email, {
         description: body.description,
         homepage: body.homepage,
         repository: body.repository,
         license: body.license,
         settings: body.settings as any,
-      })
+      }, admin)
       return Response.json({ package: updated }, { headers: corsHeaders })
     }
   }

@@ -5,7 +5,7 @@
     <div class="flex items-center justify-between mb-8 animate-fade-in">
       <div>
         <h1 class="text-2xl font-semibold mb-1">Publisher dashboard</h1>
-        <p class="text-sm" style="color: var(--fg-muted);">
+        <p class="text-sm" style="color: var(--fg-muted);" id="publisher-subtitle">
           Manage packages you have published to pantry.dev
         </p>
       </div>
@@ -72,6 +72,10 @@
           return
         }
         document.getElementById('publisher-list').style.display = 'block'
+        if (data.admin) {
+          var sub = document.getElementById('publisher-subtitle')
+          if (sub) sub.textContent = 'Admin view — all registry packages'
+        }
         var tbody = document.getElementById('publisher-tbody')
         data.packages.forEach(function(pkg) {
           var tr = document.createElement('tr')

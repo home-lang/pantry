@@ -586,6 +586,43 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
     return summaries.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   }
 
+  async listAllRegistryPackages(limit = 100): Promise<PublisherPackageSummary[]> {
+    const safeLimit = Math.max(1, Math.min(limit, 200))
+    const summaries: PublisherPackageSummary[] = []
+    let lastKey: Record<string, any> | undefined
+
+    for (let page = 0; page < 20 && summaries.length < safeLimit; page++) {
+      const result: { Items: Array<Record<string, any>>, LastEvaluatedKey?: Record<string, any> } = await this.db.scan({
+        TableName: this.tableName,
+        FilterExpression: 'SK = :metadata',
+        ExpressionAttributeValues: { ':metadata': { S: 'METADATA' } },
+        Limit: 100,
+        ExclusiveStartKey: lastKey,
+      } as any)
+
+      for (const item of result.Items) {
+        const data = DynamoDBClient.unmarshal(item)
+        if (!data.name || !String(data.PK || '').startsWith('PACKAGE#')) continue
+        const commits = await this.getPackageCommits(data.name, 5)
+        summaries.push({
+          name: data.name,
+          kind: 'registry',
+          latestVersion: data.latestVersion,
+          totalDownloads: data.totalDownloads || 0,
+          updatedAt: data.updatedAt || data.createdAt,
+          commitCount: commits.length,
+          description: data.description,
+        })
+      }
+      if (!result.LastEvaluatedKey) break
+      lastKey = result.LastEvaluatedKey
+    }
+
+    return summaries
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .slice(0, safeLimit)
+  }
+
   async updatePublisherPackage(
     name: string,
     userId: string,
@@ -596,6 +633,7 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
     if (pkg.publishedBy && pkg.publishedBy !== userId && userId !== '_admin') {
       throw new Error('Not authorized to update this package')
     }
+    // userId === '_admin' is used for site admins
 
     const now = new Date().toISOString()
     const mergedSettings = updates.settings ? { ...pkg.settings, ...updates.settings } : pkg.settings

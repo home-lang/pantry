@@ -104,6 +104,7 @@ export class AuthService {
       email: normalizedEmail,
       name: name.trim(),
       passwordHash,
+      role: 'user',
       createdAt: now,
       updatedAt: now,
     }
@@ -118,7 +119,34 @@ export class AuthService {
       throw err
     }
 
-    return { email: user.email, name: user.name, createdAt: user.createdAt, updatedAt: user.updatedAt }
+    return { email: user.email, name: user.name, role: user.role || 'user', createdAt: user.createdAt, updatedAt: user.updatedAt }
+  }
+
+  /**
+   * Create or update an admin account (production provisioning).
+   */
+  async upsertAdminUser(email: string, name: string, password: string): Promise<Omit<User, 'passwordHash'>> {
+    const normalizedEmail = email.toLowerCase().trim()
+    if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      throw new AuthError('Invalid email address', 400)
+    }
+    if (!password || password.length < 8) {
+      throw new AuthError('Password must be at least 8 characters', 400)
+    }
+
+    const existing = await this.storage.getUser(normalizedEmail)
+    const now = new Date().toISOString()
+    const passwordHash = await hashPassword(password)
+    const user: User = {
+      email: normalizedEmail,
+      name: (name || existing?.name || 'Admin').trim(),
+      passwordHash,
+      role: 'admin',
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+    }
+    await this.storage.upsertUser(user)
+    return { email: user.email, name: user.name, role: 'admin', createdAt: user.createdAt, updatedAt: user.updatedAt }
   }
 
   /**
@@ -152,7 +180,7 @@ export class AuthService {
 
     return {
       sessionToken,
-      user: { email: user.email, name: user.name, createdAt: user.createdAt, updatedAt: user.updatedAt },
+      user: { email: user.email, name: user.name, role: user.role || 'user', createdAt: user.createdAt, updatedAt: user.updatedAt },
     }
   }
 
@@ -175,7 +203,7 @@ export class AuthService {
     const user = await this.storage.getUser(session.userId)
     if (!user) return null
 
-    return { email: user.email, name: user.name, createdAt: user.createdAt, updatedAt: user.updatedAt }
+    return { email: user.email, name: user.name, role: user.role || 'user', createdAt: user.createdAt, updatedAt: user.updatedAt }
   }
 
   /**
@@ -319,6 +347,10 @@ export class InMemoryAuthStorage implements AuthStorage {
     this.users.set(user.email.toLowerCase(), user)
   }
 
+  async upsertUser(user: User): Promise<void> {
+    this.users.set(user.email.toLowerCase(), user)
+  }
+
   async getUserByEmail(email: string): Promise<User | null> {
     return this.getUser(email)
   }
@@ -401,6 +433,7 @@ export class DynamoDBAuthStorage implements AuthStorage {
       email: data.email,
       name: data.name,
       passwordHash: data.passwordHash,
+      role: data.role === 'admin' ? 'admin' : 'user',
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     }
@@ -415,10 +448,27 @@ export class DynamoDBAuthStorage implements AuthStorage {
         email: user.email,
         name: user.name,
         passwordHash: user.passwordHash,
+        role: user.role || 'user',
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       }),
       ConditionExpression: 'attribute_not_exists(PK)',
+    })
+  }
+
+  async upsertUser(user: User): Promise<void> {
+    await this.db.putItem({
+      TableName: this.tableName,
+      Item: DynamoDBClient.marshal({
+        PK: `USER#${user.email.toLowerCase()}`,
+        SK: 'PROFILE',
+        email: user.email,
+        name: user.name,
+        passwordHash: user.passwordHash,
+        role: user.role || 'user',
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      }),
     })
   }
 
