@@ -75,6 +75,7 @@ export const redisPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '8.8.0',
     '8.6.3',
     '8.6.2',
     '8.6.1',
