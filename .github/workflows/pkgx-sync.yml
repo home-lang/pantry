@@ -1,0 +1,138 @@
+name: Sync New Packages from pkgx
+
+# Watches pkgxdev/pantry for packages we don't have yet and opens ONE PR per new
+# package (scaffolded from pkgx's package.yml) for a human to review and merge.
+# Version updates to existing packages are handled separately by update-packages.yml.
+
+on:
+  schedule:
+    # Daily at 07:00 UTC
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Max number of new packages to open PRs for in this run'
+        required: false
+        default: '5'
+      dry_run:
+        description: 'Only list new packages, do not open PRs'
+        type: boolean
+        default: false
+
+concurrency:
+  group: pkgx-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    name: Discover and open PRs for new pkgx packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Discover new packages
+        id: discover
+        env:
+          # discover script hits the GitHub API; a token avoids the low anon rate limit
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          LIMIT="${{ github.event.inputs.limit || '5' }}"
+          # The script prints only domains to stdout; progress goes to stderr (shown in the log).
+          DOMAINS=$(bun packages/ts-pantry/scripts/discover-pkgx-new.ts --limit "$LIMIT" | grep -v '^$' || true)
+          echo "Discovered new domains:"
+          echo "$DOMAINS"
+          # Persist as a multiline output
+          {
+            echo "domains<<EOF"
+            echo "$DOMAINS"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open a PR per new package
+        if: steps.discover.outputs.domains != '' && github.event.inputs.dry_run != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Ensure the PR label exists (idempotent).
+          gh label create pkgx-sync --color BFD4F2 --description "Auto-discovered new package from pkgx" --force >/dev/null 2>&1 || true
+
+          while IFS= read -r DOMAIN; do
+            [ -z "$DOMAIN" ] && continue
+            SAFE=$(echo "$DOMAIN" | tr '/.' '--' | tr '[:upper:]' '[:lower:]')
+            BRANCH="pkgx-add/$SAFE"
+
+            # Skip if a branch already exists for this package (PR likely already open).
+            if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+              echo "↩  $DOMAIN: branch $BRANCH already exists, skipping"
+              continue
+            fi
+
+            echo "::group::$DOMAIN"
+            git checkout -B "$BRANCH" origin/main
+
+            # Scaffold the package formula from pkgx's package.yml.
+            if ! (cd packages/ts-pantry && bun bin/cli.ts fetch "$DOMAIN" --output-dir src/packages --no-cache); then
+              echo "⚠  $DOMAIN: fetch failed, skipping"
+              git checkout main && git branch -D "$BRANCH" 2>/dev/null || true
+              echo "::endgroup::"
+              continue
+            fi
+
+            # Commit only the new package definition file(s). The fetch step also
+            # regenerates index.ts/aliases.ts, but committing those in every PR would
+            # cause cross-PR conflicts — so unstage and restore them. They're
+            # regenerated on main post-merge by update-packages.yml.
+            git add packages/ts-pantry/src/packages/
+            git reset -q -- packages/ts-pantry/src/packages/index.ts packages/ts-pantry/src/packages/aliases.ts 2>/dev/null || true
+            git checkout -q -- packages/ts-pantry/src/packages/index.ts packages/ts-pantry/src/packages/aliases.ts 2>/dev/null || true
+            if git diff --cached --quiet; then
+              echo "⚠  $DOMAIN: nothing scaffolded, skipping"
+              git checkout main && git branch -D "$BRANCH" 2>/dev/null || true
+              echo "::endgroup::"
+              continue
+            fi
+
+            git commit -m "feat(packages): add $DOMAIN from pkgx" \
+              -m "New package definition discovered in pkgxdev/pantry and scaffolded automatically. Review the versions/programs/dependencies before merging."
+            git push -u origin "$BRANCH"
+
+            gh pr create \
+              --title "feat(packages): add $DOMAIN from pkgx" \
+              --body "$(printf 'Automated discovery: **%s** exists in [pkgxdev/pantry](https://github.com/pkgxdev/pantry/tree/main/projects/%s) but not here yet.\n\nThis PR adds the scaffolded formula. Please review programs, dependencies and versions before merging. After merge, the package index/aliases are regenerated automatically by the Update Packages workflow.\n\n_Opened by the pkgx-sync workflow._' "$DOMAIN" "$DOMAIN")" \
+              --label pkgx-sync \
+              --head "$BRANCH" \
+              --base main || echo "⚠  $DOMAIN: gh pr create failed (label missing or PR exists?)"
+
+            git checkout main
+            echo "::endgroup::"
+          done <<< "${{ steps.discover.outputs.domains }}"
+
+      - name: discord-failure-alert
+        if: failure()
+        uses: ./.github/actions/discord-notify
+        with:
+          title: pkgx Sync — Failed
+          description: New-package discovery/PR workflow failed
+          status: failure
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
