@@ -26,8 +26,17 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  AWS_REGION: us-east-1
-  S3_BUCKET: pantry-registry
+  # Object storage provider. Set the repo variable STORAGE_PROVIDER=backblaze (and
+  # the S3_* vars + B2_* secrets below) to sync binaries to Backblaze B2.
+  # Defaults to AWS S3 so existing runs are unchanged.
+  STORAGE_PROVIDER: ${{ vars.STORAGE_PROVIDER || 'aws' }}
+  S3_BUCKET: ${{ vars.S3_BUCKET || 'pantry-registry' }}
+  S3_REGION: ${{ vars.S3_REGION || 'us-east-1' }}
+  S3_ENDPOINT: ${{ vars.S3_ENDPOINT }}
+  AWS_REGION: ${{ vars.S3_REGION || 'us-east-1' }}
+  # Credentials are resolved per provider: AWS_* for S3, B2_* for Backblaze.
+  B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+  B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
 
 permissions:
   contents: read
