@@ -1,8 +1,11 @@
 import { resolve, relative } from 'node:path'
 import type { TarballStorage } from '../types'
-// TODO: Switch to ts-cloud when published on npm
-// import { S3Client } from 'ts-cloud/aws'
-import { S3Client } from './aws-client'
+import type { ResolvedStorage } from './provider'
+// Vendored S3-compatible client (AWS S3 / Backblaze B2 / Hetzner). The same
+// multi-provider support now lives in @stacksjs/ts-cloud/aws — swap to it once
+// the registry build consumes that package directly.
+import type { S3Client } from './aws-client'
+import { createS3Client, resolveStorageProvider } from './provider'
 
 /**
  * Semver descending comparator that handles prerelease suffixes.
@@ -46,15 +49,21 @@ export function sanitizePackageName(name: string): string {
  */
 export class S3Storage implements TarballStorage {
   private bucket: string
-  private region: string
   private baseUrl: string
   private s3: S3Client
 
-  constructor(bucket: string, region = 'us-east-1', baseUrl?: string) {
+  /**
+   * @param bucket   Bucket name.
+   * @param storage  Resolved provider config (region/endpoint/credentials). Defaults
+   *                 to {@link resolveStorageProvider} from the environment.
+   * @param baseUrl  Public base URL used in tarball URLs (typically the registry's
+   *                 own origin, e.g. https://registry.pantry.dev). Falls back to the
+   *                 provider's public bucket URL.
+   */
+  constructor(bucket: string, storage: ResolvedStorage = resolveStorageProvider(), baseUrl?: string) {
     this.bucket = bucket
-    this.region = region
-    this.baseUrl = baseUrl || `https://${bucket}.s3.${region}.amazonaws.com`
-    this.s3 = new S3Client(region)
+    this.baseUrl = baseUrl || storage.publicBaseUrl(bucket)
+    this.s3 = createS3Client(storage)
   }
 
   /**

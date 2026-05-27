@@ -15,6 +15,8 @@ import { join } from 'node:path'
 import { downloadNpmTarball, fetchFromNpm, listNpmVersions, searchNpm } from './npm-fallback'
 import { FileMetadataStorage } from './storage/metadata'
 import { DynamoDBMetadataStorage } from './storage/dynamodb-metadata'
+import { ObjectMetadataStorage } from './storage/object-metadata'
+import { createS3Client, resolveStorageProvider } from './storage/provider'
 import { LocalStorage, S3Storage, sanitizePackageName } from './storage/s3'
 
 /** Reject version strings containing shell-unsafe or path-unsafe characters. */
@@ -53,17 +55,43 @@ export class Registry {
     const localStoragePath = config.localStoragePath
       || (process.env.NODE_ENV === 'test' ? mkdtempSync(join(tmpdir(), 'pantry-registry-')) : './.registry')
 
-    // Initialize storage backends
-    if (config.s3Bucket && config.s3Bucket !== 'local') {
-      this.tarballStorage = new S3Storage(config.s3Bucket, config.s3Region, config.baseUrl)
+    // Resolve the object-storage provider once (AWS S3 / Backblaze B2 / Hetzner),
+    // shared by both the tarball store and the object metadata store so they
+    // always point at the same bucket/endpoint/credentials.
+    const usingObjectStorage = Boolean(config.s3Bucket && config.s3Bucket !== 'local')
+    const storage = usingObjectStorage
+      ? resolveStorageProvider({
+          provider: config.storageProvider,
+          region: config.s3Region,
+          endpoint: config.s3Endpoint,
+          forcePathStyle: config.forcePathStyle,
+        })
+      : undefined
+
+    // Initialize tarball storage
+    if (storage) {
+      this.tarballStorage = new S3Storage(config.s3Bucket, storage, config.baseUrl)
     }
     else {
       // Use local storage for development
       this.tarballStorage = new LocalStorage(join(localStoragePath, 'tarballs'), config.baseUrl)
     }
 
-    if (config.dynamoTable && config.dynamoTable !== 'local') {
-      // Use DynamoDB for production
+    // Initialize metadata storage. Default backend follows the provider: object
+    // storage for any S3-compatible provider (fully off DynamoDB), DynamoDB only
+    // when explicitly requested, and the local file store for development.
+    const metadataBackend = config.metadataBackend
+      ?? (storage && storage.provider !== 'aws' ? 'object' : undefined)
+      ?? (config.dynamoTable && config.dynamoTable !== 'local' ? 'dynamodb' : 'file')
+
+    if (metadataBackend === 'object' && storage) {
+      this.metadataStorage = new ObjectMetadataStorage(
+        createS3Client(storage),
+        config.s3Bucket,
+        config.metadataKey,
+      )
+    }
+    else if (metadataBackend === 'dynamodb' && config.dynamoTable && config.dynamoTable !== 'local') {
       this.metadataStorage = new DynamoDBMetadataStorage(config.dynamoTable, config.s3Region || 'us-east-1')
     }
     else {
@@ -434,30 +462,48 @@ export function createProductionRegistry(config: {
   baseUrl: string
   region?: string
   npmFallback?: boolean
+  storageProvider?: 'aws' | 'backblaze' | 'hetzner'
+  s3Endpoint?: string
+  forcePathStyle?: boolean
+  metadataBackend?: 'dynamodb' | 'object' | 'file'
 }): Registry {
   return new Registry({
     s3Bucket: config.s3Bucket,
-    s3Region: config.region || 'us-east-1',
+    s3Region: config.region,
+    storageProvider: config.storageProvider,
+    s3Endpoint: config.s3Endpoint,
+    forcePathStyle: config.forcePathStyle,
     dynamoTable: config.dynamoTable,
+    metadataBackend: config.metadataBackend,
     baseUrl: config.baseUrl,
     npmFallback: config.npmFallback ?? true,
   })
 }
 
 /**
- * Create a registry from environment variables
+ * Create a registry from environment variables.
+ *
+ * Storage provider is selected via STORAGE_PROVIDER (aws | backblaze | hetzner);
+ * endpoint/region/credentials are resolved by the storage provider helper from
+ * the matching env vars (S3_ENDPOINT, S3_REGION or B2_REGION, and the
+ * provider credential vars B2_... / HETZNER_S3_...).
  */
 export function createRegistryFromEnv(): Registry {
   const s3Bucket = process.env.S3_BUCKET || 'local'
   const dynamoTable = process.env.DYNAMODB_TABLE || 'pantry-registry'
   const baseUrl = process.env.BASE_URL || 'http://localhost:3000'
-  const region = process.env.AWS_REGION || 'us-east-1'
   const npmFallback = process.env.NPM_FALLBACK !== 'false'
 
   return new Registry({
     s3Bucket,
-    s3Region: region,
+    // Leave region undefined unless explicitly set so the provider default applies.
+    s3Region: process.env.S3_REGION || process.env.AWS_REGION,
+    storageProvider: process.env.STORAGE_PROVIDER as 'aws' | 'backblaze' | 'hetzner' | undefined,
+    s3Endpoint: process.env.S3_ENDPOINT,
+    forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
     dynamoTable,
+    metadataBackend: process.env.METADATA_BACKEND as 'dynamodb' | 'object' | 'file' | undefined,
+    metadataKey: process.env.METADATA_KEY,
     baseUrl,
     npmFallback,
   })

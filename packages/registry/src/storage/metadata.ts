@@ -15,9 +15,15 @@ import type {
  * Replace with DynamoDB for production
  */
 export class InMemoryMetadataStorage implements MetadataStorage {
-  private packages: Map<string, PackageRecord> = new Map()
-  private paywalls: Map<string, PackagePaywall> = new Map()
-  private accessGrants: Map<string, PackageAccessGrant> = new Map()
+  protected packages: Map<string, PackageRecord> = new Map()
+  protected paywalls: Map<string, PackagePaywall> = new Map()
+  protected accessGrants: Map<string, PackageAccessGrant> = new Map()
+
+  /**
+   * Called after any mutation. No-op in memory; persisting subclasses
+   * (file / object storage) override this to schedule a durable save.
+   */
+  protected onMutate(): void {}
 
   async getPackage(name: string): Promise<PackageRecord | null> {
     return this.packages.get(name) || null
@@ -49,6 +55,7 @@ export class InMemoryMetadataStorage implements MetadataStorage {
 
   async putPackage(record: PackageRecord): Promise<void> {
     this.packages.set(record.name, record)
+    this.onMutate()
   }
 
   async putVersion(name: string, version: string, metadata: PackageMetadata): Promise<void> {
@@ -92,6 +99,7 @@ export class InMemoryMetadataStorage implements MetadataStorage {
     pkg.author = metadata.author || pkg.author
     pkg.keywords = metadata.keywords || pkg.keywords
     this.packages.set(name, pkg)
+    this.onMutate()
   }
 
   async search(query: string, limit = 20): Promise<SearchResult[]> {
@@ -139,13 +147,14 @@ export class InMemoryMetadataStorage implements MetadataStorage {
     if (pkg) {
       pkg.totalDownloads++
       this.packages.set(name, pkg)
+      this.onMutate()
     }
   }
 
   // Commit publish operations (in-memory)
-  private commits: Map<string, CommitPublish[]> = new Map()
-  private packageCommits: Map<string, CommitPublish[]> = new Map()
-  private publisherCommitNames: Map<string, Set<string>> = new Map()
+  protected commits: Map<string, CommitPublish[]> = new Map()
+  protected packageCommits: Map<string, CommitPublish[]> = new Map()
+  protected publisherCommitNames: Map<string, Set<string>> = new Map()
 
   async setPackagePublisher(name: string, userId: string): Promise<void> {
     const pkg = this.packages.get(name)
@@ -153,6 +162,7 @@ export class InMemoryMetadataStorage implements MetadataStorage {
       pkg.publishedBy = userId
       pkg.updatedAt = new Date().toISOString()
       this.packages.set(name, pkg)
+      this.onMutate()
     }
   }
 
@@ -166,6 +176,7 @@ export class InMemoryMetadataStorage implements MetadataStorage {
       this.publisherCommitNames.set(userId, new Set())
     }
     this.publisherCommitNames.get(userId)!.add(name)
+    this.onMutate()
   }
 
   async listPackagesByPublisher(userId: string, limit = 50): Promise<PublisherPackageSummary[]> {
@@ -244,6 +255,7 @@ export class InMemoryMetadataStorage implements MetadataStorage {
     }
     pkg.updatedAt = new Date().toISOString()
     this.packages.set(name, pkg)
+    this.onMutate()
     return pkg
   }
 
@@ -261,6 +273,7 @@ export class InMemoryMetadataStorage implements MetadataStorage {
     const pkgFiltered = pkgExisting.filter(p => p.sha !== publish.sha)
     pkgFiltered.push(publish)
     this.packageCommits.set(pkgKey, pkgFiltered)
+    this.onMutate()
   }
 
   async getCommitPublish(sha: string, name: string): Promise<CommitPublish | null> {
@@ -290,6 +303,7 @@ export class InMemoryMetadataStorage implements MetadataStorage {
 
   async putPaywall(paywall: PackagePaywall): Promise<void> {
     this.paywalls.set(paywall.name, paywall)
+    this.onMutate()
   }
 
   async deletePaywall(name: string): Promise<void> {
@@ -297,6 +311,7 @@ export class InMemoryMetadataStorage implements MetadataStorage {
     if (paywall) {
       paywall.enabled = false
       paywall.updatedAt = new Date().toISOString()
+      this.onMutate()
     }
   }
 
@@ -311,6 +326,7 @@ export class InMemoryMetadataStorage implements MetadataStorage {
   async putAccessGrant(grant: PackageAccessGrant): Promise<void> {
     const key = `${grant.packageName}:${grant.token}`
     this.accessGrants.set(key, grant)
+    this.onMutate()
   }
 
   private parseSemver(v: string): { numeric: number[], prerelease: string | null } {
@@ -365,6 +381,63 @@ export class InMemoryMetadataStorage implements MetadataStorage {
       this.packages.set(name, pkg)
     }
   }
+
+  /**
+   * Capture the complete in-memory state — packages AND commit publishes,
+   * publishers, paywalls and access grants — for durable persistence.
+   * `export()` only covers packages (sufficient for the dev file store); a
+   * production object store needs everything, so use this instead.
+   */
+  protected captureState(): FullMetadataState {
+    return {
+      version: 1,
+      packages: this.export(),
+      commits: Object.fromEntries(this.commits),
+      packageCommits: Object.fromEntries(this.packageCommits),
+      publisherCommitNames: Object.fromEntries(
+        [...this.publisherCommitNames].map(([userId, names]) => [userId, [...names]]),
+      ),
+      paywalls: Object.fromEntries(this.paywalls),
+      accessGrants: Object.fromEntries(this.accessGrants),
+    }
+  }
+
+  /** Restore complete state captured by {@link captureState}. Tolerant of partial/legacy snapshots. */
+  protected applyState(state: Partial<FullMetadataState> | Record<string, PackageRecord>): void {
+    // Legacy snapshots were a bare map of packages (the shape `export()` produces).
+    if (!state || typeof state !== 'object')
+      return
+    const looksFull = 'packages' in state || 'commits' in state || 'version' in state
+    if (!looksFull) {
+      this.import(state as Record<string, PackageRecord>)
+      return
+    }
+
+    const full = state as Partial<FullMetadataState>
+    if (full.packages)
+      this.import(full.packages)
+    for (const [sha, list] of Object.entries(full.commits ?? {}))
+      this.commits.set(sha, list)
+    for (const [name, list] of Object.entries(full.packageCommits ?? {}))
+      this.packageCommits.set(name, list)
+    for (const [userId, names] of Object.entries(full.publisherCommitNames ?? {}))
+      this.publisherCommitNames.set(userId, new Set(names))
+    for (const [name, paywall] of Object.entries(full.paywalls ?? {}))
+      this.paywalls.set(name, paywall)
+    for (const [key, grant] of Object.entries(full.accessGrants ?? {}))
+      this.accessGrants.set(key, grant)
+  }
+}
+
+/** Serializable snapshot of the full metadata model. */
+export interface FullMetadataState {
+  version: 1
+  packages: Record<string, PackageRecord>
+  commits: Record<string, CommitPublish[]>
+  packageCommits: Record<string, CommitPublish[]>
+  publisherCommitNames: Record<string, string[]>
+  paywalls: Record<string, PackagePaywall>
+  accessGrants: Record<string, PackageAccessGrant>
 }
 
 /**
@@ -389,7 +462,8 @@ export class FileMetadataStorage extends InMemoryMetadataStorage {
         console.warn(`FileMetadataStorage: ${this.filePath} is not an object; starting empty`)
         return
       }
-      this.import(data)
+      // applyState handles both the full snapshot and the legacy bare-package map.
+      this.applyState(data)
     }
     catch (err) {
       // Previously swallowed silently — a malformed metadata.json would cause
@@ -425,8 +499,7 @@ export class FileMetadataStorage extends InMemoryMetadataStorage {
   }
 
   private async _doSave(): Promise<void> {
-    const data = this.export()
-    const payload = JSON.stringify(data, null, 2)
+    const payload = JSON.stringify(this.captureState(), null, 2)
     // Write to a temp file then rename — `rename(2)` is atomic on POSIX, so
     // a crash during write can't leave a half-written metadata file.
     const tmpPath = `${this.filePath}.tmp.${process.pid}.${Date.now()}`
@@ -435,18 +508,8 @@ export class FileMetadataStorage extends InMemoryMetadataStorage {
     await fs.rename(tmpPath, this.filePath)
   }
 
-  async putPackage(record: PackageRecord): Promise<void> {
-    await super.putPackage(record)
-    this.scheduleSave()
-  }
-
-  async putVersion(name: string, version: string, metadata: PackageMetadata): Promise<void> {
-    await super.putVersion(name, version, metadata)
-    this.scheduleSave()
-  }
-
-  async incrementDownloads(name: string, version: string): Promise<void> {
-    await super.incrementDownloads(name, version)
+  // Persist after every mutation (packages, commits, publishers, paywalls, grants).
+  protected onMutate(): void {
     this.scheduleSave()
   }
 }

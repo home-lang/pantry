@@ -1,17 +1,19 @@
 #!/usr/bin/env bun
 
 /**
- * Upload Package Binaries to S3
+ * Upload Package Binaries to object storage
  *
- * Uploads built package tarballs to the pantry-registry S3 bucket.
- * Uses ts-cloud for AWS S3 operations.
+ * Uploads built package tarballs to the registry bucket on the configured
+ * object-storage provider (AWS S3, Backblaze B2 or Hetzner). Set STORAGE_PROVIDER
+ * (+ the provider's endpoint/region/credential env vars) to target B2/Hetzner;
+ * defaults to AWS S3. Uses ts-cloud for the S3-compatible client.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import * as crypto from 'node:crypto'
-import { S3Client } from '@stacksjs/ts-cloud'
+import { createObjectStorageClient } from '@stacksjs/ts-cloud'
 
 const DYNAMO_TABLE = process.env.DYNAMODB_TABLE || 'pantry-packages'
 
@@ -157,15 +159,18 @@ function compareSemverDesc(a: string, b: string): number {
 
 export async function uploadToS3(options: UploadOptions): Promise<void> {
   const { package: pkgName, version, artifactsDir, bucket, region } = options
+  const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
 
   console.log(`\n${'='.repeat(60)}`)
-  console.log(`Uploading ${pkgName} ${version} to S3`)
+  console.log(`Uploading ${pkgName} ${version} to object storage`)
   console.log(`${'='.repeat(60)}`)
+  console.log(`   Provider: ${provider}`)
   console.log(`   Bucket: ${bucket}`)
   console.log(`   Region: ${region}`)
 
-  // Initialize S3 client
-  const s3 = new S3Client(region)
+  // Initialize the S3-compatible client. For AWS, honor the --region flag;
+  // for B2/Hetzner the region/endpoint/credentials come from env (resolved by ts-cloud).
+  const s3 = createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })
 
   // Find all artifact directories
   if (!existsSync(artifactsDir)) {
@@ -318,17 +323,24 @@ catch {
   })
   console.log(`   ✓ Updated metadata at s3://${bucket}/${metadataKey}`)
 
-  // Sync to DynamoDB so the Zig CLI can discover this package
-  console.log(`\n📊 Syncing to DynamoDB registry...`)
-  try {
-    const availableVersions = Object.keys(metadata.versions).sort((a, b) => {
-      return compareSemverDesc(a, b)
-    })
-    await syncToDynamoDB(pkgName, metadata.latestVersion, availableVersions, region)
-    console.log(`   ✓ Updated DynamoDB (${DYNAMO_TABLE}) — ${availableVersions.length} versions`)
+  // Sync to DynamoDB so the Zig CLI can discover this package. DynamoDB is
+  // AWS-only; when storage runs on B2/Hetzner, package discovery comes from the
+  // bucket's per-package metadata.json instead, so skip the sync.
+  if (provider === 'aws') {
+    console.log(`\n📊 Syncing to DynamoDB registry...`)
+    try {
+      const availableVersions = Object.keys(metadata.versions).sort((a, b) => {
+        return compareSemverDesc(a, b)
+      })
+      await syncToDynamoDB(pkgName, metadata.latestVersion, availableVersions, region)
+      console.log(`   ✓ Updated DynamoDB (${DYNAMO_TABLE}) — ${availableVersions.length} versions`)
+    }
+    catch (error: any) {
+      console.log(`   ⚠ DynamoDB sync failed (non-fatal): ${error.message}`)
+    }
   }
-catch (error: any) {
-    console.log(`   ⚠ DynamoDB sync failed (non-fatal): ${error.message}`)
+  else {
+    console.log(`\n📊 Skipping DynamoDB sync (provider=${provider}); discovery via bucket metadata.json`)
   }
 
   console.log(`\n${'='.repeat(60)}`)

@@ -12,7 +12,8 @@
 
 import * as crypto from 'node:crypto'
 import { DynamoDBClient } from './storage/dynamodb-client'
-import { S3Client } from './storage/aws-client'
+import type { S3Client } from './storage/aws-client'
+import { createS3Client, resolveStorageProvider } from './storage/provider'
 
 /**
  * Composer package manifest (composer.json structure)
@@ -304,7 +305,8 @@ export class DynamoDBPhpStorage implements PhpPackageStorage {
     this.bucket = opts.bucket
     this.baseUrl = opts.baseUrl
     this.db = new DynamoDBClient(opts.region || 'us-east-1')
-    this.s3 = new S3Client(opts.region || 'us-east-1')
+    // Tarballs go to the configured object-storage provider (S3 / Backblaze B2 / Hetzner).
+    this.s3 = createS3Client(resolveStorageProvider({ region: opts.region }))
   }
 
   private marshal(obj: Record<string, any>) {

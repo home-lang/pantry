@@ -8,7 +8,7 @@ import type { ZigPackageStorage } from './zig'
 import { handlePhpRoutes, createPhpStorage } from './php-routes'
 import type { PhpPackageStorage } from './php'
 import { getPackagistCount, searchPackagist, fetchFromPackagist } from './packagist-fallback'
-import { S3Client } from './storage/aws-client'
+import { createS3Client, resolveStorageProvider } from './storage/provider'
 import { checkPaywallAccess, configurePaywall, createCheckoutSession, handleStripeWebhook, formatPrice } from './paywall'
 import { renderTemplate } from '@stacksjs/stx'
 import {
@@ -2820,8 +2820,7 @@ async function handleBinaryProxy(
   // Use injected storage or fall back to S3 (cached singleton to avoid re-creating client per request)
   const binaryStore: BinaryStorage = storage || _defaultBinaryStorage || (() => {
     const s3Bucket = process.env.S3_BUCKET || 'pantry-registry'
-    const s3Region = process.env.AWS_REGION || 'us-east-1'
-    const s3 = new S3Client(s3Region)
+    const s3 = createS3Client(resolveStorageProvider())
     _defaultBinaryStorage = { getObject: (key: string) => s3.getObjectBuffer(s3Bucket, key) }
     return _defaultBinaryStorage
   })()
@@ -3133,8 +3132,7 @@ async function fetchPackageMetadata(domain: string, storage?: BinaryStorage): Pr
   try {
     const store: BinaryStorage = storage || (() => {
       const s3Bucket = process.env.S3_BUCKET || 'pantry-registry'
-      const s3Region = process.env.AWS_REGION || 'us-east-1'
-      const s3 = new S3Client(s3Region)
+      const s3 = createS3Client(resolveStorageProvider())
       return { getObject: (key: string) => s3.getObjectBuffer(s3Bucket, key) }
     })()
     const buffer = await store.getObject(`binaries/${domain}/metadata.json`)

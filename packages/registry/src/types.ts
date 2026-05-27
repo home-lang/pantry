@@ -104,12 +104,28 @@ export interface PublishRequest {
  * Registry configuration
  */
 export interface RegistryConfig {
-  /** S3 bucket name for tarball storage */
+  /** Bucket name for tarball storage */
   s3Bucket: string
-  /** S3 region */
+  /** Region / location slug for the storage provider */
   s3Region?: string
-  /** DynamoDB table name for metadata */
+  /**
+   * Object storage provider. AWS S3, Backblaze B2 and Hetzner Object Storage are
+   * all S3-compatible. Defaults to `STORAGE_PROVIDER` env, then `'aws'`.
+   */
+  storageProvider?: 'aws' | 'backblaze' | 'hetzner'
+  /** Endpoint host override (no scheme), e.g. `s3.us-west-004.backblazeb2.com`. */
+  s3Endpoint?: string
+  /** Force path-style addressing instead of virtual-hosted. */
+  forcePathStyle?: boolean
+  /** DynamoDB table name for metadata (only used when metadataBackend is 'dynamodb') */
   dynamoTable: string
+  /**
+   * Metadata storage backend. Defaults to 'object' for non-AWS providers (fully
+   * off DynamoDB), 'dynamodb' when a table is configured on AWS, else 'file'.
+   */
+  metadataBackend?: 'dynamodb' | 'object' | 'file'
+  /** Object key for the metadata snapshot when metadataBackend is 'object'. */
+  metadataKey?: string
   /** Base URL for the registry (used in tarball URLs) */
   baseUrl: string
   /** Enable npmjs fallback for missing packages */

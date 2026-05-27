@@ -1,10 +1,12 @@
 #!/usr/bin/env bun
 
 /**
- * Download Package Binaries from S3
+ * Download Package Binaries from object storage
  *
- * Downloads pre-built package binaries from the custom S3 registry.
- * Can fall back to system package manager if package is not found.
+ * Downloads pre-built package binaries from the registry bucket on the configured
+ * object-storage provider (AWS S3, Backblaze B2 or Hetzner). Set STORAGE_PROVIDER
+ * (+ the provider's endpoint/region/credential env vars) to target B2/Hetzner;
+ * defaults to AWS S3. Can fall back to the system package manager if not found.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'node:fs'
@@ -12,7 +14,16 @@ import { execSync } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { homedir, platform, arch } from 'node:os'
-import { S3Client } from '@stacksjs/ts-cloud'
+import { createObjectStorageClient } from '@stacksjs/ts-cloud'
+
+/**
+ * Build an S3-compatible client for the configured provider. For AWS the
+ * --region flag applies; for B2/Hetzner region/endpoint/credentials come from env.
+ */
+function makeStorageClient(region: string) {
+  const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
+  return createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })
+}
 
 interface DownloadOptions {
   package: string
@@ -246,13 +257,13 @@ async function downloadPackage(options: DownloadOptions): Promise<boolean> {
   console.log(`\nInstalling ${pkgName}${version ? `@${version}` : ''}`)
   console.log(`   Platform: ${currentPlatform}`)
 
-  // Initialize S3 client
-  const s3 = new S3Client(region)
+  // Initialize storage client
+  const s3 = makeStorageClient(region)
 
   try {
     // Fetch package metadata
     const metadataKey = `binaries/${pkgName}/metadata.json`
-    console.log(`   Checking S3: s3://${bucket}/${metadataKey}`)
+    console.log(`   Checking registry: ${bucket}/${metadataKey}`)
 
     let metadata: PackageMetadata
     try {
@@ -306,17 +317,11 @@ else {
     console.log(`   ⬇️  Downloading (${(platformInfo.size / 1024 / 1024).toFixed(2)} MB)...`)
 
     const tarballPath = join(pkgInstallDir, 'package.tar.gz')
-    const s3Uri = `s3://${bucket}/${platformInfo.tarball}`
 
-    try {
-      // Try AWS CLI first (most reliable for binary)
-      execSync(`aws s3 cp "${s3Uri}" "${tarballPath}" --region ${region}`, { stdio: 'pipe' })
-    }
-catch {
-      // Fallback: use curl with public URL (if bucket is public)
-      const publicUrl = `https://${bucket}.s3.${region}.amazonaws.com/${platformInfo.tarball}`
-      execSync(`curl -fSL -o "${tarballPath}" "${publicUrl}"`, { stdio: 'pipe' })
-    }
+    // Download via the S3-compatible client — provider-agnostic (works for AWS
+    // S3, Backblaze B2 and Hetzner) and avoids requiring the AWS CLI on the host.
+    const tarballBuf = await s3.getObjectBuffer(bucket, platformInfo.tarball)
+    writeFileSync(tarballPath, tarballBuf)
 
     // Verify SHA256
     console.log(`   🔐 Verifying checksum...`)
@@ -376,7 +381,7 @@ async function listAvailableVersions(
     region: string
   }
 ): Promise<string[]> {
-  const s3 = new S3Client(options.region)
+  const s3 = makeStorageClient(options.region)
   const metadataKey = `binaries/${pkgName}/metadata.json`
 
   try {
