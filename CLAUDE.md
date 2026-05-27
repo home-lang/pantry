@@ -141,6 +141,20 @@ The Pantry action exports `PANTRY_TOKEN` and `PANTRY_REGISTRY_TOKEN` as env vars
 
 The pantry S3 registry (`registry.pantry.dev/binaries/`) hosts **system packages**(pre-built binaries like zig, curl, redis, bun) and**apps** (GUI applications like VS Code, Discord, Obsidian) uploaded via the `build.yml` / `sync-binaries.yml` workflows. JS/TS packages go to npm, not S3.
 
+## Object storage provider (Backblaze B2 / Hetzner / S3)
+
+Registry object storage is **provider-agnostic** (AWS S3, Backblaze B2, Hetzner Object Storage — all S3-compatible, SigV4). Selection is via `STORAGE_PROVIDER` (`aws` default). Resolution lives in `packages/registry/src/storage/provider.ts` (which builds the vendored `S3Client`) and ts-cloud's `createObjectStorageClient` (used by the `ts-pantry` upload/download scripts). On a non-AWS provider, registry metadata is stored as a JSON object in the bucket (`ObjectMetadataStorage`, `metadata/registry-index.json`) instead of DynamoDB — so the registry runs fully off AWS while the **server stays on EC2**.
+
+- Env: `STORAGE_PROVIDER`, `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT` (auto-derived if unset), `S3_FORCE_PATH_STYLE`, `METADATA_BACKEND` (`object`|`dynamodb`|`file`), creds `B2_APPLICATION_KEY_ID`/`B2_APPLICATION_KEY` (or `HETZNER_S3_ACCESS_KEY`/`HETZNER_S3_SECRET_KEY`, or generic `S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY`).
+- Workflows `build.yml` / `sync-binaries.yml` read repo **variables** (`STORAGE_PROVIDER`, `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`) + **secrets** (`B2_APPLICATION_KEY_ID`, `B2_APPLICATION_KEY`). Unset ⇒ stays on S3.
+- Point the EC2 server at B2: `scripts/configure-registry-b2.sh` (writes the storage env into the systemd unit, mirrors to SSM `/pantry/b2-*`, restarts).
+- Full setup + how to obtain B2 credentials: `docs/backblaze-storage.md`.
+- B2 buckets stay **private**; the registry server proxies `registry.pantry.dev/binaries/...`.
+
+## pkgx new-package sync
+
+`pkgx-sync.yml` (daily) watches `pkgxdev/pantry` for packages we don't have and opens **one PR per new package** (label `pkgx-sync`). `scripts/discover-pkgx-new.ts` diffs pkgx's project list against `packages/ts-pantry/src/packages/*.ts` (by `convertDomainToFileName`); the workflow scaffolds each new formula via `pantry fetch <domain>` on its own branch. Index/aliases are regenerated post-merge by `update-packages.yml` (so per-package PRs don't conflict). This complements `update-packages.yml`, which only bumps versions of **existing** packages.
+
 ## AWS / ts-cloud (`/.config/cloud.ts`)
 
 Production site infrastructure uses **ts-cloud** from `~/Code/Libraries/ts-cloud`:
