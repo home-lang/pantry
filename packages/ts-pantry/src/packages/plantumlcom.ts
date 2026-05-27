@@ -76,6 +76,7 @@ export const plantumlcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.2026.5',
     '1.2026.4',
     '1.2026.4-native',
     '1.2026.3',
