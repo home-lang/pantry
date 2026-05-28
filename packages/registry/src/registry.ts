@@ -5,6 +5,7 @@ import type {
   PackageMetadata,
   PackagePublisherSettings,
   PackageRecord,
+  PublisherPackageSummary,
   RegistryConfig,
   SearchResult,
   TarballStorage,
@@ -249,7 +250,7 @@ export class Registry {
   }
 
   /** List packages owned by a publisher account (admins see all registry packages) */
-  async listPublisherPackages(userId: string, limit = 50, isAdmin = false) {
+  async listPublisherPackages(userId: string, limit = 50, isAdmin = false): Promise<PublisherPackageSummary[]> {
     if (isAdmin) {
       return this.metadataStorage.listAllRegistryPackages(limit)
     }
@@ -262,16 +263,16 @@ export class Registry {
     userId: string,
     updates: Partial<PackageRecord> & { settings?: PackagePublisherSettings },
     isAdmin = false,
-  ) {
+  ): Promise<PackageRecord> {
     const effectiveUser = isAdmin ? '_admin' : userId
     return this.metadataStorage.updatePublisherPackage(name, effectiveUser, updates)
   }
 
-  async getPublisherPackageRecord(name: string) {
+  async getPublisherPackageRecord(name: string): Promise<PackageRecord | null> {
     return this.metadataStorage.getPackage(name)
   }
 
-  async claimPublisherPackage(name: string, userId: string) {
+  async claimPublisherPackage(name: string, userId: string): Promise<void> {
     await this.metadataStorage.setPackagePublisher(name, userId)
   }
 

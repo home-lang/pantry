@@ -45,6 +45,7 @@
     "packages/site/**",
     "packages/inspector/**",
     "packages/zig/**",
-    "packages/ts-pantry/scripts/**"
+    "packages/ts-pantry/scripts/**",
+    "scripts/migrate-production-site-stack.ts"
   ]
 }

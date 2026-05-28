@@ -14,7 +14,7 @@ describe('Publisher dashboard', () => {
   test('publish assigns ownership and lists packages', async () => {
     await auth.signup('pub@test.com', 'Publisher', 'password12345')
     const { sessionToken } = await auth.login('pub@test.com', 'password12345')
-    const tokens = await auth.createApiToken('pub@test.com', 'ci', ['publish'])
+    const tokens = await auth.createApiToken('pub@test.com', 'ci', { permissions: ['publish'] })
     expect(tokens.token).toStartWith('ptry_')
 
     const tarball = new ArrayBuffer(8)
