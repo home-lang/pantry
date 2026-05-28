@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
-import { S3Client } from '@stacksjs/ts-cloud'
+import { createObjectStorageClient } from '@stacksjs/ts-cloud'
 import {
   BINARY_SYNC_ALLOW_EMPTY_DOMAIN_SET,
   BINARY_SYNC_DOMAINS,
@@ -504,7 +504,21 @@ async function main(): Promise<void> {
 
   if (domains.length === 0) throw new Error('Provide --package or --all-binary-sync')
 
-  const s3 = new S3Client(values.region || 'us-east-1') as unknown as S3Like
+  // Provider-aware, authenticated client (AWS S3 / Hetzner / Backblaze). Buckets
+  // may be private, so every read/HEAD goes through signed requests — never a
+  // public URL. STORAGE_PROVIDER/S3_ENDPOINT/credentials come from the env.
+  const client = createObjectStorageClient({ provider: process.env.STORAGE_PROVIDER as any, region: values.region })
+  const s3: S3Like = {
+    async listObjects({ bucket, prefix, maxKeys }) {
+      const objects = await client.listAllObjects({ bucket, prefix, maxKeys })
+      return { objects: objects.map(o => ({ Key: o.Key, LastModified: o.LastModified, Size: o.Size })) }
+    },
+    getObject: (bucket, key) => client.getObject(bucket, key),
+    getObjectBytes: async (bucket, key) => new Uint8Array(await client.getObjectBuffer(bucket, key)),
+    headObject: async (bucket, key) => (await client.headObject(bucket, key)) !== null,
+    putObject: options => client.putObject(options),
+    deleteObject: (bucket, key) => client.deleteObject(bucket, key),
+  }
   const results: VerifyResult[] = []
   for (const domain of [...new Set(domains)]) {
     console.log(`\n🔎 Verifying ${domain}`)
