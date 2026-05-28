@@ -51,13 +51,50 @@ function findPackageFiles(dir: string): string[] {
 }
 
 /**
- * Compare versions for sorting (newest to oldest)
- * Handles semantic versions like "1.2.3", "1.2.3-beta", etc.
+ * Compare two SemVer prerelease strings (the part after `-`, e.g. `dev.263`)
+ * per SemVer §11.4. Numeric identifiers compare numerically (so `dev.2471`
+ * outranks `dev.263` instead of losing a lexicographic `"263" > "2471"`
+ * comparison), numeric identifiers rank lower than alphanumeric ones, and a
+ * longer identifier set wins when all preceding identifiers are equal.
+ * Returns negative if `a` precedes `b`, positive if `a` follows, 0 if equal.
  */
-function compareVersions(a: string, b: string): number {
-  // Remove 'v' prefix if present
-  const cleanA = a.startsWith('v') ? a.slice(1) : a
-  const cleanB = b.startsWith('v') ? b.slice(1) : b
+function comparePrerelease(a: string, b: string): number {
+  const idsA = a.split('.')
+  const idsB = b.split('.')
+  const len = Math.max(idsA.length, idsB.length)
+  for (let i = 0; i < len; i++) {
+    const idA = idsA[i]
+    const idB = idsB[i]
+    // A larger set of prerelease fields has higher precedence when all the
+    // preceding identifiers are equal (e.g. `dev.1.1` > `dev.1`).
+    if (idA === undefined) return -1
+    if (idB === undefined) return 1
+    const numA = /^\d+$/.test(idA)
+    const numB = /^\d+$/.test(idB)
+    if (numA && numB) {
+      const d = Number.parseInt(idA, 10) - Number.parseInt(idB, 10)
+      if (d !== 0) return d
+    }
+    else if (numA !== numB) {
+      // Numeric identifiers always have lower precedence than alphanumeric.
+      return numA ? -1 : 1
+    }
+    else if (idA !== idB) {
+      return idA < idB ? -1 : 1
+    }
+  }
+  return 0
+}
+
+/**
+ * Compare versions for sorting (newest to oldest)
+ * Handles semantic versions like "1.2.3", "1.2.3-beta", "0.17.0-dev.263+sha", etc.
+ */
+export function compareVersions(a: string, b: string): number {
+  // Remove 'v' prefix if present, then drop SemVer build metadata (`+sha`),
+  // which carries no precedence and must not leak into the prerelease compare.
+  const cleanA = (a.startsWith('v') ? a.slice(1) : a).split('+')[0]
+  const cleanB = (b.startsWith('v') ? b.slice(1) : b).split('+')[0]
 
   // Separate numeric portion from prerelease suffix
   const dashA = cleanA.indexOf('-')
@@ -83,8 +120,9 @@ function compareVersions(a: string, b: string): number {
   if (preA === null && preB !== null) return -1
   if (preA !== null && preB === null) return 1
   if (preA !== null && preB !== null) {
-    if (preA > preB) return -1
-    if (preA < preB) return 1
+    // Newest-first ordering, so a higher-precedence prerelease sorts earlier.
+    const c = comparePrerelease(preA, preB)
+    return c === 0 ? 0 : -c
   }
 
   return 0

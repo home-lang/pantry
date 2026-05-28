@@ -267,5 +267,30 @@ fi
 [[ -d "$HOME/.local/share/pantry/global/bin" ]] && \
     __pantry_path_prepend "$HOME/.local/share/pantry/global/bin" && export PATH
 
-# Initial environment check on shell start
+# Re-prepend the active project's bins, repairing PATH order.
+# Mirrors __pantry_activate's order so project-local wrappers win: env bin
+# first, then pantry/.bin on top. Idempotent (prepend strips existing copies).
+__pantry_repair_path() {
+    [[ -d "${PANTRY_ENV_BIN_PATH:-}" ]] && __pantry_path_prepend "${PANTRY_ENV_BIN_PATH}"
+    [[ -d "${PANTRY_BIN_PATH:-}" ]] && __pantry_path_prepend "${PANTRY_BIN_PATH}"
+    export PATH
+}
+
+# Initial environment check on shell start.
+#
+# A re-sourced rc (e.g. the common `reloadshell`/`source ~/.zshrc`) re-runs any
+# `export PATH="<global tool>:$PATH"` lines, prepending global dirs AHEAD of an
+# already-active project's bins. Across a `source` (not `exec`) our env vars and
+# the __PANTRY_LAST_PWD memo persist, so __pantry_switch_environment would hit
+# its fast paths and return without repairing PATH order — leaving the global
+# tool shadowing the project's pinned one. So if a project is already active for
+# this PWD, repair PATH order explicitly before re-detecting.
+if [[ -n "${PANTRY_CURRENT_PROJECT:-}" \
+      && ( "$PWD" == "${PANTRY_CURRENT_PROJECT}" || "$PWD" == "${PANTRY_CURRENT_PROJECT}"/* ) ]]; then
+    __pantry_repair_path
+fi
+
+# Force a full re-evaluation on shell start / re-source (the per-shell PWD memo
+# may have persisted across a `source`), then run the detector.
+unset __PANTRY_LAST_PWD
 __pantry_switch_environment
