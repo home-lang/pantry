@@ -35,9 +35,9 @@ pub fn searchCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
 
     var found: usize = 0;
     for (packages.packages) |pkg| {
-        if (std.ascii.indexOfIgnoreCase(pkg.domain, search_term) != null or
-            std.ascii.indexOfIgnoreCase(pkg.name, search_term) != null or
-            std.ascii.indexOfIgnoreCase(pkg.description, search_term) != null)
+        if (std.ascii.findIgnoreCase(pkg.domain, search_term) != null or
+            std.ascii.findIgnoreCase(pkg.name, search_term) != null or
+            std.ascii.findIgnoreCase(pkg.description, search_term) != null)
         {
             style.print("  {s}\n", .{pkg.name});
             style.print("    Domain: {s}\n", .{pkg.domain});
