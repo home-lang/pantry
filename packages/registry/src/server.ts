@@ -9,6 +9,7 @@ import { handlePhpRoutes, createPhpStorage } from './php-routes'
 import type { PhpPackageStorage } from './php'
 import { getPackagistCount, searchPackagist, fetchFromPackagist } from './packagist-fallback'
 import { createS3Client, resolveStorageProvider } from './storage/provider'
+import { ObjectAnalytics } from './storage/object-analytics'
 import { checkPaywallAccess, configurePaywall, createCheckoutSession, handleStripeWebhook, formatPrice } from './paywall'
 import { renderTemplate } from '@stacksjs/stx'
 import {
@@ -4077,9 +4078,21 @@ if (import.meta.main) {
   // Use environment-based config (supports both local and production)
   const dynamoTable = process.env.DYNAMODB_TABLE || 'pantry-registry'
   const registry = createRegistryFromEnv()
-  const analytics = createAnalytics(
-    analyticsTable ? { tableName: analyticsTable, region: awsRegion } : undefined,
-  )
+
+  // Analytics persistence follows the storage provider: on a non-AWS provider
+  // (Hetzner/B2) persist the aggregate analytics to a JSON object in the bucket
+  // (durable + off-AWS, replacing the previously ephemeral in-memory analytics);
+  // on AWS keep DynamoDB when a table is configured, else in-memory.
+  const storage = resolveStorageProvider()
+  let analytics: AnalyticsStorage
+  if (storage.provider !== 'aws') {
+    analytics = new ObjectAnalytics(createS3Client(storage), process.env.S3_BUCKET || 'pantry-registry')
+  }
+  else {
+    analytics = createAnalytics(
+      analyticsTable ? { tableName: analyticsTable, region: awsRegion } : undefined,
+    )
+  }
 
   // Ensure auth storage uses the same DynamoDB table as the registry
   const authStorage = createAuthStorage(dynamoTable, awsRegion)

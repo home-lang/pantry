@@ -483,11 +483,19 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
  * In-memory analytics storage for development/testing
  */
 export class InMemoryAnalytics implements AnalyticsStorage {
+  // `downloads` is an append-only buffer that no getter reads (stats are derived
+  // from the aggregate maps below); it is intentionally not persisted.
   private downloads: DownloadEvent[] = []
-  private packageStats: Map<string, { total: number, versions: Record<string, number>, lastDownload?: string }> = new Map()
-  private dailyStats: Map<string, Map<string, number>> = new Map() // date -> package -> count
-  private categoryDailyStats: Map<string, Map<string, number>> = new Map() // "{category}:{date}" -> package -> count
-  private missingVersionRequests: Map<string, MissingVersionRequest> = new Map()
+  protected packageStats: Map<string, { total: number, versions: Record<string, number>, lastDownload?: string }> = new Map()
+  protected dailyStats: Map<string, Map<string, number>> = new Map() // date -> package -> count
+  protected categoryDailyStats: Map<string, Map<string, number>> = new Map() // "{category}:{date}" -> package -> count
+  protected missingVersionRequests: Map<string, MissingVersionRequest> = new Map()
+
+  /**
+   * Called after any tracking mutation. No-op in memory; persisting subclasses
+   * (object storage) override this to schedule a durable save.
+   */
+  protected onMutate(): void {}
 
   async trackEvent(event: AnalyticsEvent): Promise<void> {
     const date = event.timestamp.split('T')[0]
@@ -497,6 +505,7 @@ export class InMemoryAnalytics implements AnalyticsStorage {
     }
     const packages = this.categoryDailyStats.get(key)!
     packages.set(event.packageName, (packages.get(event.packageName) || 0) + 1)
+    this.onMutate()
   }
 
   async trackDownload(event: DownloadEvent): Promise<void> {
@@ -528,6 +537,7 @@ export class InMemoryAnalytics implements AnalyticsStorage {
     }
     const installPackages = this.categoryDailyStats.get(installKey)!
     installPackages.set(event.packageName, (installPackages.get(event.packageName) || 0) + 1)
+    this.onMutate()
   }
 
   async getPackageStats(packageName: string): Promise<PackageStats | null> {
@@ -626,6 +636,7 @@ else {
         this.missingVersionRequests.delete(entries[i][0])
       }
     }
+    this.onMutate()
   }
 
   async getMissingVersionRequests(packageName: string, limit = 20): Promise<MissingVersionRequest[]> {
@@ -648,6 +659,42 @@ else {
   async getInstallAnalytics(days: 30 | 90 | 365): Promise<InstallAnalyticsResult> {
     return this.getCategoryAnalytics('install', days)
   }
+
+  /** Capture the full aggregate analytics state for durable persistence. */
+  protected captureAnalyticsState(): AnalyticsState {
+    const nested = (m: Map<string, Map<string, number>>): Record<string, Record<string, number>> =>
+      Object.fromEntries([...m].map(([k, inner]) => [k, Object.fromEntries(inner)]))
+    return {
+      version: 1,
+      packageStats: Object.fromEntries(this.packageStats),
+      dailyStats: nested(this.dailyStats),
+      categoryDailyStats: nested(this.categoryDailyStats),
+      missingVersionRequests: Object.fromEntries(this.missingVersionRequests),
+    }
+  }
+
+  /** Restore aggregate analytics state captured by {@link captureAnalyticsState}. */
+  protected applyAnalyticsState(state: Partial<AnalyticsState> | null | undefined): void {
+    if (!state || typeof state !== 'object')
+      return
+    const toNested = (obj?: Record<string, Record<string, number>>): Map<string, Map<string, number>> =>
+      new Map(Object.entries(obj ?? {}).map(([k, inner]) => [k, new Map(Object.entries(inner))]))
+    if (state.packageStats)
+      this.packageStats = new Map(Object.entries(state.packageStats))
+    this.dailyStats = toNested(state.dailyStats)
+    this.categoryDailyStats = toNested(state.categoryDailyStats)
+    if (state.missingVersionRequests)
+      this.missingVersionRequests = new Map(Object.entries(state.missingVersionRequests))
+  }
+}
+
+/** Serializable snapshot of the aggregate analytics model. */
+export interface AnalyticsState {
+  version: 1
+  packageStats: Record<string, { total: number, versions: Record<string, number>, lastDownload?: string }>
+  dailyStats: Record<string, Record<string, number>>
+  categoryDailyStats: Record<string, Record<string, number>>
+  missingVersionRequests: Record<string, MissingVersionRequest>
 }
 
 /**

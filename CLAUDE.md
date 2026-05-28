@@ -150,6 +150,7 @@ Registry object storage is **provider-agnostic** (AWS S3, Hetzner Object Storage
 - Point the EC2 server at the provider: `scripts/configure-registry-storage.sh` (writes the storage env into the systemd unit, mirrors to SSM `/pantry/storage-*`, restarts).
 - Full setup + how to obtain credentials: `docs/object-storage.md`.
 - Buckets stay **private**; the registry server proxies `registry.pantry.dev/binaries/...`.
+- **Analytics** also persist off-AWS on non-AWS providers: `ObjectAnalytics` (`analytics/registry-analytics.json`) replaces the previously **ephemeral in-memory** prod analytics and DynamoDB analytics, so download tracking survives restarts. Per-package download counts persist via the object metadata store (`incrementDownloads`). On AWS the prior behavior (DynamoDB if `DYNAMODB_ANALYTICS_TABLE` set, else in-memory) is unchanged.
 
 ## pkgx new-package sync
 
