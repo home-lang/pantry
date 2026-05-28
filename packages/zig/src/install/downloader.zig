@@ -582,12 +582,14 @@ pub fn lookupS3Registry(
     const tarball_path_val = platform_info.object.get("tarball") orelse return null;
     const tarball_path = if (tarball_path_val == .string) tarball_path_val.string else return null;
 
-    // Download binary-registry artifacts directly from S3. The registry proxy
-    // buffers tarballs to set Content-Length, which can time out on large
-    // prebuilt archives like CMake's macOS bundle.
+    // Download binary-registry artifacts via the registry proxy, which 302-
+    // redirects to a (presigned, for private buckets) object URL — so large
+    // prebuilt archives stream straight from object storage without being
+    // buffered through the registry process. `tarball_path` already carries the
+    // `binaries/...` prefix, so this resolves to registry.pantry.dev/binaries/…
     const tarball_url = std.fmt.allocPrint(
         allocator,
-        "https://pantry-registry.s3.amazonaws.com/{s}",
+        "https://registry.pantry.dev/{s}",
         .{tarball_path},
     ) catch return null;
 

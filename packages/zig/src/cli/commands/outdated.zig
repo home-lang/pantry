@@ -221,7 +221,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
                 },
                 .system => {
                     const domain = resolveSystemDomain(dep.name);
-                    if (std.fmt.allocPrint(allocator, "https://pantry-registry.s3.amazonaws.com/binaries/{s}/metadata.json", .{domain})) |url| {
+                    if (std.fmt.allocPrint(allocator, "https://registry.pantry.dev/binaries/{s}/metadata.json", .{domain})) |url| {
                         prefetch_urls.append(allocator, url) catch {};
                     } else |_| {}
                 },
@@ -461,7 +461,7 @@ fn querySystemVersions(allocator: std.mem.Allocator, name: []const u8, constrain
 
     const metadata_url = std.fmt.allocPrint(
         allocator,
-        "https://pantry-registry.s3.amazonaws.com/binaries/{s}/metadata.json",
+        "https://registry.pantry.dev/binaries/{s}/metadata.json",
         .{domain},
     ) catch return null;
     defer allocator.free(metadata_url);

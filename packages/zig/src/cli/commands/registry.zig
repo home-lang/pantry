@@ -757,7 +757,7 @@ fn publishSingleToRegistry(
 
     // Check if version already exists or is lower than published
     style.print("Checking existing versions...\n", .{});
-    const version_check: ?VersionCheckResult = checkExistingVersion(allocator, name, version) catch |err| blk: {
+    const version_check: ?VersionCheckResult = checkExistingVersion(allocator, options.registry, name, version) catch |err| blk: {
         // If we can't check (e.g., network error), warn but continue
         style.print("  Warning: Could not check existing versions: {any}\n", .{err});
         break :blk null;
@@ -1403,37 +1403,25 @@ const VersionCheckResult = struct {
     latest_version: []const u8,
 };
 
-/// Check if a version already exists in the registry
-fn checkExistingVersion(allocator: std.mem.Allocator, name: []const u8, version: []const u8) !?VersionCheckResult {
-    const table_name = "pantry-packages";
+/// Check if a version already exists in the registry (via HTTP).
+/// Queries `GET {registry}/zig/packages/{name}`, whose JSON carries the latest
+/// `version`. A 404 (mapped to `error.NotFound` by `registryGet`) means the
+/// package doesn't exist yet, i.e. this is the first publish.
+fn checkExistingVersion(allocator: std.mem.Allocator, registry_url: []const u8, name: []const u8, version: []const u8) !?VersionCheckResult {
+    const url = try std.fmt.allocPrint(allocator, "{s}/zig/packages/{s}", .{ registry_url, name });
+    defer allocator.free(url);
 
-    // Build key JSON (DynamoDB uses "packageName" as the key)
-    const key_json = try std.fmt.allocPrint(allocator, "{{\"packageName\": {{\"S\": \"{s}\"}}}}", .{name});
-    defer allocator.free(key_json);
-
-    // Query DynamoDB for the package
-    const result = io_helper.childRun(allocator, &[_][]const u8{
-        "aws",
-        "dynamodb",
-        "get-item",
-        "--table-name",
-        table_name,
-        "--key",
-        key_json,
-        "--projection-expression",
-        "latestVersion",
-    }) catch {
-        return null; // Can't check, let it proceed
+    const body = registryGet(allocator, url) catch |err| switch (err) {
+        error.NotFound => return VersionCheckResult{
+            .version_exists = false,
+            .is_lower_version = false,
+            .latest_version = try allocator.dupe(u8, "none"),
+        },
+        else => return err,
     };
-    defer allocator.free(result.stdout);
-    defer allocator.free(result.stderr);
+    defer allocator.free(body);
 
-    if (result.term != .exited or result.term.exited != 0) {
-        return null; // Query failed, let it proceed
-    }
-
-    // Parse the response
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, result.stdout, .{}) catch {
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, body, .{ .ignore_unknown_fields = true }) catch {
         return null;
     };
     defer parsed.deinit();
@@ -1441,32 +1429,8 @@ fn checkExistingVersion(allocator: std.mem.Allocator, name: []const u8, version:
     const root = parsed.value;
     if (root != .object) return null;
 
-    const item = root.object.get("Item") orelse {
-        // No item found, first publish
-        return VersionCheckResult{
-            .version_exists = false,
-            .is_lower_version = false,
-            .latest_version = try allocator.dupe(u8, "none"),
-        };
-    };
-    if (item != .object) return null;
-
-    // Check for empty item (package doesn't exist)
-    if (item.object.count() == 0) {
-        return VersionCheckResult{
-            .version_exists = false,
-            .is_lower_version = false,
-            .latest_version = try allocator.dupe(u8, "none"),
-        };
-    }
-
-    const version_obj = item.object.get("latestVersion") orelse return null;
-    if (version_obj != .object) return null;
-
-    const latest_version = if (version_obj.object.get("S")) |v|
-        if (v == .string) v.string else return null
-    else
-        return null;
+    const version_obj = root.object.get("version") orelse return null;
+    const latest_version = if (version_obj == .string) version_obj.string else return null;
 
     // Check if same version
     if (std.mem.eql(u8, latest_version, version)) {

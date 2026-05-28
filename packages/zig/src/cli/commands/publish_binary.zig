@@ -12,17 +12,69 @@ pub const PublishBinaryOptions = struct {
     dry_run: bool = false,
 };
 
-/// Publish a native binary to the pantry S3 binary registry.
+/// Resolve the S3-compatible endpoint URL for the configured storage provider
+/// so `publish:binary` works against Hetzner / Backblaze (private, S3-compatible)
+/// as well as AWS. Returns an allocator-owned `https://…` URL, or null for AWS
+/// (where the `aws` CLI uses its built-in regional endpoints). Caller frees.
+fn resolveS3Endpoint(allocator: std.mem.Allocator) !?[]u8 {
+    // An explicit S3_ENDPOINT wins (normalize to include a scheme).
+    if (io_helper.getEnvVarOwned(allocator, "S3_ENDPOINT")) |ep| {
+        if (ep.len == 0) {
+            allocator.free(ep);
+        } else if (std.mem.startsWith(u8, ep, "http://") or std.mem.startsWith(u8, ep, "https://")) {
+            return ep;
+        } else {
+            defer allocator.free(ep);
+            return try std.fmt.allocPrint(allocator, "https://{s}", .{ep});
+        }
+    } else |_| {}
+
+    // Otherwise derive it from the provider. Hetzner has a predictable endpoint;
+    // other non-AWS providers must set S3_ENDPOINT explicitly.
+    const provider = io_helper.getEnvVarOwned(allocator, "STORAGE_PROVIDER") catch return null;
+    defer allocator.free(provider);
+    if (std.ascii.eqlIgnoreCase(provider, "hetzner")) {
+        const region = io_helper.getEnvVarOwned(allocator, "S3_REGION") catch null;
+        defer if (region) |r| allocator.free(r);
+        return try std.fmt.allocPrint(allocator, "https://{s}.your-objectstorage.com", .{region orelse "fsn1"});
+    }
+    return null;
+}
+
+/// Run `aws s3 cp <base args…>`, appending `--endpoint-url` when targeting a
+/// non-AWS S3-compatible provider (Hetzner/Backblaze). The `aws` CLI speaks to
+/// any S3-compatible endpoint, so this keeps a single upload path across all
+/// providers without a bespoke SigV4 client.
+fn awsS3Cp(allocator: std.mem.Allocator, endpoint: ?[]const u8, base: []const []const u8) !io_helper.ChildRunResult {
+    var argv = std.ArrayList([]const u8).empty;
+    defer argv.deinit(allocator);
+    try argv.append(allocator, "aws");
+    try argv.append(allocator, "s3");
+    try argv.append(allocator, "cp");
+    try argv.appendSlice(allocator, base);
+    if (endpoint) |ep| {
+        try argv.append(allocator, "--endpoint-url");
+        try argv.append(allocator, ep);
+    }
+    return io_helper.childRun(allocator, argv.items);
+}
+
+/// Publish a native binary to the pantry binary registry (object storage).
 ///
 /// Usage from CI:
 ///   pantry publish:binary --domain craft-native.org --version 0.0.4 --binary ./release/craft-darwin-arm64
 ///
-/// This uploads to: s3://pantry-registry/binaries/{domain}/{version}/{platform}/{domain-slug}-{version}.tar.gz
-/// and updates:     s3://pantry-registry/binaries/{domain}/metadata.json
+/// Uploads to: {bucket}/binaries/{domain}/{version}/{platform}/{domain-slug}-{version}.tar.gz
+/// and updates: {bucket}/binaries/{domain}/metadata.json
+/// The target provider is selected via STORAGE_PROVIDER / S3_ENDPOINT (AWS by
+/// default; Hetzner/Backblaze when configured), using the `aws` CLI for upload.
 pub fn publishBinaryCommand(allocator: std.mem.Allocator, args: []const []const u8, options: PublishBinaryOptions) !CommandResult {
     _ = args;
 
-    const bucket = io_helper.getenv("PANTRY_S3_BUCKET") orelse "pantry-registry";
+    const bucket = io_helper.getenv("PANTRY_S3_BUCKET") orelse io_helper.getenv("S3_BUCKET") orelse "pantry-registry";
+
+    const s3_endpoint = try resolveS3Endpoint(allocator);
+    defer if (s3_endpoint) |ep| allocator.free(ep);
 
     // Detect platform if not specified
     const platform = options.platform orelse comptime blk: {
@@ -111,8 +163,8 @@ pub fn publishBinaryCommand(allocator: std.mem.Allocator, args: []const []const 
     defer allocator.free(s3_uri);
 
     style.print("  Uploading to {s}...\n", .{s3_uri});
-    const upload_result = try io_helper.childRun(allocator, &[_][]const u8{
-        "aws", "s3", "cp", tarball_path, s3_uri, "--content-type", "application/gzip",
+    const upload_result = try awsS3Cp(allocator, s3_endpoint, &[_][]const u8{
+        tarball_path, s3_uri, "--content-type", "application/gzip",
     });
     defer allocator.free(upload_result.stdout);
     defer allocator.free(upload_result.stderr);
@@ -152,8 +204,8 @@ pub fn publishBinaryCommand(allocator: std.mem.Allocator, args: []const []const 
 
     // Try to fetch existing metadata
     style.print("  Fetching existing metadata...\n", .{});
-    const fetch_result = io_helper.childRun(allocator, &[_][]const u8{
-        "aws", "s3", "cp", metadata_s3_uri, metadata_path,
+    const fetch_result = awsS3Cp(allocator, s3_endpoint, &[_][]const u8{
+        metadata_s3_uri, metadata_path,
     }) catch null;
     if (fetch_result) |fr| {
         allocator.free(fr.stdout);
@@ -197,8 +249,8 @@ pub fn publishBinaryCommand(allocator: std.mem.Allocator, args: []const []const 
     meta_file.close(io_helper.io);
     allocator.free(jq_result.stdout);
 
-    const meta_upload_result = try io_helper.childRun(allocator, &[_][]const u8{
-        "aws", "s3", "cp", metadata_updated_path, metadata_s3_uri, "--content-type", "application/json",
+    const meta_upload_result = try awsS3Cp(allocator, s3_endpoint, &[_][]const u8{
+        metadata_updated_path, metadata_s3_uri, "--content-type", "application/json",
     });
     defer allocator.free(meta_upload_result.stdout);
     defer allocator.free(meta_upload_result.stderr);
