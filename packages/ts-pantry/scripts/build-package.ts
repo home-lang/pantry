@@ -1032,8 +1032,9 @@ async function downloadDependencies(
   bucket: string,
   region: string
 ): Promise<Record<string, string>> {
-  const { S3Client } = await import('@stacksjs/ts-cloud')
-  const s3 = new S3Client(region)
+  const { createObjectStorageClient } = await import('@stacksjs/ts-cloud')
+  const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
+  const s3 = createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })
   const depPaths: Record<string, string> = {}
   const platformOs = platform.split('-')[0]
 
@@ -1073,18 +1074,15 @@ catch {
       const availableVersions = Object.keys(metadata.versions || {})
 
       // Helper: download and register a dep version
-      const downloadAndRegisterDep = (depVersion: string, info: any): boolean => {
+      const downloadAndRegisterDep = async (depVersion: string, info: any): Promise<boolean> => {
         const depInstallDir = join(depsDir, domain, depVersion)
         mkdirSync(depInstallDir, { recursive: true })
         const tarballPath = join(depInstallDir, 'package.tar.gz')
-        const dlUrl = `https://${bucket}.s3.${region}.amazonaws.com/${info.tarball}`
         try {
-          try {
-            execSync(`aws s3 cp "s3://${bucket}/${info.tarball}" "${tarballPath}" --region ${region}`, { stdio: 'pipe' })
-          }
-catch {
-            execSync(`curl -fsSL -o "${tarballPath}" "${dlUrl}"`, { stdio: 'pipe' })
-          }
+          // Presigned GET works for private buckets on any S3-compatible provider
+          // (AWS, Hetzner, B2); avoids the aws CLI and a hardcoded amazonaws.com host.
+          const dlUrl = await s3.getSignedUrl({ bucket, key: info.tarball, expiresIn: 3600 })
+          execSync(`curl -fsSL -o "${tarballPath}" "${dlUrl}"`, { stdio: 'pipe' })
           execSync(`tar -xf "${tarballPath}" -C "${depInstallDir}"`, { stdio: 'pipe' })
           execSync(`rm "${tarballPath}"`)
         }
@@ -1140,7 +1138,7 @@ catch { /* ignore */ }
 else {
             console.log(`   - ${domain}@${v}`)
           }
-          resolved = downloadAndRegisterDep(v, info)
+          resolved = await downloadAndRegisterDep(v, info)
           break
         }
       }
@@ -1154,7 +1152,7 @@ else {
         const platformInfo = metadata.versions?.[version]?.platforms?.[platform]
         if (platformInfo) {
           console.log(`   - ${domain}@${version}`)
-          resolved = downloadAndRegisterDep(version, platformInfo)
+          resolved = await downloadAndRegisterDep(version, platformInfo)
         }
       }
 

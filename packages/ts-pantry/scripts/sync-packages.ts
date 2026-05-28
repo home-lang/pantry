@@ -21,7 +21,7 @@ import { execSync } from 'node:child_process'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { createHash } from 'node:crypto'
-import { S3Client } from '@stacksjs/ts-cloud'
+import { createObjectStorageClient } from '@stacksjs/ts-cloud'
 import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
 import { BINARY_SYNC_DOMAIN_SET } from './binary-sync-packages.ts'
 
@@ -49,7 +49,11 @@ function detectPlatform(): SyncPlatformInfo {
 
 async function checkExistsInS3(domain: string, version: string, platform: string, bucket: string, region: string): Promise<boolean> {
   try {
-    const s3 = new S3Client(region)
+    // Honor STORAGE_PROVIDER so the existence check hits the configured backend
+    // (Hetzner/B2) instead of s3.<region>.amazonaws.com, which fails for non-AWS
+    // regions and would force a redundant re-sync of every package each run.
+    const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
+    const s3 = createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })
     const metadataKey = `binaries/${domain}/metadata.json`
 
     const metadata = await s3.getObject(bucket, metadataKey)

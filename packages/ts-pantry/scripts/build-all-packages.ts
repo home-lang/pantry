@@ -31,7 +31,7 @@ import { execSync } from 'node:child_process'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { createHash } from 'node:crypto'
-import { S3Client } from '@stacksjs/ts-cloud'
+import { createObjectStorageClient } from '@stacksjs/ts-cloud'
 import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
 import { BINARY_SYNC_DOMAIN_SET } from './binary-sync-packages.ts'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
@@ -936,10 +936,14 @@ async function selectVersionsForBuild(pkg: BuildablePackage, maxVersions: number
 // --- S3 Helpers ---
 
 async function checkExistsInS3(domain: string, version: string, platform: string, bucket: string, region: string): Promise<boolean> {
+  // Honor STORAGE_PROVIDER so existence checks hit the configured backend
+  // (Hetzner/B2 endpoint) rather than defaulting to s3.<region>.amazonaws.com,
+  // which would fail for non-AWS regions and force a needless rebuild every run.
+  const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
   // Retry up to 3 times to avoid transient S3/network errors causing unnecessary rebuilds
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const s3 = new S3Client(region)
+      const s3 = createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })
       const metadataKey = `binaries/${domain}/metadata.json`
       const metadata = await s3.getObject(bucket, metadataKey)
       const parsed = JSON.parse(metadata)
