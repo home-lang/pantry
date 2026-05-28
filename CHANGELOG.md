@@ -1,3 +1,190 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.35...v0.9.36)
+
+### 🚀 Features
+
+- **registry**: object-storage backends for php, zig, and auth ([de64a49](https://github.com/home-lang/pantry/commit/de64a49)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: persist analytics on the object-storage provider ([318557f](https://github.com/home-lang/pantry/commit/318557f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: watch pkgx for new packages and open a PR per addition ([3b8d07a](https://github.com/home-lang/pantry/commit/3b8d07a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: support Backblaze B2 / Hetzner object storage ([0eb5eb5](https://github.com/home-lang/pantry/commit/0eb5eb5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: add admin role for site accounts ([6412f06](https://github.com/home-lang/pantry/commit/6412f06)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add dependency inspector and publisher dashboard on pantry.dev ([650f4b5](https://github.com/home-lang/pantry/commit/650f4b5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: add zig-dtsx recipe ([0f5e641](https://github.com/home-lang/pantry/commit/0f5e641)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **installer**: download progress + 60s stall watchdog ([e1b8abc](https://github.com/home-lang/pantry/commit/e1b8abc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **zig**: delegate JS dep install to bun/pnpm/yarn/npm ([e6046e2](https://github.com/home-lang/pantry/commit/e6046e2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **shell**: repair PATH order on rc re-source so project tools keep priority ([1da84dd](https://github.com/home-lang/pantry/commit/1da84dd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: free runner disk before large source builds ([fb50d2a](https://github.com/home-lang/pantry/commit/fb50d2a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **zig**: use std.ascii.findIgnoreCase (renamed from indexOfIgnoreCase) ([b91c6ec](https://github.com/home-lang/pantry/commit/b91c6ec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **zig**: publish + resolve via the registry (Hetzner), not AWS S3 ([89489ce](https://github.com/home-lang/pantry/commit/89489ce)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **sync**: make binary existence checks and dep downloads provider-aware ([d192942](https://github.com/home-lang/pantry/commit/d192942)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: clear lint and typecheck failures on main ([1a1c172](https://github.com/home-lang/pantry/commit/1a1c172)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: retry transient errors in binary-metadata verify ([201c3d9](https://github.com/home-lang/pantry/commit/201c3d9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: provider-aware tarball redirect (presign private buckets) ([226ebc5](https://github.com/home-lang/pantry/commit/226ebc5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: verify only the latest version's platforms, not full history ([e4272e3](https://github.com/home-lang/pantry/commit/e4272e3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: make verify-binary-metadata provider-aware ([d56a9f6](https://github.com/home-lang/pantry/commit/d56a9f6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- complete Launchpad→Pantry migration and deps.yaml install paths ([453644b](https://github.com/home-lang/pantry/commit/453644b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **cloud**: align pantry stack naming with ts-cloud conventions ([0ac8a64](https://github.com/home-lang/pantry/commit/0ac8a64)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **cloud**: route pantry.dev dynamic paths to compute via CloudFront ([36d4593](https://github.com/home-lang/pantry/commit/36d4593)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **site**: route auth API calls through registry.pantry.dev ([4f2a87d](https://github.com/home-lang/pantry/commit/4f2a87d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **scripts**: stop double-generating CHANGELOG on release ([c42c387](https://github.com/home-lang/pantry/commit/c42c387)) _(by Glenn Michael Torregosa <gtorregosa@gmail.com>)_
+- **publish**: harden npm auth fallback ([9ef3591](https://github.com/home-lang/pantry/commit/9ef3591)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **zig**: support current build api ([90ab90a](https://github.com/home-lang/pantry/commit/90ab90a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **zig**: tighten install/shell boundaries for JS delegation ([fbc3183](https://github.com/home-lang/pantry/commit/fbc3183)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **zig**: make pantry run find node_modules/.bin and stream stdio ([b65953d](https://github.com/home-lang/pantry/commit/b65953d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### ♻️ Code Refactoring
+
+- **zig**: route all registry I/O through the provider proxy, drop AWS ([7d03a82](https://github.com/home-lang/pantry/commit/7d03a82)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **zig**: remove the AWS S3 + DynamoDB publish workaround ([30b9dd7](https://github.com/home-lang/pantry/commit/30b9dd7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📚 Documentation
+
+- document Backblaze B2 storage setup and pkgx sync ([d6f74ec](https://github.com/home-lang/pantry/commit/d6f74ec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: fix upsert-admin DynamoDB table name in usage ([b02078a](https://github.com/home-lang/pantry/commit/b02078a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add example workflow for CI-built release binaries ([9d5b987](https://github.com/home-lang/pantry/commit/9d5b987)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🤖 Continuous Integration
+
+- **sync-binaries**: daily schedule + per-batch timeout + bounded parallelism ([7517854](https://github.com/home-lang/pantry/commit/7517854)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: target Hetzner Object Storage; generalize storage config ([c82bb90](https://github.com/home-lang/pantry/commit/c82bb90)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: make binary build/sync storage-provider aware ([9a4594b](https://github.com/home-lang/pantry/commit/9a4594b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.36 ([4f1b564](https://github.com/home-lang/pantry/commit/4f1b564)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update casdoor, hasura, huggingface/cli and 4 others ([22cd8f7](https://github.com/home-lang/pantry/commit/22cd8f7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update composer, mailpit ([5de884d](https://github.com/home-lang/pantry/commit/5de884d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, projen ([f901e5e](https://github.com/home-lang/pantry/commit/f901e5e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update tox ([9d7ee46](https://github.com/home-lang/pantry/commit/9d7ee46)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pnp, squawk ([12e8e03](https://github.com/home-lang/pantry/commit/12e8e03)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LocalAI ([648e7b2](https://github.com/home-lang/pantry/commit/648e7b2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly, npmjs, pscale and 2 others ([c63ee63](https://github.com/home-lang/pantry/commit/c63ee63)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update gh, eksctl, plantuml, systemd ([1f8e334](https://github.com/home-lang/pantry/commit/1f8e334)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, deno, tofu and 4 others ([46d894a](https://github.com/home-lang/pantry/commit/46d894a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update systemd ([344585e](https://github.com/home-lang/pantry/commit/344585e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, cnquery, opencode.ai, railway ([f49fe54](https://github.com/home-lang/pantry/commit/f49fe54)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update kaggle ([e879eaf](https://github.com/home-lang/pantry/commit/e879eaf)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly ([f0ed387](https://github.com/home-lang/pantry/commit/f0ed387)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dagger, dozzle, huggingface/cli and 3 others ([57dcd37](https://github.com/home-lang/pantry/commit/57dcd37)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, daytona, encore and 3 others ([b36bc45](https://github.com/home-lang/pantry/commit/b36bc45)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cnquery, keep, meilisearch and 2 others ([fd1b1cc](https://github.com/home-lang/pantry/commit/fd1b1cc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dblab ([1851f85](https://github.com/home-lang/pantry/commit/1851f85)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update buf, fly, Zed ([3766b9a](https://github.com/home-lang/pantry/commit/3766b9a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- **deps**: refresh bun.lock to pick up buddy-bot 0.9.20 ([5bae644](https://github.com/home-lang/pantry/commit/5bae644)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update AltTab, railway, steampipe, terragrunt ([57c9faf](https://github.com/home-lang/pantry/commit/57c9faf)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update daytona, LocalAI, redis, scw ([87d31db](https://github.com/home-lang/pantry/commit/87d31db)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update exr ([290c491](https://github.com/home-lang/pantry/commit/290c491)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update squawk ([e6d233a](https://github.com/home-lang/pantry/commit/e6d233a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dblab ([08c7f44](https://github.com/home-lang/pantry/commit/08c7f44)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LocalAI ([442502a](https://github.com/home-lang/pantry/commit/442502a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update goreleaser, Stats ([cdcb290](https://github.com/home-lang/pantry/commit/cdcb290)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dozzle ([bda2530](https://github.com/home-lang/pantry/commit/bda2530)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, projen ([b096a4c](https://github.com/home-lang/pantry/commit/b096a4c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([1f93e06](https://github.com/home-lang/pantry/commit/1f93e06)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, odigos ([0b5573e](https://github.com/home-lang/pantry/commit/0b5573e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update convco, pnp ([b0d4c29](https://github.com/home-lang/pantry/commit/b0d4c29)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update consul, daytona ([d0ef22d](https://github.com/home-lang/pantry/commit/d0ef22d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update nu ([abadc60](https://github.com/home-lang/pantry/commit/abadc60)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- **aws**: migrate production site to canonical ts-cloud naming ([f3b5818](https://github.com/home-lang/pantry/commit/f3b5818)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **cloud**: pin static site stack name for pantry.dev CDN ([6d3932f](https://github.com/home-lang/pantry/commit/6d3932f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update cython ([f016f06](https://github.com/home-lang/pantry/commit/f016f06)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([fef833c](https://github.com/home-lang/pantry/commit/fef833c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update mise ([d38286f](https://github.com/home-lang/pantry/commit/d38286f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update rclone ([7756b44](https://github.com/home-lang/pantry/commit/7756b44)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update projen ([ca908c0](https://github.com/home-lang/pantry/commit/ca908c0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update coder ([ab5f7e2](https://github.com/home-lang/pantry/commit/ab5f7e2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai, railway ([676f639](https://github.com/home-lang/pantry/commit/676f639)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai, pulumi ([d61f7c8](https://github.com/home-lang/pantry/commit/d61f7c8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update AltTab, mise, nginx, nomad ([12e4e1f](https://github.com/home-lang/pantry/commit/12e4e1f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update Arkade, casdoor ([616923b](https://github.com/home-lang/pantry/commit/616923b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update deno, git2, talosctl ([504fbf2](https://github.com/home-lang/pantry/commit/504fbf2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update groonga ([5b75ade](https://github.com/home-lang/pantry/commit/5b75ade)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dblab, pocketbase ([3b60f72](https://github.com/home-lang/pantry/commit/3b60f72)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update SeaweedFS ([98776cb](https://github.com/home-lang/pantry/commit/98776cb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update Zed ([1f968ab](https://github.com/home-lang/pantry/commit/1f968ab)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update tailscale ([c56e216](https://github.com/home-lang/pantry/commit/c56e216)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update turso ([313699e](https://github.com/home-lang/pantry/commit/313699e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cmake, huggingface/cli ([1bfa16c](https://github.com/home-lang/pantry/commit/1bfa16c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai ([dab0c5d](https://github.com/home-lang/pantry/commit/dab0c5d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update daytona, huggingface/cli, node and 2 others ([6a3e8c7](https://github.com/home-lang/pantry/commit/6a3e8c7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update mise, pixi ([28f2787](https://github.com/home-lang/pantry/commit/28f2787)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update AltTab, aux4 ([e3e2c0d](https://github.com/home-lang/pantry/commit/e3e2c0d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cnquery ([202d394](https://github.com/home-lang/pantry/commit/202d394)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update juju ([48b99ff](https://github.com/home-lang/pantry/commit/48b99ff)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update Arkade, npmjs, opencode.ai and 3 others ([aa69aa0](https://github.com/home-lang/pantry/commit/aa69aa0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly, plantuml, postgrest, Protocol Buffers ([14afecc](https://github.com/home-lang/pantry/commit/14afecc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update projen, terraform, Zed ([ae7fb29](https://github.com/home-lang/pantry/commit/ae7fb29)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dozzle, node, pnp ([2c03a39](https://github.com/home-lang/pantry/commit/2c03a39)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update daytona, duckdb, pnp ([e24a631](https://github.com/home-lang/pantry/commit/e24a631)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update rio, SeaweedFS, unbound, werf ([c05a0cb](https://github.com/home-lang/pantry/commit/c05a0cb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aux4, rubygems ([61eb158](https://github.com/home-lang/pantry/commit/61eb158)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update rabbitmq, rsync ([925af9f](https://github.com/home-lang/pantry/commit/925af9f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update chezmoi ([f5129b3](https://github.com/home-lang/pantry/commit/f5129b3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update coder, Protocol Buffers ([33ce5a7](https://github.com/home-lang/pantry/commit/33ce5a7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update coder, vault, Zed ([4c62293](https://github.com/home-lang/pantry/commit/4c62293)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pscale ([db0c88a](https://github.com/home-lang/pantry/commit/db0c88a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, depot, valkey ([fd03b55](https://github.com/home-lang/pantry/commit/fd03b55)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, ghostscript, pulumi and 3 others ([c628bb0](https://github.com/home-lang/pantry/commit/c628bb0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- **deps**: bump better-dx to ^0.2.15 ([57f4874](https://github.com/home-lang/pantry/commit/57f4874)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update kubeshark, libcxx.llvm, llvm and 2 others ([4001064](https://github.com/home-lang/pantry/commit/4001064)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aux4, cnquery, velero ([40d3166](https://github.com/home-lang/pantry/commit/40d3166)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update railway ([1b36d0c](https://github.com/home-lang/pantry/commit/1b36d0c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update laravel, f2py ([f1313f8](https://github.com/home-lang/pantry/commit/f1313f8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update stripe ([b9b4702](https://github.com/home-lang/pantry/commit/b9b4702)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ansible, opencode.ai ([4c19b6a](https://github.com/home-lang/pantry/commit/4c19b6a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update coder, fly, istioctl ([20063da](https://github.com/home-lang/pantry/commit/20063da)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update coder, pulumi, terragrunt, zrok ([1b7c921](https://github.com/home-lang/pantry/commit/1b7c921)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update lxml.de, oh-my-posh, pnp, tailscale ([43f4de8](https://github.com/home-lang/pantry/commit/43f4de8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update keep, lavinmq, projen ([7e60357](https://github.com/home-lang/pantry/commit/7e60357)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update meilisearch, SeaweedFS ([e538178](https://github.com/home-lang/pantry/commit/e538178)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update zotregistry ([b339864](https://github.com/home-lang/pantry/commit/b339864)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update squawk ([3e4a753](https://github.com/home-lang/pantry/commit/3e4a753)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update libusb.info, mise ([2f42b30](https://github.com/home-lang/pantry/commit/2f42b30)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai ([74f84c0](https://github.com/home-lang/pantry/commit/74f84c0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update imagemagick, mvn ([f13330c](https://github.com/home-lang/pantry/commit/f13330c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update odigos ([ca49fac](https://github.com/home-lang/pantry/commit/ca49fac)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update Stats ([fad94f7](https://github.com/home-lang/pantry/commit/fad94f7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pack ([408e521](https://github.com/home-lang/pantry/commit/408e521)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LocalAI, task ([d5ea0b8](https://github.com/home-lang/pantry/commit/d5ea0b8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LocalAI ([5a09491](https://github.com/home-lang/pantry/commit/5a09491)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update sops, opencode.ai ([83ed0cc](https://github.com/home-lang/pantry/commit/83ed0cc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai ([7b061c8](https://github.com/home-lang/pantry/commit/7b061c8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, mise ([dcb16d9](https://github.com/home-lang/pantry/commit/dcb16d9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai ([c39d78c](https://github.com/home-lang/pantry/commit/c39d78c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update f2py, vale ([9fc7d37](https://github.com/home-lang/pantry/commit/9fc7d37)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update laravel, skaffold ([ddc709c](https://github.com/home-lang/pantry/commit/ddc709c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pack, casdoor, daytona and 2 others ([30e4375](https://github.com/home-lang/pantry/commit/30e4375)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update Arkade, huggingface/cli, mise ([53871c7](https://github.com/home-lang/pantry/commit/53871c7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update Bittensor ([c163516](https://github.com/home-lang/pantry/commit/c163516)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update odigos, Zed ([0f95b0d](https://github.com/home-lang/pantry/commit/0f95b0d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai, pocketbase ([18ddfee](https://github.com/home-lang/pantry/commit/18ddfee)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ollama, opencode.ai, Zed ([3236f73](https://github.com/home-lang/pantry/commit/3236f73)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update zarf ([e6abd9d](https://github.com/home-lang/pantry/commit/e6abd9d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update carapace, mise, sqlfluff ([4a21ca9](https://github.com/home-lang/pantry/commit/4a21ca9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly, SeaweedFS, turso ([3b68888](https://github.com/home-lang/pantry/commit/3b68888)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update depot, vspipe ([f0690ad](https://github.com/home-lang/pantry/commit/f0690ad)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update bytebase, daytona, hasura, pulumi ([979505b](https://github.com/home-lang/pantry/commit/979505b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update tofu, pnp ([1d9afa5](https://github.com/home-lang/pantry/commit/1d9afa5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update tofu ([695feaa](https://github.com/home-lang/pantry/commit/695feaa)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update mailpit, opencode.ai, rubocop, SeaweedFS ([fed6dc9](https://github.com/home-lang/pantry/commit/fed6dc9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update helm, ollama ([4940a26](https://github.com/home-lang/pantry/commit/4940a26)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LocalAI, opencode.ai, pulumi ([5c16e54](https://github.com/home-lang/pantry/commit/5c16e54)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update coder, sqlfluff ([86bb629](https://github.com/home-lang/pantry/commit/86bb629)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update coder, nginx, node and 2 others ([f5de5b9](https://github.com/home-lang/pantry/commit/f5de5b9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update depot, mise ([173bf62](https://github.com/home-lang/pantry/commit/173bf62)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update projen ([9b4fab0](https://github.com/home-lang/pantry/commit/9b4fab0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update Arkade ([d8622c7](https://github.com/home-lang/pantry/commit/d8622c7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update composer, groonga, terraform ([0cd1ab9](https://github.com/home-lang/pantry/commit/0cd1ab9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ollama, squawk ([7327f75](https://github.com/home-lang/pantry/commit/7327f75)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Glenn Michael Torregosa <gtorregosa@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.34...v0.9.35)
 
 ### 🐛 Bug Fixes
