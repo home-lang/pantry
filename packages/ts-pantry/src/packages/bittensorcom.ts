@@ -69,6 +69,7 @@ export const bittensorcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '10.4.0',
     '10.3.2',
     '10.3.1',
     '10.3.0',
