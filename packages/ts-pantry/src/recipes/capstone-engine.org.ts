@@ -21,11 +21,15 @@ export const recipe: Recipe = {
     script: [
       './make.sh',
       'make install PREFIX={{prefix}}',
-      'run: sed -i -e \\s_^includedir=.*$_includedir=${libdir}/../include_\\ capstone.pc',
-      'run: gcc $FIXTURE -lcapstone -o test',
-      './test | tee out',
-      'echo "" >>out',
-      'run: diff -uw out $FIXTURE',
+      {
+        run: 'sed -i -e \'s_^includedir=.*$_includedir=${libdir}/../include_\' capstone.pc',
+        'working-directory': '{{prefix}}/lib/pkgconfig',
+      },
     ],
+    env: {
+      darwin: {
+        LDFLAGS: '$LDFLAGS -Wl,-headerpad_max_install_names',
+      },
+    },
   },
 }

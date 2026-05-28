@@ -31,14 +31,31 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'patch -p1 <props/command_not_found_handler.diff',
+      // By default, fish's fish_command_not_found handler will redirect to stderr,
+      // return an exit code of 127. Always. This patch fixes it. Hopefully, it will
+      // be merged upstream soon. https://github.com/fish-shell/fish-shell/pull/9517
+      {
+        run: 'patch -p1 <props/command_not_found_handler.diff',
+        if: '^3',
+      },
       'echo {{version}} >version',
-      'cd "build"',
-      'cmake .. $ARGS',
-      'make install',
+      {
+        run: [
+          'cmake .. $ARGS',
+          'make install',
+        ].join('\n'),
+        'working-directory': 'build',
+      },
+      {
+        run: 'sed -i -e "s| $PKGX_DIR/| \\$PKGX_DIR/|g" __fish_build_paths.fish',
+        'working-directory': '{{prefix}}/share/fish',
+      },
     ],
     env: {
-      'ARGS': ['-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_INSTALL_PREFIX={{prefix}}'],
+      'ARGS': [
+        '-DCMAKE_BUILD_TYPE=Release',
+        '-DCMAKE_INSTALL_PREFIX="{{prefix}}"',
+      ],
     },
   },
 }

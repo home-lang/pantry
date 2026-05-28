@@ -17,12 +17,24 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
 
+  buildDependencies: {
+    'rust-lang.org': '*',
+    'rust-lang.org/cargo': '*',
+  },
+
   build: {
     script: [
       'cargo install $CARGO_ARGS',
-      'mv $FIXTURE hi.js',
-      'sg run -l js -p console.log hi.js | grep \\it is me\\',
-      'ast-grep --version | grep {{version}}',
     ],
+    env: {
+      'linux/aarch64': {
+        RUSTFLAGS: '-C linker=cc',
+      },
+      CARGO_ARGS: [
+        '--locked',
+        '--root="{{prefix}}"',
+        '--path=crates/cli',
+      ],
+    },
   },
 }

@@ -21,15 +21,15 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'if test "{{version}}" = "0.3.2"; then',
-      '  git apply props/int-types.diff',
-      'fi',
-      '',
+      // fixed in https://github.com/vlang/v/commit/ca484430e0380a3fc591b842aadda4fe18deaae5
+      { run: 'git apply props/int-types.diff', if: '=0.3.2' },
+
       'make prod=1',
-      'mkdir -p "{{prefix}}/"{libexec,bin}',
+
+      'mkdir -p {{prefix}}/libexec',
       'cp -R cmd thirdparty v v.mod vlib {{prefix}}/libexec/',
-      'cd {{prefix}}/bin',
-      'ln -s ../libexec/v v',
+
+      { run: 'ln -s ../libexec/v v', 'working-directory': '{{prefix}}/bin' },
     ],
   },
 }

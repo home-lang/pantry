@@ -17,14 +17,14 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
 
+  buildDependencies: {
+    'rust-lang.org': '>=1.56',
+    'rust-lang.org/cargo': '*',
+  },
+
   build: {
     script: [
-      'run: cat $FIXTURE >test.ab',
-      'test "$(amber test.ab)" = 2',
-      'test "$(pkgx test.ab)" = 2',
-      'run: amber test.ab test.sh',
-      'run: amber build test.ab',
-      'test "$(./test.sh)" = 2',
+      'cargo install --locked --path . --root {{prefix}}',
     ],
   },
 }

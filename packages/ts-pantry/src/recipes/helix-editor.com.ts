@@ -18,10 +18,19 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
 
+  buildDependencies: {
+    'rust-lang.org': '>=1.60',
+    'rust-lang.org/cargo': '*',
+    'git-scm.org': '^2',
+  },
+
   build: {
     script: [
-      'run: patch -p1 <props/v23.10.0.patch',
+      // https://github.com/helix-editor/helix/discussions/8440
+      { run: 'patch -p1 <props/v23.10.0.patch', if: '23.10.0' },
       'cargo install --locked --path helix-term --root {{prefix}}',
+      // This directory is not used by helix, and takes up >1GB of space, so do
+      // not include it in the helix package
       'rm -rf runtime/grammars/sources',
       'mkdir -p "{{prefix}}"/share',
       'cp -a runtime "{{prefix}}"/share',

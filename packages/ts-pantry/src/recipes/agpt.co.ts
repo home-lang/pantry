@@ -25,14 +25,23 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cd "${{prefix}}/venv/lib/python{{deps.python.org.version.marketing}}/site-packages"',
-      'cp -R $SRCROOT/autogpt .',
+      // `pip install` seems to miss some vital .json files, so we must manually copy
+      // we copy everything as we're not 100% sure which files are missing
+      // we do this first so any file movements from `pip install` takes precedence
+      {
+        run: 'cp -R $SRCROOT/autogpt .',
+        'working-directory': '{{prefix}}/venv/lib/python{{deps.python.org.version.marketing}}/site-packages',
+      },
       'python-venv.py {{prefix}}/bin/auto-gpt --requirements-txt',
+      // still pretty new and thus provides no executable, so we made one
       'cp props/auto-gpt {{prefix}}/venv/bin',
-      'cd "{{prefix}}/share"',
-      'cp $SRCROOT/.env.template env.template',
-      'cp $SRCROOT/prompt_settings.yaml .',
-      '',
+      {
+        'working-directory': '{{prefix}}/share',
+        run: [
+          'cp $SRCROOT/.env.template env.template',
+          'cp $SRCROOT/prompt_settings.yaml .',
+        ].join('\n'),
+      },
       'cp props/entrypoint.sh {{prefix}}',
     ],
   },

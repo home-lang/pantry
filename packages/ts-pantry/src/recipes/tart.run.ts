@@ -20,17 +20,29 @@ export const recipe: Recipe = {
   build: {
     script: [
       'mkdir -p "{{prefix}}/bin"',
-      'curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.tag}}/tart.tar.gz | tar -xzf -',
-      'curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.tag}}/tart-$ARCH.tar.gz | tar -xzf -',
-      'if test "{{hw.arch}}" = "aarch64"; then',
-      '  curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.tag}}/tart.tar.gz | tar -xzf -',
-      'else',
-      '  # not available on x86-64',
-      '  false',
-      'fi',
-      '',
+      { run: 'curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.tag}}/tart.tar.gz | tar -xzf -', if: '>=2.24' },
+      { run: 'curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.tag}}/tart-$ARCH.tar.gz | tar -xzf -', if: '>=2.5<2.24' },
+      {
+        run: [
+          'if test "{{hw.arch}}" = "aarch64"; then',
+          '  curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.tag}}/tart.tar.gz | tar -xzf -',
+          'else',
+          '  # not available on x86-64',
+          '  false',
+          'fi',
+        ].join('\n'),
+        if: '<2.5',
+      },
       'cp -a tart.app "{{prefix}}"',
       'cp props/tart-shim "{{prefix}}"/bin/tart',
     ],
+    env: {
+      aarch64: {
+        ARCH: 'arm64',
+      },
+      'x86-64': {
+        ARCH: 'amd64',
+      },
+    },
   },
 }

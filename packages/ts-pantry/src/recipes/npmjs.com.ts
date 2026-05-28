@@ -22,23 +22,40 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'ARGS="--install-links"',
-      'cd "node_modules"',
-      'for MOD in ../workspaces/*; do',
-      '  b=$(basename $MOD)',
-      '  if test "${b#lib}" = "$b"; then',
-      '    ln -s ../$MOD @npmcli/$b',
-      '  else',
-      '    ln -s $MOD .',
-      '  fi',
-      'done',
-      '',
+      { run: 'ARGS="--install-links"', if: '^8 || >=9.4.2' },
+
+      // 9.8.0 removed the references to these modules.
+      {
+        run: [
+          'for MOD in ../workspaces/*; do',
+          '  b=$(basename $MOD)',
+          '  if test "${b#lib}" = "$b"; then',
+          '    ln -s ../$MOD @npmcli/$b',
+          '  else',
+          '    ln -s $MOD .',
+          '  fi',
+          'done',
+        ].join('\n'),
+        'working-directory': 'node_modules',
+        if: '>=9.8.0',
+      },
+
       'node . install --global --prefix={{prefix}} $ARGS',
-      'sed -i \'s/update_notifier/update-notifier/\' props/npmrc',
+
+      // since January, npm warns on bad config names
+      { run: 'sed -i \'s/update_notifier/update-notifier/\' props/npmrc', if: '>=11.2' },
+
+      // configures npm to install to ~/.local
       'mv props/npmrc {{prefix}}/lib/node_modules/npm',
-      'cd "${{prefix}}/bin"',
-      'rm npx',
-      'mv $SRCROOT/props/npx-shim npx',
+
+      // our shim fixes a bug where npx doesn't work if ~/.local/lib doesn't exist
+      {
+        run: [
+          'rm npx',
+          'mv $SRCROOT/props/npx-shim npx',
+        ],
+        'working-directory': '{{prefix}}/bin',
+      },
     ],
   },
 }

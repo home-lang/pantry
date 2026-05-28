@@ -17,10 +17,38 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
 
+  dependencies: {
+    'libjpeg-turbo.org': '^2',
+    'pngquant.org/lib': '^4',
+    'simplesystems.org/libtiff': '^4',
+    'x.org/xcb': '^1',
+    'littlecms.com': '^2',
+    'openjpeg.org': '^2',
+    'tcl.tk/tcl': '^8',
+    'google.com/webp': '^1',
+    'zlib.net': '^1',
+    'python.org': '~3.12',
+  },
+
+  buildDependencies: {
+    'pypa.io/setuptools': '*',
+  },
+
   build: {
     script: [
-      'curl -L \\https://pkgx.dev/banner.png\\ -o test.png',
-      'run: python $FIXTURE | grep \\PNG (1959, 520)\\',
+      'python -m pip install $ARGS .',
     ],
+    env: {
+      MAX_CONCURRENCY: '{{hw.concurrency}}',
+      ARGS: [
+        '--prefix={{prefix}}',
+        '-C debug=true',
+        '-C tiff=enable',
+        '-C freetype=enable',
+        '-C lcms=enable',
+        '-C webp=enable',
+        '-C xcb=enable',
+      ],
+    },
   },
 }

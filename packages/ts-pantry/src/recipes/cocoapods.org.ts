@@ -24,17 +24,22 @@ export const recipe: Recipe = {
   },
 
   build: {
+    env: {
+      'GEM_HOME': '{{prefix}}',
+      'GEM_PATH': '{{prefix}}',
+      // FIXME ruby's mkmf needs patching to check CPATH
+      'CFLAGS': '-I{{deps.sourceware.org/libffi.prefix}}/include',
+    },
     script: [
       'gem build cocoapods.gemspec',
       'gem install cocoapods-{{version}}.gem',
-      'cd "${{prefix}}/gems/bin"',
-      'mv {{prefix}}/bin/* .',
-      'cp $SRCROOT/props/proxy {{prefix}}/bin/pod',
+      {
+        run: [
+          'mv {{prefix}}/bin/* .',
+          'cp $SRCROOT/props/proxy {{prefix}}/bin/pod',
+        ].join('\n'),
+        'working-directory': '{{prefix}}/gems/bin',
+      },
     ],
-    env: {
-      'GEM_HOME': '${{prefix}}',
-      'GEM_PATH': '${{prefix}}',
-      'CFLAGS': '-I{{deps.sourceware.org/libffi.prefix}}/include',
-    },
   },
 }

@@ -142,6 +142,61 @@ __pantry_deactivate() {
     unset PANTRY_CURRENT_PROJECT PANTRY_ENV_BIN_PATH PANTRY_ENV_DIR PANTRY_BIN_PATH PANTRY_DEP_FILE PANTRY_DEP_MTIME __PANTRY_LAST_ACTIVATION_KEY
 }
 
+# Auto-install dependencies for a freshly-entered project.
+#
+# Clean by default: prints a single transient status line while installing and
+# a one-line confirmation on success — never the full installer log. The full
+# output is captured to ~/.pantry/last-install.log and only surfaced (tail) on
+# failure, so the prompt stays quiet when things just work.
+#
+# Escape hatches:
+#   PANTRY_VERBOSE=1 / __PANTRY_VERBOSE="true"  stream the full install log
+#   PANTRY_INSTALL_TIMEOUT=<seconds>            cap install time (needs `timeout`)
+#   PANTRY_NO_AUTO_INSTALL=1                     skip auto-install entirely (caller-checked)
+__pantry_auto_install() {
+    local dep_file="$1"
+    local project_dir name rc=0 tty=0
+    project_dir=$(__pantry_project_dir_from_dep_file "$dep_file") || project_dir="$PWD"
+    name="${project_dir##*/}"
+    [[ -t 2 ]] && tty=1
+
+    # Verbose: stream everything straight through, unchanged.
+    if [[ "${__PANTRY_VERBOSE:-}" == "true" || -n "${PANTRY_VERBOSE:-}" ]]; then
+        pantry install 2>&1
+        return $?
+    fi
+
+    local log="${HOME}/.pantry/last-install.log"
+    mkdir -p "${HOME}/.pantry" 2>/dev/null
+
+    # Transient "setting up" line (cleared before any result is printed).
+    [[ $tty -eq 1 ]] && printf '\r\033[Kpantry: setting up %s…' "$name" >&2
+
+    if [[ -n "${PANTRY_INSTALL_TIMEOUT:-}" ]] && command -v timeout >/dev/null 2>&1; then
+        timeout "$PANTRY_INSTALL_TIMEOUT" pantry install >"$log" 2>&1; rc=$?
+    else
+        pantry install >"$log" 2>&1; rc=$?
+    fi
+
+    # Clear the transient status line.
+    [[ $tty -eq 1 ]] && printf '\r\033[K' >&2
+
+    if [[ $rc -eq 0 ]]; then
+        printf 'pantry: %s ready\n' "$name" >&2
+        return 0
+    fi
+
+    if [[ $rc -eq 124 ]]; then
+        printf 'pantry: setup of %s timed out after %ss\n' "$name" "${PANTRY_INSTALL_TIMEOUT:-?}" >&2
+    else
+        printf 'pantry: setup of %s failed (exit %d)\n' "$name" "$rc" >&2
+    fi
+    # Brief context, not a wall of text — full log stays on disk.
+    [[ -s "$log" ]] && tail -n 12 "$log" >&2
+    printf 'pantry: full log %s — re-run with PANTRY_VERBOSE=1 or `pantry install`\n' "$log" >&2
+    return $rc
+}
+
 __pantry_switch_environment() {
     [[ "${__PANTRY_DEBUG:-}" == "1" ]] && echo "[PANTRY DEBUG] switch_environment called, PWD=$PWD" >&2
 
@@ -213,7 +268,7 @@ __pantry_switch_environment() {
 
     # No env found but dep file exists - auto-install unless PANTRY_NO_AUTO_INSTALL is set
     if [[ -n "$dep_file" && -z "${PANTRY_NO_AUTO_INSTALL:-}" ]]; then
-        if pantry install 2>&1; then
+        if __pantry_auto_install "$dep_file"; then
             # Retry lookup after install
             lookup_result=$(pantry shell:lookup "$PWD" 2>/dev/null)
             if [[ $? -eq 0 && -n "$lookup_result" ]]; then

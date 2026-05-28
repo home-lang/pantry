@@ -20,13 +20,57 @@ export const recipe: Recipe = {
 
   build: {
     script: [
+      // third party support for linux-aarch64 — bootstrap a prebuilt crystal
+      {
+        'working-directory': '.bootstrap',
+        run: [
+          'if test \'{{hw.platform}}+{{hw.arch}}\' = \'linux+aarch64\'; then',
+          '  curl -L "https://packagecloud.io/84codes/crystal/packages/any/any/crystal_1.13.3-145_arm64.deb/download.deb?distro_version_id=35" -o crystal.deb',
+          '  ar x crystal.deb',
+          '  tar zxf data.tar.gz --strip-components=2',
+          'else',
+          '  curl -Lf "https://github.com/crystal-lang/crystal/releases/download/{{version}}/crystal-{{version}}-1-$PLATFORM.tar.gz" | tar --strip-components=1 -zxf -',
+          'fi',
+        ].join('\n'),
+      },
       'mkdir -p .build',
       'make deps',
+      // tinfow isn't being picked up by the linker after splitting up ncurses
+      { run: 'export LDFLAGS="$LDFLAGS -Wl,-ltinfow"', if: 'linux' },
       'make crystal $ARGS',
       'mkdir -p "{{prefix}}/bin"',
       'cp .build/crystal "{{prefix}}/bin/crystal.bin"',
       'cp props/shim "{{prefix}}/bin/crystal"',
       'cp -a src "{{prefix}}/lib"',
+
+      // regression in 1.14.0
+      {
+        'working-directory': '${{prefix}}/lib/crystal/system/unix',
+        if: '=1.14.0',
+        run: [
+          'if test "{{hw.platform}}" = "darwin"; then',
+          '  sed -i \'s/mask = LibC::SigsetT.new$/mask = LibC::SigsetT.new(0_u32)/\' pthread.cr',
+          'fi',
+        ].join('\n'),
+      },
     ],
+    env: {
+      CRYSTAL_LIBRARY_PATH: '$LD_LIBRARY_PATH',
+      PATH: '$SRCROOT/.bootstrap/bin:$PATH',
+      darwin: { PLATFORM: 'darwin-universal' },
+      'linux/x86-64': { PLATFORM: 'linux-x86_64' },
+      LDFLAGS: '-Wl,-rpath,{{pkgx.prefix}}',
+      ARGS: [
+        'release=true',
+        'FLAGS=--no-debug',
+        'interpreter=true',
+        'CRYSTAL_CONFIG_PATH=../lib',
+      ],
+      linux: {
+        CC: 'clang',
+        CXX: 'clang++',
+        LD: 'clang',
+      },
+    },
   },
 }

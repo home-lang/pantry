@@ -22,7 +22,8 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'patch -p1 < props/5.8.0.patch',
+      // Patch to fix build on macOS for v5.8.0
+      { run: 'patch -p1 < props/5.8.0.patch', if: '=5.8.0' },
       './configure $ARGS',
       'make --jobs {{hw.concurrency}} install',
     ],

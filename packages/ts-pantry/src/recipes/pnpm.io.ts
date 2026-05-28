@@ -23,11 +23,11 @@ export const recipe: Recipe = {
   build: {
     script: [
       'mkdir -p "{{prefix}}"',
-      'mv bin/pnpm.cjs bin/pnpm',
-      'mv bin/pnpx.cjs bin/pnpx',
+      'ln -s pnpm.cjs bin/pnpm',
+      'ln -s pnpx.cjs bin/pnpx',
+      'chmod +x bin/*',
       'cp props/pnpmrc dist',
       'cp -r bin dist package.json {{prefix}}',
-      '',
     ],
   },
 }

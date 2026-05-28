@@ -76,11 +76,15 @@ export interface Recipe {
   /** Executable programs provided by this package */
   programs: string[]
 
-  /** Runtime dependencies (domain → version constraint) */
-  dependencies?: Record<string, string>
+  /**
+   * Runtime dependencies (domain → version constraint). Values may also be a
+   * nested platform map (`{ linux: { 'gnu.org/gcc': '14' } }`) — the dep
+   * extractor resolves platform/arch-keyed groups, mirroring pkgx.
+   */
+  dependencies?: Record<string, string | Record<string, string>>
 
-  /** Build-time only dependencies */
-  buildDependencies?: Record<string, string>
+  /** Build-time only dependencies (same shape as {@link dependencies}). */
+  buildDependencies?: Record<string, string | Record<string, string>>
 
   /** Supported platforms */
   platforms?: string[]
@@ -100,7 +104,7 @@ export interface Recipe {
      * `working-directory`. These flow straight through to the buildkit engine,
      * which evaluates the condition and runs the step in the given directory.
      */
-    script: Array<string | { run: string, if?: string, 'working-directory'?: string }>
+    script: Array<string | { run: string | string[], if?: string, 'working-directory'?: string, prop?: string | { content?: string, contents?: string, extname?: string } }>
     /**
      * Environment variables. Values may be nested objects keyed by platform
      * (`darwin`/`linux`) or platform/arch (`darwin/aarch64`, `linux/x86-64`),

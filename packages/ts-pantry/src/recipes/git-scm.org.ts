@@ -20,8 +20,60 @@ export const recipe: Recipe = {
   build: {
     script: [
       'mv props/config.mak .',
-      './configure',
+
+      [
+        './configure',
+        '--prefix={{prefix}}',
+        '--with-perl={{deps.perl.org.prefix}}',
+        '--with-gitconfig=etc/gitconfig',
+      ].join(' '),
+
       'make install --jobs {{hw.concurrency}} NO_TCLTK=1',
+
+      {
+        run: [
+          'make',
+          'make install',
+        ],
+        'working-directory': 'contrib/subtree',
+      },
+
+      {
+        run: [
+          'make CFLAGS="-g -O2 -Wall -I../../.." LDFLAGS="$LDFLAGS -lz -liconv"',
+          'install -Dm755 git-credential-osxkeychain "{{prefix}}"/bin',
+          'make clean',
+        ],
+        'working-directory': 'contrib/credential/osxkeychain',
+        if: 'darwin',
+      },
+
+      {
+        run: 'mv git-subtree "{{prefix}}"/libexec',
+        'working-directory': 'contrib/subtree',
+      },
+
+      {
+        run: 'fix-shebangs.ts bin/* libexec/*',
+        'working-directory': '{{prefix}}',
+      },
+
+      {
+        run: 'cp "$SRCROOT"/props/gitconfig "$SRCROOT"/props/gitignore .',
+        'working-directory': '{{prefix}}/etc',
+      },
+
+      {
+        run: [
+          'rm bin/git',
+          'cp $SRCROOT/props/git-shim bin/git',
+        ],
+        'working-directory': '{{prefix}}',
+      },
     ],
+    env: {
+      V: '1',
+      INSTALL_STRIP: '-s',
+    },
   },
 }

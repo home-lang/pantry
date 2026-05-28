@@ -24,7 +24,14 @@ export const recipe: Recipe = {
   build: {
     script: [
       'gem build rubocop.gemspec',
-      'gem install --no-user-install --bindir={{prefix}}/gems/bin --no-document rubocop-{{version}}.gem',
+      { run: 'EXTRA_GEMS="racc" # since 1.85.1', if: '>=1.85.1' },
+      [
+        'gem install',
+        '--no-user-install',
+        '--bindir={{prefix}}/gems/bin',
+        '--no-document',
+        'rubocop-{{version.raw}}.gem $EXTRA_GEMS',
+      ].join(' '),
       'install -Dm755 props/rubocop "{{prefix}}"/bin/rubocop',
     ],
     env: {

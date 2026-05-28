@@ -22,17 +22,26 @@ export const recipe: Recipe = {
   buildDependencies: {
     'cmake.org': '3',
     'gnu.org/patch': '*',
+    'linux': {
+      'gnu.org/gcc': '14',
+    },
   },
 
   build: {
+    workingDirectory: 'build',
     script: [
-      'patch -p1 -d.. <../props/clang-error.diff',
+      // New libsolidity/lsb/DocumentHoverHandler.cpp doesn't like some versions of clang
+      // (default argument issue)
+      // https://github.com/ethereum/solidity/issues/13854
+      { run: 'patch -p1 -d.. <../props/clang-error.diff', if: '=0.8.18' },
       'cmake .. $ARGS',
       'make --jobs {{hw.concurrency}}',
       'make install',
-      'rm {{prefix}}/bin/solidity-upgrade',
+      { run: 'rm {{prefix}}/bin/solidity-upgrade', if: '<0.8.18' },
     ],
     env: {
+      // -DPEDANTIC=OFF: otherwise fails due to deprecations in boost ^1.81
+      // -DSTRICT_Z3_VERSION=OFF: otherwise complains about Z3 version in cmake
       'ARGS': ['-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DPEDANTIC=OFF', '-DSTRICT_Z3_VERSION=OFF'],
     },
   },

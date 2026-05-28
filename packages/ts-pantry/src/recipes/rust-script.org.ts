@@ -17,16 +17,14 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
 
+  buildDependencies: {
+    'rust-lang.org': '>=1.64',
+    'rust-lang.org/cargo': '*',
+  },
+
   build: {
     script: [
-      'cp $FIXTURE rand.rs',
-      'chmod +x rand.rs',
-      'rust-script rand.rs',
-      'rust-script rand.rs | grep -E \\A random number:\\',
-      './rand.rs | grep -E \\A random number:\\',
-      'sed -i \\1d\\ rand.rs',
-      'chmod -x rand.rs',
-      'pkgx rand.rs | grep -E \\A random number:\\',
+      'cargo install --locked --path . --root {{prefix}}',
     ],
   },
 }

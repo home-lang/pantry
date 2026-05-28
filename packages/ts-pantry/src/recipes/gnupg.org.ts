@@ -31,15 +31,26 @@ export const recipe: Recipe = {
       './configure $ARGS',
       'make --jobs {{hw.concurrency}}',
       'make --jobs {{hw.concurrency}} install',
+
+      // this makes the lookup machinery relocatable, see runtime env
       'cp props/gpgconf.ctl {{prefix}}/bin',
-      'cd "{{prefix}}/libexec"',
-      'sed -i.bak "s|{{prefix}}|\\$(dirname \\$0)/..|g" gpg-wks-client',
-      'rm gpg-wks-client.bak',
-      '',
-      'cd "{{prefix}}"',
-      'mkdir -p var/run etc/gnupg',
-      'chmod 700 etc/gnupg',
-      '',
+
+      {
+        run: [
+          'sed -i.bak "s|{{prefix}}|\\$(dirname \\$0)/..|g" gpg-wks-client',
+          'rm gpg-wks-client.bak',
+        ],
+        'working-directory': '{{prefix}}/libexec',
+      },
+      {
+        run: [
+          'mkdir -p var/run etc/gnupg',
+          'chmod 700 etc/gnupg',
+        ],
+        'working-directory': '{{prefix}}',
+      },
+
+      // nobody added a comment explaining why this conf is required
       'cp props/gpg.conf {{prefix}}/etc/gnupg/gpg.conf',
     ],
     env: {

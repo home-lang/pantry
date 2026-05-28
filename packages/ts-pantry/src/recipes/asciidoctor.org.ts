@@ -25,22 +25,25 @@ export const recipe: Recipe = {
   },
 
   build: {
-    script: [
-      'gem build asciidoctor.gemspec',
-      '',
-      'gem install \\',
-      '  --no-user-install \\',
-      '  --bindir={{prefix}}/gems/bin \\',
-      '  --no-document \\',
-      '  asciidoctor-{{version}}.gem',
-      '',
-      'mkdir "{{prefix}}"/bin',
-      'mv props/asciidoctor "{{prefix}}"/bin',
-      '',
-    ],
     env: {
-      'GEM_HOME': '${{prefix}}',
-      'GEM_PATH': '${{prefix}}',
+      GEM_HOME: '{{prefix}}',
+      GEM_PATH: '{{prefix}}',
     },
+    script: [
+      {
+        run: [
+          'gem build asciidoctor.gemspec',
+          '',
+          'gem install \\',
+          '  --no-user-install \\',
+          '  --bindir={{prefix}}/gems/bin \\',
+          '  --no-document \\',
+          '  asciidoctor-{{version}}.gem',
+          '',
+          'mkdir "{{prefix}}"/bin',
+          'mv props/asciidoctor "{{prefix}}"/bin',
+        ].join('\n'),
+      },
+    ],
   },
 }

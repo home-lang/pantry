@@ -22,16 +22,26 @@ export const recipe: Recipe = {
   },
 
   build: {
+    env: {
+      GEM_HOME: '${{prefix}}',
+      GEM_PATH: '${{prefix}}',
+    },
     script: [
       'gem build fastlane.gemspec',
-      'gem install --no-user-install --bindir={{prefix}}/gems/bin --no-document fastlane-{{version}}.gem',
-      'cd "{{prefix}}/bin"',
-      'cp $SRCROOT/props/fastlane .',
+      [
+        'gem install',
+        '--no-user-install',
+        '--bindir={{prefix}}/gems/bin',
+        '--no-document',
+        'fastlane-{{version}}.gem',
+        'rake rexml',
+      ].join(' '),
+      {
+        run: 'cp $SRCROOT/props/fastlane .',
+        'working-directory': '{{prefix}}/bin',
+      },
+      // fails to code sign and non-essential
       'rm -rf "{{prefix}}"/gems/terminal-notifier-*',
     ],
-    env: {
-      'GEM_HOME': '${{prefix}}',
-      'GEM_PATH': '${{prefix}}',
-    },
   },
 }
