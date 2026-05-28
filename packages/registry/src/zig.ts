@@ -13,6 +13,7 @@ import * as crypto from 'node:crypto'
 import { DynamoDBClient } from './storage/dynamodb-client'
 import type { S3Client } from './storage/aws-client'
 import { createS3Client, resolveStorageProvider } from './storage/provider'
+import { ObjectSnapshot } from './storage/object-snapshot'
 
 /**
  * Zig package manifest (build.zig.zon structure)
@@ -264,9 +265,14 @@ export class InMemoryZigStorage implements ZigPackageStorage {
   }
 
   async publish(metadata: ZigPackageMetadata, tarball: ArrayBuffer): Promise<void> {
-    const { name, version } = metadata
-    const key = `${name}@${version}`
+    this.upsertRecord(metadata)
+    this.tarballs.set(`${metadata.name}@${metadata.version}`, tarball)
+    this.onMutate()
+  }
 
+  /** Create or update the in-memory package record + hash index for a version. */
+  protected upsertRecord(metadata: ZigPackageMetadata): void {
+    const { name, version } = metadata
     let record = this.packages.get(name)
     if (!record) {
       record = {
@@ -289,8 +295,21 @@ export class InMemoryZigStorage implements ZigPackageStorage {
     record.updatedAt = new Date().toISOString()
 
     this.packages.set(name, record)
-    this.tarballs.set(key, tarball)
     this.hashIndex.set(metadata.hash, { name, version })
+  }
+
+  /** Persistence hook — overridden by ObjectZigStorage to snapshot to the bucket. */
+  protected onMutate(): void {}
+
+  protected captureState(): { packages: Record<string, ZigPackageRecord>, hashIndex: Record<string, { name: string, version: string }> } {
+    return { packages: Object.fromEntries(this.packages), hashIndex: Object.fromEntries(this.hashIndex) }
+  }
+
+  protected applyState(data: { packages?: Record<string, ZigPackageRecord>, hashIndex?: Record<string, { name: string, version: string }> }): void {
+    if (data?.packages)
+      this.packages = new Map(Object.entries(data.packages))
+    if (data?.hashIndex)
+      this.hashIndex = new Map(Object.entries(data.hashIndex))
   }
 
   async exists(name: string, version: string): Promise<boolean> {
@@ -329,8 +348,17 @@ export class InMemoryZigStorage implements ZigPackageStorage {
         if (meta?.hash) this.hashIndex.delete(meta.hash)
       }
       this.packages.delete(name)
+      this.onMutate()
     }
   }
+}
+
+/** Bucket key for a Zig package tarball. */
+function zigTarballKey(name: string, version: string): string {
+  const safeName = name.replaceAll('@', '').replaceAll('/', '-')
+  if (!/^[a-z0-9._\-]+$/i.test(safeName) || safeName.includes('..'))
+    throw new Error(`Invalid package name: ${name}`)
+  return `zig-packages/${safeName}/${version}/${safeName}-${version}.tar.gz`
 }
 
 /**
@@ -613,17 +641,102 @@ export class DynamoDBZigStorage implements ZigPackageStorage {
 }
 
 /**
+ * Object-storage-backed Zig package storage (Hetzner / Backblaze B2 / S3).
+ *
+ * Package metadata + hash index are kept in memory and persisted as a single
+ * JSON snapshot in the bucket; tarballs are written under zig-packages/. Lets
+ * Zig packages release into and resolve from the configured object store with
+ * no DynamoDB.
+ */
+export class ObjectZigStorage extends InMemoryZigStorage {
+  private s3: S3Client
+  private bucket: string
+  private baseUrl: string
+  private snapshot: ObjectSnapshot
+  private loaded: Promise<void>
+
+  constructor(opts: { s3: S3Client, bucket: string, baseUrl: string, key?: string }) {
+    super()
+    this.s3 = opts.s3
+    this.bucket = opts.bucket
+    this.baseUrl = opts.baseUrl
+    this.snapshot = new ObjectSnapshot(
+      this.s3,
+      this.bucket,
+      opts.key || 'zig-packages/registry-index.json',
+      () => this.captureState(),
+    )
+    this.loaded = this.snapshot.load().then((data) => {
+      if (data)
+        this.applyState(data as { packages?: Record<string, ZigPackageRecord>, hashIndex?: Record<string, { name: string, version: string }> })
+    })
+  }
+
+  /** Resolves once the initial snapshot has loaded — await on boot before serving reads. */
+  ready(): Promise<void> {
+    return this.loaded
+  }
+
+  protected onMutate(): void {
+    this.snapshot.scheduleSave()
+  }
+
+  /** Flush any pending save immediately (e.g. before shutdown). */
+  async flush(): Promise<void> {
+    await this.snapshot.flush()
+  }
+
+  async publish(metadata: ZigPackageMetadata, tarball: ArrayBuffer): Promise<void> {
+    const key = zigTarballKey(metadata.name, metadata.version)
+    await this.s3.putObject({ bucket: this.bucket, key, body: Buffer.from(tarball), contentType: 'application/gzip' })
+
+    let toStore = metadata
+    if (!toStore.tarballUrl)
+      toStore = { ...metadata, tarballUrl: `${this.baseUrl}/zig/packages/${encodeURIComponent(metadata.name)}/${metadata.version}/tarball` }
+
+    this.upsertRecord(toStore)
+    this.onMutate()
+  }
+
+  async downloadTarball(name: string, version: string): Promise<ArrayBuffer | null> {
+    try {
+      const buf = await this.s3.getObjectBuffer(this.bucket, zigTarballKey(name, version))
+      return (buf.buffer as ArrayBuffer).slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+    }
+    catch {
+      return null
+    }
+  }
+
+  async deletePackage(name: string): Promise<void> {
+    const versions = await this.listVersions(name)
+    for (const version of versions) {
+      try { await this.s3.deleteObject(this.bucket, zigTarballKey(name, version)) }
+      catch { /* ignore missing */ }
+    }
+    // Removes the in-memory record + hash index and schedules a save via onMutate().
+    await super.deletePackage(name)
+  }
+}
+
+/**
  * Create Zig package storage.
- * Uses DynamoDB + S3 when DYNAMODB_TABLE and S3_BUCKET env vars are set, otherwise in-memory.
+ *
+ * Non-AWS providers (Hetzner / B2) and AWS-without-a-table use the object-storage
+ * snapshot backend (no DynamoDB). AWS keeps DynamoDB only when a table is set.
+ * Falls back to in-memory when no bucket is configured (local dev).
  */
 export function createZigStorage(): ZigPackageStorage {
-  const table = process.env.DYNAMODB_TABLE
   const bucket = process.env.S3_BUCKET
-  const region = process.env.AWS_REGION || 'us-east-1'
   const baseUrl = process.env.BASE_URL || 'http://localhost:3000'
 
-  if (table && bucket && bucket !== 'local') {
-    return new DynamoDBZigStorage({ tableName: table, bucket, region, baseUrl })
-  }
-  return new InMemoryZigStorage()
+  if (!bucket || bucket === 'local')
+    return new InMemoryZigStorage()
+
+  const provider = resolveStorageProvider()
+  const table = process.env.DYNAMODB_TABLE
+  if (provider.provider === 'aws' && table && table !== 'local')
+    return new DynamoDBZigStorage({ tableName: table, bucket, region: provider.region, baseUrl })
+
+  return new ObjectZigStorage({ s3: createS3Client(provider), bucket, baseUrl })
 }

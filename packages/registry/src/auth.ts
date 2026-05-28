@@ -24,6 +24,9 @@ import type {
   User,
 } from './types'
 import { DynamoDBClient } from './storage/dynamodb-client'
+import type { S3Client } from './storage/aws-client'
+import { createS3Client, resolveStorageProvider } from './storage/provider'
+import { ObjectSnapshot } from './storage/object-snapshot'
 
 // ===========================================================================
 // Token / Hash Helpers
@@ -345,10 +348,12 @@ export class InMemoryAuthStorage implements AuthStorage {
 
   async putUser(user: User): Promise<void> {
     this.users.set(user.email.toLowerCase(), user)
+    this.onMutate()
   }
 
   async upsertUser(user: User): Promise<void> {
     this.users.set(user.email.toLowerCase(), user)
+    this.onMutate()
   }
 
   async getUserByEmail(email: string): Promise<User | null> {
@@ -360,6 +365,7 @@ export class InMemoryAuthStorage implements AuthStorage {
     const userTokens = this.apiTokensByUser.get(token.userId) || []
     userTokens.push(token)
     this.apiTokensByUser.set(token.userId, userTokens)
+    this.onMutate()
   }
 
   async getApiTokenByHash(tokenHash: string): Promise<ApiToken | null> {
@@ -376,6 +382,7 @@ export class InMemoryAuthStorage implements AuthStorage {
     if (tokenToDelete) {
       this.apiTokensByHash.delete(tokenToDelete.tokenHash)
       this.apiTokensByUser.set(userId, tokens.filter(t => t.id !== tokenId))
+      this.onMutate()
     }
   }
 
@@ -383,11 +390,13 @@ export class InMemoryAuthStorage implements AuthStorage {
     const token = this.apiTokensByHash.get(tokenHash)
     if (token) {
       token.lastUsedAt = new Date().toISOString()
+      this.onMutate()
     }
   }
 
   async putSession(session: Session): Promise<void> {
     this.sessions.set(session.tokenHash, session)
+    this.onMutate()
   }
 
   async getSession(tokenHash: string): Promise<Session | null> {
@@ -396,6 +405,35 @@ export class InMemoryAuthStorage implements AuthStorage {
 
   async deleteSession(tokenHash: string): Promise<void> {
     this.sessions.delete(tokenHash)
+    this.onMutate()
+  }
+
+  /** Persistence hook — overridden by ObjectAuthStorage to snapshot to the bucket. */
+  protected onMutate(): void {}
+
+  protected captureState(): { users: Record<string, User>, apiTokens: ApiToken[], sessions: Record<string, Session> } {
+    return {
+      users: Object.fromEntries(this.users),
+      apiTokens: [...this.apiTokensByHash.values()],
+      sessions: Object.fromEntries(this.sessions),
+    }
+  }
+
+  protected applyState(data: { users?: Record<string, User>, apiTokens?: ApiToken[], sessions?: Record<string, Session> }): void {
+    if (data?.users)
+      this.users = new Map(Object.entries(data.users))
+    if (data?.sessions)
+      this.sessions = new Map(Object.entries(data.sessions))
+    if (data?.apiTokens) {
+      this.apiTokensByHash = new Map()
+      this.apiTokensByUser = new Map()
+      for (const t of data.apiTokens) {
+        this.apiTokensByHash.set(t.tokenHash, t)
+        const list = this.apiTokensByUser.get(t.userId) || []
+        list.push(t)
+        this.apiTokensByUser.set(t.userId, list)
+      }
+    }
   }
 }
 
@@ -671,13 +709,62 @@ export class DynamoDBAuthStorage implements AuthStorage {
 // ===========================================================================
 
 /**
+ * Object-storage-backed auth storage (Hetzner / Backblaze B2 / S3).
+ *
+ * Users, API tokens and sessions are kept in memory and persisted as a single
+ * JSON snapshot in the bucket — the same model as ObjectMetadataStorage — so
+ * the registry's auth runs fully off DynamoDB.
+ */
+export class ObjectAuthStorage extends InMemoryAuthStorage {
+  private snapshot: ObjectSnapshot
+  private loaded: Promise<void>
+
+  constructor(opts: { s3: S3Client, bucket: string, key?: string }) {
+    super()
+    this.snapshot = new ObjectSnapshot(
+      opts.s3,
+      opts.bucket,
+      opts.key || 'auth/registry-auth.json',
+      () => this.captureState(),
+    )
+    this.loaded = this.snapshot.load().then((data) => {
+      if (data)
+        this.applyState(data as { users?: Record<string, User>, apiTokens?: ApiToken[], sessions?: Record<string, Session> })
+    })
+  }
+
+  /** Resolves once the initial snapshot has loaded — await on boot before serving reads. */
+  ready(): Promise<void> {
+    return this.loaded
+  }
+
+  protected onMutate(): void {
+    this.snapshot.scheduleSave()
+  }
+
+  /** Flush any pending save immediately (e.g. before shutdown). */
+  async flush(): Promise<void> {
+    await this.snapshot.flush()
+  }
+}
+
+/**
  * Create an AuthStorage instance based on the environment.
- * Uses the same DynamoDB table as MetadataStorage in production.
+ *
+ * Non-AWS providers (Hetzner / B2) persist auth as a bucket JSON snapshot — no
+ * DynamoDB. AWS keeps the DynamoDB-backed store when a table is configured.
+ * Falls back to in-memory for local dev.
  */
 export function createAuthStorage(tableName?: string, region?: string): AuthStorage {
+  const bucket = process.env.S3_BUCKET
+  const provider = resolveStorageProvider()
+
+  if (provider.provider !== 'aws' && bucket && bucket !== 'local')
+    return new ObjectAuthStorage({ s3: createS3Client(provider), bucket })
+
   const table = tableName || process.env.DYNAMODB_TABLE || 'local'
-  if (table && table !== 'local') {
+  if (table && table !== 'local')
     return new DynamoDBAuthStorage(table, region || process.env.AWS_REGION || 'us-east-1')
-  }
+
   return new InMemoryAuthStorage()
 }

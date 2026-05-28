@@ -14,6 +14,7 @@ import * as crypto from 'node:crypto'
 import { DynamoDBClient } from './storage/dynamodb-client'
 import type { S3Client } from './storage/aws-client'
 import { createS3Client, resolveStorageProvider } from './storage/provider'
+import { ObjectSnapshot } from './storage/object-snapshot'
 
 /**
  * Composer package manifest (composer.json structure)
@@ -229,9 +230,14 @@ export class InMemoryPhpStorage implements PhpPackageStorage {
   }
 
   async publish(metadata: PhpPackageMetadata, tarball: ArrayBuffer): Promise<void> {
-    const { name, version } = metadata
-    const key = `${name}@${version}`
+    this.upsertRecord(metadata)
+    this.tarballs.set(`${metadata.name}@${metadata.version}`, tarball)
+    this.onMutate()
+  }
 
+  /** Create or update the in-memory package record for a published version. */
+  protected upsertRecord(metadata: PhpPackageMetadata): void {
+    const { name, version } = metadata
     let record = this.packages.get(name)
     if (!record) {
       record = {
@@ -256,9 +262,19 @@ export class InMemoryPhpStorage implements PhpPackageStorage {
       record.latest = version
     }
     record.updatedAt = new Date().toISOString()
-
     this.packages.set(name, record)
-    this.tarballs.set(key, tarball)
+  }
+
+  /** Persistence hook — overridden by ObjectPhpStorage to snapshot to the bucket. */
+  protected onMutate(): void {}
+
+  protected captureState(): { packages: Record<string, PhpPackageRecord> } {
+    return { packages: Object.fromEntries(this.packages) }
+  }
+
+  protected applyState(data: { packages?: Record<string, PhpPackageRecord> }): void {
+    if (data?.packages)
+      this.packages = new Map(Object.entries(data.packages))
   }
 
   async exists(name: string, version: string): Promise<boolean> {
@@ -279,8 +295,15 @@ export class InMemoryPhpStorage implements PhpPackageStorage {
         this.tarballs.delete(key)
       }
       this.packages.delete(name)
+      this.onMutate()
     }
   }
+}
+
+/** Bucket key for a PHP package tarball (vendor/package → vendor-package). */
+function phpTarballKey(name: string, version: string): string {
+  const safeName = name.replaceAll('/', '-').replaceAll('@', '')
+  return `php-packages/${safeName}/${version}/${safeName}-${version}.tar.gz`
 }
 
 /**
@@ -521,17 +544,103 @@ export class DynamoDBPhpStorage implements PhpPackageStorage {
 }
 
 /**
+ * Object-storage-backed PHP package storage (Hetzner / Backblaze B2 / S3).
+ *
+ * Package metadata is kept in memory and persisted as a single JSON snapshot in
+ * the bucket; tarballs are written under php-packages/. This lets PHP packages
+ * release into and resolve from the configured object store with no DynamoDB —
+ * the same model as the main registry's ObjectMetadataStorage.
+ */
+export class ObjectPhpStorage extends InMemoryPhpStorage {
+  private s3: S3Client
+  private bucket: string
+  private baseUrl: string
+  private snapshot: ObjectSnapshot
+  private loaded: Promise<void>
+
+  constructor(opts: { s3: S3Client, bucket: string, baseUrl: string, key?: string }) {
+    super()
+    this.s3 = opts.s3
+    this.bucket = opts.bucket
+    this.baseUrl = opts.baseUrl
+    this.snapshot = new ObjectSnapshot(
+      this.s3,
+      this.bucket,
+      opts.key || 'php-packages/registry-index.json',
+      () => this.captureState(),
+    )
+    this.loaded = this.snapshot.load().then((data) => {
+      if (data)
+        this.applyState(data as { packages?: Record<string, PhpPackageRecord> })
+    })
+  }
+
+  /** Resolves once the initial snapshot has loaded — await on boot before serving reads. */
+  ready(): Promise<void> {
+    return this.loaded
+  }
+
+  protected onMutate(): void {
+    this.snapshot.scheduleSave()
+  }
+
+  /** Flush any pending save immediately (e.g. before shutdown). */
+  async flush(): Promise<void> {
+    await this.snapshot.flush()
+  }
+
+  async publish(metadata: PhpPackageMetadata, tarball: ArrayBuffer): Promise<void> {
+    const key = phpTarballKey(metadata.name, metadata.version)
+    await this.s3.putObject({ bucket: this.bucket, key, body: Buffer.from(tarball), contentType: 'application/gzip' })
+
+    let toStore = metadata
+    if (!toStore.tarballUrl) {
+      const encodedName = metadata.name.split('/').map(encodeURIComponent).join('/')
+      toStore = { ...metadata, tarballUrl: `${this.baseUrl}/php/packages/${encodedName}/${metadata.version}/tarball` }
+    }
+    this.upsertRecord(toStore)
+    this.onMutate()
+  }
+
+  async downloadTarball(name: string, version: string): Promise<ArrayBuffer | null> {
+    try {
+      const buf = await this.s3.getObjectBuffer(this.bucket, phpTarballKey(name, version))
+      return (buf.buffer as ArrayBuffer).slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+    }
+    catch {
+      return null
+    }
+  }
+
+  async deletePackage(name: string): Promise<void> {
+    const versions = await this.listVersions(name)
+    for (const version of versions) {
+      try { await this.s3.deleteObject(this.bucket, phpTarballKey(name, version)) }
+      catch { /* ignore missing */ }
+    }
+    // Removes the in-memory record and schedules a snapshot save via onMutate().
+    await super.deletePackage(name)
+  }
+}
+
+/**
  * Create PHP package storage.
- * Uses DynamoDB + S3 when DYNAMODB_TABLE and S3_BUCKET env vars are set, otherwise in-memory.
+ *
+ * Non-AWS providers (Hetzner / B2) and AWS-without-a-table use the object-storage
+ * snapshot backend (no DynamoDB). AWS keeps DynamoDB only when a table is set.
+ * Falls back to in-memory when no bucket is configured (local dev).
  */
 export function createPhpStorage(): PhpPackageStorage {
-  const table = process.env.DYNAMODB_TABLE
   const bucket = process.env.S3_BUCKET
-  const region = process.env.AWS_REGION || 'us-east-1'
   const baseUrl = process.env.BASE_URL || 'http://localhost:3000'
 
-  if (table && bucket && bucket !== 'local') {
-    return new DynamoDBPhpStorage({ tableName: table, bucket, region, baseUrl })
-  }
-  return new InMemoryPhpStorage()
+  if (!bucket || bucket === 'local')
+    return new InMemoryPhpStorage()
+
+  const provider = resolveStorageProvider()
+  const table = process.env.DYNAMODB_TABLE
+  if (provider.provider === 'aws' && table && table !== 'local')
+    return new DynamoDBPhpStorage({ tableName: table, bucket, region: provider.region, baseUrl })
+
+  return new ObjectPhpStorage({ s3: createS3Client(provider), bucket, baseUrl })
 }
