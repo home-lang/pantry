@@ -276,6 +276,18 @@ jobs:
             echo "All selected source artifacts already exist in S3; skipping toolchain setup"
           fi
 
+      - name: Free disk space (Linux)
+        if: runner.os == 'Linux' && steps.source-preflight.outputs.needs_build != 'false'
+        run: |
+          # GitHub runners ship ~25-30GB of preinstalled SDKs we never use.
+          # Large source builds (e.g. juju + its k8s/cloud deps) otherwise
+          # exhaust the disk mid-build ("No space left on device").
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/local/.ghcup \
+            /usr/local/share/boost /usr/share/swift || true
+          sudo docker image prune --all --force || true
+          df -h /
+
       - name: Install build tools (Linux)
         if: runner.os == 'Linux' && steps.source-preflight.outputs.needs_build != 'false'
         run: |
@@ -487,6 +499,18 @@ jobs:
           if [ "$NEEDS_BUILD" = "false" ]; then
             echo "All selected source artifacts already exist in S3; skipping toolchain setup"
           fi
+
+      - name: Free disk space (Linux)
+        if: runner.os == 'Linux' && steps.source-preflight.outputs.needs_build != 'false'
+        run: |
+          # GitHub runners ship ~25-30GB of preinstalled SDKs we never use.
+          # Large source builds (e.g. juju + its k8s/cloud deps) otherwise
+          # exhaust the disk mid-build ("No space left on device").
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/local/.ghcup \
+            /usr/local/share/boost /usr/share/swift || true
+          sudo docker image prune --all --force || true
+          df -h /
 
       - name: Install build tools (Linux)
         if: runner.os == 'Linux' && steps.source-preflight.outputs.needs_build != 'false'
