@@ -528,11 +528,29 @@ async function main(): Promise<void> {
   const results: VerifyResult[] = []
   for (const domain of [...new Set(domains)]) {
     console.log(`\n🔎 Verifying ${domain}`)
-    const result = await verifyBinaryMetadata(s3, values.bucket, domain, {
-      repair: values.repair,
-      deleteStrays: values['delete-strays'],
-      requireConfiguredPlatforms: values['require-configured-platforms'],
-    })
+    // Retry transient storage errors (network blips against the object store)
+    // so one hiccup doesn't fail the whole run; logic errors still surface.
+    let result: VerifyResult | undefined
+    let lastErr: unknown
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        result = await verifyBinaryMetadata(s3, values.bucket, domain, {
+          repair: values.repair,
+          deleteStrays: values['delete-strays'],
+          requireConfiguredPlatforms: values['require-configured-platforms'],
+        })
+        break
+      }
+      catch (err) {
+        lastErr = err
+        if (attempt < 3) {
+          console.log(`   ⏳ transient error verifying ${domain} (attempt ${attempt}/3): ${err instanceof Error ? err.message : err}`)
+          await new Promise(r => setTimeout(r, 1000 * attempt))
+        }
+      }
+    }
+    if (!result)
+      throw lastErr instanceof Error ? lastErr : new Error(String(lastErr))
     results.push(result)
     console.log(`   versions=${result.versionCount} platforms=${result.platformCount} repaired=${result.repaired}`)
     for (const warning of result.warnings) console.log(`   ⚠️  ${warning}`)
