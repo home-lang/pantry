@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/asciidoctor.org',
   domain: 'asciidoctor.org',
   name: 'asciidoctor',
   description: ':gem: A fast, open source text processor and publishing toolchain, written in Ruby, for converting AsciiDoc content to HTML 5, DocBook 5, and other formats.',

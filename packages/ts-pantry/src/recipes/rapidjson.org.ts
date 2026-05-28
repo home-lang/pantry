@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/rapidjson.org',
   domain: 'rapidjson.org',
   name: 'rapidjson',
   description: 'A fast JSON parser/generator for C++ with both SAX/DOM style API',

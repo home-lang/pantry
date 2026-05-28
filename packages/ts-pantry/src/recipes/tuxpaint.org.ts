@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/tuxpaint.org',
   domain: 'tuxpaint.org',
   name: 'tuxpaint',
   programs: ['tp-magic-config', 'tuxpaint', 'tuxpaint-import'],

@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/gnupg.org',
   domain: 'gnupg.org',
   name: 'gnupg',
   description: 'GNU Pretty Good Privacy (PGP) package',

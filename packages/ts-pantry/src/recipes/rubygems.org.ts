@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/rubygems.org',
   domain: 'rubygems.org',
   name: 'rubygems',
   description: 'Powerful, clean, object-oriented scripting language',

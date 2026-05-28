@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/wavpack.com',
   domain: 'wavpack.com',
   name: 'wavpack',
   description: 'WavPack encode/decode library, command-line programs, and several plugins',

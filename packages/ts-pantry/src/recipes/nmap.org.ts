@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/nmap.org',
   domain: 'nmap.org',
   name: 'nmap',
   description: 'Port scanning utility for large networks',

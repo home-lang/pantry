@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/aspell.net',
   domain: 'aspell.net',
   name: 'aspell',
   description: 'Spell checker with better logic than ispell',

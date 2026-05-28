@@ -93,10 +93,20 @@ export interface Recipe {
 
   /** Build configuration */
   build: {
-    /** Build script lines — supports {{version}}, {{prefix}}, {{hw.platform}} etc. */
-    script: string[]
-    /** Environment variables */
-    env?: Record<string, string | string[]>
+    /**
+     * Build script lines — supports {{version}}, {{prefix}}, {{hw.platform}} etc.
+     * A step may be a plain command string, or an object to attach a conditional
+     * (`if`, e.g. a version range `<3.4.0` or platform `darwin/aarch64`) or a
+     * `working-directory`. These flow straight through to the buildkit engine,
+     * which evaluates the condition and runs the step in the given directory.
+     */
+    script: Array<string | { run: string, if?: string, 'working-directory'?: string }>
+    /**
+     * Environment variables. Values may be nested objects keyed by platform
+     * (`darwin`/`linux`) or platform/arch (`darwin/aarch64`, `linux/x86-64`),
+     * mirroring pkgx — used for arch-specific values like a configure target.
+     */
+    env?: Record<string, string | string[] | Record<string, string | string[]>>
     /** Platform-specific env overrides */
     platformEnv?: Record<string, Record<string, string>>
     /** Working directory relative to build dir */

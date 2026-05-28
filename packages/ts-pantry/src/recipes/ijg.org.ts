@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/ijg.org',
   domain: 'ijg.org',
   name: 'ijg',
   programs: ['cjpeg', 'djpeg', 'jpegtran', 'rdjpgcom', 'wrjpgcom'],

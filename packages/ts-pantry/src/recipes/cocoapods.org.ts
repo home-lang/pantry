@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/cocoapods.org',
   domain: 'cocoapods.org',
   name: 'pod',
   description: 'Dependency manager for Cocoa projects',

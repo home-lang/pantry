@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/soliditylang.org',
   domain: 'soliditylang.org',
   name: 'soliditylang',
   description: 'Solidity, the Smart Contract Programming Language',

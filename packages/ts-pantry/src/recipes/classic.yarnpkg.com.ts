@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/classic.yarnpkg.com',
   domain: 'classic.yarnpkg.com',
   name: 'classic.yarnpkg',
   description: 'The 1.x line is frozen - features and bugfixes now happen on https://github.com/yarnpkg/berry',

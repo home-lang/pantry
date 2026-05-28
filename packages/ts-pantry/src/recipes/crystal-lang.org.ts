@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/crystal-lang.org',
   domain: 'crystal-lang.org',
   name: 'crystal',
   description: 'Fast and statically typed, compiled language with Ruby-like syntax',

@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/npmjs.com',
   domain: 'npmjs.com',
   name: 'npmjs',
   description: 'the package manager for JavaScript',

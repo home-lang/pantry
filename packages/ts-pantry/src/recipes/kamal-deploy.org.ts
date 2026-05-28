@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/kamal-deploy.org',
   domain: 'kamal-deploy.org',
   name: 'kamal-deploy',
   description: 'Deploy web apps anywhere — from bare metal to cloud VMs — using Docker with zero downtime',

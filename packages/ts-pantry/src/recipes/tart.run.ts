@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/tart.run',
   domain: 'tart.run',
   name: 'tart',
   description: 'macOS and Linux VMs on Apple Silicon to use in CI and other automations',

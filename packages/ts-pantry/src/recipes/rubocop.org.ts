@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/rubocop.org',
   domain: 'rubocop.org',
   name: 'rubocop',
   description: 'A Ruby static code analyzer and formatter, based on the community Ruby style guide.',

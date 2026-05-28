@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/helix-editor.com',
   domain: 'helix-editor.com',
   name: 'hx',
   description: 'A post-modern modal text editor.',

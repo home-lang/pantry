@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/giflib.sourceforge.io',
   domain: 'giflib.sourceforge.io',
   name: 'gif',
   description: 'Library and utilities for processing GIFs',

@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/fishshell.com',
   domain: 'fishshell.com',
   name: 'fish',
   description: 'User-friendly command-line shell for UNIX-like operating systems',

@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/pi.dev',
   domain: 'pi.dev',
   name: 'pi',
   programs: ['pi', 'pi-init'],

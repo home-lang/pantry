@@ -1862,6 +1862,26 @@ else if (Array.isArray(value)) {
         }
       }
     }
+
+    // Process arch-specific env vars keyed `os/arch` (e.g. pkgx's
+    // `darwin/aarch64: { ARCH: darwin64-arm64-cc }`). These are skipped by the
+    // generic loop above (slash keys) and the osName loop, yet are essential
+    // for recipes whose configure target depends on the CPU arch (openssl etc.).
+    const normalizedArch = arch === 'arm64' ? 'aarch64' : 'x86-64'
+    const archEnv = env[`${osName}/${normalizedArch}`]
+    if (archEnv && typeof archEnv === 'object') {
+      for (const [key, value] of Object.entries(archEnv as Record<string, string | string[]>)) {
+        const joined = Array.isArray(value)
+          ? value.map(v => interpolate(String(v), templateVars)).join(' ')
+          : interpolate(String(value), templateVars)
+        if (key === 'ARGS') {
+          buildEnv.ARGS = buildEnv.ARGS ? `${buildEnv.ARGS} ${joined}` : joined
+        }
+        else {
+          buildEnv[key] = joined
+        }
+      }
+    }
   }
 
   console.log('\n📋 Build environment:')

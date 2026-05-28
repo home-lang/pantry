@@ -1,6 +1,7 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: 'props/pnpm.io',
   domain: 'pnpm.io',
   name: 'pnp',
   description: 'Fast, disk space efficient package manager',
