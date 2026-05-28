@@ -297,12 +297,18 @@ function checkConfiguredPlatforms(domain: string, metadata: PackageMetadata): st
   if (!requiredPlatforms?.length) return []
 
   const catalogVersions = readCatalogVersions(domain)
+  if (catalogVersions.length === 0) return []
+
+  // The build/sync workflows produce the *latest* version each cycle — we do not
+  // backfill the full historical catalog into storage. So require completeness
+  // (all configured platforms present) only for the latest catalog version; the
+  // bucket accumulates older versions over time. Internal consistency of whatever
+  // older versions are present is still checked by verifyExistingMetadataObjects.
+  const latest = [...catalogVersions].sort(compareSemverDesc)[0]
   const missing: string[] = []
-  for (const version of catalogVersions) {
-    for (const platform of requiredPlatforms) {
-      if (!metadata.versions[version]?.platforms?.[platform]) {
-        missing.push(`${version} ${platform}`)
-      }
+  for (const platform of requiredPlatforms) {
+    if (!metadata.versions[latest]?.platforms?.[platform]) {
+      missing.push(`${latest} ${platform}`)
     }
   }
   return missing
