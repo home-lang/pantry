@@ -1302,16 +1302,11 @@ fn uploadToRegistry(
     token: []const u8,
     metadata_json: []const u8,
 ) ![]const u8 {
-    // Direct S3 upload via SigV4 when env-based AWS credentials are present.
-    // (The legacy `~/.aws/credentials` file path was relevant when we shelled
-    // out to the `aws` CLI; with native SigV4 we only consume env vars.
-    // CI flows already use env-based creds, and local users can `source` an
-    // env file before publishing.)
-    if (io_helper.getenv("AWS_ACCESS_KEY_ID") != null) {
-        return uploadToS3Direct(allocator, name, version, tarball_data, metadata_json);
-    }
-
-    // Fall back to HTTP upload via registry server
+    // Publish through the registry server, which persists to the configured
+    // object store (Hetzner). The package name/version travel inside
+    // metadata_json, so they are not needed here.
+    _ = name;
+    _ = version;
     return uploadViaHttp(allocator, registry_url, tarball_data, token, metadata_json);
 }
 
