@@ -2,8 +2,9 @@ name: Sync Pre-Built Binaries
 
 on:
   schedule:
-    # Run every 6 hours
-    - cron: '0 */6 * * *'
+    # Daily. A full build/sync can exceed 6h, and the serial `sync-binaries`
+    # concurrency group means a more frequent schedule just cancels/queues runs.
+    - cron: '0 6 * * *'
   workflow_dispatch:
     inputs:
       packages:
