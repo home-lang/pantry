@@ -14,7 +14,6 @@ const io_helper = @import("../../io_helper.zig");
 const style = @import("../style.zig");
 const common = @import("common.zig");
 const registry_commands = @import("registry.zig");
-const aws = @import("../../auth/aws.zig");
 
 const CommandResult = common.CommandResult;
 
@@ -136,12 +135,8 @@ pub fn publishCommitCommand(allocator: std.mem.Allocator, args: []const []const 
         return .{ .exit_code = 0 };
     }
 
-    // Check for authentication (ensure env vars are non-empty, not just set).
-    // Env-based AWS creds only — `~/.aws/credentials` was relevant for the
-    // shelled-out `aws` CLI; the native SigV4 path uses env vars exclusively.
-    const aws_key = io_helper.getenv("AWS_ACCESS_KEY_ID");
-    const has_aws_creds = aws_key != null and aws_key.?.len > 0;
-
+    // Check for authentication. Publishing goes through the registry server
+    // (HTTP), which persists to the configured object store — a token is required.
     var token: ?[]const u8 = if (options.token) |t| (if (t.len > 0) t else null) else null;
     var token_owned = false;
     if (token == null) {
@@ -179,13 +174,12 @@ pub fn publishCommitCommand(allocator: std.mem.Allocator, args: []const []const 
     }
     defer if (token_owned and token != null) allocator.free(token.?);
 
-    if (!has_aws_creds and token == null) {
+    if (token == null) {
         return CommandResult.err(
             allocator,
             \\Error: No authentication found.
             \\
-            \\For direct S3 upload, configure AWS credentials in ~/.aws/credentials
-            \\Or set PANTRY_REGISTRY_TOKEN for HTTP upload to registry server.
+            \\Set PANTRY_REGISTRY_TOKEN (or PANTRY_TOKEN, or --token) to publish to the registry.
             ,
         );
     }
@@ -206,7 +200,7 @@ pub fn publishCommitCommand(allocator: std.mem.Allocator, args: []const []const 
     for (package_dirs.items) |pkg| {
         style.print("Publishing {s}{s}{s}...\n", .{ style.bold, pkg.name, style.reset });
 
-        const result = publishCommitPackage(allocator, pkg, sha, repo_url, options, has_aws_creds, token) catch |err| {
+        const result = publishCommitPackage(allocator, pkg, sha, repo_url, options, token) catch |err| {
             failed += 1;
             style.print("  {s}✗{s} Failed: {any}\n", .{ style.red, style.reset, err });
             continue;
@@ -666,7 +660,6 @@ fn publishCommitPackage(
     sha: []const u8,
     repo_url: ?[]const u8,
     options: PublishCommitOptions,
-    has_aws_creds: bool,
     token: ?[]const u8,
 ) !CommitPublishResult {
     // Read config content for tarball creation
@@ -698,163 +691,14 @@ fn publishCommitPackage(
 
     style.print("  Tarball: {d} bytes\n", .{tarball_data.len});
 
-    // Upload
-    if (has_aws_creds) {
-        const s3_result = uploadCommitToS3(allocator, pkg.name, sha, tarball_data, repo_url, pkg.version, options) catch |err| {
-            // S3 auth errors (credentials not found, rotated keys, profile
-            // misconfig) commonly happen when CI secrets are set but invalid.
-            // Fall back to HTTP if a registry token is available.
-            if (token) |tok| if (tok.len > 0) {
-                style.print("  S3 upload errored ({any}), falling back to registry HTTP upload...\n", .{err});
-                return uploadCommitViaHttp(allocator, pkg.name, sha, tarball_data, repo_url, pkg.version, options, tok);
-            };
-            return err;
-        };
-        if (!s3_result.success) {
-            if (token) |tok| if (tok.len > 0) {
-                style.print("  Falling back to registry HTTP upload...\n", .{});
-                return uploadCommitViaHttp(allocator, pkg.name, sha, tarball_data, repo_url, pkg.version, options, tok);
-            };
-        }
-        return s3_result;
-    } else {
-        const auth_token = token orelse "";
-        if (auth_token.len == 0) {
-            style.printError("PANTRY_REGISTRY_TOKEN is empty. Set a valid token for HTTP upload.\n", .{});
-            return error.MissingRegistryToken;
-        }
-        return uploadCommitViaHttp(allocator, pkg.name, sha, tarball_data, repo_url, pkg.version, options, auth_token);
+    // Upload through the registry server (HTTP), which persists to the
+    // configured object store (Hetzner).
+    const auth_token = token orelse "";
+    if (auth_token.len == 0) {
+        style.printError("PANTRY_REGISTRY_TOKEN is empty. Set a valid token for HTTP upload.\n", .{});
+        return error.MissingRegistryToken;
     }
-}
-
-/// Upload commit package directly to S3
-fn uploadCommitToS3(
-    allocator: std.mem.Allocator,
-    name: []const u8,
-    sha: []const u8,
-    tarball_data: []const u8,
-    repo_url: ?[]const u8,
-    version: ?[]const u8,
-    options: PublishCommitOptions,
-) !CommitPublishResult {
-    const bucket = io_helper.getenv("PANTRY_S3_BUCKET") orelse "pantry-registry";
-
-    // Sanitize package name
-    var sanitized_name = try allocator.alloc(u8, name.len);
-    defer allocator.free(sanitized_name);
-    for (name, 0..) |c, i| {
-        sanitized_name[i] = if (c == '@' or c == '/') '-' else c;
-    }
-    const clean_name = if (sanitized_name[0] == '-') sanitized_name[1..] else sanitized_name;
-
-    // S3 key: commits/{sha}/{safeName}/{safeName}.tgz
-    const tarball_key = try std.fmt.allocPrint(allocator, "commits/{s}/{s}/{s}.tgz", .{ sha, clean_name, clean_name });
-    defer allocator.free(tarball_key);
-
-    // Native S3 PUT via SigV4 — no `aws` CLI shell-out, no temp files.
-    const creds = aws.credentialsFromEnv() orelse {
-        style.print("  AWS credentials not in env\n", .{});
-        return .{ .success = false, .url = "" };
-    };
-    const region = io_helper.getenv("AWS_REGION") orelse "us-east-1";
-
-    aws.s3PutObject(allocator, creds, region, bucket, tarball_key, tarball_data, "application/gzip") catch |err| {
-        style.print("  S3 upload failed: {s}\n", .{@errorName(err)});
-        return .{ .success = false, .url = "" };
-    };
-
-    // Update DynamoDB with commit record
-    try updateCommitDynamoDB(allocator, name, clean_name, sha, tarball_key, repo_url, version);
-
-    // Build the install URL (short pkg-pr-new style: /name@sha)
-    const short_sha_local = if (sha.len >= 7) sha[0..7] else sha;
-    const install_url = try std.fmt.allocPrint(allocator, "{s}/{s}@{s}", .{
-        options.registry,
-        name,
-        short_sha_local,
-    });
-
-    return .{ .success = true, .url = install_url };
-}
-
-/// Update DynamoDB with commit publish record
-fn updateCommitDynamoDB(
-    allocator: std.mem.Allocator,
-    name: []const u8,
-    clean_name: []const u8,
-    sha: []const u8,
-    s3_path: []const u8,
-    repo_url: ?[]const u8,
-    version: ?[]const u8,
-) !void {
-    const table_name = io_helper.getenv("PANTRY_DYNAMODB_TABLE") orelse "pantry-registry";
-
-    // Get timestamp
-    var timestamp_buf: [24]u8 = undefined;
-    const timestamp: []const u8 = blk: {
-        const ts = io_helper.clockGettime();
-        const epoch_secs: std.time.epoch.EpochSeconds = .{ .secs = @intCast(ts.sec) };
-        const epoch_day = epoch_secs.getEpochDay();
-        const year_day = epoch_day.calculateYearDay();
-        const month_day = year_day.calculateMonthDay();
-        const day_secs = epoch_secs.getDaySeconds();
-        break :blk std.fmt.bufPrint(&timestamp_buf, "{d:0>4}-{d:0>2}-{d:0>2}T{d:0>2}:{d:0>2}:{d:0>2}Z", .{
-            year_day.year,
-            @intFromEnum(month_day.month),
-            month_day.day_index + 1,
-            day_secs.getHoursIntoDay(),
-            day_secs.getMinutesIntoHour(),
-            day_secs.getSecondsIntoMinute(),
-        }) catch "1970-01-01T00:00:00Z";
-    };
-
-    const repo = repo_url orelse "";
-    const ver = version orelse "";
-
-    // Primary record: COMMIT#{sha} / PACKAGE#{name}
-    const item_json = try std.fmt.allocPrint(allocator,
-        \\{{
-        \\  "PK": {{"S": "COMMIT#{s}"}},
-        \\  "SK": {{"S": "PACKAGE#{s}"}},
-        \\  "name": {{"S": "{s}"}},
-        \\  "sha": {{"S": "{s}"}},
-        \\  "safeName": {{"S": "{s}"}},
-        \\  "s3Path": {{"S": "{s}"}},
-        \\  "repository": {{"S": "{s}"}},
-        \\  "version": {{"S": "{s}"}},
-        \\  "publishedAt": {{"S": "{s}"}}
-        \\}}
-    , .{ sha, name, name, sha, clean_name, s3_path, repo, ver, timestamp });
-    defer allocator.free(item_json);
-
-    // Native DynamoDB PutItem — replaces `aws dynamodb put-item` shell-out.
-    const creds = aws.credentialsFromEnv() orelse {
-        style.print("  Warning: AWS credentials not in env; skipping DynamoDB update\n", .{});
-        return;
-    };
-    const region = io_helper.getenv("AWS_REGION") orelse "us-east-1";
-
-    aws.dynamoDbPutItem(allocator, creds, region, table_name, item_json) catch |err| {
-        style.print("  Warning: DynamoDB update failed: {s}\n", .{@errorName(err)});
-    };
-
-    // Reverse lookup record: COMMIT_PACKAGE#{name} / SHA#{sha}
-    const reverse_json = try std.fmt.allocPrint(allocator,
-        \\{{
-        \\  "PK": {{"S": "COMMIT_PACKAGE#{s}"}},
-        \\  "SK": {{"S": "SHA#{s}"}},
-        \\  "name": {{"S": "{s}"}},
-        \\  "sha": {{"S": "{s}"}},
-        \\  "repository": {{"S": "{s}"}},
-        \\  "publishedAt": {{"S": "{s}"}}
-        \\}}
-    , .{ name, sha, name, sha, repo, timestamp });
-    defer allocator.free(reverse_json);
-
-    aws.dynamoDbPutItem(allocator, creds, region, table_name, reverse_json) catch {
-        // Don't fail on reverse lookup write failure
-        style.print("  Warning: DynamoDB reverse index failed\n", .{});
-    };
+    return uploadCommitViaHttp(allocator, pkg.name, sha, tarball_data, repo_url, pkg.version, options, auth_token);
 }
 
 /// Upload commit package via HTTP to registry server

@@ -11,7 +11,6 @@ const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
 const style = @import("../style.zig");
-const aws = @import("../../auth/aws.zig");
 const http = std.http;
 
 const CommandResult = common.CommandResult;
@@ -732,13 +731,7 @@ fn publishSingleToRegistry(
 
     style.print("Registry: {s}\n", .{options.registry});
 
-    // Check if we have AWS credentials for direct S3 upload (env-based;
-    // we no longer parse `~/.aws/credentials` since the native SigV4 path
-    // only consumes env vars).
-    const has_aws_creds = io_helper.getenv("AWS_ACCESS_KEY_ID") != null;
-
     // Get auth token (from options, env, or ~/.pantry/credentials)
-    // Token is optional if we have AWS credentials for direct S3 upload
     var token: ?[]const u8 = options.token;
     var token_owned = false;
     if (token == null) {
@@ -751,20 +744,15 @@ fn publishSingleToRegistry(
     }
     defer if (token_owned and token != null) allocator.free(token.?);
 
-    // If no AWS credentials and no token, error out
-    if (!has_aws_creds and token == null) {
+    // Publishing goes through the registry server (HTTP) — a token is required.
+    if (token == null) {
         return CommandResult.err(
             allocator,
             \\Error: No authentication found.
             \\
-            \\For direct S3 upload, configure AWS credentials in ~/.aws/credentials
-            \\Or set PANTRY_REGISTRY_TOKEN for HTTP upload to registry server.
+            \\Set PANTRY_REGISTRY_TOKEN (or pass --token) to publish to the registry.
             ,
         );
-    }
-
-    if (has_aws_creds) {
-        style.print("Using direct S3 upload (AWS credentials found)\n", .{});
     }
 
     // Check if version already exists or is lower than published
@@ -1308,271 +1296,6 @@ fn uploadToRegistry(
     _ = name;
     _ = version;
     return uploadViaHttp(allocator, registry_url, tarball_data, token, metadata_json);
-}
-
-/// Upload directly to S3 + DynamoDB using native SigV4. Replaces an earlier
-/// `aws s3 cp` / `aws dynamodb put-item` shell-out that pulled in the AWS
-/// CLI as a hidden dependency.
-fn uploadToS3Direct(
-    allocator: std.mem.Allocator,
-    name: []const u8,
-    version: []const u8,
-    tarball_data: []const u8,
-    metadata_json: []const u8,
-) ![]const u8 {
-    const bucket = "pantry-registry";
-    const tmp_dir = io_helper.getTempDir();
-
-    // Sanitize package name for S3 key
-    var sanitized_name = try allocator.alloc(u8, name.len);
-    defer allocator.free(sanitized_name);
-    for (name, 0..) |c, i| {
-        sanitized_name[i] = if (c == '@' or c == '/') '-' else c;
-    }
-    const clean_name = if (sanitized_name[0] == '-') sanitized_name[1..] else sanitized_name;
-
-    // Build tarball filename and S3 key
-    const tarball_filename = try std.fmt.allocPrint(allocator, "{s}-{s}.tgz", .{ clean_name, version });
-    defer allocator.free(tarball_filename);
-
-    const tarball_key = try std.fmt.allocPrint(allocator, "packages/pantry/{s}/{s}/{s}", .{ clean_name, version, tarball_filename });
-    defer allocator.free(tarball_key);
-
-    const metadata_key = try std.fmt.allocPrint(allocator, "packages/pantry/{s}/metadata.json", .{clean_name});
-    defer allocator.free(metadata_key);
-
-    _ = tmp_dir; // No temp files needed — we sign and PUT in-process.
-
-    // Native S3 PUT via SigV4. No external `aws` CLI, no temp files.
-    const creds = aws.credentialsFromEnv() orelse return error.AwsCredentialsMissing;
-    const region = io_helper.getenv("AWS_REGION") orelse "us-east-1";
-
-    style.print("  Uploading tarball to S3...\n", .{});
-    aws.s3PutObject(allocator, creds, region, bucket, tarball_key, tarball_data, "application/gzip") catch |err| {
-        style.print("S3 upload failed: {s}\n", .{@errorName(err)});
-        return error.UploadFailed;
-    };
-
-    style.print("  Uploading metadata to S3...\n", .{});
-    aws.s3PutObject(allocator, creds, region, bucket, metadata_key, metadata_json, "application/json") catch |err| {
-        style.print("S3 metadata upload failed: {s}\n", .{@errorName(err)});
-        return error.UploadFailed;
-    };
-
-    // Update DynamoDB index
-    style.print("  Updating DynamoDB index...\n", .{});
-    try updateDynamoDBIndex(allocator, name, clean_name, tarball_key, version, metadata_json);
-
-    const success_msg = try std.fmt.allocPrint(allocator, "Published to s3://{s}/{s}", .{ bucket, tarball_key });
-    return success_msg;
-}
-
-/// Update DynamoDB index for the published package
-fn updateDynamoDBIndex(
-    allocator: std.mem.Allocator,
-    name: []const u8,
-    clean_name: []const u8,
-    s3_path: []const u8,
-    version: []const u8,
-    metadata_json: []const u8,
-) !void {
-    const table_name = "pantry-packages";
-
-    // Parse metadata to extract description, author, etc.
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, metadata_json, .{}) catch {
-        style.print("Warning: Could not parse metadata for DynamoDB\n", .{});
-        return;
-    };
-    defer parsed.deinit();
-
-    const root = parsed.value;
-    if (root != .object) return;
-
-    // Extract fields from metadata
-    const description = if (root.object.get("description")) |d| if (d == .string) d.string else "" else "";
-    const license = if (root.object.get("license")) |l| if (l == .string) l.string else "" else "";
-    const homepage = if (root.object.get("homepage")) |h| if (h == .string) h.string else "" else "";
-
-    // Get author (can be string or object)
-    var author: []const u8 = "";
-    if (root.object.get("author")) |a| {
-        if (a == .string) {
-            author = a.string;
-        } else if (a == .object) {
-            if (a.object.get("name")) |n| {
-                if (n == .string) author = n.string;
-            }
-        }
-    }
-
-    // Get repository (can be string or object)
-    var repository: []const u8 = "";
-    if (root.object.get("repository")) |r| {
-        if (r == .string) {
-            repository = r.string;
-        } else if (r == .object) {
-            if (r.object.get("url")) |u| {
-                if (u == .string) repository = u.string;
-            }
-        }
-    }
-
-    // If no repository, try to get from .git/config (native, no subprocess)
-    if (repository.len == 0) {
-        const git_config = io_helper.readFileAlloc(allocator, ".git/config", 64 * 1024) catch null;
-        if (git_config) |config| {
-            defer allocator.free(config);
-            // Parse [remote "origin"] url
-            var in_origin = false;
-            var lines = std.mem.splitScalar(u8, config, '\n');
-            while (lines.next()) |line| {
-                const tl = std.mem.trim(u8, line, " \t\r");
-                if (std.mem.startsWith(u8, tl, "[remote \"origin\"]")) {
-                    in_origin = true;
-                    continue;
-                }
-                if (in_origin) {
-                    if (tl.len > 0 and tl[0] == '[') break;
-                    if (std.mem.startsWith(u8, tl, "url = ") or std.mem.startsWith(u8, tl, "url=")) {
-                        const sep = if (std.mem.indexOf(u8, tl, "= ")) |i| i + 2 else if (std.mem.indexOf(u8, tl, "=")) |i| i + 1 else continue;
-                        const trimmed = std.mem.trim(u8, tl[sep..], " \t");
-                        if (std.mem.startsWith(u8, trimmed, "git@")) {
-                            if (std.mem.indexOf(u8, trimmed, ":")) |colon_idx| {
-                                const host = trimmed[4..colon_idx];
-                                var path = trimmed[colon_idx + 1 ..];
-                                if (std.mem.endsWith(u8, path, ".git")) {
-                                    path = path[0 .. path.len - 4];
-                                }
-                                repository = std.fmt.allocPrint(allocator, "https://{s}/{s}", .{ host, path }) catch "";
-                            }
-                        } else if (std.mem.startsWith(u8, trimmed, "https://")) {
-                            var url = trimmed;
-                            if (std.mem.endsWith(u8, url, ".git")) {
-                                url = url[0 .. url.len - 4];
-                            }
-                            repository = allocator.dupe(u8, url) catch "";
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    // Default repository if still empty
-    if (repository.len == 0) {
-        repository = std.fmt.allocPrint(allocator, "https://github.com/stacksjs/{s}", .{clean_name}) catch "";
-    }
-
-    // Get keywords as JSON array - just store as empty for now
-    // DynamoDB will store keywords in a simpler format
-    const keywords_json: []const u8 = "[]";
-
-    // Extract bin field and normalize to escaped JSON string for DynamoDB
-    // The bin JSON needs escaped quotes since it's embedded in another JSON string
-    var bin_json_escaped: []const u8 = "{}";
-    var bin_json_escaped_owned = false;
-    if (root.object.get("bin")) |bin_value| {
-        if (bin_value == .string) {
-            // Single binary: "bin": "./cli.js" -> {\"pkg-name\": \"./cli.js\"}
-            const pkg_name = if (std.mem.indexOf(u8, name, "/")) |idx| name[idx + 1 ..] else name;
-            bin_json_escaped = std.fmt.allocPrint(allocator, "{{\\\"" ++ "{s}" ++ "\\\": \\\"" ++ "{s}" ++ "\\\"}}", .{ pkg_name, bin_value.string }) catch "{}";
-            bin_json_escaped_owned = true;
-        } else if (bin_value == .object) {
-            // Multiple binaries: manually build escaped JSON object
-            const maybe_json_buf = std.ArrayList(u8).initCapacity(allocator, 256);
-            if (maybe_json_buf) |json_buf_init| {
-                var json_buf = json_buf_init;
-                build_bin: {
-                    json_buf.appendSlice(allocator, "{") catch break :build_bin;
-                    var bin_iter = bin_value.object.iterator();
-                    var first_bin = true;
-                    while (bin_iter.next()) |entry| {
-                        if (entry.value_ptr.* == .string) {
-                            if (!first_bin) json_buf.appendSlice(allocator, ", ") catch break :build_bin;
-                            const bin_entry = std.fmt.allocPrint(allocator, "\\\"{s}\\\": \\\"{s}\\\"", .{ entry.key_ptr.*, entry.value_ptr.string }) catch continue;
-                            defer allocator.free(bin_entry);
-                            json_buf.appendSlice(allocator, bin_entry) catch break :build_bin;
-                            first_bin = false;
-                        }
-                    }
-                    json_buf.appendSlice(allocator, "}") catch break :build_bin;
-                }
-                bin_json_escaped = json_buf.toOwnedSlice(allocator) catch "{}";
-                bin_json_escaped_owned = true;
-            } else |_| {}
-        }
-    }
-    defer if (bin_json_escaped_owned) allocator.free(bin_json_escaped);
-
-    // Get current timestamp as ISO 8601 string (native, no subprocess)
-    var timestamp_buf: [24]u8 = undefined;
-    const timestamp: []const u8 = blk: {
-        const ts = io_helper.clockGettime();
-        const epoch_secs: std.time.epoch.EpochSeconds = .{ .secs = @intCast(ts.sec) };
-        const epoch_day = epoch_secs.getEpochDay();
-        const year_day = epoch_day.calculateYearDay();
-        const month_day = year_day.calculateMonthDay();
-        const day_secs = epoch_secs.getDaySeconds();
-        break :blk std.fmt.bufPrint(&timestamp_buf, "{d:0>4}-{d:0>2}-{d:0>2}T{d:0>2}:{d:0>2}:{d:0>2}Z", .{
-            year_day.year,
-            @intFromEnum(month_day.month),
-            month_day.day_index + 1,
-            day_secs.getHoursIntoDay(),
-            day_secs.getMinutesIntoHour(),
-            day_secs.getSecondsIntoMinute(),
-        }) catch "1970-01-01T00:00:00Z";
-    };
-
-    // Build DynamoDB put-item JSON
-    const item_json = try std.fmt.allocPrint(allocator,
-        \\{{
-        \\  "packageName": {{"S": "{s}"}},
-        \\  "safeName": {{"S": "{s}"}},
-        \\  "s3Path": {{"S": "{s}"}},
-        \\  "latestVersion": {{"S": "{s}"}},
-        \\  "description": {{"S": "{s}"}},
-        \\  "author": {{"S": "{s}"}},
-        \\  "license": {{"S": "{s}"}},
-        \\  "repository": {{"S": "{s}"}},
-        \\  "homepage": {{"S": "{s}"}},
-        \\  "keywords": {{"S": "{s}"}},
-        \\  "bin": {{"S": "{s}"}},
-        \\  "updatedAt": {{"S": "{s}"}},
-        \\  "createdAt": {{"S": "{s}"}}
-        \\}}
-    , .{
-        name,
-        clean_name,
-        s3_path,
-        version,
-        description,
-        author,
-        license,
-        repository,
-        homepage,
-        keywords_json,
-        bin_json_escaped,
-        timestamp,
-        timestamp, // createdAt (will be preserved if item exists)
-    });
-    defer allocator.free(item_json);
-
-    // Native DynamoDB PutItem via SigV4. The tarball is already on S3, so
-    // a missing/failed index update is recoverable — warn and return
-    // rather than fail the whole publish.
-    const creds = aws.credentialsFromEnv() orelse {
-        style.print("  Warning: AWS credentials not in env; skipping DynamoDB index update\n", .{});
-        return;
-    };
-    const region = io_helper.getenv("AWS_REGION") orelse "us-east-1";
-
-    aws.dynamoDbPutItem(allocator, creds, region, table_name, item_json) catch |err| {
-        style.print("DynamoDB update failed: {s}\n", .{@errorName(err)});
-        return;
-    };
-
-    style.print("  Updated DynamoDB index for {s}\n", .{name});
 }
 
 /// Upload via HTTP to registry server (native — no curl subprocess)
