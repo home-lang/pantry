@@ -2371,6 +2371,21 @@ function tarPadding(size: number): Uint8Array | undefined {
   return pad > 0 ? new Uint8Array(pad) : undefined
 }
 
+/** Hostname of the configured object-storage bucket's public base URL (cached). */
+let _storageBucketHost: string | undefined
+function storageBucketHost(): string {
+  if (_storageBucketHost === undefined) {
+    const bucket = process.env.S3_BUCKET || 'pantry-registry'
+    try {
+      _storageBucketHost = new URL(resolveStorageProvider().publicBaseUrl(bucket)).hostname
+    }
+    catch {
+      _storageBucketHost = ''
+    }
+  }
+  return _storageBucketHost
+}
+
 function isAllowedBulkTarballUrl(value: string): boolean {
   try {
     const url = new URL(value)
@@ -2386,8 +2401,11 @@ function isAllowedBulkTarballUrl(value: string): boolean {
         || /^\/commits\/[^/]+\/[^/]+\/tarball$/.test(url.pathname)
     }
 
+    // Object-storage bucket hosts: legacy AWS S3 plus the currently-configured
+    // provider (e.g. Hetzner `pantry-registry.fsn1.your-objectstorage.com`).
     if (url.hostname === 'pantry-registry.s3.amazonaws.com'
-      || url.hostname === 'pantry-registry.s3.us-east-1.amazonaws.com') {
+      || url.hostname === 'pantry-registry.s3.us-east-1.amazonaws.com'
+      || url.hostname === storageBucketHost()) {
       return url.pathname.startsWith('/binaries/')
         || url.pathname.startsWith('/packages/')
         || url.pathname.startsWith('/commits/')
@@ -2783,6 +2801,8 @@ else {
  * Handle binary proxy requests — stream tarballs/metadata/checksums from S3
  */
 let _defaultBinaryStorage: BinaryStorage | undefined
+/** Cached client used to presign tarball download URLs for private (non-AWS) buckets. */
+let _presignClient: ReturnType<typeof createS3Client> | undefined
 async function handleBinaryProxy(
   path: string,
   req: Request,
@@ -2861,16 +2881,25 @@ async function handleBinaryProxy(
         }
       }
 
-      // Production: send clients to the immutable S3 object. Large binary
-      // artifacts should not be buffered through the registry process.
+      // Production: redirect clients to the immutable object so large binary
+      // artifacts aren't buffered through the registry process. AWS public
+      // buckets get a plain (CDN-cacheable) URL; S3-compatible providers
+      // (Hetzner/B2) use private buckets, so presign a time-limited GET URL.
       const s3Bucket = process.env.S3_BUCKET || 'pantry-registry'
-      const s3Region = process.env.AWS_REGION || 'us-east-1'
-      const s3Url = `https://${s3Bucket}.s3.${s3Region}.amazonaws.com/${s3Key}`
+      const resolved = resolveStorageProvider()
+      let location: string
+      if (resolved.provider === 'aws' && !resolved.endpoint) {
+        location = `https://${s3Bucket}.s3.${resolved.region}.amazonaws.com/${s3Key}`
+      }
+      else {
+        _presignClient ??= createS3Client(resolved)
+        location = _presignClient.generatePresignedGetUrl(s3Bucket, s3Key, 3600)
+      }
       return new Response(null, {
         status: 302,
         headers: {
           ...corsHeaders,
-          'Location': s3Url,
+          'Location': location,
           'Content-Type': contentType,
           'Cache-Control': cacheControl,
         },
