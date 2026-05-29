@@ -70,6 +70,7 @@ export const modalcomPackage = {
   versions: [
     '1.3.1',
     '1.3.0',
+    '1.3.0.post1',
     '1.2.6',
     '1.2.5',
     '1.2.4',

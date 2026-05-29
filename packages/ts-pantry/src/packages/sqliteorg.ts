@@ -74,6 +74,8 @@ export const sqlitePackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.53.1',
+    '3.53.0',
     '3.52.0',
     '3.51.3',
     '3.51.2',
@@ -97,6 +99,7 @@ export const sqlitePackage = {
     '3.45.2',
     '3.45.1',
     '3.45.0',
+    '3.44.5',
     '3.44.4',
     '3.44.3',
     '3.44.2',
@@ -105,9 +108,21 @@ export const sqlitePackage = {
     '3.43.2',
     '3.43.1',
     '3.43.0',
+    '3.42.1',
     '3.42.0',
+    '3.41.2',
+    '3.41.1',
+    '3.41.0',
+    '3.40.1',
     '3.40.0',
     '3.39.4',
+    '3.39.3',
+    '3.39.2',
+    '3.39.1',
+    '3.39.0',
+    '3.38.5',
+    '3.38.4',
+    '3.38.3',
   ] as const,
   /**
   * Alternative names for this package.

@@ -61,6 +61,12 @@ export const rometoolsPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '12.1.3',
+    '12.1.2',
+    '12.1.1',
+    '12.1.0',
+    '12.0.0',
+    '11.0.0',
     '0.4.2',
   ] as const,
   aliases: [] as const,
