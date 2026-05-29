@@ -70,12 +70,18 @@ export const recipe: Recipe = {
         '--without-zenmap',
         '--with-compiledby=tea.xyz',
       ],
-      // nmap.cc uses getopt_long_only / optional_argument / struct option from
-      // <getopt.h>; those are GNU extensions gated behind _GNU_SOURCE on glibc.
-      // Without it the whole getopt block fails to declare ("optional_argument
-      // was not declared"). Define it for both C and C++ TUs.
+      // nmap.cc includes <getopt.h> only under `#if HAVE_GETOPT_H`, and its
+      // configure probe for the header misfires under our compiler wrapper, so
+      // the getopt symbols (no_argument/optional_argument/struct option/
+      // getopt_long_only) end up undeclared. Force the cache vars so config.h
+      // defines HAVE_GETOPT_H, and define _GNU_SOURCE for the GNU getopt
+      // extensions. Linux always has <getopt.h>, so this is safe here.
       'CFLAGS': '$CFLAGS -D_GNU_SOURCE',
       'CXXFLAGS': '$CXXFLAGS -D_GNU_SOURCE',
+      'linux': {
+        'ac_cv_header_getopt_h': 'yes',
+        'ac_cv_func_getopt_long': 'yes',
+      },
     },
   },
 }
