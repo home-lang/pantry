@@ -68,6 +68,7 @@ export const carapaceshPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.7.0',
     '1.6.6',
     '1.6.5',
     '1.6.4',
