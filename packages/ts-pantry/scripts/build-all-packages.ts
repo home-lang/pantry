@@ -776,8 +776,9 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/licensee/licensed': ['*'],
   // tea-package-builder: broken recipe (copies dir into itself)
   'github.com/ArionThinker/tea-package-builder': ['*'],
-  // gnupg.org base: requires libgcrypt >= 1.11 but S3 only has older
-  'gnupg.org': ['*'],
+  // gnupg.org base now builds: its GnuPG dep-chain (libgpg-error, libgcrypt,
+  // libassuan, libksba, npth, pinentry) is built from source via recipes in
+  // recipes/gnupg.org/, so a fresh libgcrypt >= 1.11 is available in the registry.
   'gnupg.org/v2.5': ['*'],
 }
 
@@ -1312,7 +1313,9 @@ Options:
     'github.com/a7ex/xcresultparser', 'github.com/create-dmg/create-dmg',
     'portaudio.com',
     'angular.dev', // npm enoent on linux, builds fine on darwin with prebuilt modules
-    'gnupg.org/libgcrypt', // Linux system libgpg-error too old (needs >= 1.56), builds fine on darwin
+    // gnupg.org/libgcrypt now builds on linux too: we build gnupg.org/libgpg-error
+    // from source (recipes/gnupg.org/) and point configure at it via
+    // --with-libgpg-error-prefix, instead of relying on the old system lib.
     'microsoft.com/code-cli', // OpenSSL linking issues on Linux, builds fine on darwin
     'proj.org', // S3 curl.so missing version info breaks cmake on linux, darwin OK
     'pwmt.org/zathura', // gnutls/nettle ABI mismatch breaks HTTPS git on linux, darwin OK
