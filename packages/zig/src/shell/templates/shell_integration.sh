@@ -10,12 +10,15 @@
 
 __PANTRY_CACHE_FILE="${HOME}/.pantry/cache/shell-env.cache"
 
-# Dependency file names to check (keep in sync with Zig detector)
+# Dependency file names to check. MUST be a superset of the Zig detector's list
+# (src/deps/detector.zig) — the parent-walk fast path below treats "none of
+# these anywhere up the tree" as "definitely not a pantry project, skip the
+# binary", so a name the detector knows but this list omits would wrongly skip.
 __PANTRY_DEP_FILES=(
     "pantry.json" "pantry.jsonc" "pantry.yaml" "pantry.yml"
     "deps.yaml" "deps.yml" "dependencies.yaml" "dependencies.yml"
     "pkgx.yaml" "pkgx.yml" "config/deps.ts" ".config/deps.ts" "pantry.config.ts" ".config/pantry.ts" "pantry.config.js"
-    "package.json" "pyproject.toml" "requirements.txt" "Cargo.toml"
+    "package.json" "package.jsonc" "zig.json" "pyproject.toml" "requirements.txt" "Cargo.toml"
     "go.mod" "Gemfile" "deno.json" "composer.json"
 )
 
@@ -59,6 +62,23 @@ __pantry_find_dep_here() {
             echo "$dir/$fname"
             return 0
         fi
+    done
+    return 1
+}
+
+# Return 0 if any dependency file exists in $1 or an ancestor (pure shell, no
+# subprocess). Used as a cheap guard: if nothing matches up the tree there is no
+# pantry project, so we can skip the ~25ms `pantry shell:lookup` entirely. ~25
+# builtin `[[ -f ]]` stats per level, depth-capped — well under a process fork.
+__pantry_find_dep_up() {
+    local dir="$1" depth=0 fname
+    while (( depth < 16 )); do
+        for fname in "${__PANTRY_DEP_FILES[@]}"; do
+            [[ -f "$dir/$fname" ]] && return 0
+        done
+        [[ "$dir" == "/" || -z "$dir" ]] && break
+        dir="${dir%/*}"; [[ -z "$dir" ]] && dir="/"
+        (( depth++ ))
     done
     return 1
 }
@@ -235,9 +255,17 @@ __pantry_switch_environment() {
     local dep_file
     dep_file=$(__pantry_find_dep_here "$PWD")
     if [[ $? -ne 0 ]]; then
-        # No dep file in current dir - still check binary (walks parent dirs)
-        # but only if we haven't already checked recently (avoid repeated lookups)
+        # No dep file in current dir.
+        # Skip the immediately-repeated lookup memo first (cheapest).
         [[ "${__PANTRY_LAST_NO_ENV:-}" == "$PWD" ]] && return 0
+        # PURE-SHELL GUARD: if no dependency file exists in this dir or any
+        # ancestor, there is no pantry project here — skip the ~25ms binary
+        # `shell:lookup` entirely. This makes `cd`-ing into ordinary, non-project
+        # directories (home, /tmp, ~/Downloads, …) effectively free.
+        if ! __pantry_find_dep_up "$PWD"; then
+            __PANTRY_LAST_NO_ENV="$PWD"
+            return 0
+        fi
     fi
 
     # BINARY LOOKUP: Walks up parent dirs, checks Zig-side cache (~50ms, first visit)

@@ -8,7 +8,7 @@ export const recipe: Recipe = {
   homepage: 'https://giflib.sourceforge.net/',
   programs: ['gif2rgb', 'gifbuild', 'gifclrmp', 'giffix', 'giftext', 'giftool'],
   distributable: {
-    url: 'https://downloads.sourceforge.net/project/giflib/giflib-{{version}}.tar.gz',
+    url: 'https://downloads.sourceforge.net/giflib/giflib-{{version}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {

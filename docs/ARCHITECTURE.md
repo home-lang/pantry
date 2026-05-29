@@ -85,7 +85,7 @@ cli/
     shell.zig          shell:integrate, dev:shellcode, shell:lookup, shell:activate
     cache.zig          cache:stats, cache:clear, cache:clean
     px.zig             px (package executor, npx/bunx equivalent)
-    dev.zig            dev:shellcode, dev:md5, dev:find-project-root, dev:check-updates
+    dev.zig            dev:md5, dev:find-project-root, dev:check-updates
     audit.zig          Security vulnerability auditing
     verify.zig         Package signature verification, signing, key generation
     publish_commit.zig Commit-based publishing (pkg-pr-new equivalent)

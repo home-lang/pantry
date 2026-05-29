@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const cli = @import("zig-cli");
 const lib = @import("lib");
 const io_helper = lib.io_helper;
@@ -25,6 +26,7 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const user = ctx.hasOption("user");
     const force = ctx.hasOption("force");
     const verbose = ctx.hasOption("verbose");
+    const quiet = ctx.hasOption("quiet");
     const production = ctx.hasOption("production");
     const dev_only = ctx.hasOption("dev");
     const ignore_scripts = ctx.hasOption("ignore-scripts");
@@ -97,6 +99,7 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
         .include_peer = include_peer,
         .ignore_scripts = ignore_scripts,
         .verbose = verbose,
+        .quiet = quiet or pantry_config.install.quiet,
         .force = force,
         .frozen_lockfile = frozen_lockfile,
         .no_cache = no_cache,
@@ -112,7 +115,13 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        style.print("{s}\n", .{msg});
+        // A non-zero exit means this message is an error — force it past quiet
+        // mode so `--quiet` never hides the reason an install failed.
+        if (result.exit_code != 0) {
+            style.printForced("{s}\n", .{msg});
+        } else {
+            style.print("{s}\n", .{msg});
+        }
     }
 
     std.process.exit(result.exit_code);
@@ -132,6 +141,7 @@ fn ciAction(ctx: *cli.BaseCommand.ParseContext) !void {
         .frozen_lockfile = true,
         .ignore_scripts = ctx.hasOption("ignore-scripts"),
         .verbose = ctx.hasOption("verbose"),
+        .quiet = ctx.hasOption("quiet") or pantry_config.install.quiet,
         .linker = pantry_config.install.linker,
         .modules_dir = pantry_config.install.modules_dir,
         .auto_link = pantry_config.install.auto_link,
@@ -141,7 +151,12 @@ fn ciAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        style.print("{s}\n", .{msg});
+        // Force error messages past quiet so a failed `ci` still explains why.
+        if (result.exit_code != 0) {
+            style.printForced("{s}\n", .{msg});
+        } else {
+            style.print("{s}\n", .{msg});
+        }
     }
 
     std.process.exit(result.exit_code);
@@ -170,6 +185,7 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const optional = ctx.hasOption("optional");
     const exact = ctx.hasOption("exact");
     const verbose = ctx.hasOption("verbose");
+    const quiet = ctx.hasOption("quiet");
 
     // Handle global add: install to global prefix, skip config save
     if (global) {
@@ -194,6 +210,7 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
         .include_peer = peer or add_config.install.peer,
         .ignore_scripts = false,
         .verbose = verbose,
+        .quiet = quiet or add_config.install.quiet,
         .filter = null,
         .linker = add_config.install.linker,
     };
@@ -201,7 +218,12 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        style.print("{s}\n", .{msg});
+        // Force error messages past quiet so a failed `add` still explains why.
+        if (result.exit_code != 0) {
+            style.printForced("{s}\n", .{msg});
+        } else {
+            style.print("{s}\n", .{msg});
+        }
     }
 
     // Exit if install failed
@@ -231,8 +253,9 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
         // Save dependencies to config file
         saveDependenciesToConfig(allocator, path, packages.items, dev, peer, optional, exact) catch |err| {
-            style.print("\n⚠ Warning: Failed to save to config file: {}\n", .{err});
-            style.print("[33m Note:[0m To save to config, manually add to {s}\n", .{std.fs.path.basename(path)});
+            // Forced: a save failure must surface even under quiet/--quiet.
+            style.printForced("\n⚠ Warning: Failed to save to config file: {}\n", .{err});
+            style.printForced("[33m Note:[0m To save to config, manually add to {s}\n", .{std.fs.path.basename(path)});
             std.process.exit(0);
         };
 
@@ -437,6 +460,10 @@ fn removeAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const silent = ctx.hasOption("silent");
     const verbose = ctx.hasOption("verbose");
 
+    // --silent suppresses all non-error chatter (shares the global quiet gate
+    // so every style.print in removeCommand is silenced uniformly).
+    if (silent) style.setQuiet(true);
+
     const options = lib.commands.RemoveOptions{
         .save = save,
         .global = global,
@@ -449,7 +476,12 @@ fn removeAction(ctx: *cli.BaseCommand.ParseContext) !void {
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        style.print("{s}\n", .{msg});
+        // Force error messages past --silent so a failed remove still explains why.
+        if (result.exit_code != 0) {
+            style.printForced("{s}\n", .{msg});
+        } else {
+            style.print("{s}\n", .{msg});
+        }
     }
 
     std.process.exit(result.exit_code);
@@ -575,11 +607,20 @@ fn updateAction(ctx: *cli.BaseCommand.ParseContext) !void {
     if (ctx.hasOption("force")) try args.append(allocator, "--force");
     if (ctx.hasOption("dry-run")) try args.append(allocator, "--dry-run");
 
+    // --silent ("Don't log anything") silences progress for the whole update,
+    // including the installs it triggers, since the quiet gate is process-global.
+    // Errors still surface via printForced below.
+    if (ctx.hasOption("silent")) style.setQuiet(true);
+
     const result = try lib.commands.updateNewCommand(allocator, args.items);
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
-        style.print("{s}\n", .{msg});
+        if (result.exit_code != 0) {
+            style.printForced("{s}\n", .{msg});
+        } else {
+            style.print("{s}\n", .{msg});
+        }
     }
 
     std.process.exit(result.exit_code);
@@ -2458,9 +2499,20 @@ fn warnIfInvokedAsLaunchpad() void {
 }
 
 pub fn main() !void {
+    // Release builds use the fast SMP allocator — building the full command
+    // tree (~50 commands, hundreds of small allocations) runs on every single
+    // invocation, including the hot `shell:lookup` fired on each `cd`. The
+    // DebugAllocator's per-allocation leak tracking dominated startup; keep it
+    // only for Debug/ReleaseSafe where its safety checks earn their cost.
     var debug_allocator = std.heap.DebugAllocator(.{}).init;
-    defer _ = debug_allocator.deinit();
-    const allocator = debug_allocator.allocator();
+    const allocator = switch (builtin.mode) {
+        .Debug, .ReleaseSafe => debug_allocator.allocator(),
+        .ReleaseFast, .ReleaseSmall => std.heap.smp_allocator,
+    };
+    defer switch (builtin.mode) {
+        .Debug, .ReleaseSafe => _ = debug_allocator.deinit(),
+        .ReleaseFast, .ReleaseSmall => {},
+    };
 
     warnIfInvokedAsLaunchpad();
     lib.migrate.launchpad.maybeMigrate(allocator);
@@ -2497,6 +2549,10 @@ pub fn main() !void {
     const install_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose output", .bool)
         .withShort('v');
     _ = try install_cmd.addOption(install_verbose_opt);
+
+    const install_quiet_opt = cli.Option.init("quiet", "quiet", "Suppress progress output (errors still shown)", .bool)
+        .withShort('q');
+    _ = try install_cmd.addOption(install_quiet_opt);
 
     const install_production_opt = cli.Option.init("production", "production", "Skip devDependencies (install only dependencies)", .bool)
         .withShort('p');
@@ -2550,6 +2606,10 @@ pub fn main() !void {
         .withShort('v');
     _ = try ci_cmd.addOption(ci_verbose_opt);
 
+    const ci_quiet_opt = cli.Option.init("quiet", "quiet", "Suppress progress output (errors still shown)", .bool)
+        .withShort('q');
+    _ = try ci_cmd.addOption(ci_quiet_opt);
+
     _ = ci_cmd.setAction(ciAction);
     _ = try root.addCommand(ci_cmd);
 
@@ -2585,6 +2645,10 @@ pub fn main() !void {
     const add_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose output", .bool)
         .withShort('v');
     _ = try add_cmd.addOption(add_verbose_opt);
+
+    const add_quiet_opt = cli.Option.init("quiet", "quiet", "Suppress progress output (errors still shown)", .bool)
+        .withShort('q');
+    _ = try add_cmd.addOption(add_quiet_opt);
 
     _ = add_cmd.setAction(addAction);
     _ = try root.addCommand(add_cmd);

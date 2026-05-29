@@ -164,7 +164,7 @@ export const recipe: Recipe = {
     env: {
       CFLAGS: '$CFLAGS -Wno-implicit-function-declaration',
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--enable-load-relative', // makes us relocatable
         '--without-gmp',
         '--with-rubyarchprefix={{prefix}}/lib/ruby', // no need for architecture specific crap

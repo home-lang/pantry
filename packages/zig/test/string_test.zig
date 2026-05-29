@@ -15,7 +15,7 @@ test "String - hashToHex converts correctly" {
 test "String - hashToHex handles all zeros" {
     const allocator = testing.allocator;
 
-    const hash: [16]u8 = .{0} ** 16;
+    const hash: [16]u8 = @splat(0);
     const result = try lib.string.hashToHex(hash, allocator);
     defer allocator.free(result);
 
@@ -25,7 +25,7 @@ test "String - hashToHex handles all zeros" {
 test "String - hashToHex handles all ones" {
     const allocator = testing.allocator;
 
-    const hash: [16]u8 = .{0xff} ** 16;
+    const hash: [16]u8 = @splat(0xff);
     const result = try lib.string.hashToHex(hash, allocator);
     defer allocator.free(result);
 

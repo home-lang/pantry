@@ -54,10 +54,80 @@ pub fn isCI() bool {
     return false;
 }
 
+// ── Quiet Mode ────────────────────────────────────────────────────────────
+
+/// Global quiet flag. When set, `print()` — and every helper built on it
+/// (progress, per-package lines, summaries, headers) — is suppressed. Errors
+/// and failures bypass it via `printForced` so breakage is never hidden.
+/// Set by the install command from `--quiet` / `InstallOptions.quiet`.
+/// Process-lifetime: the CLI runs one command then exits, so there is no reset.
+var quiet_mode: bool = false;
+
+pub fn setQuiet(value: bool) void {
+    quiet_mode = value;
+}
+
+pub fn isQuiet() bool {
+    return quiet_mode;
+}
+
+// ── Color Detection ──────────────────────────────────────────────────────
+
+/// Whether ANSI escape sequences (color, cursor moves) should be emitted.
+/// Disabled when `NO_COLOR` is set (https://no-color.org) or when stdout is not
+/// a terminal (piped/redirected), unless `FORCE_COLOR` overrides. When off,
+/// `emit` strips escape sequences so redirected output / `pantry … > file` is
+/// plain text. Cached after the first check.
+var color_state: enum { unknown, on, off } = .unknown;
+
+pub fn colorsEnabled() bool {
+    if (color_state != .unknown) return color_state == .on;
+    const a = std.heap.page_allocator;
+    // NO_COLOR (any value) wins.
+    if (io_helper.getEnvVarOwned(a, "NO_COLOR")) |v| {
+        a.free(v);
+        color_state = .off;
+        return false;
+    } else |_| {}
+    // FORCE_COLOR keeps color even when piped (useful for CI logs that render it).
+    if (io_helper.getEnvVarOwned(a, "FORCE_COLOR")) |v| {
+        a.free(v);
+        color_state = .on;
+        return true;
+    } else |_| {}
+    // Otherwise: colorize only on a real terminal.
+    const tty = io_helper.File.stdout().isTty(io_helper.io) catch false;
+    color_state = if (tty) .on else .off;
+    return tty;
+}
+
+/// Strip ANSI CSI escape sequences (ESC '[' … final-byte) in place. The output
+/// is never longer than the input, so we filter within the same buffer.
+fn stripAnsi(s: []u8) []u8 {
+    var w: usize = 0;
+    var i: usize = 0;
+    while (i < s.len) {
+        if (s[i] == 0x1b and i + 1 < s.len and s[i + 1] == '[') {
+            i += 2;
+            // CSI parameter/intermediate bytes: 0x20–0x3F
+            while (i < s.len and s[i] >= 0x20 and s[i] <= 0x3f) : (i += 1) {}
+            // Final byte: 0x40–0x7E (consume it too)
+            if (i < s.len and s[i] >= 0x40 and s[i] <= 0x7e) i += 1;
+        } else {
+            s[w] = s[i];
+            w += 1;
+            i += 1;
+        }
+    }
+    return s[0..w];
+}
+
 // ── Core Output ─────────────────────────────────────────────────────────────
 
-/// Print to stdout (user-facing output). Thread-safe via write() syscall.
-pub fn print(comptime fmt: []const u8, args: anytype) void {
+/// Write a formatted message straight to stdout, ignoring quiet mode. Backs
+/// both `print` (gated) and `printForced` (always). Strips ANSI when color is
+/// disabled. Thread-safe via write().
+fn emit(comptime fmt: []const u8, args: anytype) void {
     if (builtin.is_test) {
         return;
     }
@@ -67,11 +137,26 @@ pub fn print(comptime fmt: []const u8, args: anytype) void {
         std.debug.print(fmt, args);
         return;
     };
+    // On the interactive TTY path colorsEnabled() is true (cached) and `msg`
+    // is written as-is — no scan. Stripping only runs when output is redirected.
+    const out = if (colorsEnabled()) msg else stripAnsi(msg);
     const stdout = io_helper.File.stdout();
-    io_helper.writeAllToFile(stdout, msg) catch {
+    io_helper.writeAllToFile(stdout, out) catch {
         // Last resort: try stderr
         std.debug.print(fmt, args);
     };
+}
+
+/// Print to stdout (user-facing output). Suppressed under quiet mode.
+pub fn print(comptime fmt: []const u8, args: anytype) void {
+    if (quiet_mode) return;
+    emit(fmt, args);
+}
+
+/// Print to stdout even under quiet mode — for output that must always surface
+/// (errors, failures). Use sparingly; most output should go through `print`.
+pub fn printForced(comptime fmt: []const u8, args: anytype) void {
+    emit(fmt, args);
 }
 
 /// Clear the current line (carriage return + erase to end). No-op in CI.
@@ -121,16 +206,17 @@ pub fn printAutoLinked(name: []const u8, path: []const u8) void {
 }
 
 /// Print a failed package: - bold(name)@dim(version) dim((reason))
+/// Forced: failures must surface even under quiet mode.
 pub fn printFailed(name: []const u8, version: []const u8, reason: ?[]const u8) void {
-    print("{s}{s}{s} {s}{s}{s}{s}@{s}", .{
+    printForced("{s}{s}{s} {s}{s}{s}{s}@{s}", .{
         red,  minus,   reset,
         bold, name,    reset,
         dim,  version,
     });
     if (reason) |msg| {
-        print(" {s}({s}){s}\n", .{ dim, msg, reset });
+        printForced(" {s}({s}){s}\n", .{ dim, msg, reset });
     } else {
-        print("\n", .{});
+        printForced("\n", .{});
     }
 }
 
@@ -205,9 +291,9 @@ pub fn printCheckedSummary(success_count: usize, total_count: usize, elapsed_ms:
     });
 }
 
-/// Print failure count
+/// Print failure count. Forced: must surface even under quiet mode.
 pub fn printFailureCount(count: usize) void {
-    print("\n{s}{d} package(s) failed to install{s}\n", .{ red, count, reset });
+    printForced("\n{s}{d} package(s) failed to install{s}\n", .{ red, count, reset });
 }
 
 // ── Progress ────────────────────────────────────────────────────────────────
@@ -301,10 +387,10 @@ pub fn printWarn(comptime fmt: []const u8, args: anytype) void {
     print(fmt, args);
 }
 
-/// Print a generic error line
+/// Print a generic error line. Forced: errors must surface even under quiet mode.
 pub fn printError(comptime fmt: []const u8, args: anytype) void {
-    print("{s}error{s}: ", .{ red, reset });
-    print(fmt, args);
+    printForced("{s}error{s}: ", .{ red, reset });
+    printForced(fmt, args);
 }
 
 /// Print a generic info line (dim)

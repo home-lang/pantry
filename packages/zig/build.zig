@@ -38,7 +38,12 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{ .preferred_optimize_mode = .ReleaseFast });
 
     // Option to strip debug symbols for smaller binaries
-    const strip = b.option(bool, "strip", "Strip debug symbols") orelse false;
+    // Strip debug symbols by default in release builds: it cut `pantry`'s
+    // process startup ~5x (≈26ms → ≈5ms), which directly speeds up the
+    // `shell:lookup` fired on every cold `cd`. Debug/ReleaseSafe keep symbols
+    // for backtraces; override either way with `-Dstrip=true|false`.
+    const strip = b.option(bool, "strip", "Strip debug symbols") orelse
+        (optimize == .ReleaseFast or optimize == .ReleaseSmall);
 
     // Single-threaded mode for smaller binary (optional, off by default)
     const single_threaded = b.option(bool, "single-threaded", "Build in single-threaded mode for smaller binary") orelse false;
@@ -521,6 +526,9 @@ pub fn build(b: *std.Build) void {
                 .root_source_file = b.path("src/main.zig"),
                 .target = resolved_target,
                 .optimize = .ReleaseFast,
+                // Strip the distributed binaries: cuts process startup ~5x
+                // (≈26ms → ≈5ms), which every `cd` pays via `shell:lookup`.
+                .strip = true,
                 .link_libc = true,
                 .imports = &.{
                     .{ .name = "lib", .module = cross_lib_mod },

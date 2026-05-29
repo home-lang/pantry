@@ -64,6 +64,8 @@ pub const PantryConfig = struct {
         optional: bool = true,
         /// Production mode — skip devDependencies (default: false)
         production: bool = false,
+        /// Suppress non-essential install output; errors still shown (default: false)
+        quiet: bool = false,
         /// Registry URL override
         registry: ?[]const u8 = null,
         /// Frozen lockfile — error if lockfile is out of date (default: false)
@@ -177,6 +179,10 @@ pub fn parseTomlContent(allocator: std.mem.Allocator, content: []const u8) !Pant
 
     if (table.getBool("install.production")) |production| {
         config.install.production = production;
+    }
+
+    if (table.getBool("install.quiet")) |quiet| {
+        config.install.quiet = quiet;
     }
 
     if (table.getString("install.registry")) |registry| {

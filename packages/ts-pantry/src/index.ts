@@ -64,6 +64,7 @@ export {
 } from './utils'
 export * from './version-utils'
 export * from './config-types'
+export * from './container'
 export * from './testing'
 export * from './desktop-apps'
 export * from './installer'

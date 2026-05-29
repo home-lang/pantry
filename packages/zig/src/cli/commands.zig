@@ -217,7 +217,6 @@ pub const installPackagesGloballyCommand = install_commands.installPackagesGloba
 // Re-export Dev Commands
 // ============================================================================
 
-pub const devShellcodeCommand = dev_commands.devShellcodeCommand;
 pub const devMd5Command = dev_commands.devMd5Command;
 pub const devFindProjectRootCommand = dev_commands.devFindProjectRootCommand;
 pub const devCheckUpdatesCommand = dev_commands.devCheckUpdatesCommand;

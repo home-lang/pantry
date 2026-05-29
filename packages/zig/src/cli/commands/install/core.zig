@@ -256,10 +256,24 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             opts.dry_run = true;
         } else if (std.mem.eql(u8, arg, "--no-auto-link")) {
             opts.auto_link = false;
+        } else if (std.mem.eql(u8, arg, "--quiet") or std.mem.eql(u8, arg, "-q")) {
+            opts.quiet = true;
         } else if (!std.mem.startsWith(u8, arg, "-")) {
             try package_args.append(allocator, arg);
         }
     }
+
+    // Honor quiet mode for all downstream output: progress, per-package lines,
+    // summaries and headers are suppressed; errors/failures still surface via
+    // style.printForced. shell:activate / `pantry env` pass quiet=true so that
+    // `eval "$(pantry env)"` never tries to execute progress chatter.
+    // PANTRY_QUIET=1 forces quiet for every entry point (install/add/ci and the
+    // auto-install triggered on `cd`) without needing a flag each time.
+    if (io_helper.getEnvVarOwned(allocator, "PANTRY_QUIET")) |val| {
+        defer allocator.free(val);
+        if (std.mem.eql(u8, val, "1") or std.mem.eql(u8, val, "true")) opts.quiet = true;
+    } else |_| {}
+    style.setQuiet(opts.quiet);
 
     // If -g flag is set with no packages, scan for global dependencies
     if (is_global and package_args.items.len == 0) {

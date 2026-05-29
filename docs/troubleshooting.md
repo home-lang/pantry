@@ -250,6 +250,45 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev
    cd .. && cd -  # Exit and re-enter directory
    ```
 
+## Output & Auto-install Control
+
+When you `cd` into a project that isn't set up yet, the shell integration runs
+`pantry install` for you. By default this is **quiet**: a single transient
+`pantry: setting up <name>…` line, then `pantry: <name> ready`. The full
+installer log is written to `~/.pantry/last-install.log` and only the tail is
+shown if setup fails. Activation itself (PATH/env changes) is silent.
+
+Knobs (all optional):
+
+| Variable / flag | Effect |
+|-----------------|--------|
+| `PANTRY_VERBOSE=1` | Stream the full install log on `cd` instead of the clean status line |
+| `PANTRY_NO_AUTO_INSTALL=1` | Never auto-install on `cd` (you run `pantry install` yourself) |
+| `PANTRY_INSTALL_TIMEOUT=<seconds>` | Cap auto-install time (requires a `timeout`/`gtimeout` binary) |
+| `PANTRY_QUIET=1` | Make **every** `pantry install`/`add`/`ci` quiet (progress hidden, errors still shown) |
+| `pantry install --quiet` / `-q` | One-off quiet install; also `pantry add -q`, `pantry ci -q` |
+| `install.quiet = true` in `pantry.toml` | Default installs to quiet for this project |
+| `pantry update --silent`, `pantry remove --silent` | Silence those commands (errors still shown) |
+| `NO_COLOR=1` | Disable ANSI colors everywhere (https://no-color.org) |
+| `FORCE_COLOR=1` | Keep colors even when output is piped/redirected |
+
+Color is auto-detected: output to a real terminal is colorized; piping or
+redirecting (`pantry list > out.txt`) produces plain text automatically.
+
+```bash
+# See exactly what setup did, in place, this once:
+PANTRY_VERBOSE=1 cd my-project/
+
+# Inspect the last auto-install if a cd setup failed:
+cat ~/.pantry/last-install.log
+
+# Make this project's installs quiet by default:
+echo -e "[install]\nquiet = true" >> pantry.toml
+```
+
+Errors and per-package failures are **never** suppressed by quiet mode — only
+progress, summaries, and headers are.
+
 ## Performance Issues
 
 ### Slow Environment Activation
