@@ -23,7 +23,7 @@ export const recipe: Recipe = {
     script: [
       'sed -i -f $PROP Makefile',
       'mkdir -p "{{prefix}}/bin"',
-      'make install VERSION=v{{version}} INSTALL_PATH="{{prefix}}/bin"',
+      'make install VERSION=v{{version}} INSTALL_PATH={{prefix}}/bin',
     ],
   },
 }

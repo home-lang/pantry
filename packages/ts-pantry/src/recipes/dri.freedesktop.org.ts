@@ -26,7 +26,7 @@ export const recipe: Recipe = {
       'ninja -j {{hw.concurrency}} install',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--libdir="{{prefix}}/lib"', '--buildtype=release', '--wrap-mode=nofallback'],
+      'ARGS': ['--prefix={{prefix}}', '--libdir={{prefix}}/lib', '--buildtype=release', '--wrap-mode=nofallback'],
     },
   },
 }

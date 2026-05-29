@@ -36,7 +36,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--with-openssl', '--with-libgcrypt'],
+      'ARGS': ['--prefix={{prefix}}', '--with-openssl', '--with-libgcrypt'],
     },
   },
 }

@@ -29,7 +29,7 @@ export const recipe: Recipe = {
       'sed -i -e \'s/^VERSION=.*/VERSION={{version}}/\' update-version',
       'sed -i -e \'/\\(chown\\|chmod\\|CHOWN\\|CHMOD\\)/d\' libfuse/Makefile',
       'make --jobs {{hw.concurrency}}',
-      'make install DESTDIR="{{prefix}}" PREFIX=""',
+      'make install DESTDIR={{prefix}} PREFIX=""',
     ],
     env: {
       'CFLAGS': '-Wno-implicit-function-declaration',

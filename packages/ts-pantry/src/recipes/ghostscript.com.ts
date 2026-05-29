@@ -29,9 +29,9 @@ export const recipe: Recipe = {
   build: {
     script: [
       '# Download ghostpdl source — tag format requires zero-padded minor',
-      'GS_MAJOR="{{version.major}}"',
-      'GS_MINOR="{{version.minor}}"',
-      'GS_PATCH="{{version.patch}}"',
+      'GS_MAJOR={{version.major}}',
+      'GS_MINOR={{version.minor}}',
+      'GS_PATCH={{version.patch}}',
       'GS_PADDED_MINOR=$(printf "%02d" "$GS_MINOR")',
       'GS_TAG="gs${GS_MAJOR}${GS_PADDED_MINOR}${GS_PATCH}"',
       'GS_RAW="${GS_MAJOR}.${GS_PADDED_MINOR}.${GS_PATCH}"',
@@ -49,7 +49,7 @@ export const recipe: Recipe = {
       'CC': 'clang',
       'CXX': 'clang++',
       'LD': 'clang',
-      'ARGS': ['--prefix="{{prefix}}"', '--disable-compile-inits', '--disable-cups', '--disable-gtk', '--without-x', '--without-versioned-path', '--without-libidn-prefix'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-compile-inits', '--disable-cups', '--disable-gtk', '--without-x', '--without-versioned-path', '--without-libidn-prefix'],
       'CFLAGS': '$CFLAGS -Wno-int-conversion',
     },
   },

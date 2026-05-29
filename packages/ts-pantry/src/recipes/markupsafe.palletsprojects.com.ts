@@ -21,7 +21,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'python -m pip install . --prefix="{{prefix}}"',
+      'python -m pip install . --prefix={{prefix}}',
     ],
   },
 }

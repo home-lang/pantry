@@ -31,7 +31,7 @@ export const recipe: Recipe = {
       'make install',
     ],
     env: {
-      'ARGS': ['-DCMAKE_INSTALL_PREFIX="{{prefix}}"', '-DCMAKE_BUILD_TYPE=Release'],
+      'ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release'],
     },
   },
 }

@@ -21,7 +21,7 @@ export const recipe: Recipe = {
     script: [
       'cd "include"',
       'sed -i \'s/l32toh(/le32toh(/g\' bytesex.h',
-      './configure --prefix="{{prefix}}"',
+      './configure --prefix={{prefix}}',
       'make --jobs {{hw.concurrency}} rdf',
       'make install install_rdf',
       'make --jobs {{hw.concurrency}}',

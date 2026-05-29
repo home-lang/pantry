@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       'go build $GO_ARGS -ldflags="$LD_FLAGS"',
     ],
     env: {
-      'GO_ARGS': ['-trimpath', '-o="{{prefix}}/bin/minio"'],
+      'GO_ARGS': ['-trimpath', '-o={{prefix}}/bin/minio'],
       'LD_FLAGS': ['-s', '-w', '-X github.com/minio/minio/cmd.ReleaseTag=2023-10-25T06-33-25Z'],
     },
   },

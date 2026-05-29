@@ -1390,6 +1390,14 @@ fn devShellcodeAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+/// Background, best-effort: detect a newer pantry release and drop the
+/// `~/.pantry/.update-available` marker the shell integration surfaces.
+/// Throttled to ~once/day internally; safe to fire on every shell start.
+fn devCheckUpdatesAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const result = try lib.commands.devCheckUpdatesCommand(ctx.allocator);
+    std.process.exit(result.exit_code);
+}
+
 fn servicesAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -3144,6 +3152,10 @@ pub fn main() !void {
     var dev_shellcode_cmd = try cli.BaseCommand.init(allocator, "dev:shellcode", "Generate shell integration code");
     _ = dev_shellcode_cmd.setAction(devShellcodeAction);
     _ = try root.addCommand(dev_shellcode_cmd);
+
+    var dev_check_updates_cmd = try cli.BaseCommand.init(allocator, "dev:check-updates", "Check for a newer pantry release (background; writes ~/.pantry/.update-available)");
+    _ = dev_check_updates_cmd.setAction(devCheckUpdatesAction);
+    _ = try root.addCommand(dev_check_updates_cmd);
 
     // ========================================================================
     // Service Commands

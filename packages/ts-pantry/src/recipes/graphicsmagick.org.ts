@@ -35,7 +35,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--disable-dependency-tracking', '--disable-openmp', '--disable-static', '--enable-shared', '--with-modules', '--with-quantum-depth=16', '--without-lzma', '--without-x', '--without-gslib', '--with-gs-font-dir={{prefix}}/share/ghostscript/fonts', '--without-wmf', '--with-jxl'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-dependency-tracking', '--disable-openmp', '--disable-static', '--enable-shared', '--with-modules', '--with-quantum-depth=16', '--without-lzma', '--without-x', '--without-gslib', '--with-gs-font-dir={{prefix}}/share/ghostscript/fonts', '--without-wmf', '--with-jxl'],
     },
   },
 }

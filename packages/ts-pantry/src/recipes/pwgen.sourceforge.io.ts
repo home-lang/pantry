@@ -18,7 +18,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--disable-debug', '--disable-dependency-tracking"', '--mandir="{{prefix}}/man"'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-debug', '--disable-dependency-tracking"', '--mandir={{prefix}}/man'],
     },
   },
 }

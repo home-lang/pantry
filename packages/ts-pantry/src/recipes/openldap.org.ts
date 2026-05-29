@@ -29,7 +29,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--enable-accesslog', '--enable-auditlog', '--enable-constraint', '--enable-dds', '--enable-deref', '--enable-dyngroup', '--enable-dynlist', '--enable-memberof', '--enable-ppolicy', '--enable-proxycache', '--enable-refint', '--enable-retcode', '--enable-seqmod', '--enable-translucent', '--enable-unique', '--enable-valsort', '--without-systemd'],
+      'ARGS': ['--prefix={{prefix}}', '--enable-accesslog', '--enable-auditlog', '--enable-constraint', '--enable-dds', '--enable-deref', '--enable-dyngroup', '--enable-dynlist', '--enable-memberof', '--enable-ppolicy', '--enable-proxycache', '--enable-refint', '--enable-retcode', '--enable-seqmod', '--enable-translucent', '--enable-unique', '--enable-valsort', '--without-systemd'],
     },
   },
 }

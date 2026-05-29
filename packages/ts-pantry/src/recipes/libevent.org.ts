@@ -36,7 +36,7 @@ export const recipe: Recipe = {
       'sed -i -e \'s|{{deps.openssl.org.prefix}}|\\${pcfiledir}/../../../../openssl.org/v{{deps.openssl.org.version.major}}|g\' *.pc',
     ],
     env: {
-      'ARGS': ['--disable-debug-mode', '--prefix="{{prefix}}"'],
+      'ARGS': ['--disable-debug-mode', '--prefix={{prefix}}'],
     },
   },
 }

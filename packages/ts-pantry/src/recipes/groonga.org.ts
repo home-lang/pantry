@@ -38,7 +38,7 @@ export const recipe: Recipe = {
       'if test -d groonga; then mv groonga/* .; rmdir groonga; fi',
     ],
     env: {
-      'CONFIGURE_ARGS': ['--disable-debug', '--disable-dependency-tracking', '--prefix="{{prefix}}"', '--libdir="{{prefix}}/lib"', '--disable-zeromq', '--disable-apache-arrow', '--with-luajit=no', '--with-ssl', '--with-zlib', '--without-libstemmer'],
+      'CONFIGURE_ARGS': ['--disable-debug', '--disable-dependency-tracking', '--prefix={{prefix}}', '--libdir={{prefix}}/lib', '--disable-zeromq', '--disable-apache-arrow', '--with-luajit=no', '--with-ssl', '--with-zlib', '--without-libstemmer'],
       'LINK': 'https://packages.groonga.org/source/groonga-normalizer-mysql/groonga-normalizer-mysql-1.2.1.tar.gz',
     },
   },

@@ -27,7 +27,7 @@ export const recipe: Recipe = {
       'make install',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"'],
+      'ARGS': ['--prefix={{prefix}}'],
     },
   },
 }

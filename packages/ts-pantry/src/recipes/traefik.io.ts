@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       'go build $GO_ARGS -ldflags="$LD_FLAGS" ./cmd/traefik',
     ],
     env: {
-      'GO_ARGS': ['-trimpath', '-o="{{prefix}}/bin/traefik"'],
+      'GO_ARGS': ['-trimpath', '-o={{prefix}}/bin/traefik'],
       'LD_FLAGS': ['-s', '-w', '-X github.com/traefik/traefik/v{{version.major}}/pkg/version.Version={{version}}'],
     },
   },

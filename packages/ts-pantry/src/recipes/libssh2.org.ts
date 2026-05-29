@@ -28,7 +28,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--with-openssl', '--with-libz', '--disable-examples-build'],
+      'ARGS': ['--prefix={{prefix}}', '--with-openssl', '--with-libz', '--disable-examples-build'],
     },
   },
 }

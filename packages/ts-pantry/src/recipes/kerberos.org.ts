@@ -30,7 +30,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--disable-nls', '--without-system-verto', '--without-keyutils'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-nls', '--without-system-verto', '--without-keyutils'],
     },
   },
 }

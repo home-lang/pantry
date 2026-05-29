@@ -24,7 +24,7 @@ export const recipe: Recipe = {
     ],
     env: {
       'CGO_ENABLED': '0',
-      'ARGS': ['-trimpath', '-o="{{prefix}}/bin/pocketbase"'],
+      'ARGS': ['-trimpath', '-o={{prefix}}/bin/pocketbase'],
       'LDFLAGS': ['-s', '-w', '-X github.com/pocketbase/pocketbase.Version={{version}}'],
     },
   },

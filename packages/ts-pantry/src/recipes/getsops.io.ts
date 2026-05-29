@@ -24,7 +24,7 @@ export const recipe: Recipe = {
       'go build $GO_ARGS -ldflags="$GO_LDFLAGS" ./cmd/sops',
     ],
     env: {
-      'GO_ARGS': ['-trimpath', '-o="{{prefix}}/bin/sops"'],
+      'GO_ARGS': ['-trimpath', '-o={{prefix}}/bin/sops'],
       'GO_LDFLAGS': ['-s', '-w', '-X github.com/getsops/sops/v3/version.Version={{version}}'],
     },
   },

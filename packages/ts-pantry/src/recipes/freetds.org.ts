@@ -40,7 +40,7 @@ export const recipe: Recipe = {
     ],
     env: {
       'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_SYSCONFDIR={{prefix}}/etc', '-DWITH_OPENSSL=ON', '-DENABLE_MSDBLIB=ON', '-DENABLE_KRB5=ON', '-DENABLE_ODBC_WIDE=ON'],
-      'ARGS': ['--prefix="{{prefix}}"', '--mandir="{{prefix}}/man"', '--sysconfdir="{{prefix}}/etc"', '--with-unixodbc={{deps.unixodbc.org.prefix}}', '--with-openssl={{deps.openssl.org.prefix}}', '--enable-sybase-compat', '--enable-krb5', '--enable-odbc-wide'],
+      'ARGS': ['--prefix={{prefix}}', '--mandir={{prefix}}/man', '--sysconfdir={{prefix}}/etc', '--with-unixodbc={{deps.unixodbc.org.prefix}}', '--with-openssl={{deps.openssl.org.prefix}}', '--enable-sybase-compat', '--enable-krb5', '--enable-odbc-wide'],
     },
   },
 }

@@ -24,7 +24,7 @@ export const recipe: Recipe = {
       'make --jobs {{hw.concurrency}} install',
     ],
     env: {
-      'ARGS': ['-DBUILD_SHARED_LIBS=true', '-DCMAKE_INSTALL_PREFIX="{{prefix}}"', '-DCMAKE_BUILD_TYPE=Release'],
+      'ARGS': ['-DBUILD_SHARED_LIBS=true', '-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release'],
     },
   },
 }

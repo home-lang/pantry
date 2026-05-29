@@ -129,7 +129,7 @@ export function buildTokens(
   const os = dashIdx === -1 ? platform : platform.slice(0, dashIdx)
   const arch = dashIdx === -1 ? 'x86-64' : platform.slice(dashIdx + 1)
   const osName = os === 'darwin' ? 'darwin' : 'linux'
-  const archName = arch === 'arm64' ? 'aarch64' : 'x86-64'
+  const archName = (arch === 'arm64' || arch === 'aarch64') ? 'aarch64' : 'x86-64'
   const versionParts = version.split('.')
   const major = versionParts[0] || '0'
   const minor = versionParts[1] || '0'
@@ -212,7 +212,7 @@ export function evaluateCondition(
   const os = dashIdx === -1 ? platform : platform.slice(0, dashIdx)
   const arch = dashIdx === -1 ? 'x86-64' : platform.slice(dashIdx + 1)
   const osName = os === 'darwin' ? 'darwin' : 'linux'
-  const archName = arch === 'arm64' ? 'aarch64' : 'x86-64'
+  const archName = (arch === 'arm64' || arch === 'aarch64') ? 'aarch64' : 'x86-64'
 
   // Handle OR conditions (e.g. ">=3.8<3.8.4 || >=3<3.7.8")
   if (condition.includes('||')) {
@@ -332,7 +332,7 @@ export function platformReduce(
   const os = dashIdx === -1 ? platform : platform.slice(0, dashIdx)
   const arch = dashIdx === -1 ? 'x86-64' : platform.slice(dashIdx + 1)
   const osName = os === 'darwin' ? 'darwin' : 'linux'
-  const archName = arch === 'arm64' ? 'aarch64' : 'x86-64'
+  const archName = (arch === 'arm64' || arch === 'aarch64') ? 'aarch64' : 'x86-64'
 
   const result: Record<string, any> = {}
 
@@ -539,7 +539,7 @@ export function generateBuildScript(
   const os = dashIdx === -1 ? platform : platform.slice(0, dashIdx)
   const arch = dashIdx === -1 ? 'x86-64' : platform.slice(dashIdx + 1)
   const osName = os === 'darwin' ? 'darwin' : 'linux'
-  const archName = arch === 'arm64' ? 'aarch64' : 'x86-64'
+  const archName = (arch === 'arm64' || arch === 'aarch64') ? 'aarch64' : 'x86-64'
 
   // Narrow build to object form (or undefined) for property access throughout this function
   const build: RecipeBuildConfig | undefined =

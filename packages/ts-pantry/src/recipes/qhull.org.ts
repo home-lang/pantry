@@ -27,7 +27,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DLIB_INSTALL_DIR="{{prefix}}"/lib'],
+      'ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DLIB_INSTALL_DIR={{prefix}}/lib'],
     },
   },
 }

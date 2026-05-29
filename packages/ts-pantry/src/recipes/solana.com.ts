@@ -16,7 +16,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'mkdir -p /tmp/solana-extract',
-      'SOL_VERSION="{{version}}"',
+      'SOL_VERSION={{version}}',
       'case "{{hw.platform}}/{{hw.arch}}" in',
       '  darwin/aarch64) SOL_ARCH="aarch64-apple-darwin" ;;',
       '  linux/x86-64) SOL_ARCH="x86_64-unknown-linux-gnu" ;;',

@@ -26,7 +26,7 @@ export const recipe: Recipe = {
       '  curl -LSs \'https://raw.githubusercontent.com/libuv/libuv/1c778bd001543371c915a79b7ac3c5864fe59e74/src/unix/darwin-syscalls.h\' -o darwin-syscalls.h',
       'fi',
       '',
-      './configure --prefix="{{prefix}}"',
+      './configure --prefix={{prefix}}',
       'make --jobs {{hw.concurrency}}',
       'make install',
     ],

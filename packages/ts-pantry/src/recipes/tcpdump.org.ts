@@ -28,7 +28,7 @@ export const recipe: Recipe = {
       'make --jobs {{hw.concurrency}} install',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--enable-ipv6', '--disable-universal'],
+      'ARGS': ['--prefix={{prefix}}', '--enable-ipv6', '--disable-universal'],
     },
   },
 }

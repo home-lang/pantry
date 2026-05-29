@@ -35,7 +35,7 @@ export const recipe: Recipe = {
       'make -j {{hw.concurrency}} install $ARGS',
     ],
     env: {
-      'ARGS': ['PREFIX="{{prefix}}"', 'SYSCONFDIR="{{prefix}}/etc"', 'SHAREDSTATEDIR="{{prefix}}/var"', 'UNITDIR="{{prefix}}/etc"', 'DOCS=', 'CRYSTAL_FLAGS=-Dbake_static'],
+      'ARGS': ['PREFIX={{prefix}}', 'SYSCONFDIR={{prefix}}/etc', 'SHAREDSTATEDIR={{prefix}}/var', 'UNITDIR={{prefix}}/etc', 'DOCS=', 'CRYSTAL_FLAGS=-Dbake_static'],
       'CRYSTAL_PATH': './lib:$CRYSTAL_PATH',
     },
   },

@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--disable-debug', '--disable-dependency-tracking', '--disable-silent-rules', '--with-crypto-library=openssl', '--disable-pkcs11'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-debug', '--disable-dependency-tracking', '--disable-silent-rules', '--with-crypto-library=openssl', '--disable-pkcs11'],
     },
   },
 }

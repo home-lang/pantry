@@ -14,7 +14,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'VERSION="{{version}}"',
+      'VERSION={{version}}',
       'case "{{hw.platform}}+{{hw.arch}}" in',
       '  darwin+aarch64) PLATFORM="aarch64-macos" ;;',
       '  darwin+x86-64)  PLATFORM="x86_64-macos"  ;;',

@@ -18,7 +18,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--disable-dependency-tracking', '--with-savestates', '--with-attributelog', '--with-nvme-devicescan'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-dependency-tracking', '--with-savestates', '--with-attributelog', '--with-nvme-devicescan'],
     },
   },
 }

@@ -14,7 +14,7 @@ export const recipe: Recipe = {
     script: [
       // config.guess from 2011 doesn't recognize aarch64
       { run: 'cp props/config.guess props/config.sub .', if: '^8' },
-      './configure --disable-dependency-tracking --disable-silent-rules --prefix="{{prefix}}"',
+      './configure --disable-dependency-tracking --disable-silent-rules --prefix={{prefix}}',
       'make --jobs {{hw.concurrency}} install',
     ],
   },

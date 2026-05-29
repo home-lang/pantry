@@ -24,7 +24,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"'],
+      'ARGS': ['--prefix={{prefix}}'],
     },
   },
 }

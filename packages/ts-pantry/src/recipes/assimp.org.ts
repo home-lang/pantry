@@ -34,7 +34,7 @@ export const recipe: Recipe = {
     ],
     env: {
       'PATCH': 'https://github.com/assimp/assimp/commit/5a89d6fee138f8bc979b508719163a74ddc9a384.patch?full_index=1',
-      'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_LIBDIR=lib', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DASSIMP_BUILD_TESTS=OFF', '-DASSIMP_BUILD_ASSIMP_TOOLS=ON', '-DCMAKE_INSTALL_RPATH="{{prefix}}"'],
+      'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_LIBDIR=lib', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DASSIMP_BUILD_TESTS=OFF', '-DASSIMP_BUILD_ASSIMP_TOOLS=ON', '-DCMAKE_INSTALL_RPATH={{prefix}}'],
     },
   },
 }

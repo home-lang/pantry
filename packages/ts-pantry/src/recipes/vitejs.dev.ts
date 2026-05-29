@@ -16,7 +16,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'npm install . --global --install-links --prefix="{{prefix}}"',
+      'npm install . --global --install-links --prefix={{prefix}}',
       'cd "${{prefix}}/lib"',
       'for x in $(pkgx fd --type x); do',
       'if lipo $x -thin $(uname -m) -output $x.new; then',

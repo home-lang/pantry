@@ -373,7 +373,31 @@ if [[ -n "${PANTRY_CURRENT_PROJECT:-}" \
     __pantry_repair_path
 fi
 
+# One-shot update notice + background check (per shell session, never on `cd`).
+#
+# This deliberately runs ONLY at shell start, not inside __pantry_switch_environment,
+# so the `cd` hot path stays untouched. Cost: one `[[ -s ]]` test plus, at most,
+# a single fully-detached `pantry dev:check-updates` spawn — which self-throttles
+# to ~once/day, so most starts do no network at all. Opt out: PANTRY_NO_UPDATE_CHECK=1.
+__pantry_update_check() {
+    [[ -n "${PANTRY_NO_UPDATE_CHECK:-}" ]] && return 0
+    [[ -n "${__PANTRY_UPDATE_CHECKED:-}" ]] && return 0
+    __PANTRY_UPDATE_CHECKED=1
+
+    # Surface an update found by a previous background check (one line, once).
+    local marker="${HOME}/.pantry/.update-available"
+    if [[ -s "$marker" ]]; then
+        local v; v=$(<"$marker")
+        [[ -n "$v" ]] && printf 'pantry: v%s available — run `pantry upgrade`\n' "$v" >&2
+    fi
+
+    # Kick off today's check fully detached: the `( … & )` subshell orphans the
+    # child so there is no job-control noise and the prompt never waits on it.
+    command -v pantry >/dev/null 2>&1 && ( pantry dev:check-updates >/dev/null 2>&1 & ) >/dev/null 2>&1
+}
+
 # Force a full re-evaluation on shell start / re-source (the per-shell PWD memo
 # may have persisted across a `source`), then run the detector.
 unset __PANTRY_LAST_PWD
 __pantry_switch_environment
+__pantry_update_check

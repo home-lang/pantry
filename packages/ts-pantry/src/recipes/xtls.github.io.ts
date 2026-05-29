@@ -31,7 +31,7 @@ export const recipe: Recipe = {
     ],
     env: {
       'GO_LDFLAGS': ['-s', '-w', '-buildid='],
-      'GO_ARGS': ['-trimpath', '-o="{{prefix}}/bin/xray"'],
+      'GO_ARGS': ['-trimpath', '-o={{prefix}}/bin/xray'],
       'RES_GEOSITE': 'https://github.com/v2fly/domain-list-community/releases/download/20250916122507/dlc.dat',
       'RES_CONFIG': 'https://raw.githubusercontent.com/v2fly/v2ray-core/v5.40.0/release/config/config.json',
       'RES_GEOIP': 'https://github.com/v2fly/geoip/releases/download/202510050144/geoip.dat',

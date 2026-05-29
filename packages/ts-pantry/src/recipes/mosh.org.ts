@@ -28,7 +28,7 @@ export const recipe: Recipe = {
       'make --jobs {{hw.concurrency}} install',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--enable-completion', '--disable-silent-rules'],
+      'ARGS': ['--prefix={{prefix}}', '--enable-completion', '--disable-silent-rules'],
       'CFLAGS': ['-DNDEBUG'],
       'CXXFLAGS': ['-std=gnu++17'],
     },

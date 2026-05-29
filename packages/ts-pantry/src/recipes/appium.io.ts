@@ -27,7 +27,7 @@ export const recipe: Recipe = {
     script: [
       'chmod +x lib/appium.js',
       'EXTRA_PACKAGES="@appium/logger"',
-      'npm install . $EXTRA_PACKAGES --global --prefix="{{prefix}}" --install-links',
+      'npm install . $EXTRA_PACKAGES --global --prefix={{prefix}} --install-links',
     ],
   },
 }

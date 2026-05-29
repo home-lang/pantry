@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       'make --jobs {{hw.concurrency}} install',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--disable-debug', '--disable-dependency-tracking', '--enable-static', '--enable-gui=no'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-debug', '--disable-dependency-tracking', '--enable-static', '--enable-gui=no'],
     },
   },
 }

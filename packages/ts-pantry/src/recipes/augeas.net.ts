@@ -39,7 +39,7 @@ export const recipe: Recipe = {
     ],
     env: {
       'CFLAGS': '-Wno-implicit-function-declaration',
-      'ARGS': ['--prefix="{{prefix}}"', '--disable-debug', '--disable-dependency-tracking'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-debug', '--disable-dependency-tracking'],
     },
   },
 }

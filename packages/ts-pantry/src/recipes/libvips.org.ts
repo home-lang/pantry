@@ -60,7 +60,7 @@ export const recipe: Recipe = {
       'CC': 'clang',
       'CXX': 'clang++',
       'LD': 'clang',
-      'MESON_ARGS': ['--prefix="{{prefix}}"', '--libdir="{{prefix}}/lib"', '--buildtype=release', '--wrap-mode=nofallback'],
+      'MESON_ARGS': ['--prefix={{prefix}}', '--libdir={{prefix}}/lib', '--buildtype=release', '--wrap-mode=nofallback'],
     },
   },
 }

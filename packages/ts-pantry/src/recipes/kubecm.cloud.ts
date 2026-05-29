@@ -21,7 +21,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'make build  BUILD_TARGET_PKG_DIR="{{prefix}}/bin" TAG={{version}} KUBECM_VERSION={{version}}',
+      'make build  BUILD_TARGET_PKG_DIR={{prefix}}/bin TAG={{version}} KUBECM_VERSION={{version}}',
     ],
     env: {
       'CGO_ENABLED': '0',

@@ -24,7 +24,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--disable-dependency-tracking', '--disable-silent-rules', '--enable-mpers=no', '--prefix="{{prefix}}"', '--disable-gcc-Werror'],
+      'ARGS': ['--disable-dependency-tracking', '--disable-silent-rules', '--enable-mpers=no', '--prefix={{prefix}}', '--disable-gcc-Werror'],
     },
   },
 }

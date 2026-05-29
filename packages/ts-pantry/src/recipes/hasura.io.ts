@@ -26,7 +26,7 @@ export const recipe: Recipe = {
       'chmod +x cli-ext/bin/cli-ext-hasura',
       'cd "cli"',
       'cp ../cli-ext/bin/cli-ext-hasura internal/cliext/static-bin/$PLATFORM/cli-ext',
-      'go build -v -ldflags="$LDFLAGS" -o="{{prefix}}/bin/hasura" ./cmd/hasura',
+      'go build -v -ldflags="$LDFLAGS" -o={{prefix}}/bin/hasura ./cmd/hasura',
       '',
     ],
     env: {

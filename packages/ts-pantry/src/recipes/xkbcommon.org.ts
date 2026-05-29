@@ -33,7 +33,7 @@ export const recipe: Recipe = {
       'meson install -C build',
     ],
     env: {
-      'MESON_ARGS': ['--prefix="{{prefix}}"', '--libdir="{{prefix}}/lib"', '--buildtype=release', '--wrap-mode=nofallback', '-Denable-wayland=false', '-Denable-docs=false'],
+      'MESON_ARGS': ['--prefix={{prefix}}', '--libdir={{prefix}}/lib', '--buildtype=release', '--wrap-mode=nofallback', '-Denable-wayland=false', '-Denable-docs=false'],
     },
   },
 }

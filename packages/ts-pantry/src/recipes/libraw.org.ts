@@ -34,7 +34,7 @@ export const recipe: Recipe = {
       'install doc/* {{prefix}}/doc/',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--disable-dependency-tracking'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-dependency-tracking'],
     },
   },
 }

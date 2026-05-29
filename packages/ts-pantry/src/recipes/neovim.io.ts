@@ -37,7 +37,7 @@ export const recipe: Recipe = {
       '    BuildLuarocks.cmake',
       'fi',
       '',
-      'make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX="{{prefix}}" install',
+      'make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX={{prefix}} install',
     ],
   },
 }

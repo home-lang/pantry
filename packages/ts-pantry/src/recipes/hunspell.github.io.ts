@@ -29,7 +29,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--with-readline', '--with-ui', '--disable-silent-rules'],
+      'ARGS': ['--prefix={{prefix}}', '--with-readline', '--with-ui', '--disable-silent-rules'],
     },
   },
 }

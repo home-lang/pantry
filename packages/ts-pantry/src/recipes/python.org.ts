@@ -203,7 +203,7 @@ export const recipe: Recipe = {
     ],
     env: {
       'ARGS': [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--with-ensurepip',
         '--enable-ipv6',
         '--disable-loadable-sqlite-extensions',

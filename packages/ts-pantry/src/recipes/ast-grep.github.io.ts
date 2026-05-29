@@ -32,7 +32,7 @@ export const recipe: Recipe = {
       },
       CARGO_ARGS: [
         '--locked',
-        '--root="{{prefix}}"',
+        '--root={{prefix}}',
         '--path=crates/cli',
       ],
     },

@@ -263,6 +263,13 @@ pub fn upgradeCommand(allocator: std.mem.Allocator, _: []const []const u8, optio
     io_helper.deleteTree(tmp_dir) catch {};
     io_helper.deleteFile(tmp_zip) catch {};
 
+    // Clear the "update available" marker so the shell-integration notice
+    // disappears immediately instead of lingering until the next daily check.
+    if (std.fmt.allocPrint(allocator, "{s}/.pantry/.update-available", .{home})) |marker| {
+        defer allocator.free(marker);
+        io_helper.deleteFile(marker) catch {};
+    } else |_| {}
+
     style.print("\n  {s}Upgraded!{s} {s} → {s}{s}{s}\n", .{
         style.green,     style.reset,
         current_version, style.green,

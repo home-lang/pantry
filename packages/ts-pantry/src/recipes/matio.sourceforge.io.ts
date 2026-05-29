@@ -26,7 +26,7 @@ export const recipe: Recipe = {
       'cmake --install build',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--disable-debug', '--disable-dependency-tracking', '--enable-extended-sparse=yes', '--enable-mat73=yes', '--with-hdf5={{deps.hdfgroup.org/HDF5.prefix}}', '--with-zlib={{deps.zlib.net.prefix}}'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-debug', '--disable-dependency-tracking', '--enable-extended-sparse=yes', '--enable-mat73=yes', '--with-hdf5={{deps.hdfgroup.org/HDF5.prefix}}', '--with-zlib={{deps.zlib.net.prefix}}'],
       'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DMATIO_WITH_HDF5=ON', '-DMATIO_WITH_ZLIB=ON', '-DMATIO_EXTENDED_SPARSE=ON', '-DMATIO_MAT73=ON'],
     },
   },

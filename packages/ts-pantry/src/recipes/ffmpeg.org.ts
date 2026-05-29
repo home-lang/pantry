@@ -36,7 +36,7 @@ export const recipe: Recipe = {
       'make install',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--enable-libfreetype', '--enable-libmp3lame', '--enable-shared', '--enable-libx264', '--enable-gpl', '--enable-libx265', '--enable-libvpx', '--enable-libopus', '--enable-libwebp', '--disable-sdl2', '--disable-doc'],
+      'ARGS': ['--prefix={{prefix}}', '--enable-libfreetype', '--enable-libmp3lame', '--enable-shared', '--enable-libx264', '--enable-gpl', '--enable-libx265', '--enable-libvpx', '--enable-libopus', '--enable-libwebp', '--disable-sdl2', '--disable-doc'],
       'CFLAGS': ['-Wno-incompatible-function-pointer-types'],
     },
   },

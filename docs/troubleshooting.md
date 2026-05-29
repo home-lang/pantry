@@ -289,6 +289,29 @@ echo -e "[install]\nquiet = true" >> pantry.toml
 Errors and per-package failures are **never** suppressed by quiet mode — only
 progress, summaries, and headers are.
 
+### Update checks
+
+The shell integration checks for a newer **pantry** release in the background,
+once per shell session (never on `cd`). It's fully detached so the prompt never
+waits, and self-throttled to ~once/day. When a newer release exists, the next
+shell prints a single line:
+
+```
+pantry: v0.10.0 available — run `pantry upgrade`
+```
+
+- Source is the GitHub releases of `home-lang/pantry` — the same place
+  `pantry upgrade` installs from, so the notice never advertises a version
+  `upgrade` can't fetch.
+- `pantry upgrade` clears the notice immediately on success.
+- State lives in `~/.pantry/.update-last-check` (24h throttle stamp) and
+  `~/.pantry/.update-available` (present ⇒ update pending; contents = version).
+- Opt out with `PANTRY_NO_UPDATE_CHECK=1`. Force a check anytime with
+  `pantry dev:check-updates` (respects the throttle; delete the stamp to bypass).
+
+This is separate from updating your project's **dependencies** — use
+`pantry outdated` / `pantry update` for those.
+
 ## Performance Issues
 
 ### Slow Environment Activation

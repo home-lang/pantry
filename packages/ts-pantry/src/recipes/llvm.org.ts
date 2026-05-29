@@ -59,7 +59,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['-DCMAKE_INSTALL_PREFIX="{{prefix}}"', '-DCMAKE_BUILD_TYPE=Release', '-DLLVM_ENABLE_PROJECTS=\'lld;lldb;clang;clang-tools-extra\'', '-DLLVM_INCLUDE_DOCS=OFF', '-DLLVM_INCLUDE_TESTS=OFF', '-DLLVM_ENABLE_RTTI=ON', '-DLLVM_BUILD_LLVM_DYLIB=ON'],
+      'ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release', '-DLLVM_ENABLE_PROJECTS=\'lld;lldb;clang;clang-tools-extra\'', '-DLLVM_INCLUDE_DOCS=OFF', '-DLLVM_INCLUDE_TESTS=OFF', '-DLLVM_ENABLE_RTTI=ON', '-DLLVM_BUILD_LLVM_DYLIB=ON'],
     },
   },
 }

@@ -24,7 +24,7 @@ export const recipe: Recipe = {
         run: [
           '# https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=180565',
           'patch -p0 < props/aspell.patch',
-          './configure --prefix="{{prefix}}" --with-compiledby=tea.xyz',
+          './configure --prefix={{prefix}} --with-compiledby=tea.xyz',
           'make --jobs {{hw.concurrency}} install',
           '',
           'urls=(',

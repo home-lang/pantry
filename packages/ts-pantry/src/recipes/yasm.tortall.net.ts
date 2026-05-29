@@ -24,7 +24,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--disable-python', '--disable-debug'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-python', '--disable-debug'],
     },
   },
 }

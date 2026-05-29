@@ -29,7 +29,7 @@ export const recipe: Recipe = {
       'sed -i \'s/defined(JEMALLOC_USE_CXX_THROW)/defined(JEMALLOC_USE_CXX_THROW) \\&\\& \\!defined(__clang__)/g\' jemalloc.h',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--disable-debug', '--with-jemalloc-prefix='],
+      'ARGS': ['--prefix={{prefix}}', '--disable-debug', '--with-jemalloc-prefix='],
     },
   },
 }

@@ -44,7 +44,7 @@ export const recipe: Recipe = {
       'PATCH1': 'https://raw.githubusercontent.com/Homebrew/patches/1860b0a745f1fe726900974845d1b0dd3c3398d6/openssh/patch-sandbox-darwin.c-apple-sandbox-named-external.diff',
       'PATCH2': 'https://raw.githubusercontent.com/Homebrew/patches/d8b2d8c2612fd251ac6de17bf0cc5174c3aab94c/openssh/patch-sshd.c-apple-sandbox-named-external.diff',
       'RES_SSHD': 'https://raw.githubusercontent.com/apple-oss-distributions/OpenSSH/OpenSSH-268.100.4/com.openssh.sshd.sb',
-      'CONFIGURE_ARGS': ['--disable-debug', '--disable-dependency-tracking', '--prefix="{{prefix}}"', '--libdir="{{prefix}}/lib"', '--sysconfdir={{prefix}}/etc/ssh', '--with-ldns', '--with-libedit', '--with-kerberos5', '--with-pam', '--with-ssl-dir={{deps.openssl.org.prefix}}', '--with-security-key-builtin'],
+      'CONFIGURE_ARGS': ['--disable-debug', '--disable-dependency-tracking', '--prefix={{prefix}}', '--libdir={{prefix}}/lib', '--sysconfdir={{prefix}}/etc/ssh', '--with-ldns', '--with-libedit', '--with-kerberos5', '--with-pam', '--with-ssl-dir={{deps.openssl.org.prefix}}', '--with-security-key-builtin'],
     },
   },
 }

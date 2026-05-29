@@ -812,7 +812,7 @@ function shouldRunStep(condition: string | undefined, platform: string, version:
   // Platform/arch conditions like "darwin/x86-64"
   if (condition.includes('/')) {
     const [condOs, condArch] = condition.split('/')
-    const normalizedArch = arch === 'arm64' ? 'aarch64' : 'x86-64'
+    const normalizedArch = (arch === 'arm64' || arch === 'aarch64') ? 'aarch64' : 'x86-64'
     if (condOs !== osName) return false
     if (condArch && condArch !== normalizedArch && condArch !== arch) return false
   }
@@ -1594,9 +1594,9 @@ else {
     'version.marketing': `${vMajor}.${vMinor}`,
     'prefix': prefix,
     'hw.concurrency': String(cpuCount),
-    'hw.arch': arch === 'arm64' ? 'aarch64' : 'x86-64',
+    'hw.arch': (arch === 'arm64' || arch === 'aarch64') ? 'aarch64' : 'x86-64',
     'hw.platform': osName,
-    'hw.target': `${arch === 'arm64' ? 'aarch64' : 'x86-64'}-${osName}`,
+    'hw.target': `${(arch === 'arm64' || arch === 'aarch64') ? 'aarch64' : 'x86-64'}-${osName}`,
     'srcroot': buildDir,
     'pkgx.prefix': prefix,
     'pkgx.dir': prefix,
@@ -1867,7 +1867,7 @@ else if (Array.isArray(value)) {
     // `darwin/aarch64: { ARCH: darwin64-arm64-cc }`). These are skipped by the
     // generic loop above (slash keys) and the osName loop, yet are essential
     // for recipes whose configure target depends on the CPU arch (openssl etc.).
-    const normalizedArch = arch === 'arm64' ? 'aarch64' : 'x86-64'
+    const normalizedArch = (arch === 'arm64' || arch === 'aarch64') ? 'aarch64' : 'x86-64'
     const archEnv = env[`${osName}/${normalizedArch}`]
     if (archEnv && typeof archEnv === 'object') {
       for (const [key, value] of Object.entries(archEnv as Record<string, string | string[]>)) {

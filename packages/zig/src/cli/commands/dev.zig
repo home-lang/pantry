@@ -84,70 +84,84 @@ pub fn devFindProjectRootCommand(allocator: std.mem.Allocator, start_dir: []cons
     return .{ .exit_code = 0 };
 }
 
-/// Dev: check-updates command - check for newer pantry version
-/// Called in background by shell integration. Writes update info to ~/.pantry/.update-available
+/// GitHub repo we ship releases from — must match `upgrade.zig`'s REPO so the
+/// "update available" notice and `pantry upgrade` agree on the source.
+const UPDATE_REPO = "home-lang/pantry";
+
+/// Dev: check-updates command — detect a newer pantry release (best-effort,
+/// silent). Fired backgrounded+disowned by the shell integration once per
+/// session; the 24h throttle below means it only hits the network ~once/day.
+///
+/// Source is GitHub releases (same as `pantry upgrade`), NOT npm — they must
+/// agree or the notice would advertise a version `upgrade` can't install.
+///
+/// Two files, deliberately separate:
+///   ~/.pantry/.update-last-check   touched after every check → drives the 24h
+///                                  throttle even when we're up to date (the old
+///                                  code threw its throttle away on up-to-date
+///                                  and re-hit the network every run).
+///   ~/.pantry/.update-available    written (latest version) only when an update
+///                                  exists; removed when up to date.
 pub fn devCheckUpdatesCommand(allocator: std.mem.Allocator) !CommandResult {
     const version_options = @import("version");
     const current_version = version_options.version;
 
-    // Determine update marker file path
     const home = io_helper.getEnvVarOwned(allocator, "HOME") catch {
         return .{ .exit_code = 0 };
     };
     defer allocator.free(home);
 
-    const marker_path = try std.fmt.allocPrint(allocator, "{s}/.pantry/.update-available", .{home});
+    const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/.pantry", .{home});
+    defer allocator.free(pantry_dir);
+    const marker_path = try std.fmt.allocPrint(allocator, "{s}/.update-available", .{pantry_dir});
     defer allocator.free(marker_path);
+    const throttle_path = try std.fmt.allocPrint(allocator, "{s}/.update-last-check", .{pantry_dir});
+    defer allocator.free(throttle_path);
 
-    // Check if we already checked recently (within 24 hours)
-    if (io_helper.statFile(marker_path)) |stat| {
-        const now_ts = io_helper.clockGettime();
-        const now_sec: i128 = @intCast(now_ts.sec);
-        const now_ns: i128 = now_sec * 1_000_000_000;
-        const file_age_ns = now_ns - stat.mtime;
-        const one_day_ns: i128 = 86400 * 1_000_000_000;
-        if (file_age_ns < one_day_ns) {
-            // Checked less than 24 hours ago, skip
-            return .{ .exit_code = 0 };
-        }
+    // Throttle: skip the network if we attempted a check within the last 24h.
+    // Keyed on a dedicated stamp file so it holds regardless of outcome.
+    if (io_helper.statFile(throttle_path)) |stat| {
+        const now_sec: i128 = @intCast(io_helper.clockGettime().sec);
+        const age_ns = now_sec * 1_000_000_000 - stat.mtime;
+        if (age_ns < 86400 * 1_000_000_000) return .{ .exit_code = 0 };
     } else |_| {}
 
-    // Query npm registry for latest pantry version
-    const registry_url = "https://registry.npmjs.org/pantry-cli/latest";
-    const response = io_helper.httpGet(allocator, registry_url) catch {
-        // Network error - silently skip (this is a background check)
-        return .{ .exit_code = 0 };
+    // Stamp the attempt up-front: even if the network call below fails (offline),
+    // we won't retry for 24h — otherwise an offline machine would hit GitHub on
+    // every new shell.
+    io_helper.makePath(pantry_dir) catch {};
+    if (io_helper.createFile(throttle_path, .{ .truncate = true })) |f| {
+        io_helper.closeFile(f);
+    } else |_| {}
+
+    // Ask GitHub for the latest release (same endpoint `upgrade` installs from).
+    const api_url = "https://api.github.com/repos/" ++ UPDATE_REPO ++ "/releases/latest";
+    const response = io_helper.httpGet(allocator, api_url) catch {
+        return .{ .exit_code = 0 }; // network error — silent (background check)
     };
     defer allocator.free(response);
 
-    // Parse JSON response to get version field
     const parsed = std.json.parseFromSlice(std.json.Value, allocator, response, .{}) catch {
         return .{ .exit_code = 0 };
     };
     defer parsed.deinit();
 
     if (parsed.value != .object) return .{ .exit_code = 0 };
+    const tag_val = parsed.value.object.get("tag_name") orelse return .{ .exit_code = 0 };
+    if (tag_val != .string) return .{ .exit_code = 0 };
+    const tag = tag_val.string;
+    const latest_version = if (tag.len > 0 and tag[0] == 'v') tag[1..] else tag;
+    if (latest_version.len == 0) return .{ .exit_code = 0 };
 
-    const version_val = parsed.value.object.get("version") orelse return .{ .exit_code = 0 };
-    if (version_val != .string) return .{ .exit_code = 0 };
-
-    const latest_version = version_val.string;
-
-    // Compare versions - if different and latest is newer, write marker
+    // Mirror `upgrade`'s own up-to-date test (string inequality of the tag) so
+    // the notice and `pantry upgrade` never disagree.
     if (!std.mem.eql(u8, current_version, latest_version)) {
-        // Ensure ~/.pantry directory exists
-        const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/.pantry", .{home});
-        defer allocator.free(pantry_dir);
-        io_helper.makePath(pantry_dir) catch {};
-
-        // Write the latest version to the marker file
         const file = io_helper.createFile(marker_path, .{ .truncate = true }) catch {
             return .{ .exit_code = 0 };
         };
         defer io_helper.closeFile(file);
         io_helper.writeAllToFile(file, latest_version) catch {};
     } else {
-        // Up to date - remove marker if it exists
         io_helper.deleteFile(marker_path) catch {};
     }
 

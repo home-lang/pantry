@@ -40,7 +40,7 @@ export const recipe: Recipe = {
         if: '^6.1.2',
       },
       'make all',
-      'make install PREFIX="{{prefix}}"',
+      'make install PREFIX={{prefix}}',
     ],
     env: {
       darwin: {

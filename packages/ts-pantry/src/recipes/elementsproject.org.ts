@@ -47,7 +47,7 @@ export const recipe: Recipe = {
     ],
     env: {
       'CXX': 'c++',
-      'ARGS': ['--prefix="{{prefix}}"', '--with-incompatible-bdb', '--enable-liquid', '--with-boost={{deps.boost.org.prefix}}', '--without-bdb'],
+      'ARGS': ['--prefix={{prefix}}', '--with-incompatible-bdb', '--enable-liquid', '--with-boost={{deps.boost.org.prefix}}', '--without-bdb'],
     },
   },
 }

@@ -17,7 +17,7 @@ export const recipe: Recipe = {
       'npm i -g patch-package',
       'export PATH="$HOME/.local/bin:$PATH"',
       '',
-      'npm install . --global --install-links --prefix="{{prefix}}"',
+      'npm install . --global --install-links --prefix={{prefix}}',
     ],
   },
 }

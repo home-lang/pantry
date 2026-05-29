@@ -31,7 +31,7 @@ export const recipe: Recipe = {
       'make --jobs {{hw.concurrency}} install',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--with-openssl="{{deps.openssl.org.prefix}}"', '--with-readline="{{deps.gnu.org/readline.prefix}}"', '--with-libidn2="{{deps.gnu.org/libidn2.prefix}}"'],
+      'ARGS': ['--prefix={{prefix}}', '--with-openssl={{deps.openssl.org.prefix}}', '--with-readline={{deps.gnu.org/readline.prefix}}', '--with-libidn2={{deps.gnu.org/libidn2.prefix}}'],
     },
   },
 }

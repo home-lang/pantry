@@ -25,7 +25,7 @@ export const recipe: Recipe = {
     ],
     env: {
       'LDFLAGS': ['-X github.com/zricethezav/gitleaks/v{{version.major}}/cmd.Version={{version}}', '-X github.com/zricethezav/gitleaks/v{{version.major}}/version.Version={{version}}'],
-      'GO_ARGS': ['-trimpath', '-o="{{prefix}}/bin/gitleaks"'],
+      'GO_ARGS': ['-trimpath', '-o={{prefix}}/bin/gitleaks'],
     },
   },
 }

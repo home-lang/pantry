@@ -27,7 +27,7 @@ export const recipe: Recipe = {
       'install -D include/pa_mac_core.h {{prefix}}/include/',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--enable-mac-universal=no', '--enable-cxx'],
+      'ARGS': ['--prefix={{prefix}}', '--enable-mac-universal=no', '--enable-cxx'],
     },
   },
 }

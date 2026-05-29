@@ -29,7 +29,7 @@ export const recipe: Recipe = {
       'make --jobs {{hw.concurrency}} install',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--disable-dependency-tracking', '--disable-oggtest', '--disable-vorbistest', '--disable-examples'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-dependency-tracking', '--disable-oggtest', '--disable-vorbistest', '--disable-examples'],
     },
   },
 }

@@ -28,7 +28,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"', '--enable-install-man'],
+      'ARGS': ['--prefix={{prefix}}', '--enable-install-man'],
     },
   },
 }

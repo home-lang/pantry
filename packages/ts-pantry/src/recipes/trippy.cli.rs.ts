@@ -26,7 +26,7 @@ export const recipe: Recipe = {
       'cargo install $CARGO_ARGS --path crates/trippy',
     ],
     env: {
-      'CARGO_ARGS': ['--locked', '--root="{{prefix}}"'],
+      'CARGO_ARGS': ['--locked', '--root={{prefix}}'],
     },
   },
 }

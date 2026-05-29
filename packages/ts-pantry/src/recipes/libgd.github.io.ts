@@ -38,7 +38,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--disable-dependency-tracking', '--prefix="{{prefix}}"', '--with-zlib'],
+      'ARGS': ['--disable-dependency-tracking', '--prefix={{prefix}}', '--with-zlib'],
     },
   },
 }

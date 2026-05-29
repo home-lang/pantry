@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       'sed -i\'\' -e \'s|#!/.* -s|#!/usr/bin/env python|g\' {{prefix}}/bin/itstool',
     ],
     env: {
-      'ARGS': ['--prefix="{{prefix}}"'],
+      'ARGS': ['--prefix={{prefix}}'],
     },
   },
 }
