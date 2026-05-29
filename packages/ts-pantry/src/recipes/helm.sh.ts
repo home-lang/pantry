@@ -21,8 +21,13 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'sed -i -f $PROP Makefile',
-      'mkdir -p "{{prefix}}/bin"',
+      {
+        run: 'sed -i -f $PROP Makefile',
+        prop: {
+          content: 's/unreleased//g\ns/\\(shell find . .* -print\\)/\\1 | grep -v dev.pkgx./\n',
+        },
+      },
+      'mkdir -p {{prefix}}/bin',
       'make install VERSION=v{{version}} INSTALL_PATH={{prefix}}/bin',
     ],
   },

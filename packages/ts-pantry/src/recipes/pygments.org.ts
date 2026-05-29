@@ -8,7 +8,7 @@ export const recipe: Recipe = {
   github: 'https://github.com/pygments/pygments',
   programs: ['pygmentize'],
   versionSource: {
-    type: 'github-releases',
+    type: 'github-tags',
     repo: 'pygments/pygments',
   },
   distributable: {
@@ -22,12 +22,18 @@ export const recipe: Recipe = {
   build: {
     script: [
       'python-venv.sh {{prefix}}/bin/pygmentize',
-      'cd "${{prefix}}/venv/lib/python3.11/site-packages"',
-      'if [ -d Pygments ]; then',
-      '  mv Pygments foo',
-      '  mv foo pygments',
-      'fi',
-      '',
+      // Rename Pygments to pygments because python and macOS can't agree
+      // on case sensitivity. Only relevant on darwin's case-insensitive FS.
+      {
+        run: [
+          'if [ -d Pygments ]; then',
+          '  mv Pygments foo',
+          '  mv foo pygments',
+          'fi',
+        ],
+        'working-directory': '{{prefix}}/venv/lib/python3.11/site-packages',
+        if: 'darwin',
+      },
     ],
   },
 }

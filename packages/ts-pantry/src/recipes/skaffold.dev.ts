@@ -17,12 +17,18 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: '{{prefix}}',
     script: [
       'curl -Lfo skaffold https://storage.googleapis.com/skaffold/releases/v{{version}}/skaffold-$PLATFORM',
       'chmod +x skaffold',
       'mkdir -p bin',
       'mv skaffold bin',
-      '',
     ],
+    env: {
+      'darwin/aarch64': { PLATFORM: 'darwin-arm64' },
+      'darwin/x86-64': { PLATFORM: 'darwin-amd64' },
+      'linux/aarch64': { PLATFORM: 'linux-arm64' },
+      'linux/x86-64': { PLATFORM: 'linux-amd64' },
+    },
   },
 }

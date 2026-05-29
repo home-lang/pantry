@@ -22,13 +22,16 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cd "xcaddy"',
-      'curl -L "$XCADDY" | tar zxf - --strip-components 1',
-      'go run cmd/xcaddy/main.go build v{{version}} --output {{prefix}}/bin/caddy',
-      '',
+      {
+        run: [
+          'curl -L "$XCADDY" | tar zxf - --strip-components 1',
+          'go run cmd/xcaddy/main.go build v{{version}} --output {{prefix}}/bin/caddy',
+        ],
+        'working-directory': 'xcaddy',
+      },
     ],
     env: {
-      'XCADDY': 'https://github.com/caddyserver/xcaddy/archive/refs/tags/v0.3.5.tar.gz',
+      XCADDY: 'https://github.com/caddyserver/xcaddy/archive/refs/tags/v0.3.5.tar.gz',
     },
   },
 }

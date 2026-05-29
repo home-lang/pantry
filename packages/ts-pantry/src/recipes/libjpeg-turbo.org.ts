@@ -17,10 +17,22 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
 
+  buildDependencies: {
+    'cmake.org': '^3',
+  },
+
   build: {
+    workingDirectory: 'build',
     script: [
       'cmake .. $ARGS',
       'make --jobs {{hw.concurrency}} install',
     ],
+    env: {
+      ARGS: [
+        '-DCMAKE_INSTALL_PREFIX={{prefix}}',
+        '-DCMAKE_BUILD_TYPE=Release',
+        '-DWITH_JPEG8=1',
+      ],
+    },
   },
 }

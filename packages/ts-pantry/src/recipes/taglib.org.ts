@@ -21,17 +21,22 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'cmake.org': '*',
+    linux: {
+      'gnu.org/gcc': '*',
+    },
   },
 
   build: {
     script: [
       'cmake $CMAKE_ARGS',
       'make --jobs {{hw.concurrency}} install',
-      'cd "{{prefix}}/bin"',
-      'sed -i -e "s|prefix=|prefix=\\$(dirname \\$0)/..|g" -e "s|{{prefix}}|\\$(dirname \\$0)/..|g" taglib-config',
+      {
+        run: 'sed -i -e "s|prefix=|prefix=\\$(dirname \\$0)/..|g" -e "s|{{prefix}}|\\$(dirname \\$0)/..|g" taglib-config',
+        'working-directory': '{{prefix}}/bin',
+      },
     ],
     env: {
-      'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX="{{prefix}}', '-DCMAKE_INSTALL_LIBDIR=lib', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF', '-DWITH_MP4=ON', '-DWITH_ASF=ON', '-DBUILD_SHARED_LIBS=ON'],
+      'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_LIBDIR=lib', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF', '-DWITH_MP4=ON', '-DWITH_ASF=ON', '-DBUILD_SHARED_LIBS=ON'],
     },
   },
 }

@@ -16,18 +16,42 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   buildDependencies: {
-    'deno.land': '~2',
-    'rust-lang.org': '^1.56',
-    'perl.org': '5',
+    'deno.land': '~2', // since 1.3.0
+    'rust-lang.org': '^1.56', // since 2.0
+    'perl.org': '5', // since 2.0
+    // provides llvm-ar, required for the linux rust build (AR env below)
+    'llvm.org': { linux: '*' },
   },
 
   build: {
-    script: [
-      'cd "${{prefix}}/bin"',
-      'deno task --config "$SRCROOT"/deno.jsonc compile',
-      'cargo install --path crates/cli --root "{{prefix}}"',
-      'strip \'{{prefix}}/bin/pkgx\'',
-    ],
+    // patchelf messes with Deno's ability to find the DATA block, making it
+    // operate as only a bloated Deno binary
     skip: ['fix-patchelf'],
+    env: {
+      'linux/aarch64': {
+        // deno's pre-built runtime doesn't support glibc old enough
+        DENORT_BIN: '{{deps.deno.land.prefix}}/bin/denort',
+      },
+      linux: {
+        // llvm-ar is required for rust builds
+        AR: 'llvm-ar',
+        // otherwise it complains about XZ_5.4 symbols
+        LZMA_API_STATIC: '1',
+      },
+    },
+    script: [
+      {
+        run: 'deno task --config "$SRCROOT"/deno.jsonc compile',
+        'working-directory': '${{prefix}}/bin',
+        if: '<2',
+      },
+      {
+        run: [
+          'cargo install --path crates/cli --root "{{prefix}}"',
+          'strip \'{{prefix}}/bin/pkgx\'',
+        ],
+        if: '>=2',
+      },
+    ],
   },
 }

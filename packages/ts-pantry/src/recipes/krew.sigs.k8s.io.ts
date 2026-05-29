@@ -13,7 +13,11 @@ export const recipe: Recipe = {
   },
   distributable: {
     url: 'git+https://github.com/kubernetes-sigs/krew',
-  },
+    // pkgx pins the git checkout to the release tag (`ref: v{{version}}`).
+    // The buildkit reads `distributable.ref`, so carry it back to build the
+    // requested version rather than the default branch HEAD.
+    ref: 'v{{version}}',
+  } as Recipe['distributable'] & { ref: string },
   dependencies: {
     'git-scm.org': '*',
   },

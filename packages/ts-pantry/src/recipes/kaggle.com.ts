@@ -11,7 +11,7 @@ export const recipe: Recipe = {
     repo: 'Kaggle/kaggle-api',
   },
   distributable: {
-    url: 'https://github.com/Kaggle/kaggle-api/archive/refs/tags/{{version}}.tar.gz',
+    url: 'https://github.com/Kaggle/kaggle-api/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {
@@ -19,6 +19,9 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'python.org': '^3.12',
+    linux: {
+      'llvm.org': '*',
+    },
   },
 
   build: {

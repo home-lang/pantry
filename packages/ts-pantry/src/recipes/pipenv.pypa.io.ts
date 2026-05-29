@@ -19,7 +19,7 @@ export const recipe: Recipe = {
     'pkgx.sh': '>=1',
   },
   buildDependencies: {
-    'python.org': '>=3.11',
+    'python.org': '~3.11', // approx. 3 — older versions won't work with python 3.12
     'crates.io/semverator': '*',
   },
 
@@ -28,18 +28,26 @@ export const recipe: Recipe = {
       'bkpyvenv stage {{prefix}} {{version}}',
       '${{prefix}}/venv/bin/pip install .',
       'bkpyvenv seal {{prefix}} pipenv',
-      'cd "${{prefix}}/lib"',
-      'cp -a {{deps.python.org.prefix}}/lib/libpython* .',
-      'cd "${{prefix}}/bin"',
-      'v=3.6',
-      'vMax=3.14',
-      'while semverator lt $v $vMax; do',
-      '  v=$(semverator bump $v minor | cut -d. -f1,2)',
-      '  echo \'#!/bin/sh\' > python$v',
-      '  echo "exec pkgx python~$v \\"\\$@\\"" >> python$v',
-      '  chmod +x python$v',
-      'done',
-      '',
+      // bring in libpython for linux
+      {
+        run: 'cp -a {{deps.python.org.prefix}}/lib/libpython* .',
+        if: 'linux',
+        'working-directory': '${{prefix}}/lib',
+      },
+      // create exec scripts for pipenv so it can auto install and use the pythons it wants
+      {
+        'working-directory': '${{prefix}}/bin',
+        run: [
+          'v=3.6',
+          'vMax=3.14',
+          'while semverator lt $v $vMax; do',
+          '  v=$(semverator bump $v minor | cut -d. -f1,2)',
+          '  echo \'#!/bin/sh\' > python$v',
+          '  echo "exec pkgx python~$v \\"\\$@\\"" >> python$v',
+          '  chmod +x python$v',
+          'done',
+        ],
+      },
     ],
   },
 }

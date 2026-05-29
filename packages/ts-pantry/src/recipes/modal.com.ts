@@ -8,7 +8,7 @@ export const recipe: Recipe = {
   github: 'https://github.com/modal-labs/modal-client',
   programs: [],
   versionSource: {
-    type: 'github-releases',
+    type: 'github-tags',
     repo: 'modal-labs/modal-client',
   },
   distributable: {
@@ -21,21 +21,42 @@ export const recipe: Recipe = {
   buildDependencies: {
     'python.org': '>=3.9<3.13',
     'protobuf.dev': '*',
+    'linux/aarch64': {
+      'cython.org': '*', // needed to build grpcio-tools
+    },
   },
 
   build: {
     script: [
-      'python3 -m pip install --break-system-packages "setuptools<78" wheel 2>/dev/null || pip3 install --break-system-packages "setuptools<78" wheel 2>/dev/null || true',
       'bkpyvenv stage {{prefix}} {{version}}',
-      'PROTO1=modal_proto/options.proto',
-      'PROTO2=modal_proto/options.proto',
-      'PROTO1=modal_proto/task_command_router.proto',
-      'PROTO2=',
-      'source {{prefix}}/venv/bin/activate',
-      'pip install grpcio-tools>=1.68.0 grpclib',
-      'python -m grpc_tools.protoc --python_out=. --grpclib_python_out=. --grpc_python_out=. -I . modal_proto/api.proto $PROTO1',
-      'python -m grpc_tools.protoc --plugin=protoc-gen-modal-grpclib-python=protoc_plugin/plugin.py --modal-grpclib-python_out=. -I . modal_proto/api.proto $PROTO2',
+
+      // needs to build the protocol files
+      // see modal-labs/modal-client/.github/workflows/ci-cd.yml L88-94
+      {
+        run: [
+          'PROTO1=modal_proto/options.proto',
+          'PROTO2=modal_proto/options.proto',
+        ],
+        if: '<1.2',
+      },
+      {
+        run: [
+          'PROTO1=modal_proto/task_command_router.proto',
+          'PROTO2=',
+        ],
+        if: '>=1.2',
+      },
+      {
+        run: [
+          'source {{prefix}}/venv/bin/activate',
+          'pip install grpcio-tools==1.59.2 grpclib==0.4.7',
+          'python -m grpc_tools.protoc --python_out=. --grpclib_python_out=. --grpc_python_out=. -I . modal_proto/api.proto $PROTO1',
+          'python -m grpc_tools.protoc --plugin=protoc-gen-modal-grpclib-python=protoc_plugin/plugin.py --modal-grpclib-python_out=. -I . modal_proto/api.proto $PROTO2',
+        ],
+      },
+
       'pip install .',
+
       'bkpyvenv seal {{prefix}} modal',
     ],
   },

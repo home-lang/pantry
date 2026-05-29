@@ -28,15 +28,20 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'freedesktop.org/pkg-config': '*',
-    'mesonbuild.com': '*',
-    'ninja-build.org': '*',
   },
 
   build: {
     script: [
-      'meson setup build --prefix="$PREFIX" --libdir="$PREFIX/lib" --buildtype=release',
-      'meson compile -C build --verbose',
-      'meson install -C build',
+      // versions didn't get bumped in 4.0.0 source; rewrite the hardcoded
+      // 3.4.1 string in configure to match the tarball version (no-op for 3.4.1).
+      {
+        run: [
+          'sed -i.bak -e \'s/3\\.4\\.1/{{version}}/g\' configure',
+          'rm configure.bak',
+        ],
+      },
+      './configure $ARGS',
+      'make --jobs {{hw.concurrency}} install',
     ],
     env: {
       'ARGS': ['--prefix={{prefix}}'],

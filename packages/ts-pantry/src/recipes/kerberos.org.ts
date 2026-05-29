@@ -23,11 +23,11 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'src',
     script: [
       './configure $ARGS',
       'make --jobs {{hw.concurrency}}',
       'make install',
-      '',
     ],
     env: {
       'ARGS': ['--prefix={{prefix}}', '--disable-nls', '--without-system-verto', '--without-keyutils'],

@@ -8,16 +8,25 @@ export const recipe: Recipe = {
     url: 'https://gitlab.com/libeigen/eigen/-/archive/{{version}}/eigen-{{version}}.tar.gz',
     stripComponents: 1,
   },
+  dependencies: {
+    linux: {
+      'gnu.org/gcc/libstdcxx': '14',
+    },
+  },
   buildDependencies: {
     'cmake.org': '^3',
   },
 
   build: {
+    workingDirectory: 'build',
     script: [
       'cmake .. -DCMAKE_INSTALL_PREFIX={{prefix}}',
       'make install',
-      'cd "${{prefix}}"',
-      'ln -s share lib',
+      // the libraries are in share for some reason
+      {
+        run: 'ln -s share lib',
+        'working-directory': '{{prefix}}',
+      },
     ],
   },
 }

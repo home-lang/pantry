@@ -23,7 +23,7 @@ export const recipe: Recipe = {
       'cmake --install build',
     ],
     env: {
-      'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX="{{prefix}}', '-DCMAKE_BUILD_TYPE=Release', '-DJSON_BuildTests=OFF', '-DJSON_MultipleHeaders=ON'],
+      'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release', '-DJSON_BuildTests=OFF', '-DJSON_MultipleHeaders=ON'],
     },
   },
 }

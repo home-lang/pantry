@@ -10,10 +10,13 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'rome/tools',
-    tagPattern: /^v(.+)$/,
+    // Rome's CLI releases are tagged `cli/v12.1.3` (the repo also carries
+    // `lsp/v*`, `js-api/v*` and `*-nightly`/`*-next` prerelease tags).
+    tagPattern: /^cli\/v(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/rome/tools/archive/refs/tags/v{{version}}.tar.gz',
+    // Tag is `cli/v{{version}}`, so the source tarball path includes the prefix.
+    url: 'https://github.com/rome/tools/archive/refs/tags/cli/v{{version}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {
@@ -22,6 +25,9 @@ export const recipe: Recipe = {
   },
 
   build: {
+    // pkgx builds from the `crates/rome_cli` workspace member, not the
+    // workspace root (the root Cargo.toml is a virtual manifest with no bin).
+    workingDirectory: 'crates/rome_cli',
     script: [
       'sed -i.bak \'s/version = "0.0.0"/version = "{{version}}"/\' Cargo.toml',
       'rm Cargo.toml.bak',

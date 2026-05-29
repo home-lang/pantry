@@ -17,11 +17,11 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'build',
     script: [
       'cmake .. $ARGS',
       'make install',
       'mv src/libssh.a {{prefix}}/lib',
-      '',
     ],
     env: {
       'ARGS': ['-DBUILD_STATIC_LIB=ON', '-DWITH_SYMBOL_VERSIONING=OFF', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_INSTALL_PREFIX={{prefix}}'],

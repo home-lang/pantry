@@ -19,15 +19,20 @@ export const recipe: Recipe = {
     'zlib.net': '^1',
     'libjpeg-turbo.org': '^2',
     'openssl.org': '^1.1',
+    'gnutls.org': '^3',
+    // needs newer libstdc++ for C++20 support
+    'linux': { 'gnu.org/gcc/libstdcxx': '^14' },
   },
   buildDependencies: {
     'cmake.org': '^3',
     'pyyaml.org/libyaml': '*',
     'python.org': '^3',
     'pip.pypa.io': '*',
+    'linux': { 'gnu.org/gcc': '^14' },
   },
 
   build: {
+    workingDirectory: 'build',
     script: [
       'python -m venv venv',
       'source venv/bin/activate',

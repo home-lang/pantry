@@ -20,6 +20,10 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'python.org': '^3.7',
+    // tox uses hatch-vcs (version.source = "vcs"); the buildkit shim does
+    // `git init` + tag v{{version}} so hatchling can resolve the version,
+    // which requires git to be present (mirrors the pytest.org sibling).
+    'git-scm.org': '^2',
   },
 
   build: {

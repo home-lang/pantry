@@ -21,13 +21,20 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cd "internal/version"',
-      'sed -i \'s/info.Main.Version/"{{version}}"/g\' version.go',
+      {
+        run: 'sed -i \'s/info.Main.Version/"{{version}}"/g\' version.go',
+        'working-directory': 'internal/version',
+      },
       'go build -o {{prefix}}/bin/task -ldflags="$GO_LDFLAGS" ./cmd/task',
     ],
     env: {
       'GOBIN': '${{prefix}}/bin',
       'GO_LDFLAGS': ['-s', '-w', '-X github.com/go-task/task/v3/internal/version.version={{version}}'],
+      // Linux needs -buildmode=pie or the resulting binary segfaults.
+      // https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+      'linux': {
+        GO_LDFLAGS: ['-s', '-w', '-X github.com/go-task/task/v3/internal/version.version={{version}}', '-buildmode=pie'],
+      },
     },
   },
 }

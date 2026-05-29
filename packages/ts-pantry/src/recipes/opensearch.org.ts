@@ -16,93 +16,158 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   dependencies: {
-    'openjdk.org': '^21',
+    'openjdk.org': '^21', // since v3
     'openmp.llvm.org': '^19',
+    // on mac we use the Accelerate framework instead, on linux this is linked statically
+    linux: {
+      'netlib.org/lapack': '*',
+    },
   },
   buildDependencies: {
     'cmake.org': '3',
     'git-scm.org': '*',
     'gnu.org/wget': '*',
-    'gnu.org/gcc': '^11',
+    'gnu.org/gcc': '^11', // for gfortran
   },
 
   build: {
     script: [
-      'if test "{{hw.platform}}+{{hw.arch}}" = "darwin+x86-64"; then',
-      'sed -i \'s|JNAKernel32Library.getInstance();|//JNAKernel32Library.getInstance();|\' server/src/main/java/org/opensearch/bootstrap/Bootstrap.java',
-      'fi',
+      // there seems to be a loader bug with trying to dlopen libc on macos 12 and earlier.
+      // remove this step when macos 12 and under are no longer supported.
+      {
+        run: [
+          'if test "{{hw.platform}}+{{hw.arch}}" = "darwin+x86-64"; then',
+          'sed -i \'s|JNAKernel32Library.getInstance();|//JNAKernel32Library.getInstance();|\' server/src/main/java/org/opensearch/bootstrap/Bootstrap.java',
+          'fi',
+        ],
+        if: '^2',
+      },
       './gradlew -Dbuild.snapshot=false ":distribution:archives:no-jdk-{{hw.platform}}-tar:assemble"',
-      'cd "${{prefix}}"',
-      'tar --strip-components=1 -xf $SRCROOT/distribution/archives/no-jdk-{{hw.platform}}-tar/build/distributions/opensearch-*.tar.gz',
-      'cd "${{prefix}}"',
-      'if test "{{hw.platform}}+{{hw.arch}}" = "darwin+x86-64"; then',
-      'rm -f lib/jna-*.jar',
-      'fi',
-      'cd "${{prefix}}/config"',
-      'sed -i.bak "s|#\\s*cluster.name: .*|cluster.name: opensearch_pkgx|" opensearch.yml',
-      'cd "k-NN"',
-      'if [ -d .git ]; then',
-      '  git fetch',
-      'else',
-      '  git clone https://github.com/opensearch-project/k-NN .',
-      'fi',
-      '',
-      'git checkout {{version}}.0',
-      'git reset --hard',
-      'git submodule foreach --recursive git reset --hard',
-      'git submodule update --init --recursive',
-      'git config --global user.email "hello@pkgx.dev"',
-      'git config --global user.name "pkgx"',
-      'cd "k-NN/jni/external"',
-      'if test "{{hw.platform}}+{{hw.arch}}" = "darwin+aarch64"; then',
-      'sed -i -e \'s/-march=native/-mcpu=apple-m1/g\' nmslib/similarity_search/CMakeLists.txt',
-      'sed -i -e \'s/-mcpu=apple-a14/-mcpu=apple-m1/g\' nmslib/python_bindings/setup.py',
-      'sed -i -e \'s/__aarch64__/__undefine_aarch64__/g\' faiss/faiss/utils/distances_simd.cpp',
-      'fi',
-      'cd "k-NN"',
-      'sed -i -f $PROP jni/CMakeLists.txt jni/cmake/*.cmake',
-      'export CC=clang',
-      'export CXX=clang++',
-      'cd "k-NN/jni/external/nmslib/similarity_search"',
-      'if test "{{hw.arch}}" = "x86-64"; then',
-      '  sed -i.bak -e \'s/-march=native/-march=x86-64/g\' CMakeLists.txt',
-      'fi',
-      '',
-      'cd "k-NN/jni"',
-      'cmake . $CMAKE_ARGS',
-      'make',
-      'cd "k-NN/jni/release"',
-      'for LIB in *.jnilib; do',
-      '  install_name_tool -add_rpath @loader_path $LIB',
-      'done',
-      '',
-      'cd "k-NN"',
-      './gradlew build --refresh-dependencies -x integTest -x test -DskipTests=true -Dopensearch.version={{version}} -Dbuild.snapshot=false -Dbuild.version_qualifier=',
-      './gradlew publishPluginZipPublicationToZipStagingRepository -Dopensearch.version={{version}} -Dbuild.snapshot=false -Dbuild.version_qualifier=',
-      './gradlew publishPluginZipPublicationToMavenLocal -Dbuild.snapshot=false -Dbuild.version_qualifier= -Dopensearch.version={{version}}',
-      'cd "k-NN"',
-      'mkdir -p ./build/distributions/lib',
-      'cp -v ./jni/release/libopensearchknn* ./build/distributions/lib',
-      'cd ./build/distributions',
-      'zip -r opensearch-knn-{{version}}.0.zip lib/',
-      'TMP=$(mktemp -d /tmp/opensearch-knn-XXXXXX)',
-      'rmdir $TMP',
-      'ln -s {{prefix}} $TMP',
-      '$TMP/bin/opensearch-plugin install --batch file:`pwd`/opensearch-knn-{{version}}.0.zip',
-      'cd "${{prefix}}/bin"',
-      'echo \'export JAVA_LIBRARY_PATH="$OPENSEARCH_HOME/plugins/opensearch-knn/lib:$JAVA_LIBRARY_PATH"\' >> opensearch-env',
-      'cd "${{prefix}}/bin"',
-      'echo \'export LD_LIBRARY_PATH="$OPENSEARCH_HOME/plugins/opensearch-knn/lib:$LD_LIBRARY_PATH"\' >> opensearch-env',
-      'sed -i.bak \'1a\\',
-      '# Auto-discover JAVA_HOME from java on PATH if not explicitly set\\',
-      'if [ -z "$OPENSEARCH_JAVA_HOME" ] && [ -z "$JAVA_HOME" ]; then\\',
-      '  _java_bin=$(command -v java 2>/dev/null)\\',
-      '  if [ -n "$_java_bin" ]; then\\',
-      '    _java_real=$(readlink -f "$_java_bin" 2>/dev/null || echo "$_java_bin")\\',
-      '    export JAVA_HOME=$(cd "$(dirname "$_java_real")/.." && pwd)\\',
-      '  fi\\',
-      '  unset _java_bin _java_real\\',
-      'fi\' "{{prefix}}/bin/opensearch-env" && rm -f "{{prefix}}/bin/opensearch-env.bak"',
+      {
+        run: 'tar --strip-components=1 -xf $SRCROOT/distribution/archives/no-jdk-{{hw.platform}}-tar/build/distributions/opensearch-*.tar.gz',
+        'working-directory': '${{prefix}}',
+      },
+      {
+        run: 'sed -i "s|#\\s*cluster.name: .*|cluster.name: opensearch_pkgx|" opensearch.yml',
+        'working-directory': '${{prefix}}/config',
+      },
+
+      // checkout k-NN plugin
+      {
+        run: [
+          'if [ -d .git ]; then',
+          '  git fetch',
+          'else',
+          '  git clone https://github.com/opensearch-project/k-NN .',
+          'fi',
+          'git checkout {{version}}.0',
+          'git reset --hard',
+          'git submodule foreach --recursive git reset --hard',
+          'git submodule update --init --recursive',
+          'git config --global user.email "hello@pkgx.dev"',
+          'git config --global user.name "pkgx"',
+          'sed -i \'s|\\.withP2Mirrors(Map.of("https://download.eclipse.org/", "https://mirror.umd.edu/eclipse/"))||\' gradle/formatting.gradle',
+        ],
+        'working-directory': 'k-NN',
+      },
+
+      // workarounds for m1 build. see: https://github.com/opensearch-project/k-NN/blob/main/DEVELOPER_GUIDE.md#extra-setup-for-mac-m1-machines
+      {
+        run: [
+          'if test "{{hw.platform}}+{{hw.arch}}" = "darwin+aarch64"; then',
+          'sed -i -e \'s/-march=native/-mcpu=apple-m1/g\' nmslib/similarity_search/CMakeLists.txt',
+          'sed -i -e \'s/-mcpu=apple-a14/-mcpu=apple-m1/g\' nmslib/python_bindings/setup.py',
+          'sed -i -e \'s/__aarch64__/__undefine_aarch64__/g\' faiss/faiss/utils/distances_simd.cpp',
+          'sed -i \'/#pragma message WARN("ScalarProductSIMD<float>: SSE2 is not available/d\' nmslib/similarity_search/src/distcomp_scalar.cc',
+          'fi',
+        ],
+        if: '<3.4.0',
+        'working-directory': 'k-NN/jni/external',
+      },
+
+      {
+        run: [
+          'sed -i -f $PROP jni/CMakeLists.txt jni/cmake/*.cmake',
+          'export CC=clang',
+          'export CXX=clang++',
+        ],
+        prop: 's|/usr/local/opt/libomp/|{{deps.openmp.llvm.org.prefix}}/|g\ns|/opt/homebrew/opt/libomp/|{{deps.openmp.llvm.org.prefix}}/|g\n',
+        if: 'darwin',
+        'working-directory': 'k-NN',
+      },
+
+      // this is recommended in https://github.com/opensearch-project/k-NN/blob/45e9e542aef60ef7073ee726e6ac14dec27bfa04/scripts/build.sh#L91-L94
+      {
+        run: [
+          'if test "{{hw.arch}}" = "x86-64"; then',
+          '  sed -i -e \'s/-march=native/-march=x86-64/g\' CMakeLists.txt',
+          'fi',
+        ],
+        'working-directory': 'k-NN/jni/external/nmslib/similarity_search',
+        if: '^2',
+      },
+      {
+        run: [
+          'cmake . $CMAKE_ARGS -DCONFIG_FAISS=ON -DCONFIG_NMSLIB=ON -DCONFIG_TEST=OFF',
+          'make',
+        ],
+        'working-directory': 'k-NN/jni',
+      },
+      {
+        run: [
+          'for LIB in *.jnilib; do',
+          '  if ! otool -l "$LIB" | grep -q \'path @loader_path \'; then',
+          '    install_name_tool -add_rpath @loader_path "$LIB"',
+          '  fi',
+          'done',
+        ],
+        'working-directory': 'k-NN/jni/release',
+        if: 'darwin',
+      },
+      {
+        run: [
+          './gradlew build --refresh-dependencies -x integTest -x test -DskipTests=true -Dopensearch.version={{version}} -Dbuild.snapshot=false -Dbuild.version_qualifier=',
+          './gradlew publishPluginZipPublicationToZipStagingRepository -Dopensearch.version={{version}} -Dbuild.snapshot=false -Dbuild.version_qualifier=',
+          './gradlew publishPluginZipPublicationToMavenLocal -Dbuild.snapshot=false -Dbuild.version_qualifier= -Dopensearch.version={{version}}',
+        ],
+        'working-directory': 'k-NN',
+      },
+      {
+        run: [
+          'mkdir -p ./build/distributions/lib',
+          'cp -v ./jni/release/libopensearchknn* ./build/distributions/lib',
+          'cd ./build/distributions',
+          'zip -r opensearch-knn-{{version}}.0.zip lib/',
+          // the code doesn't like the + in the path
+          'TMP=$(mktemp -d /tmp/opensearch-knn-XXXXXX)',
+          'rmdir $TMP',
+          'ln -s {{prefix}} $TMP',
+          '$TMP/bin/opensearch-plugin install --batch file:`pwd`/opensearch-knn-{{version}}.0.zip',
+        ],
+        'working-directory': 'k-NN',
+      },
+      {
+        run: 'echo \'export JAVA_LIBRARY_PATH="$OPENSEARCH_HOME/plugins/opensearch-knn/lib:$JAVA_LIBRARY_PATH"\' >> opensearch-env',
+        'working-directory': '${{prefix}}/bin',
+        if: 'darwin',
+      },
+      {
+        run: 'echo \'export LD_LIBRARY_PATH="$OPENSEARCH_HOME/plugins/opensearch-knn/lib:$LD_LIBRARY_PATH"\' >> opensearch-env',
+        'working-directory': '${{prefix}}/bin',
+        if: 'linux',
+      },
     ],
+    env: {
+      'linux/x86-64': {
+        // ld: release/libopensearchknn_faiss_avx2.so: undefined reference to `_gfortran_concat_string'
+        LDFLAGS: '$LDFLAGS -Wl,-lgfortran',
+      },
+      linux: {
+        CMAKE_ARGS: [
+          '-DLAPACK_LIBRARIES={{deps.netlib.org/lapack.prefix}}/lib/liblapack.so.{{deps.netlib.org/lapack.version.major}}',
+          '-DBLAS_LIBRARIES={{deps.netlib.org/lapack.prefix}}/lib/libblas.so.{{deps.netlib.org/lapack.version.major}}',
+        ],
+      },
+    },
   },
 }

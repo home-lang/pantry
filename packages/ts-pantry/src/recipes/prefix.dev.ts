@@ -27,8 +27,8 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cargo install --locked --path . --root {{prefix}}',
-      'cargo install --locked --path crates/pixi --root {{prefix}}',
+      { run: 'cargo install --locked --path . --root {{prefix}}', if: '<0.54' },
+      { run: 'cargo install --locked --path crates/pixi --root {{prefix}}', if: '>=0.54' },
     ],
   },
 }

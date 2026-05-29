@@ -16,6 +16,11 @@ export const recipe: Recipe = {
     url: 'https://github.com/randy408/libspng/archive/refs/tags/v{{version}}.tar.gz',
     stripComponents: 1,
   },
+  dependencies: {
+    darwin: {
+      'zlib.net': '*',
+    },
+  },
   buildDependencies: {
     'ninja-build.org': '1',
     'freedesktop.org/pkg-config': '*',
@@ -23,11 +28,11 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'build',
     script: [
       'meson .. --prefix={{prefix}} --libdir={{prefix}}/lib --buildtype=release',
       'ninja -v',
       'ninja install -v',
-      '',
     ],
   },
 }

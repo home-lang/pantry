@@ -23,14 +23,30 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go mod download',
-      'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o \'{{prefix}}/bin/steampipe\' .',
-      'goreleaser build --clean --single-target --skip=validate',
-      'install -Dm755 "dist/steampipe_${PLATFORM}/steampipe" "{{prefix}}"/bin/steampipe',
+      {
+        run: 'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o \'{{prefix}}/bin/steampipe\' .',
+        if: '<2.1',
+      },
+      {
+        run: [
+          'goreleaser build --clean --single-target --skip=validate',
+          'install -Dm755 "dist/steampipe_${PLATFORM}/steampipe" "{{prefix}}"/bin/steampipe',
+        ],
+        if: '>=2.1',
+      },
     ],
     env: {
+      // as of v2.1.0
+      'darwin/aarch64': { PLATFORM: 'darwin_arm64_v8.0', GOARCH: 'arm64', GOOS: 'darwin' },
+      'darwin/x86-64': { PLATFORM: 'darwin_amd64_v1', GOARCH: 'amd64', GOOS: 'darwin' },
+      'linux/aarch64': { PLATFORM: 'linux_arm64_v8.0', GOARCH: 'arm64', GOOS: 'linux' },
+      'linux/x86-64': { PLATFORM: 'linux_amd64_v1', GOARCH: 'amd64', GOOS: 'linux' },
       'GO111MODULE': 'on',
       'CGO_ENABLED': '0',
       'GO_LDFLAGS': ['-s', '-w', '-X github.com/turbot/steampipe/pkg/version.steampipeVersion={{version}}'],
+      // linux: or segmentation fault
+      // fix found here https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+      'linux': { GO_LDFLAGS: ['-buildmode=pie'] },
     },
   },
 }

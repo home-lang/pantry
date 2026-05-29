@@ -16,7 +16,13 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   dependencies: {
-    'erlang.org': '*',
+    'erlang.org': '26',
+    'openssl.org': '^1.1',
+    linux: {
+      // since v4.2.4 for GCC_12.0.0 and GLIBCXX_3.4.29
+      'gnu.org/gcc': '14',
+      'gnu.org/gcc/libstdcxx': '14',
+    },
   },
 
   build: {

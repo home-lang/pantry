@@ -16,6 +16,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   dependencies: {
+    'apache.org/arrow': '19',
     'heasarc.gsfc.nasa.gov/cfitsio': '*',
     'epsilon-project.sourceforge.io': '*',
     'libexpat.github.io': '*',
@@ -55,12 +56,22 @@ export const recipe: Recipe = {
     'zlib.net': '*',
     'dkrz.de/libaec': '*',
     'github.com/ebiggers/libdeflate': '*',
+    linux: {
+      'curl.se': '*',
+      'gnu.org/gcc/libstdcxx': '14',
+      'github.com/util-linux/util-linux': '*',
+      'apache.org/thrift': '=0.22.0',
+    },
   },
   buildDependencies: {
     'boost.org': '*',
     'cmake.org': '*',
     'swig.org': '*',
     'doxygen.nl': '*',
+    linux: {
+      'gnu.org/gcc': '14',
+      'nixos.org/patchelf': '*',
+    },
   },
 
   build: {
@@ -68,21 +79,47 @@ export const recipe: Recipe = {
       'cmake -S . -B build $CMAKE_ARGS',
       'cmake --build build',
       'cmake --install build',
-      'cd "{{prefix}}/bin"',
-      'sed -i "s|{{prefix}}|\\$(dirname \\$0)/..|g" gdal-config',
-      'sed -i "s|{{pkgx.prefix}}|\\$(dirname \\$0)/../../..|g" gdal-config',
-      'cd "{{prefix}}/lib"',
-      'ln -s python{{deps.python.org.version.marketing}} python{{deps.python.org.version.major}}',
-      'cd "{{prefix}}"',
-      'ldd lib/libgdal.so',
-      'ldd bin/gdalinfo',
-      'patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so lib/libgdal.so',
-      'patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so bin/gdalinfo',
-      'ldd lib/libgdal.so',
-      'ldd bin/gdalinfo',
+      {
+        run: [
+          'sed -i "s|{{prefix}}|\\$(dirname \\$0)/..|g" gdal-config',
+          'sed -i "s|{{pkgx.prefix}}|\\$(dirname \\$0)/../../..|g" gdal-config',
+        ],
+        'working-directory': '{{prefix}}/bin',
+      },
+      {
+        run: 'ln -s python{{deps.python.org.version.marketing}} python{{deps.python.org.version.major}}',
+        'working-directory': '{{prefix}}/lib',
+      },
+      // sqlite3 full path in the bins
+      {
+        run: [
+          'ldd lib/libgdal.so',
+          'ldd bin/gdalinfo',
+          'patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so lib/libgdal.so',
+          'patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so bin/gdalinfo',
+          'ldd lib/libgdal.so',
+          'ldd bin/gdalinfo',
+        ],
+        if: 'linux',
+        'working-directory': '{{prefix}}',
+      },
     ],
     env: {
-      'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_LIBDIR=lib', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF', '-DENABLE_PAM=ON', '-DCMAKE_CXX_STANDARD=17'],
+      'CC': 'clang',
+      'CXX': 'clang++',
+      'LD': 'clang',
+      'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_LIBDIR=lib', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF', '-DENABLE_PAM=ON', '-DCMAKE_CXX_STANDARD=17', '-DCMAKE_CXX_STANDARD_REQUIRED=ON'],
+      // otherwise it uses libdeflate from openexr
+      'darwin': {
+        LDFLAGS: '$LDFLAGS {{deps.github.com/ebiggers/libdeflate.prefix}}/lib/libdeflate.dylib',
+      },
+      'linux': {
+        CC: 'gcc',
+        CXX: 'g++',
+        LD: 'gcc',
+        CMAKE_ARGS: ['-DCMAKE_EXE_LINKER_FLAGS=-Wl,--allow-shlib-undefined'],
+        LDFLAGS: '$LDFLAGS {{deps.github.com/ebiggers/libdeflate.prefix}}/lib/libdeflate.so',
+      },
     },
   },
 }

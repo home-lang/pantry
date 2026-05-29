@@ -39,6 +39,11 @@ export const recipe: Recipe = {
     'libsdl.org/SDL_ttf': '2',
     'pngquant.org/lib': '*',
     'zlib.net': '*',
+    // pkgx declares libpaper as a linux-only runtime dep (tuxpaint links it for
+    // print-paper-size support); it was dropped in the auto-conversion.
+    linux: {
+      'github.com/rrthomas/libpaper': '*',
+    },
   },
   buildDependencies: {
     'freedesktop.org/appstream': '*',

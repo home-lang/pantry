@@ -16,10 +16,13 @@ export const recipe: Recipe = {
     url: 'https://github.com/pre-commit/pre-commit/archive/refs/tags/v{{version}}.tar.gz',
     stripComponents: 1,
   },
+  dependencies: {
+    'python.org': '>=3.9<3.14',
+  },
 
   build: {
     script: [
-      '  repo: https://github.com/pre-commit/pre-commit-hooks',
+      'python-venv.sh {{prefix}}/bin/pre-commit',
     ],
   },
 }

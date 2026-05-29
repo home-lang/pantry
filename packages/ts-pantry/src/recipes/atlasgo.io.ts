@@ -16,20 +16,22 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   buildDependencies: {
-    'go.dev': '^1.20',
+    'go.dev': '^1.24',
   },
 
   build: {
+    workingDirectory: 'cmd/atlas',
     script: [
       'go mod download',
-      'go build -v -trimpath -ldflags="$LDFLAGS" -o $BUILDLOC .',
+      'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/atlas .',
     ],
     env: {
-      'GOPROXY': 'https://proxy.golang.org,direct',
-      'GOSUMDB': 'sum.golang.org',
       'GO111MODULE': 'on',
-      'BUILDLOC': '{{prefix}}/bin/atlas',
-      'LDFLAGS': ['-s', '-w', '-X ariga.io/atlas/cmd/atlas/internal/cmdapi.version=v{{version}}'],
+      'GO_LDFLAGS': ['-s', '-w', '-X ariga.io/atlas/cmd/atlas/internal/cmdapi.version=v{{version}}'],
+      // linux: or segmentation fault — https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+      'linux': {
+        GO_LDFLAGS: ['-s', '-w', '-X ariga.io/atlas/cmd/atlas/internal/cmdapi.version=v{{version}}', '-buildmode=pie'],
+      },
     },
   },
 }

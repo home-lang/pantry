@@ -20,14 +20,19 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cd "${{prefix}}"',
-      'mkdir -p bin libexec/lib',
-      'cp apktool_{{version}}.jar {{prefix}}/libexec/lib/',
-      'cd "${{prefix}}/bin"',
-      'echo \'#!/bin/sh\' > apktool',
-      'echo \'java -jar $(dirname $0)/../libexec/lib/apktool_{{version}}.jar "$@"\' >> apktool',
-      'chmod +x apktool',
-      '',
+      {
+        run: 'mkdir -p bin libexec/lib',
+        'working-directory': '${{prefix}}',
+      },
+      'cp apktool.org-{{version}}.jar {{prefix}}/libexec/lib/',
+      {
+        run: [
+          'echo \'#!/bin/sh\' > apktool',
+          'echo \'java -jar $(dirname $0)/../libexec/lib/apktool.org-{{version}}.jar "$@"\' >> apktool',
+          'chmod +x apktool',
+        ],
+        'working-directory': '${{prefix}}/bin',
+      },
     ],
   },
 }

@@ -14,6 +14,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'gradle-{{version.raw}}',
     script: [
       'find bin -name \\*.bat -exec rm {} \\;',
       'mkdir -p {{prefix}}',

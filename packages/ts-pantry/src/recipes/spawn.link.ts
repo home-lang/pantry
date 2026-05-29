@@ -23,11 +23,28 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cd "tools"',
-      'sed -i -e \'s/^VERSION=.*/VERSION={{version}}/\' update-version',
-      'cd "buildtools"',
-      'sed -i -e \'s/^VERSION=.*/VERSION={{version}}/\' update-version',
-      'sed -i -e \'/\\(chown\\|chmod\\|CHOWN\\|CHMOD\\)/d\' libfuse/Makefile',
+      // Set the version
+      {
+        run: 'sed -i -e \'s/^VERSION=.*/VERSION={{version}}/\' update-version',
+        if: '<2.39',
+        'working-directory': 'tools',
+      },
+      {
+        run: 'sed -i -e \'s/^VERSION=.*/VERSION={{version}}/\' update-version',
+        if: '>=2.39',
+        'working-directory': 'buildtools',
+      },
+
+      // Don't try to chown/chmod on install
+      {
+        run: 'sed -i -e \'/\\(chown\\|chmod\\|CHOWN\\|CHMOD\\)/d\' libfuse/Makefile',
+        if: '<2.42',
+      },
+      {
+        run: 'sed -i -e \'/\\(chown\\|chmod\\|CHOWN\\|CHMOD\\)/d\' vendored/libfuse/Makefile',
+        if: '>=2.42',
+      },
+
       'make --jobs {{hw.concurrency}}',
       'make install DESTDIR={{prefix}} PREFIX=""',
     ],
@@ -35,6 +52,10 @@ export const recipe: Recipe = {
       'CFLAGS': '-Wno-implicit-function-declaration',
       'CC': 'clang',
       'CXX': 'clang++',
+      // since 2.41.0
+      'linux': {
+        LDFLAGS: '-Wl,-lstdc++fs',
+      },
     },
   },
 }

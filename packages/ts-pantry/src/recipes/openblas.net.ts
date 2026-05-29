@@ -17,18 +17,28 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'cmake.org': '*',
+    linux: {
+      'gnu.org/gcc': '*', // uses some gcc-specific flags
+    },
   },
 
   build: {
+    workingDirectory: 'build',
     script: [
       'cmake .. $ARGS',
       'make --jobs {{hw.concurrency}}',
       'make install',
-      'cd "${{prefix}}/include"',
-      'if test -d openblas/openblas; then rm -r openblas/openblas; fi',
+      // removing a redundant directory with a duplicate file
+      {
+        run: 'if test -d openblas/openblas; then rm -r openblas/openblas; fi',
+        'working-directory': '{{prefix}}/include',
+      },
     ],
     env: {
-      'ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_C_FLAGS="-fPIC"', '-DCMAKE_CXX_FLAGS="-fPIC"'],
+      'ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_C_FLAGS=-fPIC', '-DCMAKE_CXX_FLAGS=-fPIC'],
+      'x86-64': {
+        ARGS: ['-DDYNAMIC_ARCH=ON'],
+      },
     },
   },
 }

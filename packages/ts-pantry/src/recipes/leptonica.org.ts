@@ -12,6 +12,14 @@ export const recipe: Recipe = {
     repo: 'DanBloomberg/leptonica',
     tagPattern: /^v(.+)$/,
   },
+  dependencies: {
+    'giflib.sourceforge.io': '5',
+    'libjpeg-turbo.org': '2',
+    'libpng.org': '1',
+    'simplesystems.org/libtiff': '4',
+    'openjpeg.org': '*',
+    'google.com/webp': '*',
+  },
   distributable: {
     url: 'https://github.com/DanBloomberg/leptonica/releases/download/{{version}}/leptonica-{{version}}.tar.gz',
     stripComponents: 1,
@@ -22,8 +30,11 @@ export const recipe: Recipe = {
       './configure $ARGS',
       'make --jobs {{hw.concurrency}}',
       'make install',
-      'wget https://people.math.sc.edu/Burkardt/data/tif/at3_1m4_01.tif',
-      'fileinfo at3_1m4_01.tif',
     ],
+    env: {
+      ARGS: [
+        '--prefix={{prefix}}',
+      ],
+    },
   },
 }

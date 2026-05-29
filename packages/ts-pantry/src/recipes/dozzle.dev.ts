@@ -26,11 +26,11 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'make -j {{hw.concurrency}} tools',
-      'cd "${{prefix}}/bin"',
-      'cp ~/go/bin/* .',
+      { run: 'make -j {{hw.concurrency}} tools', if: '<10' },
+      { run: 'cp ~/go/bin/* .', if: '<10', 'working-directory': '${{prefix}}/bin' },
       'pnpm install',
-      'sudo launchctl limit maxfiles 16384 16384',
+      // otherwise on darwin/aarch64: EMFILE: too many open files, watch
+      { run: 'sudo launchctl limit maxfiles 16384 16384', if: 'darwin/aarch64' },
       'make dist generate',
       'go build -ldflags "$GO_LDFLAGS" -o {{prefix}}/bin/dozzle .',
     ],

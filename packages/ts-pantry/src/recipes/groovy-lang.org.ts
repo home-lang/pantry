@@ -5,14 +5,23 @@ export const recipe: Recipe = {
   name: 'groovy-lang',
   description: 'Apache Groovy — a powerful, optionally typed and dynamic language for the Java platform',
   programs: ['grape', 'grape_completion', 'groovy', 'groovyc', 'groovyc_completion', 'groovy_completion', 'groovyConsole', 'groovyConsole_completion', 'groovydoc', 'groovydoc_completion', 'groovysh', 'groovysh_completion', 'java2groovy', 'startGroovy'],
+  dependencies: {
+    'openjdk.org': '17',
+  },
+  buildDependencies: {
+    'waterlan.home.xs4all.nl/dos2unix': '*',
+  },
   distributable: {
     url: 'https://groovy.jfrog.io/artifactory/dist-release-local/groovy-zips/apache-groovy-binary-{{version}}.zip',
   },
 
   build: {
+    workingDirectory: 'groovy-{{version}}',
     script: [
       'find bin -name "*.bat" -exec rm {} \\;',
       'mkdir -p "{{prefix}}"',
+      // 3.0.24 shipped with CRLF line endings, so we need to convert them to LF
+      { run: 'dos2unix * || true', 'working-directory': 'bin' },
       'cp -a bin conf lib "{{prefix}}"',
     ],
   },

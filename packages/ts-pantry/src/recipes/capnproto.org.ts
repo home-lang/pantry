@@ -10,6 +10,9 @@ export const recipe: Recipe = {
   },
   dependencies: {
     'zlib.net': '*',
+    linux: {
+      'openssl.org': '^1.1',
+    },
   },
   buildDependencies: {
     'cmake.org': '^3',

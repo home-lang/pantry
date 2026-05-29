@@ -16,20 +16,24 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   dependencies: {
+    'gnu.org/bash': '*',
     'crates.io/fd-find': '*',
     'pip.pypa.io': '*',
     'python.org': '^3',
     'nodejs.org': '*',
     'rust-lang.org/cargo': '*',
+    'neovim.io': '*',
   },
   buildDependencies: {
     'cmake.org': '*',
+    'gnu.org/bash': '*',
   },
 
   build: {
     script: [
       './utils/installer/install.sh -y -l',
       './utils/installer/install_bin.sh',
+      './utils/installer/install-neovim-from-release',
       'cd "${{prefix}}/share/lunarvim"',
       'rm lvim',
       'mkdir lvim',

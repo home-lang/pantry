@@ -29,26 +29,45 @@ export const recipe: Recipe = {
   build: {
     script: [
       'cpanm -l {{prefix}}/libexec $PKGS --force --notest --verbose',
-      'cd "pkgs/SGMLSpm"',
-      'curl -L "https://cpan.metacpan.org/authors/id/R/RA/RAAB/SGMLSpm-1.1.tar.gz" | \\',
-      '  tar -xz --strip-components=1',
-      'cpanm -l {{prefix}}/libexec .',
-      '',
-      'cd "pkgs/TermReadKey"',
-      'curl -L "https://cpan.metacpan.org/authors/id/J/JS/JSTOWE/TermReadKey-2.38.tar.gz" | \\',
-      '  tar -xz --strip-components=1',
-      'cpanm -l {{prefix}}/libexec .',
-      '',
+
+      {
+        run: [
+          'curl -L "https://cpan.metacpan.org/authors/id/R/RA/RAAB/SGMLSpm-1.1.tar.gz" | \\',
+          '  tar -xz --strip-components=1',
+          'cpanm -l {{prefix}}/libexec .',
+        ],
+        'working-directory': 'pkgs/SGMLSpm',
+      },
+
+      {
+        run: [
+          'curl -L "https://cpan.metacpan.org/authors/id/J/JS/JSTOWE/TermReadKey-2.38.tar.gz" | \\',
+          '  tar -xz --strip-components=1',
+          'cpanm -l {{prefix}}/libexec .',
+        ],
+        'working-directory': 'pkgs/TermReadKey',
+      },
+
+      // xsltproc fails to parse the remote xsl file; skip xml docs
       'sed -i -e "s|/usr/share/xml/docbook/stylesheet/docbook-xsl|{{deps.docbook.org/xsl.prefix}}/libexec/docbook-xsl-ns|" -e "s/if ( \\$\\^O ne \'MSWin32\' )/if (0)/" Po4aBuilder.pm',
       'perl Build.PL --install_base {{prefix}}/libexec',
       './Build',
       './Build install',
-      'cd "${{prefix}}/share/man"',
-      'ln -s ../../libexec/man/man? .',
-      'cd "${{prefix}}/libexec/bin"',
-      'sed -i "s|{{deps.perl.org.prefix}}/bin/perl|/usr/bin/env perl|" *',
-      'cd "${{prefix}}"',
-      'ln -s ./libexec/bin bin',
+
+      {
+        run: 'ln -s ../../libexec/man/man? .',
+        'working-directory': '${{prefix}}/share/man',
+      },
+
+      {
+        run: 'sed -i "s|{{deps.perl.org.prefix}}/bin/perl|/usr/bin/env perl|" *',
+        'working-directory': '${{prefix}}/libexec/bin',
+      },
+
+      {
+        run: 'ln -s ./libexec/bin bin',
+        'working-directory': '${{prefix}}',
+      },
     ],
     env: {
       'PERL5LIB': '${{prefix}}/libexec/lib/perl5:$PERL5LIB',

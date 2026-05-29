@@ -7,10 +7,23 @@ export const recipe: Recipe = {
   homepage: 'https://git-quick-stats.sh/',
   github: 'https://github.com/arzzen/git-quick-stats',
   programs: ['git-quick-stats'],
+  dependencies: {
+    'git-scm.org': '*',
+    'gnu.org/bash': '*',
+    // requires GNU `date` since 2.5.5
+    'gnu.org/coreutils': '*',
+    // needs `tput` since 2.7.0
+    'invisible-island.net/ncurses': '~6.4.0',
+    linux: {
+      // bin/column
+      'github.com/util-linux/util-linux': '*',
+    },
+  },
   versionSource: {
-    type: 'github-releases',
+    type: 'github-tags',
     repo: 'arzzen/git-quick-stats',
-    tagPattern: /^v(.+)$/,
+    // tags are bare version numbers, e.g. 2.5.7
+    tagPattern: /^(\d.+)$/,
   },
   distributable: {
     url: 'https://github.com/arzzen/git-quick-stats/archive/refs/tags/{{version}}.tar.gz',
@@ -19,8 +32,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'git clone https://github.com/pkgxdev/pkgx',
-      'git -C pkgx quick-stats -T',
+      'make PREFIX={{prefix}} install',
     ],
   },
 }

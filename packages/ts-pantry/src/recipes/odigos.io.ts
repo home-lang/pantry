@@ -20,6 +20,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'cli',
     script: [
       'go mod download',
       'go build $ARGS -ldflags="$GO_LDFLAGS" ./',
@@ -28,6 +29,11 @@ export const recipe: Recipe = {
       'CGO_ENABLED': '0',
       'GO_LDFLAGS': ['-s', '-w', '-X github.com/keyval-dev/odigos/cli/cmd.OdigosVersion=v{{version}}', '-X github.com/odigos-io/odigos/cli/cmd.OdigosVersion=v{{version}}'],
       'ARGS': ['-v', '-trimpath', '-o={{prefix}}/bin/odigos', '-tags embed_manifests'],
+      // linux needs -buildmode=pie to avoid a segfault
+      // https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+      'linux': {
+        GO_LDFLAGS: ['-s', '-w', '-X github.com/keyval-dev/odigos/cli/cmd.OdigosVersion=v{{version}}', '-X github.com/odigos-io/odigos/cli/cmd.OdigosVersion=v{{version}}', '-buildmode=pie'],
+      },
     },
   },
 }

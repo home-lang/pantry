@@ -25,28 +25,33 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'pip3 install --break-system-packages uv 2>/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh 2>/dev/null || true',
-      'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"',
-      'cd "sdk"',
-      'go mod download',
-      'cd "pkg"',
-      'go mod download',
+      { run: 'go mod download', 'working-directory': 'sdk' },
+      { run: 'go mod download', 'working-directory': 'pkg' },
       'mkdir -p {{prefix}}/bin',
-      'cd "sdk"',
-      'sed -i.bak \'s/-ldflags "/-ldflags "-buildmode=pie /\' */Makefile',
-      'cd "sdk"',
-      'for DIR in go nodejs; do',
-      '  make -C $DIR install_plugin PULUMI_BIN={{prefix}}/bin',
-      'done',
-      '',
-      'cd "pkg"',
-      'go build -ldflags "$GO_LDFLAGS" -o {{prefix}}/bin/pulumi ./cmd/pulumi',
-      './scripts/prep-for-goreleaser.sh "local"',
-      'cp -a bin/$(go env GOOS)*/* {{prefix}}/bin/',
+      // needs this fix to prevent segfaults
+      { run: 'sed -i.bak \'s/-ldflags "/-ldflags "-buildmode=pie /\' */Makefile', 'working-directory': 'sdk' },
+      {
+        run: [
+          'for DIR in go nodejs python; do',
+          '  make -C $DIR install_plugin PULUMI_BIN={{prefix}}/bin',
+          'done',
+        ],
+        'working-directory': 'sdk',
+      },
+      // The next steps are modified from scripts/brew.sh
+      {
+        run: 'go build -ldflags "$GO_LDFLAGS" -o {{prefix}}/bin/pulumi ./cmd/pulumi',
+        'working-directory': 'pkg',
+      },
+      { run: './scripts/prep-for-goreleaser.sh "local"', 'working-directory': 'pkg' },
+      { run: 'cp -a bin/$(go env GOOS)*/* {{prefix}}/bin/', 'working-directory': 'pkg' },
     ],
     env: {
       'GOPATH': '$PWD/build',
       'GO_LDFLAGS': ['-X github.com/pulumi/pulumi/pkg/v3/version.Version={{version}}'],
+      'linux': {
+        GO_LDFLAGS: ['-buildmode=pie'],
+      },
     },
   },
 }

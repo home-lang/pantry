@@ -27,7 +27,10 @@ export const recipe: Recipe = {
       'cmake --install build',
     ],
     env: {
-      'ARGS': ['-DCMAKE_INSTALL_PREFIX="{{prefix}}', '-DCMAKE_INSTALL_LIBDIR=lib', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF', '-DURIPARSER_BUILD_TESTS=OFF', '-DURIPARSER_BUILD_DOCS=OFF'],
+      'ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_LIBDIR=lib', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF', '-DURIPARSER_BUILD_TESTS=OFF', '-DURIPARSER_BUILD_DOCS=OFF'],
+      'linux': {
+        'ARGS': ['-DCMAKE_C_FLAGS=-D_GNU_SOURCE'],
+      },
     },
   },
 }

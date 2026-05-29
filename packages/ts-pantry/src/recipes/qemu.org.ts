@@ -12,10 +12,14 @@ export const recipe: Recipe = {
   },
   dependencies: {
     'gnome.org/glib': '2',
+    'capstone-engine.org': '^4',
     'pixman.org': '^0',
     'gnutls.org': '^3',
+    'freedesktop.org/slirp': '^4',
+    'virtualsquare.org/vde': '^2',
     'facebook.com/zstd': '^1',
     'invisible-island.net/ncurses': '^6',
+    'libssh.org': '^0',
     'libpng.org': '^1',
   },
   buildDependencies: {
@@ -28,15 +32,23 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'pip3 install distlib 2>/dev/null || python3 -m pip install distlib 2>/dev/null || true',
-      'ARGS="$ARGS --enable-virtfs"',
-      'sed -i.bak -e"s/-isystem\', /-isystem\' + /g" meson.build',
+      // TODO: linux virtfs <8 requires attr and libcap-ng
+      { run: 'ARGS="$ARGS --enable-virtfs"', if: '>=8' },
+
+      // https://gitlab.com/qemu-project/qemu/-/issues/1853
+      { run: 'sed -i -e"s/-isystem\', /-isystem\' + /g" meson.build', if: '>=8.1.4' },
+
       './configure $ARGS',
       'make --jobs {{hw.concurrency}} install',
-      'xattr -cr {{prefix}}/bin/*',
+
+      // Without this, `codesign` complains about resource forks in the binary
+      { run: 'xattr -cr {{prefix}}/bin/*', if: 'darwin' },
     ],
     env: {
-      'ARGS': ['--prefix={{prefix}}', '--disable-bsd-user', '--disable-guest-agent', '--enable-slirp', '--enable-capstone', '--enable-curses', '--enable-libssh', '--enable-zstd', '--extra-cflags=-DNCURSES_WIDECHAR=1', '--disable-sdl', '--disable-docs', '--disable-slirp', '--disable-capstone', '--disable-libssh'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-bsd-user', '--disable-guest-agent', '--enable-slirp', '--enable-capstone', '--enable-curses', '--enable-libssh', '--enable-vde', '--enable-zstd', '--extra-cflags=-DNCURSES_WIDECHAR=1', '--disable-sdl', '--disable-docs'],
+      'darwin': {
+        ARGS: ['--enable-virtfs'],
+      },
     },
   },
 }

@@ -7,20 +7,23 @@ export const recipe: Recipe = {
   homepage: 'https://ytdl-org.github.io/youtube-dl/',
   github: 'https://github.com/ytdl-org/youtube-dl',
   programs: ['youtube-dl'],
+  // Upstream repo is no longer active; pkgx pins a specific master commit
+  // (86e3cf5e58) released as 2023.08.04 to capture an important fix.
   versionSource: {
-    type: 'github-releases',
-    repo: 'ytdl-org/youtube-dl',
-    tagPattern: /^v(.+)$/,
+    type: 'custom',
+    fetch: async () => ['2023.08.04'],
   },
   distributable: {
-    url: 'https://github.com/ytdl-org/youtube-dl/archive/refs/tags/{{version.tag}}.tar.gz',
+    url: 'https://github.com/ytdl-org/youtube-dl/archive/86e3cf5e58.tar.gz',
     stripComponents: 1,
+  },
+  dependencies: {
+    'python.org': '>=3<3.12',
   },
 
   build: {
     script: [
-      'make PREFIX={{prefix}}',
-      'make install PREFIX={{prefix}}',
+      'python-venv.sh {{prefix}}/bin/youtube-dl',
     ],
   },
 }

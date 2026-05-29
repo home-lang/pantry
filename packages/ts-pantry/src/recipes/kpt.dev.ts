@@ -28,6 +28,10 @@ export const recipe: Recipe = {
     ],
     env: {
       'LDFLAGS': ['-s', '-w', '-X github.com/GoogleContainerTools/kpt/run.version={{version}}'],
+      // linux: or segmentation fault — https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+      'linux': {
+        LDFLAGS: ['-s', '-w', '-X github.com/GoogleContainerTools/kpt/run.version={{version}}', '-buildmode=pie'],
+      },
     },
   },
 }

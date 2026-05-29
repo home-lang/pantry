@@ -17,11 +17,28 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
 
+  buildDependencies: {
+    'rust-lang.org': '>=1.56',
+    'rust-lang.org/cargo': '*',
+  },
+
   build: {
     script: [
-      'run: ln -s "$(command -v clang)" aarch64-linux-gnu-gcc',
-      'run: cargo install --locked --path . --root {{prefix}}',
-      'run: cargo install --locked --path dotenv-cli --root {{prefix}}',
+      // linux/aarch64 looks for aarch64-linux-gnu-gcc
+      {
+        run: 'ln -s "$(command -v clang)" aarch64-linux-gnu-gcc',
+        if: 'linux/aarch64',
+        'working-directory': '$HOME/.local/bin',
+      },
+      // <4: the crate root is an installable package
+      { run: 'cargo install --locked --path . --root {{prefix}}', if: '<4' },
+      // >=4: the workspace root is a virtual manifest; the binary lives in dotenv-cli
+      { run: 'cargo install --locked --path dotenv-cli --root {{prefix}}', if: '>=4' },
     ],
+    env: {
+      'linux/aarch64': {
+        PATH: '$HOME/.local/bin:$PATH',
+      },
+    },
   },
 }

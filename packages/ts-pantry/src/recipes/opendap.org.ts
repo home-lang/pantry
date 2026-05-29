@@ -20,25 +20,40 @@ export const recipe: Recipe = {
     'gnome.org/libxml2': '*',
     'openssl.org': '*',
     'curl.se': '*',
+    linux: {
+      'sourceforge.net/libtirpc': '*',
+      'github.com/util-linux/util-linux': '*',
+    },
   },
   buildDependencies: {
     'gnu.org/bison': '*',
     'freedesktop.org/pkg-config': '*',
     'github.com/westes/flex': '*',
     'gnu.org/patch': '*',
+    linux: {
+      'gnu.org/autoconf': '*',
+      'gnu.org/automake': '*',
+      'gnu.org/libtool': '*',
+    },
   },
 
   build: {
     script: [
       'curl $PATCH | patch -p1 || true',
-      'autoreconf --force --install --verbose',
+      { run: 'autoreconf --force --install --verbose', if: 'linux' },
       './configure $ARGS',
       'make --jobs {{hw.concurrency}}',
       'make --jobs {{hw.concurrency}} check',
       'make --jobs {{hw.concurrency}} install',
     ],
     env: {
-      'ARGS': ['--prefix={{prefix}}', '--disable-dependency-tracking', '--disable-debug', '--with-included-regex'],
+      darwin: {
+        PATCH: 'https://raw.githubusercontent.com/Homebrew/formula-patches/03cf8088210822aa2c1ab544ed58ea04c897d9c4/libtool/configure-big_sur.diff',
+      },
+      linux: {
+        PATCH: 'https://github.com/OPENDAP/libdap4/commit/48b44b96faf1ed1e44f118828c3de903fff0a276.patch?full_index=1',
+      },
+      ARGS: ['--prefix={{prefix}}', '--disable-dependency-tracking', '--disable-debug', '--with-included-regex'],
     },
   },
 }

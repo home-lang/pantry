@@ -24,6 +24,9 @@ export const recipe: Recipe = {
     'openssl.org': '^1.1',
     'facebook.com/zstd': '*',
     'lz4.org': '*',
+    linux: {
+      'savannah.nongnu.org/acl': '^2.3.1',
+    },
   },
 
   build: {
@@ -38,7 +41,11 @@ export const recipe: Recipe = {
       'BORG_LIBLZ4_PREFIX': '{{deps.lz4.org.prefix}}',
       'BORG_LIBZSTD_PREFIX': '{{deps.facebook.com/zstd.prefix}}',
       'BORG_LIBXXHASH_PREFIX': '{{deps.github.com/Cyan4973/xxHash.prefix}}',
-      'BORG_LIBACL_PREFIX': '{{deps.savannah.nongnu.org/acl.prefix}}',
+      // libacl is Linux-only; on darwin BORG_LIBACL_PREFIX must be unset
+      // (macOS has no libacl) so it stays inside the linux-keyed group.
+      'BORG_LIBACL_PREFIX': {
+        linux: '{{deps.savannah.nongnu.org/acl.prefix}}',
+      },
     },
   },
 }

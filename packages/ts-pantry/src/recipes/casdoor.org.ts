@@ -20,19 +20,28 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cd "web"',
-      'yarn install --frozen-lockfile --network-timeout 1000000',
-      'NODE_OPTIONS="--max-old-space-size=4096" yarn run build',
-      '',
-      'cd "${BUILD_DIR}"',
-      'mkdir -p ${FRONTEND_PATH}',
-      'cp -R . ${FRONTEND_PATH}',
-      '',
-      'go build ${GO_ARGS} -ldflags="${GO_LDFLAGS}" ./',
-      'cd "conf"',
-      'mkdir -p ${SAMPLE_CONFIG_PATH}',
-      'cp ${PWD}/app.conf ${SAMPLE_CONFIG_PATH}',
-      '',
+      {
+        'working-directory': 'web',
+        run: [
+          'yarn install --network-timeout 1000000',
+          'NODE_OPTIONS="--max-old-space-size=4096" yarn run build',
+        ],
+      },
+      {
+        'working-directory': '${BUILD_DIR}',
+        run: [
+          'mkdir -p ${FRONTEND_PATH}',
+          'cp -R . ${FRONTEND_PATH}',
+        ],
+      },
+      { run: 'go build ${GO_ARGS} -ldflags="${GO_LDFLAGS}" ./' },
+      {
+        'working-directory': 'conf',
+        run: [
+          'mkdir -p ${SAMPLE_CONFIG_PATH}',
+          'cp ${PWD}/app.conf ${SAMPLE_CONFIG_PATH}',
+        ],
+      },
     ],
     env: {
       'BUILD_DIR': 'web/build',
@@ -41,6 +50,9 @@ export const recipe: Recipe = {
       'CGO_ENABLED': '0',
       'GO_ARGS': ['-o "{{prefix}}/bin/"'],
       'GO_LDFLAGS': ['-s', '-w'],
+      'linux': {
+        GO_LDFLAGS: ['-s', '-w', '-buildmode=pie'],
+      },
     },
   },
 }

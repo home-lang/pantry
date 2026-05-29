@@ -22,15 +22,27 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cd "bin"',
-      'perl -pi -e "s/\'Laravel Installer\', \'[0-9\\.]*\'/\'Laravel Installer\', \'{{version}}\'/" laravel',
+      // 5.11.1 shipped as 5.11.0 — pin the reported version
+      {
+        run: 'sed -i "s/\'Laravel Installer\', \'[0-9\\.]*\'/\'Laravel Installer\', \'{{version}}\'/" laravel',
+        'working-directory': 'bin',
+      },
       'composer install --no-dev',
       'mkdir -p {{prefix}}/libexec',
       'cp -r ./* {{prefix}}/libexec',
-      'cd "${{prefix}}/bin"',
-      'ln -s ../libexec/bin/laravel laravel',
-      'cd "${{prefix}}/libexec/src"',
-      'sed -i -f $PROP NewCommand.php',
+      {
+        run: 'ln -s ../libexec/bin/laravel laravel',
+        'working-directory': '${{prefix}}/bin',
+      },
+      // patch installer so `laravel new` projects pass LD_LIBRARY_PATH to `artisan serve`
+      {
+        run: 'sed -i -f $PROP NewCommand.php',
+        if: 'linux',
+        'working-directory': '${{prefix}}/libexec/src',
+        prop: {
+          content: '/))->isSuccessful/a\\\n            $this->replaceInFile("\'PATH\',", "\'PATH\',\\n        \'LD_LIBRARY_PATH\',", "$directory/vendor/laravel/framework/src/Illuminate/Foundation/Console/ServeCommand.php");\n',
+        },
+      },
     ],
   },
 }

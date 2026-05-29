@@ -20,16 +20,18 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cd "src"',
-      'go build $ARGS -ldflags="$LDFLAGS"',
+      { run: 'go build $ARGS -ldflags="$LDFLAGS"', 'working-directory': 'src' },
       'cp -r themes {{prefix}}/',
-      'cd "${{prefix}}/share/oh-my-posh"',
-      'ln -s ../../themes themes',
+      'mkdir -p {{prefix}}/share/oh-my-posh',
+      { run: 'ln -s ../../themes themes', 'working-directory': '{{prefix}}/share/oh-my-posh' },
     ],
     env: {
       'VERSION_DATE': '$(date -u +%FT%TZ)',
       'ARGS': ['-trimpath', '-o={{prefix}}/bin/oh-my-posh'],
       'LDFLAGS': ['-s', '-w', '-X github.com/jandedobbeleer/oh-my-posh/src/build.Version={{version}}', '-X github.com/jandedobbeleer/oh-my-posh/src/build.Date=${VERSION_DATE}'],
+      'linux': {
+        LDFLAGS: ['-s', '-w', '-X github.com/jandedobbeleer/oh-my-posh/src/build.Version={{version}}', '-X github.com/jandedobbeleer/oh-my-posh/src/build.Date=${VERSION_DATE}', '-buildmode=pie'],
+      },
     },
   },
 }

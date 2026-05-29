@@ -20,6 +20,9 @@ export const recipe: Recipe = {
     'protobuf.dev': '26.1.0',
     'invisible-island.net/ncurses': '6',
     'zlib.net': '1.3',
+    'linux': {
+      'openssl.org': '3',
+    },
   },
 
   build: {
@@ -31,6 +34,9 @@ export const recipe: Recipe = {
       'ARGS': ['--prefix={{prefix}}', '--enable-completion', '--disable-silent-rules'],
       'CFLAGS': ['-DNDEBUG'],
       'CXXFLAGS': ['-std=gnu++17'],
+      'darwin': {
+        LDFLAGS: ['-Wl,-dead_strip_dylibs'],
+      },
     },
   },
 }

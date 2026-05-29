@@ -15,15 +15,29 @@ export const recipe: Recipe = {
     url: 'git+https://github.com/kubernetes-sigs/kubebuilder',
   },
   buildDependencies: {
-    'go.dev': '~1.25.3',
+    'go.dev': '~1.25.3', // as of v4.11.1
     'gnu.org/coreutils': '*',
+    'goreleaser.com': '*', // as of v4.11.1
   },
 
   build: {
     script: [
-      'go build -ldflags="$GO_LDFLAGS" -o \'{{prefix}}/bin/kubebuilder\' ./cmd',
-      'go build -ldflags="$GO_LDFLAGS" -o \'{{prefix}}/bin/kubebuilder\'',
-      'go build -ldflags="$GO_LDFLAGS" -o \'{{prefix}}/bin/kubebuilder\' .',
+      {
+        run: 'go build -ldflags="$GO_LDFLAGS" -o \'{{prefix}}/bin/kubebuilder\' ./cmd',
+        if: '<4.5.2',
+      },
+      {
+        run: 'go build -ldflags="$GO_LDFLAGS" -o \'{{prefix}}/bin/kubebuilder\'',
+        if: '>=4.5.2<4.11.1',
+      },
+      {
+        run: [
+          'rm -rf props',
+          'goreleaser build --clean --single-target --skip=validate',
+          'install -Dm755 dist/kubebuilder_$(go env GOOS)_$(go env GOARCH)*/kubebuilder \'{{prefix}}/bin/kubebuilder\'',
+        ],
+        if: '>=4.11.1',
+      },
     ],
     env: {
       'CGO_ENABLED': '0',

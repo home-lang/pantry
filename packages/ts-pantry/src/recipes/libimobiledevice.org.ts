@@ -37,8 +37,16 @@ export const recipe: Recipe = {
       'if [ -d "$BREW_LT_SHARE" ]; then',
       '  export ACLOCAL_PATH="${BREW_LT_SHARE}${ACLOCAL_PATH:+:$ACLOCAL_PATH}"',
       'fi',
-      'sed -i \'s|PLIST_FORMAT_XML|PLIST_FORMAT_XML_|g\' common/utils.h',
-      'sed -i \'s|PLIST_FORMAT_BINARY|PLIST_FORMAT_BINARY_|g\' common/utils.h',
+      // Only needed for <1.3.1, where common/utils.h redefines enumerators
+      // (error: redefinition of enumerator 'PLIST_FORMAT_XML'/'PLIST_FORMAT_BINARY').
+      // Fixed upstream in 1.3.1; applying the sed on newer trees corrupts the source.
+      {
+        run: [
+          'sed -i \'s|PLIST_FORMAT_XML|PLIST_FORMAT_XML_|g\' common/utils.h',
+          'sed -i \'s|PLIST_FORMAT_BINARY|PLIST_FORMAT_BINARY_|g\' common/utils.h',
+        ],
+        if: '<1.3.1',
+      },
       './configure $ARGS',
       'make --jobs {{hw.concurrency}} install',
     ],

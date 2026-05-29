@@ -20,6 +20,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'build',
     script: [
       'meson $ARGS ..',
       'ninja -j {{hw.concurrency}}',

@@ -28,5 +28,10 @@ export const recipe: Recipe = {
       'mkdir -p {{prefix}}/bin',
       'install ./symfony {{prefix}}/bin/symfony',
     ],
+    env: {
+      'linux/x86-64': { TYPE: 'linux_amd64' },
+      'linux/aarch64': { TYPE: 'linux_arm64' },
+      darwin: { TYPE: 'darwin_all' },
+    },
   },
 }

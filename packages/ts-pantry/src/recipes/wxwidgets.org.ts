@@ -22,26 +22,70 @@ export const recipe: Recipe = {
     'pcre.org/v2': '*',
     'libexpat.github.io': '*',
     'zlib.net': '*',
+    linux: {
+      'x.org/sm': '*',
+      'freedesktop.org/mesa-glu': '*',
+      'gtk.org/gtk3': '*',
+    },
   },
   buildDependencies: {
     'freedesktop.org/pkg-config': '*',
+    linux: {
+      'llvm.org': '<17', // still gets unassigned label errors
+      'gnu.org/make': '*',
+    },
   },
 
   build: {
     script: [
-      'cd "3rdparty"',
-      'rm -r catch pcre',
-      'cd "src"',
-      'rm -r expat jpeg png tiff zlib',
+      { run: 'rm -r catch pcre', 'working-directory': '3rdparty' },
+      { run: 'rm -r expat jpeg png tiff zlib', 'working-directory': 'src' },
       './configure $CONFIGURE_ARGS',
       'make --jobs {{hw.concurrency}} install',
-      'cd "${{prefix}}/bin"',
-      'rm wx-config',
-      'ln -s ../lib/wx/config/$WX_CONFIG wx-config',
-      '',
+      {
+        run: [
+          'rm wx-config',
+          'ln -s ../lib/wx/config/$WX_CONFIG wx-config',
+        ],
+        'working-directory': '${{prefix}}/bin',
+      },
     ],
     env: {
-      'CONFIGURE_ARGS': ['--prefix={{prefix}}', '--enable-clipboard', '--enable-controls', '--enable-dataviewctrl', '--enable-display', '--enable-dnd', '--enable-graphics_ctx', '--enable-svg', '--enable-webviewwebkit', '--with-expat', '--with-libjpeg', '--with-libpng', '--with-libtiff', '--with-opengl', '--with-zlib', '--disable-dependency-tracking', '--disable-tests', '--disable-precomp-headers', '--disable-monolithic'],
+      CONFIGURE_ARGS: [
+        '--prefix={{prefix}}',
+        '--enable-clipboard',
+        '--enable-controls',
+        '--enable-dataviewctrl',
+        '--enable-display',
+        '--enable-dnd',
+        '--enable-graphics_ctx',
+        '--enable-svg',
+        '--enable-webviewwebkit',
+        '--with-expat',
+        '--with-libjpeg',
+        '--with-libpng',
+        '--with-libtiff',
+        '--with-opengl',
+        '--with-zlib',
+        '--disable-dependency-tracking',
+        '--disable-tests',
+        '--disable-precomp-headers',
+        '--disable-monolithic',
+      ],
+      linux: {
+        WX_CONFIG: 'gtk3-unicode-{{version.marketing}}',
+        CC: 'clang',
+        CXX: 'clang++',
+        LD: 'clang',
+      },
+      darwin: {
+        WX_CONFIG: 'osx_cocoa-unicode-{{version.marketing}}',
+        CONFIGURE_ARGS: [
+          '--with-macosx-version-min=$MACOSX_DEPLOYMENT_TARGET',
+          '--with-osx_cocoa',
+          '--with-libiconv',
+        ],
+      },
     },
   },
 }

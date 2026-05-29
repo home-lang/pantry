@@ -8,24 +8,38 @@ export const recipe: Recipe = {
   github: 'https://github.com/PRQL/prql',
   programs: ['prql-compiler', 'prqlc'],
   versionSource: {
-    type: 'github-releases',
+    type: 'github-tags',
     repo: 'PRQL/prql',
-    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/PRQL/prql/archive/refs/tags/{{version}}.tar.gz',
     stripComponents: 1,
   },
 
+  buildDependencies: {
+    'rust-lang.org': '^1.65',
+    'rust-lang.org/cargo': '*',
+    linux: {
+      'llvm.org': '18', // 19 has template issues with duckdb build
+    },
+  },
+
   build: {
     script: [
-      'run: cargo install --path prql-compiler --root {{prefix}}',
-      'run: cargo install --path prql-compiler --root {{prefix}} --all-features',
-      'run: cargo install --path prql-compiler/prqlc --root {{prefix}}',
-      'run: cargo install --path crates/prqlc --root {{prefix}} --all-features',
-      'run: cargo install --path prqlc/prqlc --root {{prefix}} --locked --all-features',
-      'run: ln -s prql-compiler prqlc',
-      'run: ln -s prqlc prql-compiler',
+      { run: 'cargo install --path prql-compiler --root {{prefix}}', if: '<0.4.0' },
+      { run: 'cargo install --path prql-compiler --root {{prefix}} --all-features', if: '=0.4.0' },
+      { run: 'cargo install --path prql-compiler/prqlc --root {{prefix}}', if: '>=0.4.1<0.9.0' },
+      { run: 'cargo install --path crates/prqlc --root {{prefix}} --all-features', if: '>=0.9.0<0.10.0' },
+      { run: 'cargo install --path prqlc/prqlc --root {{prefix}} --locked --all-features', if: '>=0.10.0' },
+
+      // Bin got renamed; this is one way to keep ourselves working
+      { run: 'ln -s prql-compiler prqlc', 'working-directory': '{{prefix}}/bin', if: '<0.4.0' },
+      { run: 'ln -s prqlc prql-compiler', 'working-directory': '{{prefix}}/bin', if: '>=0.4.0' },
     ],
+    env: {
+      linux: {
+        AR: 'llvm-ar',
+      },
+    },
   },
 }

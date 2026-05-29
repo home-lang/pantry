@@ -13,33 +13,31 @@ export const recipe: Recipe = {
     tagPattern: /^llvmorg-(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-{{version}}/openmp-{{version}}.src.tar.xz',
+    url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-{{version}}/llvm-project-{{version}}.src.tar.xz',
     stripComponents: 1,
   },
   buildDependencies: {
     'cmake.org': '*',
-    'llvm.org': '*',
-    'gnu.org/wget': '*',
+    linux: {
+      'python.org': '~3.11',
+      'perl.org': '*',
+    },
   },
 
   build: {
     script: [
-      'mkdir -p src',
-      'find . -maxdepth 1 ! -name \'.\' ! -name \'src\' -exec mv {} ./src/ \\;',
-      'mkdir -p cmake',
-      'wget $CMAKE_URL && tar -xf cmake-{{version}}.src.tar.xz -C ./cmake --strip-components=1',
-      'rm cmake-{{version}}.src.tar.xz',
-      'cmake -S src -B build/shared $ARGS',
+      'cmake -S openmp -B build/shared $ARGS',
       'cmake --build build/shared',
       'cmake --install build/shared',
-      'cmake -S src -B build/static -DLIBOMP_ENABLE_SHARED=OFF $ARGS',
+      'cmake -S openmp -B build/static -DLIBOMP_ENABLE_SHARED=OFF $ARGS',
       'cmake --build build/static',
       'cmake --install build/static',
-      '',
     ],
     env: {
-      'CMAKE_URL': 'https://github.com/llvm/llvm-project/releases/download/llvmorg-{{version}}/cmake-{{version}}.src.tar.xz',
       'ARGS': ['-DLIBOMP_INSTALL_ALIASES=OFF', '-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF'],
+      linux: {
+        ARGS: ['-DLIBOMP_INSTALL_ALIASES=OFF', '-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF', '-DOPENMP_ENABLE_LIBOMPTARGET=OFF'],
+      },
     },
   },
 }

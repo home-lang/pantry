@@ -24,8 +24,10 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'python-venv.sh {{prefix}}/bin/asciinema',
-      'cargo install --path . --root {{prefix}}',
+      // asciinema 2.x is a Python package
+      { run: 'python-venv.sh {{prefix}}/bin/asciinema', if: '<3' },
+      // asciinema 3.x is a Rust crate
+      { run: 'cargo install --path . --root {{prefix}}', if: '>=3' },
     ],
   },
 }

@@ -17,8 +17,39 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
 
+  buildDependencies: {
+    'curl.se': '*',
+    darwin: {
+      // xcode gets touchy about combining c and c++:
+      // error: invalid argument '-std=c11' not allowed with 'C++'
+      'llvm.org': '20', // since 78.1
+    },
+  },
+
   build: {
+    workingDirectory: 'source',
+    env: {
+      ARGS: [
+        '--prefix={{prefix}}',
+        '--disable-samples',
+        '--disable-tests',
+        '--enable-static',
+        '--with-library-bits=64',
+      ],
+      darwin: {
+        // changing install names or rpaths can't be redone for
+        LDFLAGS: '-headerpad_max_install_names',
+      },
+    },
     script: [
+      // v74.1 replaced LICENSE with a broken symlink
+      {
+        run: [
+          'rm ../LICENSE',
+          'curl -L https://raw.githubusercontent.com/unicode-org/icu/main/LICENSE -o ../LICENSE',
+        ],
+        if: '>=74.1',
+      },
       './configure $ARGS',
       'make --jobs {{hw.concurrency}}',
       'make install',

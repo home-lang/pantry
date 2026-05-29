@@ -24,20 +24,28 @@ export const recipe: Recipe = {
 
   build: {
     script: [
+      // Required to avoid conflicts
       'mv build.rs build.rs.bak || true',
-      'cd "src"',
-      'sed -i -e\'s|T::Argument => None|// T::Argument => None|\' highlight.rs',
+      // match contains an unknown arm (only present in v4+)
+      {
+        run: 'sed -i -e\'s|T::Argument => None|// T::Argument => None|\' highlight.rs',
+        'working-directory': 'src',
+        if: '>=4',
+      },
+      // missed version bump
       'sed -i \'1,40s/^version = .*$/version = "{{version.raw}}"/\' Cargo.toml',
       'cargo install --locked --path . --root {{prefix}}',
-      'cd "${{prefix}}/bin"',
-      'if test -f gel && test ! -f edgedb; then',
-      '  ln -s gel edgedb',
-      'fi',
-      '',
-      'if test -f edgedb && test ! -f gel; then',
-      '  ln -s edgedb gel',
-      'fi',
-      '',
+      {
+        run: [
+          'if test -f gel && test ! -f edgedb; then',
+          '  ln -s gel edgedb',
+          'fi',
+          'if test -f edgedb && test ! -f gel; then',
+          '  ln -s edgedb gel',
+          'fi',
+        ],
+        'working-directory': '{{prefix}}/bin',
+      },
     ],
     env: {
       'RUSTFLAGS': ['-A warnings', '-C debuginfo=0'],

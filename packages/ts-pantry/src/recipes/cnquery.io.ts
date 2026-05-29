@@ -5,27 +5,50 @@ export const recipe: Recipe = {
   name: 'cnquery',
   description: 'open source, cloud-native, graph-based asset inventory',
   homepage: 'https://cnquery.io',
-  github: 'https://github.com/mondoohq/cnquery',
-  programs: ['cnquery'],
+  github: 'https://github.com/mondoohq/mql',
+  programs: ['cnquery', 'mql'],
   versionSource: {
     type: 'github-releases',
-    repo: 'mondoohq/cnquery',
+    repo: 'mondoohq/mql',
   },
   distributable: {
-    url: 'https://github.com/mondoohq/cnquery/archive/refs/tags/v{{version}}.tar.gz',
+    // repo mondoohq/cnquery was renamed to mondoohq/mql
+    url: 'https://github.com/mondoohq/mql/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {
-    'go.dev': '~1.21',
+    'go.dev': '~1.25.6', // as of v13
   },
 
   build: {
     script: [
-      'go build $ARGS -ldflags="$LD_FLAGS" ./apps/cnquery/cnquery.go',
+      {
+        run: [
+          'go build $ARGS -o={{prefix}}/bin/cnquery -ldflags="$GO_LDFLAGS" ./apps/cnquery/cnquery.go',
+          'ln -s cnquery {{prefix}}/bin/mql',
+        ],
+        if: '<13',
+      },
+      {
+        run: [
+          'go build $ARGS -o={{prefix}}/bin/mql -ldflags="$GO_LDFLAGS" ./apps/mql/mql.go',
+          'ln -s mql {{prefix}}/bin/cnquery',
+        ],
+        if: '>=13',
+      },
     ],
     env: {
-      'LD_FLAGS': ['-s', '-w'],
-      'ARGS': ['-v', '-trimpath', '-o={{prefix}}/bin/cnquery'],
+      GO_LDFLAGS: [
+        '-s',
+        '-w',
+        '-X go.mondoo.com/mql/v13.Version={{version}}',
+        '-X go.mondoo.com/mql/v13.Build=pkgx',
+        '-X go.mondoo.com/mql/v13.Date=$(date -u +\'%Y-%m-%dT%H:%M:%SZ\')',
+      ],
+      linux: {
+        GO_LDFLAGS: ['-buildmode=pie'],
+      },
+      ARGS: ['-v', '-trimpath'],
     },
   },
 }

@@ -14,7 +14,14 @@ export const recipe: Recipe = {
   },
   distributable: {
     url: 'git+https://github.com/sympy/sympy.git',
-  },
+    // pkgx pins the git checkout to the release tag (`ref: ${{version.tag}}`).
+    // Without this the buildkit clones the default branch (master) — a moving
+    // target whose release.py wouldn't match the version being built. The
+    // buildkit reads `distributable.ref`; sympy tags are `sympy-{version}` and
+    // the github-releases source strips `sympy-`, so `version.tag` resolves to
+    // the original `sympy-{version}` tag.
+    ref: '{{version.tag}}',
+  } as Recipe['distributable'] & { ref: string },
   dependencies: {
     'python.org': '>=3.11',
   },

@@ -15,7 +15,10 @@ export const recipe: Recipe = {
   dependencies: {
     'zlib.net': '^1.2',
     'libpng.org': '^1.6',
+    'libjpeg-turbo.org': '^2',
+    'simplesystems.org/libtiff': '^4',
     'littlecms.com': '^2.15',
+    'gnu.org/libidn': '^1.41',
     'freedesktop.org/fontconfig': '^2.14',
     'jbig2dec.com': '^0.19',
     'libexpat.github.io': '^2.5',
@@ -40,17 +43,25 @@ export const recipe: Recipe = {
       '# Use env -i to avoid LD_LIBRARY_PATH conflict with deps curl.se',
       'env -i PATH="/usr/bin:/bin:/usr/sbin:/sbin" HOME="$HOME" curl -fSL -o /tmp/ghostpdl.tar.xz "$GS_URL"',
       'tar xJf /tmp/ghostpdl.tar.xz --strip-components=1',
-      'rm -rf expat freetype jbig2dec lcms2mt libpng openjpeg zlib',
-      'sed -i -e\'s/-mfpu=neon//g\' tesseract/CMakeLists.txt tesseract/configure.ac configure.ac configure',
+      // ensure our libs are used and nothing is vendored
+      'rm -rf expat freetype jbig2dec jpeg lcms2mt libpng openjpeg tiff zlib',
+      { run: 'sed -i -e\'s/-mfpu=neon//g\' tesseract/CMakeLists.txt tesseract/configure.ac configure.ac configure', if: 'linux/aarch64' },
       './configure $ARGS',
       'make --jobs {{hw.concurrency}} install',
+      'make install-so',
     ],
     env: {
       'CC': 'clang',
       'CXX': 'clang++',
       'LD': 'clang',
-      'ARGS': ['--prefix={{prefix}}', '--disable-compile-inits', '--disable-cups', '--disable-gtk', '--without-x', '--without-versioned-path', '--without-libidn-prefix'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-compile-inits', '--disable-cups', '--disable-gtk', '--with-system-libtiff', '--without-x', '--without-versioned-path'],
       'CFLAGS': '$CFLAGS -Wno-int-conversion',
+      'linux': {
+        // since 10.5.1
+        'CFLAGS': '-Wno-incompatible-pointer-types -fPIC $CFLAGS',
+        'CXXFLAGS': '-fPIC $CXXFLAGS',
+        'LDFLAGS': '-lstdc++fs $LDFLAGS',
+      },
     },
   },
 }

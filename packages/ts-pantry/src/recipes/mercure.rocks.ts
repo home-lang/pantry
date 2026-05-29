@@ -23,12 +23,19 @@ export const recipe: Recipe = {
 
   build: {
     script: [
+      // The loader does not forward distributable.ref, so the git+ url clones
+      // the default branch. Check out the requested release tag so goreleaser
+      // builds {{version}} (it reads the version from the git tag).
+      'git fetch --depth 1 origin "tag" "v{{version}}" 2>/dev/null || git fetch origin "tag" "v{{version}}" || true',
+      'git checkout "v{{version}}" 2>/dev/null || true',
       'goreleaser build --clean --single-target --skip=validate',
       'mkdir -p "{{prefix}}"/bin',
       'mv dist/caddy_{{hw.platform}}_$ARCH/mercure "{{prefix}}"/bin',
     ],
     env: {
       'CGO_ENABLED': '0',
+      'aarch64': { ARCH: 'arm64_v8.0' },
+      'x86-64': { ARCH: 'amd64_v1' },
     },
   },
 }

@@ -13,6 +13,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'build',
     script: [
       'cmake .. $ARGS',
       'make --jobs {{hw.concurrency}}',

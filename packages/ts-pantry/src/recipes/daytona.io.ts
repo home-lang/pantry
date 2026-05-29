@@ -21,12 +21,15 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'export GONOSUMDB=github.com/daytonaio/daytona',
-      'go build $ARGS -ldflags="$GO_LDFLAGS" ./cmd/daytona',
-      'go build $ARGS -ldflags="$GO_LDFLAGS" ./apps/cli',
+      { run: 'export GONOSUMDB=github.com/daytonaio/daytona', if: '>=0.138.0' },
+      { run: 'go build $ARGS -ldflags="$GO_LDFLAGS" ./cmd/daytona', if: '<0.100' },
+      { run: 'go build $ARGS -ldflags="$GO_LDFLAGS" ./apps/cli', if: '>=0.100' },
     ],
     env: {
       'ARGS': ['-trimpath', '-o {{prefix}}/bin/daytona'],
+      'linux': {
+        ARGS: ['-buildmode=pie'],
+      },
       'GO_LDFLAGS': ['-s', '-w', '-X github.com/daytonaio/daytona/internal.Version={{version}}', '-X github.com/daytonaio/daytona-ai-saas/cli/internal.Version={{version}}', '-X github.com/daytonaio/daytona/cli/internal.Version={{version}}'],
     },
   },

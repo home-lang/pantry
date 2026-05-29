@@ -34,25 +34,36 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      './configure --prefix={{prefix}} --disable-dependency-tracking',
-      'make --jobs {{hw.concurrency}}',
-      'make install',
-      '',
-      'meson setup build --prefix={{prefix}} --buildtype=release $ARGS',
-      'ninja -C build',
-      'ninja -C build install',
-      '',
+      {
+        run: [
+          './configure --prefix={{prefix}} --disable-dependency-tracking',
+          'make --jobs {{hw.concurrency}}',
+          'make install',
+        ],
+        if: '<1.18.0',
+      },
+      {
+        run: [
+          'meson setup build --prefix={{prefix}} --buildtype=release $ARGS',
+          'ninja -C build',
+          'ninja -C build install',
+        ],
+        if: '>=1.18.0',
+      },
       'rm -rf {{prefix}}/share',
-      'cd "${{prefix}}/lib"',
-      'if [ -d cairo ]; then',
-      '  tmp_dir=cairo',
-      'else',
-      '  tmp_dir=$(ls)',
-      'fi',
-      'mv $tmp_dir/* .',
-      'rmdir $tmp_dir',
-      'ln -s . $tmp_dir',
-      '',
+      {
+        run: [
+          'if [ -d cairo ]; then',
+          '  tmp_dir=cairo',
+          'else',
+          '  tmp_dir=$(ls)',
+          'fi',
+          'mv $tmp_dir/* .',
+          'rmdir $tmp_dir',
+          'ln -s . $tmp_dir',
+        ],
+        'working-directory': '{{prefix}}/lib',
+      },
     ],
     env: {
       'ARGS': ['-Dfreetype=enabled', '-Dfontconfig=enabled', '-Dpng=enabled', '-Dglib=enabled', '-Dxcb=enabled', '-Dxlib=enabled', '-Dzlib=enabled', '-Dglib=enabled'],

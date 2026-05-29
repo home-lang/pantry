@@ -21,10 +21,11 @@ export interface Token {
 
 // ── Parsed YAML recipe types ──────────────────────────────────────────
 
-/** Inline prop content — either a string or object with content/extname */
+/** Inline prop content — either a string or object with content/extname.
+ * content/contents may be an array of lines (joined with newlines). */
 export type RecipePropValue = string | {
-  content?: string
-  contents?: string
+  content?: string | string[]
+  contents?: string | string[]
   extname?: string
 }
 
@@ -492,10 +493,15 @@ else {
       // Handle prop (inline content written to temp file)
       if (item.prop) {
         const prop = item.prop
-        const propContent = applyTokens(
-          typeof prop === 'string' ? prop : String(prop.content || prop.contents || ''),
-          tokens,
-        )
+        // content/contents may be a string or an array of lines (join with \n —
+        // String([...]) would comma-join and corrupt multi-line prop files).
+        const rawContent = typeof prop === 'string'
+          ? prop
+          : (() => {
+              const c = prop.content ?? prop.contents ?? ''
+              return Array.isArray(c) ? c.join('\n') : String(c)
+            })()
+        const propContent = applyTokens(rawContent, tokens)
         const extname = (typeof prop === 'object' && prop.extname) ? `.${prop.extname.replace(/^\./, '')}` : ''
         // Single-quoted heredoc (<<'EOF') prevents bash variable expansion,
         // so we do NOT need to escape $ — content is written literally.

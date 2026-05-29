@@ -21,6 +21,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'crates/dprint',
     script: [
       'cargo install --locked --path . --root {{prefix}}',
     ],

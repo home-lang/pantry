@@ -8,8 +8,9 @@ export const recipe: Recipe = {
   github: 'https://github.com/cask/cask',
   programs: ['cask'],
   versionSource: {
-    type: 'github-releases',
+    type: 'github-tags',
     repo: 'cask/cask',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/cask/cask/archive/v{{version}}.tar.gz',
@@ -24,12 +25,16 @@ export const recipe: Recipe = {
     script: [
       'mkdir -p {{prefix}}',
       'cp -a bin {{prefix}}',
+      // Lisp files must stay here: https://github.com/cask/cask/issues/305
       'install *.el {{prefix}}/',
       'cp -a package-build {{prefix}}',
-      'cd "${{prefix}}/elisp"',
-      'ln ../cask.el .',
-      'ln ../cask-bootstrap.el .',
-      '',
+      {
+        run: [
+          'ln ../cask.el .',
+          'ln ../cask-bootstrap.el .',
+        ],
+        'working-directory': '{{prefix}}/elisp',
+      },
       'touch {{prefix}}/.no-upgrade',
     ],
   },

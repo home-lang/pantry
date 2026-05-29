@@ -24,5 +24,19 @@ export const recipe: Recipe = {
       'mkdir -p "{{prefix}}/bin"',
       'cp -a bin/* "{{prefix}}/bin"',
     ],
+    env: {
+      'darwin/aarch64': {
+        DIST: 'https://fastdl.mongodb.org/osx/mongodb-macos-arm64-{{version}}.tgz',
+      },
+      'darwin/x86-64': {
+        DIST: 'https://fastdl.mongodb.org/osx/mongodb-macos-x86_64-{{version}}.tgz',
+      },
+      'linux/aarch64': {
+        DIST: 'https://fastdl.mongodb.org/linux/mongodb-linux-aarch64-ubuntu2004-{{version}}.tgz',
+      },
+      'linux/x86-64': {
+        DIST: 'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu2004-{{version}}.tgz',
+      },
+    },
   },
 }

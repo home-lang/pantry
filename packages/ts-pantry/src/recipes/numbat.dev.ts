@@ -21,6 +21,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'numbat-cli',
     script: [
       'cargo install --locked --path . --root {{prefix}}',
     ],

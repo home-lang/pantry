@@ -10,8 +10,14 @@ export const recipe: Recipe = {
     repo: 'project-zot/zot',
   },
   distributable: {
+    // pkgx pins the git checkout to the release tag (`ref: ${{version.tag}}`).
+    // Without this the buildkit clones the default branch (a moving target) so
+    // the build does not match the version being released. zot tags are
+    // `vX.Y.Z`; the github-releases source has no tagPattern, so version.tag
+    // resolves to the raw git tag via the GitHub API.
     url: 'git+https://github.com/project-zot/zot',
-  },
+    ref: '{{version.tag}}',
+  } as Recipe['distributable'] & { ref: string },
   buildDependencies: {
     'git-scm.org': '*',
     'npmjs.com': '*',
@@ -23,10 +29,11 @@ export const recipe: Recipe = {
       'rm -Rf ${ZUI_REPO_NAME}',
       'rm -Rf ./pkg/extensions/build',
       'git clone --depth=1 --branch ${ZUI_VERSION} https://github.com/${ZUI_REPO_OWNER}/${ZUI_REPO_NAME}',
-      'cd "${ZUI_REPO_NAME}"',
-      'npm install',
-      'npm run build',
-      '',
+      // pkgx runs the ZUI frontend build via a `working-directory` so the shell
+      // returns to the source root afterwards. Flattening this to a bare `cd`
+      // would leave the cwd inside the ZUI repo and break the subsequent
+      // `cp -r ${ZUI_REPO_NAME}/build` (a path relative to the source root).
+      { run: ['npm install', 'npm run build'], 'working-directory': '${ZUI_REPO_NAME}' },
       'cp -r ${ZUI_REPO_NAME}/build ./pkg/extensions/',
       'go build -v -ldflags="${GO_LDFLAGS}" -tags="${ALL_EXTENSIONS}" -o "{{prefix}}"/bin/zb ./cmd/zb',
       'go build -v -ldflags="${GO_LDFLAGS}" -tags="${ALL_EXTENSIONS}" -o "{{prefix}}"/bin/zli ./cmd/zli',
@@ -35,11 +42,6 @@ export const recipe: Recipe = {
     ],
     env: {
       'MODULE_PATH': '$(go list -m)',
-      'CONFIG_PACKAGE': '${MODULE_PATH}/pkg/api/config',
-      'CONFIG_RELEASE_TAG': '${CONFIG_PACKAGE}.ReleaseTag',
-      'CONFIG_COMMIT': '${CONFIG_PACKAGE}.Commit',
-      'CONFIG_BINARY_TYPE': '${CONFIG_PACKAGE}.BinaryType',
-      'CONFIG_GO_VERSION': '${CONFIG_PACKAGE}.GoVersion',
       'RELEASE_TAG': '$(git describe --tags --abbrev=0)',
       'COMMIT': '$(git describe --always --tags --long)',
       'ALL_EXTENSIONS': 'debug,imagetrust,lint,metrics,mgmt,profile,scrub,search,sync,ui,userprefs,events',
@@ -47,10 +49,29 @@ export const recipe: Recipe = {
       'GO_VERSION': '$(go version | awk \'{print $3}\')',
       'CGO_ENABLED': '0',
       'GOEXPERIMENT': 'jsonv2',
-      'GO_LDFLAGS': ['-s', '-w', '-X ${CONFIG_RELEASE_TAG}=${RELEASE_TAG}', '-X ${CONFIG_COMMIT}=${COMMIT}', '-X ${CONFIG_BINARY_TYPE}=${BINARY_TYPE}', '-X ${CONFIG_GO_VERSION}=${GO_VERSION}'],
+      'GO_LDFLAGS': [
+        '-s',
+        '-w',
+        '-X ${MODULE_PATH}/pkg/api/config.ReleaseTag=${RELEASE_TAG}',
+        '-X ${MODULE_PATH}/pkg/api/config.Commit=${COMMIT}',
+        '-X ${MODULE_PATH}/pkg/api/config.BinaryType=${BINARY_TYPE}',
+        '-X ${MODULE_PATH}/pkg/api/config.GoVersion=${GO_VERSION}',
+        // since 2.1.17 — harmless on older versions (the linker ignores -X for
+        // symbols that don't exist).
+        '-X ${MODULE_PATH}/pkg/buildinfo.ReleaseTag=${RELEASE_TAG}',
+        '-X ${MODULE_PATH}/pkg/buildinfo.Commit=${COMMIT}',
+        '-X ${MODULE_PATH}/pkg/buildinfo.BinaryType=${BINARY_TYPE}',
+        '-X ${MODULE_PATH}/pkg/buildinfo.GoVersion=${GO_VERSION}',
+      ],
       'ZUI_VERSION': '$(grep -m1 ZUI_VERSION Makefile | cut -d\' \' -f3)',
       'ZUI_REPO_OWNER': '$(grep -m1 ZUI_REPO_OWNER Makefile | cut -d\' \' -f3)',
       'ZUI_REPO_NAME': '$(grep -m1 ZUI_REPO_NAME Makefile | cut -d\' \' -f3)',
+      // NOTE: pkgx also adds `-buildmode=pie` to GO_LDFLAGS on linux via a
+      // separate `linux:` group that it *appends* to the base flags. This
+      // buildkit's platform-env merge OVERWRITES (not appends) a key, so a
+      // `linux: { GO_LDFLAGS: [...] }` group here would clobber all the version
+      // -info `-X` flags on linux. PIE is only hardening, not required to
+      // build, so it is intentionally omitted to preserve the `-X` flags.
     },
   },
 }

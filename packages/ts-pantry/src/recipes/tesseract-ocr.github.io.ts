@@ -16,6 +16,19 @@ export const recipe: Recipe = {
     url: 'https://github.com/tesseract-ocr/tesseract/archive/refs/tags/{{version}}.tar.gz',
     stripComponents: 1,
   },
+  dependencies: {
+    'cairographics.org': '1',
+    'unicode.org': '71',
+    'leptonica.org': '*',
+    'libarchive.org': '*',
+    'gnome.org/pango': '1',
+  },
+  buildDependencies: {
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
+    'gnu.org/wget': '*',
+  },
 
   build: {
     script: [
@@ -23,6 +36,26 @@ export const recipe: Recipe = {
       './configure $ARGS',
       'make --jobs {{hw.concurrency}}',
       'make install',
+
+      // install trained datafiles and move to share/tessdata
+      {
+        run: [
+          'wget https://github.com/tesseract-ocr/tessdata/blob/main/eng.traineddata?raw=true -O eng.traineddata',
+          'wget https://github.com/tesseract-ocr/tessdata/blob/main/osd.traineddata?raw=true -O osd.traineddata',
+        ],
+        'working-directory': '{{prefix}}/share/tessdata/',
+      },
     ],
+    env: {
+      ARGS: [
+        '--prefix={{prefix}}',
+        '--disable-dependency-tracking',
+        '--datarootdir={{prefix}}/share',
+      ],
+      linux: {
+        // ld.lld: error: undefined symbol: std::filesystem::recursive_directory_iterator
+        LDFLAGS: '$LDFLAGS -lstdc++fs',
+      },
+    },
   },
 }

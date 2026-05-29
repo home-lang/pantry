@@ -17,17 +17,18 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   buildDependencies: {
-    'rust-lang.org': '>=1.65',
+    'rust-lang.org': '>=1.83',
     'rust-lang.org/cargo': '*',
   },
 
   build: {
+    workingDirectory: 'crates/biome_cli',
     script: [
       'cargo install --locked --path . --root {{prefix}}',
     ],
     env: {
-      'RUSTFLAGS': '-C strip=symbols',
-      'BIOME_VERSION': 'v{{version}}',
+      RUSTFLAGS: '-C strip=symbols',
+      BIOME_VERSION: 'v{{version}}',
     },
   },
 }

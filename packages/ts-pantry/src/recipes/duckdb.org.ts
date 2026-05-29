@@ -22,7 +22,9 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'build',
     script: [
+      // duckdb uses git to get its version
       'git init ..',
       'git config user.email "bot@pkgx.dev"',
       'git config user.name "pkgxbot"',

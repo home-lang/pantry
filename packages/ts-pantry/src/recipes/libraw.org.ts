@@ -15,19 +15,31 @@ export const recipe: Recipe = {
     'libjpeg-turbo.org': '*',
     'littlecms.com': '*',
     'zlib.net': '*',
+    darwin: {
+      'openmp.llvm.org': '*',
+    },
   },
   buildDependencies: {
     'gnu.org/autoconf': '*',
     'gnu.org/automake': '*',
     'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': '*',
+    darwin: {
+      'llvm.org': '*',
+    },
+    linux: {
+      'gnu.org/gcc': '*',
+    },
   },
 
   build: {
     script: [
       'autoreconf --force --install --verbose',
-      './configure $ARGS',
-      './configure $ARGS ac_cv_prog_c_openmp=\'-Xpreprocessor -fopenmp\' ac_cv_prog_cxx_openmp=\'-Xpreprocessor -fopenmp\' || { cat config.log; exit 1; }',
+      { run: './configure $ARGS', if: 'linux' },
+      {
+        run: './configure $ARGS ac_cv_prog_c_openmp=\'-Xpreprocessor -fopenmp\' ac_cv_prog_cxx_openmp=\'-Xpreprocessor -fopenmp\' || { cat config.log; exit 1; }',
+        if: 'darwin',
+      },
       'make --jobs {{hw.concurrency}}',
       'make --jobs {{hw.concurrency}} install',
       'mkdir -p {{prefix}}/doc',

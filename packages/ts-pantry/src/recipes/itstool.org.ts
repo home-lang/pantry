@@ -8,13 +8,17 @@ export const recipe: Recipe = {
   github: 'https://github.com/itstool/itstool',
   programs: ['itstool'],
   platforms: ['linux/x86-64'],
+  dependencies: {
+    'gnome.org/libxml2': '*',
+    'python.org': '>=3.11<3.12',
+  },
   versionSource: {
-    type: 'github-releases',
+    type: 'github-tags',
     repo: 'itstool/itstool',
-    tagPattern: /^v(.+)$/,
+    tagPattern: /^v?(\d+\.\d+\.\d+)$/,
   },
   distributable: {
-    url: 'http://files.itstool.org/itstool/itstool-{{version}}.tar.bz2',
+    url: 'https://files.itstool.org/itstool/itstool-{{version}}.tar.bz2',
     stripComponents: 1,
   },
 

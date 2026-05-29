@@ -16,8 +16,22 @@ export const recipe: Recipe = {
     url: 'https://github.com/orhun/git-cliff/archive/refs/tags/v{{version}}.tar.gz',
     stripComponents: 1,
   },
+  dependencies: {
+    'libgit2.org': '~1.7', // links to libgit2.so.1.7
+  },
+  buildDependencies: {
+    'rust-lang.org': '>=1.65',
+    'rust-lang.org/cargo': '*',
+  },
 
   build: {
+    workingDirectory: 'git-cliff',
+    script: [
+      'cargo install --locked --path . --root {{prefix}}',
+    ],
+  },
+
+  test: {
     script: [
       'test "$(git-cliff --version)" = "git-cliff {{version}}"',
     ],

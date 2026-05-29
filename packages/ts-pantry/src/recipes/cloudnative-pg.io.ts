@@ -16,11 +16,26 @@ export const recipe: Recipe = {
     url: 'https://github.com/cloudnative-pg/cloudnative-pg/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
+  buildDependencies: {
+    'go.dev': '~1.23',
+  },
 
   build: {
     script: [
       'go mod download',
-      'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o \\{{prefix}}/bin/kubectl-cnpg\\ ./cmd/kubectl-cnpg/main.go',
+      'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/kubectl-cnpg ./cmd/kubectl-cnpg/main.go',
     ],
+    env: {
+      'GO111MODULE': 'on',
+      'CGO_ENABLED': '0',
+      'GO_LDFLAGS': [
+        '-s',
+        '-w',
+        '-X github.com/cloudnative-pg/cloudnative-pg/pkg/versions.buildVersion={{version}}',
+      ],
+      'linux': {
+        GO_LDFLAGS: '-buildmode=pie',
+      },
+    },
   },
 }

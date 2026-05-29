@@ -26,17 +26,25 @@ export const recipe: Recipe = {
     'mesonbuild.com': '>=0.63',
     'ninja-build.org': '1',
     'freedesktop.org/pkg-config': '^0.29',
+    'gnome.org/gobject-introspection': '1',
+    // FIXME rq'd by gnome.org/gobject-introspection but should be added by env
     'python.org': '>=3<3.12',
   },
 
   build: {
+    workingDirectory: 'build',
     script: [
       'meson .. $ARGS',
       'ninja --verbose',
       'ninja install',
     ],
     env: {
-      'ARGS': ['--prefix={{prefix}}', '--libdir={{prefix}}/lib', '--buildtype=release', '-Dcairo=enabled', '-Dcoretext=enabled', '-Dfreetype=enabled', '-Dglib=enabled', '-Dgraphite=enabled', '-Dtests=disabled', '-Dintrospection=disabled'],
+      'ARGS': ['--prefix={{prefix}}', '--libdir={{prefix}}/lib', '--buildtype=release', '-Dcairo=enabled', '-Dcoretext=enabled', '-Dfreetype=enabled', '-Dglib=enabled', '-Dgraphite=enabled', '-Dtests=disabled'],
+      'linux/x86-64': {
+        CFLAGS: '-fPIC',
+        CXXFLAGS: '-fPIC',
+        LDFLAGS: '-pie',
+      },
     },
   },
 }

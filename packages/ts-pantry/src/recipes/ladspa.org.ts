@@ -16,6 +16,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'src',
     script: [
       'make install $ARGS',
     ],

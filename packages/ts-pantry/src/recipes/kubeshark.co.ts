@@ -14,6 +14,7 @@ export const recipe: Recipe = {
   },
   distributable: {
     url: 'git+https://github.com/kubeshark/kubeshark',
+    ref: 'v{{version.raw}}',
   },
   buildDependencies: {
     'go.dev': '^1.19',
@@ -30,6 +31,10 @@ export const recipe: Recipe = {
     ],
     env: {
       'VER': '{{version}}',
+      'darwin/aarch64': { PLATFORM: 'darwin_arm64', GOOS: 'darwin', GOARCH: 'arm64' },
+      'darwin/x86-64': { PLATFORM: 'darwin_amd64', GOOS: 'darwin', GOARCH: 'amd64' },
+      'linux/aarch64': { PLATFORM: 'linux_arm64', GOOS: 'linux', GOARCH: 'arm64' },
+      'linux/x86-64': { PLATFORM: 'linux_amd64', GOOS: 'linux', GOARCH: 'amd64' },
     },
   },
 }

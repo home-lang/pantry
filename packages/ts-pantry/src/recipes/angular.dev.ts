@@ -20,11 +20,10 @@ export const recipe: Recipe = {
   build: {
     script: [
       'npm i $ARGS .',
-      'cd "{{prefix}}/bin"',
-      'ln -s ../libexec/bin/ng ng',
+      { run: 'ln -s ../libexec/bin/ng ng', 'working-directory': '{{prefix}}/bin' },
     ],
     env: {
-      'ARGS': ['-ddd', '--global', '--prefix={{prefix}}/libexec', '--install-links', '--unsafe-perm'],
+      'ARGS': ['-ddd', '--global', '--build-from-source', '--prefix={{prefix}}/libexec', '--install-links', '--unsafe-perm'],
     },
   },
 }

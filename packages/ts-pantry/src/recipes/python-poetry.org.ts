@@ -16,19 +16,34 @@ export const recipe: Recipe = {
     url: 'https://github.com/python-poetry/poetry/releases/download/{{version}}/poetry-{{version}}.tar.gz',
     stripComponents: 1,
   },
+  dependencies: {
+    'pkgx.sh': '>=1',
+  },
+  buildDependencies: {
+    'python.org': '~3.13',
+  },
 
   build: {
     script: [
       'bkpyvenv stage {{prefix}} {{version}}',
       '${{prefix}}/venv/bin/pip install .',
       'bkpyvenv seal {{prefix}} poetry',
+    ],
+  },
+
+  test: {
+    script: [
       'poetry new teaxyz',
       'cd teaxyz',
       'poetry config virtualenvs.in-project true',
-      'poetry add requests==2.29.0',
+      'poetry add requests',
       'poetry add boto3',
       'test -f pyproject.toml',
       'test -f poetry.lock',
     ],
+    env: {
+      LC_ALL: 'en_US.UTF-8',
+      PYTHON_KEYRING_BACKEND: 'keyring.backends.null.Keyring',
+    },
   },
 }

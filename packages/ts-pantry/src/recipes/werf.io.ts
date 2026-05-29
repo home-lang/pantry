@@ -17,6 +17,11 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'go.dev': '^1.23',
+    linux: {
+      'gnu.org/gcc': '14',
+      'gnu.org/binutils': '~2.44', // some go packages demand ld.gold, but it's being deprecated
+      'github.com/kdave/btrfs-progs': '^6.7',
+    },
   },
 
   build: {
@@ -27,6 +32,10 @@ export const recipe: Recipe = {
       'TAGS': ['dfrunsecurity', 'dfrunnetwork', 'dfrunmount', 'dfssh', 'containers_image_openpgp'],
       'LD_FLAGS': ['-s', '-w', '-X github.com/werf/werf/pkg/werf.Version={{version}}', '-X github.com/werf/werf/v2/pkg/werf.Version={{version}}'],
       'ARGS': ['-v', '-trimpath', '-o={{prefix}}/bin/werf'],
+      'linux': {
+        LD_FLAGS: ['-linkmode external', '-extldflags=-static', '-buildmode=pie'],
+        TAGS: ['osusergo', 'exclude_graphdriver_devicemapper', 'netgo', 'no_devmapper', 'static_build', 'cni'],
+      },
     },
   },
 }

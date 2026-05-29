@@ -23,11 +23,11 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'app',
     script: [
       'go mod download',
       'mkdir -p "{{prefix}}"/bin',
       'go build -v -trimpath -ldflags="$LDFLAGS" -o $BUILDLOC .',
-      '',
     ],
     env: {
       'GOPROXY': 'https://proxy.golang.org,direct',
@@ -36,6 +36,11 @@ export const recipe: Recipe = {
       'CGO_ENABLED': '0',
       'BUILDLOC': '{{prefix}}/bin/pluralith',
       'LDFLAGS': ['-s', '-w'],
+      // linux needs -buildmode=pie to avoid a segfault
+      // https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+      'linux': {
+        LDFLAGS: ['-s', '-w', '-buildmode=pie'],
+      },
     },
   },
 }

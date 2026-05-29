@@ -13,6 +13,24 @@ export const recipe: Recipe = {
     repo: 'crystal-lang/crystal',
     tagPattern: /^v(.+)$/,
   },
+  dependencies: {
+    'hboehm.info/gc': '^8',
+    'gnu.org/gmp': '^6',
+    'libevent.org': '^2',
+    'pyyaml.org/libyaml': '^0',
+    'llvm.org': '<17',
+    'openssl.org': '^1.1',
+    'pcre.org/v2': '^10',
+    'freedesktop.org/pkg-config': '^0',
+    'sourceware.org/libffi': '^3',
+    'invisible-island.net/ncurses': '^6',
+  },
+  buildDependencies: {
+    'curl.se': '*',
+    'linux/aarch64': {
+      'gnu.org/binutils': '*', // ar
+    },
+  },
   distributable: {
     url: 'https://github.com/crystal-lang/crystal/archive/refs/tags/{{version}}.tar.gz',
     stripComponents: 1,

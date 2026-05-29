@@ -23,14 +23,22 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cd "ui"',
-      'npm install',
-      'npm run build',
-      'cd "agent/agentUi"',
-      'npm install',
-      'npm run build',
+      {
+        run: ['npm install', 'npm run build'],
+        'working-directory': 'ui',
+      },
+      {
+        run: ['npm install', 'npm run build'],
+        'working-directory': 'agent/agentUi',
+        if: '>=1',
+      },
       'mkdir -p "{{prefix}}/bin"',
       'go build -o "{{prefix}}/bin" ./...',
+      {
+        run: 'ln -s zrok2 zrok',
+        'working-directory': '{{prefix}}/bin',
+        if: '^2',
+      },
     ],
   },
 }

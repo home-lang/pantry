@@ -20,6 +20,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'buildroot',
     script: [
       'cmake $ARGS ..',
       'make --jobs {{hw.concurrency}}',

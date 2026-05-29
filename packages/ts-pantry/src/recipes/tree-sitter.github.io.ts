@@ -17,10 +17,16 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
 
+  buildDependencies: {
+    'gnu.org/make': '*',
+    'rust-lang.org': '^1.65',
+  },
+
   build: {
     script: [
-      'run: cargo install --root {{prefix}} --path cli',
-      'run: cargo install --root {{prefix}} --path crates/cli',
+      'make install PREFIX={{prefix}}',
+      { run: 'cargo install --root {{prefix}} --path cli', if: '<0.26' },
+      { run: 'cargo install --root {{prefix}} --path crates/cli', if: '>=0.26' },
     ],
   },
 }

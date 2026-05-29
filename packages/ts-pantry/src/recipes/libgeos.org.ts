@@ -20,6 +20,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'build',
     script: [
       'cmake .. $ARGS',
       'make --jobs {{hw.concurrency}}',
@@ -27,6 +28,10 @@ export const recipe: Recipe = {
     ],
     env: {
       'ARGS': ['-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_INSTALL_PREFIX={{prefix}}'],
+      linux: {
+        // as of v3.14.0
+        LDFLAGS: '$LDFLAGS -lstdc++fs',
+      },
     },
   },
 }

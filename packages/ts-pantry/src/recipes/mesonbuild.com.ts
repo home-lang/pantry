@@ -19,7 +19,7 @@ export const recipe: Recipe = {
     'pkgx.sh': '>=1',
   },
   buildDependencies: {
-    'python.org': '~3.11',
+    'python.org': '~3.12',
   },
 
   build: {
@@ -27,8 +27,11 @@ export const recipe: Recipe = {
       'bkpyvenv stage {{prefix}} {{version}}',
       '${{prefix}}/venv/bin/pip install .',
       'bkpyvenv seal {{prefix}} meson',
-      'cd "${{prefix}}/lib"',
-      'cp -a {{deps.python.org.prefix}}/lib/libpython* .',
+      {
+        run: 'cp -a {{deps.python.org.prefix}}/lib/libpython* .',
+        if: 'linux',
+        'working-directory': '${{prefix}}/lib',
+      },
     ],
   },
 }

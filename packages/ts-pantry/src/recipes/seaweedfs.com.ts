@@ -16,17 +16,27 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   buildDependencies: {
-    'go.dev': '*',
+    'go.dev': '=1.22.0',
   },
 
   build: {
     script: [
-      'cd "weed/util"',
-      'find . -name constants.go -exec sed -i -f $PROP {} \\;',
+      {
+        // 3.86 shipped with the wrong version
+        run: 'find . -name constants.go -exec sed -i -f $PROP {} \\;',
+        'working-directory': 'weed/util',
+        prop: 's/MAJOR_VERSION  = int32.*/MAJOR_VERSION  = int32({{version.major}})/\ns/MINOR_VERSION  = int32.*/MINOR_VERSION  = int32({{version.minor}})/\n',
+      },
       'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/weed ./weed',
     ],
     env: {
       'GO_LDFLAGS': ['-s', '-w', '-X ariga.io/seaweedfs/cmd/seaweedfs/internal/cmdapi.version=v{{version}}'],
+      // platform array values supplement the base GO_LDFLAGS (brewkit semantics).
+      // -buildmode=pie on linux or segmentation fault
+      // https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+      'linux': {
+        GO_LDFLAGS: ['-buildmode=pie'],
+      },
     },
   },
 }

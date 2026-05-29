@@ -15,6 +15,19 @@ export const recipe: Recipe = {
     url: 'https://github.com/libsdl-org/SDL/archive/refs/tags/release-{{version}}.tar.gz',
     stripComponents: 1,
   },
+  dependencies: {
+    linux: {
+      'alsa-project.org/alsa-lib': '>=1.0.11',
+      'x.org/x11': '*',
+      'x.org/xcursor': '*',
+      'x.org/xi': '*',
+      'x.org/xrandr': '*',
+      'x.org/xfixes': '*',
+      'x.org/xrender': '*',
+      'x.org/xscrnsaver': '*',
+      'x.org/exts': '*',
+    },
+  },
   buildDependencies: {
     'gnu.org/autoconf': '*',
     'gnu.org/automake': '*',
@@ -24,15 +37,30 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      './configure $ARGS',
-      'make --jobs {{hw.concurrency}} install',
-      'if test "{{hw.platform}}" = "linux"; then',
-      'export CMAKE_ARGS="$CMAKE_ARGS -DSDL_X11_XTEST=OFF"',
-      'fi',
-      'cd "build"',
-      'cmake -S .. $CMAKE_ARGS',
-      'cmake --build .',
-      'cmake --install .',
+      {
+        run: [
+          './configure $ARGS',
+          'make --jobs {{hw.concurrency}} install',
+        ],
+        if: '<3.2',
+      },
+      {
+        run: [
+          'if test "{{hw.platform}}" = "linux"; then',
+          'export CMAKE_ARGS="$CMAKE_ARGS -DSDL_X11_XTEST=OFF"',
+          'fi',
+        ],
+        if: '>=3.4',
+      },
+      {
+        run: [
+          'cmake -S .. $CMAKE_ARGS',
+          'cmake --build .',
+          'cmake --install .',
+        ],
+        if: '>=3.2',
+        'working-directory': 'build',
+      },
     ],
     env: {
       'ARGS': ['--prefix={{prefix}}', '--with-x', '--enable-hidapi', '--enable-alsa', '--enable-alsa-shared', '--enable-video-dummy', '--enable-video-opengl', '--enable-video-opengles', '--enable-video-x11', '--enable-video-x11-scrnsaver', '--enable-video-x11-xcursor', '--enable-video-x11-xinerama', '--enable-video-x11-xinput', '--enable-video-x11-xrandr', '--enable-video-x11-xshape', '--enable-x11-shared'],

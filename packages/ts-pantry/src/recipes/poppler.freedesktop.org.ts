@@ -18,9 +18,16 @@ export const recipe: Recipe = {
     'poppler.freedesktop.org/poppler-data': '*',
     'simplesystems.org/libtiff': '*',
     'zlib.net': '*',
+    // clang's c++20 std lib isn't sufficient on Linux (per pkgx)
+    'linux': {
+      'gnu.org/gcc/libstdcxx': '14',
+    },
   },
   buildDependencies: {
     'cmake.org': '>=3.16.0',
+    'linux': {
+      'gnu.org/gcc': '14',
+    },
   },
 
   build: {
@@ -48,6 +55,15 @@ export const recipe: Recipe = {
     ],
     env: {
       'ARGS': ['-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DENABLE_QT5=OFF', '-DENABLE_QT6=OFF', '-DENABLE_GLIB=OFF', '-DENABLE_GPGME=OFF', '-DENABLE_NSS3=OFF'],
+      // gettid() and C++ filesystem references need PIC + relaxed link on Linux (mirrors pkgx)
+      'linux/x86-64': {
+        ARGS: ['-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DENABLE_QT5=OFF', '-DENABLE_QT6=OFF', '-DENABLE_GLIB=OFF', '-DENABLE_GPGME=OFF', '-DENABLE_NSS3=OFF', '-DCMAKE_C_FLAGS=-fPIC', '-DCMAKE_CXX_FLAGS=-fPIC', '-DCMAKE_EXE_LINKER_FLAGS=-Wl,-pie,-lstdc++fs,--unresolved-symbols=ignore-in-shared-libs'],
+        LDFLAGS: '$LDFLAGS -Wl,--unresolved-symbols=ignore-in-shared-libs',
+      },
+      'linux/aarch64': {
+        ARGS: ['-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DENABLE_QT5=OFF', '-DENABLE_QT6=OFF', '-DENABLE_GLIB=OFF', '-DENABLE_GPGME=OFF', '-DENABLE_NSS3=OFF', '-DCMAKE_EXE_LINKER_FLAGS=-Wl,-lstdc++fs,--unresolved-symbols=ignore-in-shared-libs'],
+        LDFLAGS: '$LDFLAGS -Wl,--unresolved-symbols=ignore-in-shared-libs',
+      },
     },
   },
 }

@@ -10,7 +10,10 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'typst/typst',
-    tagPattern: /^v(\d\d-\d\d-\d\d(?:-\d)?)$/,
+    // typst tags are semver (v0.13.1). The old /^v\d\d-\d\d-\d\d/ pattern was a
+    // leftover from typst's early date-based versioning and never matches modern
+    // tags, producing a bogus version and a 404 download URL.
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/typst/typst/archive/refs/tags/v{{version}}.tar.gz',
@@ -26,8 +29,8 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cargo install --path cli --locked --root {{prefix}}',
-      'cargo install --path crates/typst-cli --locked --root {{prefix}}',
+      { run: 'cargo install --path cli --locked --root {{prefix}}', if: '<0.7' },
+      { run: 'cargo install --path crates/typst-cli --locked --root {{prefix}}', if: '>=0.7' },
     ],
     env: {
       'TYPST_VERSION': '${{version}}',

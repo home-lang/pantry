@@ -25,8 +25,8 @@ export const recipe: Recipe = {
       'cmake -S . -B build $ARGS',
       'cmake --build build',
       'cmake --install build',
-      'cd "${{prefix}}/lib/pkgconfig/"',
-      'ln -s msgpack-c.pc msgpack.pc',
+      // some old software, like tmate, wants `msgpack.pc`
+      { run: 'ln -s msgpack-c.pc msgpack.pc', 'working-directory': '${{prefix}}/lib/pkgconfig/' },
     ],
     env: {
       'ARGS': ['-DMSGPACK_BUILD_TESTS=OFF', '-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_LIBDIR=lib', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF'],

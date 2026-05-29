@@ -8,7 +8,7 @@ export const recipe: Recipe = {
   github: 'https://github.com/dotnet/dotnet',
   programs: ['dotnet'],
   versionSource: {
-    type: 'github-releases',
+    type: 'github-tags',
     repo: 'dotnet/sdk',
     tagPattern: /^v(.+)$/,
   },
@@ -16,15 +16,33 @@ export const recipe: Recipe = {
     url: 'https://github.com/dotnet/sdk/archive/v{{version}}.tar.gz',
     stripComponents: 1,
   },
+  dependencies: {
+    linux: {
+      'unicode.org': '^71',
+      'openssl.org': '*',
+    },
+  },
   buildDependencies: {
     'curl.se': '*',
   },
 
   build: {
+    // The .NET SDK is shipped by upstream as a prebuilt, vendored archive.
+    // Mirror pkgx: download the official tarball into {{prefix}} and symlink
+    // the launcher into bin/. PLATFORM selects the right tarball per os/arch.
+    workingDirectory: '{{prefix}}',
+    env: {
+      'darwin/aarch64': { PLATFORM: 'osx-arm64' },
+      'darwin/x86-64': { PLATFORM: 'osx-x64' },
+      'linux/aarch64': { PLATFORM: 'linux-arm64' },
+      'linux/x86-64': { PLATFORM: 'linux-x64' },
+    },
     script: [
-      'curl -L "https://dotnetcli.azureedge.net/dotnet/Sdk/{{version}}/dotnet-sdk-{{version}}-${PLATFORM}.tar.gz" | tar zxf -',
-      'cd "{{prefix}}/bin"',
-      'ln -s ../dotnet ./dotnet',
+      'curl -L "https://builds.dotnet.microsoft.com/dotnet/Sdk/{{version}}/dotnet-sdk-{{version}}-${PLATFORM}.tar.gz" | tar zxf -',
+      {
+        run: 'ln -s ../dotnet ./dotnet',
+        'working-directory': '{{prefix}}/bin',
+      },
     ],
   },
 }

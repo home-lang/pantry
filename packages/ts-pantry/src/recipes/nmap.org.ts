@@ -18,6 +18,9 @@ export const recipe: Recipe = {
   buildDependencies: {
     'gnu.org/patch': '*',
     'python.org': '3',
+    'linux': {
+      'kernel.org/linux-headers': '*',
+    },
   },
 
   build: {

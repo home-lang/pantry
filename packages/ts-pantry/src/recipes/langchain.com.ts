@@ -21,12 +21,22 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'libs/langchain',
     script: [
       'python -m pip install --prefix={{prefix}} .',
-      'cd "${{prefix}}/lib"',
-      'ln -s python{{deps.python.org.version.marketing}} python{{deps.python.org.version.major}}',
-      'cd "${{prefix}}/bin"',
-      'sed -i\'\' "s|{{deps.python.org.prefix}}/bin/python|/usr/bin/env python|g" ./*',
+      {
+        run: 'ln -s python{{deps.python.org.version.marketing}} python{{deps.python.org.version.major}}',
+        'working-directory': '${{prefix}}/lib',
+      },
+      {
+        run: 'sed -i\'\' "s|{{deps.python.org.prefix}}/bin/python|/usr/bin/env python|g" ./*',
+        'working-directory': '${{prefix}}/bin',
+      },
     ],
+    env: {
+      linux: {
+        MULTIDICT_NO_EXTENSIONS: '1',
+      },
+    },
   },
 }

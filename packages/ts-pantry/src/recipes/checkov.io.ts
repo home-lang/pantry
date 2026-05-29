@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'bridgecrewio/checkov',
-    tagPattern: /^v(.+)$/,
+    tagPattern: /^(\d+\.\d+\.\d+)$/,
   },
   distributable: {
     url: 'https://github.com/bridgecrewio/checkov/archive/refs/tags/{{version}}.tar.gz',
@@ -27,10 +27,21 @@ export const recipe: Recipe = {
   build: {
     script: [
       'bkpyvenv stage {{prefix}} {{version}}',
-      'pkgx +rust~1.70 +cargo\\<0.83 {{prefix}}/venv/bin/pip install "rustworkx$(jq -r .default.rustworkx.version Pipfile.lock | sed \'s/==/~=/\')"',
-      'pkgx +rust~1.82 +cargo\\<0.83 {{prefix}}/venv/bin/pip install "orjson$(jq -r .default.orjson.version Pipfile.lock | sed \'s/==/~=/\')"',
-      '${{prefix}}/venv/bin/pip install .',
+      {
+        run: [
+          'pkgx +rust~1.70 +cargo\\<0.83 {{prefix}}/venv/bin/pip install "rustworkx$(jq -r .default.rustworkx.version Pipfile.lock | sed \'s/==/~=/\')"',
+          'pkgx +rust~1.82 +cargo\\<0.83 {{prefix}}/venv/bin/pip install "orjson$(jq -r .default.orjson.version Pipfile.lock | sed \'s/==/~=/\')"',
+        ],
+        if: '>=3.2.258',
+      },
+      '{{prefix}}/venv/bin/pip install .',
       'bkpyvenv seal {{prefix}} checkov',
     ],
+    env: {
+      // error: incompatible pointer to integer conversion initializing 'int' with an expression of type 'void *'
+      linux: {
+        CFLAGS: '-Wno-int-conversion',
+      },
+    },
   },
 }

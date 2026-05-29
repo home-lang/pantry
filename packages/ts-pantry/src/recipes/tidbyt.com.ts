@@ -30,11 +30,18 @@ export const recipe: Recipe = {
       'npm run build',
       'go mod download',
       'go build -v -trimpath -ldflags="$LDFLAGS" -o $BUILDLOC .',
-      'GOOS=js GOARCH=wasm go build -trimpath -ldflags="-s -w" -o ${BUILDLOC}.wasm tidbyt.dev/pixlet',
+      // removed in 0.33.1 — https://github.com/tidbyt/pixlet/pull/1070
+      {
+        run: 'GOOS=js GOARCH=wasm go build -trimpath -ldflags="-s -w" -o ${BUILDLOC}.wasm tidbyt.dev/pixlet',
+        if: '<0.33.1',
+      },
     ],
     env: {
       'BUILDLOC': '{{prefix}}/bin/pixlet',
       'LDFLAGS': ['-s', '-w', '-X=tidbyt.dev/pixlet/cmd.Version={{version}}'],
+      'linux': {
+        LDFLAGS: ['-buildmode=pie'],
+      },
     },
   },
 }

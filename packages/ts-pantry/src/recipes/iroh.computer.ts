@@ -12,23 +12,46 @@ export const recipe: Recipe = {
     repo: 'n0-computer/iroh',
   },
 
+  distributable: {
+    url: 'https://github.com/n0-computer/iroh/archive/refs/tags/v{{version}}.tar.gz',
+    stripComponents: 1,
+  },
+
+  buildDependencies: {
+    'rust-lang.org/cargo': '*',
+    'rust-lang.org': '^1.78', // stdsimd changes
+    linux: {
+      'gnu.org/gcc': '14', // since 0.92
+    },
+  },
+
   build: {
+    env: {
+      linux: {
+        RUSTFLAGS: '$RUSTFLAGS -C linker=gcc',
+      },
+    },
     script: [
-      'case "{{hw.platform}}/{{hw.arch}}" in',
-      '  darwin/aarch64) TRIPLE="aarch64-apple-darwin" ;;',
-      '  darwin/x86-64) TRIPLE="x86_64-apple-darwin" ;;',
-      '  linux/x86-64) TRIPLE="x86_64-unknown-linux-musl" ;;',
-      '  linux/aarch64) TRIPLE="aarch64-unknown-linux-musl" ;;',
-      '  *) echo "Unsupported platform" && exit 1 ;;',
-      'esac',
-      'mkdir -p "{{prefix}}/bin" /tmp/iroh-extract',
-      'for TOOL in iroh-relay iroh-dns-server; do',
-      '  curl -fSL -o /tmp/${TOOL}.tar.gz "https://github.com/n0-computer/iroh/releases/download/v{{version}}/${TOOL}-v{{version}}-${TRIPLE}.tar.gz"',
-      '  tar -xzf /tmp/${TOOL}.tar.gz -C /tmp/iroh-extract',
-      '  cp /tmp/iroh-extract/${TOOL} "{{prefix}}/bin/" 2>/dev/null || cp /tmp/iroh-extract/*/${TOOL} "{{prefix}}/bin/" 2>/dev/null || true',
-      '  chmod +x "{{prefix}}/bin/${TOOL}"',
-      'done',
-      'ln -s iroh-relay "{{prefix}}/bin/iroh"',
+      { run: 'cargo install --path . --locked --root {{prefix}}', if: '<0.6.0' },
+      { run: 'cargo install --path iroh --locked --root {{prefix}}', if: '>=0.6.0<0.13.0' },
+      { run: 'cargo install --path iroh-cli --locked --root {{prefix}}', if: '>=0.13.0<0.28.1' },
+      { run: 'cargo install --path iroh-cli --root {{prefix}}', if: '>=0.28.1<0.29' },
+      {
+        run: [
+          'cargo install --path iroh-relay --root {{prefix}}',
+          'cargo install --path iroh-dns-server --root {{prefix}}',
+          'ln -s iroh-relay {{prefix}}/bin/iroh',
+        ],
+        if: '>=0.29<0.30',
+      },
+      {
+        run: [
+          'cargo install --path iroh-relay --root {{prefix}} --features server',
+          'cargo install --path iroh-dns-server --root {{prefix}}',
+          'ln -s iroh-relay {{prefix}}/bin/iroh',
+        ],
+        if: '>=0.30',
+      },
     ],
   },
 }

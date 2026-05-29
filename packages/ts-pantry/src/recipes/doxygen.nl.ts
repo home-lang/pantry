@@ -17,13 +17,17 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   buildDependencies: {
-    'gnu.org/bison': '>=2.7',
+    'gnu.org/bison': '^3',
     'cmake.org': '^3',
     'github.com/westes/flex': '2',
     'python.org': '>=3<3.12',
+    'linux': {
+      'llvm.org': '20',
+    },
   },
 
   build: {
+    workingDirectory: 'build',
     script: [
       'cmake $ARGS -G "Unix Makefiles" ..',
       'make --jobs {{hw.concurrency}}',

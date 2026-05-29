@@ -30,7 +30,7 @@ export const recipe: Recipe = {
       'make --jobs {{hw.concurrency}} install',
     ],
     env: {
-      'ARGS': ['--disable-debug', '--disable-dependency-tracking', '--prefix={{prefix}}', '--libdir={{prefix}}/lib', '--disable-silent-rules', '--enable-ipv6', '--sysconfdir={{prefix}}/etc', '--with-hwloc={{deps.open-mpi.org/hwloc.prefix}}', '--with-libevent={{deps.libevent.org.prefix}}'],
+      'ARGS': ['--disable-debug', '--disable-dependency-tracking', '--prefix={{prefix}}', '--libdir={{prefix}}/lib', '--disable-silent-rules', '--enable-ipv6', '--sysconfdir={{prefix}}/etc', '--with-hwloc={{deps.open-mpi.org/hwloc.prefix}}', '--with-libevent={{deps.libevent.org.prefix}}', '--with-sge'],
     },
   },
 }

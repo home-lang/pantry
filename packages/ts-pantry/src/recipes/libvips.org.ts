@@ -48,6 +48,8 @@ export const recipe: Recipe = {
     'gnome.org/gobject-introspection': '*',
     'mesonbuild.com': '*',
     'ninja-build.org': '*',
+    // 8.18.1 had avx-512 issues with highway
+    'linux': { 'gnu.org/gcc': '14' },
   },
 
   build: {
@@ -57,10 +59,17 @@ export const recipe: Recipe = {
       'meson install -C build',
     ],
     env: {
-      'CC': 'clang',
-      'CXX': 'clang++',
-      'LD': 'clang',
       'MESON_ARGS': ['--prefix={{prefix}}', '--libdir={{prefix}}/lib', '--buildtype=release', '--wrap-mode=nofallback'],
+      'darwin': {
+        CFLAGS: '$CFLAGS -Wno-incompatible-function-pointer-types',
+      },
+      'linux': {
+        LDFLAGS: '$LDFLAGS -Wl,-lstdc++fs',
+      },
+      // __extendhfsf2 is hidden in libgcc.a; use shared libgcc so g-i introspection can link
+      'linux/x86-64': {
+        LDFLAGS: '$LDFLAGS -shared-libgcc',
+      },
     },
   },
 }

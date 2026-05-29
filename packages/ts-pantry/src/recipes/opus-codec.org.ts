@@ -17,6 +17,13 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
 
+  buildDependencies: {
+    'gnu.org/autoconf': '2',
+    'gnu.org/automake': '1.16',
+    'gnu.org/libtool': '2.4',
+    'gnu.org/wget': '*', // downloads content at build time
+  },
+
   build: {
     script: [
       './autogen.sh',
@@ -24,5 +31,12 @@ export const recipe: Recipe = {
       'make --jobs {{hw.concurrency}}',
       'make install',
     ],
+    env: {
+      ARGS: [
+        '--prefix={{prefix}}',
+        '--disable-dependency-tracking',
+        '--disable-doc',
+      ],
+    },
   },
 }

@@ -27,13 +27,30 @@ export const recipe: Recipe = {
       'bkpyvenv stage {{prefix}} {{version}}',
       '${{prefix}}/venv/bin/pip install .',
       'ls -l {{prefix}}/{venv/,}bin || true',
-      'bkpyvenv seal {{prefix}} huggingface-cli',
-      'ln -s huggingface-cli {{prefix}}/venv/bin/hf',
-      'ln -s huggingface-cli {{prefix}}/bin/hf',
-      'bkpyvenv seal {{prefix}} hf huggingface-cli',
-      'bkpyvenv seal {{prefix}} hf',
-      'ln -s hf {{prefix}}/venv/bin/huggingface-cli',
-      'ln -s hf {{prefix}}/bin/huggingface-cli',
+      {
+        run: [
+          'bkpyvenv seal {{prefix}} huggingface-cli',
+          'ln -s huggingface-cli {{prefix}}/venv/bin/hf',
+          'ln -s huggingface-cli {{prefix}}/bin/hf',
+        ],
+        if: '<0.36.2',
+      },
+      {
+        run: 'bkpyvenv seal {{prefix}} hf huggingface-cli',
+        if: '>=0.36.2<1',
+      },
+      {
+        run: [
+          'bkpyvenv seal {{prefix}} hf',
+          'ln -s hf {{prefix}}/venv/bin/huggingface-cli',
+          'ln -s hf {{prefix}}/bin/huggingface-cli',
+        ],
+        if: '>=1<1.10.1',
+      },
+      {
+        run: 'bkpyvenv seal {{prefix}} hf huggingface-cli',
+        if: '>=1.10.1',
+      },
     ],
   },
 }

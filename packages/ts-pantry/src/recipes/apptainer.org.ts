@@ -21,22 +21,23 @@ export const recipe: Recipe = {
     'curl.se/ca-certs': '*',
   },
   buildDependencies: {
-    'go.dev': '~1.21',
+    'go.dev': '~1.25.7',
+    linux: {
+      'gnu.org/gcc': '14', // it wants to use ld.gold
+      'gnu.org/binutils': '~2.44', // higher might no longer include ld.gold
+    },
   },
 
   build: {
     script: [
       'echo {{version}} >VERSION',
       './mconfig $ARGS',
-      'cd "builddir"',
-      'make',
-      'make install',
-      'cd "${{prefix}}/etc/apptainer"',
-      'touch apptainer.conf',
+      { run: ['make', 'make install'], 'working-directory': 'builddir' },
+      { run: 'touch apptainer.conf', 'working-directory': '${{prefix}}/etc/apptainer' },
       'mkdir -p {{prefix}}/var/apptainer/mnt/session',
     ],
     env: {
-      'ARGS': ['--prefix={{prefix}}', '--sysconfdir={{prefix}}/etc', '--localstatedir={{prefix}}/var', '--without-suid', '-P release-stripped', '-v'],
+      'ARGS': ['--prefix={{prefix}}', '--sysconfdir={{prefix}}/etc', '--localstatedir={{prefix}}/var', '--without-suid', '-v'],
       'CFLAGS': '$CFLAGS -O0',
     },
   },

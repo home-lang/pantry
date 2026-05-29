@@ -8,8 +8,9 @@ export const recipe: Recipe = {
   github: 'https://github.com/uclouvain/openjpeg',
   programs: ['opj_compress', 'opj_decompress', 'opj_dump'],
   versionSource: {
-    type: 'github-releases',
+    type: 'github-tags',
     repo: 'uclouvain/openjpeg',
+    tagPattern: /^v(.+)$/,
   },
   distributable: {
     url: 'https://github.com/uclouvain/openjpeg/archive/v{{version}}.tar.gz',
@@ -24,10 +25,10 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'build',
     script: [
       'cmake .. -DCMAKE_INSTALL_PREFIX={{prefix}} -DCMAKE_BUILD_TYPE=Release',
       'make --jobs {{hw.concurrency}} install',
-      '',
     ],
   },
 }

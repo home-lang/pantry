@@ -27,14 +27,25 @@ export const recipe: Recipe = {
       'go mod download',
       'go build $ARGS -ldflags="$GO_LDFLAGS" -o "{{prefix}}"/bin/encore ./cli/cmd/encore',
       'go build $ARGS -ldflags="$GO_LDFLAGS" -o "{{prefix}}"/bin/git-remote-encore ./cli/cmd/git-remote-encore',
-      'cp -a runtime "{{prefix}}"',
-      'cp -a runtimes "{{prefix}}"',
-      'ln -s runtimes/go "{{prefix}}/runtime"',
+      // runtime renamed to runtimes in 1.28.0 (https://github.com/encoredev/encore/pull/894)
+      { run: 'cp -a runtime "{{prefix}}"', if: '<1.28.0' },
+      {
+        run: [
+          'cp -a runtimes "{{prefix}}"',
+          'ln -s runtimes/go "{{prefix}}/runtime"',
+        ],
+        if: '>=1.28.0',
+      },
     ],
     env: {
       'GO111MODULE': 'on',
       'ARGS': ['-v', '-trimpath'],
       'GO_LDFLAGS': ['-s', '-w', '-X \'encr.dev/internal/version.Version={{version}}\''],
+      // -buildmode=pie on linux or segmentation fault (arrays supplement the base)
+      // https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+      'linux': {
+        GO_LDFLAGS: ['-buildmode=pie'],
+      },
     },
   },
 }

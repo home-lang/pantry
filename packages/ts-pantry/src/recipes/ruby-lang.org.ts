@@ -18,6 +18,26 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
 
+  dependencies: {
+    'openssl.org': '^1.1',
+    'pyyaml.org': '^0.2',
+    'zlib.net': '^1',
+  },
+
+  buildDependencies: {
+    'gnu.org/gettext': '^0.21',
+    'gnu.org/patch': '*',
+    'gnu.org/bison': '^3',
+    'gnu.org/autoconf': '*',
+    'rust-lang.org': '^1', // required to build YJIT
+    'rsync.samba.org': '*', // v4 fixes
+    linux: {
+      'ruby-lang.org': '^3', // ruby requires ruby to build
+      'rubygems.org': '*',
+      // ^^ only linux because we got issues on darwin currently and darwin provides ruby (for now)
+    },
+  },
+
   build: {
     script: [
       { run: 'ARGS="$ARGS --with-sitearchdir={{prefix}}/lib/ruby/site_ruby"', if: '<4' },

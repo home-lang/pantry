@@ -18,16 +18,23 @@ export const recipe: Recipe = {
   buildDependencies: {
     'rust-lang.org': '>=1.56',
     'rust-lang.org/cargo': '*',
+    'linux/aarch64': {
+      'gnu.org/gcc': '*',
+    },
   },
 
   build: {
     script: [
-      'cd "$HOME/.local/bin"',
-      'ln -s {{deps.gnu.org/gcc.prefix}}/bin/aarch64-unknown-linux-gnu-gcc aarch64-linux-gnu-gcc',
+      // linux/aarch64 looks for aarch64-linux-gnu-gcc
+      {
+        run: 'ln -s {{deps.gnu.org/gcc.prefix}}/bin/aarch64-unknown-linux-gnu-gcc aarch64-linux-gnu-gcc',
+        'working-directory': '$HOME/.local/bin',
+        if: 'linux/aarch64',
+      },
       'cargo install --locked --path crates/cli --root {{prefix}}',
     ],
     env: {
-      'PATH': '$HOME/.local/bin:$PATH',
+      PATH: '$HOME/.local/bin:$PATH',
     },
   },
 }

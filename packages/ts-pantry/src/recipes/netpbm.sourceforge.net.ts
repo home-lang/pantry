@@ -21,37 +21,75 @@ export const recipe: Recipe = {
   buildDependencies: {
     'gnu.org/make': '*',
     'github.com/westes/flex': '*',
+    'linux': {
+      'perl.org': '*',
+    },
   },
 
   build: {
     script: [
-      'sed -e \'s|TIFFLIB = NONE|TIFFLIB = -ltiff|g\' \\',
-      '    -e \'s|JPEGLIB = NONE|JPEGLIB = -ljpeg|g\' \\',
-      '    -e \'s|PNGLIB = NONE|PNGLIB = -lpng|g\' \\',
-      '    -e \'s|ZLIB = NONE|ZLIB = -lz|g\' \\',
-      '    -e \'s|JASPERLIB = NONE|JASPERLIB = -ljasper|g\' \\',
-      '    config.mk.in >config.mk',
-      '',
-      'sed -i \\',
-      '    -e \'s|CFLAGS_SHLIB = |CFLAGS_SHLIB = -fno-common|g\' \\',
-      '    -e \'s|NETPBMLIBTYPE = unixshared|NETPBMLIBTYPE = dylib|g\' \\',
-      '    -e \'s|NETPBMLIBSUFFIX = so|NETPBMLIBSUFFIX = dylib|g\' \\',
-      '    -e \'s|LDSHLIB = -shared -Wl,-soname,$(SONAME)|LDSHLIB = --shared -o $(SONAME)|g\' \\',
-      '    config.mk',
-      '',
-      'sed -i \'s|CFLAGS_SHLIB = |CFLAGS_SHLIB = -fPIC|g\' config.mk',
+      // Configure library link flags in config.mk (netpbm has no ./configure we use)
+      {
+        run: 'sed -f $PROP config.mk.in >config.mk',
+        prop: {
+          content: [
+            's|TIFFLIB = NONE|TIFFLIB = -ltiff|g',
+            's|JPEGLIB = NONE|JPEGLIB = -ljpeg|g',
+            's|PNGLIB = NONE|PNGLIB = -lpng|g',
+            's|ZLIB = NONE|ZLIB = -lz|g',
+            's|JASPERLIB = NONE|JASPERLIB = -ljasper|g',
+          ],
+        },
+      },
+      // macOS: build dylibs rather than ELF shared objects
+      {
+        run: 'sed -i -f $PROP config.mk',
+        if: 'darwin',
+        prop: {
+          content: [
+            's|CFLAGS_SHLIB = |CFLAGS_SHLIB = -fno-common|g',
+            's|NETPBMLIBTYPE = unixshared|NETPBMLIBTYPE = dylib|g',
+            's|NETPBMLIBSUFFIX = so|NETPBMLIBSUFFIX = dylib|g',
+            's|LDSHLIB = -shared -Wl,-soname,$(SONAME)|LDSHLIB = --shared $(LDFLAGS) -o $(SONAME)|g',
+          ],
+        },
+      },
+      // Linux: position-independent code for the shared objects
+      {
+        run: 'sed -i \'s|CFLAGS_SHLIB = |CFLAGS_SHLIB = -fPIC|g\' config.mk',
+        if: 'linux',
+      },
       'make --jobs {{hw.concurrency}}',
       'make --jobs {{hw.concurrency}} package pkgdir=$SRCROOT/stage',
-      'cd "stage"',
-      'mkdir -p {{prefix}}',
-      'mv bin include lib misc {{prefix}}/',
-      '',
-      'mkdir -p {{prefix}}/lib/pkgconfig',
-      'cp $PROP {{prefix}}/lib/pkgconfig/netpbm.pc',
-      '',
+      {
+        run: [
+          'mkdir -p {{prefix}}',
+          'mv bin include lib misc {{prefix}}/',
+          'mkdir -p {{prefix}}/lib/pkgconfig',
+          'cp $PROP {{prefix}}/lib/pkgconfig/netpbm.pc',
+        ],
+        'working-directory': 'stage',
+        prop: {
+          content: [
+            'prefix=${pcfiledir}/../..',
+            'exec_prefix=${prefix}',
+            'libdir=${exec_prefix}/lib',
+            'includedir=${prefix}/include/netpbm',
+            '',
+            'Name: Netpbm',
+            'Description: Graphics utilities',
+            'Version: {{version}}',
+            'Libs: -L${libdir} -lmylibrary',
+            'Cflags: -I${includedir}',
+          ],
+        },
+      },
     ],
     env: {
       'CFLAGS': '-Wno-implicit-function-declaration $CFLAGS',
+      'darwin': {
+        LDFLAGS: '$LDFLAGS -Wl,-headerpad_max_install_names',
+      },
     },
   },
 }

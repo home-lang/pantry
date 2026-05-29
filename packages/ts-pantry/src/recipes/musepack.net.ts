@@ -26,7 +26,12 @@ export const recipe: Recipe = {
       'cp libmpcdec/libmpcdec.* {{prefix}}/lib/',
     ],
     env: {
-      'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_LIBDIR=lib', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF', '-DCMAKE_EXE_LINKER_FLAGS=-lm -Wl,--allow-multiple-definition', '-DCMAKE_SHARED_LINKER_FLAGS=-lm -Wl,--allow-multiple-definition'],
+      // Only on Linux: ld.lld errors on duplicate symbols (Res_bit, __Cc, __Dc).
+      // Apple's ld rejects -Wl,--allow-multiple-definition, so keep it Linux-only.
+      linux: {
+        LDFLAGS: '-Wl,--allow-multiple-definition',
+      },
+      'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_LIBDIR=lib', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF'],
     },
   },
 }

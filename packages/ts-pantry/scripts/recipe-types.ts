@@ -63,6 +63,9 @@ export interface RecipeDistributable {
   /** URL template with {{version}} etc. */
   url: string
   stripComponents?: number
+  /** Git ref/tag to check out for `git+https://` source URLs (e.g. 'v{{version.raw}}').
+   * Consumed by build-package.ts downloadSource (git clone --branch <ref>). */
+  ref?: string
 }
 
 /** Full recipe definition — replaces YAML + overrides */
@@ -104,7 +107,7 @@ export interface Recipe {
      * `working-directory`. These flow straight through to the buildkit engine,
      * which evaluates the condition and runs the step in the given directory.
      */
-    script: Array<string | { run: string | string[], if?: string, 'working-directory'?: string, prop?: string | { content?: string, contents?: string, extname?: string } }>
+    script: Array<string | { run: string | string[], if?: string, 'working-directory'?: string, prop?: string | { content?: string | string[], contents?: string | string[], extname?: string } }>
     /**
      * Environment variables. Values may be nested objects keyed by platform
      * (`darwin`/`linux`) or platform/arch (`darwin/aarch64`, `linux/x86-64`),

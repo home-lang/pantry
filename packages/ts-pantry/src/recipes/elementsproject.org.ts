@@ -9,7 +9,9 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'ElementsProject/elements',
-    tagPattern: /^elements-(.+)$/,
+    // Match only stable semver tags (e.g. elements-23.2.6); skip rc/pre tags.
+    tagPattern: /^elements-(\d[\d.]*)$/,
+    stable: true,
   },
   distributable: {
     url: 'https://github.com/ElementsProject/elements/archive/refs/tags/elements-{{version}}.tar.gz',
@@ -25,6 +27,10 @@ export const recipe: Recipe = {
     'gnu.org/autoconf': '*',
     'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': '*',
+    // pkgx: hexdump (provided by util-linux) is required on Linux during the build
+    linux: {
+      'github.com/util-linux/util-linux': '*',
+    },
   },
 
   build: {
@@ -47,7 +53,7 @@ export const recipe: Recipe = {
     ],
     env: {
       'CXX': 'c++',
-      'ARGS': ['--prefix={{prefix}}', '--with-incompatible-bdb', '--enable-liquid', '--with-boost={{deps.boost.org.prefix}}', '--without-bdb'],
+      'ARGS': ['--prefix={{prefix}}', '--with-incompatible-bdb', '--enable-liquid', '--with-boost={{deps.boost.org.prefix}}'],
     },
   },
 }

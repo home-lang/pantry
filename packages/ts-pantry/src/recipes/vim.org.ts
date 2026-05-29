@@ -18,6 +18,9 @@ export const recipe: Recipe = {
   dependencies: {
     'python.org': '~3.11',
     'lua.org': '>=5.4',
+    'invisible-island.net/ncurses': '>=6.3',
+    'perl.org': '>=5.36',
+    'ruby-lang.org': '>=3.2',
   },
   buildDependencies: {
     'gnu.org/make': '^4.3',
@@ -28,11 +31,19 @@ export const recipe: Recipe = {
       './configure $ARGS',
       'make',
       'make install prefix={{prefix}}',
-      'cd "${{prefix}}/bin"',
-      'ln -s vim vi',
+      {
+        run: 'ln -s vim vi',
+        'working-directory': '{{prefix}}/bin',
+      },
     ],
     env: {
-      'ARGS': ['--prefix={{prefix}}', '--enable-multibyte', '--with-compiledby=tea.xyz', '--enable-cscope', '--enable-terminal', '--enable-python3interp', '--disable-gui', '--without-x', '--enable-luainterp'],
+      'ARGS': ['--prefix={{prefix}}', '--enable-multibyte', '--with-compiledby=tea.xyz', '--enable-cscope', '--enable-terminal', '--enable-perlinterp', '--enable-rubyinterp', '--enable-python3interp', '--disable-gui', '--without-x', '--enable-luainterp'],
+      'linux': {
+        'ARGS': ['--with-tlib=tinfow'],
+      },
+      'darwin': {
+        'ARGS': ['--with-tlib=ncurses'],
+      },
     },
   },
 }

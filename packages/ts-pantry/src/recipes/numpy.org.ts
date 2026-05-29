@@ -22,6 +22,10 @@ export const recipe: Recipe = {
   buildDependencies: {
     'cython.org/libcython': '*',
     'llvm.org': '*',
+    // gfortran — numpy probes for a Fortran compiler; without it the build
+    // fails with "configure: error: Cannot continue." (pkgx lists this as a
+    // companion for gfortran)
+    'gnu.org/gcc': '*',
   },
 
   build: {
@@ -42,10 +46,19 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
+      // ld unrecognized option '--version'
       'CC': 'clang',
       'CXX': 'clang++',
       'LD': 'clang',
       'ATLAS': 'None',
+      'darwin': {
+        BLAS: '{{deps.openblas.net.prefix}}/lib/libopenblas.dylib',
+        LAPACK: '{{deps.openblas.net.prefix}}/lib/libopenblas.dylib',
+      },
+      'linux': {
+        BLAS: '{{deps.openblas.net.prefix}}/lib/libopenblas.so',
+        LAPACK: '{{deps.openblas.net.prefix}}/lib/libopenblas.so',
+      },
     },
   },
 }

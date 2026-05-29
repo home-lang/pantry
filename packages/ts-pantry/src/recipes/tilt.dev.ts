@@ -16,25 +16,30 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   buildDependencies: {
-    'go.dev': '~1.21',
+    'go.dev': '~1.25.5', // per go.mod
     'nodejs.org': '^20',
     'classic.yarnpkg.com': '*',
+    'linux/aarch64': {
+      'gnu.org/gcc': '*', // cgo _really_ wants g++/ld.gold
+      'gnu.org/binutils': '~2.44', // ld.gold is deprecated
+    },
   },
 
   build: {
     script: [
       'make build-js',
-      'go mod download',
       'mkdir -p "{{prefix}}"/bin',
-      'go build -v -trimpath -ldflags="$LDFLAGS" -o $BUILDLOC ./cmd/tilt',
+      'go build -v -trimpath -mod=vendor -ldflags="$GO_LDFLAGS" -o "{{prefix}}/bin/tilt" ./cmd/tilt',
     ],
     env: {
-      'GOPROXY': 'https://proxy.golang.org,direct',
-      'GOSUMDB': 'sum.golang.org',
       'GO111MODULE': 'on',
       'CGO_ENABLED': '1',
-      'BUILDLOC': '{{prefix}}/bin/tilt',
-      'LDFLAGS': ['-s', '-w', '-X main.version={{version}}'],
+      'GO_LDFLAGS': ['-s', '-w', '-X main.version={{version}}'],
+      'linux': {
+        // or segmentation fault
+        // fix found here https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+        GO_LDFLAGS: ['-buildmode=pie'],
+      },
     },
   },
 }

@@ -8,7 +8,7 @@ export const recipe: Recipe = {
   github: 'https://github.com/ansible/ansible',
   programs: ['ansible', 'ansible-config', 'ansible-connection', 'ansible-console', 'ansible-doc', 'ansible-galaxy', 'ansible-inventory', 'ansible-playbook', 'ansible-pull', 'ansible-test', 'ansible-vault'],
   versionSource: {
-    type: 'github-releases',
+    type: 'github-tags',
     repo: 'ansible/ansible',
   },
   distributable: {
@@ -28,8 +28,11 @@ export const recipe: Recipe = {
       '${{prefix}}/venv/bin/pip install .',
       '${{prefix}}/venv/bin/pip install paramiko',
       'bkpyvenv seal {{prefix}} ansible ansible-config ansible-connection ansible-console ansible-doc ansible-galaxy ansible-inventory ansible-playbook ansible-pull ansible-test ansible-vault',
-      'cd "${{prefix}}/lib"',
-      'cp {{deps.python.org.prefix}}/lib/libpython{{deps.python.org.version.marketing}}.so* .',
+      {
+        run: 'cp {{deps.python.org.prefix}}/lib/libpython{{deps.python.org.version.marketing}}.so* .',
+        if: 'linux',
+        'working-directory': '${{prefix}}/lib',
+      },
     ],
   },
 }

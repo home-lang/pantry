@@ -9,42 +9,79 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   dependencies: {
+    'nlnetlabs.nl/ldns': '*',
+    'developers.yubico.com/libfido2': '*',
     'openssl.org': '*',
+    'kerberos.org': '*',
     'thrysoee.dk/editline': '*',
     'github.com/besser82/libxcrypt': '*',
     'zlib.net': '*',
+    'linux': {
+      'linux-pam.org': '*',
+    },
   },
   buildDependencies: {
     'freedesktop.org/pkg-config': '*',
     'curl.se': '*',
+    'darwin': {
+      'gnu.org/patch': '*',
+    },
+    'linux': {
+      'gnu.org/gcc': '*',
+      'gnu.org/make': '*',
+    },
   },
 
   build: {
     script: [
-      'if test "{{hw.platform}}" = "darwin"; then',
-      '  curl -L "$PATCH1" | patch',
-      'fi',
-      '',
-      'if test "{{hw.platform}}" = "darwin"; then',
-      '  curl -L "$PATCH2" | patch',
-      'fi',
-      '',
+      {
+        run: [
+          'if test "{{hw.platform}}" = "darwin"; then',
+          '  curl -L "$PATCH1" | patch',
+          'fi',
+        ],
+        if: '<10.1',
+      },
+      {
+        run: [
+          'if test "{{hw.platform}}" = "darwin"; then',
+          '  curl -L "$PATCH2" | patch',
+          'fi',
+        ],
+        if: '<9.8',
+      },
       'sed -i "s|@PREFIX@/share/openssh|{{prefix}}/etc/ssh|g" sandbox-darwin.c',
-      'sed -i "s|-fzero-call-used-regs=all|-fzero-call-used-regs=used|g" configure',
+      {
+        run: 'sed -i "s|-fzero-call-used-regs=all|-fzero-call-used-regs=used|g" configure',
+        if: 'darwin/x86-64',
+      },
       './configure $CONFIGURE_ARGS',
-      'sed -i "s|prefix=/usr/local|prefix={{prefix}}|g" Makefile',
+      {
+        run: 'sed -i "s|prefix=/usr/local|prefix={{prefix}}|g" Makefile',
+        if: 'linux',
+      },
       'make --jobs {{hw.concurrency}}',
       'make --jobs 1 install',
-      'cd "{{prefix}}/bin"',
-      'ln -s ssh slogin',
-      'cd "{{prefix}}/etc/ssh"',
-      'curl -L "$RES_SSHD" -o org.openssh.sshd.sb',
+      {
+        run: 'ln -s ssh slogin',
+        'working-directory': '{{prefix}}/bin',
+      },
+      {
+        run: 'curl -L "$RES_SSHD" -o org.openssh.sshd.sb',
+        'working-directory': '{{prefix}}/etc/ssh',
+      },
     ],
     env: {
       'PATCH1': 'https://raw.githubusercontent.com/Homebrew/patches/1860b0a745f1fe726900974845d1b0dd3c3398d6/openssh/patch-sandbox-darwin.c-apple-sandbox-named-external.diff',
       'PATCH2': 'https://raw.githubusercontent.com/Homebrew/patches/d8b2d8c2612fd251ac6de17bf0cc5174c3aab94c/openssh/patch-sshd.c-apple-sandbox-named-external.diff',
       'RES_SSHD': 'https://raw.githubusercontent.com/apple-oss-distributions/OpenSSH/OpenSSH-268.100.4/com.openssh.sshd.sb',
       'CONFIGURE_ARGS': ['--disable-debug', '--disable-dependency-tracking', '--prefix={{prefix}}', '--libdir={{prefix}}/lib', '--sysconfdir={{prefix}}/etc/ssh', '--with-ldns', '--with-libedit', '--with-kerberos5', '--with-pam', '--with-ssl-dir={{deps.openssl.org.prefix}}', '--with-security-key-builtin'],
+      'linux': {
+        'CONFIGURE_ARGS': '--with-privsep-path={{prefix}}/var/lib/sshd',
+      },
+      'darwin': {
+        'CPPFLAGS': '$CPPFLAGS -D__APPLE_SANDBOX_NAMED_EXTERNAL__',
+      },
     },
   },
 }

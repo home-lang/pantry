@@ -7,7 +7,10 @@ export const recipe: Recipe = {
   homepage: 'https://lame.sourceforge.io/',
   programs: ['lame'],
   distributable: {
-    url: 'https://prdownloads.sourceforge.net/project/lame/lame/{{version.raw}}/lame-{{version.raw}}.tar.gz',
+    // The release tarball is published as lame-{major}.{minor} (e.g. 3.100), but
+    // the discovered version is normalized to 3.100.0, so version.raw 404s. Use
+    // version.marketing (major.minor) to match the upstream filename.
+    url: 'https://downloads.sourceforge.net/project/lame/lame/{{version.marketing}}/lame-{{version.marketing}}.tar.gz',
     stripComponents: 1,
   },
 
@@ -24,5 +27,12 @@ export const recipe: Recipe = {
       'make install',
       '',
     ],
+    env: {
+      'linux/x86-64': {
+        CFLAGS: '-fPIC',
+        CXXFLAGS: '-fPIC',
+        LDFLAGS: '-pie',
+      },
+    },
   },
 }

@@ -22,8 +22,8 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cargo install $CARGO_ARGS --path .',
-      'cargo install $CARGO_ARGS --path crates/trippy',
+      { run: 'cargo install $CARGO_ARGS --path .', if: '<0.11' },
+      { run: 'cargo install $CARGO_ARGS --path crates/trippy', if: '>=0.11' },
     ],
     env: {
       'CARGO_ARGS': ['--locked', '--root={{prefix}}'],

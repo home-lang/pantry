@@ -10,11 +10,11 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'build/generic',
     script: [
       './configure $ARGS',
       'make --jobs {{hw.concurrency}}',
       'make --jobs {{hw.concurrency}} install',
-      '',
     ],
     env: {
       'ARGS': ['--prefix={{prefix}}', '--disable-assembly'],

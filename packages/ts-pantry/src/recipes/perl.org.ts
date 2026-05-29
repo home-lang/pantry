@@ -16,6 +16,13 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
 
+  buildDependencies: {
+    linux: {
+      'llvm.org': '<19',
+      'gnu.org/make': '*',
+    },
+  },
+
   build: {
     script: [
       './Configure $ARGS',
@@ -37,6 +44,9 @@ export const recipe: Recipe = {
     ],
     env: {
       'ARGS': ['-d', '-e', '-Dprefix={{prefix}}', '-Duselargefiles', '-Dusethreads', '-Duseshrplib=false', '-Duserelocatableinc'],
+      'linux': {
+        ARGS: ['-Accflags=-fPIC'],
+      },
     },
   },
 }

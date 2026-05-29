@@ -20,12 +20,17 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'cmd/scw',
     script: [
       'go mod download',
       'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/scw .',
     ],
     env: {
       'GO_LDFLAGS': ['-s', '-w', '-X main.GitCommit=pkgx', '-X main.GitBranch=pantry', '-X main.BuildDate=$(date -u +\'%Y-%m-%dT%H:%M:%SZ\')', '-X main.Version={{version}}'],
+      // linux: or segmentation fault — https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+      'linux': {
+        'GO_LDFLAGS': ['-buildmode=pie'],
+      },
     },
   },
 }

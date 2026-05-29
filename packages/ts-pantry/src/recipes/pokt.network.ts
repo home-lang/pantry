@@ -22,9 +22,16 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cd "app"',
-      'sed -i -e \'s/AppVersion = ".*"$/AppVersion = "RC-{{version}}"/\' app.go',
-      'go build -ldflags="$GO_LDFLAGS" -o \'{{prefix}}\'/bin/pocket ./app/cmd/pocket_core/main.go',
+      {
+        run: 'sed -i -e \'s/AppVersion = ".*"$/AppVersion = "RC-{{version}}"/\' app.go',
+        'working-directory': 'app',
+      },
+      'go build -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/pocket ./app/cmd/pocket_core/main.go',
     ],
+    env: {
+      linux: {
+        GO_LDFLAGS: '-buildmode=pie',
+      },
+    },
   },
 }

@@ -15,12 +15,26 @@ export const recipe: Recipe = {
     url: 'https://github.com/raphamorim/rio/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
+  dependencies: {
+    linux: {
+      'freedesktop.org/fontconfig': '*', // as of 0.2.33
+    },
+  },
   buildDependencies: {
     'rust-lang.org': '>=1.85',
     'rust-lang.org/cargo': '*',
+    linux: {
+      'khronos.org/glslang': '*', // since 0.4.0
+    },
   },
 
   build: {
+    workingDirectory: 'frontends/rioterm',
+    env: {
+      linux: {
+        RUSTFLAGS: '-C link-arg=-Wl,-lstdc++fs',
+      },
+    },
     script: [
       'cargo install --locked --path . --root {{prefix}}',
     ],

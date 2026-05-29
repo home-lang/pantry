@@ -8,7 +8,7 @@ export const recipe: Recipe = {
   github: 'https://github.com/libuv/libuv',
   programs: [],
   versionSource: {
-    type: 'github-releases',
+    type: 'github-tags',
     repo: 'libuv/libuv',
   },
   distributable: {
@@ -21,11 +21,16 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cd "src/unix"',
-      'if [ ! -f darwin-syscalls.h ]; then',
-      '  curl -LSs \'https://raw.githubusercontent.com/libuv/libuv/1c778bd001543371c915a79b7ac3c5864fe59e74/src/unix/darwin-syscalls.h\' -o darwin-syscalls.h',
-      'fi',
-      '',
+      // missing file in the 1.49.0 tarball (darwin only)
+      {
+        run: [
+          'if [ ! -f darwin-syscalls.h ]; then',
+          '  curl -LSs \'https://raw.githubusercontent.com/libuv/libuv/1c778bd001543371c915a79b7ac3c5864fe59e74/src/unix/darwin-syscalls.h\' -o darwin-syscalls.h',
+          'fi',
+        ].join('\n'),
+        if: 'darwin',
+        'working-directory': 'src/unix',
+      },
       './configure --prefix={{prefix}}',
       'make --jobs {{hw.concurrency}}',
       'make install',

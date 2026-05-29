@@ -27,6 +27,9 @@ export const recipe: Recipe = {
     'gnu.org/wget': '*',
     'gnu.org/coreutils': '*',
     'sqlite.org': '*',
+    linux: {
+      'nixos.org/patchelf': '*',
+    },
   },
 
   build: {
@@ -37,24 +40,34 @@ export const recipe: Recipe = {
       'cmake -S . -B static $ARGS $STATIC_LIB_ARGS',
       'cmake --build static',
       'mv static/lib/libproj.a "{{prefix}}/lib/"',
+      // The datum grid files are required to support datum shifting
       'wget https://download.osgeo.org/proj/proj-data-1.13.tar.gz',
       'expected_checksum=\'f1e5e42ba15426d01d1970be727af77ac9b88c472215497a5a433d0a16dd105b  proj-data-1.13.tar.gz\'',
-      'actual_checksum="$(shasum -a 256 proj-data-1.13.tar.gz)"',
+      'actual_checksum="$(sha256sum proj-data-1.13.tar.gz)"',
       'test "$expected_checksum" = "$actual_checksum"',
       'mkdir proj-data',
       'tar -xzf proj-data-1.13.tar.gz -C proj-data',
       'mkdir -p "{{prefix}}/share/proj"',
       'mv proj-data/* "{{prefix}}/share/proj/"',
-      'cd "{{prefix}}/bin"',
-      'for BIN in *; do',
-      '  patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so $BIN',
-      'done',
-      '',
-      'cd "{{prefix}}/lib"',
-      'for LIB in *.so; do',
-      '  patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so $LIB',
-      'done',
-      '',
+      // sqlite3 full path in the bins (linux only)
+      {
+        run: [
+          'for BIN in *; do',
+          '  patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so $BIN',
+          'done',
+        ],
+        if: 'linux',
+        'working-directory': '{{prefix}}/bin',
+      },
+      {
+        run: [
+          'for LIB in *.so; do',
+          '  patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so $LIB',
+          'done',
+        ],
+        if: 'linux',
+        'working-directory': '{{prefix}}/lib',
+      },
     ],
     env: {
       'ARGS': ['-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_INSTALL_PREFIX={{prefix}}'],

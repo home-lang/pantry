@@ -20,7 +20,7 @@ export const recipe: Recipe = {
     'pkgx.sh': '>=1',
   },
   buildDependencies: {
-    'python.org': '>=3.7<3.12',
+    'python.org': '>=3.9<3.14',
     'git-scm.org': '^2',
   },
 

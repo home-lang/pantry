@@ -13,7 +13,10 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/g-truc/glm/releases/download/{{version.tag}}/glm-{{version.tag}}.zip',
+    // v1.0.0+ ships only a "-light" zip; the plain glm-<tag>.zip 404s for those
+    // releases. The light archive still extracts to a `glm/` subdir with the
+    // CMakeLists + headers the build below expects.
+    url: 'https://github.com/g-truc/glm/releases/download/{{version.tag}}/glm-{{version.tag}}-light.zip',
   },
   buildDependencies: {
     'cmake.org': '^3',

@@ -24,5 +24,13 @@ export const recipe: Recipe = {
       'make pkg/{{hw.platform}}_$GOARCH/nomad',
       'install -Dm755 pkg/{{hw.platform}}_$GOARCH/nomad {{prefix}}/bin/nomad',
     ],
+    env: {
+      aarch64: {
+        GOARCH: 'arm64',
+      },
+      'x86-64': {
+        GOARCH: 'amd64',
+      },
+    },
   },
 }

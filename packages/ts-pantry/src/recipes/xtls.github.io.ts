@@ -23,11 +23,15 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go build $GO_ARGS -ldflags="$GO_LDFLAGS" ./main',
-      'cd "${{prefix}}/share/xray"',
-      'curl -L "$RES_GEOSITE" -o geosite.dat',
-      'curl -L "$RES_GEOIP" -o geoip.dat',
-      'cd "${{prefix}}/etc/xray"',
-      'curl -L "$RES_CONFIG" -o config.json',
+      {
+        run: [
+          'mkdir -p "${{prefix}}/share/xray"',
+          'curl -L "$RES_GEOSITE" -o "${{prefix}}/share/xray/geosite.dat"',
+          'curl -L "$RES_GEOIP" -o "${{prefix}}/share/xray/geoip.dat"',
+          'mkdir -p "${{prefix}}/etc/xray"',
+          'curl -L "$RES_CONFIG" -o "${{prefix}}/etc/xray/config.json"',
+        ],
+      },
     ],
     env: {
       'GO_LDFLAGS': ['-s', '-w', '-buildid='],
@@ -35,6 +39,9 @@ export const recipe: Recipe = {
       'RES_GEOSITE': 'https://github.com/v2fly/domain-list-community/releases/download/20250916122507/dlc.dat',
       'RES_CONFIG': 'https://raw.githubusercontent.com/v2fly/v2ray-core/v5.40.0/release/config/config.json',
       'RES_GEOIP': 'https://github.com/v2fly/geoip/releases/download/202510050144/geoip.dat',
+      'linux': {
+        GO_LDFLAGS: ['-s', '-w', '-buildid=', '-buildmode=pie'],
+      },
     },
   },
 }

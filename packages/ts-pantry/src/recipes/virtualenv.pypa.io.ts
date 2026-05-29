@@ -30,8 +30,11 @@ export const recipe: Recipe = {
       'bkpyvenv stage \'{{prefix}}\' {{version}}',
       '${{prefix}}/venv/bin/pip install .',
       'bkpyvenv seal \'{{prefix}}\' virtualenv',
-      'cd "${{prefix}}/lib"',
-      'cp {{deps.python.org.prefix}}/lib/libpython{{deps.python.org.version.marketing}}.so* .',
+      {
+        run: 'cp {{deps.python.org.prefix}}/lib/libpython{{deps.python.org.version.marketing}}.so* .',
+        if: 'linux',
+        'working-directory': '${{prefix}}/lib',
+      },
     ],
   },
 }

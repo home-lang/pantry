@@ -24,10 +24,10 @@ export const recipe: Recipe = {
   },
 
   build: {
+    workingDirectory: 'build',
     script: [
       'cmake .. $ARGS',
       'make --jobs {{hw.concurrency}} install',
-      '',
     ],
     env: {
       'ARGS': ['-DBUILD_EXAMPLES=OFF', '-DBUILD_TESTS=OFF', '-DUSE_SSH=ON', '-DBUILD_SHARED_LIBS=ON', '-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release'],

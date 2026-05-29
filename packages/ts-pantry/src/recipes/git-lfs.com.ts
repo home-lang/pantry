@@ -17,7 +17,36 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
 
+  // git-lfs is shipped vendored (prebuilt binaries) by upstream/pkgx:
+  // building from source dies on signal 11 (see git-lfs#from-source FIXME in
+  // pkgx). The build script downloads the platform-specific prebuilt binary
+  // via $DOWNLOAD_URL / $UNARCHIVE defined in build.env below.
+  dependencies: {
+    'git-scm.org': '*',
+  },
+  buildDependencies: {
+    'gnu.org/wget': '*',
+  },
+
   build: {
+    env: {
+      'linux/x86-64': {
+        DOWNLOAD_URL: 'https://github.com/git-lfs/git-lfs/releases/download/v{{version}}/git-lfs-linux-amd64-v{{version}}.tar.gz',
+        UNARCHIVE: 'tar -xz -f git-lfs-linux-amd64-v{{version}}.tar.gz',
+      },
+      'linux/aarch64': {
+        DOWNLOAD_URL: 'https://github.com/git-lfs/git-lfs/releases/download/v{{version}}/git-lfs-linux-arm64-v{{version}}.tar.gz',
+        UNARCHIVE: 'tar -xz -f git-lfs-linux-arm64-v{{version}}.tar.gz',
+      },
+      'darwin/x86-64': {
+        DOWNLOAD_URL: 'https://github.com/git-lfs/git-lfs/releases/download/v{{version}}/git-lfs-darwin-amd64-v{{version}}.zip',
+        UNARCHIVE: 'unzip git-lfs-darwin-amd64-v{{version}}.zip -d ./',
+      },
+      'darwin/aarch64': {
+        DOWNLOAD_URL: 'https://github.com/git-lfs/git-lfs/releases/download/v{{version}}/git-lfs-darwin-arm64-v{{version}}.zip',
+        UNARCHIVE: 'unzip git-lfs-darwin-arm64-v{{version}}.zip -d ./',
+      },
+    },
     script: [
       'wget $DOWNLOAD_URL',
       '$UNARCHIVE',
