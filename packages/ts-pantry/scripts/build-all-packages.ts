@@ -768,8 +768,10 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/lsof-org/lsof': ['*'],
   // util-linux: cc_wrapper -version flag incompatible + configure failure
   'github.com/util-linux/util-linux': ['*'],
-  // rubocop: gem native extension can't find /./bin/ruby
-  'rubocop.org': ['*'],
+  // agpt (auto-gpt): upstream repo Significant-Gravitas/Auto-GPT was renamed to
+  // AutoGPT and restructured into a multi-package "platform" monorepo — the old
+  // single-CLI release tarballs 404 and there is no equivalent buildable CLI.
+  'agpt.co': ['*'],
   // ronn: gemspec errors, old unmaintained project
   'rtomayko.github.io/ronn': ['*'],
   // licensee: racc gem native extension build failure

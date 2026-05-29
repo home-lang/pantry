@@ -20,12 +20,12 @@ export const recipe: Recipe = {
   build: {
     script: [
       'mkdir -p "{{prefix}}/bin"',
-      { run: 'curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.tag}}/tart.tar.gz | tar -xzf -', if: '>=2.24' },
-      { run: 'curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.tag}}/tart-$ARCH.tar.gz | tar -xzf -', if: '>=2.5<2.24' },
+      { run: 'curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.raw}}/tart.tar.gz | tar -xzf -', if: '>=2.24' },
+      { run: 'curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.raw}}/tart-$ARCH.tar.gz | tar -xzf -', if: '>=2.5<2.24' },
       {
         run: [
           'if test "{{hw.arch}}" = "aarch64"; then',
-          '  curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.tag}}/tart.tar.gz | tar -xzf -',
+          '  curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.raw}}/tart.tar.gz | tar -xzf -',
           'else',
           '  # not available on x86-64',
           '  false',
