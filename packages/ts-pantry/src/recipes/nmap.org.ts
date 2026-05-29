@@ -70,6 +70,12 @@ export const recipe: Recipe = {
         '--without-zenmap',
         '--with-compiledby=tea.xyz',
       ],
+      // nmap.cc uses getopt_long_only / optional_argument / struct option from
+      // <getopt.h>; those are GNU extensions gated behind _GNU_SOURCE on glibc.
+      // Without it the whole getopt block fails to declare ("optional_argument
+      // was not declared"). Define it for both C and C++ TUs.
+      'CFLAGS': '$CFLAGS -D_GNU_SOURCE',
+      'CXXFLAGS': '$CXXFLAGS -D_GNU_SOURCE',
     },
   },
 }

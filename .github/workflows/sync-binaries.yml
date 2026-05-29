@@ -352,6 +352,7 @@ jobs:
             libsdl2-dev libsdl2-gfx-dev libsdl2-mixer-dev libsdl2-image-dev \
             libsdl2-ttf-dev libsdl2-net-dev libplist-dev \
             libgc-dev \
+            libpaper-dev \
             libassuan-dev libgpg-error-dev \
             libfido2-dev \
             libdouble-conversion-dev libgoogle-glog-dev libgflags-dev \
@@ -578,6 +579,7 @@ jobs:
             libsdl2-dev libsdl2-gfx-dev libsdl2-mixer-dev libsdl2-image-dev \
             libsdl2-ttf-dev libsdl2-net-dev libplist-dev \
             libgc-dev \
+            libpaper-dev \
             libassuan-dev libgpg-error-dev \
             libfido2-dev \
             libdouble-conversion-dev libgoogle-glog-dev libgflags-dev \
