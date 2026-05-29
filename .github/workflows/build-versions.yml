@@ -88,8 +88,12 @@ jobs:
         platform:
           - os: macos-15
             name: darwin-arm64
+          - os: macos-13
+            name: darwin-x86-64
           - os: ubuntu-latest
             name: linux-x86-64
+          - os: ubuntu-24.04-arm
+            name: linux-arm64
     runs-on: ${{ matrix.platform.os }}
     permissions:
       contents: read
@@ -317,8 +321,12 @@ jobs:
         platform:
           - os: macos-15
             name: darwin-arm64
+          - os: macos-13
+            name: darwin-x86-64
           - os: ubuntu-latest
             name: linux-x86-64
+          - os: ubuntu-24.04-arm
+            name: linux-arm64
     runs-on: ${{ matrix.platform.os }}
     permissions:
       contents: read

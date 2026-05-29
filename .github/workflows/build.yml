@@ -19,7 +19,9 @@ on:
           - all
           - unix
           - darwin-arm64
+          - darwin-x86-64
           - linux-x86-64
+          - linux-arm64
           - windows-x64
         default: all
       force:
@@ -61,16 +63,20 @@ jobs:
         # apps-only = darwin + windows (GUI apps)
         platform: ${{
           (github.event_name == 'schedule' || github.event.inputs.apps-only == 'true')
-            && fromJson('[{"os":"macos-15","name":"darwin-arm64"},{"os":"windows-latest","name":"windows-x64"}]')
+            && fromJson('[{"os":"macos-15","name":"darwin-arm64"},{"os":"macos-13","name":"darwin-x86-64"},{"os":"windows-latest","name":"windows-x64"}]')
           || github.event.inputs.platform == 'unix'
-            && fromJson('[{"os":"macos-15","name":"darwin-arm64"},{"os":"ubuntu-latest","name":"linux-x86-64"}]')
+            && fromJson('[{"os":"macos-15","name":"darwin-arm64"},{"os":"macos-13","name":"darwin-x86-64"},{"os":"ubuntu-latest","name":"linux-x86-64"},{"os":"ubuntu-24.04-arm","name":"linux-arm64"}]')
           || github.event.inputs.platform == 'darwin-arm64'
             && fromJson('[{"os":"macos-15","name":"darwin-arm64"}]')
+          || github.event.inputs.platform == 'darwin-x86-64'
+            && fromJson('[{"os":"macos-13","name":"darwin-x86-64"}]')
           || github.event.inputs.platform == 'linux-x86-64'
             && fromJson('[{"os":"ubuntu-latest","name":"linux-x86-64"}]')
+          || github.event.inputs.platform == 'linux-arm64'
+            && fromJson('[{"os":"ubuntu-24.04-arm","name":"linux-arm64"}]')
           || github.event.inputs.platform == 'windows-x64'
             && fromJson('[{"os":"windows-latest","name":"windows-x64"}]')
-          || fromJson('[{"os":"macos-15","name":"darwin-arm64"},{"os":"ubuntu-latest","name":"linux-x86-64"},{"os":"windows-latest","name":"windows-x64"}]')
+          || fromJson('[{"os":"macos-15","name":"darwin-arm64"},{"os":"macos-13","name":"darwin-x86-64"},{"os":"ubuntu-latest","name":"linux-x86-64"},{"os":"ubuntu-24.04-arm","name":"linux-arm64"},{"os":"windows-latest","name":"windows-x64"}]')
           }}
     runs-on: ${{ matrix.platform.os }}
     permissions:
