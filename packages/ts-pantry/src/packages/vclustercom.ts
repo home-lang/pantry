@@ -82,6 +82,7 @@ export const vclustercomPackage = {
   versions: [
     '0.34.1',
     '0.34.0',
+    '0.33.3',
     '0.33.2',
     '0.33.1',
     '0.33.0',
