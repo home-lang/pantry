@@ -102,7 +102,10 @@ function request(
       },
     )
     req.on('error', reject)
-    req.on('timeout', () => { req.destroy(); reject(new Error(`timeout: ${url}`)) })
+    req.on('timeout', () => {
+      req.destroy()
+      reject(new Error(`timeout: ${url}`))
+    })
     if (body)
       req.write(body)
     req.end()
@@ -144,7 +147,10 @@ function download(url: string, dest: string, headers: Record<string, string> = {
       },
     )
     req.on('error', reject)
-    req.on('timeout', () => { req.destroy(); reject(new Error(`timeout: ${url}`)) })
+    req.on('timeout', () => {
+      req.destroy()
+      reject(new Error(`timeout: ${url}`))
+    })
   })
 }
 

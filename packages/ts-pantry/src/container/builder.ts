@@ -138,7 +138,7 @@ export async function buildImage(options: BuildOptions): Promise<BuildResult> {
 
   // Per-stage rootfs dirs so `COPY --from` can reference earlier stages.
   const stageRootfs = new Map<string, string>()
-  const matcher = loadFreezer(context)
+  const matcher = loadFreezer(context, path.dirname(dockerfilePath))
   const contextEntries = collectBuildContext(context, matcher)
 
   let finalState = emptyState()

@@ -111,17 +111,25 @@ export function createMatcher(rules: FreezerRule[]): FreezerMatcher {
 
 /**
  * Load the freezer matcher for a build context. Reads `.freezer`, falling back
- * to `.dockerignore`. The freezer file itself and `.git` are always excluded.
+ * to `.dockerignore`. When `extraDir` is given (e.g. the directory holding the
+ * Dockerfile), it is searched too — so a generated Dockerfile + `.freezer` pair
+ * tucked away under `storage/framework` still filters the context. The freezer
+ * file itself and `.git` are always excluded.
  */
-export function loadFreezer(contextDir: string): FreezerMatcher {
+export function loadFreezer(contextDir: string, extraDir?: string): FreezerMatcher {
   let content = ''
   let usedFile: string | undefined
-  for (const name of FREEZER_FILENAMES) {
-    const candidate = path.join(contextDir, name)
-    if (fs.existsSync(candidate)) {
-      content = fs.readFileSync(candidate, 'utf8')
-      usedFile = name
-      break
+  const searchDirs = extraDir && path.resolve(extraDir) !== path.resolve(contextDir)
+    ? [contextDir, extraDir]
+    : [contextDir]
+  outer: for (const dir of searchDirs) {
+    for (const name of FREEZER_FILENAMES) {
+      const candidate = path.join(dir, name)
+      if (fs.existsSync(candidate)) {
+        content = fs.readFileSync(candidate, 'utf8')
+        usedFile = name
+        break outer
+      }
     }
   }
 
@@ -134,7 +142,7 @@ export function loadFreezer(contextDir: string): FreezerMatcher {
       rules.unshift({ pattern: bp, negated: false, regex: patternToRegex(bp) })
   }
 
-  const matcher = createMatcher(rules)
-  ;(matcher as FreezerMatcher & { sourceFile?: string }).sourceFile = usedFile
+  const matcher = createMatcher(rules) as FreezerMatcher & { sourceFile?: string }
+  matcher.sourceFile = usedFile
   return matcher
 }

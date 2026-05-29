@@ -20,6 +20,7 @@ import {
   savePackageAsTypeScript,
   saveToCacheAndOutput,
 } from '../src/index'
+import { buildImage, generateContainerFiles, parseImageRef, PANTRY_REGISTRY, pushImage } from '../src/container'
 import { globalBinDir, installPackage } from '../src/installer'
 import { aliases as PACKAGE_ALIASES } from '../src/packages/aliases'
 import { detectShell, installShellInit, rcFileFor, renderShellSnippet, uninstallShellInit } from '../src/shell-init'
@@ -1491,6 +1492,129 @@ cli
     }
     catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error)
+      process.exit(1)
+    }
+  })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// build — build a Dockerfile into an OCI image, natively (no Docker daemon)
+// ─────────────────────────────────────────────────────────────────────────────
+cli
+  .command('build [context]', 'Build a Dockerfile into an OCI image (no Docker daemon required)')
+  .option('-f, --file <path>', 'Path to the Dockerfile (default: <context>/Dockerfile)')
+  .option('-t, --tag <tag>', 'Image tag, e.g. myapp:latest (repeatable)')
+  .option('--target <stage>', 'Target stage for a multi-stage build')
+  .option('--build-arg <kv>', 'Set a build arg KEY=VALUE (repeatable)')
+  .option('--platform <os/arch>', 'Target platform (default: linux/<host-arch>)')
+  .option('--output <dir>', 'Where to write the image archive + OCI layout (default: <context>/.pantry/images)')
+  .option('--run-mode <mode>', 'How to run RUN steps: auto|chroot|host|skip (default: auto)')
+  .option('--push', 'Push the built image to the pantry registry after building')
+  .option('--quiet', 'Suppress step output')
+  .action(async (context: string | undefined, options: {
+    file?: string
+    tag?: string | string[]
+    target?: string
+    buildArg?: string | string[]
+    platform?: string
+    output?: string
+    runMode?: 'auto' | 'chroot' | 'host' | 'skip'
+    push?: boolean
+    quiet?: boolean
+  }) => {
+    try {
+      const tags = ([] as string[]).concat(options.tag ?? [])
+      const buildArgs: Record<string, string> = {}
+      for (const kv of ([] as string[]).concat(options.buildArg ?? [])) {
+        const eq = kv.indexOf('=')
+        if (eq !== -1)
+          buildArgs[kv.slice(0, eq)] = kv.slice(eq + 1)
+      }
+
+      const result = await buildImage({
+        context: context ?? '.',
+        dockerfile: options.file,
+        tags,
+        target: options.target,
+        buildArgs,
+        platform: options.platform,
+        outputDir: options.output,
+        runMode: options.runMode,
+        quiet: options.quiet,
+      })
+
+      if (!options.quiet) {
+        console.log(`\n✓ Built ${result.imageId}`)
+        if (tags.length)
+          console.log(`  tags: ${tags.join(', ')}`)
+        console.log(`  archive: ${result.archivePath}`)
+        console.log(`  oci layout: ${result.ociLayoutPath}`)
+      }
+
+      if (options.push) {
+        const ref = parseImageRef(tags[0] || 'app:latest')
+        if (!options.quiet)
+          console.log(`\nPushing ${ref.repository}:${ref.tag} → ${PANTRY_REGISTRY} ...`)
+        const pushed = await pushImage({
+          repository: ref.repository,
+          tag: ref.tag,
+          registry: ref.implicitRegistry ? undefined : `https://${ref.registry}`,
+          configBytes: Buffer.from(result.configBytes),
+          configDigest: result.configDigest,
+          layers: result.layers.map(l => ({ digest: l.digest, path: l.path, size: l.size })),
+          manifestBytes: Buffer.from(result.manifestBytes),
+          manifestMediaType: result.manifestMediaType,
+          quiet: options.quiet,
+        })
+        console.log(`✓ Pushed ${pushed.ref} (${pushed.digest})`)
+      }
+
+      process.exit(0)
+    }
+    catch (error) {
+      console.error('Build failed:', error instanceof Error ? error.message : error)
+      process.exit(1)
+    }
+  })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// container:generate — scaffold a Dockerfile + .freezer for a project
+// ─────────────────────────────────────────────────────────────────────────────
+cli
+  .command('container:generate [outDir]', 'Generate a Dockerfile + .freezer (default outDir: storage/framework)')
+  .alias('freeze')
+  .option('--base <image>', 'Base image (default: oven/bun:1.3.10)')
+  .option('--workdir <dir>', 'Working directory in the image (default: /app)')
+  .option('--install <cmd>', 'Install command (default: bun install --frozen-lockfile)')
+  .option('--build <cmd>', 'Optional build command run after install')
+  .option('--start <cmd>', 'Start command (default: bun start)')
+  .option('--port <port>', 'Exposed port (default: 3000)')
+  .option('--force', 'Overwrite existing files')
+  .action(async (outDir: string | undefined, options: {
+    base?: string
+    workdir?: string
+    install?: string
+    build?: string
+    start?: string
+    port?: string
+    force?: boolean
+  }) => {
+    try {
+      const result = generateContainerFiles({
+        outDir: outDir ?? 'storage/framework',
+        baseImage: options.base,
+        workdir: options.workdir,
+        installCommand: options.install,
+        buildCommand: options.build,
+        startCommand: options.start ? options.start.split(/\s+/) : undefined,
+        port: options.port ? Number(options.port) : undefined,
+        force: options.force,
+      })
+      console.log(`${result.wroteDockerfile ? '✓ wrote' : '• kept'} ${result.dockerfilePath}`)
+      console.log(`${result.wroteFreezer ? '✓ wrote' : '• kept'} ${result.freezerPath}`)
+      process.exit(0)
+    }
+    catch (error) {
+      console.error('Generate failed:', error instanceof Error ? error.message : error)
       process.exit(1)
     }
   })
