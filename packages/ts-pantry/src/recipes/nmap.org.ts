@@ -54,11 +54,11 @@ export const recipe: Recipe = {
 
       './configure $ARGS',
 
-      // 7.96 is looking for libpcap/VERSION, but it's still named VERSION.txt, as in prior versions
-      {
-        run: 'sed -i \'s|/VERSION`|/VERSION.txt`|\' Makefile',
-        'working-directory': 'libpcap',
-      },
+      // 7.96 is looking for libpcap/VERSION, but it's still named VERSION.txt, as in prior versions.
+      // Guard on the Makefile existing: when configure detects a usable system/pantry libpcap
+      // (e.g. 7.98 on Linux) it skips the bundled libpcap subdir entirely, so no libpcap/Makefile
+      // is generated and an unconditional sed would abort the build under `set -e`.
+      'if [ -f libpcap/Makefile ]; then sed -i \'s|/VERSION`|/VERSION.txt`|\' libpcap/Makefile; fi',
 
       'make -j {{hw.concurrency}}',
       'make install',

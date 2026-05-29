@@ -776,8 +776,6 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/licensee/licensed': ['*'],
   // tea-package-builder: broken recipe (copies dir into itself)
   'github.com/ArionThinker/tea-package-builder': ['*'],
-  // soliditylang: vtable linker errors (complex C++ build)
-  'soliditylang.org': ['*'],
   // gnupg.org base: requires libgcrypt >= 1.11 but S3 only has older
   'gnupg.org': ['*'],
   'gnupg.org/v2.5': ['*'],

@@ -8,8 +8,14 @@ export const recipe: Recipe = {
   github: 'https://github.com/vlang/v',
   programs: ['v'],
   versionSource: {
+    // Track V's STABLE tagged releases (e.g. 0.5.1) only — the repo also
+    // publishes unstable `weekly.YYYY.WW` snapshots as GitHub releases, and
+    // those broke the source build (e.g. weekly.2026.08 fails to compile with
+    // an upstream `vlib/builtin/float.c.v` `$if` error). The tagPattern keeps
+    // resolution on semver-style stable tags.
     type: 'github-releases',
     repo: 'vlang/v',
+    tagPattern: /^(\d+\.\d+(?:\.\d+)?)$/,
   },
   distributable: {
     url: 'https://github.com/vlang/v/archive/refs/tags/{{version.raw}}.tar.gz',

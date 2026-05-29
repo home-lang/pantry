@@ -35,8 +35,9 @@ export const recipe: Recipe = {
       },
       'mkdir -p .build',
       'make deps',
-      // tinfow isn't being picked up by the linker after splitting up ncurses
-      { run: 'export LDFLAGS="$LDFLAGS -Wl,-ltinfow"', if: 'linux' },
+      // On Ubuntu the wide tinfo dev symlink (libtinfow.so) usually doesn't exist —
+      // the symbols crystal needs ship in libtinfo (libtinfo-dev), so link -ltinfo on linux.
+      { run: 'export LDFLAGS="$LDFLAGS -Wl,-ltinfo"', if: 'linux' },
       'make crystal $ARGS',
       'mkdir -p "{{prefix}}/bin"',
       'cp .build/crystal "{{prefix}}/bin/crystal.bin"',

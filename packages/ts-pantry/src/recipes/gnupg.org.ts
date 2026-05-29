@@ -24,6 +24,17 @@ export const recipe: Recipe = {
     'openldap.org': '^2',
     'gnu.org/readline': '^8',
     'sqlite.org': '^3',
+    // nobody (in pkgx) added a comment to say why this is Darwin only
+    darwin: {
+      'gnu.org/gettext': '^0.21',
+    },
+  },
+
+  buildDependencies: {
+    'freedesktop.org/pkg-config': '*',
+    linux: {
+      'gnu.org/gcc': '*',
+    },
   },
 
   build: {

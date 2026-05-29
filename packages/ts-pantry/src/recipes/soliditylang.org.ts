@@ -42,7 +42,14 @@ export const recipe: Recipe = {
     env: {
       // -DPEDANTIC=OFF: otherwise fails due to deprecations in boost ^1.81
       // -DSTRICT_Z3_VERSION=OFF: otherwise complains about Z3 version in cmake
-      'ARGS': ['-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DPEDANTIC=OFF', '-DSTRICT_Z3_VERSION=OFF'],
+      // -DUSE_Z3=OFF / -DUSE_CVC4=OFF: our CI image ships a system Z3/CVC4 (apt) that
+      //   pkgx's hermetic env doesn't have. CMake auto-detects it and links the SMT
+      //   backend against a libz3 built with a different libstdc++ ABI, producing the
+      //   "vtable linker errors" that caused this package to be skip-listed. solc's SMT
+      //   solver is optional, so disable it to get a deterministic, hermetic build.
+      // -DTESTS=OFF: don't build/link the boost unit-test suite (also a source of
+      //   ABI-mismatch undefined-reference/vtable link errors against system boost).
+      'ARGS': ['-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DPEDANTIC=OFF', '-DSTRICT_Z3_VERSION=OFF', '-DUSE_Z3=OFF', '-DUSE_CVC4=OFF', '-DTESTS=OFF'],
     },
   },
 }
