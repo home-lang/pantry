@@ -1,3 +1,28 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.36...v0.9.37)
+
+### 🚀 Features
+
+- **container**: wire `build` + `container:generate` CLI and freezer lookup ([94260ca](https://github.com/home-lang/pantry/commit/94260ca)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **recipes**: unblock wavpack/ruby/git-scm/giflib source builds ([8bb77db](https://github.com/home-lang/pantry/commit/8bb77db)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: faithfully re-port 38 source recipes from pkgx (conditionals, env, drop test cruft) ([4457d85](https://github.com/home-lang/pantry/commit/4457d85)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: carry pkgx props patches + faithful conditional/arch build steps ([e80a20e](https://github.com/home-lang/pantry/commit/e80a20e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.37 ([4c1f153](https://github.com/home-lang/pantry/commit/4c1f153)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update Bittensor ([f807d9c](https://github.com/home-lang/pantry/commit/f807d9c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- **deps**: bump @stacksjs/ts-cloud to 0.2.19 ([422050c](https://github.com/home-lang/pantry/commit/422050c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: bump @stacksjs/ts-cloud to 0.2.18 ([d459f07](https://github.com/home-lang/pantry/commit/d459f07)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update LocalAI, mise, opencode.ai and 3 others ([97ecdc7](https://github.com/home-lang/pantry/commit/97ecdc7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update hugo, pulumi, zarf, Zed ([9c536b2](https://github.com/home-lang/pantry/commit/9c536b2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.35...v0.9.36)
 
 ### 🚀 Features
