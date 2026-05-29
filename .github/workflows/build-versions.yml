@@ -131,6 +131,23 @@ jobs:
             echo "All selected source artifacts already exist in S3; skipping toolchain setup"
           fi
 
+      - name: Free disk space (Linux)
+        if: runner.os == 'Linux' && steps.source-preflight.outputs.needs_build != 'false'
+        run: |
+          # Reclaim ~25-30GB of unused preinstalled SDKs and move heavy build
+          # trees to the large /mnt volume so multi-version source builds don't
+          # exhaust the ~20GB root volume ("No space left on device").
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/local/.ghcup \
+            /usr/local/share/boost /usr/share/swift \
+            /opt/hostedtoolcache/PyPy /opt/hostedtoolcache/Ruby \
+            /usr/local/lib/node_modules /usr/share/miniconda \
+            /usr/local/graalvm /usr/local/share/chromium /usr/local/share/powershell || true
+          sudo docker image prune --all --force || true
+          sudo mkdir -p /mnt/buildkit && sudo chown "$(id -u):$(id -g)" /mnt/buildkit
+          echo "BUILDKIT_ROOT=/mnt/buildkit" >> "$GITHUB_ENV"
+          df -h / /mnt
+
       - name: Install build tools (Linux)
         if: runner.os == 'Linux' && steps.source-preflight.outputs.needs_build != 'false'
         run: |
@@ -340,6 +357,23 @@ jobs:
           if [ "$NEEDS_BUILD" = "false" ]; then
             echo "All selected source artifacts already exist in S3; skipping toolchain setup"
           fi
+
+      - name: Free disk space (Linux)
+        if: runner.os == 'Linux' && steps.source-preflight.outputs.needs_build != 'false'
+        run: |
+          # Reclaim ~25-30GB of unused preinstalled SDKs and move heavy build
+          # trees to the large /mnt volume so multi-version source builds don't
+          # exhaust the ~20GB root volume ("No space left on device").
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/local/.ghcup \
+            /usr/local/share/boost /usr/share/swift \
+            /opt/hostedtoolcache/PyPy /opt/hostedtoolcache/Ruby \
+            /usr/local/lib/node_modules /usr/share/miniconda \
+            /usr/local/graalvm /usr/local/share/chromium /usr/local/share/powershell || true
+          sudo docker image prune --all --force || true
+          sudo mkdir -p /mnt/buildkit && sudo chown "$(id -u):$(id -g)" /mnt/buildkit
+          echo "BUILDKIT_ROOT=/mnt/buildkit" >> "$GITHUB_ENV"
+          df -h / /mnt
 
       - name: Install build tools (Linux)
         if: runner.os == 'Linux' && steps.source-preflight.outputs.needs_build != 'false'

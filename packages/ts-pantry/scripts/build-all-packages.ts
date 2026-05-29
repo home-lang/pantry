@@ -244,7 +244,15 @@ catch {
         if (!pkg?.versions?.length) continue
 
         const override = packageOverrides[domain]
-        const platforms = override?.supportedPlatforms
+        // Respect the recipe's own `platforms:` field — overrides win, but if the
+        // recipe declares platforms (e.g. darwin/windows-only GUI apps) we must NOT
+        // attempt to source-build it on an unsupported OS (it 404s / fails).
+        const recipeSrc = readFileSync(join(dir, entry.name), 'utf-8')
+        const platformsMatch = recipeSrc.match(/platforms\s*:\s*\[([^\]]*)\]/)
+        const recipePlatforms = platformsMatch
+          ? platformsMatch[1].split(',').map(s => s.trim().replace(/['"]/g, '')).filter(Boolean)
+          : []
+        const platforms = override?.supportedPlatforms ?? (recipePlatforms.length ? recipePlatforms : undefined)
         if (targetOsName && platforms) {
           const isCompatible = platforms.some((p: string) => {
             const ps = String(p).trim()
@@ -254,7 +262,7 @@ catch {
         }
 
         // Apps are packages with only darwin/windows platforms (no linux)
-        const appPlatforms = override?.supportedPlatforms || []
+        const appPlatforms = platforms || []
         const isApp = appPlatforms.length > 0 && !appPlatforms.some((p: string) => p.includes('linux'))
         const depDomains = [...(pkg.dependencies || []), ...(pkg.buildDependencies || [])]
           .map((d: string) => d.replace(/@.*$/, '').replace(/\^.*$/, '').replace(/>=.*$/, '').replace(/:.*$/, '').trim())
@@ -1066,10 +1074,15 @@ else {
     }
   }
 
-  const buildDir = `/tmp/buildkit-${domain.replace(/\//g, '-')}`
-  const installDir = `/tmp/buildkit-install-${domain.replace(/\//g, '-')}`
-  const artifactsDir = `/tmp/buildkit-artifacts-${domain.replace(/\//g, '-')}`
-  const depsDir = `/tmp/buildkit-deps-${domain.replace(/\//g, '-')}`
+  // Heavy build trees live under BUILDKIT_ROOT (default /tmp). CI points this at
+  // the runner's large /mnt volume (~70GB) so big source trees + their deps don't
+  // exhaust the ~20GB root volume ("No space left on device").
+  const buildkitRoot = process.env.BUILDKIT_ROOT || '/tmp'
+  const safeDomain = domain.replace(/\//g, '-')
+  const buildDir = `${buildkitRoot}/buildkit-${safeDomain}`
+  const installDir = `${buildkitRoot}/buildkit-install-${safeDomain}`
+  const artifactsDir = `${buildkitRoot}/buildkit-artifacts-${safeDomain}`
+  const depsDir = `${buildkitRoot}/buildkit-deps-${safeDomain}`
 
   mkdirSync(artifactsDir, { recursive: true })
   mkdirSync(depsDir, { recursive: true })
@@ -1832,6 +1845,17 @@ Options:
     allPackages = allPackages.filter(p => p.isApp)
     console.log(`Filtered to ${allPackages.length} apps`)
   }
+  else if (!values.package) {
+    // Source-build batches must NOT attempt GUI apps. They ship as prebuilt
+    // binaries via the apps path (build.yml --apps-only); source-building them
+    // 404s (no source tarball exists for Slack/Spotify/Discord/etc.) and only
+    // inflates the failure count. A targeted `-p <app>` request still allows it.
+    const before = allPackages.length
+    allPackages = allPackages.filter(p => !p.isApp)
+    const dropped = before - allPackages.length
+    if (dropped > 0)
+      console.log(`Excluded ${dropped} GUI app(s) from source build (built via --apps-only path)`)
+  }
 
   // Filter by specific packages if provided
   if (values.package) {
@@ -1941,7 +1965,8 @@ else {
         if (elapsed2 > BATCH_TIME_BUDGET_MS) break
 
         // Clean artifacts dir between iterations to prevent stale tarballs leaking
-        const pkgArtifactsDir = `/tmp/buildkit-artifacts-${pkg.domain.replace(/\//g, '-')}`
+        // (must match buildAndUpload's BUILDKIT_ROOT-derived artifactsDir)
+        const pkgArtifactsDir = `${process.env.BUILDKIT_ROOT || '/tmp'}/buildkit-artifacts-${pkg.domain.replace(/\//g, '-')}`
         try { execSync(`rm -rf "${pkgArtifactsDir}"/*`, { stdio: 'pipe' }) }
         catch (e) { console.warn(`Warning: failed to clean artifacts dir: ${(e as Error).message}`) }
 
