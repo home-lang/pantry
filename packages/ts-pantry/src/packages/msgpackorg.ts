@@ -60,6 +60,7 @@ export const msgpackorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '7.0.0',
     '6.1.0',
     '6.0.2',
     '6.0.1',
