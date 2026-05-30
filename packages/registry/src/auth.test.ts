@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach } from 'bun:test'
-import net from 'node:net'
 import { createServer, type BinaryStorage } from './server'
 import { createLocalRegistry } from './registry'
+import { getAvailablePort } from './test-utils'
 import { InMemoryAnalytics } from './analytics'
 import {
   AuthService,
@@ -301,23 +301,6 @@ describe('AuthService', () => {
 // ===========================================================================
 // E2E: Auth HTTP routes
 // ===========================================================================
-
-async function getAvailablePort(): Promise<number> {
-  return await new Promise((resolve, reject) => {
-    const probe = net.createServer()
-    probe.unref()
-    probe.on('error', reject)
-    probe.listen(0, () => {
-      const address = probe.address()
-      probe.close(() => {
-        if (typeof address === 'object' && address?.port)
-          resolve(address.port)
-        else
-          reject(new Error('Could not allocate a free test port'))
-      })
-    })
-  })
-}
 
 describe('e2e: auth routes', () => {
   let port: number

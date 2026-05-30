@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, beforeEach } from 'bun:test'
+import { getAvailablePort } from './test-utils'
 import {
   computePhpChecksum,
   generateComposerRequire,
@@ -252,10 +253,8 @@ describe('PHP routes (HTTP)', () => {
     const { InMemoryAnalytics } = await import('./analytics')
     const { InMemoryPhpStorage } = await import('./php')
 
-    // Range 6000–6999 — kept non-overlapping with auth.test.ts (5000–5999)
-    // so the two suites don't randomly collide on the same port when run
-    // concurrently.
-    port = 6000 + Math.floor(Math.random() * 1000)
+    // OS-assigned free port so parallel test files can't collide.
+    port = await getAvailablePort()
     baseUrl = `http://localhost:${port}`
 
     const registry = createLocalRegistry(baseUrl)

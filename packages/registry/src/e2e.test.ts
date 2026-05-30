@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'bun:test'
 import { createServer, type BinaryStorage } from './server'
 import { createLocalRegistry } from './registry'
 import { InMemoryAnalytics } from './analytics'
+import { getAvailablePort } from './test-utils'
 
 // --- Helpers ---
 
@@ -56,11 +57,11 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
   // Use a fixed token for dashboard auth tests
   const TEST_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN || 'ABCD1234'
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Server reads PANTRY_REGISTRY_TOKEN lazily — pin it so dashboard auth
     // accepts `TEST_TOKEN` in these tests.
     process.env.PANTRY_REGISTRY_TOKEN = TEST_TOKEN
-    port = 4000 + Math.floor(Math.random() * 1000)
+    port = await getAvailablePort()
     baseUrl = `http://localhost:${port}`
     analytics = new InMemoryAnalytics()
     binaryStore = new MockBinaryStorage()
@@ -156,7 +157,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
     })
 
     it('GET production tarball redirects directly to S3 instead of buffering through registry', async () => {
-      const directPort = port + 6000
+      const directPort = await getAvailablePort()
       const directBaseUrl = `http://localhost:${directPort}`
       const directServer = createServer(createLocalRegistry(directBaseUrl), directPort, analytics)
       directServer.start()

@@ -1,20 +1,18 @@
 import { describe, expect, it, beforeEach } from 'bun:test'
 import { createServer } from './server'
 import { createLocalRegistry } from './registry'
+import { getAvailablePort } from './test-utils'
 
 describe('commit publish', () => {
   let registry: ReturnType<typeof createLocalRegistry>
   let baseUrl: string
   let port: number
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Server reads PANTRY_REGISTRY_TOKEN lazily — pin the value tests send.
     process.env.PANTRY_REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || 'ABCD1234'
-    // Range 3000–3999 — kept non-overlapping with e2e.test.ts (4000–4999),
-    // auth.test.ts (5000–5999), and php.test.ts (6000–6999) so parallel test
-    // files don't randomly collide on the same port and surface as a flaky
-    // "fetch failed" with no useful error.
-    port = 3000 + Math.floor(Math.random() * 1000)
+    // OS-assigned free port so parallel test files can't collide.
+    port = await getAvailablePort()
     baseUrl = `http://localhost:${port}`
     registry = createLocalRegistry(baseUrl)
   })
