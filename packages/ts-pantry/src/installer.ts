@@ -198,6 +198,58 @@ const resolvers: Record<string, PackageResolver> = {
 // ── Core Install Function ──
 
 /**
+ * (Re)create the `.bin/<name>` links for an installed package, pointing each at
+ * the real binary under `pkgDir` (root or `bin/` subdir). Binaries absent from
+ * the archive (e.g. `bunx`, `npx`) are aliased to the primary binary.
+ *
+ * This is intentionally idempotent and always run — including for already-installed
+ * packages — so a real binary reliably *owns* its `.bin` entry. Without this, a
+ * second installer writing the same dir (e.g. a registry client that drops a
+ * placeholder stub for a platform it lacks) could leave `.bin/<name>` pointing at
+ * a broken stub even though the genuine binary is present on disk.
+ */
+function linkBinaries(pkgDir: string, binaries: string[], binDir: string, platform: Platform): void {
+  fs.mkdirSync(binDir, { recursive: true })
+  let primaryBin: string | null = null
+
+  for (const bin of binaries) {
+    // Check both root and bin/ subdirectory
+    let srcBin = path.join(pkgDir, bin)
+    if (!fs.existsSync(srcBin)) {
+      srcBin = path.join(pkgDir, 'bin', bin)
+    }
+
+    if (!fs.existsSync(srcBin)) {
+      // Binary doesn't exist in archive — create as alias to primary binary
+      // (e.g. bunx -> bun, npx -> node)
+      if (primaryBin) {
+        const dstBin = path.join(binDir, bin)
+        try { fs.unlinkSync(dstBin) } catch { /* */ }
+        if (platform.os === 'windows') {
+          fs.copyFileSync(primaryBin, dstBin)
+        }
+        else {
+          fs.symlinkSync(primaryBin, dstBin)
+        }
+      }
+      continue
+    }
+
+    if (!primaryBin) primaryBin = srcBin
+
+    const dstBin = path.join(binDir, bin)
+    try { fs.unlinkSync(dstBin) } catch { /* doesn't exist */ }
+
+    if (platform.os === 'windows') {
+      fs.copyFileSync(srcBin, dstBin)
+    }
+    else {
+      fs.symlinkSync(srcBin, dstBin)
+    }
+  }
+}
+
+/**
  * Install a system package by downloading from its official source.
  * Works cross-platform using only Node.js APIs.
  */
@@ -246,6 +298,11 @@ export async function installPackage(
   const firstBinInSubdir = path.join(pkgDir, 'bin', binaries[0])
   if (fs.existsSync(firstBin) || fs.existsSync(firstBinInSubdir)) {
     if (!options.quiet) console.log(`  ✓ ${domain}@${version} (cached)`)
+    // Re-assert the .bin links even when already installed, so the genuine
+    // binary keeps ownership of `.bin/<name>` if another installer clobbered it.
+    if (options.createBinLinks !== false) {
+      linkBinaries(pkgDir, binaries, binDir, platform)
+    }
     const globalLinks = maybeLinkToGlobalBin(pkgDir, binaries, platform, options)
     return { name: domain, version, installPath: pkgDir, binaries, globalLinks }
   }
@@ -304,44 +361,7 @@ export async function installPackage(
 
     // Create .bin/ links
     if (options.createBinLinks !== false) {
-      fs.mkdirSync(binDir, { recursive: true })
-      let primaryBin: string | null = null
-
-      for (const bin of binaries) {
-        // Check both root and bin/ subdirectory
-        let srcBin = path.join(pkgDir, bin)
-        if (!fs.existsSync(srcBin)) {
-          srcBin = path.join(pkgDir, 'bin', bin)
-        }
-
-        if (!fs.existsSync(srcBin)) {
-          // Binary doesn't exist in archive — create as alias to primary binary
-          // (e.g. bunx -> bun, npx -> node)
-          if (primaryBin) {
-            const dstBin = path.join(binDir, bin)
-            try { fs.unlinkSync(dstBin) } catch { /* */ }
-            if (platform.os === 'windows') {
-              fs.copyFileSync(primaryBin, dstBin)
-            }
-            else {
-              fs.symlinkSync(primaryBin, dstBin)
-            }
-          }
-          continue
-        }
-
-        if (!primaryBin) primaryBin = srcBin
-
-        const dstBin = path.join(binDir, bin)
-        try { fs.unlinkSync(dstBin) } catch { /* doesn't exist */ }
-
-        if (platform.os === 'windows') {
-          fs.copyFileSync(srcBin, dstBin)
-        }
-        else {
-          fs.symlinkSync(srcBin, dstBin)
-        }
-      }
+      linkBinaries(pkgDir, binaries, binDir, platform)
     }
 
     if (!options.quiet) console.log(`  ✓ ${domain}@${version}`)

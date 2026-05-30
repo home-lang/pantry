@@ -791,6 +791,30 @@ export async function run(): Promise<void> {
       }
     }
 
+    // ── Re-assert system-package bin links (post `pantry install`) ──
+    // `pantry install` resolves system deps from the registry. For a platform
+    // the registry lacks (e.g. darwin-x86-64 bun before it's been published),
+    // it drops a placeholder stub and repoints `.bin/<name>` at it — clobbering
+    // the genuine upstream binary that `installSystemPackage` (ts installer,
+    // fetched from the official source) put in place earlier. Re-run the ts
+    // installer for each system dep *after* `pantry install`: it's idempotent
+    // (no-op download when present) and re-links `.bin/<name>` to the real
+    // binary, so the stub never wins. Fixes the Intel-macOS bootstrap without
+    // any per-workflow workaround.
+    {
+      const reassertDeps = inputs.packages
+        ? inputs.packages.split(/\s+/).filter(Boolean)
+        : extractSystemDeps()
+      for (const dep of reassertDeps) {
+        try {
+          await installSystemPackage(dep, pantryDir, lockedVersions)
+        }
+        catch (err) {
+          core.warning(`re-assert ${dep}: ${err instanceof Error ? err.message : 'failed'}`)
+        }
+      }
+    }
+
     // ── Ensure installed binaries are executable ──
     // Some extracted archives (e.g. zig from ziglang.org) may lose +x during copy
     if (platform.os !== 'windows') {

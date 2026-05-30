@@ -91,17 +91,6 @@ jobs:
       - name: Setup Pantry
         uses: ./packages/action
 
-      # Intel-macOS bootstrap: the pantry registry has no darwin-x86-64 bun yet,
-      # so `pantry install` writes a placeholder stub and points pantry/.bin/bun
-      # at it. Install a real upstream bun *after* Setup Pantry so it shadows the
-      # stub on PATH. Self-heals once a real darwin-x86-64 bun lands in the
-      # registry (this very sync re-hosts the upstream release).
-      - name: Bootstrap upstream Bun (Intel macOS)
-        if: matrix.platform == 'darwin-x86-64'
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
       - name: Install dependencies
         run: bun install
 
