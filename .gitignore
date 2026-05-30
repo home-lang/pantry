@@ -34,4 +34,5 @@ github-rate-limit.json
 pantry
 .claude/scheduled_tasks.lock
 /packages/registry/.stx
+/.stx
 .cloud-migration
