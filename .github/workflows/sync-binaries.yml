@@ -92,7 +92,27 @@ jobs:
         uses: ./packages/action
 
       - name: Install dependencies
-        run: bun install
+        run: |
+          # TEMP DIAGNOSTIC (darwin-x86-64 bun bootstrap) — remove after triage
+          if [ "${{ matrix.platform }}" = "darwin-x86-64" ]; then
+            echo "::group::darwin-x86-64 bun diagnostics"
+            echo "uname -m: $(uname -m)"
+            sysctl -n machdep.cpu.brand_string 2>/dev/null || true
+            echo "AVX2: $(sysctl -n machdep.cpu.leaf7_features 2>/dev/null | tr ' ' '\n' | grep -i avx2 || echo NONE)"
+            echo "which -a bun:"; which -a bun || true
+            echo "bun --version:"; bun --version || echo "bun --version FAILED ($?)"
+            echo "bun --revision:"; bun --revision || true
+            echo "file \$(which bun):"; file "$(which bun)" 2>/dev/null || true
+            echo "node_modules/bun (pre-install):"; ls -la node_modules/bun 2>/dev/null || echo "(absent)"
+            echo "::endgroup::"
+            echo "::group::bun install --verbose tail"
+            bun install --verbose 2>&1 | tail -80 || echo "bun install exited $?"
+            echo "::endgroup::"
+            echo "node_modules/bun (post-install):"; ls -la node_modules/bun 2>/dev/null || echo "(absent)"
+            cat node_modules/bun/package.json 2>/dev/null | head -40 || true
+          else
+            bun install
+          fi
 
       - name: Install build dependencies (Linux)
         if: runner.os == 'Linux'
