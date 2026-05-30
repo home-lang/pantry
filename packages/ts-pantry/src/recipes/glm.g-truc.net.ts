@@ -25,6 +25,11 @@ export const recipe: Recipe = {
   build: {
     workingDirectory: 'glm',
     script: [
+      // The "-light" archive only ships the *inner* glm/CMakeLists.txt, which is
+      // a subdirectory listfile (no cmake_minimum_required / project()). The full
+      // glm-<tag>.zip that carries the top-level project file 404s for v1.0.0+.
+      // Prepend the missing commands so `cmake -S .` has a valid top-level project.
+      'printf \'cmake_minimum_required(VERSION 3.10)\\nproject(glm CXX)\\n\' | cat - CMakeLists.txt > CMakeLists.txt.tmp && mv CMakeLists.txt.tmp CMakeLists.txt',
       'cmake -S . -B build $ARGS',
       'cmake --build build -- all',
       'mkdir -p {{prefix}}/include {{prefix}}/lib/pkgconfig',

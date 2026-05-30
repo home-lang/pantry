@@ -15,7 +15,13 @@ export const recipe: Recipe = {
     url: 'git+https://github.com/grpc/grpc',
   },
   dependencies: {
-    'abseil.io': '^20250127',
+    // grpc 1.81.0 vendors abseil 20250512.1 (third_party/abseil-cpp submodule +
+    // bazel/grpc_deps.bzl). Newer abseil (e.g. 20260107.1) installs a CMake
+    // package whose abslTargets.cmake references files grpc's
+    // `find_package(absl REQUIRED CONFIG)` can't resolve ("not all the files it
+    // references"), so pin to the vendored, known-good release. This still
+    // satisfies protobuf.dev's abseil floor (^20250127).
+    'abseil.io': '20250512.1',
     'c-ares.org': '*',
     'openssl.org': '^1.1',
     'github.com/google/re2': '*',

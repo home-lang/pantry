@@ -66,7 +66,11 @@ export const recipe: Recipe = {
       },
     ],
     env: {
-      'ARGS': ['-Dfreetype=enabled', '-Dfontconfig=enabled', '-Dpng=enabled', '-Dglib=enabled', '-Dxcb=enabled', '-Dxlib=enabled', '-Dzlib=enabled', '-Dglib=enabled'],
+      // -Dtests=disabled: the test/ and perf/ programs (meson targets ~705-724,
+      // built after util/) pull in cairo internal headers and backend-specific
+      // code paths that fail to compile on macOS arm64; they are never installed,
+      // so disabling them yields a complete, installable libcairo + cairo-trace.
+      'ARGS': ['-Dfreetype=enabled', '-Dfontconfig=enabled', '-Dpng=enabled', '-Dglib=enabled', '-Dxcb=enabled', '-Dxlib=enabled', '-Dzlib=enabled', '-Dtests=disabled'],
     },
   },
 }

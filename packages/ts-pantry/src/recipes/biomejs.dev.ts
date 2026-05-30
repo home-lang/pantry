@@ -12,8 +12,13 @@ export const recipe: Recipe = {
     repo: 'biomejs/biome',
     tagPattern: /(cli\/v|@biomejs\/biome@)(.+)$/,
   },
+  // Biome's CLI is tagged on GitHub as `@biomejs/biome@<version>` (the monorepo
+  // uses scoped per-crate tags). The `{{version.tag}}` machinery can't recover
+  // this for native recipes (it falls back to the `v<version>` heuristic, which
+  // 404s), so hardcode the real 2.x tag scheme directly. The literal `@`/`/` are
+  // passed through verbatim by the templating + curl and resolve to a 200.
   distributable: {
-    url: 'https://github.com/biomejs/biome/archive/refs/tags/{{version.tag}}.tar.gz',
+    url: 'https://github.com/biomejs/biome/archive/refs/tags/@biomejs/biome@{{version}}.tar.gz',
     stripComponents: 1,
   },
   buildDependencies: {

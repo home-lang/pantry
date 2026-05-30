@@ -26,9 +26,9 @@ export const recipe: Recipe = {
     'mesonbuild.com': '>=0.63',
     'ninja-build.org': '1',
     'freedesktop.org/pkg-config': '^0.29',
-    'gnome.org/gobject-introspection': '1',
-    // FIXME rq'd by gnome.org/gobject-introspection but should be added by env
-    'python.org': '>=3<3.12',
+    // gobject-introspection + its python pin were only needed for -Dintrospection;
+    // introspection is disabled below (broken in CI), so they are dropped to avoid
+    // meson auto-detecting them and to remove the Python 3.14 distutils failure path.
   },
 
   build: {
@@ -39,7 +39,13 @@ export const recipe: Recipe = {
       'ninja install',
     ],
     env: {
-      'ARGS': ['--prefix={{prefix}}', '--libdir={{prefix}}/lib', '--buildtype=release', '-Dcairo=enabled', '-Dcoretext=enabled', '-Dfreetype=enabled', '-Dglib=enabled', '-Dgraphite=enabled', '-Dtests=disabled'],
+      // -Dintrospection=disabled and -Dgobject=disabled: the gobject-introspection
+      // codegen path is broken in CI — on Linux g-ir-scanner crashes under Python 3.14
+      // (distutils.msvccompiler was removed), and on macOS meson's glib-mkenums exe
+      // wrapper produces a corrupt command. These only generate .gir/.typelib and
+      // GObject bindings, which none of the shipped binaries (hb-shape/hb-subset/hb-view)
+      // require. -Ddocs=disabled avoids gtk-doc (auto-enabled) for the same reason.
+      'ARGS': ['--prefix={{prefix}}', '--libdir={{prefix}}/lib', '--buildtype=release', '-Dcairo=enabled', '-Dcoretext=enabled', '-Dfreetype=enabled', '-Dglib=enabled', '-Dgobject=disabled', '-Dgraphite=enabled', '-Dintrospection=disabled', '-Ddocs=disabled', '-Dtests=disabled'],
       'linux/x86-64': {
         CFLAGS: '-fPIC',
         CXXFLAGS: '-fPIC',

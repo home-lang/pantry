@@ -22,15 +22,25 @@ export const recipe: Recipe = {
   buildDependencies: {
     'python.org': '~3.13',
     'stedolan.github.io/jq': '*',
+    // checkov pulls in Rust-backed wheels (rustworkx, orjson). Upstream pkgx
+    // pins specific Rust versions per-wheel via `pkgx +rust~1.xx`, but pkgx is
+    // not on PATH in our buildkit — so we provide a Rust toolchain directly and
+    // let the wheels build against ambient stable cargo/rustc.
+    'rust-lang.org': '*',
+    'rust-lang.org/cargo': '*',
   },
 
   build: {
     script: [
       'bkpyvenv stage {{prefix}} {{version}}',
+      // Pre-build the Rust-backed wheels against the ambient cargo/rustc the
+      // buildkit puts on PATH. The upstream `pkgx +rust~1.xx +cargo\<0.83`
+      // prefix is dropped because `pkgx` is not available in this environment;
+      // current stable Rust builds these wheels fine.
       {
         run: [
-          'pkgx +rust~1.70 +cargo\\<0.83 {{prefix}}/venv/bin/pip install "rustworkx$(jq -r .default.rustworkx.version Pipfile.lock | sed \'s/==/~=/\')"',
-          'pkgx +rust~1.82 +cargo\\<0.83 {{prefix}}/venv/bin/pip install "orjson$(jq -r .default.orjson.version Pipfile.lock | sed \'s/==/~=/\')"',
+          '{{prefix}}/venv/bin/pip install "rustworkx$(jq -r .default.rustworkx.version Pipfile.lock | sed \'s/==/~=/\')"',
+          '{{prefix}}/venv/bin/pip install "orjson$(jq -r .default.orjson.version Pipfile.lock | sed \'s/==/~=/\')"',
         ],
         if: '>=3.2.258',
       },

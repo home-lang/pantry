@@ -78,6 +78,17 @@ export const recipe: Recipe = {
       BOOTSTRAP_HASKELL_MINIMAL: '1',
       GHCUP_INSTALL_BASE_PREFIX: '${{prefix}}',
       GHCUP_SKIP_UPDATE_CHECK: '1',
+      // The GHC bindist runs its own ./configure during `ghcup install ghc`.
+      // On the buildkit macOS runners the heavily-manipulated PATH can leave
+      // configure unable to find a working C compiler ("C compiler cannot
+      // create executables", GHCup-00841). Pin the system clang/ld so the
+      // bindist configure links against the known-good Xcode toolchain rather
+      // than whatever the build prelude left in PATH.
+      darwin: {
+        CC: '/usr/bin/clang',
+        CXX: '/usr/bin/clang++',
+        LD: '/usr/bin/ld',
+      },
     },
   },
 }

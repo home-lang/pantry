@@ -35,7 +35,7 @@ export const recipe: Recipe = {
       [
         './configure',
         '--prefix={{prefix}}',
-        '--with-perl={{deps.perl.org.prefix}}',
+        '--with-perl={{deps.perl.org.prefix}}/bin/perl',
         '--with-gitconfig=etc/gitconfig',
       ].join(' '),
 

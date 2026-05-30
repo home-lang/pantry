@@ -76,6 +76,10 @@ export const recipe: Recipe = {
     env: {
       CRYSTAL_LIBRARY_PATH: '$LD_LIBRARY_PATH',
       PATH: '$SRCROOT/.bootstrap/bin:$PATH',
+      // Crystal's Makefile probes PATH for `llvm-config-NN`/`llvm-config` and the
+      // versioned binary isn't symlinked into our buildkit PATH, so point it at the
+      // llvm dep's `llvm-config` directly (the Makefile honors $LLVM_CONFIG).
+      LLVM_CONFIG: '{{deps.llvm.org.prefix}}/bin/llvm-config',
       darwin: { PLATFORM: 'darwin-universal' },
       'linux/x86-64': { PLATFORM: 'linux-x86_64' },
       LDFLAGS: '-Wl,-rpath,{{pkgx.prefix}}',

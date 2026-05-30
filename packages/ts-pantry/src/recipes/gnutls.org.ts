@@ -20,6 +20,11 @@ export const recipe: Recipe = {
     'curl.se/ca-certs': '*',
   },
   buildDependencies: {
+    // gnutls' configure uses PKG_CHECK_MODULES to locate nettle/hogweed,
+    // p11-kit and libtasn1 — without pkg-config on PATH configure aborts
+    // early (matches the ~8s configure failure in CI). The working sibling
+    // gnupg.org recipe relies on the same explicit pkg-config build dep.
+    'freedesktop.org/pkg-config': '*',
     linux: {
       'gnu.org/gcc': '*',
     },

@@ -7,7 +7,10 @@ export const recipe: Recipe = {
   homepage: 'https://exiftool.org',
   programs: ['exiftool'],
   distributable: {
-    url: 'https://cpan.metacpan.org/authors/id/E/EX/EXIFTOOL/Image-ExifTool-{{version.raw}}.tar.gz',
+    // CPAN tarballs are named with the upstream 2-part version (e.g. 13.50), but
+    // pantry's registry normalizes versions to 3-part semver (13.50.0), so
+    // {{version.raw}} would 404. {{version.marketing}} yields the major.minor form.
+    url: 'https://cpan.metacpan.org/authors/id/E/EX/EXIFTOOL/Image-ExifTool-{{version.marketing}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

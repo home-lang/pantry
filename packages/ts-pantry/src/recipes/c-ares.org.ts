@@ -6,7 +6,11 @@ export const recipe: Recipe = {
   description: 'A C library for asynchronous DNS requests',
   programs: ['c-ares'],
   distributable: {
-    url: 'https://c-ares.org/download/c-ares-{{version}}.tar.gz',
+    // c-ares.org/download/ now 404s for every version; the project publishes
+    // release tarballs on GitHub (tag v{{version}}). Upstream pkgx lists this
+    // as the fallback distributable — we use it as the primary since the
+    // c-ares.org mirror is dead.
+    url: 'https://github.com/c-ares/c-ares/releases/download/v{{version}}/c-ares-{{version}}.tar.gz',
     stripComponents: 1,
   },
 

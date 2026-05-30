@@ -31,7 +31,11 @@ export const recipe: Recipe = {
     },
     script: [
       'bkpyvenv stage {{prefix}} {{version}}',
-      '${{prefix}}/venv/bin/pip install .[postgres,mysql,odbc,sqlite]',
+      // Quote the extras spec: buildkit runs scripts with `shopt -s nullglob`,
+      // which treats the unquoted `.[postgres,...]` as a glob pattern that
+      // matches no file and expands to nothing, leaving pip with no argument
+      // ("ERROR: You must give at least one requirement to install").
+      '${{prefix}}/venv/bin/pip install ".[postgres,mysql,odbc,sqlite]"',
       'bkpyvenv seal {{prefix}} harlequin',
       // Library not loaded: /opt/homebrew/opt/unixodbc/lib/libodbc.2.dylib
       {

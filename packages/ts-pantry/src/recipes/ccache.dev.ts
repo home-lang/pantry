@@ -32,6 +32,12 @@ export const recipe: Recipe = {
 
   build: {
     script: [
+      // The asciidoctor.org dependency ships its `bin/asciidoctor` launcher
+      // (a /bin/sh wrapper) without the executable bit, so ccache's
+      // doc/scripts/generate-manpage invocation fails with "Permission denied"
+      // when it execs the binary by absolute path. Make every asciidoctor on
+      // PATH (i.e. the dep wrapper) executable before the build runs.
+      'for _ad in $(command -v -a asciidoctor 2>/dev/null); do chmod +x "$_ad" 2>/dev/null || true; done',
       'cmake -S . -B build $CMAKE_ARGS',
       'cmake --build build',
       'cmake --install build',
