@@ -102,7 +102,13 @@ jobs:
             echo "which -a bun:"; which -a bun || true
             echo "bun --version:"; bun --version || echo "bun --version FAILED ($?)"
             echo "bun --revision:"; bun --revision || true
-            echo "file \$(which bun):"; file "$(which bun)" 2>/dev/null || true
+            BUNBIN="$(which bun)"
+            echo "file \$(which bun):"; file "$BUNBIN" 2>/dev/null || true
+            echo "ls -la \$(which bun):"; ls -la "$BUNBIN" 2>/dev/null || true
+            echo "readlink:"; readlink "$BUNBIN" 2>/dev/null || echo "(not a symlink)"
+            echo "real target file type:"; file "$(readlink -f "$BUNBIN" 2>/dev/null || echo "$BUNBIN")" 2>/dev/null || true
+            echo "--- head -40 of bun file/target ---"; head -40 "$(readlink -f "$BUNBIN" 2>/dev/null || echo "$BUNBIN")" 2>/dev/null || true
+            echo "--- pantry bun.sh pkgDir ---"; ls -laR "$BUN_INSTALL"/bun.sh 2>/dev/null | head -40 || echo "(no bun.sh pkgdir)"
             echo "node_modules/bun (pre-install):"; ls -la node_modules/bun 2>/dev/null || echo "(absent)"
             echo "::endgroup::"
             echo "::group::bun install --verbose tail"
