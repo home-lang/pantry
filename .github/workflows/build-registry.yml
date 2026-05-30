@@ -107,11 +107,11 @@ jobs:
           PLATFORMS="${{ github.event.inputs.platforms }}"
 
           if [ "$PLATFORMS" = "all" ]; then
-            MATRIX='{"include":[{"os":"macos-14","platform":"darwin-arm64"},{"os":"macos-13","platform":"darwin-x86-64"},{"os":"ubuntu-latest","platform":"linux-x86-64"}]}'
+            MATRIX='{"include":[{"os":"macos-14","platform":"darwin-arm64"},{"os":"macos-15-intel","platform":"darwin-x86-64"},{"os":"ubuntu-latest","platform":"linux-x86-64"}]}'
           elif [ "$PLATFORMS" = "darwin-arm64" ]; then
             MATRIX='{"include":[{"os":"macos-14","platform":"darwin-arm64"}]}'
           elif [ "$PLATFORMS" = "darwin-x86-64" ]; then
-            MATRIX='{"include":[{"os":"macos-13","platform":"darwin-x86-64"}]}'
+            MATRIX='{"include":[{"os":"macos-15-intel","platform":"darwin-x86-64"}]}'
           elif [ "$PLATFORMS" = "linux-x86-64" ]; then
             MATRIX='{"include":[{"os":"ubuntu-latest","platform":"linux-x86-64"}]}'
           fi
