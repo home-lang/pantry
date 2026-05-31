@@ -394,6 +394,15 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             }
         }
 
+        // Install GUI apps & fonts declared in deps.yaml (macOS). Runs before the
+        // dependency filter so it still fires when a project declares only
+        // apps:/fonts: and no command-line dependencies. No-op off macOS; every
+        // failure is non-fatal so it never breaks the CLI-dependency install.
+        if (deps_file_path) |dpath| {
+            const desktop_apps = @import("../../../install/desktop_apps.zig");
+            desktop_apps.installFromDepsFile(allocator, dpath, opts.quiet);
+        }
+
         // Filter dependencies based on options
         var filtered_deps = try std.ArrayList(parser.PackageDependency).initCapacity(allocator, deps.len);
         defer filtered_deps.deinit(allocator);

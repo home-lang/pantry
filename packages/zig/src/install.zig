@@ -10,6 +10,7 @@ pub const downloader = @import("install/downloader.zig");
 pub const recovery = @import("install/recovery.zig");
 pub const offline = @import("install/offline.zig");
 pub const patches = @import("install/patches.zig");
+pub const desktop_apps = @import("install/desktop_apps.zig");
 
 // Re-export main types
 pub const Installer = installer.Installer;
