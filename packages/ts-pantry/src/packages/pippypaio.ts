@@ -80,6 +80,7 @@ export const pippypaioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '26.1.2',
     '26.1.1',
     '26.1',
     '26.0.1',
