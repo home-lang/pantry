@@ -69,6 +69,7 @@ export const mercurerocksPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.24.2',
     '0.24.1',
     '0.24.0',
     '0.23.5',
