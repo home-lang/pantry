@@ -23,6 +23,13 @@ export async function fixUp(prefix: string, platform: string, skips: string[] = 
   // Fix rpaths/install_names
   if (osName === 'darwin' && !skips.includes('fix-machos')) {
     fixMachoRpaths(prefix)
+    // After bundling deps into prefix/lib, strip the build-time absolute rpaths
+    // (Homebrew Cellar/opt, /usr/lib, /tmp/...) so the loader-relative
+    // @loader_path/../lib wins. Otherwise an @rpath/<dep>.dylib can resolve to a
+    // build-machine copy first — e.g. php's @rpath/libiconv.2.dylib binding to
+    // /usr/lib's Apple libiconv (no _libiconv symbol) instead of the bundled GNU
+    // one — which makes the package non-portable / unloadable.
+    if (!skips.includes('strip-build-rpaths')) stripBuildRpaths(prefix)
   }
 else if (osName === 'linux' && !skips.includes('fix-patchelf')) {
     fixElfRpaths(prefix)
@@ -45,6 +52,55 @@ else if (osName === 'linux' && !skips.includes('fix-patchelf')) {
   }
 
   console.log('Fix-ups complete.')
+}
+
+/**
+ * Strip build-time absolute LC_RPATHs from every Mach-O under prefix, keeping
+ * only loader-relative ones (@loader_path/@executable_path/@rpath). Re-signs
+ * (ad-hoc) afterwards since install_name_tool invalidates the signature — arm64
+ * dyld refuses to load an unsigned/invalid dylib.
+ */
+function stripBuildRpaths(prefix: string): void {
+  let files: string[]
+  try {
+    files = execSync(
+      `find "${prefix}" -type f \\( -perm -u+x -o -name '*.dylib' -o -name '*.so' \\) 2>/dev/null`,
+      { encoding: 'utf-8' },
+    ).split('\n').filter(Boolean)
+  }
+  catch { return }
+
+  for (const file of files) {
+    try {
+      const head = execSync(`file "${file}" 2>/dev/null`, { encoding: 'utf-8' })
+      if (!head.includes('Mach-O')) continue
+      const rpaths = execSync(`otool -l "${file}" 2>/dev/null`, { encoding: 'utf-8' })
+        .split('\n')
+        .reduce<string[]>((acc, line, i, arr) => {
+          if (line.includes('LC_RPATH')) {
+            const pathLine = arr[i + 2] || ''
+            const m = pathLine.match(/\bpath (\S+)/)
+            if (m) acc.push(m[1])
+          }
+          return acc
+        }, [])
+      let changed = false
+      for (const rp of rpaths) {
+        if (rp.startsWith('@loader_path') || rp.startsWith('@executable_path') || rp.startsWith('@rpath')) continue
+        try {
+          execSync(`install_name_tool -delete_rpath "${rp}" "${file}" 2>/dev/null`, { stdio: 'pipe' })
+          changed = true
+        }
+        catch { /* duplicate / already gone */ }
+      }
+      if (changed) {
+        try { execSync(`codesign --force --sign - "${file}" 2>/dev/null`, { stdio: 'pipe' }) }
+        catch { /* signing best-effort */ }
+      }
+    }
+    catch { /* skip unreadable file */ }
+  }
+  console.log('  Stripped build-time rpaths (kept @loader_path-relative).')
 }
 
 /**
