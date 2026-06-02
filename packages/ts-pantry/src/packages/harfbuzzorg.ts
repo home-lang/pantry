@@ -84,6 +84,7 @@ export const harfbuzzorgPackage = {
   */
   versions: [
     '999.999.999',
+    '14.2.1',
     '14.2.0',
     '14.1.0',
     '14.0.0',

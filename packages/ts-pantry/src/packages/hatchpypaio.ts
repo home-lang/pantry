@@ -68,6 +68,7 @@ export const hatchpypaioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.17.0',
     '1.16.5',
     '1.16.4',
     '1.16.3',

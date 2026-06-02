@@ -68,6 +68,7 @@ export const k3dioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.9.0',
     '5.8.3',
     '5.8.2',
     '5.8.1',

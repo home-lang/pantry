@@ -75,6 +75,7 @@ export const terragruntgruntworkioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.0.7',
     '1.0.6',
     '1.0.5',
     '1.0.4',

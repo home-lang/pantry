@@ -68,6 +68,7 @@ export const kindsigsk8sioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.32.0',
     '0.31.0',
     '0.30.0',
     '0.29.0',
