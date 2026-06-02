@@ -1447,9 +1447,42 @@ pub fn httpGet(allocator: std.mem.Allocator, url: []const u8) ![]u8 {
     return owned;
 }
 
+/// Download a URL to a file on disk via curl subprocess. Returns on success;
+/// errors if curl is not found or exits non-zero. `-fsSL` fails on HTTP errors,
+/// stays silent, and follows redirects.
+fn curlDownloadFile(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8) !void {
+    const curl_paths = [_][]const u8{ "/usr/bin/curl", "curl" };
+    var tried = false;
+    for (curl_paths) |curl| {
+        const args = [_][]const u8{ curl, "-fsSL", "--connect-timeout", "30", "--retry", "3", "--max-time", "300", "-o", dest_path, url };
+        const result = childRun(allocator, &args) catch continue;
+        defer allocator.free(result.stdout);
+        defer allocator.free(result.stderr);
+        tried = true;
+        switch (result.term) {
+            .exited => |code| if (code == 0) return,
+            else => {},
+        }
+    }
+    return if (tried) error.HttpRequestFailed else error.CurlNotFound;
+}
+
 /// Download a URL to a file on disk (replaces `curl -sfL -o <path> <url>`).
 /// Handles HTTPS (native TLS), redirects (up to 10), and content decompression.
+///
+/// Tries curl first: the native Zig HTTP client mishandles some real-world
+/// download chains — notably S3 presigned-URL redirects served over HTTP/2
+/// (e.g. the Hetzner object storage backing the pantry registry), where it
+/// writes corrupt bytes that then fail checksum verification. curl handles
+/// these correctly and is already relied on for metadata fetches, so prefer it
+/// and fall back to the Zig client only when curl is unavailable.
 pub fn httpDownloadFile(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8) !void {
+    if (curlDownloadFile(allocator, url, dest_path)) {
+        return;
+    } else |_| {
+        // curl missing or failed — fall through to the native client below.
+    }
+
     var client: std.http.Client = .{
         .allocator = allocator,
         .io = io,

@@ -76,6 +76,16 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
         return error.InvalidUrl;
     }
 
+    // The pantry registry 302-redirects binary tarballs to presigned object-storage
+    // URLs (Hetzner / S3). The native Zig HTTP client mishandles that redirect chain:
+    // it returns status 200 but streams corrupt bytes (no truncation signal, so the
+    // size check below never trips), which then fails checksum verification. curl
+    // follows the presigned redirect correctly, so use it directly for registry
+    // downloads. We lose the live progress bar for these, but correctness wins.
+    if (std.mem.indexOf(u8, url, "registry.pantry.dev") != null) {
+        return downloadFileWithCurl(allocator, url, dest_path, quiet);
+    }
+
     // Native Zig HTTP download with TLS. Falls back to curl on connection failure.
     var stream = io_helper.httpStreamGet(allocator, url) catch {
         return downloadFileWithCurl(allocator, url, dest_path, quiet);
