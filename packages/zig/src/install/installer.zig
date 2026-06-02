@@ -2889,6 +2889,10 @@ pub const Installer = struct {
             ) catch null;
         };
 
+        // Path of the content-addressed cache file backing this archive, if it was
+        // served from cache — used to evict a poisoned entry on checksum mismatch.
+        var cached_archive_path: ?[]const u8 = null;
+
         if (s3_url) |url| {
             const temp_archive_path = try std.fmt.allocPrint(
                 self.allocator,
@@ -2909,6 +2913,10 @@ pub const Installer = struct {
                         const file = io_helper.cwd().createFile(io_helper.io, temp_archive_path, .{}) catch break :blk false;
                         defer file.close(io_helper.io);
                         io_helper.writeAllToFile(file, cached_bytes) catch break :blk false;
+                        // The cache is written before checksum verification, so a single
+                        // bad download would otherwise poison it forever. Remember the
+                        // backing file so a checksum mismatch below can evict + re-fetch.
+                        cached_archive_path = self.allocator.dupe(u8, meta.cache_path) catch null;
                         break :blk true;
                     } else |_| {}
                 }
@@ -2978,7 +2986,27 @@ pub const Installer = struct {
         defer self.allocator.free(extract_dir);
 
         try io_helper.makePath(extract_dir);
-        try extractor.extractArchiveWithVerification(self.allocator, archive_path, extract_dir, used_format, used_url, options.verbose);
+        defer if (cached_archive_path) |p| self.allocator.free(p);
+        extractor.extractArchiveWithVerification(self.allocator, archive_path, extract_dir, used_format, used_url, options.verbose) catch |err| {
+            // A poisoned cache entry (bad bytes stored before checksum verification)
+            // would fail every install forever. If the archive came from cache and
+            // failed to verify/extract (corrupt or checksum mismatch), evict it and
+            // re-download once from the registry before giving up.
+            if (cached_archive_path != null) {
+                io_helper.deleteFile(cached_archive_path.?) catch {};
+                if (!options.quiet) {
+                    style.print("  {s}evicting bad cached archive for {s}@{s}, re-downloading…{s}\n", .{ style.dim, spec.name, spec.version, style.reset });
+                }
+                if (options.inline_progress) |progress_opts| {
+                    try downloader.downloadFileInline(self.allocator, used_url, archive_path, progress_opts);
+                } else {
+                    try downloader.downloadFileQuiet(self.allocator, used_url, archive_path, options.quiet);
+                }
+                try extractor.extractArchiveWithVerification(self.allocator, archive_path, extract_dir, used_format, used_url, options.verbose);
+            } else {
+                return err;
+            }
+        };
 
         // Find the actual package root
         const package_source = try self.findPackageRoot(extract_dir, domain, spec.version);
