@@ -8,9 +8,11 @@ export const recipe: Recipe = {
   github: 'https://github.com/php/php-src',
   programs: ['pear', 'pecl', 'phar', 'php', 'php-cgi', 'php-config', 'phpdbg', 'phpize'],
   versionSource: {
+    // Stable releases only — exclude pre-releases (php-8.5.7RC1, *alpha/beta/RC*),
+    // whose tarballs are NOT published at /distributions/ and 404.
     type: 'github-tags',
     repo: 'php/php-src',
-    tagPattern: /^php-(.+)$/,
+    tagPattern: /^php-(\d+\.\d+\.\d+)$/,
   },
   distributable: {
     url: 'https://www.php.net/distributions/php-{{version}}.tar.gz',
