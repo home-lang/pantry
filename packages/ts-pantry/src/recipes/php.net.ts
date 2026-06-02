@@ -103,7 +103,7 @@ export const recipe: Recipe = {
       },
     ],
     env: {
-      'ARGS': ['--prefix={{prefix}}', '--enable-bcmath', '--enable-calendar', '--enable-dba', '--enable-exif', '--enable-ftp', '--enable-fpm', '--enable-gd', '--enable-intl', '--enable-mbregex', '--enable-mbstring', '--enable-mysqlnd', '--enable-pcntl', '--enable-phpdbg', '--enable-phpdbg-readline', '--enable-shmop', '--enable-soap', '--enable-sockets', '--enable-sysvmsg', '--enable-sysvsem', '--enable-sysvshm', '--without-pear', '--with-curl', '--with-external-pcre', '--with-ffi', '--with-gettext={{deps.gnu.org/gettext.prefix}}', '--with-gmp={{deps.gnu.org/gmp.prefix}}', '--with-iconv={{deps.gnu.org/libiconv.prefix}}', '--with-kerberos', '--with-layout=GNU', '--with-libxml', '--with-libedit', '--with-openssl', '--with-pdo-sqlite', '--with-pic', '--with-sodium', '--with-sqlite3', '--with-xsl', '--with-zlib', '--disable-dtrace', '--without-ldap-sasl', '--without-ndbm', '--without-gdbm', 'CC=gcc'],
+      'ARGS': ['--prefix={{prefix}}', '--enable-bcmath', '--enable-calendar', '--enable-dba', '--enable-exif', '--enable-ftp', '--enable-fpm', '--enable-gd', '--enable-intl', '--enable-mbregex', '--enable-mbstring', '--enable-mysqlnd', '--enable-pcntl', '--enable-phpdbg', '--enable-phpdbg-readline', '--enable-shmop', '--enable-soap', '--enable-sockets', '--enable-sysvmsg', '--enable-sysvsem', '--enable-sysvshm', '--without-pear', '--with-curl', '--with-external-pcre', '--with-ffi', '--with-gettext={{deps.gnu.org/gettext.prefix}}', '--with-gmp={{deps.gnu.org/gmp.prefix}}', '--with-iconv={{deps.gnu.org/libiconv.prefix}}', '--with-kerberos', '--with-layout=GNU', '--with-libxml', '--with-libedit', '--with-openssl', '--with-pdo-sqlite', '--with-pic', '--with-sodium', '--with-sqlite3', '--with-xsl', '--with-zip', '--with-zlib', '--disable-dtrace', '--without-ldap-sasl', '--without-ndbm', '--without-gdbm', 'CC=gcc'],
       'linux': {
         LDFLAGS: '-Wl,-rpath,{{pkgx.prefix}}',
       },
@@ -116,7 +116,7 @@ export const recipe: Recipe = {
         // macOS res_9_* resolver functions, which live in libresolv; php's
         // configure doesn't always add it, so link it explicitly.
         LDFLAGS: '-Wl,-rpath,{{pkgx.prefix}},-headerpad_max_install_names -lresolv',
-        ARGS: ['--with-zip', '--enable-dtrace', '--with-ldap-sasl'],
+        ARGS: ['--enable-dtrace', '--with-ldap-sasl'],
       },
       'darwin/x86-64': {
         // causes libtool to: <unknown>:0: error: invalid CFI advance_loc expression
