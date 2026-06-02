@@ -259,6 +259,28 @@ function htmlResponse(html: string, status = 200): Response {
   })
 }
 
+// gzip-negotiated response for large dashboard payloads — cuts the ~196KB HTML
+// and ~111KB JSON to a fraction over the wire when the client (and proxy) accept
+// gzip. Harmless if the fronting proxy decompresses: the client still gets valid
+// content, just uncompressed.
+function negotiatedResponse(req: Request, body: string, contentType: string, extra: Record<string, string> = {}): Response {
+  const headers: Record<string, string> = { 'Content-Type': contentType, 'Vary': 'Accept-Encoding', ...extra }
+  const ae = req.headers.get('accept-encoding') || ''
+  if (/\bgzip\b/.test(ae) && body.length > 1024) {
+    return new Response(Bun.gzipSync(Buffer.from(body)), { headers: { ...headers, 'Content-Encoding': 'gzip' } })
+  }
+  return new Response(body, { headers })
+}
+
+const SITE_SECURITY_HEADERS: Record<string, string> = {
+  'Cache-Control': 'public, max-age=60',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
+}
+
 const categorySlugMap: Record<string, AnalyticsCategory> = {
   'install': 'install',
   'install-on-request': 'install_on_request',
@@ -413,7 +435,7 @@ export function createHandler(
       // Full package table: per-platform coverage + live building state.
       if (path === '/api/packages' && req.method === 'GET') {
         const data = await getBuildStatus().getPackages()
-        return Response.json(data, { headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=15' } })
+        return negotiatedResponse(req, JSON.stringify(data), 'application/json; charset=utf-8', { ...corsHeaders, 'Cache-Control': 'public, max-age=15' })
       }
       // Live build status: what's building now, recent outcomes, rebuild queue.
       if (path === '/api/build-status' && req.method === 'GET') {
@@ -1056,7 +1078,7 @@ export function createHandler(
       }
 
       // Static pages
-      if (path === '/packages') return htmlResponse(await renderPackagesPage())
+      if (path === '/packages') return negotiatedResponse(req, await renderPackagesPage(), 'text/html; charset=utf-8', SITE_SECURITY_HEADERS)
       if (path === '/about') return htmlResponse(await renderSitePage('about.stx', { title: 'About', canonicalUrl: 'https://pantry.dev/about' }))
       if (path === '/privacy') return htmlResponse(await renderSitePage('privacy.stx', { title: 'Privacy Policy', canonicalUrl: 'https://pantry.dev/privacy' }))
       if (path === '/accessibility') return htmlResponse(await renderSitePage('accessibility.stx', { title: 'Accessibility', canonicalUrl: 'https://pantry.dev/accessibility' }))
