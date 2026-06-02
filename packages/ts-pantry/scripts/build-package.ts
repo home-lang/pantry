@@ -1974,6 +1974,11 @@ else {
 
   // Post-build fix-ups for relocatable binaries
   console.log('\n🔧 Running post-build fix-ups...')
+  // Tell fixUp where this build's deps live so it can bundle @rpath dep dylibs
+  // (e.g. libxml2.16.dylib) that aren't under the default /tmp/buildkit-deps* or
+  // Homebrew. Without it, binaries built against the S3 deps reference an
+  // @rpath/<dep>.dylib that nothing on the target resolves.
+  if (depsDir) process.env.PANTRY_DEPS_DIR = depsDir
   const skips = getSkips(recipe as PackageRecipe)
   await fixUp(prefix, platform, skips)
 

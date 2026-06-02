@@ -1014,7 +1014,9 @@ else if (osName === 'darwin') {
         // final) binaries then carry rpath entries that load the dep dylibs. These are
         // dep dirs only (never the install prefix), so they don't collide with the
         // CMAKE_INSTALL_RPATH whose duplicates install_name_tool rejects.
-        const rpathFlags = depLibPaths.map(p => `-Wl,-rpath,${p}`).join(' ')
+        // Deduplicate: depLibPaths can repeat /usr/lib, /opt/homebrew/lib, etc. across
+        // deps, and modern dyld (macOS 15+) aborts on a duplicate LC_RPATH at runtime.
+        const rpathFlags = [...new Set(depLibPaths)].map(p => `-Wl,-rpath,${p}`).join(' ')
         sections.push(`export LDFLAGS="${rpathFlags} \${LDFLAGS:-}"`)
       }
     }
@@ -1376,6 +1378,25 @@ SYSLIB_OVERRIDE_EOF`)
   sections.push('  if ! $_is_compile_only; then')
   sections.push('    args+=("-Wl,-ld_classic" "-Wl,-no_warn_duplicate_libraries")')
   sections.push('  fi')
+  // Drop duplicate -Wl,-rpath,<path> flags: our LDFLAGS, the package configure
+  // (--with-x), and libtool all add the same dep rpaths, and modern dyld aborts
+  // on a duplicate LC_RPATH — which silently breaks autotools compile-and-run
+  // probes (e.g. PHP\'s iconv-errno check). The darwin exec path below uses
+  // "${args[@]}" directly (the Linux _final_args fix-up loop never runs here),
+  // so we must dedupe args itself.
+  sections.push('  _dedup_args=(); _seen_rpaths=":"')
+  sections.push('  for arg in "${args[@]}"; do')
+  sections.push('    case "$arg" in')
+  sections.push('      -Wl,-rpath,*)')
+  sections.push('        _rp="${arg#-Wl,-rpath,}"')
+  sections.push('        case "$_seen_rpaths" in')
+  sections.push('          *":$_rp:"*) continue ;;')
+  sections.push('          *) _seen_rpaths="$_seen_rpaths$_rp:" ;;')
+  sections.push('        esac ;;')
+  sections.push('    esac')
+  sections.push('    _dedup_args+=("$arg")')
+  sections.push('  done')
+  sections.push('  args=("${_dedup_args[@]}")')
   sections.push('fi')
   sections.push('# GCC specs/ directory workaround: run from /tmp if ./specs is a directory')
   sections.push('# Only on Linux — macOS clang does not read ./specs, and the CWD change')
@@ -1387,6 +1408,10 @@ SYSLIB_OVERRIDE_EOF`)
   sections.push('  _has_output=false')
   sections.push('  _has_compile_only=false')
   sections.push('  _last_source=""')
+  // Track -rpath values so duplicates (which modern dyld aborts on — breaking
+  // configure compile-and-run probes) are dropped, no matter how many sources
+  // — our LDFLAGS, the package's own --with-x flags, libtool — add the same one.
+  sections.push('  _seen_rpaths=":"')
   sections.push('  for _a in "${args[@]}"; do')
   sections.push('    if $_next_is_output; then')
   sections.push('      case "$_a" in /*) _final_args+=("$_a") ;; *) _final_args+=("$_orig_cwd/$_a") ;; esac')
@@ -1418,6 +1443,13 @@ SYSLIB_OVERRIDE_EOF`)
   sections.push('        else')
   sections.push('          _final_args+=("$_a")')
   sections.push('        fi ;;')
+  // Drop duplicate -Wl,-rpath,<path> flags (dyld aborts on duplicate LC_RPATH).
+  sections.push('      -Wl,-rpath,*)')
+  sections.push('        _rp="${_a#-Wl,-rpath,}"')
+  sections.push('        case "$_seen_rpaths" in')
+  sections.push('          *":$_rp:"*) ;;')
+  sections.push('          *) _seen_rpaths="$_seen_rpaths$_rp:"; _final_args+=("$_a") ;;')
+  sections.push('        esac ;;')
   sections.push('      *) _final_args+=("$_a") ;;')
   sections.push('    esac')
   sections.push('  done')

@@ -161,7 +161,7 @@ catch { /* ignore */ }
           if (existsSync(destPath)) continue // already bundled
           // Search in build directories and Homebrew
           try {
-            const searchPaths = ['/tmp/buildkit-deps', '/tmp/buildkit-install-*', '/tmp/buildkit-deps-*'].filter(p => {
+            const searchPaths = [...(process.env.PANTRY_DEPS_DIR ? [process.env.PANTRY_DEPS_DIR] : []), '/tmp/buildkit-deps', '/tmp/buildkit-install-*', '/tmp/buildkit-deps-*'].filter(p => {
               try { return execSync(`ls -d ${p} 2>/dev/null`, { encoding: 'utf-8' }).trim().length > 0 }
 catch { return false }
             })
