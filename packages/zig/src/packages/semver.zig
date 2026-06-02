@@ -112,9 +112,25 @@ pub fn parseConstraint(constraint_str: []const u8) !Constraint {
     };
 }
 
+/// True if a version string carries a pre-release tag (e.g. "2.10.0-RC1",
+/// "1.2.0-beta.3"). Standard semver: a "-" after the major.minor.patch core marks
+/// a pre-release. We treat the whole string as pre-release if any "-" appears after
+/// an optional leading "v" — release versions never contain one.
+pub fn isPrerelease(version_str: []const u8) bool {
+    const v = if (std.mem.startsWith(u8, version_str, "v")) version_str[1..] else version_str;
+    return std.mem.indexOfScalar(u8, v, '-') != null;
+}
+
 /// Check if a version satisfies a constraint
 pub fn satisfiesConstraint(version_str: []const u8, constraint: Constraint) bool {
     const version = parseVersion(version_str) catch return false;
+
+    // Pre-releases never satisfy a range constraint (^, ~, >=, …) — npm/semver
+    // semantics. Without this, parseVersion drops the "-RC1" tag and a range like
+    // "^2.8.10" wrongly matches "2.10.0-RC1" over the published final "2.10.0".
+    // Exact pins are left alone (the tag is already dropped, so "=2.10.0" matching
+    // both is pre-existing behaviour and harmless).
+    if (constraint.type != .exact and isPrerelease(version_str)) return false;
 
     return switch (constraint.type) {
         .exact => version.major == constraint.major and

@@ -1006,13 +1006,16 @@ else if (osName === 'darwin') {
       sections.push(`export LIBRARY_PATH="${depLibPaths.join(':')}:\${LIBRARY_PATH:-}"`)
       sections.push(`export LD_LIBRARY_PATH="${depLibPaths.join(':')}:\${LD_LIBRARY_PATH:-}"`)
       if (osName === 'darwin') {
-        // macOS resolves shared libraries at runtime via DYLD_*, not LD_LIBRARY_PATH.
-        // configure scripts that compile-and-RUN a probe (e.g. PostgreSQL's "checking
-        // test program") otherwise fail with "could not execute a simple test program"
-        // because the dep dylibs can't be found. Exporting these inside the build
-        // script reaches the (non-SIP-protected) probe binaries it spawns.
-        sections.push(`export DYLD_LIBRARY_PATH="${depLibPaths.join(':')}:\${DYLD_LIBRARY_PATH:-}"`)
-        sections.push(`export DYLD_FALLBACK_LIBRARY_PATH="${depLibPaths.join(':')}:/opt/homebrew/lib:/usr/lib:\${DYLD_FALLBACK_LIBRARY_PATH:-}"`)
+        // Dep dylibs ship @rpath-style install names (e.g. @rpath/libxslt.1.dylib).
+        // configure's compile-and-RUN probes (PostgreSQL's "checking test program")
+        // must resolve those, but DYLD_* can't help: SIP strips DYLD_* from the
+        // /bin/sh that runs ./configure, and @rpath refs need a real LC_RPATH, not
+        // DYLD_LIBRARY_PATH. So add an -rpath per dep lib dir to LDFLAGS — probe (and
+        // final) binaries then carry rpath entries that load the dep dylibs. These are
+        // dep dirs only (never the install prefix), so they don't collide with the
+        // CMAKE_INSTALL_RPATH whose duplicates install_name_tool rejects.
+        const rpathFlags = depLibPaths.map(p => `-Wl,-rpath,${p}`).join(' ')
+        sections.push(`export LDFLAGS="${rpathFlags} \${LDFLAGS:-}"`)
       }
     }
     if (depIncludePaths.length > 0) {
@@ -1020,6 +1023,12 @@ else if (osName === 'darwin') {
     }
     if (depPkgConfigPaths.length > 0) {
       sections.push(`export PKG_CONFIG_PATH="${depPkgConfigPaths.join(':')}:\${PKG_CONFIG_PATH:-}"`)
+      if (osName === 'darwin') {
+        // Homebrew keg-only formulae (e.g. icu4c, which Node's --with-intl=system-icu
+        // needs) live under /opt/homebrew/opt/<name>/lib/pkgconfig and aren't symlinked
+        // into /opt/homebrew/lib/pkgconfig, so the static paths above miss them.
+        sections.push('for _kp in /opt/homebrew/opt/*/lib/pkgconfig; do [ -d "$_kp" ] && PKG_CONFIG_PATH="$_kp:$PKG_CONFIG_PATH"; done; export PKG_CONFIG_PATH')
+      }
     }
     if (osName === 'linux') {
       // On Linux, LD_LIBRARY_PATH is searched BEFORE default locations. S3 deps may
