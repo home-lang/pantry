@@ -8,9 +8,12 @@ export const recipe: Recipe = {
   github: 'https://github.com/postgres/postgres',
   programs: ['clusterdb', 'createdb', 'dropdb', 'dropuser', 'ecpg', 'initdb', 'pg_archivecleanup', 'pg_basebackup', 'pg_config', 'pg_controldata', 'pg_ctl', 'pg_dump', 'pg_dumpall', 'pg_isready', 'pg_receivewal', 'pg_recvlogical', 'pg_resetwal', 'pg_restore', 'pg_rewind', 'pg_test_fsync', 'pg_test_timing', 'pg_upgrade', 'pg_waldump', 'pgbench', 'postgres', 'psql', 'reindexdb', 'vacuumdb'],
   versionSource: {
-    type: 'github-releases',
+    // postgres/postgres is a mirror with no GitHub Releases — it tags stable
+    // releases as REL_<major>_<minor> (e.g. REL_17_10). Read tags and join the
+    // two capture groups into a "<major>.<minor>" version.
+    type: 'github-tags',
     repo: 'postgres/postgres',
-    tagPattern: /^v(.+)$/,
+    tagPattern: /^REL_(\d+)_(\d+)$/,
   },
   distributable: {
     url: 'https://github.com/postgres/postgres/archive/refs/tags/REL_{{version.major}}_{{version.minor}}.tar.gz',

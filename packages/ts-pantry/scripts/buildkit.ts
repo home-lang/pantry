@@ -1005,6 +1005,15 @@ else if (osName === 'darwin') {
     if (depLibPaths.length > 0) {
       sections.push(`export LIBRARY_PATH="${depLibPaths.join(':')}:\${LIBRARY_PATH:-}"`)
       sections.push(`export LD_LIBRARY_PATH="${depLibPaths.join(':')}:\${LD_LIBRARY_PATH:-}"`)
+      if (osName === 'darwin') {
+        // macOS resolves shared libraries at runtime via DYLD_*, not LD_LIBRARY_PATH.
+        // configure scripts that compile-and-RUN a probe (e.g. PostgreSQL's "checking
+        // test program") otherwise fail with "could not execute a simple test program"
+        // because the dep dylibs can't be found. Exporting these inside the build
+        // script reaches the (non-SIP-protected) probe binaries it spawns.
+        sections.push(`export DYLD_LIBRARY_PATH="${depLibPaths.join(':')}:\${DYLD_LIBRARY_PATH:-}"`)
+        sections.push(`export DYLD_FALLBACK_LIBRARY_PATH="${depLibPaths.join(':')}:/opt/homebrew/lib:/usr/lib:\${DYLD_FALLBACK_LIBRARY_PATH:-}"`)
+      }
     }
     if (depIncludePaths.length > 0) {
       sections.push(`export CPATH="${depIncludePaths.join(':')}:\${CPATH:-}"`)

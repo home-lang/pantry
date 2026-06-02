@@ -50,7 +50,10 @@ async function fetchGitHubReleases(repo: string, tagPattern?: RegExp, stable = t
     let version = release.tag_name
     if (tagPattern) {
       const match = version.match(tagPattern)
-      if (match) version = match[1]
+      // Join all capture groups so multi-part tag schemes work, e.g. PostgreSQL's
+      // `REL_17_10` with /^REL_(\d+)_(\d+)$/ → "17.10". Single-group patterns are
+      // unchanged (one group → just that group).
+      if (match) version = match.length > 2 ? match.slice(1).filter(Boolean).join('.') : match[1]
       else continue
     }
     else {
@@ -82,7 +85,10 @@ async function fetchGitHubTags(repo: string, tagPattern?: RegExp): Promise<strin
     let version = tag.name
     if (tagPattern) {
       const match = version.match(tagPattern)
-      if (match) version = match[1]
+      // Join all capture groups so multi-part tag schemes work, e.g. PostgreSQL's
+      // `REL_17_10` with /^REL_(\d+)_(\d+)$/ → "17.10". Single-group patterns are
+      // unchanged (one group → just that group).
+      if (match) version = match.length > 2 ? match.slice(1).filter(Boolean).join('.') : match[1]
       else continue
     }
     else {
