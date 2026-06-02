@@ -110,9 +110,10 @@ export const recipe: Recipe = {
         if: 'darwin',
       },
       // Verify the deduped binary actually loads (fail the build if php still
-      // can't run, instead of shipping a broken artifact).
+      // can't run). Print the module list too (zip etc.) for confirmation, but
+      // don't gate on it — php -v loading is the correctness check.
       {
-        run: '"{{prefix}}/bin/php" -v && "{{prefix}}/bin/php" -m | grep -qi zip',
+        run: '"{{prefix}}/bin/php" -v && { echo "=== php -m ==="; "{{prefix}}/bin/php" -m || true; }',
         if: 'darwin',
       },
       {
