@@ -35,6 +35,7 @@ export const recipe: Recipe = {
     'openssl.org': '*',
     'pcre.org/v2': '>=10.30',
     'sqlite.org': '^3',
+    'postgresql.org': '^17', // libpq for the pgsql / pdo_pgsql extensions
     'unicode.org': '^71',
     'gnu.org/libiconv': '^1',
     'kerberos.org': '^1',
@@ -128,7 +129,7 @@ export const recipe: Recipe = {
       },
     ],
     env: {
-      'ARGS': ['--prefix={{prefix}}', '--enable-bcmath', '--enable-calendar', '--enable-dba', '--enable-exif', '--enable-ftp', '--enable-fpm', '--enable-gd', '--enable-intl', '--enable-mbregex', '--enable-mbstring', '--enable-mysqlnd', '--enable-pcntl', '--enable-phpdbg', '--enable-phpdbg-readline', '--enable-shmop', '--enable-soap', '--enable-sockets', '--enable-sysvmsg', '--enable-sysvsem', '--enable-sysvshm', '--without-pear', '--with-curl', '--with-external-pcre', '--with-ffi', '--with-gettext={{deps.gnu.org/gettext.prefix}}', '--with-gmp={{deps.gnu.org/gmp.prefix}}', '--with-iconv={{deps.gnu.org/libiconv.prefix}}', '--with-kerberos', '--with-layout=GNU', '--with-libxml', '--with-libedit', '--with-openssl', '--with-pdo-sqlite', '--with-pic', '--with-sodium', '--with-sqlite3', '--with-xsl', '--with-zip', '--with-zlib', '--disable-dtrace', '--without-ldap-sasl', '--without-ndbm', '--without-gdbm', 'CC=gcc'],
+      'ARGS': ['--prefix={{prefix}}', '--enable-bcmath', '--enable-calendar', '--enable-dba', '--enable-exif', '--enable-ftp', '--enable-fpm', '--enable-gd', '--enable-intl', '--enable-mbregex', '--enable-mbstring', '--enable-mysqlnd', '--enable-pcntl', '--enable-phpdbg', '--enable-phpdbg-readline', '--enable-shmop', '--enable-soap', '--enable-sockets', '--enable-sysvmsg', '--enable-sysvsem', '--enable-sysvshm', '--without-pear', '--with-curl', '--with-external-pcre', '--with-ffi', '--with-gettext={{deps.gnu.org/gettext.prefix}}', '--with-gmp={{deps.gnu.org/gmp.prefix}}', '--with-iconv={{deps.gnu.org/libiconv.prefix}}', '--with-kerberos', '--with-layout=GNU', '--with-libxml', '--with-libedit', '--with-openssl', '--with-pdo-sqlite', '--with-pgsql={{deps.postgresql.org.prefix}}', '--with-pdo-pgsql={{deps.postgresql.org.prefix}}', '--with-pic', '--with-sodium', '--with-sqlite3', '--with-xsl', '--with-zip', '--with-zlib', '--disable-dtrace', '--without-ldap-sasl', '--without-ndbm', '--without-gdbm', 'CC=gcc'],
       'linux': {
         LDFLAGS: '-Wl,-rpath,{{pkgx.prefix}}',
       },
