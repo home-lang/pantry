@@ -119,8 +119,10 @@ export const recipe: Recipe = {
       {
         run: [
           'sed -i -e\'s|^prefix=.*|prefix="$(dirname "$(dirname "$0")")"|g\' -e\'s|^datarootdir=.*|datarootdir="${prefix}/share"|g\' -e\'s|^ini_path=.*|ini_path="${prefix}/etc"|g\' -e\'s|^extension_dir=\'\\\'\'{{prefix}}\\(.*\\)\'\\\'\'|extension_dir="${prefix}\\1"|g\' -e\'s|^SED=.*|SED="$(dirname "$(dirname "$(dirname "$(dirname "$0")")")")/gnu.org/sed/v4/bin/sed"|g\' -e\'s|#{{prefix}}#|#$(dirname "$(dirname "$0")")#|g\' -e\'s|{{pkgx.prefix}}|${prefix}/../..|g\' php-config phpize',
-          'fix-shebangs.ts "{{prefix}}/bin/phar"',
-          'sed -i -e\'s|{{prefix}}|$(dirname "$(dirname "$0")")|g\' pear peardev pecl',
+          // phar CLI tool + pear/peardev/pecl are not generated (we skip the
+          // crashing install-pharcmd / --without-pear), so only touch them if present.
+          '[ -f phar ] && fix-shebangs.ts "{{prefix}}/bin/phar" || true',
+          'for f in pear peardev pecl; do [ -f "$f" ] && sed -i -e\'s|{{prefix}}|$(dirname "$(dirname "$0")")|g\' "$f"; done; true',
         ],
         'working-directory': '${{prefix}}/bin',
       },
