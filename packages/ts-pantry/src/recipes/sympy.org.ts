@@ -27,12 +27,21 @@ export const recipe: Recipe = {
   },
 
   build: {
+    // Mirrors the upstream pkgx recipe. The git source is checked out into the
+    // build root, so setup.py lives at the build root (pip install .) while
+    // release.py lives at sympy/release.py — hence the per-step
+    // working-directory. The old recipe wrongly `cd "sympy"`'d for the pip
+    // install, which ran in the package subdir that has no setup.py.
     script: [
-      'cd "sympy"',
-      'sed -i \'s/__version__ =.*/__version__ = "{{version.raw}}"/\' release.py',
+      {
+        run: 'sed -i \'s/__version__ =.*/__version__ = "{{version.raw}}"/\' release.py',
+        'working-directory': 'sympy',
+      },
       'python -m pip install --prefix={{prefix}} .',
-      'cd "${{prefix}}/lib"',
-      'ln -s python{{deps.python.org.version.marketing}} python{{deps.python.org.version.major}}',
+      {
+        run: 'ln -s python{{deps.python.org.version.marketing}} python{{deps.python.org.version.major}}',
+        'working-directory': '${{prefix}}/lib',
+      },
     ],
   },
 }

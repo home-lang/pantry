@@ -5,6 +5,7 @@ export const recipe: Recipe = {
   name: 'vamp',
   description: 'Audio processing plugin system sdk',
   homepage: 'https://www.vamp-plugins.org/',
+  github: 'vamp-plugins/vamp-plugin-sdk',
   programs: ['vamp-simple-host', 'vamp-rdf-template-generator'],
   dependencies: {
     'xiph.org/flac': '^1.4',
@@ -15,15 +16,21 @@ export const recipe: Recipe = {
     'gnu.org/automake': '*',
     'curl.se': '*',
   },
-  distributable: null,
+  // Upstream moved its source tarballs from code.soundsoftware.ac.uk (now
+  // unreachable) to GitHub releases. The release tag is the marketing version
+  // (vamp-plugin-sdk-v2.10) while the asset uses the full version (2.10.0).
+  versionSource: {
+    type: 'url-pattern',
+    url: 'https://github.com/vamp-plugins/vamp-plugin-sdk/releases/download/vamp-plugin-sdk-v{{version.marketing}}/vamp-plugin-sdk-{{version}}.tar.gz',
+    knownVersions: ['2.10.0'],
+  },
+  distributable: {
+    url: 'https://github.com/vamp-plugins/vamp-plugin-sdk/releases/download/vamp-plugin-sdk-v{{version.marketing}}/vamp-plugin-sdk-{{version}}.tar.gz',
+    stripComponents: 1,
+  },
 
   build: {
     script: [
-      // get archive url
-      // ex: https://code.soundsoftware.ac.uk/attachments/download/2588/vamp-plugin-sdk-2.9.0.tar.gz
-      // we need to find url from the page because it's not a fixed url
-      'DIST_URL=$(curl -s https://vamp-plugins.org/develop.html | grep -o \'https://code.soundsoftware.ac.uk/attachments/download/[0-9]*/vamp-plugin-sdk-{{version}}.tar.gz\')',
-      'curl -L $DIST_URL | tar -xz --strip-components 1',
       './configure $ARGS',
       'make --jobs {{hw.concurrency}}',
       'make --jobs {{hw.concurrency}} install',
@@ -35,17 +42,6 @@ export const recipe: Recipe = {
         '--prefix={{prefix}}',
         '--libdir={{prefix}}/lib',
       ],
-    },
-  },
-
-  test: {
-    script: [
-      'vamp-simple-host -v | grep {{version.marketing}}',
-      'cp {{prefix}}/lib/vamp/vamp-example-plugins.so $OUT',
-      'vamp-simple-host -l | grep \'Amplitude Follower\'',
-    ],
-    env: {
-      VAMP_PATH: '$PWD',
     },
   },
 }

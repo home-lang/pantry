@@ -13,7 +13,11 @@ export const recipe: Recipe = {
     script: [
       './configure --prefix={{prefix}}',
       'make --jobs {{hw.concurrency}} install',
-      '',
     ],
+    env: {
+      'linux/aarch64': {
+        CFLAGS: '$CFLAGS -march=armv8-a+crypto',
+      },
+    },
   },
 }
