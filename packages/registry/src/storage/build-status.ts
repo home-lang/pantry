@@ -39,7 +39,7 @@ export interface PackageRow {
 
 const RECENT_LIMIT = 500
 const BUILDING_TTL_MS = 60 * 60 * 1000 // a "building" event older than 1h is considered stale
-const COVERAGE_TTL_MS = 5 * 60 * 1000
+const COVERAGE_TTL_MS = 15 * 60 * 1000
 
 interface PersistedState {
   version: 1
@@ -219,7 +219,13 @@ export class BuildStatusStore {
 
   /** The full package table: coverage merged with live building state. */
   async getPackages(): Promise<{ packages: PackageRow[], generatedAt: string }> {
-    await this.refreshCoverage()
+    // Stale-while-revalidate: only block on a completely cold cache (first call
+    // before the boot-seed lands). When merely stale, refresh in the background
+    // so the request never waits on the full binaries/ listing.
+    if (this.coverage.size === 0)
+      await this.refreshCoverage(true)
+    else if (Date.now() - this.coverageAt > COVERAGE_TTL_MS)
+      void this.refreshCoverage()
     this.pruneStaleBuilding()
     // building: domain -> set of platforms currently building
     const buildingByDomain = new Map<string, Set<string>>()

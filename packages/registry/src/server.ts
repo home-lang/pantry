@@ -336,9 +336,30 @@ function getBuildStatus(): BuildStatusStore {
   if (!_buildStatus) {
     const storage = resolveStorageProvider()
     _buildStatus = new BuildStatusStore(createS3Client(storage), process.env.S3_BUCKET || 'pantry-registry')
-    _buildStatus.load().catch(e => console.error('build-status load failed:', (e as Error).message))
+    const s = _buildStatus
+    s.load()
+      // Warm the coverage cache in the background so the first /api/packages
+      // request never waits on the full binaries/ listing.
+      .then(() => s.refreshCoverage(true))
+      .catch(e => console.error('build-status init failed:', (e as Error).message))
   }
   return _buildStatus
+}
+
+// The /packages dashboard shell is identical for every visitor (data is loaded
+// client-side via /api/*), but stx render + crosswind CSS injection costs ~4s.
+// Render it once and serve the cached HTML; a deploy restarts the process and
+// clears this.
+let _packagesPageHtml: string | null = null
+async function renderPackagesPage(): Promise<string> {
+  if (_packagesPageHtml === null) {
+    _packagesPageHtml = await renderSitePage('packages.stx', {
+      title: 'Packages & Builds',
+      metaDescription: 'Browse every pantry package, see per-platform build coverage and live build activity, and trigger rebuilds.',
+      canonicalUrl: 'https://pantry.dev/packages',
+    })
+  }
+  return _packagesPageHtml
 }
 
 export function createHandler(
@@ -1035,7 +1056,7 @@ export function createHandler(
       }
 
       // Static pages
-      if (path === '/packages') return htmlResponse(await renderSitePage('packages.stx', { title: 'Packages & Builds', metaDescription: 'Browse every pantry package, see per-platform build coverage and live build activity, and trigger rebuilds.', canonicalUrl: 'https://pantry.dev/packages' }))
+      if (path === '/packages') return htmlResponse(await renderPackagesPage())
       if (path === '/about') return htmlResponse(await renderSitePage('about.stx', { title: 'About', canonicalUrl: 'https://pantry.dev/about' }))
       if (path === '/privacy') return htmlResponse(await renderSitePage('privacy.stx', { title: 'Privacy Policy', canonicalUrl: 'https://pantry.dev/privacy' }))
       if (path === '/accessibility') return htmlResponse(await renderSitePage('accessibility.stx', { title: 'Accessibility', canonicalUrl: 'https://pantry.dev/accessibility' }))
