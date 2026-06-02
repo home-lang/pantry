@@ -15,20 +15,45 @@ export const recipe: Recipe = {
     url: 'https://github.com/surrealdb/surrealdb/archive/refs/tags/v{{version}}.tar.gz',
     stripComponents: 1,
   },
+  dependencies: {
+    'openssl.org': '^1',
+  },
+  buildDependencies: {
+    'rust-lang.org': '>=1.60',
+    'rust-lang.org/cargo': '*',
+    'gnu.org/patch': '*', // rquickjs-sys:build.rs:L132
+  },
 
   build: {
     script: [
-      'if test "{{hw.platform}}" = "darwin"; then',
-      '  if test "{{hw.arch}}" = "aarch64"; then SUFFIX="darwin-arm64"',
-      '  else SUFFIX="darwin-amd64"; fi',
-      'else',
-      '  if test "{{hw.arch}}" = "aarch64"; then SUFFIX="linux-arm64"',
-      '  else SUFFIX="linux-amd64"; fi',
-      'fi',
-      'URL="https://github.com/surrealdb/surrealdb/releases/download/v{{version}}/surreal-v{{version}}.${SUFFIX}.tgz"',
-      'echo "Downloading SurrealDB from: $URL"',
-      'mkdir -p "{{prefix}}/bin"',
-      'curl -fSL "$URL" | tar -xz -C "{{prefix}}/bin"',
+      // async state machines can exceed the default recursion limit (128)
+      {
+        run: 'sed -i -f $PROP lib.rs',
+        if: '^3.0.3',
+        'working-directory': 'surrealdb/server/src',
+        prop: {
+          content: '1i #![recursion_limit = "256"]',
+        },
+      },
+      'cargo install --path . --locked --root {{prefix}}',
+    ],
+    env: {
+      SURREAL_BUILD_METADATA: 'pkgx',
+      RUSTFLAGS: [
+        // required as of v1.4.0
+        '--cfg surrealdb_unstable',
+      ],
+      linux: {
+        // Needed to build `generic-array` for some odd reason. Keep the base
+        // `--cfg surrealdb_unstable` via shell expansion of $RUSTFLAGS.
+        RUSTFLAGS: '$RUSTFLAGS -C linker=cc',
+      },
+    },
+  },
+
+  test: {
+    script: [
+      'surreal version',
     ],
   },
 }

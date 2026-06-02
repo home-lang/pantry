@@ -21,21 +21,23 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      // The jbang release archive is extracted directly into {{prefix}}
-      // (stripComponents: 1 removes the top-level jbang-{{version}}/ dir), so
-      // {{prefix}} already holds bin/, lib/, etc. Move the extracted payload
-      // into a staging dir first, then relocate it under libexec — copying
-      // {{prefix}}/* into {{prefix}}/libexec would otherwise recurse the
-      // freshly-created libexec into itself.
-      'cd "{{prefix}}"',
-      'mkdir -p .jbang-stage',
-      // Move every top-level entry (incl. dotfiles) except the staging dir.
-      'for entry in * .[!.]*; do [ -e "$entry" ] || continue; [ "$entry" = ".jbang-stage" ] && continue; mv "$entry" .jbang-stage/; done',
-      'mkdir -p bin libexec',
-      'mv .jbang-stage/* libexec/',
-      'rmdir .jbang-stage',
+      // The jbang release archive is a self-contained shell launcher + jar
+      // (no compilation). With stripComponents: 1 the top-level jbang-{{version}}/
+      // dir is removed, so the extracted payload (bin/, version.txt) lands directly
+      // in the build dir ($SRCROOT, which is also the script's cwd) — NOT in
+      // {{prefix}} (the install dir, which starts empty).
+      //
+      // Install the payload under {{prefix}}/libexec, then symlink the launcher
+      // into {{prefix}}/bin. The launcher (bin/jbang) resolves its own dir via
+      // readlink, so it finds bin/jbang.jar relative to the real (libexec) path.
+      // Copy only the known jbang payload — copying $SRCROOT/* wholesale would
+      // also drag in buildkit scratch files (props/, _build.sh, etc.).
+      'mkdir -p "{{prefix}}/libexec" "{{prefix}}/bin"',
+      'cp -R "$SRCROOT/bin" "{{prefix}}/libexec/"',
+      '[ -f "$SRCROOT/version.txt" ] && cp "$SRCROOT/version.txt" "{{prefix}}/libexec/version.txt" || true',
+      'chmod +x "{{prefix}}/libexec/bin/jbang"',
       'cd "{{prefix}}/bin"',
-      'ln -s ../libexec/bin/jbang jbang',
+      'ln -sf ../libexec/bin/jbang jbang',
     ],
   },
 }

@@ -23,7 +23,6 @@ export const recipe: Recipe = {
     },
   },
   buildDependencies: {
-    'asciidoctor.org': '*',
     'cmake.org': '*',
     linux: {
       'gnu.org/gcc': '15',
@@ -32,12 +31,15 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      // The asciidoctor.org dependency ships its `bin/asciidoctor` launcher
-      // (a /bin/sh wrapper) without the executable bit, so ccache's
-      // doc/scripts/generate-manpage invocation fails with "Permission denied"
-      // when it execs the binary by absolute path. Make every asciidoctor on
-      // PATH (i.e. the dep wrapper) executable before the build runs.
-      'for _ad in $(command -v -a asciidoctor 2>/dev/null); do chmod +x "$_ad" 2>/dev/null || true; done',
+      // Documentation (man page / html) is generated via asciidoctor. The
+      // asciidoctor.org dependency ships its `bin/asciidoctor` launcher without
+      // the executable bit, so ccache's doc/scripts/generate-manpage invocation
+      // fails with "Permission denied" when cmake execs the resolved binary by
+      // absolute path (the build got to 69% then died on `Generating ccache.1`).
+      // The man page is not part of what this package provides (`bin/ccache`
+      // only), so disable documentation generation entirely via
+      // -DENABLE_DOCUMENTATION=OFF. This drops the fragile asciidoctor build
+      // dependency and makes the build deterministic on every platform.
       'cmake -S . -B build $CMAKE_ARGS',
       'cmake --build build',
       'cmake --install build',
@@ -63,7 +65,7 @@ export const recipe: Recipe = {
       },
     ],
     env: {
-      CMAKE_ARGS: ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_LIBDIR=lib', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF', '-DENABLE_IPO=TRUE'],
+      CMAKE_ARGS: ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_LIBDIR=lib', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF', '-DENABLE_IPO=TRUE', '-DENABLE_DOCUMENTATION=OFF'],
     },
   },
 }

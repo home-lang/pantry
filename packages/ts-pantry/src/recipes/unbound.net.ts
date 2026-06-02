@@ -28,6 +28,16 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure $ARGS',
+      // pthread_set_name_np is the FreeBSD/NetBSD spelling and does not exist on
+      // macOS (only the 1-arg pthread_setname_np) or Linux/glibc (only the 2-arg
+      // form). unbound's configure probes for it with a -Werror compile test, but
+      // our cc_wrapper injects -Wno-error=implicit-function-declaration, which
+      // defeats that -Werror and yields a false positive. HAVE_PTHREAD_SET_NAME_NP
+      // then wins in util/locks.h over the correct HAVE_PTHREAD_SETNAME_NP1 (macOS)
+      // / HAVE_PTHREAD_SETNAME_NP (Linux), producing a link error for the
+      // nonexistent _pthread_set_name_np symbol. Undefine it so the build falls
+      // through to the real, platform-correct API already detected by configure.
+      { run: 'sed -i.bak -e "s|^#define HAVE_PTHREAD_SET_NAME_NP 1|/* #undef HAVE_PTHREAD_SET_NAME_NP */|" config.h && rm -f config.h.bak' },
       'make -j {{hw.concurrency}} install',
       '',
       'cd {{prefix}}/bin',

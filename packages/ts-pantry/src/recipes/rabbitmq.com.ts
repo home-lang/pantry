@@ -32,8 +32,8 @@ export const recipe: Recipe = {
       'find . -mindepth 1 -maxdepth 1 -name \\*.pkgx.\\* -exec rm -rf {} \\;',
       'if test -f pkgx.yaml; then rm pkgx.yaml; fi',
       '',
-      'cd "{{prefix}}/var"',
-      'mkdir -p lib/rabbitmq og/rabbitmq',
+      // The generic-unix tarball ships no `var` dir, so create it before use.
+      'mkdir -p "{{prefix}}/var/lib/rabbitmq" "{{prefix}}/var/og/rabbitmq"',
     ],
   },
 }
