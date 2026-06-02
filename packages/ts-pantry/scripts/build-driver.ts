@@ -211,6 +211,9 @@ function storageEnvFile(): string {
 // apt lock (cloud-init / unattended-upgrades) instead of racing it, and fails
 // LOUDLY if the toolchain doesn't come up — the previous silent "|| true" on apt
 // let bun go missing and produced an empty no-op build.
+// Full build dependency set — mirrors the CI Linux toolchain (sync-binaries.yml
+// "Install build tools (Linux)") so source builds have parity with CI. A trimmed
+// list previously failed ~150 packages on missing libs (jpeglib.h, hwloc, gtk…).
 const APT_PACKAGES = [
   'build-essential libreadline-dev zlib1g-dev libssl-dev',
   'cmake meson ninja-build patchelf pkg-config',
@@ -220,12 +223,34 @@ const APT_PACKAGES = [
   'libcurl4-openssl-dev libxml2-dev libonig-dev ruby ruby-dev scons',
   'gperf bison flex texinfo nasm yasm libgmp-dev libmpfr-dev libmpc-dev',
   'libuv1-dev libpcre2-dev libevent-dev libglib2.0-dev libpixman-1-dev',
-  'libgit2-dev libssh2-1-dev protobuf-compiler libprotobuf-dev',
-  'liblz4-dev libzstd-dev libyaml-dev libedit-dev libelf-dev tcl-dev tk-dev',
-  'git curl unzip xz-utils',
+  'libgit2-dev libssh2-1-dev libhttp-parser-dev',
+  'libasound2-dev libdbus-1-dev libsystemd-dev protobuf-compiler libprotobuf-dev',
+  'nettle-dev libp11-kit-dev libboost-all-dev libsndfile1-dev',
+  'libjpeg-dev libpng-dev libtiff-dev libwebp-dev libfreetype-dev libharfbuzz-dev',
+  'libltdl-dev libacl1-dev libattr1-dev liblz4-dev libzstd-dev libxxhash-dev',
+  'libyaml-dev libjansson-dev libedit-dev libelf-dev tcl-dev tk-dev',
+  'libunwind-dev libdw-dev libzip-dev liblapack-dev gfortran python3-lxml python3-libxml2',
+  'libx11-dev libxext-dev libxrender-dev libxrandr-dev libxinerama-dev libxcomposite-dev libxdamage-dev',
+  'libxcursor-dev libxi-dev libxtst-dev libxmu-dev libxt-dev libxaw7-dev libxres-dev',
+  'libsm-dev libice-dev libxpm-dev libxxf86vm-dev libxshmfence-dev libxv-dev libxss-dev',
+  'x11proto-dev xtrans-dev xutils-dev xauth libxkbcommon-dev libxkbfile-dev',
+  'libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxcb-image0-dev libxcb-util-dev libxcb-keysyms1-dev libxcb-randr0-dev libxcb-shm0-dev',
+  'libwayland-dev libfontconfig1-dev gobject-introspection libgirepository1.0-dev',
+  'libatk1.0-dev libcairo2-dev libcairo-gobject2 libpango1.0-dev libgtk-3-dev',
+  'librsvg2-dev libsecret-1-dev libjson-glib-dev libsoup2.4-dev libgdk-pixbuf-2.0-dev',
+  'libva-dev libegl-dev libgbm-dev libdrm-dev libgl-dev libglu1-mesa-dev',
+  'clang llvm-dev libclang-dev libgnutls28-dev liblua5.4-dev',
+  'libcap-dev libcap-ng-dev libslirp-dev libssh-dev libspeexdsp-dev libmaxminddb-dev libsmi2-dev',
+  'libc-ares-dev libre2-dev libpcap-dev libnl-3-dev libnl-genl-3-dev libpam0g-dev libudev-dev',
+  'libarchive-dev libusb-1.0-0-dev libjemalloc-dev libvterm-dev libxslt1-dev',
+  'libsdl2-dev libsdl2-gfx-dev libsdl2-mixer-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-net-dev libplist-dev',
+  'libgc-dev libpaper-dev libimagequant-dev libassuan-dev libgpg-error-dev libfido2-dev',
+  'libdouble-conversion-dev libgoogle-glog-dev libgflags-dev libsodium-dev liblzo2-dev libsnappy-dev libbrotli-dev',
+  'doxygen xsltproc docbook-xsl xmlto git curl unzip xz-utils',
 ].join(' ')
 
 function fullScript(platform: string, force: boolean): string {
+  const goArch = platform === 'linux-arm64' ? 'arm64' : 'amd64'
   return [
     'set -x',
     'export DEBIAN_FRONTEND=noninteractive',
@@ -234,12 +259,17 @@ function fullScript(platform: string, force: boolean): string {
     // -o Lock::Timeout makes apt WAIT for the boot lock instead of failing.
     'apt-get -o DPkg::Lock::Timeout=600 update',
     `apt-get -o DPkg::Lock::Timeout=600 install -y ${APT_PACKAGES}`,
-    'echo "### SETUP: installing bun + rust"',
+    'echo "### SETUP: installing bun + rust + go"',
     'curl -fsSL https://bun.sh/install | bash',
     'export BUN_INSTALL=/root/.bun',
-    'export PATH=/root/.bun/bin:/root/.cargo/bin:$PATH',
     'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable',
+    'source /root/.cargo/env 2>/dev/null || true',
+    // Go (current stable, fetched dynamically so it never goes stale).
+    `GO_VER=$(curl -s https://go.dev/VERSION?m=text | head -1)`,
+    `curl -fsSL "https://go.dev/dl/\${GO_VER}.linux-${goArch}.tar.gz" -o /tmp/go.tgz && rm -rf /usr/local/go && tar -C /usr/local -xzf /tmp/go.tgz || true`,
+    'export PATH=/root/.bun/bin:/root/.cargo/bin:/usr/local/go/bin:$PATH',
     'command -v bun >/dev/null || { echo "### FATAL: bun not installed"; exit 1; }',
+    'echo "### toolchains: bun=$(bun --version) rust=$(rustc --version 2>/dev/null) go=$(go version 2>/dev/null)"',
     'echo "### SETUP: cloning repo"',
     'rm -rf /opt/pantry && git clone --depth 1 https://github.com/home-lang/pantry.git /opt/pantry',
     'cd /opt/pantry && bun install',
