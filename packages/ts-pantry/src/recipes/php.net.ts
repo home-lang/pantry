@@ -112,7 +112,10 @@ export const recipe: Recipe = {
         CXX: 'clang++',
         LD: '/usr/bin/ld',
         // ... we need to link with headerpad...
-        LDFLAGS: '-Wl,-rpath,{{pkgx.prefix}},-headerpad_max_install_names',
+        // -lresolv: php's ext/standard DNS code (dns_get_record etc.) uses the
+        // macOS res_9_* resolver functions, which live in libresolv; php's
+        // configure doesn't always add it, so link it explicitly.
+        LDFLAGS: '-Wl,-rpath,{{pkgx.prefix}},-headerpad_max_install_names -lresolv',
         ARGS: ['--with-zip', '--enable-dtrace', '--with-ldap-sasl'],
       },
       'darwin/x86-64': {
