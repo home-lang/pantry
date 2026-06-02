@@ -535,7 +535,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // Old luarocks configure fails; 3.13.0 (latest) works
   'luarocks.org': ['<3.13.0'],
   // libxml2 cmake fails on darwin; 2.15.1+ works on both (2.15.0 also fails)
-  'gnome.org/libxml2': ['<2.16.0'],
+  'gnome.org/libxml2': ['<2.15.1'],
   // pkgx.sh 1.x fails; 2.5.0+ works on both
   'pkgx.sh': ['<2.0.0'],
   // Old pycairo fails on linux; 1.27.0+ works on both
