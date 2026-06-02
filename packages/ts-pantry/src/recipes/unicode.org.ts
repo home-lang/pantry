@@ -13,7 +13,10 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/unicode-org/icu/releases/download/{{version.tag}}/icu4c-{{version.major}}.{{version.minor}}-sources.tgz',
+    // ICU release assets use underscores + "-src" and a release-MAJOR-MINOR tag
+    // (e.g. release-77-1/icu4c-77_1-src.tgz). The old "{major}.{minor}-sources"
+    // form 404s for current releases.
+    url: 'https://github.com/unicode-org/icu/releases/download/release-{{version.major}}-{{version.minor}}/icu4c-{{version.major}}_{{version.minor}}-src.tgz',
     stripComponents: 1,
   },
 
