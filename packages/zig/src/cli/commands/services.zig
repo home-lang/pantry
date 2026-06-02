@@ -732,7 +732,47 @@ fn printLastNLines(content: []const u8, n: usize) void {
 // ============================================================================
 
 /// Get service configuration by name, optionally with project context for path resolution
+/// Make a service's executable an absolute path. launchd and systemd do not
+/// consult $PATH, so a bare `ProgramArguments[0]` / `ExecStart` binary name
+/// (e.g. `mysqld`, `postgres`, `redis-server`) yields an unlaunchable unit
+/// (exit 78 on macOS). Idempotent and conservative: skips commands that are
+/// already absolute, explicit relative paths, or lead with a `VAR=value` env
+/// assignment, and is a no-op when the binary can't be resolved.
+fn absolutizeServiceBinary(allocator: std.mem.Allocator, config: *ServiceConfig, project_root: ?[]const u8) void {
+    const io_helper = @import("../../io_helper.zig");
+    const cmd = config.start_command;
+    if (cmd.len == 0 or cmd[0] == '/') return;
+    const end = std.mem.indexOfAny(u8, cmd, " \t") orelse cmd.len;
+    const token = cmd[0..end];
+    if (token.len == 0) return;
+    if (std.mem.indexOfScalar(u8, token, '=') != null) return; // leading env assignment
+    if (std.mem.indexOfScalar(u8, token, '/') != null) return; // explicit path already
+
+    const home = io_helper.getEnvVarOwned(allocator, "HOME") catch null;
+    defer if (home) |h| allocator.free(h);
+
+    const resolved = services.definitions.resolveServiceBinary(allocator, token, project_root, home) catch return;
+    defer allocator.free(resolved);
+    if (resolved.len == 0 or resolved[0] != '/') return; // couldn't resolve to an absolute path
+
+    const rest = cmd[end..];
+    const new_cmd = if (std.mem.indexOfScalar(u8, resolved, ' ') != null)
+        std.fmt.allocPrint(allocator, "\"{s}\"{s}", .{ resolved, rest }) catch return
+    else
+        std.fmt.allocPrint(allocator, "{s}{s}", .{ resolved, rest }) catch return;
+    allocator.free(config.start_command);
+    config.start_command = new_cmd;
+}
+
+/// Resolve a service configuration, ensuring its launch command uses an
+/// absolute executable path (see absolutizeServiceBinary).
 pub fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_root: ?[]const u8) !ServiceConfig {
+    var config = try getServiceConfigRaw(allocator, name, project_root);
+    absolutizeServiceBinary(allocator, &config, project_root);
+    return config;
+}
+
+fn getServiceConfigRaw(allocator: std.mem.Allocator, name: []const u8, project_root: ?[]const u8) !ServiceConfig {
     // Handle port-less services first
     if (std.mem.eql(u8, name, "cloudflared")) {
         return try Services.cloudflared(allocator);
@@ -912,6 +952,12 @@ pub fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_
 
 /// Get service configuration with a custom port override
 pub fn getServiceConfigWithPort(allocator: std.mem.Allocator, name: []const u8, port: u16, project_root: ?[]const u8) !ServiceConfig {
+    var config = try getServiceConfigWithPortRaw(allocator, name, port, project_root);
+    absolutizeServiceBinary(allocator, &config, project_root);
+    return config;
+}
+
+fn getServiceConfigWithPortRaw(allocator: std.mem.Allocator, name: []const u8, port: u16, project_root: ?[]const u8) !ServiceConfig {
     // Handle port-less services (ignore port override)
     if (std.mem.eql(u8, name, "cloudflared")) {
         return try Services.cloudflared(allocator);

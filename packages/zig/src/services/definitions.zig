@@ -171,8 +171,8 @@ fn resolvePackageHome(allocator: std.mem.Allocator, package_domain: []const u8, 
 }
 
 /// Resolve a service binary path by searching pantry install locations
-/// Tries: project-local pantry/.bin, global Paths.globalBinDir(), then falls back to bare name.
-fn resolveServiceBinary(allocator: std.mem.Allocator, binary_name: []const u8, project_root: ?[]const u8, home: ?[]const u8) ![]const u8 {
+/// Tries: project-local pantry/.bin, global Paths.globalBinDir(), $PATH, then falls back to bare name.
+pub fn resolveServiceBinary(allocator: std.mem.Allocator, binary_name: []const u8, project_root: ?[]const u8, home: ?[]const u8) ![]const u8 {
     const io_helper = @import("../io_helper.zig");
 
     // 1. Project-local pantry/.bin
@@ -194,18 +194,42 @@ fn resolveServiceBinaryGlobal(allocator: std.mem.Allocator, binary_name: []const
 
     // 2. Global pantry bin (Paths.globalBinDir, the same dir the shell hook puts on PATH).
     if (home) |_| {
-        const global_bin_dir = Paths.globalBinDir(allocator) catch return allocator.dupe(u8, binary_name);
-        defer allocator.free(global_bin_dir);
-        const global_bin = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ global_bin_dir, binary_name });
-        io_helper.accessAbsolute(global_bin, .{}) catch {
-            allocator.free(global_bin);
-            return allocator.dupe(u8, binary_name);
-        };
-        return global_bin;
+        if (Paths.globalBinDir(allocator)) |global_bin_dir| {
+            defer allocator.free(global_bin_dir);
+            const global_bin = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ global_bin_dir, binary_name });
+            if (io_helper.accessAbsolute(global_bin, .{})) |_| {
+                return global_bin;
+            } else |_| {
+                allocator.free(global_bin);
+            }
+        } else |_| {}
     }
 
-    // 3. Fallback: bare binary name (rely on PATH)
+    // 3. Anything already on $PATH (covers globally-installed daemons and
+    //    activated shells whose PATH includes the project's pantry/.bin).
+    if (try findBinaryOnPath(allocator, binary_name)) |on_path| return on_path;
+
+    // 4. Fallback: bare binary name. launchd/systemd can't exec this, but it
+    //    keeps behaviour sane for callers that run via a shell.
     return allocator.dupe(u8, binary_name);
+}
+
+/// Search $PATH for an executable, returning the first absolute match (caller-owned) or null.
+fn findBinaryOnPath(allocator: std.mem.Allocator, binary_name: []const u8) !?[]const u8 {
+    const io_helper = @import("../io_helper.zig");
+    const path_env = io_helper.getEnvVarOwned(allocator, "PATH") catch return null;
+    defer allocator.free(path_env);
+    var it = std.mem.splitScalar(u8, path_env, ':');
+    while (it.next()) |dir| {
+        if (dir.len == 0 or dir[0] != '/') continue;
+        const cand = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ dir, binary_name });
+        if (io_helper.accessAbsolute(cand, .{})) |_| {
+            return cand;
+        } else |_| {
+            allocator.free(cand);
+        }
+    }
+    return null;
 }
 
 /// Pre-defined service configurations
@@ -233,11 +257,23 @@ pub const Services = struct {
         try env_vars.put("PGPORT", try std.fmt.allocPrint(allocator, "{d}", .{port}));
         try env_vars.put("PGDATA", try allocator.dupe(u8, pgdata));
 
-        // Resolve postgres binary path
+        // Resolve postgres + initdb binary paths.
         const postgres_bin = try resolveServiceBinary(allocator, "postgres", project_root, home);
+        defer allocator.free(postgres_bin);
+        const initdb_bin = try resolveServiceBinary(allocator, "initdb", project_root, home);
+        defer allocator.free(initdb_bin);
 
-        const start_cmd = try std.fmt.allocPrint(allocator, "{s} -D {s} -p {d}", .{ postgres_bin, pgdata, port });
-        allocator.free(postgres_bin);
+        // Self-initializing launch command: on first start (no PG_VERSION yet)
+        // run initdb, then exec postgres. This makes the launchd/systemd unit
+        // self-sufficient on a fresh machine and across reboots, instead of
+        // depending on a separate interactive init step that the daemon
+        // launcher (launchd RunAtLoad) never runs. `exec` keeps postgres as the
+        // tracked PID so KeepAlive works.
+        const start_cmd = try std.fmt.allocPrint(
+            allocator,
+            "/bin/sh -c \"test -f {s}/PG_VERSION || {s} -D {s} --no-locale --encoding=UTF8; exec {s} -D {s} -p {d}\"",
+            .{ pgdata, initdb_bin, pgdata, postgres_bin, pgdata, port },
+        );
 
         return ServiceConfig{
             .name = try allocator.dupe(u8, "postgres"),

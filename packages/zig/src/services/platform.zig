@@ -191,13 +191,45 @@ pub const ServiceController = struct {
         defer self.allocator.free(label);
 
         const argv = [_][]const u8{ "launchctl", "list", label };
-        var child = try io_helper.spawn(.{ .argv = &argv, .stdout = .pipe, .stderr = .pipe });
-        const result = try io_helper.wait(&child);
+        const result = io_helper.childRun(self.allocator, &argv) catch return .stopped;
+        defer self.allocator.free(result.stdout);
+        defer self.allocator.free(result.stderr);
 
-        return switch (result) {
-            .exited => |code| if (code == 0) .running else .stopped,
-            else => .stopped,
+        // `launchctl list <label>` exits non-zero when the label isn't loaded.
+        const loaded = switch (result.term) {
+            .exited => |code| code == 0,
+            else => false,
         };
+        if (!loaded) return .stopped;
+
+        // The job is registered, but that does NOT mean it's running — a unit
+        // that exits immediately (e.g. a bad config, exit 78) stays registered.
+        // A live "PID" key means it's actually running; otherwise a non-zero
+        // "LastExitStatus" means it bounced (failed). Checking exit code alone
+        // (the old behaviour) reported "running" for dead jobs.
+        if (std.mem.indexOf(u8, result.stdout, "\"PID\" =") != null or
+            std.mem.indexOf(u8, result.stdout, "\"PID\"=") != null)
+        {
+            return .running;
+        }
+        if (lastExitStatusNonZero(result.stdout)) return .failed;
+        return .stopped;
+    }
+
+    /// Parse the integer after `"LastExitStatus" =` in `launchctl list` output
+    /// and report whether it is non-zero (i.e. the job exited with an error).
+    fn lastExitStatusNonZero(output: []const u8) bool {
+        const key = "\"LastExitStatus\" =";
+        const key_pos = std.mem.indexOf(u8, output, key) orelse return false;
+        var i = key_pos + key.len;
+        while (i < output.len and (output[i] == ' ' or output[i] == '\t')) : (i += 1) {}
+        var value: i64 = 0;
+        var saw_digit = false;
+        while (i < output.len and output[i] >= '0' and output[i] <= '9') : (i += 1) {
+            value = value * 10 + @as(i64, output[i] - '0');
+            saw_digit = true;
+        }
+        return saw_digit and value != 0;
     }
 
     fn getLaunchdServiceFile(self: *ServiceController, service_name: []const u8) ![]const u8 {
