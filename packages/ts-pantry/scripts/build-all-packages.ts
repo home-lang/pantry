@@ -536,6 +536,9 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'luarocks.org': ['<3.13.0'],
   // libxml2 cmake fails on darwin; 2.15.1+ works on both (2.15.0 also fails)
   'gnome.org/libxml2': ['<2.15.1'],
+  // gettext is 0.x (latest 0.26); a stray ancient v1.0 mirror tag sorts highest
+  // and builds a broken 1995 release — skip 1.x so the build uses real 0.x.
+  'gnu.org/gettext': ['>=1.0.0'],
   // pkgx.sh 1.x fails; 2.5.0+ works on both
   'pkgx.sh': ['<2.0.0'],
   // Old pycairo fails on linux; 1.27.0+ works on both

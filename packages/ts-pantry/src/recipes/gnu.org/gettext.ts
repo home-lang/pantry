@@ -44,9 +44,10 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-tags',
     repo: 'autotools-mirror/gettext',
-    // tags are v1.0, v0.26, v0.22.5 — strip the leading "v" so {{version.raw}}
-    // matches the FTP tarball names (gettext-1.0.tar.gz, gettext-0.26.tar.gz).
-    tagPattern: /^v(.+)$/,
+    // Modern gettext is 0.x (latest 0.26). The mirror also carries a stray
+    // ancient `v1.0` (1995) tag that sorts ABOVE 0.26 and 404s nothing but
+    // produces a broken ancient build — match 0.x only so "latest" is real.
+    tagPattern: /^v(0\..+)$/,
   },
   distributable: {
     url: 'https://ftp.gnu.org/gnu/gettext/gettext-{{version.raw}}.tar.gz',
