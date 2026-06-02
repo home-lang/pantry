@@ -301,9 +301,25 @@ pub const Services = struct {
         const home = io_helper.getEnvVarOwned(allocator, "HOME") catch null;
         defer if (home) |h| allocator.free(h);
 
+        // Redis data directory (so RDB/AOF persistence doesn't default to / which is read-only on macOS)
+        const data_dir = if (home) |h|
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/redis", .{h})
+        else
+            try allocator.dupe(u8, "/tmp/redis-data");
+        defer allocator.free(data_dir);
+
+        // Ensure data directory exists
+        io_helper.makePath(data_dir) catch {};
+
         const redis_bin = try resolveServiceBinary(allocator, "redis-server", project_root, home);
-        const start_cmd = try std.fmt.allocPrint(allocator, "{s} --port {d}", .{ redis_bin, port });
+        const start_cmd = try std.fmt.allocPrint(allocator, "{s} --port {d} --dir {s}", .{ redis_bin, port, data_dir });
         allocator.free(redis_bin);
+
+        // Set working directory to data dir so launchd doesn't use / (read-only on macOS)
+        const working_dir = if (home) |h|
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/redis", .{h})
+        else
+            try allocator.dupe(u8, "/tmp/redis-data");
 
         return ServiceConfig{
             .name = try allocator.dupe(u8, "redis"),
@@ -314,6 +330,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .working_directory = working_dir,
             .health_check = try std.fmt.allocPrint(allocator, "redis-cli -p {d} ping", .{port}),
         };
     }
