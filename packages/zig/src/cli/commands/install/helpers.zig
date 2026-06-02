@@ -43,6 +43,9 @@ pub fn resolvePackageAlias(name: []const u8) []const u8 {
         .{ "luajit", "luajit.org" },
         .{ "perl", "perl.org" },
         .{ "php", "php.net" },
+        // composer is the PHP dependency manager; the bare name otherwise collides
+        // with an unrelated npm "composer" package and installs that instead.
+        .{ "composer", "getcomposer.org" },
         .{ "julia", "julialang.org" },
         .{ "erlang", "erlang.org" },
         .{ "elixir", "elixir-lang.org" },
