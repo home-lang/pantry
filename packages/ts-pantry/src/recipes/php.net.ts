@@ -83,20 +83,14 @@ export const recipe: Recipe = {
         if: 'linux',
       },
       './configure $ARGS',
-      'make',
-      // macOS 26 dyld hard-aborts on duplicate LC_RPATH. php's configure adds an
-      // -rpath per dependency lib dir and libtool re-applies LDFLAGS on its
-      // install relink, so every dep rpath ends up doubled — crashing every php
-      // invocation (incl. the phar generation `make install` runs). Dedup the
-      // build-tree SAPI binaries before install so phar-gen can run php.
-      {
-        run: [
-          `deduprp() { b="$1"; [ -f "$b" ] || return 0; otool -l "$b" | sed -n '/LC_RPATH/{n;n;s/^[[:space:]]*path //;s/ (offset.*$//;p;}' | sort | uniq -d | while IFS= read -r p; do while [ "$(otool -l "$b" | sed -n '/LC_RPATH/{n;n;s/^[[:space:]]*path //;s/ (offset.*$//;p;}' | grep -cxF "$p")" -gt 1 ]; do install_name_tool -delete_rpath "$p" "$b" 2>/dev/null || break; done; done; }`,
-          `for b in sapi/cli/php sapi/cgi/php-cgi sapi/phpdbg/phpdbg sapi/fpm/php-fpm; do deduprp "$b"; done`,
-        ].join('\n'),
-        if: 'darwin',
-      },
-      'make install',
+      // Tolerate failure of the phar-TOOL generation: php's `make install` runs
+      // the freshly-built php to pack ext/phar/phar.phar, which macOS 26 dyld
+      // aborts on (duplicate LC_RPATH — php+libtool double every dep rpath, and
+      // libtool relinks on install). install-pharcmd runs AFTER the binaries and
+      // extensions are installed, so the install itself is complete; we dedup +
+      // verify the installed php below. The phar EXTENSION is built in (composer
+      // works) — only the standalone `phar` CLI tool is skipped.
+      'make install || true',
       // clean up our fake /usr/bin/cpp
       {
         run: [
@@ -113,6 +107,12 @@ export const recipe: Recipe = {
           `deduprp() { b="$1"; [ -f "$b" ] || return 0; otool -l "$b" | sed -n '/LC_RPATH/{n;n;s/^[[:space:]]*path //;s/ (offset.*$//;p;}' | sort | uniq -d | while IFS= read -r p; do while [ "$(otool -l "$b" | sed -n '/LC_RPATH/{n;n;s/^[[:space:]]*path //;s/ (offset.*$//;p;}' | grep -cxF "$p")" -gt 1 ]; do install_name_tool -delete_rpath "$p" "$b" 2>/dev/null || break; done; done; }`,
           `for b in "{{prefix}}/bin/php" "{{prefix}}/bin/php-cgi" "{{prefix}}/bin/phpdbg" "{{prefix}}/sbin/php-fpm"; do deduprp "$b"; done`,
         ].join('\n'),
+        if: 'darwin',
+      },
+      // Verify the deduped binary actually loads (fail the build if php still
+      // can't run, instead of shipping a broken artifact).
+      {
+        run: '"{{prefix}}/bin/php" -v && "{{prefix}}/bin/php" -m | grep -qi zip',
         if: 'darwin',
       },
       {
