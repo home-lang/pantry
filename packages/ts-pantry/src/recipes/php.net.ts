@@ -83,6 +83,19 @@ export const recipe: Recipe = {
         if: 'linux',
       },
       './configure $ARGS',
+      'make',
+      // macOS 26 dyld hard-aborts on duplicate LC_RPATH. php's configure adds an
+      // -rpath per dependency lib dir and libtool re-applies LDFLAGS on its
+      // install relink, so every dep rpath ends up doubled — crashing every php
+      // invocation (incl. the phar generation `make install` runs). Dedup the
+      // build-tree SAPI binaries before install so phar-gen can run php.
+      {
+        run: [
+          `deduprp() { b="$1"; [ -f "$b" ] || return 0; otool -l "$b" | sed -n '/LC_RPATH/{n;n;s/^[[:space:]]*path //;s/ (offset.*$//;p;}' | sort | uniq -d | while IFS= read -r p; do while [ "$(otool -l "$b" | sed -n '/LC_RPATH/{n;n;s/^[[:space:]]*path //;s/ (offset.*$//;p;}' | grep -cxF "$p")" -gt 1 ]; do install_name_tool -delete_rpath "$p" "$b" 2>/dev/null || break; done; done; }`,
+          `for b in sapi/cli/php sapi/cgi/php-cgi sapi/phpdbg/phpdbg sapi/fpm/php-fpm; do deduprp "$b"; done`,
+        ].join('\n'),
+        if: 'darwin',
+      },
       'make install',
       // clean up our fake /usr/bin/cpp
       {
@@ -92,6 +105,15 @@ export const recipe: Recipe = {
           'fi',
         ].join('\n'),
         if: 'linux',
+      },
+      // Dedup LC_RPATHs again on the INSTALLED binaries — libtool re-doubles them
+      // during its install relink (see the pre-install dedup above).
+      {
+        run: [
+          `deduprp() { b="$1"; [ -f "$b" ] || return 0; otool -l "$b" | sed -n '/LC_RPATH/{n;n;s/^[[:space:]]*path //;s/ (offset.*$//;p;}' | sort | uniq -d | while IFS= read -r p; do while [ "$(otool -l "$b" | sed -n '/LC_RPATH/{n;n;s/^[[:space:]]*path //;s/ (offset.*$//;p;}' | grep -cxF "$p")" -gt 1 ]; do install_name_tool -delete_rpath "$p" "$b" 2>/dev/null || break; done; done; }`,
+          `for b in "{{prefix}}/bin/php" "{{prefix}}/bin/php-cgi" "{{prefix}}/bin/phpdbg" "{{prefix}}/sbin/php-fpm"; do deduprp "$b"; done`,
+        ].join('\n'),
+        if: 'darwin',
       },
       {
         run: [
