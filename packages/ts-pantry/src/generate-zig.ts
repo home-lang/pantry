@@ -241,6 +241,23 @@ export async function generateZigDefinitions(packagesDir: string, outputFile: st
   fs.writeFileSync(outputFile, zigCode, 'utf-8')
   console.log(`✅ Generated Zig definitions: ${outputFile}`)
   console.log(`📊 Total packages: ${packages.length}`)
+
+  // Normalize formatting so the committed file is canonical `zig fmt` output
+  // (best-effort: skipped silently when no zig toolchain is on PATH).
+  formatZig(outputFile)
+}
+
+/** Run `zig fmt` on a generated file, best-effort (no-op if zig isn't available). */
+function formatZig(file: string): void {
+  try {
+    const { execFileSync } = require('node:child_process') as typeof import('node:child_process')
+    execFileSync('zig', ['fmt', file], { stdio: 'ignore' })
+    console.log(`✨ Formatted with zig fmt: ${file}`)
+  }
+  catch {
+    // zig not installed (e.g. CI without the toolchain) — leave the deterministic
+    // generator output as-is; it is valid Zig and compiles fine.
+  }
 }
 
 /**

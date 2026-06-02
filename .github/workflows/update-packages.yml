@@ -54,10 +54,25 @@ jobs:
         run: cd packages/ts-pantry && bun bin/cli.ts generate-aliases
         timeout-minutes: 5
 
+      # The Zig CLI reads its package catalog from a committed, generated file
+      # (packages/zig/src/packages/generated.zig). Regenerate it from the freshly
+      # fetched recipe versions so the binary always sees current versions — this
+      # used to be skipped, leaving the catalog months stale.
+      - name: Setup Pantry & Zig (to format generated.zig)
+        uses: ./packages/action
+
+      - name: Regenerate Zig package catalog
+        run: |
+          cd packages/ts-pantry
+          bun bin/cli.ts generate-zig --packages-dir src/packages \
+            --output ../zig/src/packages/generated.zig
+          # generate-zig runs `zig fmt` itself when zig is on PATH (set up above).
+        timeout-minutes: 5
+
       - name: Check for changes
         id: git-check
         run: |
-          CHANGES=$(git status --porcelain packages/ts-pantry/src/packages/ 2>/dev/null || echo "")
+          CHANGES=$(git status --porcelain packages/ts-pantry/src/packages/ packages/zig/src/packages/generated.zig 2>/dev/null || echo "")
           if [[ -z "$CHANGES" ]]; then
             echo "changes=false" >> $GITHUB_OUTPUT
             echo "No version changes detected"
@@ -121,7 +136,7 @@ jobs:
             git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git
           fi
 
-          git add packages/ts-pantry/src/packages/
+          git add packages/ts-pantry/src/packages/ packages/zig/src/packages/generated.zig
           git commit -m "${{ steps.commit-message.outputs.commit_message }}" -m "Automated version update via GitHub API"
           git stash --include-untracked
           if ! git pull --rebase origin refs/heads/main; then
