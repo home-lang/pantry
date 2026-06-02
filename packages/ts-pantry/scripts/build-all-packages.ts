@@ -32,6 +32,7 @@ import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { createHash } from 'node:crypto'
 import { createObjectStorageClient } from '@stacksjs/ts-cloud'
+import { reportBuild } from './report-build'
 import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
 import { BINARY_SYNC_DOMAIN_SET } from './binary-sync-packages.ts'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
@@ -1116,6 +1117,7 @@ else {
       }
 
       console.log(`   Building ${domain}@${candidateVersion} for ${platform}...`)
+      reportBuild(domain, candidateVersion, platform, 'building')
 
       tryBuildVersion(domain, candidateVersion, platform, buildDir, installDir, depsDir, bucket, region)
 
@@ -1146,6 +1148,7 @@ catch (error: any) {
   if (lastError) {
     const elapsed = Math.round((Date.now() - pkgStartTime) / 1000)
     console.error(`   ❌ Failed (${elapsed}s): ${lastError.message}`)
+    reportBuild(domain, usedVersion || version, platform, 'failed')
     try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) }
     catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) }
@@ -1183,10 +1186,12 @@ catch (error: any) {
 
     const elapsed = Math.round((Date.now() - pkgStartTime) / 1000)
     console.log(`   ✅ Uploaded ${domain}@${usedVersion} (${elapsed}s)`)
+    reportBuild(domain, usedVersion, platform, 'built')
     return { status: 'uploaded' }
   }
 catch (error: any) {
     console.error(`   ❌ Failed packaging/upload: ${error.message}`)
+    reportBuild(domain, usedVersion || version, platform, 'failed')
     try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) }
     catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) }

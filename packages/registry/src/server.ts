@@ -10,6 +10,7 @@ import type { PhpPackageStorage } from './php'
 import { getPackagistCount, searchPackagist, fetchFromPackagist } from './packagist-fallback'
 import { createS3Client, resolveStorageProvider } from './storage/provider'
 import { ObjectAnalytics } from './storage/object-analytics'
+import { BuildStatusStore } from './storage/build-status'
 import { checkPaywallAccess, configurePaywall, createCheckoutSession, handleStripeWebhook, formatPrice } from './paywall'
 import { renderTemplate } from '@stacksjs/stx'
 import {
@@ -327,6 +328,19 @@ export interface BinaryStorage {
   getObject(key: string): Promise<Buffer>
 }
 
+// Build dashboard status store — lazily created against the active storage
+// provider, loaded once. Tracks live builds, recent outcomes, the rebuild queue,
+// and per-platform coverage (derived from the binaries/ prefix).
+let _buildStatus: BuildStatusStore | null = null
+function getBuildStatus(): BuildStatusStore {
+  if (!_buildStatus) {
+    const storage = resolveStorageProvider()
+    _buildStatus = new BuildStatusStore(createS3Client(storage), process.env.S3_BUCKET || 'pantry-registry')
+    _buildStatus.load().catch(e => console.error('build-status load failed:', (e as Error).message))
+  }
+  return _buildStatus
+}
+
 export function createHandler(
   registry: Registry,
   analyticsStorage: AnalyticsStorage,
@@ -370,6 +384,45 @@ export function createHandler(
       // Health check
       if (path === '/health') {
         return Response.json({ status: 'ok', timestamp: new Date().toISOString() }, { headers: corsHeaders })
+      }
+
+      // ================================================================
+      // Build dashboard API (/packages page)
+      // ================================================================
+      // Full package table: per-platform coverage + live building state.
+      if (path === '/api/packages' && req.method === 'GET') {
+        const data = await getBuildStatus().getPackages()
+        return Response.json(data, { headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=15' } })
+      }
+      // Live build status: what's building now, recent outcomes, rebuild queue.
+      if (path === '/api/build-status' && req.method === 'GET') {
+        return Response.json(getBuildStatus().getStatus(), { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } })
+      }
+      // Builders report progress here (building/built/failed). Best-effort, unauthenticated.
+      if (path === '/api/build-events' && req.method === 'POST') {
+        const body = await req.json().catch(() => null)
+        if (!body)
+          return Response.json({ error: 'invalid body' }, { status: 400, headers: corsHeaders })
+        const events = Array.isArray(body) ? body : [body]
+        let count = 0
+        for (const e of events.slice(0, 200)) {
+          if (getBuildStatus().record(e))
+            count++
+        }
+        return Response.json({ ok: true, recorded: count }, { headers: corsHeaders })
+      }
+      // Queue a manual rebuild from the dashboard (drained by the build-driver).
+      if (path === '/api/rebuild' && req.method === 'POST') {
+        const body = await req.json().catch(() => null)
+        const domain = typeof body?.domain === 'string' ? body.domain : ''
+        if (!/^[a-zA-Z0-9._/-]{1,128}$/.test(domain))
+          return Response.json({ error: 'valid domain required' }, { status: 400, headers: corsHeaders })
+        const queued = getBuildStatus().requestRebuild(domain)
+        return Response.json({ queued, domain }, { headers: corsHeaders })
+      }
+      // The build-driver reads (and optionally clears) the rebuild queue.
+      if (path === '/api/rebuild-queue' && req.method === 'GET') {
+        return Response.json({ queue: getBuildStatus().getQueue() }, { headers: corsHeaders })
       }
 
       // ================================================================
@@ -982,6 +1035,7 @@ export function createHandler(
       }
 
       // Static pages
+      if (path === '/packages') return htmlResponse(await renderSitePage('packages.stx', { title: 'Packages & Builds', metaDescription: 'Browse every pantry package, see per-platform build coverage and live build activity, and trigger rebuilds.', canonicalUrl: 'https://pantry.dev/packages' }))
       if (path === '/about') return htmlResponse(await renderSitePage('about.stx', { title: 'About', canonicalUrl: 'https://pantry.dev/about' }))
       if (path === '/privacy') return htmlResponse(await renderSitePage('privacy.stx', { title: 'Privacy Policy', canonicalUrl: 'https://pantry.dev/privacy' }))
       if (path === '/accessibility') return htmlResponse(await renderSitePage('accessibility.stx', { title: 'Accessibility', canonicalUrl: 'https://pantry.dev/accessibility' }))
