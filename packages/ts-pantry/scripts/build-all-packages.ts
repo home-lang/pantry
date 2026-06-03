@@ -1209,6 +1209,8 @@ catch (error: any) {
     catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) }
     catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
+    try { execSync(`rm -rf "${depsDir}"`, { stdio: 'pipe' }) }
+    catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     return { status: 'failed', error: lastError.message }
   }
 
@@ -1246,6 +1248,11 @@ catch (error: any) {
     catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     try { execSync(`rm -rf "${artifactDir}"`, { stdio: 'pipe' }) }
     catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
+    // depsDir holds the downloaded (often multi-GB) dependency tree for this
+    // package. It was never cleaned, so it accumulated across every package and
+    // pass until the box hit 0 bytes free. Remove it once the build is done.
+    try { execSync(`rm -rf "${depsDir}"`, { stdio: 'pipe' }) }
+    catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
 
     const elapsed = Math.round((Date.now() - pkgStartTime) / 1000)
     console.log(`   ✅ Uploaded ${domain}@${usedVersion} (${elapsed}s)`)
@@ -1261,6 +1268,8 @@ catch (error: any) {
     catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     // Also clean artifacts to prevent stale tarballs leaking to next iteration
     try { execSync(`rm -rf "${artifactsDir}"/*`, { stdio: 'pipe' }) }
+    catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
+    try { execSync(`rm -rf "${depsDir}"`, { stdio: 'pipe' }) }
     catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     return { status: 'failed', error: error.message }
   }
