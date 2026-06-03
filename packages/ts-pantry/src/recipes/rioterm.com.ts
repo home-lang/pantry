@@ -21,7 +21,8 @@ export const recipe: Recipe = {
     },
   },
   buildDependencies: {
-    'rust-lang.org': '>=1.85',
+    // rio's Cargo.toml/rust-toolchain.toml require rustc >=1.92 (was 1.85); --locked build fails on older rust
+    'rust-lang.org': '>=1.92',
     'rust-lang.org/cargo': '*',
     linux: {
       'khronos.org/glslang': '*', // since 0.4.0

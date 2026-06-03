@@ -20,7 +20,11 @@ export const recipe: Recipe = {
     'ruby-lang.org': '>=2.3',
   },
   buildDependencies: {
-    'ruby-lang.org': '<4',
+    // rubygems 4.0.x's setup.rb hard-aborts on Ruby < 3.2 ("RubyGems only
+    // supports Ruby 3.2 or higher"), and now that pantry ships Ruby 4.0.x the
+    // bare `<4` could otherwise resolve to an EOL 3.x. Floor it at 3.2 so the
+    // build toolchain is always capable of compiling the current rubygems.
+    'ruby-lang.org': '>=3.2<4',
   },
 
   build: {

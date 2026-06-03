@@ -11,13 +11,18 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'ollama/ollama',
   },
+  // Use the GitHub release source tarball instead of a git clone. The buildkit's
+  // shallow `git clone --branch v{{version}}` can fall back to a full clone of the
+  // DEFAULT branch when the shallow clone is flaky, and the subsequent
+  // `git checkout v{{version}}` is best-effort — leaving the tree at main HEAD,
+  // where `llama/llama.go` no longer exists (it was restructured upstream). That
+  // produced the `sed: can't read llama.go` failure. The release tarball is a
+  // single stable download that ships the fully vendored tree (llama/llama.go,
+  // root CMakeLists.txt, llama/llama.cpp) and is pinned to the exact tag.
   distributable: {
-    url: 'git+https://github.com/ollama/ollama',
-    // pkgx pins the git checkout to the release tag (`ref: v{{version}}`).
-    // The buildkit reads `distributable.ref`, so carry it back to build the
-    // requested version rather than the default branch HEAD.
-    ref: 'v{{version}}',
-  } as Recipe['distributable'] & { ref: string },
+    url: 'https://github.com/ollama/ollama/archive/refs/tags/v{{version}}.tar.gz',
+    'strip-components': 1,
+  },
   dependencies: {
     'curl.se/ca-certs': '*',
   },
@@ -33,13 +38,10 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      {
-        run: [
-          'git submodule init',
-          'git submodule update',
-        ],
-        if: '>=0.0.18',
-      },
+      // NOTE: the upstream `git submodule init && git submodule update` step was
+      // dropped — current ollama releases vendor llama.cpp directly (no
+      // .gitmodules), and we now build from the release tarball which has no
+      // `.git`, so that step is a no-op that only emitted spurious curl 404s.
       // arm64 build bug
       // https://github.com/ollama/ollama/issues/7292#issuecomment-2427773036
       {

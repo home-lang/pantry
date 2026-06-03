@@ -13,7 +13,12 @@ export const recipe: Recipe = {
   },
   distributable: {
     url: 'git+https://github.com/turbot/steampipe.git',
-  },
+    // Pin the git checkout to the release tag. Without this the shallow clone
+    // lands on the default branch (no tag), so `goreleaser build` (used for
+    // >=2.1) can't derive {{.Version}} and aborts, and the <2.1 `go build`
+    // path would compile main HEAD instead of the released version.
+    ref: 'v{{version}}',
+  } as Recipe['distributable'] & { ref: string },
   buildDependencies: {
     'go.dev': '^1.24',
     'goreleaser.com': '*',
@@ -29,7 +34,7 @@ export const recipe: Recipe = {
       },
       {
         run: [
-          'goreleaser build --clean --single-target --skip=validate',
+          'GORELEASER_CURRENT_TAG="v{{version}}" goreleaser build --clean --single-target --skip=validate',
           'install -Dm755 "dist/steampipe_${PLATFORM}/steampipe" "{{prefix}}"/bin/steampipe',
         ],
         if: '>=2.1',

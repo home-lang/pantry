@@ -71,6 +71,10 @@ export const recipe: Recipe = {
     ],
     env: {
       'FORCE_UNSAFE_CONFIGURE': '1',
+      // clisp 2.49.92 (2010) relies on tentative common-symbol definitions in
+      // its headers; modern GCC (10+) defaults to -fno-common, causing
+      // "multiple definition" link errors on linux-x86-64. Restore -fcommon.
+      'CFLAGS': ['-fcommon', '-O2'],
       'ARGS': ['--prefix={{prefix}}', '--disable-debug', '--disable-dependency-tracking', '--disable-silent-rules', '--with-readline=yes', '--with-libsigsegv-prefix={{deps.gnu.org/libsigsegv.prefix}}', '--enable-portability'],
       'darwin': {
         ARGS: ['--disable-rpath'],

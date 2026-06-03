@@ -30,7 +30,8 @@ export const recipe: Recipe = {
         '--no-user-install',
         '--bindir={{prefix}}/gems/bin',
         '--no-document',
-        'rubocop-{{version.raw}}.gem $EXTRA_GEMS',
+        // Built gem is named by the gemspec version (plain semver), matching upstream pkgx — use {{version}} not {{version.raw}}
+        'rubocop-{{version}}.gem $EXTRA_GEMS',
       ].join(' '),
       'install -Dm755 props/rubocop "{{prefix}}"/bin/rubocop',
     ],

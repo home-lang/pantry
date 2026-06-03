@@ -13,7 +13,11 @@ export const recipe: Recipe = {
   },
   distributable: {
     url: 'git+https://github.com/oras-project/oras',
-  },
+    // pkgx pins the git checkout to the release tag (`ref: ${{version.tag}}`).
+    // Without it the clone builds from default-branch HEAD (untagged), which
+    // makes `goreleaser build` fail and never targets the requested version.
+    ref: 'v{{version}}',
+  } as Recipe['distributable'] & { ref: string },
   buildDependencies: {
     'go.dev': '^1.19',
     'goreleaser.com': '*',
@@ -22,7 +26,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'goreleaser build --clean --single-target --skip=validate',
+      'GORELEASER_CURRENT_TAG="v{{version}}" goreleaser build --clean --single-target --skip=validate',
       'mkdir -p {{prefix}}/bin',
       'mv dist/oras_$PLATFORM/oras {{prefix}}/bin',
     ],

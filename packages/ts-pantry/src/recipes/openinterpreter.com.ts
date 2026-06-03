@@ -19,6 +19,12 @@ export const recipe: Recipe = {
     'python.org': '>=3.10<3.12',
     'github.com/mattrobenolt/jinja2-cli': '*',
   },
+  // tiktoken (a transitive dep) ships no prebuilt wheel for this target, so pip
+  // builds it from source — that needs a Rust toolchain + cargo to compile.
+  buildDependencies: {
+    'rust-lang.org': '>=1.56',
+    'rust-lang.org/cargo': '*',
+  },
 
   build: {
     script: [

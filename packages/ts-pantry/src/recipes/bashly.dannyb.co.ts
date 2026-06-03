@@ -16,7 +16,9 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   dependencies: {
-    'ruby-lang.org': '^3.1',
+    // bashly's gemspec requires Ruby >= 3.2; ^3.1 resolved to 3.1.x and the
+    // gem install was rejected with "requires Ruby version >= 3.2".
+    'ruby-lang.org': '>=3.2',
     'rubygems.org': '*',
   },
   buildDependencies: {

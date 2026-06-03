@@ -22,6 +22,13 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'python.org': '^3.11',
+    // hwloc detection compiles+links a test program (hwloc_topology_init);
+    // the sibling open-mpi.org recipe (same OAC/configure machinery, same
+    // hwloc dep) needs a full GCC/binutils toolchain on linux-x86-64 for that
+    // link probe to succeed, otherwise configure aborts with
+    // "an adequate version of that library was not found." / "Cannot continue."
+    'gnu.org/gcc': '*',
+    'gnu.org/binutils': '*',
   },
 
   build: {

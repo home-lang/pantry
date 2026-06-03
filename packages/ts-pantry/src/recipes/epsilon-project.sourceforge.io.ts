@@ -27,6 +27,15 @@ export const recipe: Recipe = {
         '--disable-debug',
         '--disable-dependency-tracking',
       ],
+      // epsilon's configure uses bare AC_CHECK_HEADER([popt.h]) /
+      // AC_CHECK_LIB([popt]), which only search default system paths and
+      // abort with "Configure script failed to find popt library!" when popt
+      // lives in the pantry dep prefix. Point CPPFLAGS/LDFLAGS at the popt dep
+      // so the checks resolve. (The "cc: unrecognized option '-version'" line
+      // in the build log is a benign autoconf compiler-probe diagnostic, not
+      // the fatal error.)
+      CPPFLAGS: '-I{{deps.rpm.org/popt.prefix}}/include',
+      LDFLAGS: '-L{{deps.rpm.org/popt.prefix}}/lib',
     },
     script: [
       // epsilon's configure.in uses the obsolete AM_PROG_LIBTOOL macro, so

@@ -7,10 +7,29 @@ export const recipe: Recipe = {
   homepage: 'https://www.openshift.com/',
   github: 'https://github.com/openshift/oc',
   programs: ['oc'],
+  // The openshift/oc GitHub repo only publishes a placeholder `v0.0.0-alpha.0`
+  // release, so github-releases resolved a bogus version and the mirror download
+  // URL 404'd (openshift-v0/.../0.0.0-alpha.0/...). Scrape the actual release
+  // mirror directory instead — mirrors upstream pkgx (match /\d+\.\d+\.\d+/).
   versionSource: {
-    type: 'github-releases',
-    repo: 'openshift/oc',
-    tagPattern: /^v(.+)$/,
+    type: 'custom',
+    fetch: async () => {
+      const res = await fetch('https://mirror.openshift.com/pub/openshift-v4/clients/ocp/')
+      const html = await res.text()
+      const versions = new Set<string>()
+      for (const m of html.matchAll(/>(\d+\.\d+\.\d+)</g))
+        versions.add(m[1])
+      // newest first (numeric sort by major.minor.patch)
+      return [...versions].sort((a, b) => {
+        const pa = a.split('.').map(Number)
+        const pb = b.split('.').map(Number)
+        for (let i = 0; i < 3; i++) {
+          if (pa[i] !== pb[i])
+            return pb[i] - pa[i]
+        }
+        return 0
+      })
+    },
   },
   distributable: {
     url: 'https://mirror.openshift.com/pub/openshift-v{{version.major}}/clients/ocp/{{version}}/openshift-client-src.tar.gz',

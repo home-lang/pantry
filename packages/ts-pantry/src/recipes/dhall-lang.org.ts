@@ -26,6 +26,10 @@ export const recipe: Recipe = {
         run: 'sed -i \'/unordered-containers/i\\\n        -- zlib 0.7.0 fails to find zlib.dylib on macOS\\\n        zlib                        >= 0.6.0    \\&\\& < 0.7 ,\' \\\ndhall.cabal',
         if: 'darwin',
       },
+      // The prebuilt haskell.org/cabal binary is not always provisioned on
+      // linux-x86-64 (cabal: command not found). haskell.org ships `ghcup`,
+      // which can install cabal-install — fall back to it when cabal is absent.
+      'command -v cabal >/dev/null 2>&1 || { ghcup install cabal --set && export PATH="$HOME/.ghcup/bin:$PATH"; }',
       'cabal v2-update',
       'mkdir -p {{prefix}}/bin',
       'cabal v2-install $ARGS',

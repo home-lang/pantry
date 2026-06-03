@@ -13,7 +13,10 @@ export const recipe: Recipe = {
     'gnu.org/make': '*',
   },
   distributable: {
-    url: 'https://www.mercurial-scm.org/release/mercurial-{{version.raw}}.tar.gz',
+    // Upstream drops the trailing ".0" for major.minor releases: 7.2.0 ships as
+    // mercurial-7.2.tar.gz (a 3-part 7.2.0 URL 404s). version.marketing yields
+    // major.minor, which matches the latest release we build.
+    url: 'https://www.mercurial-scm.org/release/mercurial-{{version.marketing}}.tar.gz',
     stripComponents: 1,
   },
 
@@ -23,7 +26,9 @@ export const recipe: Recipe = {
         run: [
           'python -m venv ~/.venv',
           'source ~/.venv/bin/activate',
-          'pip install setuptools_scm wheel',
+          // Setuptools>=77 requires packaging>=24.2 for license-expression
+          // validation; install it so `make install-bin` doesn't fail.
+          'pip install "packaging>=24.2" setuptools_scm wheel',
         ],
       },
       'make install-bin PREFIX={{prefix}}',

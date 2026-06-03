@@ -13,7 +13,10 @@ export const recipe: Recipe = {
     'gnu.org/libidn2': '*',
     'gnu.org/libunistring': '^1',
     'gnu.org/libtasn1': '^4',
-    'gnu.org/nettle': '^3',
+    // gnutls' configure hard-requires Libnettle >= 3.10 (PKG_CHECK_MODULES
+    // aborts with "Libnettle 3.10 was not found" otherwise). The plain `^3`
+    // constraint let the resolver pick an older 3.8/3.9 nettle; pin >=3.10.
+    'gnu.org/nettle': '>=3.10',
     'gnu.org/gettext': '*',
     'gnu.org/gmp': '*',
     'unbound.net': '^1',

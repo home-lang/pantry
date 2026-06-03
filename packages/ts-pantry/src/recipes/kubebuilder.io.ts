@@ -12,8 +12,13 @@ export const recipe: Recipe = {
     repo: 'kubernetes-sigs/kubebuilder',
   },
   distributable: {
+    // pkgx pins the git checkout to the release tag (`ref: ${{version.tag}}`).
+    // Without this the buildkit clones the default branch (a moving target)
+    // rather than the version being built. Tags are `v{version}` and the
+    // github-releases source strips the `v`, so `v{{version}}` resolves.
     url: 'git+https://github.com/kubernetes-sigs/kubebuilder',
-  },
+    ref: 'v{{version}}',
+  } as Recipe['distributable'] & { ref: string },
   buildDependencies: {
     'go.dev': '~1.25.3', // as of v4.11.1
     'gnu.org/coreutils': '*',
@@ -33,7 +38,11 @@ export const recipe: Recipe = {
       {
         run: [
           'rm -rf props',
-          'goreleaser build --clean --single-target --skip=validate',
+          // The goreleaser config lives at build/.goreleaser.yml (not the repo
+          // root), so goreleaser must be pointed at it with -f. Without this it
+          // reports "could not find a configuration file, using defaults" and
+          // builds nothing usable. Matches upstream CI (release.yml).
+          'GORELEASER_CURRENT_TAG="v{{version}}" goreleaser build --clean --single-target --skip=validate -f ./build/.goreleaser.yml',
           'install -Dm755 dist/kubebuilder_$(go env GOOS)_$(go env GOARCH)*/kubebuilder \'{{prefix}}/bin/kubebuilder\'',
         ],
         if: '>=4.11.1',
