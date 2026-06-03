@@ -38,6 +38,11 @@ import { BINARY_SYNC_DOMAIN_SET } from './binary-sync-packages.ts'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
 const packageOverrides: Record<string, any> = {}
 
+// A long build tees a lot of child output to stdout. If stdout is a redirected
+// file/pipe that faults (EPIPE, disk hiccup), an unhandled 'error' event would
+// crash the whole run — guard it so the build keeps going.
+process.stdout.on('error', () => { /* swallow — never crash the build over a log write */ })
+
 // Import package metadata
 import { fileURLToPath } from 'node:url'
 const packagesPath = fileURLToPath(new URL('../src/packages/index.ts', import.meta.url))
@@ -1036,7 +1041,10 @@ async function tryBuildVersion(
     }
     const onData = (chunk: Buffer) => {
       const s = chunk.toString()
-      process.stdout.write(s) // tee to the CI console
+      // Tee to our stdout, but never let a stdout write fault (EPIPE, a full
+      // redirected-file stream, backpressure) take the whole build down.
+      try { process.stdout.write(s) }
+      catch { /* ignore — streaming to the dashboard is what matters */ }
       pending += s
       const parts = pending.split('\n')
       pending = parts.pop() ?? ''
