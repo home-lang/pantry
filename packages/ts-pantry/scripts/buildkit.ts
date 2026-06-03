@@ -523,7 +523,13 @@ else {
     }
   }
 
-  return parts.join('\n\n')
+  // Join script items with a blank line for readability, but collapse blank
+  // lines that immediately follow a backslash line-continuation: a recipe that
+  // splits one command across array items (e.g. `./configure --prefix=… \`,
+  // `  --disable-debug \`, …) would otherwise get `… \<newline><blankline>…`,
+  // and the `\` continues into the empty line — terminating the command early
+  // so the next flag runs standalone ("--disable-debug: command not found").
+  return parts.join('\n\n').replace(/\\\n\n+/g, '\\\n')
 }
 
 /**
