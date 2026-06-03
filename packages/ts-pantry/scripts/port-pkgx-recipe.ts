@@ -25,7 +25,9 @@ function ser(v: any, indent = 2): string {
   const pad2 = ' '.repeat(indent + 2)
   if (v === null) return 'null'
   if (typeof v === 'number' || typeof v === 'boolean') return String(v)
-  if (typeof v === 'string') return `'${v.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
+  // JSON.stringify gives robust escaping (quotes, backslashes, newlines) in valid
+  // double-quoted TS — pickier --fix later normalizes quote style.
+  if (typeof v === 'string') return JSON.stringify(v)
   if (Array.isArray(v)) {
     if (v.length === 0) return '[]'
     const items = v.map(x => `${pad2}${ser(x, indent + 2)}`).join(',\n')

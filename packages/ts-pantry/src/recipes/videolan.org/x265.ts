@@ -1,0 +1,78 @@
+import type { Recipe } from '../../../scripts/recipe-types'
+
+export const recipe: Recipe = {
+  domain: "videolan.org/x265",
+  name: "x265",
+  programs: [
+    "x265",
+  ],
+  buildDependencies: {
+    'cmake.org': "*",
+    'nasm.us': "*",
+  },
+  distributable: {
+    url: "http://ftp.videolan.org/pub/videolan/x265/x265_{{version.raw}}.tar.gz",
+    stripComponents: 1,
+  },
+  build: {
+    script: [
+      {
+        run: "cmake ../source -DENABLE_HDR10_PLUS=ON $ARGS_DEFAULT $HIGHBITARGS\nmake\nmv libx265.a ../8bit/libx265_main10.a\n",
+        'working-directory': "../10bit",
+      },
+      {
+        run: "cmake ../source -DMAIN12=ON $ARGS_DEFAULT $HIGHBITARGS\nmake\nmv libx265.a ../8bit/libx265_main12.a\n",
+        'working-directory': "../12bit",
+      },
+      {
+        run: "cmake ../source $ARGS_DEFAULT $ARGS\nmake\nmv libx265.a libx265_main.a\n",
+      },
+      {
+        run: "libtool -static -o $LIB_ARGS",
+        if: "darwin",
+      },
+      {
+        run: "ar crs $LIB_ARGS",
+        if: "linux",
+      },
+      {
+        run: "make install",
+      },
+    ],
+    env: {
+      ARGS_DEFAULT: [
+        "-Wno-dev",
+        "-DBUILD_TESTING=OFF",
+        "-DCMAKE_FIND_FRAMEWORK=\"LAST\"",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_INSTALL_LIBDIR=\"lib\"",
+        "-DENABLE_PIC=ON",
+        "-DCMAKE_INSTALL_PREFIX={{prefix}}",
+        "-DCMAKE_VERBOSE_MAKEFILE=ON",
+      ],
+      ARGS: [
+        "-DLINKED_10BIT=ON",
+        "-DLINKED_12BIT=ON",
+        "-DEXTRA_LINK_FLAGS=-L.",
+        "-DEXTRA_LIB=x265_main10.a;x265_main12.a",
+      ],
+      HIGHBITARGS: [
+        "-DHIGH_BIT_DEPTH=ON",
+        "-DEXPORT_C_API=OFF",
+        "-DENABLE_SHARED=OFF",
+        "-DENABLE_CLI=OFF",
+      ],
+      LIB_ARGS: [
+        "libx265.a",
+        "libx265_main.a",
+        "libx265_main10.a",
+        "libx265_main12.a",
+      ],
+    },
+  },
+  test: {
+    script: [
+      "pkg-config --modversion x265 | grep {{version.raw}}",
+    ],
+  },
+}
