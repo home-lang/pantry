@@ -28,7 +28,7 @@ export const recipe: Recipe = {
       },
       {
         run: "ln -s python{{deps.python.org.version.marketing}} python{{deps.python.org.version.major}}",
-        'working-directory': {{prefix}}/lib,
+        'working-directory': "{{prefix}}/lib",
       },
     ],
     env: {
@@ -43,7 +43,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      "test \"$(pkg-config --modversion py3cairo)\" = \{{version}}\",
+      "test \"$(pkg-config --modversion py3cairo)\" = \"{{version}}\"",
       "pkg-config --libs py3cairo",
       "cc $FIXTURE -o test -lcairo",
       "./test",

@@ -40,7 +40,7 @@ export const recipe: Recipe = {
       "cd zookeeper",
       {
         run: "mkdir -p etc/zookeeper var/log/zookeeper var/run/zookeeper/data",
-        'working-directory': {{prefix}},
+        'working-directory': "{{prefix}}",
       },
       "mvn install -Pfull-build -DskipTests",
       "tar -xf zookeeper-assembly/target/apache-zookeeper-{{version}}-bin.tar.gz",
@@ -55,15 +55,15 @@ export const recipe: Recipe = {
       },
       {
         run: "rm -f *.txt *.md",
-        'working-directory': {{prefix}},
+        'working-directory': "{{prefix}}",
       },
       {
         run: "ln -s zkCleanup.sh zkCleanup\nln -s zkCli.sh zkCli\nln -s zkEnv.sh zkEnv\nln -s zkServer-initialize.sh zkServer-initialize\nln -s zkServer.sh zkServer\nln -s zkSnapshotComparer.sh zkSnapshotComparer\nln -s zkSnapshotRecursiveSummaryToolkit.sh zkSnapshotRecursiveSummaryToolkit\nln -s zkSnapShotToolkit.sh zkSnapShotToolkit\nln -s zkTxnLogToolkit.sh zkTxnLogToolkit\n",
-        'working-directory': {{prefix}}/bin,
+        'working-directory': "{{prefix}}/bin",
       },
       {
         run: "cp zoo_sample.cfg zoo.cfg\nsed -i.bak 's|dataDir=/tmp/zookeeper|dataDir=\\$ZOODIR/var/run/zookeper|' zoo.cfg\nrm -f zoo.cfg.bak\n",
-        'working-directory': {{prefix}}/conf,
+        'working-directory': "{{prefix}}/conf",
       },
     ],
   },

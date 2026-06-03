@@ -34,13 +34,13 @@ export const recipe: Recipe = {
       "meson install -C build",
       {
         run: "if test -d libproxy; then\n  mv libproxy/* .\n  rmdir libproxy\n  ln -s . libproxy\nfi\n",
-        'working-directory': {{prefix}}/lib,
+        'working-directory': "{{prefix}}/lib",
       },
     ],
     env: {
       MESON_ARGS: [
-        "--prefix=\{{prefix}}\",
-        "--libdir=\{{prefix}}/lib\",
+        "--prefix=\"{{prefix}}\"",
+        "--libdir=\"{{prefix}}/lib\"",
         "--buildtype=release",
         "--wrap-mode=nofallback",
         "-Ddocs=false",

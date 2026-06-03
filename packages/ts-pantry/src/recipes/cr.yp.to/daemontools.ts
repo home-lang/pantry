@@ -61,7 +61,7 @@ export const recipe: Recipe = {
       "install command/* {{prefix}}/bin/",
       {
         run: "sed -i.bak \"s|{{prefix}}|\\$(dirname \\$0)/..|g\" svscanboot\nrm svscanboot.bak\n",
-        'working-directory': {{prefix}}/bin,
+        'working-directory': "{{prefix}}/bin",
       },
     ],
     env: {

@@ -34,7 +34,7 @@ export const recipe: Recipe = {
       },
       {
         run: "ln -s p11-kit-1/p11-kit .",
-        'working-directory': {{prefix}}/include,
+        'working-directory': "{{prefix}}/include",
       },
     ],
     env: {

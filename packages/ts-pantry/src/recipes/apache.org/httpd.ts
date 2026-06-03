@@ -55,7 +55,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        "--prefix=\{{prefix}}\",
+        "--prefix=\"{{prefix}}\"",
         "--enable-layout=\"Apache\"",
         "--enable-mpms-shared=all",
         "--enable-mods-shared=all",

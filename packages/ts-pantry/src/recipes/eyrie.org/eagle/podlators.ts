@@ -41,7 +41,7 @@ export const recipe: Recipe = {
       },
     ],
     env: {
-      PERL5LIB: {{prefix}}/libexec/lib/perl5:{{prefix}}/lib/perl5:$PERL5LIB,
+      PERL5LIB: "{{prefix}}/libexec/lib/perl5:{{prefix}}/lib/perl5:$PERL5LIB",
       ARGS: [
         "INSTALL_BASE={{prefix}}",
         "INSTALLSITEMAN1DIR={{prefix}}/man/man1",

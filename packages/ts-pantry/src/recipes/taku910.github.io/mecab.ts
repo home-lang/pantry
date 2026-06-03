@@ -16,12 +16,12 @@ export const recipe: Recipe = {
       "./configure $ARGS",
       "make --jobs {{ hw.concurrency }} install",
       {
-        run: "cd \{{prefix}}/bin\\nsed -i.bak 's|{{prefix}}|\"$(cd \"$(dirname \"$0\")/..\" \\&\\& pwd)\"|' mecab-config\nrm mecab-config.bak\n",
+        run: "cd \"{{prefix}}/bin\"\nsed -i.bak 's|{{prefix}}|\"$(cd \"$(dirname \"$0\")/..\" \\&\\& pwd)\"|' mecab-config\nrm mecab-config.bak\n",
       },
     ],
     env: {
       ARGS: [
-        "--prefix=\{{prefix}}\",
+        "--prefix=\"{{prefix}}\"",
         "--disable-dependency-tracking",
       ],
     },

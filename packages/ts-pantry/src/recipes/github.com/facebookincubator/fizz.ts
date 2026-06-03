@@ -56,17 +56,17 @@ export const recipe: Recipe = {
       "cmake --install build",
       {
         run: "sed -E -i -e \"s:{{pkgx.prefix}}:\\$\\{_IMPORT_PREFIX\\}/../../../..:g\" -e '/^  INTERFACE_INCLUDE_DIRECTORIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/include|/v\\1/include|g' -e '/^  INTERFACE_LINK_LIBRARIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/lib|/v\\1/lib|g' fizz-targets.cmake",
-        'working-directory': {{prefix}}/lib/cmake/fizz,
+        'working-directory': "{{prefix}}/lib/cmake/fizz",
       },
     ],
     env: {
       ARGS: [
         "-GNinja",
         "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_INSTALL_PREFIX=\{{prefix}}\",
+        "-DCMAKE_INSTALL_PREFIX=\"{{prefix}}\"",
         "-DBUILD_TESTS=OFF",
         "-DBUILD_SHARED_LIBS=ON",
-        "-DCMAKE_INSTALL_RPATH=\{{prefix}}\",
+        "-DCMAKE_INSTALL_RPATH=\"{{prefix}}\"",
       ],
       'linux/aarch64': {
         ARGS: [

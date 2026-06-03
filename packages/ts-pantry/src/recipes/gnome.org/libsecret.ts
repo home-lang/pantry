@@ -38,11 +38,11 @@ export const recipe: Recipe = {
       "ninja install --verbose",
       {
         run: "ln -s libsecret-1/libsecret libsecret",
-        'working-directory': {{prefix}}/include,
+        'working-directory': "{{prefix}}/include",
       },
       {
         run: "ln -s libsecret-1/libsecret libsecret",
-        'working-directory': {{prefix}}/include,
+        'working-directory': "{{prefix}}/include",
       },
     ],
     env: {
@@ -52,10 +52,10 @@ export const recipe: Recipe = {
         LD: "clang",
         CFLAGS: "-Wno-incompatible-function-pointer-types $CFLAGS",
       },
-      XML_CATALOG_FILES: {{prefix}}/etc/xml/catalog,
+      XML_CATALOG_FILES: "{{prefix}}/etc/xml/catalog",
       MESON_ARGS: [
-        "--prefix=\{{prefix}}\",
-        "--libdir=\{{prefix}}/lib\",
+        "--prefix=\"{{prefix}}\"",
+        "--libdir=\"{{prefix}}/lib\"",
         "--buildtype=release",
         "--wrap-mode=nofallback",
         "-Dgtk_doc=false",

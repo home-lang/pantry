@@ -27,7 +27,7 @@ export const recipe: Recipe = {
       GOSUMDB: "sum.golang.org",
       GO111MODULE: "on",
       CGO_ENABLED: 0,
-      BUILDLOC: {{prefix}}/bin/horcrux,
+      BUILDLOC: "{{prefix}}/bin/horcrux",
       LDFLAGS: [
         "-s",
         "-w",

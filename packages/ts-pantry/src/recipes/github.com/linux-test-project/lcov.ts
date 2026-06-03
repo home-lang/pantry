@@ -36,7 +36,7 @@ export const recipe: Recipe = {
         'working-directory': "${{prefix}}/lib/perl5",
       },
       {
-        run: "sed -i -e '2i use File::Basename qw(dirname);' -e 's|\{{prefix}}|dirname($0) . \/..|g' ../lib/perl5/lcovutil.pm *",
+        run: "sed -i -e '2i use File::Basename qw(dirname);' -e 's|\"{{prefix}}|dirname($0) . \"/..|g' ../lib/perl5/lcovutil.pm *",
         'working-directory': "${{prefix}}/bin",
       },
     ],
@@ -62,8 +62,8 @@ export const recipe: Recipe = {
         ],
       },
       ARGS: [
-        "PREFIX=\{{prefix}}\",
-        "BIN_DR=\{{prefix}}/bin\",
+        "PREFIX=\"{{prefix}}\"",
+        "BIN_DR=\"{{prefix}}/bin\"",
       ],
     },
   },

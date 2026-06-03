@@ -29,11 +29,11 @@ export const recipe: Recipe = {
       "npm i -ddd --unsafe-perm $PKGS",
       {
         run: "cp -a $SRCROOT/* .",
-        'working-directory': {{prefix}}/libexec,
+        'working-directory': "{{prefix}}/libexec",
       },
       {
         run: "ln -s ../libexec/out/node/entry.js code-server",
-        'working-directory': {{prefix}}/bin,
+        'working-directory': "{{prefix}}/bin",
       },
     ],
     env: {

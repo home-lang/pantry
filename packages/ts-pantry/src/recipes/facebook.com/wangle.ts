@@ -46,7 +46,7 @@ export const recipe: Recipe = {
       "cp lib/libwangle.a {{prefix}}/lib",
       {
         run: "sed -E -i.bak \\\n  -e \"s:{{pkgx.prefix}}:\\$\\{_IMPORT_PREFIX\\}/../../..:g\" \\\n  -e '/^  INTERFACE_INCLUDE_DIRECTORIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/include|/v\\1/include|g' \\\n  -e '/^  INTERFACE_LINK_LIBRARIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/lib|/v\\1/lib|g' \\\nwangle-targets.cmake\nrm wangle-targets.cmake.bak\n",
-        'working-directory': {{prefix}}/lib/cmake/wangle,
+        'working-directory': "{{prefix}}/lib/cmake/wangle",
       },
     ],
     env: {

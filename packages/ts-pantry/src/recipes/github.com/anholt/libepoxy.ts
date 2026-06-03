@@ -31,13 +31,13 @@ export const recipe: Recipe = {
       {
         run: "sed -i.bak \"s|Requires.private: x11, |Requires.private: x11|g\" epoxy.pc\nrm -f epoxy.pc.bak\n",
         if: "darwin",
-        'working-directory': {{prefix}}/lib/pkgconfig,
+        'working-directory': "{{prefix}}/lib/pkgconfig",
       },
     ],
     env: {
       ARGS: [
-        "--prefix=\{{prefix}}\",
-        "--libdir=\{{prefix}}/lib\",
+        "--prefix=\"{{prefix}}\"",
+        "--libdir=\"{{prefix}}/lib\"",
         "--buildtype=release",
         "--wrap-mode=nofallback",
       ],

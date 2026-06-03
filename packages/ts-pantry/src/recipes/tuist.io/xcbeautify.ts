@@ -14,7 +14,7 @@ export const recipe: Recipe = {
     script: [
       "export TMPDIR=$(mktemp -d)",
       {
-        run: "echo 'let version = \{{version}}\' > Sources/xcbeautify/Version.swift",
+        run: "echo 'let version = \"{{version}}\"' > Sources/xcbeautify/Version.swift",
         if: ">=0.21.0",
       },
       {
@@ -24,12 +24,12 @@ export const recipe: Recipe = {
       "make install",
     ],
     env: {
-      PREFIX: {{prefix}},
+      PREFIX: "{{prefix}}",
     },
   },
   test: {
     script: [
-      "if test \{{version.major}}\ -ge 3 && test \"$(sw_vers -productVersion | cut -d . -f 1)\" -lt 14; then\n  exit 0\nfi\n",
+      "if test \"{{version.major}}\" -ge 3 && test \"$(sw_vers -productVersion | cut -d . -f 1)\" -lt 14; then\n  exit 0\nfi\n",
       "xcbeautify --version | grep {{version}}",
     ],
   },

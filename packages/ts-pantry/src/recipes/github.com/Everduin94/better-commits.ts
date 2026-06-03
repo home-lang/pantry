@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       "npm i $ARGS .",
       {
         run: "ln -s ../libexec/bin/bcommits bcommits\nln -s ../libexec/bin/better-branch better-branch\nln -s ../libexec/bin/better-commits better-commits\nln -s ../libexec/bin/better-commits-init better-commits-init\nln -s ../libexec/bin/git-bc git-bc\n",
-        'working-directory': {{prefix}}/bin,
+        'working-directory': "{{prefix}}/bin",
       },
     ],
     env: {

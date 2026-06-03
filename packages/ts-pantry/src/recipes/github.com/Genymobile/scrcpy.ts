@@ -50,13 +50,13 @@ export const recipe: Recipe = {
       {
         run: "mv \"../bin/scrcpy\" .\ninstall -m755 $PROP \"../bin/scrcpy\"",
         if: ">=4",
-        'working-directory': {{prefix}}/libexec,
+        'working-directory': "{{prefix}}/libexec",
       },
     ],
     env: {
       PREBUILT_SERVER_URL: "https://github.com/Genymobile/scrcpy/releases/download/v{{version.marketing}}/scrcpy-server-v{{version.marketing}}",
       ARGS: [
-        "--prefix=\{{prefix}}\",
+        "--prefix=\"{{prefix}}\"",
         "--buildtype=release",
         "--wrap-mode=nofallback",
         "-Dprebuilt_server=\"build/scrcpy-server\"",

@@ -23,7 +23,7 @@ export const recipe: Recipe = {
       "cp -R . {{prefix}}/venv/bin",
       {
         run: "rm -rf docker .github docs .gitignore *.md",
-        'working-directory': {{prefix}}/venv/bin,
+        'working-directory': "{{prefix}}/venv/bin",
       },
       "python -m venv {{prefix}}/venv\nsource {{prefix}}/venv/bin/activate\n",
       "pip install torch torchvision torchaudio",
@@ -38,7 +38,7 @@ export const recipe: Recipe = {
       "pip install -r $REQS",
       {
         run: "echo '#!/usr/bin/env python' > text-generation-webui\necho 'import os' >> text-generation-webui\necho 'os.chdir(os.path.dirname(os.path.abspath(__file__)))' >> text-generation-webui\ncat server.py >> text-generation-webui\nchmod +x text-generation-webui\nrm server.py",
-        'working-directory': {{prefix}}/venv/bin,
+        'working-directory': "{{prefix}}/venv/bin",
       },
       "python-venv-stubber.sh text-generation-webui",
       "cp props/entrypoint.sh {{prefix}}",

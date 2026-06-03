@@ -19,17 +19,17 @@ export const recipe: Recipe = {
     script: [
       {
         run: "mkdir -p bin libexec etc/bash_completion.d",
-        'working-directory': {{prefix}},
+        'working-directory': "{{prefix}}",
       },
       "install nvm.sh nvm-exec {{prefix}}/libexec/",
       "install bash_completion {{prefix}}/etc/bash_completion.d/nvm",
       {
         run: "ln -s ../libexec/nvm-exec || true\n",
-        'working-directory': {{prefix}}/bin,
+        'working-directory': "{{prefix}}/bin",
       },
       {
         run: "sed -i.bak \"s|unset NVM_CD_FLAGS|unset NVM_CD_FLAGS \\&\\& DIR=\\$DIR/../libexec|g\" nvm-exec\nrm *.bak\n",
-        'working-directory': {{prefix}}/libexec,
+        'working-directory': "{{prefix}}/libexec",
       },
     ],
   },

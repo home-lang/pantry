@@ -20,7 +20,7 @@ export const recipe: Recipe = {
       "gem install --no-user-install --bindir={{prefix}}/gems/bin --no-document xcodeproj-{{version}}.gem",
       {
         run: "cp $SRCROOT/props/xcodeproj .\nchmod +x xcodeproj",
-        'working-directory': {{prefix}}/bin,
+        'working-directory': "{{prefix}}/bin",
       },
     ],
     env: {

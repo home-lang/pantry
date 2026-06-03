@@ -30,8 +30,8 @@ export const recipe: Recipe = {
       CONFIGURE_ARGS: [
         "--disable-debug",
         "--disable-dependency-tracking",
-        "--prefix=\{{prefix}}\",
-        "--libdir=\{{prefix}}/lib\",
+        "--prefix=\"{{prefix}}\"",
+        "--libdir=\"{{prefix}}/lib\"",
       ],
       MESON_ARGS: [
         "--prefix={{prefix}}",
