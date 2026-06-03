@@ -20,6 +20,13 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
+      // yajl's reformatter/verify CMakeLists read the target LOCATION property
+      // (removed in CMake 4.x, so CMP0026 no longer helps). It's only used to
+      // stage a copy of the built binary — swap it for the modern
+      // $<TARGET_FILE:..> generator expression, which ADD_CUSTOM_COMMAND
+      // evaluates correctly. The real install is a separate INSTALL(TARGETS).
+      'sed -i \'s/GET_TARGET_PROPERTY(binPath json_reformat LOCATION)/SET(binPath $<TARGET_FILE:json_reformat>)/\' reformatter/CMakeLists.txt',
+      'sed -i \'s/GET_TARGET_PROPERTY(binPath json_verify LOCATION)/SET(binPath $<TARGET_FILE:json_verify>)/\' verify/CMakeLists.txt',
       'cmake . $CMAKE_ARGS',
       'make install',
       'mkdir -p {{prefix}}/include/yajl',
@@ -34,12 +41,8 @@ export const recipe: Recipe = {
         '-DCMAKE_VERBOSE_MAKEFILE=ON',
         '-Wno-dev',
         '-DBUILD_TESTING=OFF',
-        // yajl's reformatter/verify CMakeLists read the deprecated target
-        // LOCATION property (GET_TARGET_PROPERTY ... LOCATION), removed in
-        // modern CMake; CMP0026=OLD re-permits it, and the min-version shim
-        // lets its pre-3.5 cmake_minimum_required parse under CMake 4.x.
+        // yajl's ancient cmake_minimum_required is rejected by CMake 4.x.
         '-DCMAKE_POLICY_VERSION_MINIMUM=3.5',
-        '-DCMAKE_POLICY_DEFAULT_CMP0026=OLD',
       ],
     },
   },
