@@ -64,8 +64,8 @@ export const recipe: Recipe = {
     ],
     env: {
       MESON_ARGS: [
-        '--prefix="{{prefix}}"',
-        '--libdir="{{prefix}}/lib"',
+        '--prefix={{prefix}}',
+        '--libdir={{prefix}}/lib',
         '--buildtype=release',
         '--wrap-mode=nofallback',
         '-Dintrospection=true',

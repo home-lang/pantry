@@ -18,7 +18,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--disable-dependency-tracking',
         '--disable-silent-rules',
       ],
@@ -34,7 +34,7 @@ export const recipe: Recipe = {
       },
       'linux/aarch64': {
         ARGS: [
-          '--enable-native="no"',
+          '--enable-native=no',
         ],
       },
     },

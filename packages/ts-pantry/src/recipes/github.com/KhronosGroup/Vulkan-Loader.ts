@@ -34,7 +34,7 @@ export const recipe: Recipe = {
     env: {
       CMAKE_ARGS: [
         '-DVULKAN_HEADERS_INSTALL_DIR={{deps.github.com/KhronosGroup/Vulkan-Headers.prefix}}',
-        '-DCMAKE_INSTALL_PREFIX="{{prefix}}',
+        '-DCMAKE_INSTALL_PREFIX={{prefix}}',
         '-DCMAKE_INSTALL_LIBDIR=lib',
         '-DCMAKE_BUILD_TYPE=Release',
         '-DCMAKE_FIND_FRAMEWORK=LAST',

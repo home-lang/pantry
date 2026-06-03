@@ -19,7 +19,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        '-DCMAKE_INSTALL_PREFIX="{{prefix}}"',
+        '-DCMAKE_INSTALL_PREFIX={{prefix}}',
         '-DCMAKE_BUILD_TYPE=Release',
         '-DCMAKE_VERBOSE_MAKEFILE=ON',
         '-DCMAKE_FIND_FRAMEWORK=LAST',

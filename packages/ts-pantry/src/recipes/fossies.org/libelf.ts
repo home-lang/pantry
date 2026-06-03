@@ -23,7 +23,7 @@ export const recipe: Recipe = {
     env: {
       CFLAGS: '-Wno-implicit-function-declaration',
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--disable-debug',
         '--disable-compat',
       ],

@@ -23,7 +23,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--disable-dependency-tracking',
         '--disable-silent-rules',
         '--sysconfdir={{pkgx.prefix}}/x.org/etc',

@@ -19,7 +19,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['--prefix={{prefix}}', '--with-gmp=system",'],
+      'ARGS': ['--prefix={{prefix}}', '--with-gmp=system,'],
     },
   },
 }

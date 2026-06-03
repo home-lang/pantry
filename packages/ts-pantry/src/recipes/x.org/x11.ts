@@ -27,8 +27,8 @@ export const recipe: Recipe = {
       SHELF: '${{pkgx.prefix}}/x.org',
       ARGS: [
         '--prefix={{prefix}}',
-        '--sysconfdir="$SHELF"/etc',
-        '--localstatedir="$SHELF"/var',
+        '--sysconfdir=$SHELF/etc',
+        '--localstatedir=$SHELF/var',
         '--disable-debug',
         '--enable-unix-transport',
         '--enable-tcp-transport',

@@ -20,7 +20,7 @@ export const recipe: Recipe = {
     env: {
       GO_ARGS: [
         '-trimpath',
-        '-o="{{prefix}}/bin/xeol"',
+        '-o={{prefix}}/bin/xeol',
       ],
       LD_FLAGS: [
         '-s',

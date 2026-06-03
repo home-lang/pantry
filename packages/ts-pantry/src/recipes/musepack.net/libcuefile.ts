@@ -27,7 +27,7 @@ export const recipe: Recipe = {
         CFLAGS: '$CFLAGS -Wno-implicit-function-declaration',
       },
       CMAKE_ARGS: [
-        '-DCMAKE_INSTALL_PREFIX="{{prefix}}',
+        '-DCMAKE_INSTALL_PREFIX={{prefix}}',
         '-DCMAKE_INSTALL_LIBDIR=lib',
         '-DCMAKE_BUILD_TYPE=Release',
         '-DCMAKE_FIND_FRAMEWORK=LAST',

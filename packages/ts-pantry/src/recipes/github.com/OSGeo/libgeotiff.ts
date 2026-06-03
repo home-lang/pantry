@@ -25,7 +25,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--with-jpeg',
         '--disable-debug',
         '--disable-dependency-tracking',

@@ -25,7 +25,7 @@ export const recipe: Recipe = {
     env: {
       ARGS: [
         '-DCMAKE_BUILD_TYPE=Release',
-        '-DCMAKE_INSTALL_PREFIX="{{prefix}}"',
+        '-DCMAKE_INSTALL_PREFIX={{prefix}}',
       ],
       linux: {
         CFLAGS: '-fPIC',

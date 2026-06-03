@@ -21,7 +21,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        '-DCMAKE_INSTALL_PREFIX:PATH="{{prefix}}"',
+        '-DCMAKE_INSTALL_PREFIX:PATH={{prefix}}',
       ],
     },
   },

@@ -36,7 +36,7 @@ export const recipe: Recipe = {
       RES_CMAKE: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-{{version}}/cmake-{{version}}.src.tar.xz',
       RES_THIRD_PARTY: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-{{version}}/third-party-{{version}}.src.tar.xz',
       CMAKE_ARGS: [
-        '-DCMAKE_INSTALL_PREFIX="{{prefix}}',
+        '-DCMAKE_INSTALL_PREFIX={{prefix}}',
         '-DCMAKE_INSTALL_LIBDIR=lib',
         '-DCMAKE_BUILD_TYPE=Release',
         '-DCMAKE_FIND_FRAMEWORK=LAST',

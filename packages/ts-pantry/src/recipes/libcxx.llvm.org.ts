@@ -38,7 +38,7 @@ export const recipe: Recipe = {
       '',
     ],
     env: {
-      'ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release', '-DLLVM_INCLUDE_DOCS=OFF', '-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind"', '-DLLVM_INCLUDE_TESTS=OFF', '-DLLVM_ENABLE_RTTI=ON'],
+      'ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release', '-DLLVM_INCLUDE_DOCS=OFF', '-DLLVM_ENABLE_RUNTIMES=libcxx;libcxxabi;libunwind', '-DLLVM_INCLUDE_TESTS=OFF', '-DLLVM_ENABLE_RTTI=ON'],
     },
   },
 }

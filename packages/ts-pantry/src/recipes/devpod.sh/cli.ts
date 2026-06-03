@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       GO_LDFLAGS: [
         '-s',
         '-w',
-        '-X=github.com/loft-sh/devpod/pkg/version.version="v{{version}}"',
+        '-X=github.com/loft-sh/devpod/pkg/version.version=v{{version}}',
       ],
       linux: {
         GO_LDFLAGS: [
