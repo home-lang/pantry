@@ -14,7 +14,7 @@ export const recipe: Recipe = {
     script: [
       "export TMPDIR=$(mktemp -d)",
       {
-        run: "echo 'let version = {{version}}' > Sources/xcbeautify/Version.swift",
+        run: "echo 'let version = \"{{version}}\"' > Sources/xcbeautify/Version.swift",
         if: ">=0.21.0",
       },
       {

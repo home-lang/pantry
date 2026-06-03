@@ -21,7 +21,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: 'sed -i -e \'1,20s/^version = ".*"/version = {{version}}/\' core/Cargo.toml cli/Cargo.toml backend/Cargo.toml',
+        run: 'sed -i -e \'1,20s/^version = ".*"/version = "{{version}}"/\' core/Cargo.toml cli/Cargo.toml backend/Cargo.toml',
         'working-directory': '..',
       },
       {

@@ -13,7 +13,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'sed -i \'s/^version = ".*"$/version = {{version}}/\' pyproject.toml',
+      'sed -i \'s/^version = ".*"$/version = "{{version}}"/\' pyproject.toml',
       'python -m pip install --prefix={{prefix}} .',
     ],
   },

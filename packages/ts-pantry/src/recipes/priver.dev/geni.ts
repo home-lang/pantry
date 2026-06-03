@@ -20,7 +20,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: 'sed -i -e \'s/^version = ".*"/version = {{version}}/\' Cargo.toml',
+        run: 'sed -i -e \'s/^version = ".*"/version = "{{version}}"/\' Cargo.toml',
       },
       {
         run: 'sed -i -e \'s/"0\\.0\\.3"/{{version}}/\' main.rs',

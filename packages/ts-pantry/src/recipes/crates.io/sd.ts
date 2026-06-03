@@ -16,7 +16,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'sed -i \'s/^version = ".*"/version = {{version}}/\' Cargo.toml',
+      'sed -i \'s/^version = ".*"/version = "{{version}}"/\' Cargo.toml',
       {
         run: 'cargo install --locked --path . --root {{prefix}}',
         if: '<1.1.0',

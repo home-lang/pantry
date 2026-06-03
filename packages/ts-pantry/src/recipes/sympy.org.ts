@@ -34,7 +34,7 @@ export const recipe: Recipe = {
     // install, which ran in the package subdir that has no setup.py.
     script: [
       {
-        run: 'sed -i \'s/__version__ =.*/__version__ = {{version.raw}}/\' release.py',
+        run: 'sed -i \'s/__version__ =.*/__version__ = "{{version.raw}}"/\' release.py',
         'working-directory': 'sympy',
       },
       'python -m pip install --prefix={{prefix}} .',
