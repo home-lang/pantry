@@ -18,7 +18,7 @@ export const recipe: Recipe = {
 
   buildDependencies: {
     linux: {
-      'llvm.org': '<19',
+      // perl builds with the system cc (gcc) — no llvm toolchain dep needed.
       'gnu.org/make': '*',
     },
   },
@@ -45,7 +45,11 @@ export const recipe: Recipe = {
     env: {
       'ARGS': ['-d', '-e', '-Dprefix={{prefix}}', '-Duselargefiles', '-Dusethreads', '-Duseshrplib=false', '-Duserelocatableinc'],
       'linux': {
-        ARGS: ['-Accflags=-fPIC'],
+        // -fPIC for shared-lib relocatability. -DI_POLL forces perl's ext/IO
+        // `poll.h` shim down its `#include <poll.h>` branch (it gates on
+        // HAS_POLL && I_POLL) so `struct pollfd` is always complete in IO.xs —
+        // cheap insurance against Configure's poll header-probe mis-detecting.
+        ARGS: ['-Accflags=-fPIC', '-Accflags=-DI_POLL'],
       },
     },
   },

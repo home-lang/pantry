@@ -972,7 +972,16 @@ else if (osName === 'linux' && archName === 'x86-64') {
     if (!key.endsWith('.prefix')) continue
     depBinPaths.push(`${depPath}/bin`)
     depLibPaths.push(`${depPath}/lib`)
-    depIncludePaths.push(`${depPath}/include`)
+    // A dep whose prefix fell back to a system root (/usr, /usr/local) would
+    // contribute /usr/include to CPATH — which the comment below warns breaks
+    // GCC header resolution: forcing /usr/include onto CPATH (≈ -I/usr/include)
+    // reorders the multiarch search so e.g. <poll.h>'s bits/poll.h chain no
+    // longer resolves, producing "incomplete type 'struct pollfd'" (perl ext/IO)
+    // and similar. Those system roots are already in the compiler's default
+    // search path, so skip their include dir entirely.
+    if (depPath !== '/usr' && depPath !== '/usr/local' && depPath !== '/') {
+      depIncludePaths.push(`${depPath}/include`)
+    }
     depPkgConfigPaths.push(`${depPath}/lib/pkgconfig`)
     depPkgConfigPaths.push(`${depPath}/share/pkgconfig`)
   }
