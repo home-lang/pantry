@@ -10,7 +10,7 @@ export const recipe: Recipe = {
     'go.dev': '^1.21',
   },
   distributable: {
-    url: 'https://github.com/indexsupply/code/archive/refs/tags/{{version.tag}}.tar.gz',
+    url: 'https://github.com/indexsupply/code/archive/refs/tags/v{{version.marketing}}.tar.gz',
     stripComponents: 1,
   },
   build: {
