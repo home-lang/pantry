@@ -69,6 +69,7 @@ export const caddyservercomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.11.4',
     '2.11.3',
     '2.11.2',
     '2.11.1',
