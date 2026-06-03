@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: "github.com/sindresorhus/macos-term-size",
+  platforms: ['darwin/aarch64', 'darwin/x86-64'],
   name: "macos-term-size",
   programs: [
     "term-size",
