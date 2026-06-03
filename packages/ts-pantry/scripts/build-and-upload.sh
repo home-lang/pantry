@@ -1,9 +1,17 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # Build and Upload Package to S3
 # Usage: ./scripts/build-and-upload.sh <package> <version> [bucket] [region]
 # Example: ./scripts/build-and-upload.sh php.net 8.4.11 my-bucket us-east-1
+
+# Anchor to the ts-pantry package root (this script lives in scripts/) so the
+# relative `bun scripts/...` invocations and the artifacts directory resolve the
+# same way no matter what directory the caller runs us from. Without this, the
+# tar step below (which used a relative ./artifacts path after cd-ing into the
+# install dir) wrote to a non-existent path and failed.
+cd "$(dirname "$0")/.."
+REPO_DIR="$(pwd)"
 
 PACKAGE="${1:?Usage: $0 <package> <version> [bucket] [region]}"
 VERSION="${2:?Usage: $0 <package> <version> [bucket] [region]}"
@@ -20,10 +28,10 @@ else
 fi
 PLATFORM="${OS}-${ARCH}"
 
-# Directories
+# Directories (ARTIFACTS_DIR is absolute so it survives any cd)
 BUILD_DIR="/tmp/pantry-build/${PACKAGE}-${VERSION}"
 INSTALL_DIR="/tmp/pantry-install/${PACKAGE}-${VERSION}"
-ARTIFACTS_DIR="./artifacts"
+ARTIFACTS_DIR="${REPO_DIR}/artifacts"
 ARTIFACT_NAME="${PACKAGE}-${VERSION}-${PLATFORM}"
 ARTIFACT_DIR="${ARTIFACTS_DIR}/${ARTIFACT_NAME}"
 
@@ -32,6 +40,7 @@ echo "Building ${PACKAGE}@${VERSION} for ${PLATFORM}"
 echo "============================================================"
 echo "Build dir: ${BUILD_DIR}"
 echo "Install dir: ${INSTALL_DIR}"
+echo "Artifacts dir: ${ARTIFACT_DIR}"
 echo "Bucket: ${BUCKET}"
 echo "Region: ${REGION}"
 echo ""
@@ -50,21 +59,23 @@ bun scripts/build-package.ts \
   --build-dir "${BUILD_DIR}" \
   --prefix "${INSTALL_DIR}"
 
-# Step 2: Package
+# Guard: the build must have produced something to package.
+if [ -z "$(ls -A "${INSTALL_DIR}" 2>/dev/null)" ]; then
+  echo "❌ Build produced no files in ${INSTALL_DIR}; aborting before upload." >&2
+  exit 1
+fi
+
+# Step 2: Package (tar -C avoids cd, and all paths are absolute)
 echo ""
 echo ">>> Step 2: Creating tarball..."
 TARBALL="${PACKAGE}-${VERSION}.tar.gz"
-cd "${INSTALL_DIR}"
-tar -czf "${ARTIFACT_DIR}/${TARBALL}" .
-cd - > /dev/null
+tar -czf "${ARTIFACT_DIR}/${TARBALL}" -C "${INSTALL_DIR}" .
 
-# Generate SHA256
-cd "${ARTIFACT_DIR}"
-shasum -a 256 "${TARBALL}" > "${TARBALL}.sha256"
-cd - > /dev/null
+# Generate SHA256 (subshell keeps the cwd change local)
+( cd "${ARTIFACT_DIR}" && shasum -a 256 "${TARBALL}" > "${TARBALL}.sha256" )
 
 echo "Created: ${ARTIFACT_DIR}/${TARBALL}"
-echo "SHA256: $(cat ${ARTIFACT_DIR}/${TARBALL}.sha256)"
+echo "SHA256: $(cat "${ARTIFACT_DIR}/${TARBALL}.sha256")"
 
 # Step 3: Upload
 echo ""

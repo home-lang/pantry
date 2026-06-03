@@ -30,4 +30,8 @@ ARGS=(-b "$S3_BUCKET" -r "$S3_REGION" --platform "$PLATFORM")
 
 echo "### build-all-packages ${ARGS[*]}  cwd=$(pwd)  $(date -u +%FT%TZ)"
 bun scripts/build-all-packages.ts "${ARGS[@]}"
-echo "### REMOTE-BUILD DONE rc=$? $(date -u +%FT%TZ)"
+rc=$?
+echo "### REMOTE-BUILD DONE rc=$rc $(date -u +%FT%TZ)"
+# Propagate the build's exit code so the SSH driver/orchestrator sees failures
+# instead of the implicit exit 0 of the trailing echo.
+exit "$rc"

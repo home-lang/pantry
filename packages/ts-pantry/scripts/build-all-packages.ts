@@ -1160,13 +1160,20 @@ catch (error: any) {
   }
 
   try {
+    // A build that exits 0 but installs nothing (no-op install step) must not be
+    // packaged and uploaded — that publishes an empty tarball that passes its own
+    // checksum and registers as a valid-but-broken binary.
+    if (!existsSync(installDir) || readdirSync(installDir).length === 0) {
+      throw new Error(`Build produced no files in ${installDir}; refusing to package/upload`)
+    }
+
     // Create tarball
     console.log(`   Packaging...`)
     const artifactDir = join(artifactsDir, `${domain.replace(/\//g, '-')}-${usedVersion}-${platform}`)
     mkdirSync(artifactDir, { recursive: true })
 
     const tarball = `${domain.replace(/\//g, '-')}-${usedVersion}.tar.gz`
-    execSync(`cd "${installDir}" && tar -czf "${join(artifactDir, tarball)}" .`)
+    execSync(`tar -czf "${join(artifactDir, tarball)}" -C "${installDir}" .`)
     execSync(`cd "${artifactDir}" && shasum -a 256 "${tarball}" > "${tarball}.sha256"`)
 
     // Upload to S3

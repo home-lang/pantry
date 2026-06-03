@@ -229,9 +229,9 @@ download_from_config() {
       version=$(echo "$version" | sed "s/^[[:space:]]*//;s/[[:space:]]*$//;s/['\"]//g")
 
       if download_package "$pkg" "$version"; then
-        ((success++))
+        success=$((success + 1))
       else
-        ((failed++))
+        failed=$((failed + 1))
       fi
     fi
   done < "$config"

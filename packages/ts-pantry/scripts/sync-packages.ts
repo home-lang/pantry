@@ -77,11 +77,15 @@ async function uploadToS3(artifactsDir: string, domain: string, version: string,
 }
 
 function createTarball(sourceDir: string, artifactsDir: string, domain: string, version: string, platform: string): void {
-  const artifactDir = join(artifactsDir, `${domain}-${version}-${platform}`)
+  // Replace '/' in the domain for the directory name too — otherwise a slashed
+  // domain (e.g. github.com/cli) creates a NESTED dir that upload-to-s3.ts's
+  // top-level readdir + platform regex can't match, silently skipping the upload.
+  const safeDomain = domain.replace(/\//g, '-')
+  const artifactDir = join(artifactsDir, `${safeDomain}-${version}-${platform}`)
   mkdirSync(artifactDir, { recursive: true })
 
-  const tarball = `${domain.replace(/\//g, '-')}-${version}.tar.gz`
-  execSync(`cd "${sourceDir}" && tar -czf "${join(artifactDir, tarball)}" .`)
+  const tarball = `${safeDomain}-${version}.tar.gz`
+  execSync(`tar -czf "${join(artifactDir, tarball)}" -C "${sourceDir}" .`)
   execSync(`cd "${artifactDir}" && shasum -a 256 "${tarball}" > "${tarball}.sha256"`)
 
   console.log(`   Created: ${tarball}`)

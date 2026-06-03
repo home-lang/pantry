@@ -113,9 +113,13 @@ download_package() {
 
   log "   Version: ${version}"
 
-  # Build tarball URL
-  local tarball_name="${pkg//./-}-${version}.tar.gz"
-  local tarball_url="https://${PANTRY_BUCKET}.s3.${PANTRY_REGION}.amazonaws.com/binaries/${pkg}/${version}/${PLATFORM}/${tarball_name}"
+  # Build tarball URL. Artifacts are uploaded with dots PRESERVED in the
+  # filename (e.g. php.net-8.4.11.tar.gz); only '/' is replaced with '-'. Try
+  # that canonical name first, then fall back to the all-dashes form for any
+  # older artifacts that used it.
+  local base="binaries/${pkg}/${version}/${PLATFORM}"
+  local tarball_name="${pkg//\//-}-${version}.tar.gz"
+  local tarball_url="https://${PANTRY_BUCKET}.s3.${PANTRY_REGION}.amazonaws.com/${base}/${tarball_name}"
 
   # Create install dir
   local install_dir="$PANTRY_HOME/$pkg/$version"
@@ -125,9 +129,13 @@ download_package() {
   log "   Downloading..."
   local tmp="$install_dir/package.tar.gz"
   if ! curl -fsSL -o "$tmp" "$tarball_url" 2>/dev/null; then
-    log "   ${RED}✗${NC} Download failed"
-    rm -rf "$install_dir"
-    return 1
+    # Fallback: legacy all-dashes filename (dots also replaced)
+    local alt_url="https://${PANTRY_BUCKET}.s3.${PANTRY_REGION}.amazonaws.com/${base}/${pkg//./-}-${version}.tar.gz"
+    if ! curl -fsSL -o "$tmp" "$alt_url" 2>/dev/null; then
+      log "   ${RED}✗${NC} Download failed"
+      rm -rf "$install_dir"
+      return 1
+    fi
   fi
 
   # Extract (with safety flags to prevent zip-slip / absolute path attacks)
