@@ -98,6 +98,7 @@ import { capstoneengineorgPackage } from './capstone-engineorg'
 import { carapaceshPackage } from './carapacesh'
 import { casdoororgPackage } from './casdoororg'
 import { caskreadthedocsioPackage } from './caskreadthedocsio'
+import { cassandraapacheorgPackage } from './cassandraapacheorg'
 import { catborgwumpusPackage } from './catb.org/wumpus'
 import { ccachedevPackage } from './ccachedev'
 import { cedarpolicycomcliPackage } from './cedarpolicy.com/cli'
@@ -1247,6 +1248,7 @@ import { mypylangorgPackage } from './mypy-langorg'
 import { mysqlPackage } from './mysqlcom'
 import { nanoeditororgPackage } from './nano-editororg'
 import { nasmusPackage } from './nasmus'
+import { neo4jcomPackage } from './neo4jcom'
 import { neovimioPackage } from './neovimio'
 import { netflixcomvmafPackage } from './netflix.com/vmaf'
 import { netliborglapackPackage } from './netlib.org/lapack'
@@ -1504,6 +1506,7 @@ import { snykioPackage } from './snykio'
 import { solanacomPackage } from './solanacom'
 import { soldeerxyzPackage } from './soldeerxyz'
 import { soliditylangorgPackage } from './soliditylangorg'
+import { solrapacheorgPackage } from './solrapacheorg'
 import { sonarqubeorgsonarscannerPackage } from './sonarqube.org/sonarscanner'
 import { sourceforgenete2fsprogsPackage } from './sourceforge.net/e2fsprogs'
 import { sourceforgenetfaacPackage } from './sourceforge.net/faac'
@@ -1721,6 +1724,7 @@ import { zeromqorgPackage } from './zeromqorg'
 import { ziglangorgPackage } from './ziglangorg'
 import { zlibnetminizipPackage } from './zlib.net/minizip'
 import { zlibnetPackage } from './zlibnet'
+import { zookeeperapacheorgPackage } from './zookeeperapacheorg'
 import { zotregistrydevPackage } from './zotregistrydev'
 import { zrokioPackage } from './zrokio'
 import { zshsourceforgeioPackage } from './zshsourceforgeio'
@@ -1872,6 +1876,7 @@ export interface Pantry {
   carapacesh: typeof carapaceshPackage
   casdoororg: typeof casdoororgPackage
   caskreadthedocsio: typeof caskreadthedocsioPackage
+  cassandraapacheorg: typeof cassandraapacheorgPackage
 
   catborgwumpus: typeof catborgwumpusPackage
   ccachedev: typeof ccachedevPackage
@@ -3883,6 +3888,7 @@ export interface Pantry {
   nano_editororg: typeof nanoeditororgPackage
   nanoeditororg: typeof nanoeditororgPackage
   nasmus: typeof nasmusPackage
+  neo4jcom: typeof neo4jcomPackage
   neovimio: typeof neovimioPackage
 
   netflixcomvmaf: typeof netflixcomvmafPackage
@@ -4262,6 +4268,7 @@ export interface Pantry {
   solanacom: typeof solanacomPackage
   soldeerxyz: typeof soldeerxyzPackage
   soliditylangorg: typeof soliditylangorgPackage
+  solrapacheorg: typeof solrapacheorgPackage
   sonarscanner: typeof sonarqubeorgsonarscannerPackage
   sonarqubeorgsonarscanner: typeof sonarqubeorgsonarscannerPackage
 
@@ -4588,6 +4595,7 @@ export interface Pantry {
 
   zlibnetminizip: typeof zlibnetminizipPackage
   zlibnet: typeof zlibnetPackage
+  zookeeperapacheorg: typeof zookeeperapacheorgPackage
   zotregistrydev: typeof zotregistrydevPackage
   zrokio: typeof zrokioPackage
   zshsourceforgeio: typeof zshsourceforgeioPackage
@@ -4745,6 +4753,7 @@ export interface Pantry {
   carthage: typeof carthagePackage
   casdoor: typeof casdoororgPackage
   cask: typeof caskreadthedocsioPackage
+  cassandra: typeof cassandraapacheorgPackage
   cavif: typeof cratesiocavifPackage
   cbindgen: typeof mozillaorgcbindgenPackage
   ccache: typeof ccachedevPackage
@@ -5579,6 +5588,7 @@ export interface Pantry {
   ncdu: typeof devyorhelnlncduPackage
   ncurses: typeof invisibleislandnetncursesPackage
   needs: typeof needsPackage
+  neo4j: typeof neo4jcomPackage
   neofetch: typeof neofetchPackage
   'neon-config': typeof notrojgithubioneonPackage
   neowofetch: typeof neowofetchPackage
@@ -5952,6 +5962,7 @@ export interface Pantry {
   solana: typeof solanacomPackage
   soldeer: typeof soldeerxyzPackage
   soliditylang: typeof soliditylangorgPackage
+  solr: typeof solrapacheorgPackage
   'sonar-scanner': typeof sonarqubeorgsonarscannerPackage
   sops: typeof getsopsioPackage
   'source-highlight': typeof gnuorgsourcehighlightPackage
@@ -6465,6 +6476,7 @@ export const pantry: Pantry = {
   carapacesh: carapaceshPackage,
   casdoororg: casdoororgPackage,
   caskreadthedocsio: caskreadthedocsioPackage,
+  cassandraapacheorg: cassandraapacheorgPackage,
 
   catborgwumpus: catborgwumpusPackage,
   ccachedev: ccachedevPackage,
@@ -8476,6 +8488,7 @@ export const pantry: Pantry = {
   nano_editororg: nanoeditororgPackage,
   nanoeditororg: nanoeditororgPackage,
   nasmus: nasmusPackage,
+  neo4jcom: neo4jcomPackage,
   neovimio: neovimioPackage,
 
   netflixcomvmaf: netflixcomvmafPackage,
@@ -8855,6 +8868,7 @@ export const pantry: Pantry = {
   solanacom: solanacomPackage,
   soldeerxyz: soldeerxyzPackage,
   soliditylangorg: soliditylangorgPackage,
+  solrapacheorg: solrapacheorgPackage,
   sonarscanner: sonarqubeorgsonarscannerPackage,
   sonarqubeorgsonarscanner: sonarqubeorgsonarscannerPackage,
 
@@ -9181,6 +9195,7 @@ export const pantry: Pantry = {
 
   zlibnetminizip: zlibnetminizipPackage,
   zlibnet: zlibnetPackage,
+  zookeeperapacheorg: zookeeperapacheorgPackage,
   zotregistrydev: zotregistrydevPackage,
   zrokio: zrokioPackage,
   zshsourceforgeio: zshsourceforgeioPackage,
@@ -9338,6 +9353,7 @@ export const pantry: Pantry = {
   carthage: carthagePackage,
   casdoor: casdoororgPackage,
   cask: caskreadthedocsioPackage,
+  cassandra: cassandraapacheorgPackage,
   cavif: cratesiocavifPackage,
   cbindgen: mozillaorgcbindgenPackage,
   ccache: ccachedevPackage,
@@ -10172,6 +10188,7 @@ export const pantry: Pantry = {
   ncdu: devyorhelnlncduPackage,
   ncurses: invisibleislandnetncursesPackage,
   needs: needsPackage,
+  neo4j: neo4jcomPackage,
   neofetch: neofetchPackage,
   'neon-config': notrojgithubioneonPackage,
   neowofetch: neowofetchPackage,
@@ -10545,6 +10562,7 @@ export const pantry: Pantry = {
   solana: solanacomPackage,
   soldeer: soldeerxyzPackage,
   soliditylang: soliditylangorgPackage,
+  solr: solrapacheorgPackage,
   'sonar-scanner': sonarqubeorgsonarscannerPackage,
   sops: getsopsioPackage,
   'source-highlight': gnuorgsourcehighlightPackage,

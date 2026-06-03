@@ -1,7 +1,7 @@
 //! Package definitions generated from ts-pantry
 //! DO NOT EDIT MANUALLY - This file is auto-generated
-//! Generated on: 2026-06-03T01:30:58.366Z
-//! Total packages: 1723
+//! Generated on: 2026-06-03T03:11:53.112Z
+//! Total packages: 1727
 
 const std = @import("std");
 
@@ -18,7 +18,7 @@ pub const PackageInfo = struct {
     versions: []const []const u8,
 };
 
-/// All known packages (1723 total)
+/// All known packages (1727 total)
 pub const packages = [_]PackageInfo{ .{
     .name = "1Password",
     .domain = "1password.com",
@@ -989,6 +989,16 @@ pub const packages = [_]PackageInfo{ .{
     .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "0.9.1", "0.9.0", "0.8.8", "0.8.7", "0.8.6", "0.8.5", "0.8.4", "0.8.3", "0.8.2", "0.8.1", "0.8.0", "0.7.4", "0.7.3", "0.7.2", "0.7.1", "0.7.0", "0.6.0", "0.5.2", "0.5.1", "0.5.0", "0.4.6", "0.4.5", "0.4.4", "0.4.3", "0.4.2", "0.4.1", "0.4.0", "0.3.1", "0.3.0", "0.2.0", "0.1.2", "0.1.1", "0.1.0", "0.0.2" },
+}, .{
+    .name = "cassandra",
+    .domain = "cassandra.apache.org",
+    .description = "Apache Cassandra wide-column distributed database",
+    .homepage_url = "https://cassandra.apache.org",
+    .programs = &[_][]const u8{ "cassandra", "nodetool", "cqlsh" },
+    .dependencies = &[_][]const u8{"openjdk.org"},
+    .build_dependencies = &[_][]const u8{},
+    .aliases = &[_][]const u8{},
+    .versions = &[_][]const u8{ "5.0.3", "5.0.2", "4.1.7", "4.1.6" },
 }, .{
     .name = "wumpus",
     .domain = "catb.org/wumpus",
@@ -12480,6 +12490,16 @@ pub const packages = [_]PackageInfo{ .{
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "3.1.0", "3.0.0", "2.16.3", "2.16.2", "2.15.5" },
 }, .{
+    .name = "neo4j",
+    .domain = "neo4j.com",
+    .description = "Neo4j graph database (community edition)",
+    .homepage_url = "https://neo4j.com",
+    .programs = &[_][]const u8{ "neo4j", "neo4j-admin", "cypher-shell" },
+    .dependencies = &[_][]const u8{"openjdk.org"},
+    .build_dependencies = &[_][]const u8{},
+    .aliases = &[_][]const u8{},
+    .versions = &[_][]const u8{ "5.26.0", "5.25.1", "5.24.0" },
+}, .{
     .name = "nvim",
     .domain = "neovim.io",
     .description = "Ambitious Vim-fork focused on extensibility and agility",
@@ -15050,6 +15070,16 @@ pub const packages = [_]PackageInfo{ .{
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "0.8.35", "0.8.34", "0.8.33", "0.8.32", "0.8.31", "0.8.30", "0.8.29", "0.8.28", "0.8.27", "0.8.26", "0.8.25", "0.8.24", "0.8.23", "0.8.22", "0.8.21", "0.8.20", "0.8.19", "0.8.18", "0.8.17", "0.8.16", "0.8.15", "0.8.14", "0.8.13", "0.8.12", "0.8.11", "0.8.10", "0.8.9", "0.8.8", "0.8.7", "0.8.6", "0.8.5", "0.8.4", "0.8.3", "0.8.2", "0.8.1", "0.8.0", "0.7.6", "0.7.5", "0.7.4", "0.7.3", "0.7.2", "0.7.1", "0.7.0", "0.6.12", "0.6.11", "0.6.10", "0.6.9", "0.6.8" },
 }, .{
+    .name = "solr",
+    .domain = "solr.apache.org",
+    .description = "Apache Solr enterprise search platform",
+    .homepage_url = "https://solr.apache.org",
+    .programs = &[_][]const u8{"solr"},
+    .dependencies = &[_][]const u8{"openjdk.org"},
+    .build_dependencies = &[_][]const u8{},
+    .aliases = &[_][]const u8{},
+    .versions = &[_][]const u8{ "9.8.1", "9.8.0", "9.7.0" },
+}, .{
     .name = "sonar-scanner",
     .domain = "sonarqube.org/sonarscanner",
     .description = "Scanner CLI for SonarQube (Server, Cloud)",
@@ -17219,6 +17249,16 @@ pub const packages = [_]PackageInfo{ .{
     .build_dependencies = &[_][]const u8{ "gnu.org/autoconf@^2", "gnu.org/automake@^1", "gnu.org/libtool@^2" },
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "1.3.2", "1.3.1", "1.3.0", "1.2.13" },
+}, .{
+    .name = "zookeeper",
+    .domain = "zookeeper.apache.org",
+    .description = "Apache ZooKeeper distributed coordination service",
+    .homepage_url = "https://zookeeper.apache.org",
+    .programs = &[_][]const u8{ "zkServer.sh", "zkCli.sh" },
+    .dependencies = &[_][]const u8{"openjdk.org"},
+    .build_dependencies = &[_][]const u8{},
+    .aliases = &[_][]const u8{},
+    .versions = &[_][]const u8{ "3.9.3", "3.9.2", "3.9.1", "3.8.4" },
 }, .{
     .name = "zotregistry",
     .domain = "zotregistry.dev",
