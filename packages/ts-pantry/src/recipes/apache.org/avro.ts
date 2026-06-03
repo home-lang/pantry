@@ -25,13 +25,17 @@ export const recipe: Recipe = {
       'gnu.org/make': '*',
     },
   },
-  distributable: undefined,
+  distributable: {
+    url: 'https://github.com/apache/avro/archive/release-{{version}}.tar.gz',
+    stripComponents: 1,
+  },
   build: {
+    // avro is a polyglot monorepo; the C library (which provides avrocat /
+    // avroappend / avromod / avropipe) lives in lang/c, not at the repo root —
+    // the old `cmake -S .` failed with "does not appear to contain
+    // CMakeLists.txt". Point cmake at lang/c.
     script: [
-      {
-        run: 'curl -LsS https://github.com/apache/avro/archive/release-{{version}}.tar.gz | tar -xz --strip-components=1 -C ../..',
-      },
-      'cmake -S . -B build $CMAKE_ARGS',
+      'cmake -S lang/c -B build $CMAKE_ARGS',
       'cmake --build build',
       'cmake --install build',
     ],

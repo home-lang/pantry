@@ -34,6 +34,12 @@ export const recipe: Recipe = {
         '-DCMAKE_VERBOSE_MAKEFILE=ON',
         '-Wno-dev',
         '-DBUILD_TESTING=OFF',
+        // yajl's reformatter/verify CMakeLists read the deprecated target
+        // LOCATION property (GET_TARGET_PROPERTY ... LOCATION), removed in
+        // modern CMake; CMP0026=OLD re-permits it, and the min-version shim
+        // lets its pre-3.5 cmake_minimum_required parse under CMake 4.x.
+        '-DCMAKE_POLICY_VERSION_MINIMUM=3.5',
+        '-DCMAKE_POLICY_DEFAULT_CMP0026=OLD',
       ],
     },
   },
