@@ -74,6 +74,7 @@ export const sqlitePackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.53.2',
     '3.53.1',
     '3.53.0',
     '3.52.0',
