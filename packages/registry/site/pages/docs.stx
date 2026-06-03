@@ -149,7 +149,7 @@ redis.io = "latest"</code></pre>
       <div>
         <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Resources</h2>
         <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));">
-          <a href="https://github.com/home-lang/pantry" target="_blank" rel="noopener" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+          <a href="https://github.com/pantry-pm/pantry" target="_blank" rel="noopener" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
             <h3 class="text-sm font-medium mb-1">GitHub</h3>
             <p style="font-size: 0.8125rem; color: var(--fg-muted);">Source code and issues</p>
           </a>
