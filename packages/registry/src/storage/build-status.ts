@@ -62,7 +62,12 @@ const MESSAGE_MAX = 2000 // cap a single message/error so the snapshot can't blo
 const MAX_LOG_DOMAINS = 400 // bound total memory: only keep logs for the most-recent N domains
 
 const RECENT_LIMIT = 500
-const BUILDING_TTL_MS = 60 * 60 * 1000 // a "building" event older than 1h is considered stale
+// A "building" event with no log activity for this long is treated as a dead
+// worker (killed mid-build, OOM, crash) and pruned. Active builds stream log
+// lines via recordLogs(), which refreshes the entry's ts — so a genuinely long
+// compile stays "building" as long as it keeps producing output. Without that
+// heartbeat a stale 1h window let dozens of zombie entries inflate "Building now".
+const BUILDING_TTL_MS = 20 * 60 * 1000
 const COVERAGE_TTL_MS = 15 * 60 * 1000
 
 interface PersistedState {
@@ -152,6 +157,13 @@ export class BuildStatusStore {
       buf.push({ ts, platform: platform || '', state: 'building', text: String(line).slice(0, MESSAGE_MAX) })
     if (buf.length > LOG_LIMIT)
       buf.splice(0, buf.length - LOG_LIMIT)
+    // Heartbeat: streaming logs prove the build is alive, so refresh the ts of
+    // its "building" entries. This keeps long-running compiles out of the stale
+    // sweep (BUILDING_TTL_MS) while still letting dead workers expire.
+    for (const [, e] of this.building) {
+      if (e.domain === domain && (!platform || !e.platform || e.platform === platform))
+        e.ts = ts
+    }
     this.evictOldLogDomains()
     this.emit()
   }

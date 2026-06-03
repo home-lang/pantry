@@ -270,15 +270,18 @@
       function setStat(id, val) { var el = document.getElementById(id); if (el && el.textContent !== String(val)) { el.textContent = val; bump(el) } }
       function renderSummary() {
         var bm = buildingMap()
-        var full = 0, failed = 0, unbuilt = 0
+        var full = 0, failed = 0, unbuilt = 0, building = 0
         for (var i = 0; i < packages.length; i++) {
           var st = statusOf(packages[i], bm[packages[i].domain])
-          if (st === 'ok') full++; else if (st === 'failed') failed++; else if (st === 'unbuilt') unbuilt++
+          if (st === 'ok') full++; else if (st === 'failed') failed++; else if (st === 'unbuilt') unbuilt++; else if (st === 'building') building++
         }
         setStat('stat-total', packages.length)
         setStat('stat-versions', totals.publishedVersions || 0)
         setStat('stat-full', full)
-        setStat('stat-building', status.building.length)
+        // Count building *rows* (unique packages shown as building), not raw
+        // events — multiple versions/platforms of one domain collapse to a
+        // single row, so status.building.length over-counted the visible list.
+        setStat('stat-building', building)
         setStat('stat-failed', failed)
         setStat('stat-unbuilt', unbuilt)
         setStat('stat-queued', status.queue.length)
