@@ -1412,13 +1412,17 @@ async function validateToken(authHeader: string | null): Promise<{ valid: boolea
 
   // Try user API token first if AuthService is available
   if (_authService && isUserApiToken(token)) {
-    const result = await _authService.validatePublishToken(token, registryToken!)
+    const result = await _authService.validatePublishToken(token, registryToken ?? '')
     return result
   }
 
-  // Fall back to legacy admin token (constant-time comparison to prevent timing attacks)
+  // Fall back to legacy admin token (constant-time comparison to prevent timing attacks).
+  // Distinguish "server isn't configured to accept publishes" from "token mismatch" —
+  // the former is an operator misconfiguration (e.g. PANTRY_REGISTRY_TOKEN not set in the
+  // service env after a server/host migration) and was previously indistinguishable from
+  // a bad client token, which made it very hard to diagnose.
   if (!registryToken) {
-    return { valid: false, error: 'Invalid token' }
+    return { valid: false, error: 'Registry has no publish token configured — set PANTRY_REGISTRY_TOKEN in the registry service environment' }
   }
   const crypto = require('node:crypto')
   const maxLen = Math.max(token.length, registryToken.length)
