@@ -16,7 +16,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'cargo install --path . --root {{prefix}}',
+      'cargo install --path crates/typos-cli --root {{prefix}}',
     ],
   },
   test: {
