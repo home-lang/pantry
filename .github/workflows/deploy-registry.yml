@@ -40,11 +40,11 @@ jobs:
       - name: Deploy to registry server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.REGISTRY_SSH_KEY }}
-          # The registry now runs on the Hetzner box that serves
-          # registry.pantry.dev. Prefer the REGISTRY_HOST secret if set, else
-          # target the DNS name directly so a stale secret can't point us at the
-          # decommissioned EC2 host.
-          REGISTRY_HOST: ${{ secrets.REGISTRY_HOST || 'registry.pantry.dev' }}
+          # Target the live box by its DNS name. The old REGISTRY_HOST secret
+          # still points at the decommissioned EC2 IP, so we deliberately do NOT
+          # use it — registry.pantry.dev always resolves to the current Hetzner
+          # host. (Public DNS, not a secret.)
+          REGISTRY_HOST: registry.pantry.dev
         run: |
           # Create the key file with a 0600 umask before writing so it is
           # never readable by other users for any window of time, and use
