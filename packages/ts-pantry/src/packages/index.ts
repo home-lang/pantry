@@ -1601,6 +1601,7 @@ import { tunnelblicknetPackage } from './tunnelblicknet'
 import { tursotechPackage } from './tursotech'
 import { tuxpaintorgPackage } from './tuxpaintorg'
 import { typescriptlangorgPackage } from './typescriptlangorg'
+import { typesenseorgPackage } from './typesenseorg'
 import { typstappPackage } from './typstapp'
 import { unboundnetPackage } from './unboundnet'
 import { unicodeorgPackage } from './unicodeorg'
@@ -4395,6 +4396,7 @@ export interface Pantry {
   tursotech: typeof tursotechPackage
   tuxpaintorg: typeof tuxpaintorgPackage
   typescriptlangorg: typeof typescriptlangorgPackage
+  typesenseorg: typeof typesenseorgPackage
   typstapp: typeof typstappPackage
   unboundnet: typeof unboundnetPackage
   unicodeorg: typeof unicodeorgPackage
@@ -6127,6 +6129,7 @@ export interface Pantry {
   turso: typeof tursotechPackage
   tuxpaint: typeof tuxpaintorgPackage
   twine: typeof twinePackage
+  typesense: typeof typesenseorgPackage
   typing_extensions: typeof pythonorgtyping_extensionsPackage
   typos: typeof cratesiotyposPackage
   typst: typeof typstappPackage
@@ -8986,6 +8989,7 @@ export const pantry: Pantry = {
   tursotech: tursotechPackage,
   tuxpaintorg: tuxpaintorgPackage,
   typescriptlangorg: typescriptlangorgPackage,
+  typesenseorg: typesenseorgPackage,
   typstapp: typstappPackage,
   unboundnet: unboundnetPackage,
   unicodeorg: unicodeorgPackage,
@@ -10718,6 +10722,7 @@ export const pantry: Pantry = {
   turso: tursotechPackage,
   tuxpaint: tuxpaintorgPackage,
   twine: twinePackage,
+  typesense: typesenseorgPackage,
   typing_extensions: pythonorgtyping_extensionsPackage,
   typos: cratesiotyposPackage,
   typst: typstappPackage,

@@ -1,7 +1,7 @@
 //! Package definitions generated from ts-pantry
 //! DO NOT EDIT MANUALLY - This file is auto-generated
-//! Generated on: 2026-06-02T23:02:10.822Z
-//! Total packages: 1722
+//! Generated on: 2026-06-03T01:30:58.366Z
+//! Total packages: 1723
 
 const std = @import("std");
 
@@ -18,7 +18,7 @@ pub const PackageInfo = struct {
     versions: []const []const u8,
 };
 
-/// All known packages (1722 total)
+/// All known packages (1723 total)
 pub const packages = [_]PackageInfo{ .{
     .name = "1Password",
     .domain = "1password.com",
@@ -16019,6 +16019,16 @@ pub const packages = [_]PackageInfo{ .{
     .build_dependencies = &[_][]const u8{"npmjs.com"},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "6.0.3", "6.0.2", "5.9.3", "5.9.2", "5.8.3", "5.8.2", "5.7.3", "5.7.2", "5.6.3", "5.6.2", "5.5.4", "5.5.3", "5.5.2", "5.4.5", "5.4.4", "5.4.3", "5.4.2", "5.3.3", "5.3.2", "5.2.2", "5.1.6", "5.1.5", "5.1.3", "5.0.4", "5.0.3", "5.0.2", "4.9.5", "4.9.4", "4.9.3" },
+}, .{
+    .name = "typesense",
+    .domain = "typesense.org",
+    .description = "Fast, typo-tolerant search engine for building delightful search experiences",
+    .homepage_url = "https://typesense.org",
+    .programs = &[_][]const u8{"typesense-server"},
+    .dependencies = &[_][]const u8{},
+    .build_dependencies = &[_][]const u8{},
+    .aliases = &[_][]const u8{},
+    .versions = &[_][]const u8{ "30.2", "30.1", "30.0", "29.1", "29.0", "28.0", "27.1", "27.0", "26.0" },
 }, .{
     .name = "typst",
     .domain = "typst.app",
