@@ -10,6 +10,8 @@ on:
       - 'public/install.sh'
       - 'docs/**'
       - '.config/bunpress.ts'
+      # Re-deploy when the deploy workflow itself changes.
+      - '.github/workflows/deploy-registry.yml'
       # Root deps: stx + crosswind transitively render the site, so any
       # dependency bump can change what gets served. Re-deploy on lockfile
       # changes too — see CLAUDE.md "Site CSS pinning" for the v0.2.0 incident.
@@ -26,7 +28,7 @@ permissions:
 
 jobs:
   deploy:
-    name: ec2
+    name: hetzner
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -38,7 +40,11 @@ jobs:
       - name: Deploy to registry server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.REGISTRY_SSH_KEY }}
-          REGISTRY_HOST: ${{ secrets.REGISTRY_HOST }}
+          # The registry now runs on the Hetzner box that serves
+          # registry.pantry.dev. Prefer the REGISTRY_HOST secret if set, else
+          # target the DNS name directly so a stale secret can't point us at the
+          # decommissioned EC2 host.
+          REGISTRY_HOST: ${{ secrets.REGISTRY_HOST || 'registry.pantry.dev' }}
         run: |
           # Create the key file with a 0600 umask before writing so it is
           # never readable by other users for any window of time, and use
@@ -47,27 +53,27 @@ jobs:
           (umask 077 && cat > ~/.ssh/id_rsa <<< "$SSH_PRIVATE_KEY")
           ssh-keyscan -H "$REGISTRY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
 
-          ssh -o StrictHostKeyChecking=no "ec2-user@${REGISTRY_HOST}" << 'EOF'
+          # Hetzner Cloud images log in as root (the old EC2 host used ec2-user).
+          # Running as root means no sudo is needed (and minimal images lack it).
+          ssh -o StrictHostKeyChecking=no "root@${REGISTRY_HOST}" << 'EOF'
             set -e
             cd /opt/pantry-registry/repo
 
-            # Fix git ownership (repo owned by root, SSH user is ec2-user)
             git config --global --add safe.directory /opt/pantry-registry/repo
+            git checkout -- bun.lock 2>/dev/null || true
+            git fetch origin main
+            git reset --hard origin/main
+            /root/.bun/bin/bun install
 
-            sudo git checkout -- bun.lock 2>/dev/null || true
-            sudo git fetch origin main
-            sudo git reset --hard origin/main
-            sudo /root/.bun/bin/bun install
+            # Build bunpress docs (served at /docs). Project-local bunpress finds
+            # crosswind from the root node_modules.
+            /root/.bun/bin/bun ./node_modules/@stacksjs/bunpress/dist/bin/cli.js build docs || echo "::warning::Docs build failed — check bunpress/crosswind"
 
-            # Build bunpress docs (served at /docs)
-            # Use npx-style resolution to use project-local bunpress (which can find crosswind from root node_modules)
-            sudo /root/.bun/bin/bun ./node_modules/@stacksjs/bunpress/dist/bin/cli.js build docs || echo "::warning::Docs build failed — check bunpress/crosswind"
+            # Stop the old standalone site service if it lingers (merged into registry).
+            systemctl stop pantry-site 2>/dev/null || true
+            systemctl disable pantry-site 2>/dev/null || true
 
-            # Stop old site service if it exists (merged into registry)
-            sudo systemctl stop pantry-site 2>/dev/null || true
-            sudo systemctl disable pantry-site 2>/dev/null || true
-
-            sudo systemctl restart pantry-registry
+            systemctl restart pantry-registry
             sleep 2
             curl -sf http://localhost:3000/health || echo "Health check failed"
           EOF
