@@ -6,35 +6,18 @@
       <a href="/" class="hvr-fg transition-colors" style="font-size: 0.8125rem; color: var(--fg-subtle);">&larr; back</a>
     </div>
     <p class="leading-relaxed mb-8" style="font-size: 0.9375rem; color: var(--fg-muted);">
-      Every package and its per-platform build coverage. Rows pulse while a build is in flight; use rebuild to queue one.
+      Every package and its per-platform build coverage. Rows pulse while a build is in flight — click a row to watch its build log stream live.
     </p>
 
-    <!-- Summary cards (filled client-side) -->
-    <div class="grid gap-3 mb-6" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));" id="summary">
-      <div class="rounded-lg p-4" style="background: var(--bg-subtle); border: 1px solid var(--border);">
-        <p class="uppercase tracking-widest mb-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">Packages</p>
-        <p class="text-2xl font-semibold font-mono" id="stat-total">&mdash;</p>
-      </div>
-      <div class="rounded-lg p-4" style="background: var(--bg-subtle); border: 1px solid var(--border);">
-        <p class="uppercase tracking-widest mb-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">All 4 platforms</p>
-        <p class="text-2xl font-semibold font-mono" id="stat-full">&mdash;</p>
-      </div>
-      <div class="rounded-lg p-4" style="background: var(--bg-subtle); border: 1px solid var(--border);">
-        <p class="uppercase tracking-widest mb-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">Building now</p>
-        <p class="text-2xl font-semibold font-mono" id="stat-building" style="color: var(--yellow);">&mdash;</p>
-      </div>
-      <div class="rounded-lg p-4" style="background: var(--bg-subtle); border: 1px solid var(--border);">
-        <p class="uppercase tracking-widest mb-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">Failed</p>
-        <p class="text-2xl font-semibold font-mono" id="stat-failed" style="color: var(--red, #f87171);">&mdash;</p>
-      </div>
-      <div class="rounded-lg p-4" style="background: var(--bg-subtle); border: 1px solid var(--border);">
-        <p class="uppercase tracking-widest mb-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">Unbuilt</p>
-        <p class="text-2xl font-semibold font-mono" id="stat-unbuilt" style="color: var(--fg-subtle);">&mdash;</p>
-      </div>
-      <div class="rounded-lg p-4" style="background: var(--bg-subtle); border: 1px solid var(--border);">
-        <p class="uppercase tracking-widest mb-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">Queued</p>
-        <p class="text-2xl font-semibold font-mono" id="stat-queued">&mdash;</p>
-      </div>
+    <!-- Summary cards (filled client-side, updated live) -->
+    <div class="grid gap-3 mb-6" style="grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));" id="summary">
+      <div class="stat-card"><p class="stat-label">Packages</p><p class="stat-num" id="stat-total">&mdash;</p></div>
+      <div class="stat-card"><p class="stat-label">Versions published</p><p class="stat-num" id="stat-versions">&mdash;</p></div>
+      <div class="stat-card"><p class="stat-label">All 4 platforms</p><p class="stat-num" id="stat-full" style="color: var(--green);">&mdash;</p></div>
+      <div class="stat-card"><p class="stat-label">Building now</p><p class="stat-num" id="stat-building" style="color: var(--yellow);">&mdash;</p></div>
+      <div class="stat-card"><p class="stat-label">Failed</p><p class="stat-num" id="stat-failed" style="color: var(--red, #f87171);">&mdash;</p></div>
+      <div class="stat-card"><p class="stat-label">Unbuilt</p><p class="stat-num" id="stat-unbuilt" style="color: var(--fg-subtle);">&mdash;</p></div>
+      <div class="stat-card"><p class="stat-label">Queued</p><p class="stat-num" id="stat-queued">&mdash;</p></div>
     </div>
 
     <!-- Controls -->
@@ -44,6 +27,7 @@
       <label class="flex items-center gap-2" style="font-size: 0.8125rem; color: var(--fg-muted);">
         <input id="group-status" type="checkbox" checked /> group by status
       </label>
+      <span id="live-dot" title="live" style="font-size:0.7rem;color:var(--fg-subtle)">○ live</span>
       <span id="rowcount" class="font-mono" style="font-size: 0.8125rem; color: var(--fg-subtle);"></span>
     </div>
     <!-- Status filter chips (building first so in-flight builds are easy to find) -->
@@ -65,10 +49,10 @@
             <th style="text-align: left; padding: 0.6rem 0.75rem; font-weight: 500;">package</th>
             <th style="text-align: left; padding: 0.6rem 0.5rem; font-weight: 500;">status</th>
             <th style="text-align: left; padding: 0.6rem 0.5rem; font-weight: 500;">version</th>
-            <th style="text-align: center; padding: 0.6rem 0.4rem; font-weight: 500;" title="darwin-arm64">mac&nbsp;arm</th>
-            <th style="text-align: center; padding: 0.6rem 0.4rem; font-weight: 500;" title="darwin-x86-64">mac&nbsp;x64</th>
-            <th style="text-align: center; padding: 0.6rem 0.4rem; font-weight: 500;" title="linux-x86-64">linux&nbsp;x64</th>
-            <th style="text-align: center; padding: 0.6rem 0.4rem; font-weight: 500;" title="linux-arm64">linux&nbsp;arm</th>
+            <th style="text-align: center; padding: 0.6rem 0.4rem; font-weight: 500;" title="darwin-arm64">🍎&nbsp;arm</th>
+            <th style="text-align: center; padding: 0.6rem 0.4rem; font-weight: 500;" title="darwin-x86-64">🍎&nbsp;x64</th>
+            <th style="text-align: center; padding: 0.6rem 0.4rem; font-weight: 500;" title="linux-x86-64">🐧&nbsp;x64</th>
+            <th style="text-align: center; padding: 0.6rem 0.4rem; font-weight: 500;" title="linux-arm64">🐧&nbsp;arm</th>
             <th style="text-align: left; padding: 0.6rem 0.5rem; font-weight: 500;">last built</th>
             <th style="text-align: right; padding: 0.6rem 0.75rem; font-weight: 500;"></th>
           </tr>
@@ -84,19 +68,22 @@
   <style>
     @keyframes pantry-pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.35 } }
     .pkg-building { animation: pantry-pulse 1.1s ease-in-out infinite; }
-    #rows tr { border-top: 1px solid var(--border); }
-    #rows tr:hover { background: var(--bg-subtle); }
+    .stat-card { border-radius: 0.5rem; padding: 0.85rem 1rem; background: var(--bg-subtle); border: 1px solid var(--border); }
+    .stat-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.625rem; color: var(--fg-subtle); margin-bottom: 0.25rem; }
+    .stat-num { font-size: 1.5rem; font-weight: 600; font-family: ui-monospace, monospace; transition: color 0.3s; }
+    .stat-num.bump { animation: statbump 0.4s ease; }
+    @keyframes statbump { 0%{transform:scale(1)} 40%{transform:scale(1.18)} 100%{transform:scale(1)} }
+    #rows tr.pkg-row { border-top: 1px solid var(--border); cursor: pointer; }
+    #rows tr.pkg-row:hover { background: var(--bg-subtle); }
+    #rows tr.pkg-row.open { background: var(--bg-subtle); }
     #rows tr.group-head { background: var(--bg-subtle); }
-    #rows tr.group-head:hover { background: var(--bg-subtle); }
-    #rows tr.log-row:hover { background: transparent; }
+    #rows tr.log-row, #rows tr.log-row:hover { background: transparent; cursor: default; }
     .cell-yes { color: var(--green); font-weight: 600; }
     .cell-no { color: var(--fg-subtle); opacity: 0.5; }
     .cell-build { color: var(--yellow); font-weight: 700; }
     .rebuild-btn { font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 0.4rem; border: 1px solid var(--border); background: var(--bg-subtle); color: var(--fg-muted); cursor: pointer; }
     .rebuild-btn:hover { border-color: var(--accent); color: var(--accent); }
     .rebuild-btn:disabled { opacity: 0.5; cursor: default; }
-    .logs-btn { font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--border); background: transparent; color: var(--fg-subtle); cursor: pointer; margin-right: 0.35rem; }
-    .logs-btn:hover { border-color: var(--accent); color: var(--accent); }
     .chip { font-size: 0.78rem; padding: 0.3rem 0.7rem; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-subtle); color: var(--fg-muted); cursor: pointer; }
     .chip:hover { border-color: var(--accent); color: var(--accent); }
     .chip-on { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -107,24 +94,34 @@
     .badge-incomplete { color: var(--fg-muted); border: 1px solid var(--border); }
     .badge-unbuilt { color: var(--fg-subtle); border: 1px solid var(--border); opacity: 0.8; }
     .badge-queued { color: var(--accent); border: 1px solid var(--accent); }
-    .row-msg { font-size: 0.72rem; color: var(--fg-subtle); margin-top: 0.15rem; max-width: 38ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .row-msg.err { color: var(--red, #f87171); }
-    .log-panel { margin: 0; padding: 0.6rem 0.9rem; background: #0b0b0d; color: #d4d4d8; font-family: ui-monospace, monospace; font-size: 0.72rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; max-height: 320px; overflow: auto; border-radius: 0.4rem; }
+    .row-msg { font-size: 0.72rem; color: var(--fg-subtle); margin-top: 0.2rem; display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; }
+    .row-msg .msg-text { max-width: 30ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row-msg.err .msg-text { color: var(--red, #f87171); }
+    .host-chip { font-size: 0.66rem; padding: 0.05rem 0.4rem; border-radius: 0.3rem; border: 1px solid var(--border); color: var(--fg-muted); text-decoration: none; white-space: nowrap; }
+    a.host-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .host-github { border-color: #8b5cf6; color: #a78bfa; }
+    .host-hetzner { border-color: #d50c2d; color: #f87171; }
+    .host-local { border-color: var(--border); }
+    .log-wrap { padding: 0 0.75rem 0.7rem; }
+    .log-head { display:flex; align-items:center; justify-content:space-between; font-size:0.7rem; color:var(--fg-subtle); padding:0.35rem 0.2rem; }
+    .log-panel { margin: 0; padding: 0.6rem 0.9rem; background: #0b0b0d; color: #d4d4d8; font-family: ui-monospace, monospace; font-size: 0.72rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; max-height: 340px; overflow: auto; border-radius: 0.4rem; border: 1px solid var(--border); }
     .log-panel .ll-failed { color: #f87171; }
     .log-panel .ll-built { color: #4ade80; }
-    .log-panel .ll-building { color: #facc15; }
+    .log-panel .ll-building { color: #d4d4d8; }
+    .log-live { color: var(--yellow); }
   </style>
 
   <script client>
     (function () {
       var PLATS = ['darwin-arm64', 'darwin-x86-64', 'linux-x86-64', 'linux-arm64']
       var packages = []
+      var totals = { publishedVersions: 0, publishedArtifacts: 0 }
       var status = { building: [], recent: [], queue: [] }
       var queued = {}
       var statusFilter = 'all'
-      var openLogs = {} // domain -> true while its log panel is expanded
+      var openLog = null // single open domain (clicking a row toggles it)
+      var logCache = {}  // domain -> last-rendered log signature (avoid flicker)
 
-      // Group order — building first so in-flight builds are immediately visible.
       var GROUP_ORDER = { building: 0, failed: 1, queued: 2, incomplete: 3, unbuilt: 4, ok: 5 }
       var GROUP_LABEL = {
         building: '● building', failed: '✗ failed', queued: 'queued for rebuild',
@@ -140,68 +137,80 @@
         if (d < 86400) return Math.floor(d / 3600) + 'h ago'
         return Math.floor(d / 86400) + 'd ago'
       }
-
-      function buildingMap() {
-        var m = {}
-        for (var i = 0; i < status.building.length; i++) {
-          var e = status.building[i]
-          if (!m[e.domain]) m[e.domain] = {}
-          m[e.domain][e.platform] = true
-        }
-        return m
-      }
-
       function esc(s) {
         return String(s).replace(/[&<>"]/g, function (c) {
           return c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : '&quot;'
         })
       }
-
       function cssId(domain) { return domain.replace(/[^a-z0-9]/gi, '_') }
+
+      // domain -> {platforms:{}, host, hostKind, hostUrl, message} for live builds
+      function buildingMap() {
+        var m = {}
+        for (var i = 0; i < status.building.length; i++) {
+          var e = status.building[i]
+          if (!m[e.domain]) m[e.domain] = { platforms: {} }
+          m[e.domain].platforms[e.platform] = true
+          m[e.domain].host = e.host; m[e.domain].hostKind = e.hostKind
+          m[e.domain].hostUrl = e.hostUrl; m[e.domain].message = e.message
+        }
+        return m
+      }
 
       function cell(present, building) {
         if (building) return '<td style="text-align:center" class="cell-build pkg-building">●</td>'
         if (present) return '<td style="text-align:center" class="cell-yes">✓</td>'
         return '<td style="text-align:center" class="cell-no">–</td>'
       }
-
-      // Per-package build status used for grouping/filtering/the badge.
       function statusOf(p, b) {
-        if (Object.keys(b).length > 0) return 'building'
+        if (b && Object.keys(b.platforms).length > 0) return 'building'
         if (queued[p.domain]) return 'queued'
         if (p.lastState === 'failed') return 'failed'
         if (!p.published) return 'unbuilt'
-        var full = PLATS.every(function (pl) { return p.platforms[pl] })
-        return full ? 'ok' : 'incomplete'
+        return PLATS.every(function (pl) { return p.platforms[pl] }) ? 'ok' : 'incomplete'
       }
-
       function badge(st) {
         return '<span class="badge badge-' + st + (st === 'building' ? ' pkg-building' : '') + '">' + BADGE_LABEL[st] + '</span>'
+      }
+      function hostChip(b) {
+        if (!b || !b.host) return ''
+        var kind = b.hostKind || 'local'
+        var label = esc(b.host)
+        if (b.hostUrl)
+          return '<a class="host-chip host-' + kind + '" href="' + esc(b.hostUrl) + '" target="_blank" rel="noopener" title="' + esc(b.hostUrl) + '" onclick="event.stopPropagation()">' + label + ' ↗</a>'
+        return '<span class="host-chip host-' + kind + '" title="' + esc(kind) + ' build host">' + label + '</span>'
       }
 
       function rowHtml(p, b, st) {
         var cells = ''
-        for (var j = 0; j < PLATS.length; j++) cells += cell(p.platforms[PLATS[j]], b[PLATS[j]])
+        for (var j = 0; j < PLATS.length; j++) cells += cell(p.platforms[PLATS[j]], b && b.platforms[PLATS[j]])
         var btnLabel = queued[p.domain] ? 'queued' : 'rebuild'
         var btnDis = queued[p.domain] ? ' disabled' : ''
+        // Activity line: progress/error message + the clickable host chip.
+        var liveMsg = (b && b.message) || ''
+        var msgText = liveMsg || (st === 'failed' ? (p.lastMessage || '') : '')
         var msg = ''
-        if (p.lastMessage) {
-          msg = '<div class="row-msg' + (st === 'failed' ? ' err' : '') + '" title="' + esc(p.lastMessage) + '">' + esc(p.lastMessage) + '</div>'
+        if (msgText || (b && b.host)) {
+          msg = '<div class="row-msg' + (st === 'failed' ? ' err' : '') + '">'
+            + (msgText ? '<span class="msg-text" title="' + esc(msgText) + '">' + esc(msgText) + '</span>' : '')
+            + hostChip(b) + '</div>'
         }
-        // Offer a log panel whenever there is build activity/history to show.
-        var hasLogs = st === 'building' || st === 'failed' || (p.lastState && p.lastState !== 'built')
-        var logsBtn = hasLogs ? '<button class="logs-btn" data-logs="' + esc(p.domain) + '">' + (openLogs[p.domain] ? 'hide' : 'logs') + '</button>' : ''
+        var open = openLog === p.domain
         var tr =
-          '<tr' + (st === 'building' ? ' style="background:var(--bg-subtle)"' : '') + '>'
-          + '<td style="padding:0.5rem 0.75rem"><a class="font-mono hvr-accent" href="/package/' + encodeURIComponent(p.domain) + '" style="color:var(--fg)">' + esc(p.domain) + '</a>' + msg + '</td>'
-          + '<td style="padding:0.5rem">' + badge(st) + '</td>'
-          + '<td class="font-mono" style="padding:0.5rem;color:var(--fg-subtle)">' + esc(p.latestVersion || '—') + '</td>'
+          '<tr class="pkg-row' + (open ? ' open' : '') + '" data-domain="' + esc(p.domain) + '">'
+          + '<td style="padding:0.55rem 0.75rem"><a class="font-mono hvr-accent" href="/package/' + encodeURIComponent(p.domain) + '" style="color:var(--fg)" onclick="event.stopPropagation()">' + esc(p.domain) + '</a>' + msg + '</td>'
+          + '<td style="padding:0.55rem">' + badge(st) + '</td>'
+          + '<td class="font-mono" style="padding:0.55rem;color:var(--fg-subtle)">' + esc(p.latestVersion || '—') + '</td>'
           + cells
-          + '<td style="padding:0.5rem;color:var(--fg-subtle)">' + relTime(p.lastBuilt) + '</td>'
-          + '<td style="padding:0.5rem 0.75rem;text-align:right;white-space:nowrap">' + logsBtn + '<button class="rebuild-btn" data-domain="' + esc(p.domain) + '"' + btnDis + '>' + btnLabel + '</button></td>'
+          + '<td style="padding:0.55rem;color:var(--fg-subtle)">' + relTime(p.lastBuilt) + '</td>'
+          + '<td style="padding:0.55rem 0.75rem;text-align:right;white-space:nowrap"><button class="rebuild-btn" data-domain="' + esc(p.domain) + '" onclick="event.stopPropagation()"' + btnDis + '>' + btnLabel + '</button></td>'
           + '</tr>'
-        if (openLogs[p.domain]) {
-          tr += '<tr class="log-row"><td colspan="9" style="padding:0 0.75rem 0.6rem"><pre class="log-panel" id="log-' + cssId(p.domain) + '">loading logs…</pre></td></tr>'
+        if (open) {
+          tr += '<tr class="log-row"><td colspan="9"><div class="log-wrap">'
+            + '<div class="log-head"><span>build log · <span class="font-mono">' + esc(p.domain) + '</span></span>'
+            + '<span class="' + (st === 'building' ? 'log-live' : '') + '">' + (st === 'building' ? '● streaming live' : 'last build') + '</span></div>'
+            + '<pre class="log-panel" id="log-' + cssId(p.domain) + '">loading logs…</pre>'
+            + '</div></td></tr>'
         }
         return tr
       }
@@ -210,19 +219,16 @@
         var bm = buildingMap()
         var q = (document.getElementById('filter').value || '').toLowerCase()
         var groupBy = document.getElementById('group-status').checked
-        // Annotate + filter.
         var list = []
         for (var i = 0; i < packages.length; i++) {
           var p = packages[i]
           if (q && p.domain.toLowerCase().indexOf(q) === -1) continue
-          var b = bm[p.domain] || {}
+          var b = bm[p.domain]
           var st = statusOf(p, b)
           if (statusFilter !== 'all' && st !== statusFilter) continue
           list.push({ p: p, b: b, st: st })
         }
-        // Sort by group priority (building first), then domain.
         list.sort(function (a, c) { return (GROUP_ORDER[a.st] - GROUP_ORDER[c.st]) || a.p.domain.localeCompare(c.p.domain) })
-        // Group counts for headers.
         var counts = {}
         for (var k = 0; k < list.length; k++) counts[list[k].st] = (counts[list[k].st] || 0) + 1
         var rows = []
@@ -239,73 +245,84 @@
           ? rows.join('')
           : '<tr><td colspan="9" style="padding:2rem;text-align:center;color:var(--fg-subtle)">no matches</td></tr>'
         document.getElementById('rowcount').textContent = list.length + ' / ' + packages.length
-        wireButtons()
-        // (Re)load any open log panels.
-        for (var d in openLogs) { if (openLogs[d]) loadLogs(d) }
+        wireRows()
+        logCache = {} // table rebuilt — force a fresh paint of the open panel
+        if (openLog) loadLogs(openLog)
       }
 
+      // Throttle full table re-renders so a flood of SSE events (logs from many
+      // concurrent builds) can't thrash the 1700-row table.
+      var renderTimer = null, lastRender = 0
+      function scheduleRender() {
+        if (renderTimer) return
+        var wait = Math.max(0, 1200 - (Date.now() - lastRender))
+        renderTimer = setTimeout(function () { renderTimer = null; lastRender = Date.now(); render() }, wait)
+      }
+
+      function bump(el) { if (!el) return; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump') }
+      function setStat(id, val) {
+        var el = document.getElementById(id)
+        if (!el) return
+        if (el.textContent !== String(val)) { el.textContent = val; bump(el) }
+      }
+      // Cheap: just the 7 numbers. Runs on every status change (no table rebuild).
       function renderSummary() {
         var bm = buildingMap()
         var full = 0, failed = 0, unbuilt = 0
         for (var i = 0; i < packages.length; i++) {
-          var st = statusOf(packages[i], bm[packages[i].domain] || {})
-          if (st === 'ok') full++
-          else if (st === 'failed') failed++
-          else if (st === 'unbuilt') unbuilt++
+          var st = statusOf(packages[i], bm[packages[i].domain])
+          if (st === 'ok') full++; else if (st === 'failed') failed++; else if (st === 'unbuilt') unbuilt++
         }
-        document.getElementById('stat-total').textContent = packages.length
-        document.getElementById('stat-full').textContent = full
-        document.getElementById('stat-building').textContent = status.building.length
-        document.getElementById('stat-failed').textContent = failed
-        document.getElementById('stat-unbuilt').textContent = unbuilt
-        document.getElementById('stat-queued').textContent = status.queue.length
+        setStat('stat-total', packages.length)
+        setStat('stat-versions', totals.publishedVersions || 0)
+        setStat('stat-full', full)
+        setStat('stat-building', status.building.length)
+        setStat('stat-failed', failed)
+        setStat('stat-unbuilt', unbuilt)
+        setStat('stat-queued', status.queue.length)
       }
 
-      // Fetch + render the recent build-log lines for one package.
+      // Fetch + paint the open log panel. Preserves scroll-at-bottom and skips
+      // re-paint when nothing changed, so streaming stays smooth (no flicker).
       function loadLogs(domain) {
         var pre = document.getElementById('log-' + cssId(domain))
         if (!pre) return
         fetch('/api/build-logs/' + encodeURIComponent(domain)).then(function (r) { return r.json() }).then(function (d) {
+          if (openLog !== domain) return
           var lines = (d && d.logs) || []
-          if (!lines.length) { pre.textContent = 'no build logs captured yet'; return }
+          var sig = lines.length + ':' + (lines.length ? lines[lines.length - 1].ts : 0)
+          if (logCache[domain] === sig) return // unchanged
+          logCache[domain] = sig
+          if (!lines.length) { pre.textContent = 'no build output captured yet — it will stream here once the build starts'; return }
+          var atBottom = (pre.scrollHeight - pre.scrollTop - pre.clientHeight) < 40
           var html = ''
           for (var i = 0; i < lines.length; i++) {
             var l = lines[i]
-            var t = new Date(l.ts).toLocaleTimeString()
-            html += '<span class="ll-' + esc(l.state) + '">' + esc(t) + ' [' + esc(l.platform) + '] ' + esc(l.text) + '</span>\n'
+            html += '<span class="ll-' + esc(l.state) + '">' + esc(l.text) + '</span>\n'
           }
           pre.innerHTML = html
-          pre.scrollTop = pre.scrollHeight
-        }).catch(function () { pre.textContent = 'failed to load logs' })
+          if (atBottom) pre.scrollTop = pre.scrollHeight
+        }).catch(function () {})
       }
 
-      function wireButtons() {
-        var btns = document.querySelectorAll('.rebuild-btn')
-        for (var i = 0; i < btns.length; i++) {
-          btns[i].onclick = function () {
+      function wireRows() {
+        var rows = document.querySelectorAll('#rows tr.pkg-row')
+        for (var i = 0; i < rows.length; i++) {
+          rows[i].onclick = function () {
             var domain = this.getAttribute('data-domain')
-            var btn = this
-            btn.disabled = true
-            btn.textContent = '…'
-            fetch('/api/rebuild', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ domain: domain }),
-            }).then(function (r) { return r.json() }).then(function () {
-              queued[domain] = true
-              btn.textContent = 'queued'
-            }).catch(function () {
-              btn.disabled = false
-              btn.textContent = 'retry'
-            })
+            openLog = (openLog === domain) ? null : domain
+            render()
           }
         }
-        var logBtns = document.querySelectorAll('.logs-btn')
-        for (var j = 0; j < logBtns.length; j++) {
-          logBtns[j].onclick = function () {
-            var domain = this.getAttribute('data-logs')
-            openLogs[domain] = !openLogs[domain]
-            render()
+        var btns = document.querySelectorAll('.rebuild-btn')
+        for (var j = 0; j < btns.length; j++) {
+          btns[j].onclick = function (ev) {
+            ev.stopPropagation()
+            var domain = this.getAttribute('data-domain'), btn = this
+            btn.disabled = true; btn.textContent = '…'
+            fetch('/api/rebuild', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain: domain }) })
+              .then(function (r) { return r.json() }).then(function () { queued[domain] = true; btn.textContent = 'queued' })
+              .catch(function () { btn.disabled = false; btn.textContent = 'retry' })
           }
         }
       }
@@ -313,51 +330,39 @@
       function loadPackages() {
         return fetch('/api/packages').then(function (r) { return r.json() }).then(function (d) {
           packages = d.packages || []
+          totals = d.totals || totals
           var el = document.getElementById('updated')
           if (el) el.textContent = 'coverage as of ' + new Date(d.generatedAt).toLocaleTimeString()
         })
       }
-
       function loadStatus() {
         return fetch('/api/build-status').then(function (r) { return r.json() }).then(function (d) {
           status = d || status
-          status.queue = status.queue || []
-          status.building = status.building || []
+          status.queue = status.queue || []; status.building = status.building || []
           for (var i = 0; i < status.queue.length; i++) queued[status.queue[i]] = true
         })
       }
-
       function refreshAll() {
-        Promise.all([loadPackages(), loadStatus()]).then(function () {
-          renderSummary()
-          render()
-        })
+        Promise.all([loadPackages(), loadStatus()]).then(function () { renderSummary(); render() })
       }
 
       var lastBuiltTs = 0
-      // Apply a status snapshot (from SSE or a poll) and re-render. When a build
-      // has just COMPLETED, refresh coverage too so the platform ✓ lands promptly
-      // instead of waiting for the next coverage poll.
       function applyStatus(d) {
         status = d || status
-        status.queue = status.queue || []
-        status.building = status.building || []
-        status.recent = status.recent || []
+        status.queue = status.queue || []; status.building = status.building || []; status.recent = status.recent || []
         for (var i = 0; i < status.queue.length; i++) queued[status.queue[i]] = true
+        renderSummary()           // cheap, immediate — cards stay reactive
+        if (openLog) loadLogs(openLog) // open panel updates live, no table rebuild
+        scheduleRender()          // throttled table refresh
         var r = status.recent[0]
         if (r && r.state === 'built' && r.ts > lastBuiltTs) {
           lastBuiltTs = r.ts
-          loadPackages().then(function () { renderSummary(); render() })
+          loadPackages().then(function () { renderSummary(); scheduleRender() })
         }
-        renderSummary()
-        render()
       }
 
       document.getElementById('filter').addEventListener('input', render)
       document.getElementById('group-status').addEventListener('change', render)
-
-      // Status filter chips — pick a single status (building is first so it's
-      // trivial to jump to in-flight builds).
       var chips = document.querySelectorAll('#status-chips .chip')
       for (var ci = 0; ci < chips.length; ci++) {
         chips[ci].onclick = function () {
@@ -369,34 +374,20 @@
       }
 
       refreshAll()
-      // Coverage (which platforms are built) changes slowly — poll every 60s.
-      setInterval(function () { loadPackages().then(render) }, 60000)
+      setInterval(function () { loadPackages().then(renderSummary) }, 60000) // coverage refresh
+      setInterval(function () { if (openLog) loadLogs(openLog) }, 1500)       // live log tail while open
 
-      // Live build status via Server-Sent Events: the server pushes a fresh
-      // snapshot on every build event, so rows pulse/settle in real time. Fall
-      // back to 5s polling if the stream is unavailable (old browser, proxy).
+      function setLive(on) { var d = document.getElementById('live-dot'); if (d) { d.textContent = on ? '● live' : '○ reconnecting'; d.style.color = on ? 'var(--green)' : 'var(--fg-subtle)' } }
       var statusPoll = null
-      function startStatusPolling() {
-        if (statusPoll) return
-        statusPoll = setInterval(function () { loadStatus().then(function () { renderSummary(); render() }) }, 5000)
-      }
-      function stopStatusPolling() {
-        if (statusPoll) { clearInterval(statusPoll); statusPoll = null }
-      }
+      function startStatusPolling() { if (statusPoll) return; setLive(false); statusPoll = setInterval(function () { loadStatus().then(function () { renderSummary(); scheduleRender() }) }, 5000) }
+      function stopStatusPolling() { if (statusPoll) { clearInterval(statusPoll); statusPoll = null } }
       if (window.EventSource) {
         try {
           var es = new EventSource('/api/build-events-stream')
-          es.onmessage = function (ev) {
-            stopStatusPolling() // stream is live — polling not needed
-            try { applyStatus(JSON.parse(ev.data)) } catch (e) {}
-          }
-          es.onerror = function () { startStatusPolling() } // dropped — poll until it recovers
-        } catch (e) {
-          startStatusPolling()
-        }
-      } else {
-        startStatusPolling()
-      }
+          es.onmessage = function (ev) { stopStatusPolling(); setLive(true); try { applyStatus(JSON.parse(ev.data)) } catch (e) {} }
+          es.onerror = function () { startStatusPolling() }
+        } catch (e) { startStatusPolling() }
+      } else { startStatusPolling() }
     })()
   </script>
 </section>

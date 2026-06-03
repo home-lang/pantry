@@ -30,6 +30,10 @@ export interface BuildEvent {
   message?: string
   /** Optional failure detail (for `failed`) — the error/output tail. */
   error?: string
+  /** Where the build ran: 'github' | 'hetzner' | 'local' (for the host chip). */
+  hostKind?: string
+  /** A link for the host chip (e.g. the GitHub Actions run URL). */
+  hostUrl?: string
 }
 
 export interface PackageRow {
@@ -216,6 +220,8 @@ export class BuildStatusStore {
       ts: Date.now(),
       message: raw.message ? String(raw.message).slice(0, MESSAGE_MAX) : undefined,
       error: raw.error ? String(raw.error).slice(0, MESSAGE_MAX) : undefined,
+      hostKind: raw.hostKind ? String(raw.hostKind).slice(0, 16) : undefined,
+      hostUrl: raw.hostUrl ? String(raw.hostUrl).slice(0, 300) : undefined,
     }
     const k = this.key(event)
     if (event.state === 'building') {
@@ -348,7 +354,7 @@ export class BuildStatusStore {
   }
 
   /** The full package table: coverage merged with live building state. */
-  async getPackages(): Promise<{ packages: PackageRow[], generatedAt: string }> {
+  async getPackages(): Promise<{ packages: PackageRow[], generatedAt: string, totals: { publishedVersions: number, publishedArtifacts: number } }> {
     // Stale-while-revalidate: only block on a completely cold cache (first call
     // before the boot-seed lands). When merely stale, refresh in the background
     // so the request never waits on the full binaries/ listing.
@@ -419,7 +425,20 @@ export class BuildStatusStore {
       })
     }
     packages.sort((a, b) => a.domain.localeCompare(b.domain))
-    return { packages, generatedAt: new Date().toISOString() }
+    // Totals across ALL published versions (not just the latest per package):
+    // publishedVersions = unique (domain, version) with ≥1 platform built;
+    // publishedArtifacts = total per-platform binaries published.
+    let publishedVersions = 0
+    let publishedArtifacts = 0
+    for (const versions of this.coverage.values()) {
+      for (const plats of versions.values()) {
+        if (plats.size > 0) {
+          publishedVersions++
+          publishedArtifacts += plats.size
+        }
+      }
+    }
+    return { packages, generatedAt: new Date().toISOString(), totals: { publishedVersions, publishedArtifacts } }
   }
 
   async flush(): Promise<void> {

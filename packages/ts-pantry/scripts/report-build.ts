@@ -13,6 +13,24 @@ let HOST = ''
 try { HOST = hostname() }
 catch { /* ignore */ }
 
+// Classify where this build is running so the dashboard can show a labelled,
+// clickable host chip (a GitHub Actions run, a Hetzner build box, or local).
+const { HOST_KIND, HOST_URL, HOST_LABEL } = (() => {
+  const env = process.env
+  if (env.GITHUB_ACTIONS === 'true' && env.GITHUB_RUN_ID) {
+    const base = env.GITHUB_SERVER_URL || 'https://github.com'
+    const repo = env.GITHUB_REPOSITORY || ''
+    return {
+      HOST_KIND: 'github',
+      HOST_URL: `${base}/${repo}/actions/runs/${env.GITHUB_RUN_ID}`,
+      HOST_LABEL: `GitHub Actions${env.RUNNER_OS ? ` (${env.RUNNER_OS})` : ''}`,
+    }
+  }
+  if (/^pantry-build/.test(HOST))
+    return { HOST_KIND: 'hetzner', HOST_URL: '', HOST_LABEL: `Hetzner · ${HOST}` }
+  return { HOST_KIND: 'local', HOST_URL: '', HOST_LABEL: HOST || 'local' }
+})()
+
 export type BuildState = 'building' | 'built' | 'failed'
 
 export interface BuildReportDetail {
@@ -31,7 +49,7 @@ export function reportBuild(
 ): Promise<void> {
   if (DISABLED)
     return Promise.resolve()
-  const body: Record<string, unknown> = { domain, version, platform, state, host: HOST }
+  const body: Record<string, unknown> = { domain, version, platform, state, host: HOST_LABEL || HOST, hostKind: HOST_KIND, hostUrl: HOST_URL || undefined }
   // Cap payloads so a runaway error/output tail can't bloat the request.
   if (detail?.message)
     body.message = String(detail.message).slice(0, 2000)
