@@ -122,7 +122,7 @@ jobs:
 
           ARGS="-b $S3_BUCKET -r $AWS_REGION --platform ${{ matrix.platform.name }}"
           PACKAGES="${{ github.event.inputs.packages }}"
-          PACKAGES=$(echo "$PACKAGES" | tr -cd 'a-zA-Z0-9._\-/,')
+          PACKAGES=$(echo "$PACKAGES" | tr -cd 'a-zA-Z0-9._\-/, ')
           if [ -n "$PACKAGES" ]; then
             PACKAGES="${PACKAGES// /,}"
             ARGS="$ARGS -p $PACKAGES"
@@ -321,7 +321,7 @@ jobs:
             # Pass specific packages if provided
             PACKAGES="${{ github.event.inputs.packages }}"
             # Validate package input (only allow safe characters)
-            PACKAGES=$(echo "$PACKAGES" | tr -cd 'a-zA-Z0-9._\-/,')
+            PACKAGES=$(echo "$PACKAGES" | tr -cd 'a-zA-Z0-9._\-/, ')
             if [ -n "$PACKAGES" ]; then
               PACKAGES="${PACKAGES// /,}"
               ARGS="$ARGS -p $PACKAGES"
