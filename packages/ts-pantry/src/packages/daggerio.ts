@@ -68,6 +68,7 @@ export const daggerioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.21.4',
     '0.21.3',
     '0.21.2',
     '0.21.1',

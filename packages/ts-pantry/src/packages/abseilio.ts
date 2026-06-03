@@ -70,6 +70,7 @@ export const abseilioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '20260526.0',
     '20260107.1',
     '20260107.1.0',
     '20260107.0',
