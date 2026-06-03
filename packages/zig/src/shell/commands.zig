@@ -392,31 +392,32 @@ pub const ShellCommands = struct {
             break :blk true;
         } else false;
 
-        // Build PATH (highest precedence first)
+        // Build PATH (highest precedence first), de-duplicating directories.
+        // Sources 1 and 3 are themselves ':'-joined lists, and a package can
+        // contribute both its `bin` dir and its root — without dedup the same
+        // directory lands on PATH multiple times (e.g. meilisearch appeared 4x).
+        // First occurrence wins, so precedence order is preserved.
         var path_components: std.ArrayList([]const u8) = .empty;
         defer path_components.deinit(self.allocator);
+        var seen_paths = std.StringHashMap(void).init(self.allocator);
+        defer seen_paths.deinit();
 
-        // 0. Environment binaries
-        try path_components.append(self.allocator, env_bin);
-
-        // 1. Project-local package binaries and package roots
-        if (project_package_paths.len > 0) {
-            try path_components.append(self.allocator, project_package_paths);
-        }
-
-        // 2. Project-local npm-style binaries
-        if (has_pantry) {
-            try path_components.append(self.allocator, pantry_bin);
-        }
-
-        // 3. Runtime binaries
-        if (runtime_paths.len > 0) {
-            try path_components.append(self.allocator, runtime_paths);
-        }
-
-        // 4. Global binaries (fallback)
-        if (has_global_bin) {
-            try path_components.append(self.allocator, global_bin_path.?);
+        const path_sources = [_][]const u8{
+            env_bin, // 0. Environment binaries
+            if (project_package_paths.len > 0) project_package_paths else "", // 1. Project packages
+            if (has_pantry) pantry_bin else "", // 2. Project npm-style bins
+            if (runtime_paths.len > 0) runtime_paths else "", // 3. Runtimes
+            if (has_global_bin) global_bin_path.? else "", // 4. Global (fallback)
+        };
+        for (path_sources) |src| {
+            if (src.len == 0) continue;
+            var dirs = std.mem.splitScalar(u8, src, ':');
+            while (dirs.next()) |dir| {
+                if (dir.len == 0) continue;
+                if (seen_paths.contains(dir)) continue;
+                try seen_paths.put(dir, {});
+                try path_components.append(self.allocator, dir);
+            }
         }
 
         // Join all paths
