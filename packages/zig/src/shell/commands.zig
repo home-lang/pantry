@@ -232,7 +232,7 @@ pub const ShellCommands = struct {
             var install_result = install_cmd.installCommandWithOptions(
                 self.allocator,
                 &[_][]const u8{},
-                install_types.InstallOptions{ .quiet = true },
+                install_types.InstallOptions{ .quiet = false },
             ) catch {
                 return try self.allocator.dupe(u8, "");
             };
@@ -296,7 +296,7 @@ pub const ShellCommands = struct {
                     var install_result = install_cmd.installCommandWithOptions(
                         self.allocator,
                         &[_][]const u8{},
-                        install_types.InstallOptions{ .quiet = true },
+                        install_types.InstallOptions{ .quiet = false },
                     ) catch {
                         return try self.allocator.dupe(u8, "");
                     };

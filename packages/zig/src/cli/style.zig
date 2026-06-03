@@ -71,6 +71,16 @@ pub fn isQuiet() bool {
     return quiet_mode;
 }
 
+/// When true, `emit` writes to stderr instead of stdout. Commands whose stdout
+/// is consumed by `eval "$(...)"` (notably `env`) enable this so all
+/// human-facing output — progress, install/download lines, errors — goes to
+/// stderr and never corrupts the shell code emitted on stdout.
+var diagnostics_to_stderr: bool = false;
+
+pub fn setDiagnosticsToStderr(value: bool) void {
+    diagnostics_to_stderr = value;
+}
+
 // ── Color Detection ──────────────────────────────────────────────────────
 
 /// Whether ANSI escape sequences (color, cursor moves) should be emitted.
@@ -140,8 +150,8 @@ fn emit(comptime fmt: []const u8, args: anytype) void {
     // On the interactive TTY path colorsEnabled() is true (cached) and `msg`
     // is written as-is — no scan. Stripping only runs when output is redirected.
     const out = if (colorsEnabled()) msg else stripAnsi(msg);
-    const stdout = io_helper.File.stdout();
-    io_helper.writeAllToFile(stdout, out) catch {
+    const target = if (diagnostics_to_stderr) io_helper.File.stderr() else io_helper.File.stdout();
+    io_helper.writeAllToFile(target, out) catch {
         // Last resort: try stderr
         std.debug.print(fmt, args);
     };

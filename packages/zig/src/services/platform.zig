@@ -162,10 +162,15 @@ pub const ServiceController = struct {
         const service_file = try self.getLaunchdServiceFile(service_name);
         defer self.allocator.free(service_file);
 
+        // Capture launchctl's stdio rather than inheriting it. If inherited, its
+        // messages ("Load failed: ...") land on the parent's stdout — which, for
+        // `eval "$(pantry env)"`, is captured and corrupts the shell code.
         const argv = [_][]const u8{ "launchctl", "load", service_file };
-        const result = try io_helper.spawnAndWait(.{ .argv = &argv });
+        const result = io_helper.childRun(self.allocator, &argv) catch return error.ServiceStartFailed;
+        defer self.allocator.free(result.stdout);
+        defer self.allocator.free(result.stderr);
 
-        const ok = switch (result) {
+        const ok = switch (result.term) {
             .exited => |code| code == 0,
             else => false,
         };
@@ -176,10 +181,14 @@ pub const ServiceController = struct {
         const service_file = try self.getLaunchdServiceFile(service_name);
         defer self.allocator.free(service_file);
 
+        // Capture launchctl's stdio (see launchdStart) so it can't contaminate
+        // a captured stdout such as `eval "$(pantry env)"`.
         const argv = [_][]const u8{ "launchctl", "unload", service_file };
-        const result = try io_helper.spawnAndWait(.{ .argv = &argv });
+        const result = io_helper.childRun(self.allocator, &argv) catch return error.ServiceStopFailed;
+        defer self.allocator.free(result.stdout);
+        defer self.allocator.free(result.stderr);
 
-        const ok = switch (result) {
+        const ok = switch (result.term) {
             .exited => |code| code == 0,
             else => false,
         };

@@ -1347,6 +1347,13 @@ fn shellActivateAction(ctx: *cli.BaseCommand.ParseContext) !void {
 fn envAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
+    // stdout is consumed by `eval "$(pantry env)"`, so it must contain ONLY the
+    // shell code. Route every diagnostic (install/download progress, service
+    // start messages, errors) to stderr instead — the user still sees it, but
+    // it can't corrupt the eval. The final shell code is written to the real
+    // stdout below, bypassing this toggle.
+    style.setDiagnosticsToStderr(true);
+
     // Get current working directory
     const cwd = io_helper.getCwdAlloc(allocator) catch {
         style.print("Error: Could not get current directory\n", .{});
@@ -2496,6 +2503,10 @@ fn warnIfInvokedAsLaunchpad() void {
     if (exe.len == 0) return;
     const base = std.fs.path.basename(exe[0]);
     if (!std.mem.eql(u8, base, "launchpad") and !std.mem.endsWith(u8, base, "/launchpad")) return;
+    // Diagnostic — keep it off stdout so it can't corrupt commands whose stdout
+    // is captured (e.g. `eval "$(launchpad env)"`).
+    style.setDiagnosticsToStderr(true);
+    defer style.setDiagnosticsToStderr(false);
     style.printWarn(
         "Launchpad was renamed to Pantry. This binary is a compatibility alias — use `pantry` instead.\n",
         .{},
