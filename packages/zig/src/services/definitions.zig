@@ -180,13 +180,48 @@ pub fn resolveServiceBinary(allocator: std.mem.Allocator, binary_name: []const u
         const local_bin = try std.fmt.allocPrint(allocator, "{s}/pantry/.bin/{s}", .{ pr, binary_name });
         io_helper.accessAbsolute(local_bin, .{}) catch {
             allocator.free(local_bin);
-            // fall through
+            // 1b. Not symlinked into .bin (e.g. packages installed without a
+            //     `programs` declaration). Scan the installed package dirs
+            //     directly so services still resolve an absolute path.
+            const pkg_root = try std.fmt.allocPrint(allocator, "{s}/pantry", .{pr});
+            defer allocator.free(pkg_root);
+            if (try findBinaryInPackagesDir(allocator, pkg_root, binary_name)) |in_pkg| return in_pkg;
             return resolveServiceBinaryGlobal(allocator, binary_name, home);
         };
         return local_bin;
     }
 
     return resolveServiceBinaryGlobal(allocator, binary_name, home);
+}
+
+/// Search installed package directories under `packages_root` (one level deep)
+/// for an executable named `binary_name`, checking both `<pkg>/<bin>` and
+/// `<pkg>/bin/<bin>`. Returns the first absolute match (caller-owned) or null.
+/// This covers service binaries that were never symlinked into pantry/.bin.
+fn findBinaryInPackagesDir(allocator: std.mem.Allocator, packages_root: []const u8, binary_name: []const u8) !?[]const u8 {
+    const io_helper = @import("../io_helper.zig");
+    var dir = io_helper.openDirAbsoluteForIteration(packages_root) catch return null;
+    defer dir.close();
+    var it = dir.iterate();
+    while (try it.next()) |entry| {
+        if (entry.kind == .file) continue;
+        if (entry.name.len == 0 or entry.name[0] == '.') continue;
+        // <pkg>/<binary>
+        const direct = try std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ packages_root, entry.name, binary_name });
+        if (io_helper.accessAbsolute(direct, .{})) |_| {
+            return direct;
+        } else |_| {
+            allocator.free(direct);
+        }
+        // <pkg>/bin/<binary>
+        const nested = try std.fmt.allocPrint(allocator, "{s}/{s}/bin/{s}", .{ packages_root, entry.name, binary_name });
+        if (io_helper.accessAbsolute(nested, .{})) |_| {
+            return nested;
+        } else |_| {
+            allocator.free(nested);
+        }
+    }
+    return null;
 }
 
 fn resolveServiceBinaryGlobal(allocator: std.mem.Allocator, binary_name: []const u8, home: ?[]const u8) ![]const u8 {
@@ -1096,14 +1131,53 @@ pub const Services = struct {
 
     /// Typesense service
     pub fn typesense(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return typesenseWithContext(allocator, port, null);
+    }
+
+    pub fn typesenseWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
+        const io_helper = @import("../io_helper.zig");
         const env_vars = std.StringHashMap([]const u8).init(allocator);
+
+        const home = io_helper.getEnvVarOwned(allocator, "HOME") catch null;
+        defer if (home) |h| allocator.free(h);
+
+        // Typesense data directory (must exist and be writable; the upstream
+        // default /usr/local/var/typesense is neither on a fresh machine).
+        const data_dir = if (home) |h|
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/typesense", .{h})
+        else
+            try allocator.dupe(u8, "/tmp/typesense-data");
+        defer allocator.free(data_dir);
+
+        // Ensure data directory exists
+        io_helper.makePath(data_dir) catch {};
+
+        // typesense-server refuses to start without an --api-key. Use a local
+        // dev default so config-driven setups work out of the box.
+        const ts_bin = try resolveServiceBinary(allocator, "typesense-server", project_root, home);
+        const start_cmd = try std.fmt.allocPrint(
+            allocator,
+            "{s} --data-dir {s} --api-key=pantry-dev --api-address 127.0.0.1 --api-port {d}",
+            .{ ts_bin, data_dir, port },
+        );
+        allocator.free(ts_bin);
+
+        // Set working directory to data dir so launchd doesn't use / (read-only on macOS)
+        const working_dir = if (home) |h|
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/typesense", .{h})
+        else
+            try allocator.dupe(u8, "/tmp/typesense-data");
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "typesense"),
             .display_name = try allocator.dupe(u8, "Typesense"),
             .description = try allocator.dupe(u8, "Typo-tolerant search engine"),
-            .start_command = try std.fmt.allocPrint(allocator, "typesense-server --data-dir /usr/local/var/typesense --api-port {d}", .{port}),
+            .start_command = start_cmd,
             .env_vars = env_vars,
             .port = port,
+            .auto_start = false,
+            .keep_alive = true,
+            .working_directory = working_dir,
             .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/health", .{port}),
         };
     }

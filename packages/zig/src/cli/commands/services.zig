@@ -822,7 +822,7 @@ fn getServiceConfigRaw(allocator: std.mem.Allocator, name: []const u8, project_r
     } else if (std.mem.eql(u8, name, "dragonflydb")) {
         return try Services.dragonflydb(allocator, port);
     } else if (std.mem.eql(u8, name, "typesense")) {
-        return try Services.typesense(allocator, port);
+        return try Services.typesenseWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "ferretdb")) {
         return try Services.ferretdb(allocator, port);
     } else if (std.mem.eql(u8, name, "tidb")) {
@@ -1001,7 +1001,7 @@ fn getServiceConfigWithPortRaw(allocator: std.mem.Allocator, name: []const u8, p
     } else if (std.mem.eql(u8, name, "dragonflydb")) {
         return try Services.dragonflydb(allocator, port);
     } else if (std.mem.eql(u8, name, "typesense")) {
-        return try Services.typesense(allocator, port);
+        return try Services.typesenseWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "ferretdb")) {
         return try Services.ferretdb(allocator, port);
     } else if (std.mem.eql(u8, name, "tidb")) {
