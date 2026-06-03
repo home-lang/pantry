@@ -532,6 +532,17 @@ export function createHandler(
           return Response.json({ error: 'valid domain required' }, { status: 400, headers: corsHeaders })
         return Response.json({ domain, logs: getBuildStatus().getLogs(domain) }, { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } })
       }
+      // Builders stream batches of build-output lines here while a build runs, so
+      // the per-package log panel updates live. Best-effort, unauthenticated.
+      if (path === '/api/build-logs' && req.method === 'POST') {
+        const body = await req.json().catch(() => null)
+        const domain = typeof body?.domain === 'string' ? body.domain : ''
+        const lines = Array.isArray(body?.lines) ? body.lines.filter((l: unknown) => typeof l === 'string') : []
+        if (!/^[a-zA-Z0-9._/-]{1,128}$/.test(domain))
+          return Response.json({ error: 'valid domain required' }, { status: 400, headers: corsHeaders })
+        getBuildStatus().recordLogs(domain, typeof body?.platform === 'string' ? body.platform : '', lines.slice(0, 500))
+        return Response.json({ ok: true, recorded: Math.min(lines.length, 500) }, { headers: corsHeaders })
+      }
 
       // ================================================================
       // Auth API routes

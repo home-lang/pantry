@@ -27,12 +27,12 @@
  */
 
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { execSync } from 'node:child_process'
+import { execSync, spawn } from 'node:child_process'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { createHash } from 'node:crypto'
 import { createObjectStorageClient } from '@stacksjs/ts-cloud'
-import { reportBuild } from './report-build'
+import { reportBuild, reportBuildLog } from './report-build'
 import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
 import { BINARY_SYNC_DOMAIN_SET } from './binary-sync-packages.ts'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
@@ -983,7 +983,7 @@ catch (err: any) {
 
 // --- Build & Upload ---
 
-function tryBuildVersion(
+async function tryBuildVersion(
   domain: string,
   version: string,
   platform: string,
@@ -992,7 +992,7 @@ function tryBuildVersion(
   depsDir: string,
   bucket: string,
   region: string,
-): void {
+): Promise<void> {
   // Cleanup from previous attempt
   try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) }
   catch (e) { console.warn(`Warning: cleanup failed for ${buildDir}: ${(e as Error).message}`) }
@@ -1013,13 +1013,56 @@ function tryBuildVersion(
     '--region', region,
   ]
 
-  execSync(`bun ${args.join(' ')}`, {
-    cwd: join(process.cwd()),
-    // build-all already reports building/built/failed for this package, so tell
-    // the child build-package not to double-report.
-    env: { ...process.env, PANTRY_REPORTED_BY_PARENT: '1' },
-    stdio: 'inherit',
-    timeout: 60 * 60 * 1000, // 60 min per package (fbthrift/heavy C++ need >45 min)
+  // Stream the child's output: tee it to our stdout (so CI logs are intact) AND
+  // forward batched lines to the registry so the /packages log panel shows the
+  // build live. Batched on a timer + line count to keep the POSTs reasonable.
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn('bun', args, {
+      cwd: join(process.cwd()),
+      // build-all already reports building/built/failed for this package, so the
+      // child build-package shouldn't double-report state transitions.
+      env: { ...process.env, PANTRY_REPORTED_BY_PARENT: '1' },
+      timeout: 60 * 60 * 1000, // 60 min per package (fbthrift/heavy C++ need >45 min)
+    })
+
+    let pending = ''
+    let batch: string[] = []
+    const flush = () => {
+      if (batch.length) {
+        const lines = batch
+        batch = []
+        void reportBuildLog(domain, version, platform, lines)
+      }
+    }
+    const onData = (chunk: Buffer) => {
+      const s = chunk.toString()
+      process.stdout.write(s) // tee to the CI console
+      pending += s
+      const parts = pending.split('\n')
+      pending = parts.pop() ?? ''
+      for (const line of parts) batch.push(line)
+      if (batch.length >= 40) flush()
+    }
+    child.stdout?.on('data', onData)
+    child.stderr?.on('data', onData)
+    const timer = setInterval(flush, 1500)
+
+    child.on('error', (err) => { clearInterval(timer); reject(err) })
+    child.on('close', (code) => {
+      clearInterval(timer)
+      if (pending) batch.push(pending)
+      flush()
+      if (code === 0) {
+        resolve()
+      }
+      else {
+        // Mimic execSync's error shape so the caller's exit-code-42 (download
+        // failure → try older version) fallback logic still works.
+        const err = new Error(`build-package.ts exited with code ${code}`) as Error & { status?: number | null }
+        err.status = code
+        reject(err)
+      }
+    })
   })
 }
 
@@ -1124,7 +1167,7 @@ else {
       console.log(`   Building ${domain}@${candidateVersion} for ${platform}...`)
       reportBuild(domain, candidateVersion, platform, 'building', { message: `building ${candidateVersion} on ${platform}` })
 
-      tryBuildVersion(domain, candidateVersion, platform, buildDir, installDir, depsDir, bucket, region)
+      await tryBuildVersion(domain, candidateVersion, platform, buildDir, installDir, depsDir, bucket, region)
 
       usedVersion = candidateVersion
       lastError = null

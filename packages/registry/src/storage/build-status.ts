@@ -53,8 +53,9 @@ export interface BuildLogLine {
   text: string
 }
 
-const LOG_LIMIT = 200 // per-domain ring buffer of recent build-log lines
+const LOG_LIMIT = 400 // per-domain ring buffer of recent build-log lines (tail)
 const MESSAGE_MAX = 2000 // cap a single message/error so the snapshot can't bloat
+const MAX_LOG_DOMAINS = 400 // bound total memory: only keep logs for the most-recent N domains
 
 const RECENT_LIMIT = 500
 const BUILDING_TTL_MS = 60 * 60 * 1000 // a "building" event older than 1h is considered stale
@@ -134,18 +135,55 @@ export class BuildStatusStore {
     return [...(this.logs.get(domain) || [])]
   }
 
+  /**
+   * Append a batch of streamed build-output lines for a domain and notify live
+   * subscribers, so an open log panel updates in real time while a build runs.
+   */
+  recordLogs(domain: string, platform: string, lines: string[]): void {
+    if (!domain || !lines?.length)
+      return
+    const buf = this.touchLogBuf(domain)
+    const ts = Date.now()
+    for (const line of lines)
+      buf.push({ ts, platform: platform || '', state: 'building', text: String(line).slice(0, MESSAGE_MAX) })
+    if (buf.length > LOG_LIMIT)
+      buf.splice(0, buf.length - LOG_LIMIT)
+    this.evictOldLogDomains()
+    this.emit()
+  }
+
+  /** Get-or-create a domain's log buffer, moving it to the end of the Map so the
+   *  eviction order is LRU (least-recently-touched domains drop first). */
+  private touchLogBuf(domain: string): BuildLogLine[] {
+    let buf = this.logs.get(domain)
+    if (buf)
+      this.logs.delete(domain) // re-insert to move to the end (most-recent)
+    else
+      buf = []
+    this.logs.set(domain, buf)
+    return buf
+  }
+
   /** Append a captured log line to a domain's bounded ring buffer. */
   private appendLog(e: BuildEvent, text: string): void {
     if (!text)
       return
-    let buf = this.logs.get(e.domain)
-    if (!buf) {
-      buf = []
-      this.logs.set(e.domain, buf)
-    }
+    const buf = this.touchLogBuf(e.domain)
     buf.push({ ts: e.ts, platform: e.platform, state: e.state, text: text.slice(0, MESSAGE_MAX) })
     if (buf.length > LOG_LIMIT)
       buf.splice(0, buf.length - LOG_LIMIT)
+    this.evictOldLogDomains()
+  }
+
+  /** Bound total memory by keeping logs only for the most-recently-touched
+   *  domains (Map preserves insertion order; evict from the front). */
+  private evictOldLogDomains(): void {
+    while (this.logs.size > MAX_LOG_DOMAINS) {
+      const oldest = this.logs.keys().next().value
+      if (oldest === undefined)
+        break
+      this.logs.delete(oldest)
+    }
   }
 
   async load(): Promise<void> {

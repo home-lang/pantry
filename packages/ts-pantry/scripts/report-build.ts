@@ -46,3 +46,21 @@ export function reportBuild(
     signal: AbortSignal.timeout(5000),
   }).then(() => {}).catch(() => {})
 }
+
+/**
+ * Stream a batch of build-output lines to the dashboard so the per-package log
+ * panel updates live while a build is in flight. Fire-and-forget; never throws.
+ * Lines are capped (count + per-line length) so a noisy build can't bloat the
+ * request or the server's ring buffer.
+ */
+export function reportBuildLog(domain: string, version: string, platform: string, lines: string[]): Promise<void> {
+  if (DISABLED || !lines?.length)
+    return Promise.resolve()
+  const capped = lines.slice(-300).map(l => (l.length > 600 ? `${l.slice(0, 600)}…` : l))
+  return fetch(`${STATUS_URL}/api/build-logs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ domain, version, platform, host: HOST, lines: capped }),
+    signal: AbortSignal.timeout(5000),
+  }).then(() => {}).catch(() => {})
+}
