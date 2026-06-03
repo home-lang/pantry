@@ -22,6 +22,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'build',
     workingDirectory: 'build',
     script: [
       // duckdb uses git to get its version

@@ -24,6 +24,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': 'build',
     script: [
       {
         run: 'sed -i -f $PROP ../CMakeLists.txt',

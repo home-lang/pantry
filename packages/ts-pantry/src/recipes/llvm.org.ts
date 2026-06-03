@@ -28,6 +28,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'build',
     script: [
       'RUNTIMES="-DLLVM_ENABLE_RUNTIMES=\'compiler-rt\'"',
       'if test {{hw.platform}} = "linux"; then',

@@ -17,6 +17,7 @@ export const recipe: Recipe = {
     url: 'https://aomedia.googlesource.com/aom/+archive/v{{version}}.tar.gz',
   },
   build: {
+    'working-directory': 'build',
     script: [
       'cmake .. $ARGS',
       'make',

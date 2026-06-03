@@ -21,6 +21,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': 'build',
     script: [
       'cmake .. $ARGS',
       'make --jobs {{ hw.concurrency }} install',

@@ -28,6 +28,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'build',
     workingDirectory: 'build',
     script: [
       // New libsolidity/lsb/DocumentHoverHandler.cpp doesn't like some versions of clang

@@ -12,6 +12,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': 'build',
     script: [
       "cmake .. -DCMAKE_INSTALL_PREFIX={{prefix}} -DYAML_BUILD_SHARED_LIBS=ON -DYAML_CPP_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release",
       {

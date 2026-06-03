@@ -23,6 +23,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': 'build',
     script: [
       {
         run: "MACOSX_DEPLOYMENT_TARGET=13.3",

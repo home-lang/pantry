@@ -18,6 +18,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'build',
     script: [
       'sed -i -e \\s/\\(STRING_APPEND.*moutline-atomics.*\\)/# \\1/\\ ../CMakeLists.txt',
       'run: export ARGS="$(echo $ARGS | sed \\s/WITH_ZLIB=system/WITH_ZLIB=bundled/g\\)"',

@@ -24,6 +24,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'build',
     script: [
       'cmake ../runtimes -G Ninja $ARGS',
       'ninja cxx cxxabi unwind',
