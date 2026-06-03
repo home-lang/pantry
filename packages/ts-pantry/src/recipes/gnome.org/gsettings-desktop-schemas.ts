@@ -31,8 +31,8 @@ export const recipe: Recipe = {
     env: {
       DESTDIR: '/',
       ARGS: [
-        '--prefix="{{prefix}}"',
-        '--libdir="{{prefix}}/lib"',
+        '--prefix={{prefix}}',
+        '--libdir={{prefix}}/lib',
         '--buildtype=release',
         '--wrap-mode=nofallback',
       ],

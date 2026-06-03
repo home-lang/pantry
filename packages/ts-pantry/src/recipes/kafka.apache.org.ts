@@ -26,7 +26,7 @@ export const recipe: Recipe = {
       'rm -rf bin/windows',
       'cd "${{prefix}}"',
       'rsync -avP $SRCROOT/* .',
-      'sed -i.bak \'s#base_dir=$(dirname $0)/..#base_dir=$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")/..#g\' "{{prefix}}/bin/kafka-run-class.sh" && rm -f "{{prefix}}/bin/kafka-run-class.sh.bak"',
+      'sed -i.bak \'s#base_dir=$(dirname $0)/..#base_dir=$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")/..#g\' {{prefix}}/bin/kafka-run-class.sh && rm -f {{prefix}}/bin/kafka-run-class.sh.bak',
     ],
   },
 }

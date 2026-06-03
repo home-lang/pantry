@@ -18,9 +18,9 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      './configure --prefix="{{prefix}}"',
-      'make -j {{hw.concurrency}} PREFIX="{{prefix}}"',
-      'make install PREFIX="{{prefix}}"',
+      './configure --prefix={{prefix}}',
+      'make -j {{hw.concurrency}} PREFIX={{prefix}}',
+      'make install PREFIX={{prefix}}',
     ],
   },
 }

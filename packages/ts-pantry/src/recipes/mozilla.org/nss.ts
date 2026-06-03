@@ -92,7 +92,7 @@ export const recipe: Recipe = {
       },
       {
         run: "mkdir -p bin lib/pkgconfig include/dbm include/nss\ncat <<< \"$PC_FILE\" > lib/pkgconfig/nss.pc",
-        'working-directory': "{{prefix}}",
+        'working-directory': {{prefix}},
       },
       "cat <<< \"$CONFIG_FILE\" > ./dist/nss-config",
       "install ./dist/nss-config {{prefix}}/bin/",
@@ -103,10 +103,10 @@ export const recipe: Recipe = {
     ],
     env: {
       linux: {
-        CC: "{{deps.gnu.org/gcc.prefix}}/bin/gcc",
+        CC: {{deps.gnu.org/gcc.prefix}}/bin/gcc,
       },
       'darwin/aarch64': {
-        CC: "{{deps.llvm.org.prefix}}/bin/clang",
+        CC: {{deps.llvm.org.prefix}}/bin/clang,
       },
       'darwin/x86-64': {
         CPU_ARCH: "x86_64",

@@ -17,7 +17,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'make --jobs {{ hw.concurrency }} install PREFIX="{{prefix}}"',
+      'make --jobs {{ hw.concurrency }} install PREFIX={{prefix}}',
     ],
   },
   test: {

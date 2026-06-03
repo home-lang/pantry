@@ -17,7 +17,7 @@ export const recipe: Recipe = {
     script: [
       'go mod download',
       'mkdir -p {{prefix}}/bin',
-      'go build -trimpath -ldflags="$LDFLAGS" -o "{{ prefix }}"/bin/eclint ./cmd/eclint',
+      'go build -trimpath -ldflags="$LDFLAGS" -o {{ prefix }}/bin/eclint ./cmd/eclint',
     ],
     env: {
       LDFLAGS: [

@@ -18,7 +18,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'mkdir -p "{{prefix}}"',
+      'mkdir -p {{prefix}}',
       'npm_config_build_from_source=true yarn install --modules-folder {{prefix}}/node_modules',
       'cp -r bundle/bin package.json {{prefix}}',
     ],

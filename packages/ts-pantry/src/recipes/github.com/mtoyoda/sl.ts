@@ -21,8 +21,8 @@ export const recipe: Recipe = {
       '# Add -v to allow testing resultant binary',
       'patch -p1 < props/version.patch',
       'make',
-      'mkdir -p "{{prefix}}"/bin',
-      'mv sl "{{prefix}}"/bin',
+      'mkdir -p {{prefix}}/bin',
+      'mv sl {{prefix}}/bin',
     ],
     env: {
       TEA_VERSION: '${{ version }}',

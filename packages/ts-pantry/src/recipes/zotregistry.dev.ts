@@ -35,10 +35,10 @@ export const recipe: Recipe = {
       // `cp -r ${ZUI_REPO_NAME}/build` (a path relative to the source root).
       { run: ['npm install', 'npm run build'], 'working-directory': '${ZUI_REPO_NAME}' },
       'cp -r ${ZUI_REPO_NAME}/build ./pkg/extensions/',
-      'go build -v -ldflags="${GO_LDFLAGS}" -tags="${ALL_EXTENSIONS}" -o "{{prefix}}"/bin/zb ./cmd/zb',
-      'go build -v -ldflags="${GO_LDFLAGS}" -tags="${ALL_EXTENSIONS}" -o "{{prefix}}"/bin/zli ./cmd/zli',
-      'go build -v -ldflags="${GO_LDFLAGS}" -tags="${ALL_EXTENSIONS}" -o "{{prefix}}"/bin/zot ./cmd/zot',
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{prefix}}"/bin/zxp ./cmd/zxp',
+      'go build -v -ldflags="${GO_LDFLAGS}" -tags="${ALL_EXTENSIONS}" -o {{prefix}}/bin/zb ./cmd/zb',
+      'go build -v -ldflags="${GO_LDFLAGS}" -tags="${ALL_EXTENSIONS}" -o {{prefix}}/bin/zli ./cmd/zli',
+      'go build -v -ldflags="${GO_LDFLAGS}" -tags="${ALL_EXTENSIONS}" -o {{prefix}}/bin/zot ./cmd/zot',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o {{prefix}}/bin/zxp ./cmd/zxp',
     ],
     env: {
       'MODULE_PATH': '$(go list -m)',

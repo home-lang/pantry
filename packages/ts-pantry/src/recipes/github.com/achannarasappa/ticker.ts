@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/ticker .',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o {{ prefix }}/bin/ticker .',
     ],
     env: {
       GO_LDFLAGS: [

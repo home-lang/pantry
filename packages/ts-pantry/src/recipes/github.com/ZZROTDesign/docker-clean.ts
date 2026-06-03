@@ -16,13 +16,13 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'mkdir -p "{{ prefix }}"/bin',
+      'mkdir -p {{ prefix }}/bin',
       'cp docker-clean {{prefix}}/bin',
     ],
   },
   test: {
     script: [
-      'test "$(docker-clean --version)" = "{{version}}"',
+      'test "$(docker-clean --version)" = {{version}}',
     ],
   },
 }

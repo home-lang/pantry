@@ -26,7 +26,7 @@ export const recipe: Recipe = {
         if: "<3.2",
       },
       {
-        run: "export CMAKE_PREFIX_PATH=\"{{pkgx.prefix}}/libsdl.org/v{{version.major}}:$CMAKE_PREFIX_PATH\"\ncmake -S . -B build $CMAKE_ARGS\ncmake --build build\ncmake --install build",
+        run: "export CMAKE_PREFIX_PATH=\{{pkgx.prefix}}/libsdl.org/v{{version.major}}:$CMAKE_PREFIX_PATH\\ncmake -S . -B build $CMAKE_ARGS\ncmake --build build\ncmake --install build",
         if: ">=3.2",
       },
     ],

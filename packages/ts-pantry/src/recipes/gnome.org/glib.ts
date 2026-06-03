@@ -48,20 +48,20 @@ export const recipe: Recipe = {
       "GT='${prefix}/../../../gnu.org/gettext/v{{ deps.gnu.org/gettext.version.major }}'",
       {
         run: "sed -i -e \\\n's|Libs: -L${libdir} -lglib-2.0 -lintl|Libs: -L${libdir} -lglib-2.0'\\ -L$GT/lib\\ -lintl\\| \\\n./glib-2.0.pc\n\nsed -i -e \\\n's|Cflags: -I${includedir}/glib-2.0 -I${libdir}/glib-2.0/include|Cflags: -I${includedir}/glib-2.0 -I${libdir}/glib-2.0/include'\\ -I$GT/include\\| \\\n./glib-2.0.pc\n",
-        'working-directory': "{{prefix}}/lib/pkgconfig",
+        'working-directory': {{prefix}}/lib/pkgconfig,
       },
       {
         run: "mv glib-{{version.major}}.0/* .\nrmdir glib-{{version.major}}.0\nln -s . glib-{{version.major}}.0\nmv gio-unix-{{version.major}}.0/gio/* gio/\nrmdir -p gio-unix-{{version.major}}.0/gio\nln -s . gio-unix-{{version.major}}.0\nln -s ../lib/glib-{{version.major}}.0/include/* .",
-        'working-directory': "{{prefix}}/include",
+        'working-directory': {{prefix}}/include,
       },
-      "cp -a ../venv/lib/python{{deps.python.org.version.marketing}} \"{{prefix}}\"/lib",
+      "cp -a ../venv/lib/python{{deps.python.org.version.marketing}} \{{prefix}}\/lib",
       {
         run: "ln -s python{{deps.python.org.version.marketing}} python{{deps.python.org.version.major}}",
-        'working-directory': "{{prefix}}/lib",
+        'working-directory': {{prefix}}/lib,
       },
       {
         run: "sed -i -e 's_{{deps.mesonbuild.com.prefix}}/venv/bin/python_/usr/bin/env python_' gdbus-codegen glib-genmarshal glib-mkenums gtester-report",
-        'working-directory': "{{prefix}}/bin",
+        'working-directory': {{prefix}}/bin,
       },
     ],
     env: {

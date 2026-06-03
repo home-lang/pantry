@@ -54,9 +54,9 @@ export const recipe: Recipe = {
       'install -v -D props/${SFTPGO_SERVICE_ENVIRONMENT_FILE} {{prefix}}/conf/${SFTPGO_SERVICE_ENVIRONMENT_FILE}',
       'install -v -D props/${SFTPGO_SYSTEMD_SERVICE_FILE} {{prefix}}/conf/${SFTPGO_SYSTEMD_SERVICE_FILE}',
       'install -v -D props/${SFTPGO_LAUNCHD_SERVICE_FILE} {{prefix}}/conf/${SFTPGO_LAUNCHD_SERVICE_FILE}',
-      'find templates -type f -exec install -v -D "{}" "{{prefix}}/conf/{}" \\;',
-      'find static -type f -exec install -v -D "{}" "{{prefix}}/conf/{}" \\;',
-      'find openapi -type f -exec install -v -D "{}" "{{prefix}}/conf/{}" \\;',
+      'find templates -type f -exec install -v -D "{}" {{prefix}}/conf/{} \\;',
+      'find static -type f -exec install -v -D "{}" {{prefix}}/conf/{} \\;',
+      'find openapi -type f -exec install -v -D "{}" {{prefix}}/conf/{} \\;',
     ],
   },
 }

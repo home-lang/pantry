@@ -12,11 +12,11 @@ export const recipe: Recipe = {
     script: [
       'curl -fSL "https://download.scdn.co/SpotifyARM64.dmg" -o /tmp/spotify.dmg',
       'hdiutil attach /tmp/spotify.dmg -mountpoint /tmp/spotify-mount -nobrowse -quiet',
-      'mkdir -p "{{prefix}}"',
-      'cp -R "/tmp/spotify-mount/Spotify.app" "{{prefix}}/Spotify.app"',
+      'mkdir -p {{prefix}}',
+      'cp -R "/tmp/spotify-mount/Spotify.app" {{prefix}}/Spotify.app',
       'hdiutil detach /tmp/spotify-mount -quiet || true',
-      'mkdir -p "{{prefix}}/bin"',
-      'ln -sf "../Spotify.app/Contents/MacOS/Spotify" "{{prefix}}/bin/spotify"',
+      'mkdir -p {{prefix}}/bin',
+      'ln -sf "../Spotify.app/Contents/MacOS/Spotify" {{prefix}}/bin/spotify',
     ],
   },
 }

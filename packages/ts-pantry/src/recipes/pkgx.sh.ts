@@ -47,7 +47,7 @@ export const recipe: Recipe = {
       },
       {
         run: [
-          'cargo install --path crates/cli --root "{{prefix}}"',
+          'cargo install --path crates/cli --root {{prefix}}',
           'strip \'{{prefix}}/bin/pkgx\'',
         ],
         if: '>=2',

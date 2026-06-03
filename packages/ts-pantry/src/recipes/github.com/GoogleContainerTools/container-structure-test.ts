@@ -17,8 +17,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'goreleaser build --clean --single-target --skip=validate',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv "dist/container-structure-test-${GOOS}-${GOARCH}" "{{ prefix }}"/bin/container-structure-test',
+      'mkdir -p {{ prefix }}/bin',
+      'mv "dist/container-structure-test-${GOOS}-${GOARCH}" {{ prefix }}/bin/container-structure-test',
     ],
     env: {
       CGO_ENABLED: 0,
@@ -46,7 +46,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      'test "$(container-structure-test version)" = "{{version}}"',
+      'test "$(container-structure-test version)" = {{version}}',
     ],
   },
 }

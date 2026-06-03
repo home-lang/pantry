@@ -34,8 +34,8 @@ export const recipe: Recipe = {
         LD: 'clang',
       },
       MESON_ARGS: [
-        '--prefix="{{prefix}}"',
-        '--libdir="{{prefix}}/lib"',
+        '--prefix={{prefix}}',
+        '--libdir={{prefix}}/lib',
         '--buildtype=release',
         '--wrap-mode=nofallback',
         '-Dlibproxy=disabled',

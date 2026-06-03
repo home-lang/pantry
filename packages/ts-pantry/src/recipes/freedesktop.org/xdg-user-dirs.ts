@@ -22,7 +22,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: "./configure --prefix=\"{{ prefix }}\" --disable-documentation\nmake --jobs {{ hw.concurrency }} install",
+        run: "./configure --prefix=\{{ prefix }}\ --disable-documentation\nmake --jobs {{ hw.concurrency }} install",
         if: "<0.19",
       },
       {

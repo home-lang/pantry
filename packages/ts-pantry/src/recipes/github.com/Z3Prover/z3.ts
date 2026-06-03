@@ -54,8 +54,8 @@ export const recipe: Recipe = {
     script: [
       "wget https://raw.githubusercontent.com/Z3Prover/z3/z3-{{version}}/examples/c/test_capi.c",
       "cc test_capi.c -lz3",
-      "if test \"{{hw.platform}}+{{hw.arch}}\" != \"linux+x86-64\"; then\n  ./a.out\nfi\n",
-      "if \"{{hw.platform}}+{{hw.arch}}\" != \"linux+aarch\"; then\n  v=\"$(python -c 'import z3; print(z3.get_version_string())')\"\n  test \"$v\" = {{version}}\nfi\n",
+      "if test \{{hw.platform}}+{{hw.arch}}\ != \"linux+x86-64\"; then\n  ./a.out\nfi\n",
+      "if \{{hw.platform}}+{{hw.arch}}\ != \"linux+aarch\"; then\n  v=\"$(python -c 'import z3; print(z3.get_version_string())')\"\n  test \"$v\" = {{version}}\nfi\n",
     ],
   },
 }

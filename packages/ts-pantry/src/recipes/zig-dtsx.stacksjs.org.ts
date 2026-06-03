@@ -17,7 +17,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'case "{{hw.platform}}+{{hw.arch}}" in',
+      'case {{hw.platform}}+{{hw.arch}} in',
       '  darwin+aarch64) PLATFORM="darwin-arm64" ;;',
       '  darwin+x86-64)  PLATFORM="darwin-x64"  ;;',
       '  linux+aarch64)  PLATFORM="linux-arm64" ;;',
@@ -27,7 +27,7 @@ export const recipe: Recipe = {
       '',
       'curl -fSL -L "https://github.com/stacksjs/dtsx/releases/download/v{{version}}/zig-dtsx-${PLATFORM}.zip" -o zig-dtsx.zip',
       'unzip -q zig-dtsx.zip',
-      'install -Dm755 zig-dtsx "{{prefix}}/bin/zig-dtsx"',
+      'install -Dm755 zig-dtsx {{prefix}}/bin/zig-dtsx',
     ],
   },
 }

@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'mkdir -p "{{ prefix }}"/bin',
+      'mkdir -p {{ prefix }}/bin',
       'cp src/* {{prefix}}/bin',
     ],
   },

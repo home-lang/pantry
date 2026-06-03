@@ -15,8 +15,8 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/sparsecat ./cmd/sparsecat',
-      'ln -s sparsecat "{{ prefix }}"/bin/sparsecat-{{version}}',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o {{ prefix }}/bin/sparsecat ./cmd/sparsecat',
+      'ln -s sparsecat {{ prefix }}/bin/sparsecat-{{version}}',
     ],
     env: {
       CGO_ENABLED: 0,

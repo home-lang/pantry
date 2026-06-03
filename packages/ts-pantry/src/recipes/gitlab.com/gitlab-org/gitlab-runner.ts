@@ -20,7 +20,7 @@ export const recipe: Recipe = {
     env: {
       GO_ARGS: [
         '-trimpath',
-        '-o="{{prefix}}/bin/gitlab-runner"',
+        '-o={{prefix}}/bin/gitlab-runner',
       ],
       GO_LDFLAGS: [
         '-s',

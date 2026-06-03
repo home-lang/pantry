@@ -18,10 +18,10 @@ export const recipe: Recipe = {
     script: [
       'curl -fSL "https://github.com/p0deje/Maccy/releases/download/{{version}}/Maccy.app.zip" -o /tmp/maccy.zip',
       'cd /tmp && unzip -qo maccy.zip',
-      'mkdir -p "{{prefix}}"',
-      'mv "/tmp/Maccy.app" "{{prefix}}/Maccy.app"',
-      'mkdir -p "{{prefix}}/bin"',
-      'ln -sf "../Maccy.app/Contents/MacOS/Maccy" "{{prefix}}/bin/maccy"',
+      'mkdir -p {{prefix}}',
+      'mv "/tmp/Maccy.app" {{prefix}}/Maccy.app',
+      'mkdir -p {{prefix}}/bin',
+      'ln -sf "../Maccy.app/Contents/MacOS/Maccy" {{prefix}}/bin/maccy',
     ],
   },
 }

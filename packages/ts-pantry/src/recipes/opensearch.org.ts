@@ -36,7 +36,7 @@ export const recipe: Recipe = {
       // remove this step when macos 12 and under are no longer supported.
       {
         run: [
-          'if test "{{hw.platform}}+{{hw.arch}}" = "darwin+x86-64"; then',
+          'if test {{hw.platform}}+{{hw.arch}} = "darwin+x86-64"; then',
           'sed -i \'s|JNAKernel32Library.getInstance();|//JNAKernel32Library.getInstance();|\' server/src/main/java/org/opensearch/bootstrap/Bootstrap.java',
           'fi',
         ],
@@ -74,7 +74,7 @@ export const recipe: Recipe = {
       // workarounds for m1 build. see: https://github.com/opensearch-project/k-NN/blob/main/DEVELOPER_GUIDE.md#extra-setup-for-mac-m1-machines
       {
         run: [
-          'if test "{{hw.platform}}+{{hw.arch}}" = "darwin+aarch64"; then',
+          'if test {{hw.platform}}+{{hw.arch}} = "darwin+aarch64"; then',
           'sed -i -e \'s/-march=native/-mcpu=apple-m1/g\' nmslib/similarity_search/CMakeLists.txt',
           'sed -i -e \'s/-mcpu=apple-a14/-mcpu=apple-m1/g\' nmslib/python_bindings/setup.py',
           'sed -i -e \'s/__aarch64__/__undefine_aarch64__/g\' faiss/faiss/utils/distances_simd.cpp',
@@ -99,7 +99,7 @@ export const recipe: Recipe = {
       // this is recommended in https://github.com/opensearch-project/k-NN/blob/45e9e542aef60ef7073ee726e6ac14dec27bfa04/scripts/build.sh#L91-L94
       {
         run: [
-          'if test "{{hw.arch}}" = "x86-64"; then',
+          'if test {{hw.arch}} = "x86-64"; then',
           '  sed -i -e \'s/-march=native/-march=x86-64/g\' CMakeLists.txt',
           'fi',
         ],

@@ -42,7 +42,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      'yazi --version | grep "{{version}}"',
+      'yazi --version | grep {{version}}',
     ],
   },
 }

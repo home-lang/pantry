@@ -20,7 +20,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go mod download',
-      'go build -ldflags "$LDFLAGS" -o "{{prefix}}/bin/bazelisk"',
+      'go build -ldflags "$LDFLAGS" -o {{prefix}}/bin/bazelisk',
       'ln -s bazelisk {{prefix}}/bin/bazel',
     ],
     env: {

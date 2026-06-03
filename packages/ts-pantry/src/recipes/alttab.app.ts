@@ -18,10 +18,10 @@ export const recipe: Recipe = {
     script: [
       'curl -fSL "https://github.com/lwouis/alt-tab-macos/releases/download/v{{version}}/AltTab-{{version}}.zip" -o /tmp/alttab.zip',
       'cd /tmp && unzip -qo alttab.zip',
-      'mkdir -p "{{prefix}}"',
-      'mv "/tmp/AltTab.app" "{{prefix}}/AltTab.app"',
-      'mkdir -p "{{prefix}}/bin"',
-      'ln -sf "../AltTab.app/Contents/MacOS/AltTab" "{{prefix}}/bin/alttab"',
+      'mkdir -p {{prefix}}',
+      'mv "/tmp/AltTab.app" {{prefix}}/AltTab.app',
+      'mkdir -p {{prefix}}/bin',
+      'ln -sf "../AltTab.app/Contents/MacOS/AltTab" {{prefix}}/bin/alttab',
     ],
   },
 }

@@ -29,7 +29,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'cargo install --locked --path . --root {{prefix}}',
-      'cd "{{prefix}}/bin"',
+      'cd {{prefix}}/bin',
       'if test -f rtx; then',
       '  ln -s rtx mise',
       'elif test -f mise; then',

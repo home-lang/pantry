@@ -22,8 +22,8 @@ export const recipe: Recipe = {
     script: [
       './Configure -n {{ hw.platform }}',
       'make --jobs {{ hw.concurrency }}',
-      'install -d "{{prefix}}/bin"',
-      'install -m 755 lsof "{{prefix}}/bin/lsof"',
+      'install -d {{prefix}}/bin',
+      'install -m 755 lsof {{prefix}}/bin/lsof',
     ],
   },
 }

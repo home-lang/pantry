@@ -52,7 +52,7 @@ export const recipe: Recipe = {
       {
         run: [
           'make CFLAGS="-g -O2 -Wall -I../../.." LDFLAGS="$LDFLAGS -lz -liconv"',
-          'install -Dm755 git-credential-osxkeychain "{{prefix}}"/bin',
+          'install -Dm755 git-credential-osxkeychain {{prefix}}/bin',
           'make clean',
         ],
         'working-directory': 'contrib/credential/osxkeychain',
@@ -60,7 +60,7 @@ export const recipe: Recipe = {
       },
 
       {
-        run: 'mv git-subtree "{{prefix}}"/libexec',
+        run: 'mv git-subtree {{prefix}}/libexec',
         'working-directory': 'contrib/subtree',
       },
 

@@ -33,7 +33,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: 'sed -i \'s/var version = ".*";/var version = "{{version}}";/\' cli.js',
+        run: 'sed -i \'s/var version = ".*";/var version = {{version}};/\' cli.js',
         'working-directory': 'dist',
       },
       'npm install --global --prefix={{prefix}} --install-links .',
@@ -41,7 +41,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      'test "$(pake --version)" = "{{version}}"',
+      'test "$(pake --version)" = {{version}}',
       'pake --name pkgx pkgx.sh --targets=deb',
     ],
   },

@@ -16,8 +16,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'goreleaser build --clean --single-target --skip=validate',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv dist/{{hw.platform}}*/usque "{{ prefix }}"/bin',
+      'mkdir -p {{ prefix }}/bin',
+      'mv dist/{{hw.platform}}*/usque {{ prefix }}/bin',
     ],
     env: {
       CGO_ENABLED: 0,

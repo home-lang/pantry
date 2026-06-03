@@ -30,7 +30,7 @@ export const recipe: Recipe = {
       },
       GO_ARGS: [
         '-trimpath',
-        '-o="{{prefix}}/bin/grype"',
+        '-o={{prefix}}/bin/grype',
       ],
     },
   },

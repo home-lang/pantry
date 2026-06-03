@@ -21,7 +21,7 @@ export const recipe: Recipe = {
     env: {
       GO_ARGS: [
         '-trimpath',
-        '-o="{{prefix}}/bin/ladder"',
+        '-o={{prefix}}/bin/ladder',
       ],
       LDFLAGS: [
         '-s',

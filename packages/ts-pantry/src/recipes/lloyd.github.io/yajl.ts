@@ -27,7 +27,7 @@ export const recipe: Recipe = {
     ],
     env: {
       CMAKE_ARGS: [
-        '-DCMAKE_INSTALL_PREFIX="{{prefix}}',
+        '-DCMAKE_INSTALL_PREFIX={{prefix}}',
         '-DCMAKE_INSTALL_LIBDIR=lib',
         '-DCMAKE_BUILD_TYPE=Release',
         '-DCMAKE_FIND_FRAMEWORK=LAST',
@@ -40,7 +40,7 @@ export const recipe: Recipe = {
   test: {
     script: [
       'pkg-config --modversion yajl | grep {{version}}',
-      'json_verify < test.json | grep "JSON is valid"',
+      'json_verify < test.json | grep JSON is valid"',
     ],
   },
 }

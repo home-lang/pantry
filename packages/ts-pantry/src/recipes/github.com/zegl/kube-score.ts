@@ -16,8 +16,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go build -ldflags="$LDFLAGS" ./cmd/kube-score',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv kube-score "{{ prefix }}"/bin',
+      'mkdir -p {{ prefix }}/bin',
+      'mv kube-score {{ prefix }}/bin',
     ],
     env: {
       LDFLAGS: [

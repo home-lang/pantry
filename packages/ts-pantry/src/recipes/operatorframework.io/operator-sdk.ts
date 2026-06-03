@@ -19,8 +19,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'make build/operator-sdk',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv build/operator-sdk "{{ prefix }}"/bin',
+      'mkdir -p {{ prefix }}/bin',
+      'mv build/operator-sdk {{ prefix }}/bin',
     ],
   },
   test: {

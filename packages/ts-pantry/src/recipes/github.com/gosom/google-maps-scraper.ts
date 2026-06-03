@@ -30,7 +30,7 @@ export const recipe: Recipe = {
     env: {
       GO_ARGS: [
         '-trimpath',
-        '-o="{{prefix}}/bin/google-maps-scraper"',
+        '-o={{prefix}}/bin/google-maps-scraper',
       ],
       GO_LDFLAGS: [
         '-s',

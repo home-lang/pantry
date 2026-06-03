@@ -27,7 +27,7 @@ export const recipe: Recipe = {
         if: "linux",
       },
       "make libgit2 all",
-      "mkdir -p \"{{ prefix }}\"/bin",
+      "mkdir -p \{{ prefix }}\/bin",
       "mv .build/mergestat {{prefix}}/bin/mergestat",
     ],
     env: {

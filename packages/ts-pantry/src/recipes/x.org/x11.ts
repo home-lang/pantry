@@ -26,7 +26,7 @@ export const recipe: Recipe = {
     env: {
       SHELF: '${{pkgx.prefix}}/x.org',
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--sysconfdir="$SHELF"/etc',
         '--localstatedir="$SHELF"/var',
         '--disable-debug',

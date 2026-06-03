@@ -19,7 +19,7 @@ export const recipe: Recipe = {
       ARGS: [
         '--disable-dependency-tracking',
         '--enable-shared',
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
       ],
     },
   },

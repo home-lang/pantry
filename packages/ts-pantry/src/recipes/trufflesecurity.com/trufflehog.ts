@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build -v -ldflags="$GO_LDFLAGS" -o "{{prefix}}"/bin/trufflehog',
+      'go build -v -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/trufflehog',
     ],
     env: {
       CGO_ENABLED: 0,

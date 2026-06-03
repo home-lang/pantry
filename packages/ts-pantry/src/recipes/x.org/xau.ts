@@ -18,7 +18,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       './configure \\',
-      '  --prefix="{{prefix}}" \\',
+      '  --prefix={{prefix}} \\',
       '  --sysconfdir="$SHELF"/etc \\',
       '  --localstatedir="$SHELF"/var',
       'make --jobs {{ hw.concurrency }} install',

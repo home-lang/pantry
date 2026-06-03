@@ -26,7 +26,7 @@ export const recipe: Recipe = {
         'working-directory': '${{deps.haskell.org.prefix}}/.ghcup/ghc/9.10.3/lib/ghc-9.10.3/lib',
       },
       {
-        run: 'sed -i \'s|Merge objects command.*|Merge objects command", "{{deps.gnu.org/binutils.prefix}}/bin/ld")|\' settings',
+        run: 'sed -i \'s|Merge objects command.*|Merge objects command", {{deps.gnu.org/binutils.prefix}}/bin/ld)|\' settings',
         if: 'linux',
         'working-directory': '${{deps.haskell.org.prefix}}/.ghcup/ghc/9.10.3/lib/ghc-9.10.3/lib',
       },

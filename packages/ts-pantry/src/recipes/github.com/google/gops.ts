@@ -19,7 +19,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go build -ldflags="$LDFLAGS"',
-      'install -Dm755 gops "{{ prefix }}"/bin/gops',
+      'install -Dm755 gops {{ prefix }}/bin/gops',
     ],
     env: {
       LDFLAGS: [

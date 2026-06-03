@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build -o "{{ prefix }}"/bin/hcloud -v -ldflags="$LDFLAGS" cmd/hcloud/main.go',
+      'go build -o {{ prefix }}/bin/hcloud -v -ldflags="$LDFLAGS" cmd/hcloud/main.go',
     ],
     env: {
       GO111MODULE: 'on',

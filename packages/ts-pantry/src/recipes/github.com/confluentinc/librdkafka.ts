@@ -23,7 +23,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      './configure --prefix="{{prefix}}"',
+      './configure --prefix={{prefix}}',
       'make --jobs {{ hw.concurrency }}',
       'make --jobs {{ hw.concurrency }} install',
     ],

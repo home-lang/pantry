@@ -15,7 +15,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'case "{{hw.platform}}/{{hw.arch}}" in',
+      'case {{hw.platform}}/{{hw.arch}} in',
       '  darwin/aarch64) TRIPLE="aarch64-apple-darwin" ;;',
       '  darwin/x86-64) TRIPLE="x86_64-apple-darwin" ;;',
       '  linux/x86-64) TRIPLE="x86_64-unknown-linux-gnu" ;;',
@@ -23,10 +23,10 @@ export const recipe: Recipe = {
       '  *) echo "Unsupported platform" && exit 1 ;;',
       'esac',
       'curl -fSL -o /tmp/spacetime.tar.gz "https://github.com/clockworklabs/SpacetimeDB/releases/download/v{{version}}/spacetime-${TRIPLE}.tar.gz"',
-      'mkdir -p /tmp/spacetime-extract "{{prefix}}/bin"',
+      'mkdir -p /tmp/spacetime-extract {{prefix}}/bin',
       'tar -xzf /tmp/spacetime.tar.gz -C /tmp/spacetime-extract',
-      'find /tmp/spacetime-extract -name spacetime -type f | head -1 | xargs -I{} cp {} "{{prefix}}/bin/spacetime"',
-      'chmod +x "{{prefix}}/bin/spacetime"',
+      'find /tmp/spacetime-extract -name spacetime -type f | head -1 | xargs -I{} cp {} {{prefix}}/bin/spacetime',
+      'chmod +x {{prefix}}/bin/spacetime',
     ],
   },
 }

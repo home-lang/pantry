@@ -23,7 +23,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: "sed -i 's/^const Version.*/const Version = \"{{version.tag}}\"/' internal/version/const.go\ngo build -v -ldflags=\"${GO_LDFLAGS_BINARY}\" -trimpath -buildvcs=false -o \"{{ prefix }}\"/bin/glauth",
+        run: "sed -i 's/^const Version.*/const Version = \{{version.tag}}\/' internal/version/const.go\ngo build -v -ldflags=\"${GO_LDFLAGS_BINARY}\" -trimpath -buildvcs=false -o \{{ prefix }}\/bin/glauth",
         'working-directory': "v2",
       },
       {
@@ -34,7 +34,7 @@ export const recipe: Recipe = {
         'working-directory': "v2/pkg/plugins",
       },
       {
-        run: "for plugin in ${PLUGINS}; do\ngo mod edit -json pkg/plugins/${plugin}/go.mod |\njq --raw-output '.Require|.[]|select(.Indirect!=true and ((.Path|contains(\"glauth\"))|not))| \"\\(.Path)@\\(.Version)\"' | xargs -I{} go get '{}'\nSRC_FILE=\"$(cd pkg/plugins/${plugin}/ && ls -1 *.go | grep ${plugin/glauth-/})\"\ngo build -v -ldflags=\"-s -w\" -buildmode=plugin -trimpath -o \"{{ prefix }}\"/lib/${plugin}.${LIB_SUFFIX} ./pkg/plugins/${plugin}/${SRC_FILE}\ndone",
+        run: "for plugin in ${PLUGINS}; do\ngo mod edit -json pkg/plugins/${plugin}/go.mod |\njq --raw-output '.Require|.[]|select(.Indirect!=true and ((.Path|contains(\"glauth\"))|not))| \"\\(.Path)@\\(.Version)\"' | xargs -I{} go get '{}'\nSRC_FILE=\"$(cd pkg/plugins/${plugin}/ && ls -1 *.go | grep ${plugin/glauth-/})\"\ngo build -v -ldflags=\"-s -w\" -buildmode=plugin -trimpath -o \{{ prefix }}\/lib/${plugin}.${LIB_SUFFIX} ./pkg/plugins/${plugin}/${SRC_FILE}\ndone",
         'working-directory': "v2",
       },
       {

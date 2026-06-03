@@ -19,10 +19,10 @@ export const recipe: Recipe = {
       'go build -v -ldflags="$LDFLAGS"',
       './scripts/generate-man-page-md.sh',
       './scripts/generate-man-page.sh',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv yq "{{ prefix }}"/bin',
-      'mkdir -p "{{ prefix }}"/share/man/man1',
-      'mv yq.1 "{{ prefix }}"/share/man/man1',
+      'mkdir -p {{ prefix }}/bin',
+      'mv yq {{ prefix }}/bin',
+      'mkdir -p {{ prefix }}/share/man/man1',
+      'mv yq.1 {{ prefix }}/share/man/man1',
     ],
     env: {
       LDFLAGS: [

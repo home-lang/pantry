@@ -16,9 +16,9 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'mkdir -p "{{prefix}}/bin"',
+      'mkdir -p {{prefix}}/bin',
       'make -j {{hw.concurrency}}',
-      'cp o/blink/blink{,enlights} "{{prefix}}/bin"',
+      'cp o/blink/blink{,enlights} {{prefix}}/bin',
     ],
   },
   test: {

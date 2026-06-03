@@ -37,7 +37,7 @@ export const recipe: Recipe = {
   test: {
     script: [
       'svu --version',
-      'svu --version 2>&1 | grep "{{version}}"',
+      'svu --version 2>&1 | grep {{version}}',
     ],
   },
 }

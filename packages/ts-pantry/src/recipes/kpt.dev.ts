@@ -24,7 +24,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build -v -trimpath -ldflags="$LDFLAGS" -o "{{prefix}}/bin/kpt" .',
+      'go build -v -trimpath -ldflags="$LDFLAGS" -o {{prefix}}/bin/kpt .',
     ],
     env: {
       'LDFLAGS': ['-s', '-w', '-X github.com/GoogleContainerTools/kpt/run.version={{version}}'],

@@ -35,7 +35,7 @@ export const recipe: Recipe = {
       '  -ldflags "-w \\',
       '            -X sigs.k8s.io/krew/internal/version.gitCommit=$(git rev-parse --short HEAD) \\',
       '            -X sigs.k8s.io/krew/internal/version.gitTag={{version}}" \\',
-      '  -o "{{prefix}}/bin/kubectl-krew" \\',
+      '  -o {{prefix}}/bin/kubectl-krew \\',
       '  ./cmd/krew',
       '',
     ],

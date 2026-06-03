@@ -20,9 +20,9 @@ export const recipe: Recipe = {
       '  arm64|aarch64) ARCH="arm64" ;;',
       '  x86_64) ARCH="amd64" ;;',
       'esac',
-      'mkdir -p "{{prefix}}/bin"',
-      'curl -fSL "https://github.com/foundry-rs/foundry/releases/download/v{{version}}/foundry_v{{version}}_${OS}_${ARCH}.tar.gz" | tar xz -C "{{prefix}}/bin"',
-      'chmod +x "{{prefix}}/bin/forge" "{{prefix}}/bin/cast" "{{prefix}}/bin/anvil" "{{prefix}}/bin/chisel"',
+      'mkdir -p {{prefix}}/bin',
+      'curl -fSL "https://github.com/foundry-rs/foundry/releases/download/v{{version}}/foundry_v{{version}}_${OS}_${ARCH}.tar.gz" | tar xz -C {{prefix}}/bin',
+      'chmod +x {{prefix}}/bin/forge {{prefix}}/bin/cast {{prefix}}/bin/anvil {{prefix}}/bin/chisel',
     ],
   },
 }

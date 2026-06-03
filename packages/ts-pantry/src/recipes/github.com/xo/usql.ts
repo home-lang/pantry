@@ -18,7 +18,7 @@ export const recipe: Recipe = {
     script: [
       'sd 0.0.0-dev v{{version}} text/text.go',
       'go mod download',
-      'mkdir -p "{{ prefix }}"/bin',
+      'mkdir -p {{ prefix }}/bin',
       'go build -v -trimpath -ldflags="$LDFLAGS" -o $BUILDLOC .',
     ],
     env: {

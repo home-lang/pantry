@@ -10,9 +10,9 @@ export const recipe: Recipe = {
   distributable: undefined,
   build: {
     script: [
-      'mkdir -p "{{prefix}}/ssl"',
+      'mkdir -p {{prefix}}/ssl',
       'URL_VER=$(echo {{version.raw}} | tr -- . -)',
-      'curl -k https://curl.se/ca/cacert-$URL_VER.pem -o "{{prefix}}"/ssl/cert.pem',
+      'curl -k https://curl.se/ca/cacert-$URL_VER.pem -o {{prefix}}/ssl/cert.pem',
     ],
   },
   test: {

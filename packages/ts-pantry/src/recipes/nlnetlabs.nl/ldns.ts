@@ -26,11 +26,11 @@ export const recipe: Recipe = {
       'make --jobs {{ hw.concurrency }} install',
       '# Oddly, the man pages are read-only, messing',
       '# up our build process',
-      'find "{{ prefix }}"/share/man -type f -print0 | xargs -0 chmod u+w',
+      'find {{ prefix }}/share/man -type f -print0 | xargs -0 chmod u+w',
     ],
     env: {
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--with-drill',
         '--with-ssl={{ deps.openssl.org.prefix }}',
         '--disable-dane-verify',

@@ -12,7 +12,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      './configure --prefix="{{ prefix }}" --disable-debug --disable-host-tool --with-internal-glib --with-pc-path=/usr/lib/pkgconfig:/usr/share/pkgconfig',
+      './configure --prefix={{ prefix }} --disable-debug --disable-host-tool --with-internal-glib --with-pc-path=/usr/lib/pkgconfig:/usr/share/pkgconfig',
       'make --jobs {{ hw.concurrency }} install',
     ],
     env: {

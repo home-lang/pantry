@@ -15,14 +15,14 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/vault-unseal',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o {{ prefix }}/bin/vault-unseal',
     ],
     env: {
       CGO_ENABLED: 0,
       GO_LDFLAGS: [
         '-s',
         '-w',
-        '-X main.version="{{ version }}"',
+        '-X main.version={{ version }}',
         '-X main.commit="$( git rev-parse HEAD )"',
         '-X main.date="$( date --iso-8601=minutes )"',
       ],

@@ -28,8 +28,8 @@ export const recipe: Recipe = {
     env: {
       CONFIGURE_ARGS: [
         '--disable-debug',
-        '--prefix="{{prefix}}"',
-        '--libdir="{{prefix}}/lib"',
+        '--prefix={{prefix}}',
+        '--libdir={{prefix}}/lib',
         '--disable-rpath',
       ],
     },

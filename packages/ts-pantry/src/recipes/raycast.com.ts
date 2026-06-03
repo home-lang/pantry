@@ -12,11 +12,11 @@ export const recipe: Recipe = {
     script: [
       'curl -fSL "https://releases.raycast.com/releases/{{version}}/download?arch=arm64" -o /tmp/raycast.dmg',
       'hdiutil attach /tmp/raycast.dmg -mountpoint /tmp/raycast-mount -nobrowse -quiet',
-      'mkdir -p "{{prefix}}"',
-      'cp -R "/tmp/raycast-mount/Raycast.app" "{{prefix}}/Raycast.app"',
+      'mkdir -p {{prefix}}',
+      'cp -R "/tmp/raycast-mount/Raycast.app" {{prefix}}/Raycast.app',
       'hdiutil detach /tmp/raycast-mount -quiet || true',
-      'mkdir -p "{{prefix}}/bin"',
-      'ln -sf "../Raycast.app/Contents/MacOS/Raycast" "{{prefix}}/bin/raycast"',
+      'mkdir -p {{prefix}}/bin',
+      'ln -sf "../Raycast.app/Contents/MacOS/Raycast" {{prefix}}/bin/raycast',
     ],
   },
 }

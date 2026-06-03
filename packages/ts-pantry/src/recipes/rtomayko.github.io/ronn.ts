@@ -25,8 +25,8 @@ export const recipe: Recipe = {
       '  --bindir={{prefix}}/gems/bin \\',
       '  --no-document \\',
       '  ronn-{{version}}.gem',
-      'mkdir "{{prefix}}"/bin',
-      'mv props/ronn "{{prefix}}"/bin',
+      'mkdir {{prefix}}/bin',
+      'mv props/ronn {{prefix}}/bin',
     ],
     env: {
       GEM_HOME: '${{prefix}}',

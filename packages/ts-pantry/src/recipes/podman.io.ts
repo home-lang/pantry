@@ -39,13 +39,13 @@ export const recipe: Recipe = {
         prop: 's_\\(^var defaultHelperBinariesDir.*\\)_\\\n\\1\\n        "$BINDIR/../../../github.com/containers/gvisor-tap-vsock/v{{deps.github.com/containers/gvisor-tap-vsock.version.major}}/bin",_',
       },
 
-      'mkdir -p "{{prefix}}"/bin',
+      'mkdir -p {{prefix}}/bin',
       'make --jobs {{hw.concurrency}} podman-remote',
 
       {
         run: [
-          'mv bin/podman-remote "{{prefix}}"/bin/',
-          'ln -s podman-remote "{{prefix}}"/bin/podman',
+          'mv bin/podman-remote {{prefix}}/bin/',
+          'ln -s podman-remote {{prefix}}/bin/podman',
         ],
         if: 'linux',
       },
@@ -53,8 +53,8 @@ export const recipe: Recipe = {
       {
         run: [
           'make --jobs {{hw.concurrency}} podman-mac-helper',
-          'mv bin/darwin/podman{-mac-helper,} "{{prefix}}"/bin/',
-          'ln -s podman "{{prefix}}"/bin/podman-remote',
+          'mv bin/darwin/podman{-mac-helper,} {{prefix}}/bin/',
+          'ln -s podman {{prefix}}/bin/podman-remote',
         ],
         if: 'darwin',
       },

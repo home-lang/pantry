@@ -22,7 +22,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: 'sed -i \'s/__version__ = ".*"/__version__ = "{{version}}"/\' version.py',
+        run: 'sed -i \'s/__version__ = ".*"/__version__ = {{version}}/\' version.py',
         'working-directory': 'src/cfnlint',
       },
       'bkpyvenv stage {{prefix}} {{version}}',

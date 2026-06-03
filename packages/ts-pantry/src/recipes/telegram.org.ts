@@ -12,11 +12,11 @@ export const recipe: Recipe = {
     script: [
       'curl -fSL -L "https://osx.telegram.org/updates/Telegram.dmg" -o /tmp/telegram.dmg',
       'hdiutil attach /tmp/telegram.dmg -mountpoint /tmp/telegram-mount -nobrowse -quiet',
-      'mkdir -p "{{prefix}}"',
-      'cp -R "/tmp/telegram-mount/Telegram.app" "{{prefix}}/Telegram.app"',
+      'mkdir -p {{prefix}}',
+      'cp -R "/tmp/telegram-mount/Telegram.app" {{prefix}}/Telegram.app',
       'hdiutil detach /tmp/telegram-mount -quiet || true',
-      'mkdir -p "{{prefix}}/bin"',
-      'ln -sf "../Telegram.app/Contents/MacOS/Telegram" "{{prefix}}/bin/telegram"',
+      'mkdir -p {{prefix}}/bin',
+      'ln -sf "../Telegram.app/Contents/MacOS/Telegram" {{prefix}}/bin/telegram',
     ],
   },
 }

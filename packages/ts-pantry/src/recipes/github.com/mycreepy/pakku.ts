@@ -17,12 +17,12 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: "if test \"{{hw.arch}}\" = \"aarch64\"; then\n  export PLATFORM=${PLATFORM}_v8.0\nfi\n",
+        run: "if test \{{hw.arch}}\ = \"aarch64\"; then\n  export PLATFORM=${PLATFORM}_v8.0\nfi\n",
         if: ">=0.4.2",
       },
       "goreleaser build --clean --single-target --skip=validate",
-      "mkdir -p \"{{ prefix }}\"/bin",
-      "mv dist/pakku_$PLATFORM/pakku \"{{ prefix }}\"/bin",
+      "mkdir -p \{{ prefix }}\/bin",
+      "mv dist/pakku_$PLATFORM/pakku \{{ prefix }}\/bin",
     ],
     env: {
       CGO_ENABLED: 0,

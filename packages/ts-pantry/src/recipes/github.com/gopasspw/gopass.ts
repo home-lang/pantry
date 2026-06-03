@@ -35,7 +35,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      '[[ "$(gopass --version)" == *"{{version}}"* ]]',
+      '[[ "$(gopass --version)" == *{{version}}* ]]',
     ],
   },
 }

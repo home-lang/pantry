@@ -26,14 +26,14 @@ export const recipe: Recipe = {
       'cmake .. $CMAKE_ARGS',
       'make --jobs {{ hw.concurrency }} install',
       {
-        run: 'pip install ../python --verbose  --prefix="{{prefix}}"',
+        run: 'pip install ../python --verbose  --prefix={{prefix}}',
         if: 'darwin',
       },
     ],
     env: {
       PKG_CONFIG_PATH: '$PKG_CONFIG_PATH:{{prefix}}/lib/pkgconfig',
       CMAKE_ARGS: [
-        '-DCMAKE_INSTALL_PREFIX="{{prefix}}"',
+        '-DCMAKE_INSTALL_PREFIX={{prefix}}',
         '-DCMAKE_BUILD_TYPE=Release',
       ],
     },

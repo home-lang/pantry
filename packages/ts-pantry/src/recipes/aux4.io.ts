@@ -25,7 +25,7 @@ export const recipe: Recipe = {
     ],
     env: {
       'GO_LDFLAGS': ['-s', '-w', '-X main.version={{version}}'],
-      'ARGS': ['-v', '-trimpath', '-o "{{prefix}}/bin/aux4"'],
+      'ARGS': ['-v', '-trimpath', '-o {{prefix}}/bin/aux4'],
     },
   },
 }

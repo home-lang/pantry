@@ -19,7 +19,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'VER_UNDERSCORE=$(echo "{{version}}" | tr "." "_")',
+      'VER_UNDERSCORE=$(echo {{version}} | tr "." "_")',
       'TAG="rel_${VER_UNDERSCORE}"',
       'curl -fSL "https://github.com/sqlalchemy/alembic/archive/refs/tags/${TAG}.tar.gz" | tar xz --strip-components=1',
       'bkpyvenv stage {{prefix}} {{version}}',

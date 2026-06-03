@@ -23,8 +23,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go build -v -ldflags="$LDFLAGS"',
-      'mkdir -p "{{prefix}}"/bin',
-      'mv chezmoi "{{prefix}}"/bin',
+      'mkdir -p {{prefix}}/bin',
+      'mv chezmoi {{prefix}}/bin',
       '',
     ],
     env: {

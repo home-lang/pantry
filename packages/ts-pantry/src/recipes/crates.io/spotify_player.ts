@@ -24,7 +24,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      "sed -i '1,10s/^version = \".*\"/version = \"{{version}}\"/' spotify_player/Cargo.toml",
+      "sed -i '1,10s/^version = \".*\"/version = \{{version}}\/' spotify_player/Cargo.toml",
       "cargo install $ARGS",
       {
         run: "SIXEL=$(otool -l {{prefix}}/bin/spotify_player | grep 'libsixel.1.dylib' | sed 's/.*name \\(.*\\) (offset .*/\\1/')\ninstall_name_tool -change \"$SIXEL\" {{deps.github.com/libsixel/libsixel.prefix}}/lib/libsixel.1.dylib {{prefix}}/bin/spotify_player",

@@ -22,7 +22,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go mod download',
-      'go build -tags release -ldflags="$GO_LDFLAGS" -o "{{prefix}}/bin/ctop"',
+      'go build -tags release -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/ctop',
     ],
     env: {
       'GO_LDFLAGS': ['-s', '-w', '-X main.version={{version}}', '-X main.build=pkgx'],

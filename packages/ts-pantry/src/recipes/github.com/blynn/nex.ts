@@ -16,9 +16,9 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{prefix}}"/bin/nex ./main.go ./nex.go',
-      'rsync -avH ./test "{{prefix}}"',
-      'rsync -avH ./props/README.md "{{prefix}}/share/"',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o {{prefix}}/bin/nex ./main.go ./nex.go',
+      'rsync -avH ./test {{prefix}}',
+      'rsync -avH ./props/README.md {{prefix}}/share/',
     ],
     env: {
       CGO_ENABLED: 0,
@@ -35,7 +35,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      'nex -r -s {{prefix}}/test/lc.nex < "{{prefix}}/share/README.md"',
+      'nex -r -s {{prefix}}/test/lc.nex < {{prefix}}/share/README.md',
     ],
   },
 }

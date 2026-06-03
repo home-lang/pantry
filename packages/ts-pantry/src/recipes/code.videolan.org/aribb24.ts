@@ -26,7 +26,7 @@ export const recipe: Recipe = {
     env: {
       ARGS: [
         '--disable-silent-rules',
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
       ],
     },
   },

@@ -17,8 +17,8 @@ export const recipe: Recipe = {
       './configure $ARGS --prefix="$TMP_PREFIX"',
       'make device-mapper',
       'make install_device-mapper',
-      'mkdir -p "{{prefix}}"',
-      'cp -a "$TMP_PREFIX"/* "{{prefix}}"',
+      'mkdir -p {{prefix}}',
+      'cp -a "$TMP_PREFIX"/* {{prefix}}',
     ],
     env: {
       ARGS: [

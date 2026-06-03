@@ -44,7 +44,7 @@ export const recipe: Recipe = {
       'cmake --build .',
       'cmake --install .',
       {
-        run: 'cp "{{deps.lua.org.prefix}}/lib/liblua.so" liblua.so',
+        run: 'cp {{deps.lua.org.prefix}}/lib/liblua.so liblua.so',
         'working-directory': '${{prefix}}/lib',
       },
     ],

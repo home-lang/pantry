@@ -28,7 +28,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'if test "{{hw.platform}}" = "darwin"; then',
+      'if test {{hw.platform}} = "darwin"; then',
       '  LLAMA_VERSION=\'CPPLLAMA_VERSION=387a1598ca094a4755303ec964c3b09b4c5c300e\'',
       'fi',
       '',

@@ -18,11 +18,11 @@ export const recipe: Recipe = {
     script: [
       'curl -fSL "https://github.com/exelban/stats/releases/download/v{{version}}/Stats.dmg" -o /tmp/stats.dmg',
       'hdiutil attach /tmp/stats.dmg -mountpoint /tmp/stats-mount -nobrowse -quiet',
-      'mkdir -p "{{prefix}}"',
-      'cp -R "/tmp/stats-mount/Stats.app" "{{prefix}}/Stats.app"',
+      'mkdir -p {{prefix}}',
+      'cp -R "/tmp/stats-mount/Stats.app" {{prefix}}/Stats.app',
       'hdiutil detach /tmp/stats-mount -quiet || true',
-      'mkdir -p "{{prefix}}/bin"',
-      'ln -sf "../Stats.app/Contents/MacOS/Stats" "{{prefix}}/bin/stats"',
+      'mkdir -p {{prefix}}/bin',
+      'ln -sf "../Stats.app/Contents/MacOS/Stats" {{prefix}}/bin/stats',
     ],
   },
 }

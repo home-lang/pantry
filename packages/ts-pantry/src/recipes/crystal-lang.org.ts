@@ -57,17 +57,17 @@ export const recipe: Recipe = {
       // the symbols crystal needs ship in libtinfo (libtinfo-dev), so link -ltinfo on linux.
       { run: 'export LDFLAGS="$LDFLAGS -Wl,-ltinfo"', if: 'linux' },
       'make crystal $ARGS',
-      'mkdir -p "{{prefix}}/bin"',
-      'cp .build/crystal "{{prefix}}/bin/crystal.bin"',
-      'cp props/shim "{{prefix}}/bin/crystal"',
-      'cp -a src "{{prefix}}/lib"',
+      'mkdir -p {{prefix}}/bin',
+      'cp .build/crystal {{prefix}}/bin/crystal.bin',
+      'cp props/shim {{prefix}}/bin/crystal',
+      'cp -a src {{prefix}}/lib',
 
       // regression in 1.14.0
       {
         'working-directory': '${{prefix}}/lib/crystal/system/unix',
         if: '=1.14.0',
         run: [
-          'if test "{{hw.platform}}" = "darwin"; then',
+          'if test {{hw.platform}} = "darwin"; then',
           '  sed -i \'s/mask = LibC::SigsetT.new$/mask = LibC::SigsetT.new(0_u32)/\' pthread.cr',
           'fi',
         ].join('\n'),

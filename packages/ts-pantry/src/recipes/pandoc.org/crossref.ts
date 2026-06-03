@@ -32,7 +32,7 @@ export const recipe: Recipe = {
         'working-directory': "${{deps.haskell.org.prefix}}/.ghcup/ghc/{{deps.haskell.org.version}}/lib/ghc-{{deps.haskell.org.version}}/lib",
       },
       "cabal update",
-      "mkdir -p \"{{prefix}}/bin\"",
+      "mkdir -p \{{prefix}}/bin\",
       "cabal install --install-method=copy --installdir={{prefix}}/bin",
     ],
   },

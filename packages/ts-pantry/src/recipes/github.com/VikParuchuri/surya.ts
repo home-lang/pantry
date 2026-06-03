@@ -32,15 +32,15 @@ export const recipe: Recipe = {
         if: ">=0.20",
       },
       {
-        run: "if test \"{{hw.platform}}\" = \"darwin\"; then\n  poetry config --local installer.no-binary opencv-python\nfi\n",
+        run: "if test \{{hw.platform}}\ = \"darwin\"; then\n  poetry config --local installer.no-binary opencv-python\nfi\n",
         if: "<0.20",
       },
       {
-        run: "if test \"{{hw.platform}}/{{hw.arch}}\" = \"darwin/x86-64\"; then\n  sed -i 's/^torch.*/torch = \"=2.2.2\"/' pyproject.toml\n  poetry lock\nfi\n",
+        run: "if test \{{hw.platform}}/{{hw.arch}}\ = \"darwin/x86-64\"; then\n  sed -i 's/^torch.*/torch = \"=2.2.2\"/' pyproject.toml\n  poetry lock\nfi\n",
         if: ">=0.4.4<0.20",
       },
       {
-        run: "if test \"{{hw.platform}}/{{hw.arch}}\" = \"linux/aarch64\"; then\n  poetry add 'pymupdf==1.25.2'\nfi\n",
+        run: "if test \{{hw.platform}}/{{hw.arch}}\ = \"linux/aarch64\"; then\n  poetry add 'pymupdf==1.25.2'\nfi\n",
         if: "<0.20",
       },
       {

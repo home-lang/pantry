@@ -12,11 +12,11 @@ export const recipe: Recipe = {
     script: [
       'curl -fSL -L "https://github.com/aonez/Keka/releases/download/v{{version}}/Keka-{{version}}.dmg" -o /tmp/keka.dmg',
       'hdiutil attach /tmp/keka.dmg -mountpoint /tmp/keka-mount -nobrowse -quiet',
-      'mkdir -p "{{prefix}}"',
-      'cp -R "/tmp/keka-mount/Keka.app" "{{prefix}}/Keka.app"',
+      'mkdir -p {{prefix}}',
+      'cp -R "/tmp/keka-mount/Keka.app" {{prefix}}/Keka.app',
       'hdiutil detach /tmp/keka-mount -quiet || true',
-      'mkdir -p "{{prefix}}/bin"',
-      'ln -sf "../Keka.app/Contents/MacOS/Keka" "{{prefix}}/bin/keka"',
+      'mkdir -p {{prefix}}/bin',
+      'ln -sf "../Keka.app/Contents/MacOS/Keka" {{prefix}}/bin/keka',
     ],
   },
 }

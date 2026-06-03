@@ -29,7 +29,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        '-DCMAKE_INSTALL_PREFIX:PATH="{{prefix}}"',
+        '-DCMAKE_INSTALL_PREFIX:PATH={{prefix}}',
         '-DRELEASE=svn-{{version.marketing}}',
         '-DPUTTY_GTK_VERSION=NONE',
       ],

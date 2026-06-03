@@ -21,8 +21,8 @@ export const recipe: Recipe = {
     script: [
       'go mod download',
       'go build -v -ldflags="$LDFLAGS"',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv vhs "{{ prefix }}"/bin',
+      'mkdir -p {{ prefix }}/bin',
+      'mv vhs {{ prefix }}/bin',
     ],
     env: {
       LDFLAGS: [

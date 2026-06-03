@@ -22,8 +22,8 @@ export const recipe: Recipe = {
     skip: ['fix-machos', 'fix-patchelf'],
     script: [
       'curl -fSL "https://dist.neo4j.org/neo4j-community-{{version}}-unix.tar.gz" -o neo4j.tar.gz',
-      'mkdir -p "{{prefix}}"',
-      'tar xzf neo4j.tar.gz --strip-components=1 -C "{{prefix}}"',
+      'mkdir -p {{prefix}}',
+      'tar xzf neo4j.tar.gz --strip-components=1 -C {{prefix}}',
       'rm neo4j.tar.gz',
     ],
   },

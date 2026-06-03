@@ -12,10 +12,10 @@ export const recipe: Recipe = {
     script: [
       'curl -fSL "https://desktop.figma.com/mac-arm/Figma-{{version}}.zip" -o /tmp/figma.zip',
       'cd /tmp && unzip -qo figma.zip',
-      'mkdir -p "{{prefix}}"',
-      'mv "/tmp/Figma.app" "{{prefix}}/Figma.app"',
-      'mkdir -p "{{prefix}}/bin"',
-      'ln -sf "../Figma.app/Contents/MacOS/Figma" "{{prefix}}/bin/figma"',
+      'mkdir -p {{prefix}}',
+      'mv "/tmp/Figma.app" {{prefix}}/Figma.app',
+      'mkdir -p {{prefix}}/bin',
+      'ln -sf "../Figma.app/Contents/MacOS/Figma" {{prefix}}/bin/figma',
     ],
   },
 }

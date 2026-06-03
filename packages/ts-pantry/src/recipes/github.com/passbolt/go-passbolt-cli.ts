@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build -v -ldflags="$LDFLAGS" -o "{{ prefix }}"/bin/passbolt',
+      'go build -v -ldflags="$LDFLAGS" -o {{ prefix }}/bin/passbolt',
     ],
     env: {
       CGO_ENABLED: 0,

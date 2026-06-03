@@ -17,7 +17,7 @@ export const recipe: Recipe = {
     script: [
       'go mod download',
       {
-        run: 'sed -i \'s/info\\.Main\\.Version/"{{version}}"/g\' version.go',
+        run: 'sed -i \'s/info\\.Main\\.Version/{{version}}/g\' version.go',
         'working-directory': 'cmd',
       },
       'go build -v -trimpath -ldflags="$LDFLAGS" -o $BUILDLOC .',

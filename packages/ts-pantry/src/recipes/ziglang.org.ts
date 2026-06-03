@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'VERSION={{version}}',
-      'case "{{hw.platform}}+{{hw.arch}}" in',
+      'case {{hw.platform}}+{{hw.arch}} in',
       '  darwin+aarch64) PLATFORM="aarch64-macos" ;;',
       '  darwin+x86-64)  PLATFORM="x86_64-macos"  ;;',
       '  linux+aarch64)  PLATFORM="aarch64-linux" ;;',
@@ -35,8 +35,8 @@ export const recipe: Recipe = {
       'curl -Lfo zig.tar.xz "$URL"',
       'tar Jxf zig.tar.xz',
       '',
-      'install -Dm755 "zig-${PLATFORM}-${DOWNLOAD_VERSION}/zig" "{{prefix}}/bin/zig"',
-      'cp -a "zig-${PLATFORM}-${DOWNLOAD_VERSION}/lib" "{{prefix}}"',
+      'install -Dm755 "zig-${PLATFORM}-${DOWNLOAD_VERSION}/zig" {{prefix}}/bin/zig',
+      'cp -a "zig-${PLATFORM}-${DOWNLOAD_VERSION}/lib" {{prefix}}',
     ],
   },
 }

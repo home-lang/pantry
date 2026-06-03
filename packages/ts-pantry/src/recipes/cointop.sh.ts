@@ -25,7 +25,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build -ldflags="$LDFLAGS" -o "{{prefix}}/bin/cointop"',
+      'go build -ldflags="$LDFLAGS" -o {{prefix}}/bin/cointop',
       '',
     ],
     env: {

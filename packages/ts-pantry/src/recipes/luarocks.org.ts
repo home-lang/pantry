@@ -67,7 +67,7 @@ export const recipe: Recipe = {
             'variables = {',
             '  LUA_DIR = "${PKGX_DIR:-$HOME/.pkgx}/lua.org/v{{deps.lua.org.version.marketing}}";',
             '  LUA_BINDIR = "${PKGX_DIR:-$HOME/.pkgx}/lua.org/v{{deps.lua.org.version.marketing}}/bin";',
-            '  LUA_VERSION = "{{deps.lua.org.version.marketing}}";',
+            '  LUA_VERSION = {{deps.lua.org.version.marketing}};',
             '  LUA = "${PKGX_DIR:-$HOME/.pkgx}/lua.org/v{{deps.lua.org.version.marketing}}/bin/lua";',
             '}',
             'EOF',

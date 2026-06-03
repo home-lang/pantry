@@ -25,7 +25,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'sed -i \'1,20s/^version = .*/version = "{{ version }}"/\' Cargo.toml',
+      'sed -i \'1,20s/^version = .*/version = {{ version }}/\' Cargo.toml',
       'cargo install --locked --path . --root {{prefix}}',
     ],
   },

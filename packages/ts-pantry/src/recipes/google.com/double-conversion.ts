@@ -13,7 +13,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'cmake -DCMAKE_INSTALL_PREFIX="{{prefix}}" -DBUILD_SHARED_LIBS=ON .',
+      'cmake -DCMAKE_INSTALL_PREFIX={{prefix}} -DBUILD_SHARED_LIBS=ON .',
       'make --jobs {{ hw.concurrency }} ',
       'make install',
     ],

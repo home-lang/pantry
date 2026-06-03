@@ -21,7 +21,7 @@ export const recipe: Recipe = {
       'make --jobs {{ hw.concurrency }} install',
       'cd {{prefix}}/bin',
       'sed -i.bak \\',
-      '  -e \'s_prefix="{{prefix}}"_prefix="$(dirname $(dirname $0))"_\' \\',
+      '  -e \'s_prefix={{prefix}}_prefix="$(dirname $(dirname $0))"_\' \\',
       '  -e \'s_{{prefix}}_$prefix_\' \\',
       '  libtoolize',
       'rm libtoolize.bak',

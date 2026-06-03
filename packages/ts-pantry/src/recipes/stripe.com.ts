@@ -24,8 +24,8 @@ export const recipe: Recipe = {
     script: [
       'make setup',
       'go build -v -ldflags="$LDFLAGS" -o stripe cmd/stripe/main.go',
-      'mkdir -p "{{prefix}}"/bin',
-      'mv stripe "{{prefix}}"/bin',
+      'mkdir -p {{prefix}}/bin',
+      'mv stripe {{prefix}}/bin',
       '',
     ],
     env: {

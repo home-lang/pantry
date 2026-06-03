@@ -37,9 +37,9 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'mkdir -p "{{prefix}}"/bin',
+      'mkdir -p {{prefix}}/bin',
       'make build-wasmer',
-      'mv target/release/wasmer "{{prefix}}"/bin',
+      'mv target/release/wasmer {{prefix}}/bin',
     ],
     env: {
       // -A warnings: ignore warnings (focus on errors)

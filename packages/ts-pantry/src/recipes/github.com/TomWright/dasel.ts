@@ -18,7 +18,7 @@ export const recipe: Recipe = {
       "go install -ldflags=\"$GO_LDFLAGS\"",
     ],
     env: {
-      GOBIN: "{{prefix}}/bin",
+      GOBIN: {{prefix}}/bin,
       GO_LDFLAGS: [
         "-X 'github.com/tomwright/dasel/v2/internal.Version={{version}}'",
         "-X 'github.com/tomwright/dasel/v3/internal.Version={{version}}'",
@@ -33,7 +33,7 @@ export const recipe: Recipe = {
   test: {
     script: [
       "test \"$(dasel --version)\" = \"dasel version {{version}}\"\nEXEC=\"-r json\"",
-      "test \"$(dasel version)\" = \"{{version}}\"\nEXEC=\"query\"",
+      "test \"$(dasel version)\" = \{{version}}\\nEXEC=\"query\"",
       "test \"$(cat $FIXTURE | dasel $EXEC 'hello.world')\" = '\"Hello, World!\"'",
     ],
   },

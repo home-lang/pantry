@@ -27,7 +27,7 @@ export const recipe: Recipe = {
       // tries to load a vendored `protoc` with the wrong architecture; the
       // offending code was removed upstream in 0.75.0, so only patch before that.
       {
-        run: 'sed -i \'s|protoc_bin_vendored::protoc_bin_path().expect("Failed to find protoc binary")|Path::new("{{deps.protobuf.dev.prefix}}/bin/protoc")|\' build.rs',
+        run: 'sed -i \'s|protoc_bin_vendored::protoc_bin_path().expect("Failed to find protoc binary")|Path::new({{deps.protobuf.dev.prefix}}/bin/protoc)|\' build.rs',
         if: '<0.75.0',
       },
       'cargo install --locked --path . --root {{prefix}}',

@@ -41,8 +41,8 @@ export const recipe: Recipe = {
     env: {
       PATCH: 'https://raw.githubusercontent.com/Homebrew/formula-patches/0a8a55872e/d-bus/org.freedesktop.dbus-session.plist.osx.diff',
       MESON_ARGS: [
-        '--prefix="{{prefix}}"',
-        '--libdir="{{prefix}}/lib"',
+        '--prefix={{prefix}}',
+        '--libdir={{prefix}}/lib',
         '--buildtype=release',
         '--wrap-mode=nofallback',
         '-Ddbus_user=$(whoami)',

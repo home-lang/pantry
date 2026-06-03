@@ -19,10 +19,10 @@ export const recipe: Recipe = {
     workingDirectory: 'groovy-{{version}}',
     script: [
       'find bin -name "*.bat" -exec rm {} \\;',
-      'mkdir -p "{{prefix}}"',
+      'mkdir -p {{prefix}}',
       // 3.0.24 shipped with CRLF line endings, so we need to convert them to LF
       { run: 'dos2unix * || true', 'working-directory': 'bin' },
-      'cp -a bin conf lib "{{prefix}}"',
+      'cp -a bin conf lib {{prefix}}',
     ],
   },
 }

@@ -22,7 +22,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'case "{{hw.platform}}/{{hw.arch}}" in',
+      'case {{hw.platform}}/{{hw.arch}} in',
       '  darwin/aarch64) PLATFORM=macos; ARCH=aarch64; SUFFIX= ;;',
       '  darwin/x86-64)  PLATFORM=macos; ARCH=amd64;   SUFFIX= ;;',
       '  linux/aarch64)  PLATFORM=linux; ARCH=aarch64; SUFFIX=-static ;;',

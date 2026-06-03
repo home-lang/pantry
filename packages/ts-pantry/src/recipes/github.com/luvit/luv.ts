@@ -33,13 +33,13 @@ export const recipe: Recipe = {
       "cmake --install buildlua",
       {
         run: "ln -s {{deps.lua.org.version.marketing}} {{deps.lua.org.version.major}}\n",
-        'working-directory': "{{prefix}}/lib/lua",
+        'working-directory': {{prefix}}/lib/lua,
       },
     ],
     env: {
       lua_compact: "https://github.com/keplerproject/lua-compat-5.3/archive/v0.10.tar.gz",
       CMAKE_ARGS: [
-        "-DCMAKE_INSTALL_PREFIX=\"{{prefix}}",
+        "-DCMAKE_INSTALL_PREFIX=\{{prefix}},
         "-DCMAKE_INSTALL_LIBDIR=lib",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_FIND_FRAMEWORK=LAST",

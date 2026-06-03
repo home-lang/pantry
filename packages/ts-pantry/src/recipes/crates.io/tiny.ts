@@ -25,7 +25,7 @@ export const recipe: Recipe = {
   test: {
     script: [
       'tiny --help',
-      'tiny --version | grep "{{version}}"',
+      'tiny --version | grep {{version}}',
     ],
   },
 }

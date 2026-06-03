@@ -28,7 +28,7 @@ export const recipe: Recipe = {
       './Configure $ARGS',
       'make --jobs {{hw.concurrency}} install',
       '',
-      'cd "{{prefix}}"/bin',
+      'cd {{prefix}}/bin',
       'for x in *; do',
       '  case $x in',
       '  perl|perl{{version}})',

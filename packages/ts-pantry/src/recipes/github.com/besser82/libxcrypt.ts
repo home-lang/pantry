@@ -19,7 +19,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--disable-valgrind',
         '--disable-symvers',
         '--disable-failure-tokens',

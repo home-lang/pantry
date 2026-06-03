@@ -20,7 +20,7 @@ export const recipe: Recipe = {
       '# otherwise X11 fails to build on all platforms we support at least lol',
       'sed -i.bak \'s|# include <sys/stropts.h>|# include <sys/ioctl.h>|g\' Xtranslcl.c',
       './configure \\',
-      '  --prefix="{{prefix}}" \\',
+      '  --prefix={{prefix}} \\',
       '  --sysconfdir="$SHELF"/etc \\',
       '  --localstatedir="$SHELF"/var \\',
       '  --disable-debug \\',

@@ -25,7 +25,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--with-pmdir={{prefix}}/lib/perl{{deps.perl.org.version.major}}',
       ],
       PERL5LIB: '${{prefix}}/lib/perl{{deps.perl.org.version.major}}',

@@ -18,7 +18,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       "mkdir -p {{prefix}}",
-      "for x in $PARTS; do\n  test -e $x && cp -a $x \"{{prefix}}\"\ndone\n",
+      "for x in $PARTS; do\n  test -e $x && cp -a $x \{{prefix}}\\ndone\n",
     ],
     env: {
       PARTS: [

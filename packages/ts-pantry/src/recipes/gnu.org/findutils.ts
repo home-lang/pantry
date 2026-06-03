@@ -20,7 +20,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--localstatedir={{prefix}}/var/locate',
         '--disable-dependency-tracking',
         '--disable-nls',

@@ -35,7 +35,7 @@ export const recipe: Recipe = {
       {
         run: [
           'GORELEASER_CURRENT_TAG="v{{version}}" goreleaser build --clean --single-target --skip=validate',
-          'install -Dm755 "dist/steampipe_${PLATFORM}/steampipe" "{{prefix}}"/bin/steampipe',
+          'install -Dm755 "dist/steampipe_${PLATFORM}/steampipe" {{prefix}}/bin/steampipe',
         ],
         if: '>=2.1',
       },

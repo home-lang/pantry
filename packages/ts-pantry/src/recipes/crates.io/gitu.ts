@@ -21,7 +21,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: 'sed -i \'s/git_version::git_version!(cargo_suffix = "")/"{{version}}"/\' main.rs',
+        run: 'sed -i \'s/git_version::git_version!(cargo_suffix = "")/{{version}}/\' main.rs',
         'working-directory': 'src',
       },
       'cargo install --locked --path . --root {{prefix}}',

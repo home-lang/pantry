@@ -50,7 +50,7 @@ export const recipe: Recipe = {
     ],
     env: {
       CMAKE_ARGS: [
-        '-DCMAKE_INSTALL_PREFIX="{{prefix}}',
+        '-DCMAKE_INSTALL_PREFIX={{prefix}}',
         '-DCMAKE_INSTALL_LIBDIR=lib',
         '-DCMAKE_BUILD_TYPE=Release',
         '-DCMAKE_FIND_FRAMEWORK=LAST',
@@ -74,7 +74,7 @@ export const recipe: Recipe = {
   test: {
     script: [
       'export PATH={{deps.gnu.org/binutils.prefix}}/bin:$PATH',
-      'PADDED_VERSION=$(echo "{{version}}" | gawk -F. \'{printf "%04d.%02d.%02d.%02d\\n", $1, $2, $3, $4}\')',
+      'PADDED_VERSION=$(echo {{version}}" | gawk -F. \'{printf "%04d.%02d.%02d.%02d\\n", $1, $2, $3, $4}\')',
       'curl -L "https://github.com/facebook/mvfst/archive/v$PADDED_VERSION.tar.gz" | tar -xz --strip-components=1',
       'cat $FIXTURE > CMakeLists.txt',
       'cmake .',

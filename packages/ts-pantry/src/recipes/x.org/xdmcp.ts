@@ -16,7 +16,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      "./configure \\\n  --prefix=\"{{prefix}}\" \\\n  --sysconfdir=\"$SHELF\"/etc \\\n  --localstatedir=\"$SHELF\"/var\n",
+      "./configure \\\n  --prefix=\{{prefix}}\ \\\n  --sysconfdir=\"$SHELF\"/etc \\\n  --localstatedir=\"$SHELF\"/var\n",
       "make --jobs {{ hw.concurrency }} install",
       {
         run: "sed -i 's/\\+brewing//g' *.la",

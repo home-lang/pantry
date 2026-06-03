@@ -29,8 +29,8 @@ export const recipe: Recipe = {
       'git fetch --depth 1 origin "tag" "v{{version}}" 2>/dev/null || git fetch origin "tag" "v{{version}}" || true',
       'git checkout "v{{version}}" 2>/dev/null || true',
       'goreleaser build --clean --single-target --skip=validate',
-      'mkdir -p "{{prefix}}"/bin',
-      'mv dist/caddy_{{hw.platform}}_$ARCH/mercure "{{prefix}}"/bin',
+      'mkdir -p {{prefix}}/bin',
+      'mv dist/caddy_{{hw.platform}}_$ARCH/mercure {{prefix}}/bin',
     ],
     env: {
       'CGO_ENABLED': '0',

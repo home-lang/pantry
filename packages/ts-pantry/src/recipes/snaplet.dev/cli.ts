@@ -22,7 +22,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'chmod +x bin/snaplet.js',
-      'npm install . --global --prefix="{{prefix}}" --install-links',
+      'npm install . --global --prefix={{prefix}} --install-links',
     ],
     env: {
       linux: {

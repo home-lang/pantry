@@ -15,14 +15,14 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/earthly ./cmd/earthly',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o {{ prefix }}/bin/earthly ./cmd/earthly',
     ],
     env: {
       CGO_ENABLED: 0,
       GO_LDFLAGS: [
         '-s',
         '-w',
-        '-X main.Version="{{ version }}"',
+        '-X main.Version={{ version }}',
         '-X main.GitSha="$( git rev-parse HEAD )"',
         '-X main.BuiltBy="pkgx"',
         '-X main.DefaultInstallationName="earthly"',

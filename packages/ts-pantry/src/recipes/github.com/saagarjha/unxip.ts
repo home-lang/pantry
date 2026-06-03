@@ -14,13 +14,13 @@ export const recipe: Recipe = {
     script: [
       'curl -Lfo unxip "https://github.com/saagarjha/unxip/releases/download/v{{version.raw}}/unxip"',
       'chmod +x unxip',
-      'mkdir -p "{{prefix}}/bin"',
-      'mv unxip "{{prefix}}/bin"',
+      'mkdir -p {{prefix}}/bin',
+      'mv unxip {{prefix}}/bin',
     ],
   },
   test: {
     script: [
-      'if test "{{ hw.platform }}+{{ hw.arch }}" = "darwin+x86-64"; then exit 0; fi',
+      'if test {{ hw.platform }}+{{ hw.arch }} = "darwin+x86-64"; then exit 0; fi',
       'unxip --help',
     ],
   },

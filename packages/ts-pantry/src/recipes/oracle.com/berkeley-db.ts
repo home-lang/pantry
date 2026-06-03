@@ -31,7 +31,7 @@ export const recipe: Recipe = {
     script: [
       '../dist/configure $ARGS',
       'make install DOCLIST=license',
-      'rm -rf "{{prefix}}/docs"',
+      'rm -rf {{prefix}}/docs',
     ],
     env: {
       ARGS: [

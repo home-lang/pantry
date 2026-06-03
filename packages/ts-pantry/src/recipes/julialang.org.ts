@@ -22,7 +22,7 @@ export const recipe: Recipe = {
     workingDirectory: 'tmp',
     script: [
       'curl -L "https://julialang-s3.julialang.org/bin/$PLATFORM/$ARCH/{{version.marketing}}/julia-{{version.raw}}-$TRIPLE.tar.gz" | tar zxvf - --strip-components=1',
-      'mkdir -p "{{prefix}}"',
+      'mkdir -p {{prefix}}',
       'cp -av ./* {{prefix}}/',
     ],
     // since these are vendored, all paths are relative; we don't need to fix-machos

@@ -29,7 +29,7 @@ export const recipe: Recipe = {
       'make prefix=\'{{prefix}}\' release',
       'make prefix=\'{{prefix}}\' install',
       'make prefix=\'{{prefix}}\' install-shared',
-      'cd "{{prefix}}/lib/pkgconfig"',
+      'cd {{prefix}}/lib/pkgconfig',
       'sed -i "s/Version: \\([^\\ ]*\\)/Version: {{version}}/g" *.pc',
     ],
   },

@@ -36,7 +36,7 @@ export const recipe: Recipe = {
     script: [
       {
         run: [
-          'if test "{{hw.platform}}" = "darwin"; then',
+          'if test {{hw.platform}} = "darwin"; then',
           '  curl -L "$PATCH1" | patch',
           'fi',
         ],
@@ -44,7 +44,7 @@ export const recipe: Recipe = {
       },
       {
         run: [
-          'if test "{{hw.platform}}" = "darwin"; then',
+          'if test {{hw.platform}} = "darwin"; then',
           '  curl -L "$PATCH2" | patch',
           'fi',
         ],

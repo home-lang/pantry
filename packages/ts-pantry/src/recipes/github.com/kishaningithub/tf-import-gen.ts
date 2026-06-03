@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build -v -ldflags="$LDFLAGS" -o "{{prefix}}"/bin/tf-import-gen',
+      'go build -v -ldflags="$LDFLAGS" -o {{prefix}}/bin/tf-import-gen',
     ],
     env: {
       CGO_ENABLED: 0,
@@ -29,7 +29,7 @@ export const recipe: Recipe = {
   test: {
     script: [
       'tf-import-gen --version',
-      'tf-import-gen --version 2>&1 | grep -F "{{version}}"',
+      'tf-import-gen --version 2>&1 | grep -F {{version}}',
     ],
   },
 }

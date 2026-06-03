@@ -61,7 +61,7 @@ export const recipe: Recipe = {
 
       // darwin link fix: https://github.com/grpc/grpc/issues/36654
       {
-        run: 'if test "{{hw.platform}}" = "darwin"; then\n  patch -i $PROP || true\nfi',
+        run: 'if test {{hw.platform}} = "darwin"; then\n  patch -i $PROP || true\nfi',
         if: '>=1.63<1.66.2',
         'working-directory': '../..',
         prop: {
@@ -97,8 +97,8 @@ export const recipe: Recipe = {
         run: [
           'cmake $COMMON_ARGS $CLI_ARGS ../..',
           'make grpc_cli',
-          'cp grpc_cli "{{prefix}}/bin"',
-          'cp libgrpc++_test_config.* "{{prefix}}/lib"',
+          'cp grpc_cli {{prefix}}/bin',
+          'cp libgrpc++_test_config.* {{prefix}}/lib',
         ],
         if: 'darwin',
       },

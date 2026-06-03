@@ -25,7 +25,7 @@ export const recipe: Recipe = {
     script: [
       '_SRCROOT="$SRCROOT"',
       'for venv in azure-cli{-telemetry,-core,}; do',
-      '  SRCROOT="$_SRCROOT"/src/"$venv" python-venv.sh "{{prefix}}"/bin/az',
+      '  SRCROOT="$_SRCROOT"/src/"$venv" python-venv.sh {{prefix}}/bin/az',
       'done',
     ],
     env: {

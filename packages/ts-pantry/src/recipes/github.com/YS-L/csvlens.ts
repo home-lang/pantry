@@ -21,7 +21,7 @@ export const recipe: Recipe = {
     env: {
       CARGO_ARGS: [
         '--locked',
-        '--root="{{prefix}}"',
+        '--root={{prefix}}',
         '--path=.',
       ],
     },

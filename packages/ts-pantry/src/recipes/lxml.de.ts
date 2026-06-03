@@ -25,7 +25,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'python -m pip install --prefix={{prefix}} .',
-      'cd "{{prefix}}/lib"',
+      'cd {{prefix}}/lib',
       'ln -s python{{deps.python.org.version.marketing}} python{{deps.python.org.version.major}}',
     ],
   },

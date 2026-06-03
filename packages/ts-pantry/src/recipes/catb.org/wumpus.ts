@@ -15,8 +15,8 @@ export const recipe: Recipe = {
     script: [
       'make wumpus superhack',
       '# When xmlto is packaged then switch the to `make ... install`',
-      'mkdir -p "{{prefix}}"/bin',
-      'mv wumpus superhack "{{prefix}}"/bin',
+      'mkdir -p {{prefix}}/bin',
+      'mv wumpus superhack {{prefix}}/bin',
       '# make prefix={{prefix}} install',
     ],
   },

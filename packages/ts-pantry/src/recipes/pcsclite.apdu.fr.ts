@@ -53,7 +53,7 @@ export const recipe: Recipe = {
           'ln -s . \'{{prefix}}/include/PCSC\'',
           '',
           '# lib',
-          'if test "{{hw.platform}}" = "darwin"; then',
+          'if test {{hw.platform}} = "darwin"; then',
           '  cp libpcsc{lite,spy}.*dylib \'{{prefix}}/lib/\'',
           'else',
           '  cp libpcsc{lite,spy}.so{,.?} \'{{prefix}}/lib/\'',

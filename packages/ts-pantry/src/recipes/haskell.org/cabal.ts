@@ -74,7 +74,7 @@ export const recipe: Recipe = {
       // zlib 0.7.0.0 doesn't respect our rpaths with its intermediate build products
       // SEE https://github.com/haskell/cabal/issues/8118
       'sed -i -e \'s/build-depends: base.*/build-depends: base >=4.10 \\&\\& <5/\' cabal-install.cabal',
-      'mkdir -p "{{prefix}}/bin"',
+      'mkdir -p {{prefix}}/bin',
       './.bootstrap/cabal v2-update',
       './.bootstrap/cabal v2-install --install-method=copy --installdir={{prefix}}/bin $ADDITIONAL_CABAL_FLAGS',
     ],

@@ -17,9 +17,9 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'mkdir -p "{{prefix}}/bin"',
-      'curl -fSL -o "{{prefix}}/bin/rebar3" "https://github.com/erlang/rebar3/releases/download/{{version}}/rebar3"',
-      'chmod +x "{{prefix}}/bin/rebar3"',
+      'mkdir -p {{prefix}}/bin',
+      'curl -fSL -o {{prefix}}/bin/rebar3 "https://github.com/erlang/rebar3/releases/download/{{version}}/rebar3"',
+      'chmod +x {{prefix}}/bin/rebar3',
     ],
   },
 }

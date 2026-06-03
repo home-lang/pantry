@@ -12,11 +12,11 @@ export const recipe: Recipe = {
     script: [
       'curl -fSL -L "https://download.blender.org/release/Blender{{version.marketing}}/blender-{{version}}-macos-arm64.dmg" -o /tmp/blender.dmg',
       'hdiutil attach /tmp/blender.dmg -mountpoint /tmp/blender-mount -nobrowse -quiet',
-      'mkdir -p "{{prefix}}"',
-      'cp -R "/tmp/blender-mount/Blender.app" "{{prefix}}/Blender.app"',
+      'mkdir -p {{prefix}}',
+      'cp -R "/tmp/blender-mount/Blender.app" {{prefix}}/Blender.app',
       'hdiutil detach /tmp/blender-mount -quiet || true',
-      'mkdir -p "{{prefix}}/bin"',
-      'ln -sf "../Blender.app/Contents/MacOS/Blender" "{{prefix}}/bin/blender"',
+      'mkdir -p {{prefix}}/bin',
+      'ln -sf "../Blender.app/Contents/MacOS/Blender" {{prefix}}/bin/blender',
     ],
   },
 }

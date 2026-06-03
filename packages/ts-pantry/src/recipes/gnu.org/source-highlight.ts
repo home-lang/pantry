@@ -22,7 +22,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--disable-dependency-tracking',
         '--with-boost={{deps.boost.org.prefix}}',
       ],

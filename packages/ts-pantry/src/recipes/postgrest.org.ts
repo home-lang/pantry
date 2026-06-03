@@ -24,9 +24,9 @@ export const recipe: Recipe = {
       'else',
       '  echo "Unsupported platform: $OS/$ARCH" && exit 1',
       'fi',
-      'mkdir -p "{{prefix}}/bin"',
-      'curl -fSL "https://github.com/PostgREST/postgrest/releases/download/v{{version.marketing}}/postgrest-v{{version.marketing}}-${SUFFIX}.tar.xz" | tar xJ -C "{{prefix}}/bin"',
-      'chmod +x "{{prefix}}/bin/postgrest"',
+      'mkdir -p {{prefix}}/bin',
+      'curl -fSL "https://github.com/PostgREST/postgrest/releases/download/v{{version.marketing}}/postgrest-v{{version.marketing}}-${SUFFIX}.tar.xz" | tar xJ -C {{prefix}}/bin',
+      'chmod +x {{prefix}}/bin/postgrest',
     ],
   },
 }

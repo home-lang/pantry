@@ -16,7 +16,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'autoreconf -i',
-      './configure --prefix="{{prefix}}"',
+      './configure --prefix={{prefix}}',
       'make',
       'make install',
     ],

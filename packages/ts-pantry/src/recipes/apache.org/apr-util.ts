@@ -46,7 +46,7 @@ export const recipe: Recipe = {
 
   test: {
     script: [
-      'test "$(apu-{{version.major}}-config --version)" = "{{version}}"',
+      'test "$(apu-{{version.major}}-config --version)" = {{version}}',
     ],
   },
 }

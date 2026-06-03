@@ -22,7 +22,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'mkdir -p "{{prefix}}"',
+      'mkdir -p {{prefix}}',
       'ln -s pnpm.cjs bin/pnpm',
       'ln -s pnpx.cjs bin/pnpx',
       'chmod +x bin/*',

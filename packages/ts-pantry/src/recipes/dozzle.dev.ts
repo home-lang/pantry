@@ -46,10 +46,10 @@ export const recipe: Recipe = {
         'done',
         '_node_bin="$(command -v node)"',
         'if [ -n "$_pnpm_cjs" ] && [ -n "$_node_bin" ]; then',
-        '  mkdir -p "{{prefix}}/.pnpm-shim"',
-        '  printf \'#!/bin/sh\\nexec "%s" "%s" "$@"\\n\' "$_node_bin" "$_pnpm_cjs" > "{{prefix}}/.pnpm-shim/pnpm"',
-        '  chmod +x "{{prefix}}/.pnpm-shim/pnpm"',
-        '  export PATH="{{prefix}}/.pnpm-shim:$PATH"',
+        '  mkdir -p {{prefix}}/.pnpm-shim',
+        '  printf \'#!/bin/sh\\nexec "%s" "%s" "$@"\\n\' "$_node_bin" "$_pnpm_cjs" > {{prefix}}/.pnpm-shim/pnpm',
+        '  chmod +x {{prefix}}/.pnpm-shim/pnpm',
+        '  export PATH={{prefix}}/.pnpm-shim:$PATH',
         '  hash -r 2>/dev/null || true',
         '  echo "[dozzle] using node-backed pnpm shim: $_node_bin $_pnpm_cjs" >&2',
         'fi',
@@ -61,15 +61,15 @@ export const recipe: Recipe = {
       // make dist runs `pnpm build`; reuse the same node-backed shim resolved above.
       [
         'set -e',
-        'if [ -x "{{prefix}}/.pnpm-shim/pnpm" ]; then',
-        '  export PATH="{{prefix}}/.pnpm-shim:$PATH"',
+        'if [ -x {{prefix}}/.pnpm-shim/pnpm ]; then',
+        '  export PATH={{prefix}}/.pnpm-shim:$PATH',
         '  hash -r 2>/dev/null || true',
         'fi',
         'make dist generate',
       ].join('\n'),
       'go build -ldflags "$GO_LDFLAGS" -o {{prefix}}/bin/dozzle .',
       // Drop the temporary pnpm shim from the install prefix.
-      'rm -rf "{{prefix}}/.pnpm-shim"',
+      'rm -rf {{prefix}}/.pnpm-shim',
     ],
     env: {
       'CGO_ENABLED': '0',

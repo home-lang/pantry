@@ -21,15 +21,15 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: "curl -L https://github.com/crystal-lang/crystal-molinillo/archive/refs/tags/v0.2.0.tar.gz | \\\n  tar --strip-components=2 -zxf -\nmkdir -p \"{{prefix}}/lib\"\ncp -a molinillo molinillo.cr \"{{prefix}}/lib\"\n",
+        run: "curl -L https://github.com/crystal-lang/crystal-molinillo/archive/refs/tags/v0.2.0.tar.gz | \\\n  tar --strip-components=2 -zxf -\nmkdir -p \{{prefix}}/lib\\ncp -a molinillo molinillo.cr \{{prefix}}/lib\\n",
         'working-directory': ".molinillo",
       },
       {
         run: "sed -i.bak \\\n    -e 's/MOLINILLO_VERSION = .*$/MOLINILLO_VERSION = 0.2.0/' \\\n    Makefile\nrm Makefile.bak\n",
       },
       "make $ARGS bin/shards",
-      "mkdir -p \"{{prefix}}/bin\"",
-      "install bin/shards \"{{prefix}}/bin\"",
+      "mkdir -p \{{prefix}}/bin\",
+      "install bin/shards \{{prefix}}/bin\",
     ],
     env: {
       CRYSTAL_LINK_FLAGS: "-Wl,-rpath,{{prefix}}/../../..",

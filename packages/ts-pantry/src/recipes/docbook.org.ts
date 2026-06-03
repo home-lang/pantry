@@ -37,7 +37,7 @@ export const recipe: Recipe = {
       'done',
       'mv docbook/xml/5.0/docbook-5.0/* docbook/xml/5.0',
       'rmdir docbook/xml/5.0/docbook-5.0',
-      'if [ "{{prefix}}" != "" -a -e "{{prefix}}" ]; then',
+      'if [ {{prefix}} != "" -a -e {{prefix}} ]; then',
       '    rm -r {{prefix}}',
       'fi',
       'mkdir -p {{prefix}}',

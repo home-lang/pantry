@@ -26,7 +26,7 @@ export const recipe: Recipe = {
       'cmake --install build',
       'cd "${{prefix}}/lib/pkgconfig"',
       'sed -i \'s/-Xarch_x86_64 -Xarch_x86_64 -Xarch_arm64 //g\' *.pc',
-      'cd "{{prefix}}/lib/cmake/absl"',
+      'cd {{prefix}}/lib/cmake/absl',
       'sed -i -e "s:{{pkgx.prefix}}:\\$\\{CMAKE_CURRENT_LIST_DIR\\}/../../../../..:g" -e "s/\\+brewing//g" abslTargets{,-release}.cmake',
     ],
     env: {

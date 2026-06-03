@@ -22,9 +22,9 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      "mkdir -p \"{{prefix}}\"",
+      "mkdir -p \{{prefix}}\",
       {
-        run: "sed -i '1,10s/\"version\": \".*\"/\"version\": \"{{version}}\"/' package.json\n",
+        run: "sed -i '1,10s/\"version\": \".*\"/\"version\": \{{version}}\/' package.json\n",
         'working-directory': "packages/eas-cli",
       },
       "yarn install",
@@ -54,7 +54,7 @@ export const recipe: Recipe = {
       "eas",
       "eas --help",
       "eas --version",
-      "eas --version | grep \"{{version}}\"",
+      "eas --version | grep \{{version}}\",
       "eas autocomplete zsh",
     ],
   },

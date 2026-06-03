@@ -38,9 +38,9 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'sed -i \'s|set(SYSTEMD_DIR "/usr/lib/systemd/system")|set(SYSTEMD_DIR "{{prefix}}/lib/systemd/system")|\' CMakeLists.txt',
-      'sed -i \'s|set (BASH_COMPLETION_COMPLETIONSDIR "/etc/bash_completion.d")|set (BASH_COMPLETION_COMPLETIONSDIR "{{prefix}}/share/bash-completion/completions")|\' dnf5/CMakeLists.txt',
-      'sed -i \'/find_package(bash-completion)/a set(BASH_COMPLETION_COMPLETIONSDIR "{{prefix}}/share/bash-completion/completions")\' dnf5/CMakeLists.txt',
+      'sed -i \'s|set(SYSTEMD_DIR "/usr/lib/systemd/system")|set(SYSTEMD_DIR {{prefix}}/lib/systemd/system)|\' CMakeLists.txt',
+      'sed -i \'s|set (BASH_COMPLETION_COMPLETIONSDIR "/etc/bash_completion.d")|set (BASH_COMPLETION_COMPLETIONSDIR {{prefix}}/share/bash-completion/completions)|\' dnf5/CMakeLists.txt',
+      'sed -i \'/find_package(bash-completion)/a set(BASH_COMPLETION_COMPLETIONSDIR {{prefix}}/share/bash-completion/completions)\' dnf5/CMakeLists.txt',
       'cmake . $CMAKE_ARGS',
       'cmake --build . --target dnf5',
       'cmake --install .',
@@ -80,7 +80,7 @@ export const recipe: Recipe = {
   test: {
     script: [
       'dnf5 --version 2>&1 | tee out',
-      'test "$(cat out | head -n1 | awk \'{print $3}\')" == "{{version.tag}}"',
+      'test "$(cat out | head -n1 | awk \'{print $3}\')" == {{version.tag}}',
       'dnf5 --help',
     ],
   },

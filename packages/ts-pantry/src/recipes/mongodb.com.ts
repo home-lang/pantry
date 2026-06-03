@@ -21,8 +21,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'curl -L "$DIST" | tar xzf - --strip-components=1',
-      'mkdir -p "{{prefix}}/bin"',
-      'cp -a bin/* "{{prefix}}/bin"',
+      'mkdir -p {{prefix}}/bin',
+      'cp -a bin/* {{prefix}}/bin',
     ],
     env: {
       'darwin/aarch64': {

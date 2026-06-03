@@ -74,7 +74,7 @@ export const recipe: Recipe = {
       "make --jobs {{hw.concurrency}} install",
       {
         run: "sed -i \"1s|.*|#!/usr/bin/env perl|g\" afmtodit grog gropdf mmroff pdfmom\nsed -i \"s|$PKGX_DIR|\\$ENV{'PKGX_DIR'}|g\" afmtodit chem glilypond gperl gropdf\nsed -i \"s|$PKGX_DIR|\\$PKGX_DIR|g\" neqn nroff\nsed -i \"s|@g@||g\" neqn",
-        'working-directory': "{{prefix}}/bin",
+        'working-directory': {{prefix}}/bin,
       },
     ],
     env: {
@@ -82,7 +82,7 @@ export const recipe: Recipe = {
         PERL: "${{deps.perl.org.prefix}}/bin/perl",
       },
       ARGS: [
-        "--prefix=\"{{prefix}}\"",
+        "--prefix=\{{prefix}}\",
         "--without-x",
         "--with-uchardet",
       ],

@@ -84,7 +84,7 @@ export const recipe: Recipe = {
       // Older patches have configure issues that aren't present in newer patches
       {
         run: [
-          'if test "{{hw.platform}}" = "darwin"; then',
+          'if test {{hw.platform}} = "darwin"; then',
           '  sed -i \\',
           '      -e \'s/ppc)/arm64)/g\' \\',
           '      -e \'s/MACOSX_DEFAULT_ARCH="ppc.*$/MACOSX_DEFAULT_ARCH="arm64"/g\' \\',
@@ -95,7 +95,7 @@ export const recipe: Recipe = {
       },
       {
         run: [
-          'if test "{{hw.platform}}" = "darwin"; then',
+          'if test {{hw.platform}} = "darwin"; then',
           '  sed -i -e \'s/^MULTIARCH=.*$/MULTIARCH=""/\' configure',
           'fi',
         ].join('\n'),
@@ -105,7 +105,7 @@ export const recipe: Recipe = {
       // Some old versions don't support macOS 11 and greater in their configures
       {
         run: [
-          'if test "{{hw.platform}}" = "darwin"; then',
+          'if test {{hw.platform}} = "darwin"; then',
           '  curl -L https://github.com/python/cpython/commit/8ea6353.patch | patch -p1',
           'fi',
         ].join('\n'),

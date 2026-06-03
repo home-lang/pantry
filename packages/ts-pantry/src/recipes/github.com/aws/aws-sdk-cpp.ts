@@ -30,7 +30,7 @@ export const recipe: Recipe = {
       LDFLAGS: '-Wl,-rpath,{{prefix}}',
       ARGS: [
         '-DCMAKE_BUILD_TYPE=Release',
-        '-DCMAKE_INSTALL_PREFIX="{{prefix}}"',
+        '-DCMAKE_INSTALL_PREFIX={{prefix}}',
         '-DENABLE_TESTING=OFF',
         '-DZLIB_INCLUDE_DIR={{deps.zlib.net.prefix}}/include',
         '-Dcrypto_INCLUDE_DIR={{deps.openssl.org.prefix}}/include',

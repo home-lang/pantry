@@ -22,7 +22,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: 'sed -i \'s/info.Main.Version/"{{version}}"/g\' version.go',
+        run: 'sed -i \'s/info.Main.Version/{{version}}/g\' version.go',
         'working-directory': 'internal/version',
       },
       'go build -o {{prefix}}/bin/task -ldflags="$GO_LDFLAGS" ./cmd/task',

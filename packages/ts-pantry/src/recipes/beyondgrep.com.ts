@@ -17,9 +17,9 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'mkdir -p "{{prefix}}/bin"',
-      'env -i PATH="/usr/bin:/bin:/usr/sbin:/sbin" HOME="$HOME" curl -fSL -o "{{prefix}}/bin/ack" "https://beyondgrep.com/ack-v{{version}}"',
-      'chmod +x "{{prefix}}/bin/ack"',
+      'mkdir -p {{prefix}}/bin',
+      'env -i PATH="/usr/bin:/bin:/usr/sbin:/sbin" HOME="$HOME" curl -fSL -o {{prefix}}/bin/ack "https://beyondgrep.com/ack-v{{version}}"',
+      'chmod +x {{prefix}}/bin/ack',
     ],
   },
 }

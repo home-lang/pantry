@@ -18,8 +18,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'make build VERSION={{version}}',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv bin/flux "{{ prefix }}"/bin',
+      'mkdir -p {{ prefix }}/bin',
+      'mv bin/flux {{ prefix }}/bin',
     ],
   },
   test: {

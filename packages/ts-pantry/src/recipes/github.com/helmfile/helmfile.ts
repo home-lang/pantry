@@ -19,8 +19,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'make build',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv ./helmfile "{{ prefix }}"/bin',
+      'mkdir -p {{ prefix }}/bin',
+      'mv ./helmfile {{ prefix }}/bin',
     ],
     env: {
       CGO_ENABLED: 0,

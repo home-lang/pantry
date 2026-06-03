@@ -21,7 +21,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build -v -ldflags="$LDFLAGS" -o "{{prefix}}"/bin/arkade',
+      'go build -v -ldflags="$LDFLAGS" -o {{prefix}}/bin/arkade',
     ],
     env: {
       'LDFLAGS': ['-s', '-w', '-X github.com/alexellis/arkade/pkg.Version={{version}}', '-X github.com/alexellis/arkade/pkg.GitCommit=$(git rev-parse HEAD)"'],

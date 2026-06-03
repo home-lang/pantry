@@ -23,7 +23,7 @@ export const recipe: Recipe = {
     env: {
       SHELF: '${{pkgx.prefix}}/x.org',
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--sysconfdir="$SHELF"/etc',
         '--localstatedir="$SHELF"/var',
         '--disable-silent-rules',
@@ -32,7 +32,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      'test "$(pkg-config --modversion xcb-util)" = "{{version}}"',
+      'test "$(pkg-config --modversion xcb-util)" = {{version}}',
     ],
   },
 }

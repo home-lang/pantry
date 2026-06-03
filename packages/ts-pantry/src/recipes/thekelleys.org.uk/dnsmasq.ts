@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'make install PREFIX="{{ prefix }}"',
+      'make install PREFIX={{ prefix }}',
     ],
   },
 }

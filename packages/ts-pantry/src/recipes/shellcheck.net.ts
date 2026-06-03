@@ -19,10 +19,10 @@ export const recipe: Recipe = {
       'case "$ARCH" in',
       '  arm64) ARCH="aarch64" ;;',
       'esac',
-      'mkdir -p "{{prefix}}/bin" /tmp/shellcheck-extract',
+      'mkdir -p {{prefix}}/bin /tmp/shellcheck-extract',
       'curl -fSL "https://github.com/koalaman/shellcheck/releases/download/v{{version}}/shellcheck-v{{version}}.${OS}.${ARCH}.tar.xz" | tar xJ -C /tmp/shellcheck-extract',
-      'cp /tmp/shellcheck-extract/shellcheck-v{{version}}/shellcheck "{{prefix}}/bin/"',
-      'chmod +x "{{prefix}}/bin/shellcheck"',
+      'cp /tmp/shellcheck-extract/shellcheck-v{{version}}/shellcheck {{prefix}}/bin/',
+      'chmod +x {{prefix}}/bin/shellcheck',
     ],
   },
 }

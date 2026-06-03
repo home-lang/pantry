@@ -41,7 +41,7 @@ export const recipe: Recipe = {
       "make --jobs {{hw.concurrency}} install",
       {
         run: "for x in $HEADERS; do\n  if test -f \"$x/$x.h\"; then\n    mv \"$x/$x.h\" .\n    ln -s \"../$x.h\" \"$x/\"\n  fi\ndone\n",
-        'working-directory': "{{prefix}}/include",
+        'working-directory': {{prefix}}/include,
       },
     ],
     env: {

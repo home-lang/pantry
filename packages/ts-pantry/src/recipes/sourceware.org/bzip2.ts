@@ -26,7 +26,7 @@ export const recipe: Recipe = {
       "make --environment-overrides install",
       {
         run: "for x in *; do\n  if [ -L $x ]; then\n    y=\"$(readlink $x)\"\n    rm $x\n    ln -s $(basename \"$y\") $x\n  fi\ndone\n",
-        'working-directory': "{{prefix}}/bin",
+        'working-directory': {{prefix}}/bin,
       },
       {
         run: "make \\\n  --file Makefile-libbz2_so \\\n  --environment-overrides \\\n  --jobs {{ hw.concurrency }}\n\nmv libbz2.*.1.* {{ prefix }}/lib\ncd {{ prefix }}/lib\ntest -e libbz2.so || ln -s libbz2.so.{{ version }} libbz2.so\ntest -e libbz2.so.{{ version.major }} || ln -s libbz2.so.{{ version }} libbz2.so.{{ version.major }}\n",

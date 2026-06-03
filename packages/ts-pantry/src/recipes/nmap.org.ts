@@ -41,7 +41,7 @@ export const recipe: Recipe = {
           'sed -i \'s/#elif HAVE_OPAQUE_STRUCTS/#elif OPENSSL_VERSION_NUMBER >= 0x30000000L/\' nse_ssl_cert.cc',
         ],
         prop: [
-          's/dynamic = \\["version"\\]/version = "{{version.raw}}"/',
+          's/dynamic = \\["version"\\]/version = {{version.raw}}/',
           '/\\[tool.setuptools.dynamic\\]/,/^$/d',
         ].join('\n'),
         if: '>=7.99',

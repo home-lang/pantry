@@ -32,8 +32,8 @@ export const recipe: Recipe = {
         'working-directory': 'agent/agentUi',
         if: '>=1',
       },
-      'mkdir -p "{{prefix}}/bin"',
-      'go build -o "{{prefix}}/bin" ./...',
+      'mkdir -p {{prefix}}/bin',
+      'go build -o {{prefix}}/bin ./...',
       {
         run: 'ln -s zrok2 zrok',
         'working-directory': '{{prefix}}/bin',

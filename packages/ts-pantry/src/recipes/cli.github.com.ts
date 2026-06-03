@@ -22,8 +22,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'make bin/gh',
-      'mkdir -p "{{prefix}}"/bin',
-      'mv bin/gh "{{prefix}}"/bin',
+      'mkdir -p {{prefix}}/bin',
+      'mv bin/gh {{prefix}}/bin',
       '',
       '# cleanup - gocache for some reason is not writeable',
       'chmod -R u+w "$GOPATH" "$GOCACHE"',

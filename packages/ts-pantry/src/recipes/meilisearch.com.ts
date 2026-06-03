@@ -15,8 +15,8 @@ export const recipe: Recipe = {
     script: [
       'curl -L "$DIST" -o meilisearch',
       'chmod +x meilisearch',
-      'mkdir -p "{{prefix}}/bin"',
-      'mv meilisearch "{{prefix}}/bin/"',
+      'mkdir -p {{prefix}}/bin',
+      'mv meilisearch {{prefix}}/bin/',
     ],
   },
 }

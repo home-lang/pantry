@@ -16,7 +16,7 @@ export const recipe: Recipe = {
       "python -m pip install --prefix={{prefix}}/libexec .",
       {
         run: "ln -s ../libexec/lib/python{{deps.python.org.version.marketing}} python{{deps.python.org.version.marketing}}\nln -s ../libexec/lib/python{{deps.python.org.version.marketing}} python{{deps.python.org.version.major}}\n",
-        'working-directory': "{{prefix}}/lib",
+        'working-directory': {{prefix}}/lib,
       },
     ],
   },

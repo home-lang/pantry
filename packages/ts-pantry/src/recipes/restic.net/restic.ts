@@ -16,8 +16,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go run build.go',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv restic "{{ prefix }}"/bin',
+      'mkdir -p {{ prefix }}/bin',
+      'mv restic {{ prefix }}/bin',
     ],
   },
 }

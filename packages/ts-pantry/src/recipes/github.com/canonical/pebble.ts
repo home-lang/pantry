@@ -23,7 +23,7 @@ export const recipe: Recipe = {
         if: '<1.2',
         'working-directory': 'cmd',
       },
-      'go build -v -ldflags="${LDFLAGS}" -o "{{ prefix }}/bin/pebble" --trimpath ./cmd/pebble',
+      'go build -v -ldflags="${LDFLAGS}" -o {{ prefix }}/bin/pebble --trimpath ./cmd/pebble',
     ],
     env: {
       CGO_ENABLED: 0,

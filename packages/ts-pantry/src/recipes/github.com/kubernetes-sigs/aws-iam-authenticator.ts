@@ -21,7 +21,7 @@ export const recipe: Recipe = {
       GO_ARGS: [
         '-v',
         '-trimpath',
-        '-o="{{prefix}}/bin/aws-iam-authenticator"',
+        '-o={{prefix}}/bin/aws-iam-authenticator',
       ],
       LDFLAGS: [
         '-s',

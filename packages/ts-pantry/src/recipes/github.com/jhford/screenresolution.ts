@@ -14,7 +14,7 @@ export const recipe: Recipe = {
     script: [
       'curl $PATCH | patch -p1 || true',
       'make',
-      'make PREFIX="{{prefix}}" install',
+      'make PREFIX={{prefix}} install',
     ],
     env: {
       PATCH: 'https://github.com/jhford/screenresolution/commit/c3c1e5c498cf2e1fbe37f90899a3d440305398bd.patch',

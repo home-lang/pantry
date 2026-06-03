@@ -43,7 +43,7 @@ export const recipe: Recipe = {
         'logger',
         'ostruct',
       ].join(' '),
-      'install -Dm755 $SRCROOT/props/kamal "{{prefix}}"/bin/kamal',
+      'install -Dm755 $SRCROOT/props/kamal {{prefix}}/bin/kamal',
     ],
   },
 }

@@ -77,7 +77,7 @@ export const recipe: Recipe = {
       {
         run: [
           'if [ ! -f /usr/bin/cpp ]; then',
-          '  $SUDO ln -s "{{deps.gnu.org/gcc.prefix}}/bin/cpp" /usr/bin/cpp',
+          '  $SUDO ln -s {{deps.gnu.org/gcc.prefix}}/bin/cpp /usr/bin/cpp',
           '  FAKE_CPP=1',
           'fi',
         ].join('\n'),
@@ -106,7 +106,7 @@ export const recipe: Recipe = {
       {
         run: [
           `deduprp() { b="$1"; [ -f "$b" ] || return 0; otool -l "$b" | sed -n '/LC_RPATH/{n;n;s/^[[:space:]]*path //;s/ (offset.*$//;p;}' | sort | uniq -d | while IFS= read -r p; do while [ "$(otool -l "$b" | sed -n '/LC_RPATH/{n;n;s/^[[:space:]]*path //;s/ (offset.*$//;p;}' | grep -cxF "$p")" -gt 1 ]; do install_name_tool -delete_rpath "$p" "$b" 2>/dev/null || break; done; done; }`,
-          `for b in "{{prefix}}/bin/php" "{{prefix}}/bin/php-cgi" "{{prefix}}/bin/phpdbg" "{{prefix}}/sbin/php-fpm"; do deduprp "$b"; done`,
+          `for b in {{prefix}}/bin/php {{prefix}}/bin/php-cgi {{prefix}}/bin/phpdbg {{prefix}}/sbin/php-fpm; do deduprp "$b"; done`,
         ].join('\n'),
         if: 'darwin',
       },
@@ -114,7 +114,7 @@ export const recipe: Recipe = {
       // can't run). Print the module list too (zip etc.) for confirmation, but
       // don't gate on it — php -v loading is the correctness check.
       {
-        run: '"{{prefix}}/bin/php" -v && { echo "=== php -m ==="; "{{prefix}}/bin/php" -m || true; }',
+        run: '{{prefix}}/bin/php -v && { echo "=== php -m ==="; {{prefix}}/bin/php -m || true; }',
         if: 'darwin',
       },
       {
@@ -122,7 +122,7 @@ export const recipe: Recipe = {
           'sed -i -e\'s|^prefix=.*|prefix="$(dirname "$(dirname "$0")")"|g\' -e\'s|^datarootdir=.*|datarootdir="${prefix}/share"|g\' -e\'s|^ini_path=.*|ini_path="${prefix}/etc"|g\' -e\'s|^extension_dir=\'\\\'\'{{prefix}}\\(.*\\)\'\\\'\'|extension_dir="${prefix}\\1"|g\' -e\'s|^SED=.*|SED="$(dirname "$(dirname "$(dirname "$(dirname "$0")")")")/gnu.org/sed/v4/bin/sed"|g\' -e\'s|#{{prefix}}#|#$(dirname "$(dirname "$0")")#|g\' -e\'s|{{pkgx.prefix}}|${prefix}/../..|g\' php-config phpize',
           // phar CLI tool + pear/peardev/pecl are not generated (we skip the
           // crashing install-pharcmd / --without-pear), so only touch them if present.
-          '[ -f phar ] && fix-shebangs.ts "{{prefix}}/bin/phar" || true',
+          '[ -f phar ] && fix-shebangs.ts {{prefix}}/bin/phar || true',
           'for f in pear peardev pecl; do [ -f "$f" ] && sed -i -e\'s|{{prefix}}|$(dirname "$(dirname "$0")")|g\' "$f"; done; true',
         ],
         'working-directory': '${{prefix}}/bin',

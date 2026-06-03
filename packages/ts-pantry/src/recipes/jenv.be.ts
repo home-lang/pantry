@@ -18,8 +18,8 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'mkdir -p "{{prefix}}"',
-      'mv bin libexec fish available-plugins "{{prefix}}"',
+      'mkdir -p {{prefix}}',
+      'mv bin libexec fish available-plugins {{prefix}}',
     ],
   },
 }

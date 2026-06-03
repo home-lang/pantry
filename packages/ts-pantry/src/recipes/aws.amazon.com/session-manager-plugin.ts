@@ -17,12 +17,12 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: "echo \"{{version}}\" > VERSION\nsed -i -e 's/1.2+.0.0/{{version.raw}}/g' src/version/version.go",
+        run: "echo \{{version}}\ > VERSION\nsed -i -e 's/1.2+.0.0/{{version.raw}}/g' src/version/version.go",
         if: "<1.2.804",
       },
       "make GO_BUILD=\"go build\" build-${PLATFORM}",
-      "mkdir -p \"{{ prefix }}\"/bin",
-      "mv ./bin/${BIN_DIR}/session-manager-plugin \"{{prefix}}\"/bin/",
+      "mkdir -p \{{ prefix }}\/bin",
+      "mv ./bin/${BIN_DIR}/session-manager-plugin \{{prefix}}\/bin/",
     ],
     env: {
       CGO_ENABLED: 0,

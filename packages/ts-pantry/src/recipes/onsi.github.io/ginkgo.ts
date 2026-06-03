@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build -v -ldflags="${LDFLAGS}" -o "{{ prefix }}"/bin/ginkgo ./ginkgo/main.go',
+      'go build -v -ldflags="${LDFLAGS}" -o {{ prefix }}/bin/ginkgo ./ginkgo/main.go',
     ],
     env: {
       CGO_ENABLED: 0,

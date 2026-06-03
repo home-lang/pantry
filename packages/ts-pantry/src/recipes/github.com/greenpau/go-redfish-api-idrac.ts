@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/go-redfish-api-idrac-client ./cmd/go-redfish-api-idrac-client/main.go',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o {{ prefix }}/bin/go-redfish-api-idrac-client ./cmd/go-redfish-api-idrac-client/main.go',
     ],
     env: {
       CGO_ENABLED: 0,

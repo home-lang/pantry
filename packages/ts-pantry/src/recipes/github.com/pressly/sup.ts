@@ -18,12 +18,12 @@ export const recipe: Recipe = {
       'test -f go.mod || go mod init',
       'go mod tidy',
       'go mod vendor',
-      'sed -i "s/^const VERSION.*/var VERSION = \\"{{ version }}\\"/" sup.go',
+      'sed -i "s/^const VERSION.*/var VERSION = \\{{ version }}\\/" sup.go',
       'go build ${GO_ARGS} -ldflags="${GO_LDFLAGS}" ./cmd/sup',
     ],
     env: {
       GO_ARGS: [
-        '-o "{{prefix}}/bin/"',
+        '-o {{prefix}}/bin/',
       ],
       GO_LDFLAGS: [
         '-s',

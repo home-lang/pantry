@@ -19,7 +19,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: "if test \"{{hw.platform}}\" = \"darwin\"; then\n  git apply props/darwin.diff\n  git apply props/lgamma_r.diff\nfi\n",
+        run: "if test \{{hw.platform}}\ = \"darwin\"; then\n  git apply props/darwin.diff\n  git apply props/lgamma_r.diff\nfi\n",
         if: "<1.7",
       },
       "./configure --disable-maintainer-mode --prefix={{prefix}}",

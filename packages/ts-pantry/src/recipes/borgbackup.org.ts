@@ -40,7 +40,7 @@ export const recipe: Recipe = {
       // a >=3.10 interpreter by shimming it into the cc-wrapper dir (early on PATH)
       // before bkpyvenv runs.
       'mkdir -p "${TMPDIR:-/tmp}/_cc_wrapper"',
-      'for _py in python3.13 python3.12 python3.11 python3.10 "{{deps.python.org.prefix}}/bin/python3" python3; do '
+      'for _py in python3.13 python3.12 python3.11 python3.10 {{deps.python.org.prefix}}/bin/python3 python3; do '
         + '_pybin="$(command -v "$_py" 2>/dev/null || ([ -x "$_py" ] && echo "$_py") || true)"; '
         + '[ -n "$_pybin" ] || continue; '
         + '_pyver="$("$_pybin" -c \'import sys;print("%d%02d"%sys.version_info[:2])\' 2>/dev/null || echo 0)"; '

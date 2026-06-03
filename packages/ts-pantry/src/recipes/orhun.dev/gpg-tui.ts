@@ -28,7 +28,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      'gpg-tui --version | grep "{{version}}"',
+      'gpg-tui --version | grep {{version}}',
     ],
   },
 }

@@ -16,10 +16,10 @@ export const recipe: Recipe = {
   build: {
     script: [
       'make --jobs {{ hw.concurrency }} pstree CC=gcc',
-      'mkdir -p "{{prefix}}/bin"',
-      'mkdir -p "{{prefix}}/man1"',
-      'mv pstree "{{prefix}}/bin"',
-      'mv pstree.1 "{{prefix}}/man1"',
+      'mkdir -p {{prefix}}/bin',
+      'mkdir -p {{prefix}}/man1',
+      'mv pstree {{prefix}}/bin',
+      'mv pstree.1 {{prefix}}/man1',
     ],
     env: {
       'linux/x86-64': {

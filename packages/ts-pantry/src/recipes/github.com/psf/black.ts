@@ -30,8 +30,8 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      'test "$(black --version | grep black | sed \'s/.*, \\([^ ]*\\) .*/\\1/\')" = "{{ version }}"',
-      'test "$(blackd --version | sed \'s/.* //\')" = "{{ version }}"',
+      'test "$(black --version | grep black | sed \'s/.*, \\([^ ]*\\) .*/\\1/\')" = {{ version }}',
+      'test "$(blackd --version | sed \'s/.* //\')" = {{ version }}',
     ],
   },
 }

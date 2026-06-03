@@ -22,8 +22,8 @@ export const recipe: Recipe = {
         if: 'darwin',
       },
       'make build',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv air "{{ prefix }}"/bin',
+      'mkdir -p {{ prefix }}/bin',
+      'mv air {{ prefix }}/bin',
     ],
     env: {
       linux: {

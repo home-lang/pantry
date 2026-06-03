@@ -30,7 +30,7 @@ export const recipe: Recipe = {
       "autoreconf -fiv",
       "./configure $ARGS",
       "make src/watch",
-      "install -Dm755 src/watch \"{{ prefix }}\"/bin/watch",
+      "install -Dm755 src/watch \{{ prefix }}\/bin/watch",
     ],
     env: {
       AUTOPOINT: "true",

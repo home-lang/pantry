@@ -16,10 +16,10 @@ export const recipe: Recipe = {
   build: {
     script: [
       'pod2man rename rename.1',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv rename "{{ prefix }}"/bin',
-      'mkdir -p "{{ prefix }}"/share/man/man1',
-      'mv rename.1 "{{ prefix }}"/share/man/man1',
+      'mkdir -p {{ prefix }}/bin',
+      'mv rename {{ prefix }}/bin',
+      'mkdir -p {{ prefix }}/share/man/man1',
+      'mv rename.1 {{ prefix }}/share/man/man1',
     ],
   },
   test: {

@@ -22,7 +22,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go mod download',
-      'go build -ldflags "$LDFLAGS" -o "{{prefix}}"/bin/yubikey-agent',
+      'go build -ldflags "$LDFLAGS" -o {{prefix}}/bin/yubikey-agent',
     ],
     env: {
       LDFLAGS: [

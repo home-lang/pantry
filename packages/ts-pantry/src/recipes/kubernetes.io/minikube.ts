@@ -24,8 +24,8 @@ export const recipe: Recipe = {
         if: "linux",
       },
       "make",
-      "mkdir -p \"{{ prefix }}\"/bin",
-      "mv out/minikube \"{{ prefix }}\"/bin",
+      "mkdir -p \{{ prefix }}\/bin",
+      "mv out/minikube \{{ prefix }}\/bin",
     ],
   },
   test: {

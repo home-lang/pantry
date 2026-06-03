@@ -77,14 +77,14 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        "--prefix=\"{{prefix}}\"",
+        "--prefix=\{{prefix}}\",
         "--with-json-c",
         "--with-libidn2={{deps.gnu.org/libidn2.prefix}}",
         "--with-openssl={{deps.openssl.org.prefix}}",
         "--with-lmdb={{deps.openldap.org/liblmdb.prefix}}",
       ],
       MESON_ARGS: [
-        "--prefix=\"{{prefix}}\"",
+        "--prefix=\{{prefix}}\",
       ],
       darwin: {
         MESON_ARGS: [

@@ -32,7 +32,7 @@ export const recipe: Recipe = {
       './configure $ARGS',
       'make V=1 --jobs {{hw.concurrency}}',
       'make install',
-      'cd "{{prefix}}/lib/pkgconfig"',
+      'cd {{prefix}}/lib/pkgconfig',
       'sed -i -e \'s|{{deps.openssl.org.prefix}}|\\${pcfiledir}/../../../../openssl.org/v{{deps.openssl.org.version.major}}|g\' *.pc',
     ],
     env: {

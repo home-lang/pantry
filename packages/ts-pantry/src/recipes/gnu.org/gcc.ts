@@ -58,7 +58,7 @@ export const recipe: Recipe = {
         'working-directory': "..",
       },
       {
-        run: "if test \"{{hw.platform}}/{{hw.arch}}\" = \"darwin/x86-64\"; then\npatch -p1 < props/disable-cfi-x86-64-darwin.patch\nif test {{version.major}} -ge 16; then\npatch -p1 < props/disable-msabi-darwin-v16.patch\nelse\npatch -p1 < props/disable-msabi-darwin.patch\nfi\npatch -p1 < props/remove-old-frame-symbols-darwin.patch\nfi",
+        run: "if test \{{hw.platform}}/{{hw.arch}}\ = \"darwin/x86-64\"; then\npatch -p1 < props/disable-cfi-x86-64-darwin.patch\nif test {{version.major}} -ge 16; then\npatch -p1 < props/disable-msabi-darwin-v16.patch\nelse\npatch -p1 < props/disable-msabi-darwin.patch\nfi\npatch -p1 < props/remove-old-frame-symbols-darwin.patch\nfi",
         if: ">=15.2",
         'working-directory': "..",
       },
@@ -76,7 +76,7 @@ export const recipe: Recipe = {
         if: "<10",
       },
       {
-        run: "DEPRP=\"{{deps.gnu.org/mpc.prefix}}/lib:{{deps.gnu.org/mpfr.prefix}}/lib:{{deps.gnu.org/gmp.prefix}}/lib:{{deps.zlib.net.prefix}}/lib\"\nexport LDFLAGS=\"$LDFLAGS -Wl,-rpath,$DEPRP -Wl,-rpath-link,$DEPRP\"\n",
+        run: "DEPRP=\{{deps.gnu.org/mpc.prefix}}/lib:{{deps.gnu.org/mpfr.prefix}}/lib:{{deps.gnu.org/gmp.prefix}}/lib:{{deps.zlib.net.prefix}}/lib\\nexport LDFLAGS=\"$LDFLAGS -Wl,-rpath,$DEPRP -Wl,-rpath-link,$DEPRP\"\n",
         if: "linux",
       },
       {
@@ -182,7 +182,7 @@ export const recipe: Recipe = {
       "gcc -print-libgcc-file-name",
       "gcc -print-multiarch",
       "if ! test -f /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/AvailabilityInternalLegacy.h || ! test -f ; then\necho \"Missing SDK; skipping remaining tests\"\nexit 0\nfi",
-      "if test \"{{hw.platform}}\" = \"darwin\" && ! test -f /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_bounds.h || ! test -f ; then\necho \"Missing SDK; skipping remaining tests\"\nexit 0\nfi",
+      "if test \{{hw.platform}}\ = \"darwin\" && ! test -f /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_bounds.h || ! test -f ; then\necho \"Missing SDK; skipping remaining tests\"\nexit 0\nfi",
       "gcc -o test1 test.c -lgmp",
       "./test1",
       "g++ -o test2 test.cc",

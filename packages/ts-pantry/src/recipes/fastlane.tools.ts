@@ -41,7 +41,7 @@ export const recipe: Recipe = {
         'working-directory': '{{prefix}}/bin',
       },
       // fails to code sign and non-essential
-      'rm -rf "{{prefix}}"/gems/terminal-notifier-*',
+      'rm -rf {{prefix}}/gems/terminal-notifier-*',
     ],
   },
 }

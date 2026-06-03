@@ -28,8 +28,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'make build-js',
-      'mkdir -p "{{prefix}}"/bin',
-      'go build -v -trimpath -mod=vendor -ldflags="$GO_LDFLAGS" -o "{{prefix}}/bin/tilt" ./cmd/tilt',
+      'mkdir -p {{prefix}}/bin',
+      'go build -v -trimpath -mod=vendor -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/tilt ./cmd/tilt',
     ],
     env: {
       'GO111MODULE': 'on',

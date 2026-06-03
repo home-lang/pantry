@@ -22,7 +22,7 @@ export const recipe: Recipe = {
         '--disable-macos-framework',
         '--disable-dependency-tracking',
         '--disable-silent-rules',
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--with-ssl={{ deps.openssl.org.prefix }}',
       ],
       linux: {

@@ -27,7 +27,7 @@ export const recipe: Recipe = {
     env: {
       'GO111MODULE': 'on',
       'CGO_ENABLED': '0',
-      'ARGS': ['-v', '-trimpath', '-o "{{prefix}}"/bin/wunderctl'],
+      'ARGS': ['-v', '-trimpath', '-o {{prefix}}/bin/wunderctl'],
       'LDFLAGS': ['-s', '-w', '-X \'main.commit={{version}}\'', '-X \'main.builtBy=dev\'', '-X \'main.version=dev\''],
     },
   },

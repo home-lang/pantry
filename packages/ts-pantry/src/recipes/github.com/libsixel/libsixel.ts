@@ -28,7 +28,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--libdir={{prefix}}/lib',
         '--buildtype=release',
         '-Dgdk-pixbuf2=disabled',

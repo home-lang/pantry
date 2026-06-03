@@ -48,7 +48,7 @@ export const recipe: Recipe = {
       'FRONTEND_PATH': '{{prefix}}/${BUILD_DIR}',
       'SAMPLE_CONFIG_PATH': '{{prefix}}/etc/casdoor',
       'CGO_ENABLED': '0',
-      'GO_ARGS': ['-o "{{prefix}}/bin/"'],
+      'GO_ARGS': ['-o {{prefix}}/bin/'],
       'GO_LDFLAGS': ['-s', '-w'],
       'linux': {
         GO_LDFLAGS: ['-s', '-w', '-buildmode=pie'],

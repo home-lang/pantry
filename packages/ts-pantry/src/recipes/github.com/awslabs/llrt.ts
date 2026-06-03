@@ -27,7 +27,7 @@ export const recipe: Recipe = {
       "yarn",
       "node build.mjs",
       {
-        run: "find . -name Cargo.toml -print0 | xargs -0 sed -i 's/ = \"0.8.0-beta\"/ = \"{{version}}-beta\"/g'",
+        run: "find . -name Cargo.toml -print0 | xargs -0 sed -i 's/ = \"0.8.0-beta\"/ = \{{version}}-beta\/g'",
         if: "=0.8.1",
       },
       "cargo install --path llrt --root {{prefix}}",

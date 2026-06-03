@@ -47,9 +47,9 @@ export const recipe: Recipe = {
       './autogen.sh',
       './configure $ARGS',
       'make --jobs {{hw.concurrency}} install',
-      'cd "{{prefix}}/lib"',
+      'cd {{prefix}}/lib',
       'ln -s python{{deps.python.org.version.marketing}} python{{deps.python.org.version.major}} || true',
-      'cd "{{prefix}}/lib/pkgconfig"',
+      'cd {{prefix}}/lib/pkgconfig',
       'sed -i -e "s|{{pkgx.prefix}}|\\${pcfiledir}/../../../..|g" -e "s|python.org/v{{deps.python.org.version}}|python.org/v{{deps.python.org.version.marketing}}|g" -e \'s/\\+brewing//g\' *.pc',
     ],
     env: {

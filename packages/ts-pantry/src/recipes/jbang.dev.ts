@@ -32,11 +32,11 @@ export const recipe: Recipe = {
       // readlink, so it finds bin/jbang.jar relative to the real (libexec) path.
       // Copy only the known jbang payload — copying $SRCROOT/* wholesale would
       // also drag in buildkit scratch files (props/, _build.sh, etc.).
-      'mkdir -p "{{prefix}}/libexec" "{{prefix}}/bin"',
-      'cp -R "$SRCROOT/bin" "{{prefix}}/libexec/"',
-      '[ -f "$SRCROOT/version.txt" ] && cp "$SRCROOT/version.txt" "{{prefix}}/libexec/version.txt" || true',
-      'chmod +x "{{prefix}}/libexec/bin/jbang"',
-      'cd "{{prefix}}/bin"',
+      'mkdir -p {{prefix}}/libexec {{prefix}}/bin',
+      'cp -R "$SRCROOT/bin" {{prefix}}/libexec/',
+      '[ -f "$SRCROOT/version.txt" ] && cp "$SRCROOT/version.txt" {{prefix}}/libexec/version.txt || true',
+      'chmod +x {{prefix}}/libexec/bin/jbang',
+      'cd {{prefix}}/bin',
       'ln -sf ../libexec/bin/jbang jbang',
     ],
   },

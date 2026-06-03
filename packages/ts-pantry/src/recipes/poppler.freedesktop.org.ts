@@ -33,7 +33,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       '# Poppler uses zero-padded month in tarball names (e.g. 26.03.0)',
-      'IFS="." read -r YEAR MONTH PATCH <<< "{{version}}"',
+      'IFS="." read -r YEAR MONTH PATCH <<< {{version}}',
       '# force base-10 so an already-padded month (e.g. 08/09) is not parsed as octal',
       'MONTH_PAD=$(printf "%02d" "$((10#$MONTH))")',
       'PADDED_VER="${YEAR}.${MONTH_PAD}.${PATCH}"',

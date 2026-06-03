@@ -32,7 +32,7 @@ export const recipe: Recipe = {
       './configure $ARGS',
       'make --jobs {{hw.concurrency}} install',
       // Make fltk-config relocatable (mirror pkgx: rewrite hardcoded prefix to runtime path)
-      'cd "{{prefix}}/bin"',
+      'cd {{prefix}}/bin',
       'sed -i "s|{{prefix}}|\\$(dirname \\$0)/..|g" fltk-config',
       'sed -i "s|{{pkgx.prefix}}|\\$(dirname \\$0)/../../..|g" fltk-config',
     ],

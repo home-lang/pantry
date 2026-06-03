@@ -21,7 +21,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--disable-lsmash',
         '--disable-swscale',
         '--disable-ffms',

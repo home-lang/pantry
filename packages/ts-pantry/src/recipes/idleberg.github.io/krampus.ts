@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build -ldflags="$LDFLAGS" -o "{{ prefix }}/bin/krampus"',
+      'go build -ldflags="$LDFLAGS" -o {{ prefix }}/bin/krampus',
     ],
     env: {
       LDFLAGS: [

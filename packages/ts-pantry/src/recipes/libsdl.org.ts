@@ -46,7 +46,7 @@ export const recipe: Recipe = {
       },
       {
         run: [
-          'if test "{{hw.platform}}" = "linux"; then',
+          'if test {{hw.platform}} = "linux"; then',
           'export CMAKE_ARGS="$CMAKE_ARGS -DSDL_X11_XTEST=OFF"',
           'fi',
         ],

@@ -23,7 +23,7 @@ export const recipe: Recipe = {
     script: [
       'mkdir -p /tmp/tinygo-extract',
       'TINYGO_VERSION={{version}}',
-      'case "{{hw.platform}}/{{hw.arch}}" in',
+      'case {{hw.platform}}/{{hw.arch}} in',
       '  darwin/aarch64) TINYGO_ARCH="darwin-arm64" ;;',
       '  linux/x86-64) TINYGO_ARCH="linux-amd64" ;;',
       '  *) echo "Unsupported platform" && exit 1 ;;',

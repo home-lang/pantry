@@ -20,8 +20,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go mod download',
-      'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o "{{prefix}}"/bin/gitsign',
-      'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o "{{prefix}}"/bin/gitsign-credential-cache ./cmd/gitsign-credential-cache',
+      'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/gitsign',
+      'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/gitsign-credential-cache ./cmd/gitsign-credential-cache',
     ],
     env: {
       GOPROXY: 'https://proxy.golang.org,direct',

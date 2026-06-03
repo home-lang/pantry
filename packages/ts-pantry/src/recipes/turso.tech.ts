@@ -28,7 +28,7 @@ export const recipe: Recipe = {
     env: {
       'GO111MODULE': 'on',
       'CGO_ENABLED': '0',
-      'ARGS': ['-v', '-trimpath', '-tags=prod', '-o "{{prefix}}"/bin/turso'],
+      'ARGS': ['-v', '-trimpath', '-tags=prod', '-o {{prefix}}/bin/turso'],
       'LDFLAGS': ['-s', '-w', '-X main.debugMode=false'],
     },
   },

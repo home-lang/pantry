@@ -22,8 +22,8 @@ export const recipe: Recipe = {
     skip: ['fix-machos', 'fix-patchelf'],
     script: [
       'curl -fSL "https://archive.apache.org/dist/cassandra/{{version}}/apache-cassandra-{{version}}-bin.tar.gz" -o cassandra.tar.gz',
-      'mkdir -p "{{prefix}}"',
-      'tar xzf cassandra.tar.gz --strip-components=1 -C "{{prefix}}"',
+      'mkdir -p {{prefix}}',
+      'tar xzf cassandra.tar.gz --strip-components=1 -C {{prefix}}',
       'rm cassandra.tar.gz',
     ],
   },

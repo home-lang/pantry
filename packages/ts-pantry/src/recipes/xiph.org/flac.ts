@@ -28,7 +28,7 @@ export const recipe: Recipe = {
       ARGS: [
         '--disable-debug',
         '--disable-dependency-tracking',
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--enable-static',
       ],
     },

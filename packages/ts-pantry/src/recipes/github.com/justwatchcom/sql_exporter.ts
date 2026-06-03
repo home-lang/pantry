@@ -23,7 +23,7 @@ export const recipe: Recipe = {
       LDFLAGS: [
         '-s',
         '-w',
-        '-X github.com/prometheus/common/version.Version="{{version}}"',
+        '-X github.com/prometheus/common/version.Version={{version}}',
         '-X github.com/prometheus/common/version.Branch="$( git branch --show-current )"',
         '-X github.com/prometheus/common/version.BuildUser="${USER}"',
         '-X github.com/prometheus/common/version.BuildDate="$(date +%Y-%m-%d %H:%M:%S)"',

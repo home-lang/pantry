@@ -31,7 +31,7 @@ export const recipe: Recipe = {
       {
         run: [
           'sed -i -e \'s/ldflags="/ldflags="-buildmode=pie /\' ../Makefile',
-          'ln -s "{{deps.gnu.org/gcc.prefix}}/bin/$ARCH-linux-gnu-gcc" .',
+          'ln -s {{deps.gnu.org/gcc.prefix}}/bin/$ARCH-linux-gnu-gcc .',
         ],
         'working-directory': '.bin',
         if: 'linux',

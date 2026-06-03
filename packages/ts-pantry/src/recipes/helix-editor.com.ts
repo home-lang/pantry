@@ -42,8 +42,8 @@ export const recipe: Recipe = {
       // This directory is not used by helix, and takes up >1GB of space, so do
       // not include it in the helix package
       'rm -rf runtime/grammars/sources',
-      'mkdir -p "{{prefix}}"/share',
-      'cp -a runtime "{{prefix}}"/share',
+      'mkdir -p {{prefix}}/share',
+      'cp -a runtime {{prefix}}/share',
     ],
   },
 }

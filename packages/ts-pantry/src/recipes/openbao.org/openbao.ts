@@ -17,7 +17,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/${OPENBAO_BINARY}',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o {{ prefix }}/bin/${OPENBAO_BINARY}',
       'install -D props/${OPENBAO_SETUP_SCRIPT} {{prefix}}/bin/bao-setup',
       'install -D props/${OPENBAO_README_FILE} {{prefix}}/doc/${OPENBAO_README_FILE}',
       'install -D props/${OPENBAO_CONFIG_FILE} {{prefix}}/etc/openbao/${OPENBAO_CONFIG_FILE}',

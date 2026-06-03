@@ -12,8 +12,8 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'mkdir -p "{{prefix}}"/bin',
-      'mv ./zap "{{prefix}}"/bin',
+      'mkdir -p {{prefix}}/bin',
+      'mv ./zap {{prefix}}/bin',
     ],
   },
 }

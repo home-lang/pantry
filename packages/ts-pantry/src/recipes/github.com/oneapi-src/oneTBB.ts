@@ -19,11 +19,11 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: "cmake -S ../.. $CMAKE_ARGS -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_RPATH=\"{{prefix}}\"\ncmake --build .\ncmake --install .\n",
+        run: "cmake -S ../.. $CMAKE_ARGS -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_RPATH=\{{prefix}}\\ncmake --build .\ncmake --install .\n",
         'working-directory': "shared",
       },
       {
-        run: "cmake -S ../.. $CMAKE_ARGS -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_RPATH=\"{{prefix}}\"\ncmake --build .\ninstall ./*/libtbb*.a {{prefix}}/lib/\n",
+        run: "cmake -S ../.. $CMAKE_ARGS -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_RPATH=\{{prefix}}\\ncmake --build .\ninstall ./*/libtbb*.a {{prefix}}/lib/\n",
         'working-directory': "static",
       },
       {
@@ -41,16 +41,16 @@ export const recipe: Recipe = {
       },
     ],
     env: {
-      TBBROOT: "{{prefix}}",
+      TBBROOT: {{prefix}},
       CMAKE_ARGS: [
-        "-DCMAKE_INSTALL_PREFIX=\"{{prefix}}",
+        "-DCMAKE_INSTALL_PREFIX=\{{prefix}},
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_FIND_FRAMEWORK=LAST",
         "-DCMAKE_VERBOSE_MAKEFILE=ON",
         "-Wno-dev",
         "-DTBB_TEST=OFF",
       ],
-      PYTHONPATH: "{{prefix}}/lib/python{{deps.python.org.version.marketing}}/site-packages:$PYTHONPATH",
+      PYTHONPATH: {{prefix}}/lib/python{{deps.python.org.version.marketing}}/site-packages:$PYTHONPATH,
       linux: {
         CFLAGS: "$CFLAGS -Wl,--undefined-version",
       },

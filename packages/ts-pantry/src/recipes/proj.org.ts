@@ -39,7 +39,7 @@ export const recipe: Recipe = {
       'cmake --install build',
       'cmake -S . -B static $ARGS $STATIC_LIB_ARGS',
       'cmake --build static',
-      'mv static/lib/libproj.a "{{prefix}}/lib/"',
+      'mv static/lib/libproj.a {{prefix}}/lib/',
       // The datum grid files are required to support datum shifting
       'wget https://download.osgeo.org/proj/proj-data-1.13.tar.gz',
       'expected_checksum=\'f1e5e42ba15426d01d1970be727af77ac9b88c472215497a5a433d0a16dd105b  proj-data-1.13.tar.gz\'',
@@ -47,8 +47,8 @@ export const recipe: Recipe = {
       'test "$expected_checksum" = "$actual_checksum"',
       'mkdir proj-data',
       'tar -xzf proj-data-1.13.tar.gz -C proj-data',
-      'mkdir -p "{{prefix}}/share/proj"',
-      'mv proj-data/* "{{prefix}}/share/proj/"',
+      'mkdir -p {{prefix}}/share/proj',
+      'mv proj-data/* {{prefix}}/share/proj/',
       // sqlite3 full path in the bins (linux only)
       {
         run: [

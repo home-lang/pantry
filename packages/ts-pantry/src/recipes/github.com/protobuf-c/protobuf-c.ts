@@ -24,8 +24,8 @@ export const recipe: Recipe = {
       CFLAGS: '$CFLAGS -DNDEBUG',
       CONFIGURE_ARGS: [
         '--disable-dependency-tracking',
-        '--prefix="{{prefix}}"',
-        '--libdir="{{prefix}}/lib"',
+        '--prefix={{prefix}}',
+        '--libdir={{prefix}}/lib',
       ],
     },
   },

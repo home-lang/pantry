@@ -41,7 +41,7 @@ export const recipe: Recipe = {
       'cmake -B . -S .. $CMAKE_ARGS',
       'cmake --build .',
       'cmake --install . --prefix {{prefix}}',
-      'cd "{{prefix}}/bin"',
+      'cd {{prefix}}/bin',
       'patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so bitcoin-wallet || true',
       'patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so bitcoind || true',
     ],

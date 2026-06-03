@@ -23,9 +23,9 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        '--prefix="{{prefix}}"',
-        '--with-pnglib="{{deps.libpng.org.prefix}}/lib"',
-        '--with-pnginc="{{deps.libpng.org.prefix}}/include"',
+        '--prefix={{prefix}}',
+        '--with-pnglib={{deps.libpng.org.prefix}}/lib',
+        '--with-pnginc={{deps.libpng.org.prefix}}/include',
       ],
     },
   },

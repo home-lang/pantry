@@ -38,9 +38,9 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      "python -m pip install --prefix=\"{{prefix}}\" -e .",
+      "python -m pip install --prefix=\{{prefix}}\ -e .",
       {
-        run: "for AGENT in $AGENTS; do\n  python -m pip install --prefix=\"{{prefix}}\" -e agents/$AGENT\ndone\n",
+        run: "for AGENT in $AGENTS; do\n  python -m pip install --prefix=\{{prefix}}\ -e agents/$AGENT\ndone\n",
       },
       {
         run: "fix-shebangs.ts *",

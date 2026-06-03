@@ -35,7 +35,7 @@ export const recipe: Recipe = {
       '(nuclei -scan-all-ips -disable-update-check example.com 2>&1 || true) | tee nuclei.log',
       'grep "No results found" nuclei.log',
       'nuclei --version 2>&1 | tee nuclei.log',
-      'grep "{{version}}" nuclei.log',
+      'grep {{version}} nuclei.log',
     ],
   },
 }

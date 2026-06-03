@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      "echo 'export default \"{{version}}\"' > ./src/app-version.ts",
+      "echo 'export default \{{version}}\' > ./src/app-version.ts",
       "mkdir -p {{prefix}}/bin {{prefix}}/share/pkgx/dev",
       "cp -r ./app.ts src deno.json deno.lock {{prefix}}/share/pkgx/dev",
       {

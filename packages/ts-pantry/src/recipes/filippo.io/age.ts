@@ -18,13 +18,13 @@ export const recipe: Recipe = {
     script: [
       'mkdir -p build/age',
       'go build -o "build/age"  -ldflags "$LDFLAGS" -trimpath ./cmd/...',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv build/age/age "{{ prefix }}"/bin',
-      'mv build/age/age-keygen "{{ prefix }}"/bin',
+      'mkdir -p {{ prefix }}/bin',
+      'mv build/age/age {{ prefix }}/bin',
+      'mv build/age/age-keygen {{ prefix }}/bin',
     ],
     env: {
       LDFLAGS: [
-        '-X main.Version="{{version}}"',
+        '-X main.Version={{version}}',
       ],
       linux: {
         LDFLAGS: [

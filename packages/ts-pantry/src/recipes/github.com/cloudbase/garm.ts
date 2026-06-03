@@ -16,8 +16,8 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build $ARGS -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/garm ./cmd/garm',
-      'go build $ARGS -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/garm-cli ./cmd/garm-cli',
+      'go build $ARGS -ldflags="${GO_LDFLAGS}" -o {{ prefix }}/bin/garm ./cmd/garm',
+      'go build $ARGS -ldflags="${GO_LDFLAGS}" -o {{ prefix }}/bin/garm-cli ./cmd/garm-cli',
     ],
     env: {
       CGO_ENABLED: 1,

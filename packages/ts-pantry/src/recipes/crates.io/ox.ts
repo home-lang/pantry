@@ -21,7 +21,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      'test "$(ox --version)" = "{{version}}"',
+      'test "$(ox --version)" = {{version}}',
       'ox --help',
     ],
   },

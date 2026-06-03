@@ -22,7 +22,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build -ldflags="$LDFLAGS" -o "{{prefix}}/bin/elvish" ./cmd/elvish',
+      'go build -ldflags="$LDFLAGS" -o {{prefix}}/bin/elvish ./cmd/elvish',
     ],
     env: {
       'LDFLAGS': ['-s', '-w', '-X', 'src.elv.sh/pkg/buildinfo.VersionSuffix='],

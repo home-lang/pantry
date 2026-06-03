@@ -15,7 +15,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'case "{{hw.platform}}/{{hw.arch}}" in',
+      'case {{hw.platform}}/{{hw.arch}} in',
       '  darwin/aarch64) TRIPLE="aarch64-apple-darwin" ;;',
       '  darwin/x86-64) TRIPLE="x86_64-apple-darwin" ;;',
       '  linux/x86-64) TRIPLE="x86_64-unknown-linux-gnu" ;;',
@@ -23,10 +23,10 @@ export const recipe: Recipe = {
       '  *) echo "Unsupported platform" && exit 1 ;;',
       'esac',
       'curl -fSL -o /tmp/quickwit.tar.gz "https://github.com/quickwit-oss/quickwit/releases/download/v{{version}}/quickwit-v{{version}}-${TRIPLE}.tar.gz"',
-      'mkdir -p /tmp/quickwit-extract "{{prefix}}/bin"',
+      'mkdir -p /tmp/quickwit-extract {{prefix}}/bin',
       'tar -xzf /tmp/quickwit.tar.gz -C /tmp/quickwit-extract',
-      'find /tmp/quickwit-extract -name quickwit -type f | head -1 | xargs -I{} cp {} "{{prefix}}/bin/quickwit"',
-      'chmod +x "{{prefix}}/bin/quickwit"',
+      'find /tmp/quickwit-extract -name quickwit -type f | head -1 | xargs -I{} cp {} {{prefix}}/bin/quickwit',
+      'chmod +x {{prefix}}/bin/quickwit',
     ],
   },
 }

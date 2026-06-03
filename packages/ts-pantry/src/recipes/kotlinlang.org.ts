@@ -21,7 +21,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'echo -e "{{version}}" > build.txt',
+      'echo -e {{version}} > build.txt',
       'mkdir -p {{prefix}}/bin',
       'install bin/* {{prefix}}/bin/',
       'mkdir -p {{prefix}}/lib',

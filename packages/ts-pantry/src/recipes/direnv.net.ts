@@ -21,7 +21,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'echo -n "{{version}}" >version.txt',
+      'echo -n {{version}} >version.txt',
       'make install PREFIX={{prefix}} $EXTRA_ARGS',
     ],
   },

@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build $ARGS -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/diun ./cmd',
+      'go build $ARGS -ldflags="${GO_LDFLAGS}" -o {{ prefix }}/bin/diun ./cmd',
     ],
     env: {
       CGO_ENABLED: 0,

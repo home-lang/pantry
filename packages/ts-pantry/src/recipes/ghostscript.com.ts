@@ -35,7 +35,7 @@ export const recipe: Recipe = {
       '# The pantry version is the concatenated tag digit string (e.g. tag gs10071 -> "10071"),',
       '# where minor is always 2 digits and patch always 1 digit (10.07.1 -> 10+07+1).',
       '# {{version.major}} resolves to that full digit string since the version has no dots.',
-      'GS_DIGITS="{{version.major}}"',
+      'GS_DIGITS={{version.major}}',
       'GS_MAJOR="${GS_DIGITS%???}"',
       'GS_REST="${GS_DIGITS#"$GS_MAJOR"}"',
       'GS_MINOR="${GS_REST%?}"',

@@ -37,12 +37,12 @@ export const recipe: Recipe = {
       {
         run: "ln -s mongoose suitesparse_mongoose",
         if: "<7.4.0",
-        'working-directory': "{{prefix}}/bin",
+        'working-directory': {{prefix}}/bin,
       },
       {
         run: "ln -s suitesparse_mongoose mongoose",
         if: ">=7.4.0",
-        'working-directory': "{{prefix}}/bin",
+        'working-directory': {{prefix}}/bin,
       },
     ],
     env: {
@@ -51,7 +51,7 @@ export const recipe: Recipe = {
         "JOBS={{hw.concurrency}}",
       ],
       CMAKE_ARGS: [
-        "-DCMAKE_INSTALL_PREFIX=\"{{prefix}}",
+        "-DCMAKE_INSTALL_PREFIX=\{{prefix}},
         "-DCMAKE_INSTALL_LIBDIR=lib",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_FIND_FRAMEWORK=LAST",

@@ -11,15 +11,15 @@ export const recipe: Recipe = {
   build: {
     script: [
       'make headers',
-      'mkdir -p "{{prefix}}"',
-      'cp -a usr/include "{{prefix}}/"',
+      'mkdir -p {{prefix}}',
+      'cp -a usr/include {{prefix}}/',
     ],
   },
   test: {
     script: [
       'PATCH=$(test {{version.patch}} -gt 255 && echo 255 || echo {{version.patch}})',
       'V=$(({{version.major}} * 65536 + {{version.minor}} * 256 + $PATCH))',
-      'grep "LINUX_VERSION_CODE $V" "{{prefix}}/include/linux/version.h"',
+      'grep "LINUX_VERSION_CODE $V" {{prefix}}/include/linux/version.h',
     ],
   },
 }

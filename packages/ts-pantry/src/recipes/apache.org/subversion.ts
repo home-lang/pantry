@@ -47,7 +47,7 @@ export const recipe: Recipe = {
     env: {
       CFLAGS: '$CFLAGS -I{{deps.apache.org/apr-util.prefix}}/include/apr-1',
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--disable-debug',
         '--enable-optimize',
         '--disable-mod-activation',

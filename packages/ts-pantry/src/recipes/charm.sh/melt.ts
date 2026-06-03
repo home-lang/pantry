@@ -17,8 +17,8 @@ export const recipe: Recipe = {
     script: [
       'go mod download',
       'go build -v -ldflags="$LDFLAGS" ./cmd/melt',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv melt "{{ prefix }}"/bin',
+      'mkdir -p {{ prefix }}/bin',
+      'mv melt {{ prefix }}/bin',
     ],
     env: {
       GO111MODULE: 'on',

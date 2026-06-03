@@ -19,12 +19,12 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'mkdir -p "{{prefix}}/bin"',
+      'mkdir -p {{prefix}}/bin',
       { run: 'curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.raw}}/tart.tar.gz | tar -xzf -', if: '>=2.24' },
       { run: 'curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.raw}}/tart-$ARCH.tar.gz | tar -xzf -', if: '>=2.5<2.24' },
       {
         run: [
-          'if test "{{hw.arch}}" = "aarch64"; then',
+          'if test {{hw.arch}} = "aarch64"; then',
           '  curl -LSs https://github.com/cirruslabs/tart/releases/download/{{version.raw}}/tart.tar.gz | tar -xzf -',
           'else',
           '  # not available on x86-64',
@@ -33,8 +33,8 @@ export const recipe: Recipe = {
         ].join('\n'),
         if: '<2.5',
       },
-      'cp -a tart.app "{{prefix}}"',
-      'cp props/tart-shim "{{prefix}}"/bin/tart',
+      'cp -a tart.app {{prefix}}',
+      'cp props/tart-shim {{prefix}}/bin/tart',
     ],
     env: {
       aarch64: {

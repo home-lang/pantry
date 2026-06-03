@@ -24,7 +24,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      "echo \"{{ title }}\" > test.tmpl",
+      "echo \{{ title }}\ > test.tmpl",
       "OUT=\"$(jinja2 test.tmpl $FIXTURE --format=json)\"",
       "test \"$OUT\" = \"tea.xyz\"",
     ],

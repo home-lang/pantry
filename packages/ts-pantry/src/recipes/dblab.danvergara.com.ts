@@ -21,7 +21,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go mod download',
-      'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o "{{prefix}}/bin/dblab" .',
+      'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/dblab .',
     ],
     env: {
       'CGO_ENABLED': '0',

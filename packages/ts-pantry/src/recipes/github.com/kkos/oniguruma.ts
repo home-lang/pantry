@@ -28,7 +28,7 @@ export const recipe: Recipe = {
 
   test: {
     script: [
-      'test "$(onig-config --version)" = "{{version}}"',
+      'test "$(onig-config --version)" = {{version}}',
     ],
   },
 }

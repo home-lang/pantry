@@ -16,11 +16,11 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: 'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/lego ./cmd/lego',
+        run: 'go build -v -ldflags="${GO_LDFLAGS}" -o {{ prefix }}/bin/lego ./cmd/lego',
         if: '<5',
       },
       {
-        run: 'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/lego .',
+        run: 'go build -v -ldflags="${GO_LDFLAGS}" -o {{ prefix }}/bin/lego .',
         if: '>=5',
       },
     ],

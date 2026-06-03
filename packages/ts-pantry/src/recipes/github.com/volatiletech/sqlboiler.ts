@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'sed -i \'s/^const sqlBoilerVersion = ".*"/const sqlBoilerVersion = "{{version}}"/\' main.go',
+      'sed -i \'s/^const sqlBoilerVersion = ".*"/const sqlBoilerVersion = {{version}}/\' main.go',
       'go mod download',
       'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/sqlboiler .',
     ],

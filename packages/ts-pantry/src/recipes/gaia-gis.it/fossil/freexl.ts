@@ -22,7 +22,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
       ],
       'linux/aarch64': {
         ARGS: [

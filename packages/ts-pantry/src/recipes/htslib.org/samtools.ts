@@ -43,7 +43,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        '--prefix="{{prefix}}"',
+        '--prefix={{prefix}}',
         '--with-htslib={{deps.htslib.org.prefix}}',
       ],
       linux: {

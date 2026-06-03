@@ -20,7 +20,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'sed -i \'1,10s/"version":.*/"version":"{{version}}",/\' ../package.json',
+      'sed -i \'1,10s/"version":.*/"version":{{version}},/\' ../package.json',
       'cargo install --locked --path . --root {{prefix}}',
       {
         run: 'install_name_tool -change "@rpath/gnu.org/libiconv/v1/lib/libiconv.2.dylib" "/usr/lib/libiconv.2.dylib" code',

@@ -63,7 +63,7 @@ export const recipe: Recipe = {
       // ^3.1.4 can't find rubygems without help on linux
       {
         run: [
-          'if test "{{hw.platform}}" = "linux"; then',
+          'if test {{hw.platform}} = "linux"; then',
           'sed -i "s_^RUBYLIB.*=.*\\$_RUBYLIB = ${RUBYLIB}_" uncommon.mk',
           'fi',
         ],
@@ -72,7 +72,7 @@ export const recipe: Recipe = {
       // back in 4.0.0
       {
         run: [
-          'if test "{{hw.platform}}" = "linux"; then',
+          'if test {{hw.platform}} = "linux"; then',
           'sed -i "s_^RUBYLIB.*=.*\\$_RUBYLIB = ${RUBYLIB}_" common.mk',
           'fi',
         ],

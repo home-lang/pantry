@@ -34,11 +34,11 @@ export const recipe: Recipe = {
     script: [
       'curl -L "$Mako" | tar zxf -',
       'curl -L "$MarkupSafe" | tar zxf -',
-      'if test "{{hw.platform}}" = "linux"; then',
+      'if test {{hw.platform}} = "linux"; then',
       '  MESON_ARGS="$MESON_ARGS -Ddri3=enabled -Dgallium-omx=disabled"',
       'fi',
       '',
-      'if test "{{hw.platform}}" = "darwin"; then',
+      'if test {{hw.platform}} = "darwin"; then',
       '  MESON_ARGS="$MESON_ARGS -Dosmesa=true"',
       'fi',
       '',

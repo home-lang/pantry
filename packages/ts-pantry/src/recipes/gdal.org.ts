@@ -116,14 +116,14 @@ export const recipe: Recipe = {
       // with "no such file or directory". Guard with a shell test so CMake's own
       // FindDeflate (via CMAKE_PREFIX_PATH / Homebrew) can resolve it instead.
       'darwin': {
-        LDFLAGS: '$LDFLAGS $([ -f "{{deps.github.com/ebiggers/libdeflate.prefix}}/lib/libdeflate.dylib" ] && echo "{{deps.github.com/ebiggers/libdeflate.prefix}}/lib/libdeflate.dylib")',
+        LDFLAGS: '$LDFLAGS $([ -f {{deps.github.com/ebiggers/libdeflate.prefix}}/lib/libdeflate.dylib ] && echo {{deps.github.com/ebiggers/libdeflate.prefix}}/lib/libdeflate.dylib)',
       },
       'linux': {
         CC: 'gcc',
         CXX: 'g++',
         LD: 'gcc',
         CMAKE_ARGS: ['-DCMAKE_EXE_LINKER_FLAGS=-Wl,--allow-shlib-undefined'],
-        LDFLAGS: '$LDFLAGS $([ -f "{{deps.github.com/ebiggers/libdeflate.prefix}}/lib/libdeflate.so" ] && echo "{{deps.github.com/ebiggers/libdeflate.prefix}}/lib/libdeflate.so")',
+        LDFLAGS: '$LDFLAGS $([ -f {{deps.github.com/ebiggers/libdeflate.prefix}}/lib/libdeflate.so ] && echo {{deps.github.com/ebiggers/libdeflate.prefix}}/lib/libdeflate.so)',
       },
     },
   },

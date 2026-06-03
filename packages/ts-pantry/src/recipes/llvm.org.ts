@@ -30,11 +30,11 @@ export const recipe: Recipe = {
   build: {
     script: [
       'RUNTIMES="-DLLVM_ENABLE_RUNTIMES=\'compiler-rt\'"',
-      'if test "{{hw.platform}}" = "linux"; then',
+      'if test {{hw.platform}} = "linux"; then',
       '  ARGS="$ARGS $RUNTIMES"',
       'elif semverator satisfies \'>=14\' {{version}}; then',
       '  ARGS="$ARGS $RUNTIMES"',
-      'elif test "{{hw.arch}}" = "x86-64" && semverator satisfies \'>=14\' {{version}}; then',
+      'elif test {{hw.arch}} = "x86-64" && semverator satisfies \'>=14\' {{version}}; then',
       '  ARGS="$ARGS $RUNTIMES"',
       'fi',
       '',

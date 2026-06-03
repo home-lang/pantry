@@ -24,7 +24,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build -o "{{prefix}}/bin/" -ldflags="$GO_LDFLAGS" ./cmd/tofu',
+      'go build -o {{prefix}}/bin/ -ldflags="$GO_LDFLAGS" ./cmd/tofu',
     ],
     env: {
       'GO_LDFLAGS': ['-s', '-w', '-X github.com/opentofu/opentofu/version.dev=no'],

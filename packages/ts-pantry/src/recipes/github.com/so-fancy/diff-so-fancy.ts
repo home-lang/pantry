@@ -18,9 +18,9 @@ export const recipe: Recipe = {
       {
         run: 'sed -i -f $PROP diff-so-fancy',
       },
-      'mkdir -p "{{prefix}}/bin"',
-      'install -Dm755 diff-so-fancy "{{prefix}}/bin"',
-      'cp -a lib "{{prefix}}"',
+      'mkdir -p {{prefix}}/bin',
+      'install -Dm755 diff-so-fancy {{prefix}}/bin',
+      'cp -a lib {{prefix}}',
     ],
   },
 }

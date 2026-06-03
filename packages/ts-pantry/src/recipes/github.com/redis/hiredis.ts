@@ -14,10 +14,10 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        'PREFIX="{{prefix}}"',
-        'INSTALL_INCLUDE_PATH="{{prefix}}/include"',
-        'INSTALL_LIBRARY_PATH="{{prefix}}/lib"',
-        'INSTALL_PKGCONF_PATH="{{prefix}}/lib/pkgconfig"',
+        'PREFIX={{prefix}}',
+        'INSTALL_INCLUDE_PATH={{prefix}}/include',
+        'INSTALL_LIBRARY_PATH={{prefix}}/lib',
+        'INSTALL_PKGCONF_PATH={{prefix}}/lib/pkgconfig',
       ],
     },
   },

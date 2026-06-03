@@ -23,7 +23,7 @@ export const recipe: Recipe = {
     env: {
       CGO_ENABLED: 0,
       GO_ARGS: [
-        '-o "{{prefix}}/bin/"',
+        '-o {{prefix}}/bin/',
       ],
       GO_LDFLAGS: [
         '-s',

@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       'cmake -S . -B build $CMAKE_ARGS',
       'cmake --build build',
       'cmake --install build',
-      'cd "{{prefix}}/bin"',
+      'cd {{prefix}}/bin',
       'sed -i.bak "s|{{prefix}}|\\$(dirname \\$0)/..|g" sfcgal-config',
       'rm sfcgal-config.bak',
       '',

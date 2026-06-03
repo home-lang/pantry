@@ -45,8 +45,8 @@ export const recipe: Recipe = {
       // programs: ['nginx'] (i.e. bin/nginx). Expose it from bin/ so the
       // program resolves and matches the rest of the pantry (openresty does
       // the same move).
-      'mkdir -p "{{prefix}}/bin"',
-      'ln -sf ../sbin/nginx "{{prefix}}/bin/nginx"',
+      'mkdir -p {{prefix}}/bin',
+      'ln -sf ../sbin/nginx {{prefix}}/bin/nginx',
       '',
     ],
     env: {

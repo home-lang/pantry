@@ -24,7 +24,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      'test "$(pkg --version)" = "{{version.raw}}"',
+      'test "$(pkg --version)" = {{version.raw}}',
       'pkg fixture.js -t node18-$TARGET -o fixture',
       'test "$(./fixture)" = "Hello, World!"',
     ],

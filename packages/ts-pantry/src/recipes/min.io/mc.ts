@@ -20,7 +20,7 @@ export const recipe: Recipe = {
     env: {
       GO_ARGS: [
         '-trimpath',
-        '-o="{{prefix}}/bin/mc"',
+        '-o={{prefix}}/bin/mc',
       ],
       linux: {
         GO_ARGS: [

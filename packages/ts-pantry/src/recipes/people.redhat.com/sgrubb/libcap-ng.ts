@@ -22,8 +22,8 @@ export const recipe: Recipe = {
     env: {
       CONFIGURE_ARGS: [
         '--disable-dependency-tracking',
-        '--prefix="{{prefix}}"',
-        '--libdir="{{prefix}}/lib"',
+        '--prefix={{prefix}}',
+        '--libdir={{prefix}}/lib',
         '--disable-silent-rules',
       ],
     },

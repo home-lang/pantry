@@ -12,11 +12,11 @@ export const recipe: Recipe = {
     script: [
       'curl -fSL "https://updates.getcleanshot.com/v3/CleanShot-X-{{version}}.dmg" -o /tmp/cleanshot.dmg',
       'hdiutil attach /tmp/cleanshot.dmg -mountpoint /tmp/cleanshot-mount -nobrowse -quiet',
-      'mkdir -p "{{prefix}}"',
-      'cp -R "/tmp/cleanshot-mount/CleanShot X.app" "{{prefix}}/CleanShot X.app"',
+      'mkdir -p {{prefix}}',
+      'cp -R "/tmp/cleanshot-mount/CleanShot X.app" {{prefix}}/CleanShot X.app',
       'hdiutil detach /tmp/cleanshot-mount -quiet || true',
-      'mkdir -p "{{prefix}}/bin"',
-      'ln -sf "../CleanShot X.app/Contents/MacOS/CleanShot X" "{{prefix}}/bin/cleanshot"',
+      'mkdir -p {{prefix}}/bin',
+      'ln -sf "../CleanShot X.app/Contents/MacOS/CleanShot X" {{prefix}}/bin/cleanshot',
     ],
   },
 }

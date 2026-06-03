@@ -19,7 +19,7 @@ export const recipe: Recipe = {
         run: 'sed -i \'s/"kube-capacity version v.*"/"kube-capacity version v{{version}}"/\' version.go',
         'working-directory': 'pkg/cmd',
       },
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/kube-capacity .',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o {{ prefix }}/bin/kube-capacity .',
     ],
     env: {
       GO_LDFLAGS: [

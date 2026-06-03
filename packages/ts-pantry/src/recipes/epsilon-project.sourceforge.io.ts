@@ -45,8 +45,8 @@ export const recipe: Recipe = {
       // ACLOCAL_PATH so the macro resolves on both Linux and macOS.
       'for _lt_share in \\',
       '  "$(brew --prefix libtool 2>/dev/null)/share/aclocal" \\',
-      '  "{{deps.gnu.org/libtool.prefix}}/share/aclocal" \\',
-      '  "{{deps.gnu.org/automake.prefix}}/share/aclocal" \\',
+      '  {{deps.gnu.org/libtool.prefix}}/share/aclocal \\',
+      '  {{deps.gnu.org/automake.prefix}}/share/aclocal \\',
       '  /usr/share/aclocal \\',
       '  /usr/local/share/aclocal; do',
       '  if [ -d "$_lt_share" ] && ls "$_lt_share"/libtool.m4 &>/dev/null; then',

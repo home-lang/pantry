@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build -v -ldflags="${GO_LDFLAGS}" -o "{{ prefix }}"/bin/cirrus ./cmd/cirrus',
+      'go build -v -ldflags="${GO_LDFLAGS}" -o {{ prefix }}/bin/cirrus ./cmd/cirrus',
     ],
     env: {
       GO_LDFLAGS: [

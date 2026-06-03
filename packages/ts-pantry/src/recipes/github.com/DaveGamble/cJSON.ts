@@ -21,7 +21,7 @@ export const recipe: Recipe = {
         '-DENABLE_CJSON_UTILS=On',
         '-DENABLE_CJSON_TEST=Off',
         '-DBUILD_SHARED_AND_STATIC_LIBS=On',
-        '-DCMAKE_INSTALL_PREFIX="{{ prefix }}"',
+        '-DCMAKE_INSTALL_PREFIX={{ prefix }}',
         '-DCMAKE_BUILD_TYPE=Release',
       ],
     },

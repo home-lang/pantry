@@ -47,7 +47,7 @@ export const recipe: Recipe = {
   test: {
     script: [
       'cloc --csv . | grep 1,C,0,0,5',
-      'test "v$(cloc --version)" = "{{version.tag}}"',
+      'test "v$(cloc --version)" = {{version.tag}}',
     ],
   },
 }

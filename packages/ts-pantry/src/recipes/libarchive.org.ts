@@ -31,7 +31,7 @@ export const recipe: Recipe = {
       './configure $ARGS',
       'make --jobs {{hw.concurrency}}',
       'make install',
-      'cd "{{prefix}}/lib/pkgconfig"',
+      'cd {{prefix}}/lib/pkgconfig',
       'perl -ni -e \'print unless /Requires\\.private:.*iconv/\' libarchive.pc',
     ],
     env: {

@@ -30,7 +30,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'cd "cli/lib"',
-      'echo -n "{{version}}" >version.txt',
+      'echo -n {{version}} >version.txt',
       'cd "$HOME/.cargo/bin"',
       'ln -sf {{deps.rust-lang.org/rustup.prefix}}/bin/rustup .',
       'rustup default $(grep channel $SRCROOT/rust-toolchain.toml | sed \'s/channel = "//;s/"//\')',
@@ -47,7 +47,7 @@ export const recipe: Recipe = {
       'find ext/ffi/tinycc -maxdepth 0 -empty -exec \\',
       '  git clone https://github.com/TinyCC/tinycc.git {} \\;',
       '',
-      'if test "{{hw.platform}}+{{hw.arch}}" = "darwin+x86-64"; then',
+      'if test {{hw.platform}}+{{hw.arch}} = "darwin+x86-64"; then',
       '  # our LLVM cannot build with deployment target set to 10.6',
       '  sed -i s/MACOSX_DEPLOYMENT_TARGET/\\#/ ext/ffi/tinycc/Makefile',
       'fi',
@@ -57,9 +57,9 @@ export const recipe: Recipe = {
       'sed -i -e \'s/home_path.push(".deno")/home_path.push(".local")/\' $INSTALLER_RS',
       'grep home_path $INSTALLER_RS',
       'sed -i -e \'s/version = "4.1.2"/version = "4.1.1"/\' -e \'s/0a677b8922c94e01bdbb12126b0bc852f00447528dee1782229af9c720c3f348/e89b8c6a2e4b1f45971ad09761aafb85514a84744b67a95e32c3cc1352d1f65c/\' Cargo.lock',
-      'sed -i \'s/^version = .*/version = "{{version}}"/\' cli/Cargo.toml',
-      'cargo install --locked --path cli --root "{{prefix}}" $EXTRA_ARGS',
-      'cargo install --locked --path cli/rt --root "{{prefix}}" $EXTRA_ARGS',
+      'sed -i \'s/^version = .*/version = {{version}}/\' cli/Cargo.toml',
+      'cargo install --locked --path cli --root {{prefix}} $EXTRA_ARGS',
+      'cargo install --locked --path cli/rt --root {{prefix}} $EXTRA_ARGS',
     ],
     env: {
       'PATH': '$HOME/.cargo/bin:$PATH',

@@ -23,7 +23,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: "if test \"{{hw.platform}}\" = \"darwin\"; then\n  sed -i -e 's/generation = (buf\\.st_mtim\\.tv_sec << 32).*/generation = buf.st_mtime << 32;/' srp_shared.c\nfi\n",
+        run: "if test \{{hw.platform}}\ = \"darwin\"; then\n  sed -i -e 's/generation = (buf\\.st_mtim\\.tv_sec << 32).*/generation = buf.st_mtime << 32;/' srp_shared.c\nfi\n",
         if: "^0.2.8",
         'working-directory': "../tools",
       },

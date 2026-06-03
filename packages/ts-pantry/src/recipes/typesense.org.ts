@@ -21,12 +21,12 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'if test "{{hw.arch}}" = "aarch64"; then ARCH="arm64"; else ARCH="amd64"; fi',
+      'if test {{hw.arch}} = "aarch64"; then ARCH="arm64"; else ARCH="amd64"; fi',
       'curl -fSL "https://dl.typesense.org/releases/{{version}}/typesense-server-{{version}}-{{hw.platform}}-${ARCH}.tar.gz" -o typesense.tar.gz',
       'tar xzf typesense.tar.gz',
       'chmod +x typesense-server',
-      'mkdir -p "{{prefix}}/bin"',
-      'mv typesense-server "{{prefix}}/bin/"',
+      'mkdir -p {{prefix}}/bin',
+      'mv typesense-server {{prefix}}/bin/',
     ],
   },
 }

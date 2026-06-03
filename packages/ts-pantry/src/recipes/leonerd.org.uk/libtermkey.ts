@@ -26,7 +26,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        'PREFIX="{{prefix}}"',
+        'PREFIX={{prefix}}',
         '--jobs {{ hw.concurrency }}',
       ],
     },

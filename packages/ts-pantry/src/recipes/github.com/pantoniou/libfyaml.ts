@@ -28,7 +28,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      './configure $ARGS --prefix="{{prefix}}"',
+      './configure $ARGS --prefix={{prefix}}',
       'make --jobs {{ hw.concurrency }} install',
       {
         run: 'sed -i \'s/\\*__ptr/\\*(_ptr)/g\' {{prefix}}/include/libfyaml/libfyaml-atomics.h',
@@ -39,8 +39,8 @@ export const recipe: Recipe = {
   test: {
     script: [
       'c++ $FIXTURE -o test -lfyaml',
-      'test "$(./test)" = "{{version}}" || test "$(./test)" = "{{version.marketing}}"',
-      'test "$(fy-tool --version)" = "{{version}}" || test "$(fy-tool --version)" = "{{version.marketing}}"',
+      'test "$(./test)" = {{version}} || test "$(./test)" = {{version.marketing}}',
+      'test "$(fy-tool --version)" = {{version}} || test "$(fy-tool --version)" = {{version.marketing}}',
     ],
   },
 }

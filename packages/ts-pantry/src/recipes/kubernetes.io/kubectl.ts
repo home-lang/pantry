@@ -20,8 +20,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'make WHAT=cmd/kubectl',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv _output/bin/kubectl "{{ prefix }}"/bin',
+      'mkdir -p {{ prefix }}/bin',
+      'mv _output/bin/kubectl {{ prefix }}/bin',
     ],
   },
   test: {

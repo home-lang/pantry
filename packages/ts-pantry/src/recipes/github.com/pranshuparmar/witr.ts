@@ -16,8 +16,8 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'mkdir -p "{{prefix}}"/bin',
-      'go build -ldflags "-X main.version=v{{version}} -X main.commit=$(git rev-parse --short HEAD) -X \'main.buildDate=$(date +%Y-%m-%d)\'" -o "{{prefix}}"/bin/witr ./cmd/witr',
+      'mkdir -p {{prefix}}/bin',
+      'go build -ldflags "-X main.version=v{{version}} -X main.commit=$(git rev-parse --short HEAD) -X \'main.buildDate=$(date +%Y-%m-%d)\'" -o {{prefix}}/bin/witr ./cmd/witr',
     ],
     env: {
       CGO_ENABLED: 0,

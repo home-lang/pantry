@@ -39,7 +39,7 @@ export const recipe: Recipe = {
         'working-directory': ".compat-headers/solv",
       },
       "export CPLUS_INCLUDE_PATH=\"$PWD/.compat-headers:$CPATH\"",
-      "sed -i 's|set(SYSTEMD_DIR \"/usr/lib/systemd/system\")|set(SYSTEMD_DIR \"{{prefix}}/lib/systemd/system\")|' CMakeLists.txt",
+      "sed -i 's|set(SYSTEMD_DIR \"/usr/lib/systemd/system\")|set(SYSTEMD_DIR \{{prefix}}/lib/systemd/system\)|' CMakeLists.txt",
       "cmake . $CMAKE_ARGS",
       "cmake --build .",
       "cmake --install .",

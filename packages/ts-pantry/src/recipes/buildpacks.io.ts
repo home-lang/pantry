@@ -21,8 +21,8 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      { run: 'go build -v -ldflags="${GO_LDFLAGS}" -o "{{prefix}}"/bin/pack ./cmd/pack', if: '<0.38' },
-      { run: 'go build -v -ldflags="${GO_LDFLAGS}" -o "{{prefix}}"/bin/pack .', if: '>=0.38' },
+      { run: 'go build -v -ldflags="${GO_LDFLAGS}" -o {{prefix}}/bin/pack ./cmd/pack', if: '<0.38' },
+      { run: 'go build -v -ldflags="${GO_LDFLAGS}" -o {{prefix}}/bin/pack .', if: '>=0.38' },
     ],
     env: {
       'GO_LDFLAGS': ['-s', '-w', '-X github.com/buildpacks/pack.Version={{version}}', '-X github.com/buildpacks/pack/pkg/client.Version={{version}}'],

@@ -25,14 +25,14 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go mod download',
-      'go build $ARGS -ldflags="$GO_LDFLAGS" -o "{{prefix}}"/bin/encore ./cli/cmd/encore',
-      'go build $ARGS -ldflags="$GO_LDFLAGS" -o "{{prefix}}"/bin/git-remote-encore ./cli/cmd/git-remote-encore',
+      'go build $ARGS -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/encore ./cli/cmd/encore',
+      'go build $ARGS -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/git-remote-encore ./cli/cmd/git-remote-encore',
       // runtime renamed to runtimes in 1.28.0 (https://github.com/encoredev/encore/pull/894)
-      { run: 'cp -a runtime "{{prefix}}"', if: '<1.28.0' },
+      { run: 'cp -a runtime {{prefix}}', if: '<1.28.0' },
       {
         run: [
-          'cp -a runtimes "{{prefix}}"',
-          'ln -s runtimes/go "{{prefix}}/runtime"',
+          'cp -a runtimes {{prefix}}',
+          'ln -s runtimes/go {{prefix}}/runtime',
         ],
         if: '>=1.28.0',
       },

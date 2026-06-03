@@ -56,7 +56,7 @@ export const recipe: Recipe = {
       'meson setup $ARGS build',
       'meson compile -C build',
       'meson install -C build',
-      'cd "{{prefix}}/lib"',
+      'cd {{prefix}}/lib',
       'if test -d systemd; then',
       '  ln -s systemd/lib* .',
       'fi',

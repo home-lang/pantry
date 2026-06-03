@@ -16,8 +16,8 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go build -v -ldflags="$LDFLAGS"',
-      'mkdir -p "{{ prefix }}"/bin',
-      'mv slides "{{ prefix }}"/bin',
+      'mkdir -p {{ prefix }}/bin',
+      'mv slides {{ prefix }}/bin',
     ],
     env: {
       LDFLAGS: [

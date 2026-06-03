@@ -33,7 +33,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      'jira version | grep \'Version="{{version}}"\'',
+      'jira version | grep \'Version={{version}}\'',
       '(jira serverinfo 2>&1 || true) | grep \'The tool needs a Jira API token to function.\'',
     ],
   },

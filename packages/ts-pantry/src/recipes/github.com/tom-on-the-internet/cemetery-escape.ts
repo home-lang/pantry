@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'go build -ldflags="$LDFLAGS" -o "{{prefix}}"/bin/cemetery-escape',
+      'go build -ldflags="$LDFLAGS" -o {{prefix}}/bin/cemetery-escape',
     ],
     env: {
       LDFLAGS: [

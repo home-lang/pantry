@@ -31,7 +31,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      '(kaspad --version || true) | grep "{{version}}"',
+      '(kaspad --version || true) | grep {{version}}',
     ],
   },
 }

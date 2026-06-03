@@ -22,7 +22,7 @@ export const recipe: Recipe = {
       "cargo install --locked --path . --root {{prefix}}",
       {
         run: "if test -f rtx; then\n  ln -s rtx mise\nelif test -f mise; then\n  ln -s mise rtx\nfi\n",
-        'working-directory': "{{prefix}}/bin",
+        'working-directory': {{prefix}}/bin,
       },
     ],
     env: {

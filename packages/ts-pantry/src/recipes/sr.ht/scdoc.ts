@@ -17,7 +17,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        'PREFIX="{{prefix}}"',
+        'PREFIX={{prefix}}',
         'LDFLAGS="$LDFLAGS"',
       ],
     },

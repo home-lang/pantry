@@ -20,7 +20,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go mod download',
-      'go build -v -ldflags="$LDFLAGS" -o "{{prefix}}"/bin/terraform-docs',
+      'go build -v -ldflags="$LDFLAGS" -o {{prefix}}/bin/terraform-docs',
     ],
   },
 }
