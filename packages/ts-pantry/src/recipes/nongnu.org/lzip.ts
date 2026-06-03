@@ -7,7 +7,7 @@ export const recipe: Recipe = {
     'lzip',
   ],
   distributable: {
-    url: 'https://cdn.betsu.org/mirrors/savannah/lzip/lzip-{{version.marketing}}.tar.gz',
+    url: 'https://download.savannah.gnu.org/releases/lzip/lzip-{{version.marketing}}.tar.gz',
     stripComponents: 1,
   },
   build: {

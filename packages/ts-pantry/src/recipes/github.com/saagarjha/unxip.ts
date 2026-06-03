@@ -8,12 +8,12 @@ export const recipe: Recipe = {
     'unxip',
   ],
   distributable: {
-    url: 'https://github.com/saagarjha/unxip/archive/refs/tags/v{{version.raw}}.tar.gz',
+    url: 'https://github.com/saagarjha/unxip/archive/refs/tags/v{{version.marketing}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
-      'curl -Lfo unxip "https://github.com/saagarjha/unxip/releases/download/v{{version.raw}}/unxip"',
+      'curl -Lfo unxip "https://github.com/saagarjha/unxip/releases/download/v{{version.marketing}}/unxip"',
       'chmod +x unxip',
       'mkdir -p {{prefix}}/bin',
       'mv unxip {{prefix}}/bin',

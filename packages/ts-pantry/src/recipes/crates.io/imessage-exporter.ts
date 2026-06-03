@@ -17,7 +17,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'sed -i \'s/^version = ".*"$/version = "{{version}}"/\' Cargo.toml',
-      'cargo install --locked --path . --root {{prefix}}',
+      'cargo install --locked --path imessage-exporter --root {{prefix}}',
     ],
   },
   test: {

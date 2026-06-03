@@ -8,7 +8,7 @@ export const recipe: Recipe = {
     "term-size",
   ],
   distributable: {
-    url: "https://github.com/sindresorhus/macos-term-size/releases/download/v{{version}}/term-size.zip",
+    url: "https://github.com/sindresorhus/macos-term-size/releases/download/v{{version}}/terminal-size.zip",
     stripComponents: 1,
   },
   build: {
