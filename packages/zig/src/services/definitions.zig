@@ -170,6 +170,44 @@ fn resolvePackageHome(allocator: std.mem.Allocator, package_domain: []const u8, 
     return null;
 }
 
+/// Owned HOME or null. Caller frees.
+fn getHome(allocator: std.mem.Allocator) ?[]const u8 {
+    const io_helper = @import("../io_helper.zig");
+    return io_helper.getEnvVarOwned(allocator, "HOME") catch null;
+}
+
+/// Best-effort mkdir -p.
+fn ensureDir(path: []const u8) void {
+    const io_helper = @import("../io_helper.zig");
+    io_helper.makePath(path) catch {};
+}
+
+/// Return {HOME}/.local/share/pantry/data/<name> (or /tmp/<name>-data without a
+/// HOME), creating it. Many daemons require their data/working dir to already
+/// exist and be writable — launchd/systemd create nothing. Caller owns the result.
+fn serviceDataDir(allocator: std.mem.Allocator, home: ?[]const u8, name: []const u8) ![]const u8 {
+    const io_helper = @import("../io_helper.zig");
+    const dir = if (home) |h|
+        try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/{s}", .{ h, name })
+    else
+        try std.fmt.allocPrint(allocator, "/tmp/{s}-data", .{name});
+    io_helper.makePath(dir) catch {};
+    return dir;
+}
+
+/// Write `content` to `dir/filename`, returning the absolute path (caller-owned).
+/// Best-effort: a write failure still returns the path so the daemon surfaces the
+/// real error. Overwrites on each call so generated configs track the live port.
+fn writeServiceFile(allocator: std.mem.Allocator, dir: []const u8, filename: []const u8, content: []const u8) ![]const u8 {
+    const io_helper = @import("../io_helper.zig");
+    const path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ dir, filename });
+    if (io_helper.createFile(path, .{})) |f| {
+        io_helper.writeAllToFile(f, content) catch {};
+        io_helper.closeFile(f);
+    } else |_| {}
+    return path;
+}
+
 /// Resolve a service binary path by searching pantry install locations
 /// Tries: project-local pantry/.bin, global Paths.globalBinDir(), $PATH, then falls back to bare name.
 pub fn resolveServiceBinary(allocator: std.mem.Allocator, binary_name: []const u8, project_root: ?[]const u8, home: ?[]const u8) ![]const u8 {
@@ -406,22 +444,61 @@ pub const Services = struct {
 
     /// MySQL service
     pub fn mysql(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
-        var env_vars = std.StringHashMap([]const u8).init(allocator);
-        try env_vars.put("MYSQL_PORT", try std.fmt.allocPrint(allocator, "{d}", .{port}));
+        return mysqlWithContext(allocator, port, null);
+    }
+
+    pub fn mysqlWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        const home = getHome(allocator);
+        defer if (home) |h| allocator.free(h);
+
+        // mysqld needs an initialized datadir; bare `mysqld --port` exits on a
+        // fresh machine. Initialize once (no root password), then run foreground.
+        const data_dir = try serviceDataDir(allocator, home, "mysql");
+        defer allocator.free(data_dir);
+
+        const mysqld = try resolveServiceBinary(allocator, "mysqld", project_root, home);
+        defer allocator.free(mysqld);
+
+        // mysqld derives basedir from argv[0]'s dir (../), which for the .bin
+        // symlink resolves to pantry/ — wrong, so it can't find share/english/
+        // errmsg.sys or charsets and aborts. Pass the real package home.
+        const basedir = (try resolvePackageHome(allocator, "mysql.com", project_root, home)) orelse
+            try allocator.dupe(u8, "");
+        defer allocator.free(basedir);
+        const basedir_flag = if (basedir.len > 0)
+            try std.fmt.allocPrint(allocator, " --basedir=\"{s}\"", .{basedir})
+        else
+            try allocator.dupe(u8, "");
+        defer allocator.free(basedir_flag);
+
+        const script = try std.fmt.allocPrint(allocator,
+            \\#!/bin/sh
+            \\DATADIR="{s}"
+            \\# Initialize once. Use a completion marker so an interrupted init
+            \\# (e.g. killed mid-run) starts clean next time instead of failing on
+            \\# a half-written InnoDB datadir.
+            \\if [ ! -f "$DATADIR/.pantry-initialized" ]; then
+            \\  rm -rf "$DATADIR"/* "$DATADIR"/.[!.]* 2>/dev/null
+            \\  "{s}"{s} --initialize-insecure --datadir="$DATADIR" && touch "$DATADIR/.pantry-initialized"
+            \\fi
+            \\exec "{s}"{s} --datadir="$DATADIR" --port={d} --socket="$DATADIR/mysqld.sock" --pid-file="$DATADIR/mysqld.pid" --mysqlx=OFF
+            \\
+        , .{ data_dir, mysqld, basedir_flag, mysqld, basedir_flag, port });
+        defer allocator.free(script);
+        const script_path = try writeServiceFile(allocator, data_dir, "start.sh", script);
+        defer allocator.free(script_path);
 
         return ServiceConfig{
             .name = try allocator.dupe(u8, "mysql"),
             .display_name = try allocator.dupe(u8, "MySQL"),
             .description = try allocator.dupe(u8, "MySQL database server"),
-            .start_command = try std.fmt.allocPrint(
-                allocator,
-                "mysqld --port={d}",
-                .{port},
-            ),
+            .start_command = try std.fmt.allocPrint(allocator, "/bin/sh {s}", .{script_path}),
             .env_vars = env_vars,
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .working_directory = try allocator.dupe(u8, data_dir),
             .health_check = try std.fmt.allocPrint(allocator, "mysqladmin ping --port={d}", .{port}),
         };
     }
@@ -525,16 +602,47 @@ pub const Services = struct {
 
     /// Neo4j service
     pub fn neo4j(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
-        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return neo4jWithContext(allocator, port, null);
+    }
+
+    pub fn neo4jWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
+        var env_vars = std.StringHashMap([]const u8).init(allocator);
+        const home = getHome(allocator);
+        defer if (home) |h| allocator.free(h);
+
+        // `--http-port` isn't a valid `neo4j console` flag; Neo4j 5 is configured
+        // via NEO4J_* env overrides + writable data/logs/run dirs. Needs a JDK.
+        const data_dir = try serviceDataDir(allocator, home, "neo4j");
+        defer allocator.free(data_dir);
+
+        if (try resolveJavaHome(allocator, project_root, home)) |jh| {
+            try env_vars.put("JAVA_HOME", jh);
+        }
+        if (try resolvePackageHome(allocator, "neo4j.com", project_root, home)) |nh| {
+            try env_vars.put("NEO4J_HOME", nh);
+        }
+        try env_vars.put("NEO4J_server_directories_data", try std.fmt.allocPrint(allocator, "{s}/data", .{data_dir}));
+        try env_vars.put("NEO4J_server_directories_logs", try std.fmt.allocPrint(allocator, "{s}/logs", .{data_dir}));
+        try env_vars.put("NEO4J_server_directories_run", try std.fmt.allocPrint(allocator, "{s}/run", .{data_dir}));
+        try env_vars.put("NEO4J_server_default__listen__address", try allocator.dupe(u8, "127.0.0.1"));
+        try env_vars.put("NEO4J_server_http_listen__address", try std.fmt.allocPrint(allocator, ":{d}", .{port}));
+        try env_vars.put("NEO4J_server_bolt_listen__address", try allocator.dupe(u8, ":7687"));
+        try env_vars.put("NEO4J_dbms_security_auth__enabled", try allocator.dupe(u8, "false"));
+
+        const bin = try resolveServiceBinary(allocator, "neo4j", project_root, home);
+        defer allocator.free(bin);
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "neo4j"),
             .display_name = try allocator.dupe(u8, "Neo4j"),
             .description = try allocator.dupe(u8, "Graph database"),
-            .start_command = try std.fmt.allocPrint(allocator, "neo4j console --http-port={d}", .{port}),
+            .start_command = try std.fmt.allocPrint(allocator, "{s} console", .{bin}),
             .env_vars = env_vars,
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .working_directory = try allocator.dupe(u8, data_dir),
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/", .{port}),
         };
     }
 
@@ -947,17 +1055,45 @@ pub const Services = struct {
 
     /// SonarQube service
     pub fn sonarqube(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return sonarqubeWithContext(allocator, port, null);
+    }
+
+    pub fn sonarqubeWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
         var env_vars = std.StringHashMap([]const u8).init(allocator);
+        const home = getHome(allocator);
+        defer if (home) |h| allocator.free(h);
+
+        // `sonar.sh start` forks (breaks launchd KeepAlive); use `console` for
+        // foreground. Point data/temp/logs at writable dirs and supply a JDK.
+        const data_dir = try serviceDataDir(allocator, home, "sonarqube");
+        defer allocator.free(data_dir);
+
         try env_vars.put("SONAR_WEB_PORT", try std.fmt.allocPrint(allocator, "{d}", .{port}));
+        try env_vars.put("SONAR_WEB_HOST", try allocator.dupe(u8, "127.0.0.1"));
+        try env_vars.put("SONAR_PATH_DATA", try std.fmt.allocPrint(allocator, "{s}/data", .{data_dir}));
+        try env_vars.put("SONAR_PATH_TEMP", try std.fmt.allocPrint(allocator, "{s}/temp", .{data_dir}));
+        try env_vars.put("SONAR_PATH_LOGS", try std.fmt.allocPrint(allocator, "{s}/logs", .{data_dir}));
+        if (try resolveJavaHome(allocator, project_root, home)) |jh| {
+            try env_vars.put("JAVA_HOME", jh);
+        }
+        if (try resolvePackageHome(allocator, "sonarqube.org", project_root, home)) |sh| {
+            try env_vars.put("SONARQUBE_HOME", sh);
+        }
+
+        const bin = try resolveServiceBinary(allocator, "sonar.sh", project_root, home);
+        defer allocator.free(bin);
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "sonarqube"),
             .display_name = try allocator.dupe(u8, "SonarQube"),
             .description = try allocator.dupe(u8, "Code quality and security analysis"),
-            .start_command = try allocator.dupe(u8, "sonar.sh start"),
+            .start_command = try std.fmt.allocPrint(allocator, "{s} console", .{bin}),
             .env_vars = env_vars,
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .working_directory = try allocator.dupe(u8, data_dir),
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/api/system/status", .{port}),
         };
     }
 
@@ -1089,15 +1225,62 @@ pub const Services = struct {
 
     /// MariaDB service (MySQL-compatible fork)
     pub fn mariadb(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
-        var env_vars = std.StringHashMap([]const u8).init(allocator);
-        try env_vars.put("MYSQL_TCP_PORT", try std.fmt.allocPrint(allocator, "{d}", .{port}));
+        return mariadbWithContext(allocator, port, null);
+    }
+
+    pub fn mariadbWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        const home = getHome(allocator);
+        defer if (home) |h| allocator.free(h);
+
+        // Like mysql: mariadbd needs an initialized datadir or it exits. Init
+        // once with mariadb-install-db (no root password), then run foreground.
+        const data_dir = try serviceDataDir(allocator, home, "mariadb");
+        defer allocator.free(data_dir);
+
+        const mariadbd = try resolveServiceBinary(allocator, "mariadbd", project_root, home);
+        defer allocator.free(mariadbd);
+        const installdb = try resolveServiceBinary(allocator, "mariadb-install-db", project_root, home);
+        defer allocator.free(installdb);
+
+        // Pass the real package home so mariadbd/mariadb-install-db find their
+        // share/ (errmsg, charsets, system-table SQL) instead of deriving the
+        // wrong basedir from the .bin symlink.
+        const basedir = (try resolvePackageHome(allocator, "mariadb.com/server", project_root, home)) orelse
+            try allocator.dupe(u8, "");
+        defer allocator.free(basedir);
+        const basedir_flag = if (basedir.len > 0)
+            try std.fmt.allocPrint(allocator, " --basedir=\"{s}\"", .{basedir})
+        else
+            try allocator.dupe(u8, "");
+        defer allocator.free(basedir_flag);
+
+        const script = try std.fmt.allocPrint(allocator,
+            \\#!/bin/sh
+            \\DATADIR="{s}"
+            \\# Initialize once; a completion marker makes an interrupted init retry
+            \\# from a clean datadir rather than failing on half-written state.
+            \\if [ ! -f "$DATADIR/.pantry-initialized" ]; then
+            \\  rm -rf "$DATADIR"/* "$DATADIR"/.[!.]* 2>/dev/null
+            \\  "{s}"{s} --datadir="$DATADIR" --auth-root-authentication-method=normal && touch "$DATADIR/.pantry-initialized"
+            \\fi
+            \\exec "{s}"{s} --datadir="$DATADIR" --port={d} --socket="$DATADIR/mariadbd.sock" --pid-file="$DATADIR/mariadbd.pid"
+            \\
+        , .{ data_dir, installdb, basedir_flag, mariadbd, basedir_flag, port });
+        defer allocator.free(script);
+        const script_path = try writeServiceFile(allocator, data_dir, "start.sh", script);
+        defer allocator.free(script_path);
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "mariadb"),
             .display_name = try allocator.dupe(u8, "MariaDB"),
             .description = try allocator.dupe(u8, "MySQL-compatible relational database"),
-            .start_command = try std.fmt.allocPrint(allocator, "mariadbd --port={d}", .{port}),
+            .start_command = try std.fmt.allocPrint(allocator, "/bin/sh {s}", .{script_path}),
             .env_vars = env_vars,
             .port = port,
+            .auto_start = false,
+            .keep_alive = true,
+            .working_directory = try allocator.dupe(u8, data_dir),
             .health_check = try std.fmt.allocPrint(allocator, "mysqladmin ping --port={d}", .{port}),
         };
     }
@@ -1162,29 +1345,133 @@ pub const Services = struct {
 
     /// CouchDB service
     pub fn couchdb(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
-        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return couchdbWithContext(allocator, port, null);
+    }
+
+    pub fn couchdbWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
+        var env_vars = std.StringHashMap([]const u8).init(allocator);
+        const home = getHome(allocator);
+        defer if (home) |h| allocator.free(h);
+
+        // The 1.x flags `-b -o -p` are obsolete; CouchDB 3 runs foreground and
+        // refuses to start without an admin (admin party disabled). Generate a
+        // local.ini with an admin + the data dir + port and feed it via ERL_FLAGS.
+        const data_dir = try serviceDataDir(allocator, home, "couchdb");
+        defer allocator.free(data_dir);
+
+        const ini = try std.fmt.allocPrint(allocator,
+            \\[admins]
+            \\admin = pantry-dev
+            \\
+            \\[chttpd]
+            \\port = {d}
+            \\bind_address = 127.0.0.1
+            \\
+            \\[couchdb]
+            \\database_dir = {s}
+            \\view_index_dir = {s}
+            \\
+            \\[chttpd_auth]
+            \\secret = 0123456789abcdef0123456789abcdef
+            \\
+        , .{ port, data_dir, data_dir });
+        defer allocator.free(ini);
+        const ini_path = try writeServiceFile(allocator, data_dir, "local.ini", ini);
+        defer allocator.free(ini_path);
+
+        // Prepend the package's bundled default.ini when we can find it.
+        const pkg_home = try resolvePackageHome(allocator, "couchdb.apache.org", project_root, home);
+        defer if (pkg_home) |p| allocator.free(p);
+        const erl_flags = if (pkg_home) |p|
+            try std.fmt.allocPrint(allocator, "-couch_ini {s}/etc/default.ini {s}", .{ p, ini_path })
+        else
+            try std.fmt.allocPrint(allocator, "-couch_ini {s}", .{ini_path});
+        try env_vars.put("ERL_FLAGS", erl_flags);
+        try env_vars.put("HOME", try allocator.dupe(u8, data_dir));
+
+        const bin = try resolveServiceBinary(allocator, "couchdb", project_root, home);
+        defer allocator.free(bin);
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "couchdb"),
             .display_name = try allocator.dupe(u8, "CouchDB"),
             .description = try allocator.dupe(u8, "Document-oriented NoSQL database"),
-            .start_command = try std.fmt.allocPrint(allocator, "couchdb -b -o /dev/null -p {d}", .{port}),
+            .start_command = try allocator.dupe(u8, bin),
             .env_vars = env_vars,
             .port = port,
+            .auto_start = false,
+            .keep_alive = true,
+            .working_directory = try allocator.dupe(u8, data_dir),
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://admin:pantry-dev@127.0.0.1:{d}/", .{port}),
         };
     }
 
     /// Apache Cassandra service
     pub fn cassandra(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return cassandraWithContext(allocator, port, null);
+    }
+
+    pub fn cassandraWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
         var env_vars = std.StringHashMap([]const u8).init(allocator);
+        const home = getHome(allocator);
+        defer if (home) |h| allocator.free(h);
+
+        // `cassandra -f -p {port}` was wrong: -p is a PID file, not a port.
+        // Cassandra needs CASSANDRA_CONF with a cassandra.yaml pointing at
+        // writable data dirs + the native transport port, plus a JDK.
+        const data_dir = try serviceDataDir(allocator, home, "cassandra");
+        defer allocator.free(data_dir);
+        const conf_dir = try std.fmt.allocPrint(allocator, "{s}/conf", .{data_dir});
+        defer allocator.free(conf_dir);
+        ensureDir(conf_dir);
+
+        const yaml = try std.fmt.allocPrint(allocator,
+            \\cluster_name: 'pantry'
+            \\num_tokens: 16
+            \\partitioner: org.apache.cassandra.dht.Murmur3Partitioner
+            \\data_file_directories:
+            \\    - {s}/data
+            \\commitlog_directory: {s}/commitlog
+            \\saved_caches_directory: {s}/saved_caches
+            \\hints_directory: {s}/hints
+            \\commitlog_sync: periodic
+            \\commitlog_sync_period: 10000ms
+            \\seed_provider:
+            \\    - class_name: org.apache.cassandra.locator.SimpleSeedProvider
+            \\      parameters:
+            \\          - seeds: "127.0.0.1:7000"
+            \\endpoint_snitch: SimpleSnitch
+            \\listen_address: 127.0.0.1
+            \\rpc_address: 127.0.0.1
+            \\storage_port: 7000
+            \\native_transport_port: {d}
+            \\start_native_transport: true
+            \\
+        , .{ data_dir, data_dir, data_dir, data_dir, port });
+        defer allocator.free(yaml);
+        const yaml_path = try writeServiceFile(allocator, conf_dir, "cassandra.yaml", yaml);
+        defer allocator.free(yaml_path);
+
         try env_vars.put("MAX_HEAP_SIZE", try allocator.dupe(u8, "1G"));
         try env_vars.put("HEAP_NEWSIZE", try allocator.dupe(u8, "256M"));
+        try env_vars.put("CASSANDRA_CONF", try allocator.dupe(u8, conf_dir));
+        if (try resolveJavaHome(allocator, project_root, home)) |jh| {
+            try env_vars.put("JAVA_HOME", jh);
+        }
+
+        const bin = try resolveServiceBinary(allocator, "cassandra", project_root, home);
+        defer allocator.free(bin);
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "cassandra"),
             .display_name = try allocator.dupe(u8, "Cassandra"),
             .description = try allocator.dupe(u8, "Wide-column distributed database"),
-            .start_command = try std.fmt.allocPrint(allocator, "cassandra -f -p {d}", .{port}),
+            .start_command = try std.fmt.allocPrint(allocator, "{s} -f", .{bin}),
             .env_vars = env_vars,
             .port = port,
+            .auto_start = false,
+            .keep_alive = true,
+            .working_directory = try allocator.dupe(u8, data_dir),
         };
     }
 
@@ -1296,14 +1583,55 @@ pub const Services = struct {
 
     /// ScyllaDB service (Cassandra-compatible)
     pub fn scylladb(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return scylladbWithContext(allocator, port, null);
+    }
+
+    pub fn scylladbWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
         const env_vars = std.StringHashMap([]const u8).init(allocator);
+        const home = getHome(allocator);
+        defer if (home) |h| allocator.free(h);
+
+        // Scylla needs a --workdir and an options-file (scylla.yaml) with data
+        // dirs; bare `scylla --native-transport-port` has nowhere to write.
+        // (Scylla is Linux-only — uses linux-aio — so this is correct-by-config
+        // but only runs on Linux.)
+        const data_dir = try serviceDataDir(allocator, home, "scylladb");
+        defer allocator.free(data_dir);
+        const conf_dir = try std.fmt.allocPrint(allocator, "{s}/conf", .{data_dir});
+        defer allocator.free(conf_dir);
+        ensureDir(conf_dir);
+
+        const yaml = try std.fmt.allocPrint(allocator,
+            \\cluster_name: 'pantry'
+            \\data_file_directories:
+            \\    - {s}/data
+            \\commitlog_directory: {s}/commitlog
+            \\seed_provider:
+            \\    - class_name: org.apache.cassandra.locator.SimpleSeedProvider
+            \\      parameters:
+            \\          - seeds: "127.0.0.1"
+            \\listen_address: 127.0.0.1
+            \\rpc_address: 127.0.0.1
+            \\native_transport_port: {d}
+            \\
+        , .{ data_dir, data_dir, port });
+        defer allocator.free(yaml);
+        const yaml_path = try writeServiceFile(allocator, conf_dir, "scylla.yaml", yaml);
+        defer allocator.free(yaml_path);
+
+        const bin = try resolveServiceBinary(allocator, "scylla", project_root, home);
+        defer allocator.free(bin);
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "scylladb"),
             .display_name = try allocator.dupe(u8, "ScyllaDB"),
             .description = try allocator.dupe(u8, "Cassandra-compatible NoSQL database"),
-            .start_command = try std.fmt.allocPrint(allocator, "scylla --native-transport-port {d}", .{port}),
+            .start_command = try std.fmt.allocPrint(allocator, "{s} --options-file {s} --workdir {s} --developer-mode 1 --smp 1", .{ bin, yaml_path, data_dir }),
             .env_vars = env_vars,
             .port = port,
+            .auto_start = false,
+            .keep_alive = true,
+            .working_directory = try allocator.dupe(u8, data_dir),
         };
     }
 
@@ -1416,14 +1744,53 @@ pub const Services = struct {
 
     /// HAProxy service
     pub fn haproxy(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return haproxyWithContext(allocator, port, null);
+    }
+
+    pub fn haproxyWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
         const env_vars = std.StringHashMap([]const u8).init(allocator);
+        const home = getHome(allocator);
+        defer if (home) |h| allocator.free(h);
+
+        // The old default config path doesn't exist and `-p {port}` was a misuse
+        // (-p is a PID file, not a port). Generate a minimal foreground config
+        // with a frontend that returns HTTP 200 on the service port.
+        const data_dir = try serviceDataDir(allocator, home, "haproxy");
+        defer allocator.free(data_dir);
+
+        const cfg = try std.fmt.allocPrint(allocator,
+            \\global
+            \\    maxconn 256
+            \\
+            \\defaults
+            \\    mode http
+            \\    timeout connect 5s
+            \\    timeout client  30s
+            \\    timeout server  30s
+            \\
+            \\frontend status
+            \\    bind 127.0.0.1:{d}
+            \\    http-request return status 200
+            \\
+        , .{port});
+        defer allocator.free(cfg);
+        const cfg_path = try writeServiceFile(allocator, data_dir, "haproxy.cfg", cfg);
+        defer allocator.free(cfg_path);
+
+        const bin = try resolveServiceBinary(allocator, "haproxy", project_root, home);
+        defer allocator.free(bin);
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "haproxy"),
             .display_name = try allocator.dupe(u8, "HAProxy"),
             .description = try allocator.dupe(u8, "TCP/HTTP load balancer"),
-            .start_command = try std.fmt.allocPrint(allocator, "haproxy -f /usr/local/etc/haproxy/haproxy.cfg -p {d}", .{port}),
+            .start_command = try std.fmt.allocPrint(allocator, "{s} -f {s}", .{ bin, cfg_path }),
             .env_vars = env_vars,
             .port = port,
+            .auto_start = false,
+            .keep_alive = true,
+            .working_directory = try allocator.dupe(u8, data_dir),
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/", .{port}),
         };
     }
 
@@ -1442,14 +1809,49 @@ pub const Services = struct {
 
     /// Envoy proxy service
     pub fn envoy(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return envoyWithContext(allocator, port, null);
+    }
+
+    pub fn envoyWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
         const env_vars = std.StringHashMap([]const u8).init(allocator);
+        const home = getHome(allocator);
+        defer if (home) |h| allocator.free(h);
+
+        // The old default config doesn't exist and `--admin-address-path :{port}`
+        // was a misuse (it expects a unix socket path). Generate a minimal
+        // bootstrap with an admin endpoint on the service port.
+        const data_dir = try serviceDataDir(allocator, home, "envoy");
+        defer allocator.free(data_dir);
+
+        const cfg = try std.fmt.allocPrint(allocator,
+            \\admin:
+            \\  address:
+            \\    socket_address:
+            \\      address: 127.0.0.1
+            \\      port_value: {d}
+            \\static_resources:
+            \\  listeners: []
+            \\  clusters: []
+            \\
+        , .{port});
+        defer allocator.free(cfg);
+        const cfg_path = try writeServiceFile(allocator, data_dir, "envoy.yaml", cfg);
+        defer allocator.free(cfg_path);
+
+        const bin = try resolveServiceBinary(allocator, "envoy", project_root, home);
+        defer allocator.free(bin);
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "envoy"),
             .display_name = try allocator.dupe(u8, "Envoy"),
             .description = try allocator.dupe(u8, "Cloud-native edge/service proxy"),
-            .start_command = try std.fmt.allocPrint(allocator, "envoy -c /usr/local/etc/envoy/envoy.yaml --base-id 0 -l info --admin-address-path :{d}", .{port}),
+            .start_command = try std.fmt.allocPrint(allocator, "{s} -c {s} --base-id 0 -l info", .{ bin, cfg_path }),
             .env_vars = env_vars,
             .port = port,
+            .auto_start = false,
+            .keep_alive = true,
+            .working_directory = try allocator.dupe(u8, data_dir),
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/ready", .{port}),
         };
     }
 
@@ -1580,14 +1982,63 @@ pub const Services = struct {
 
     /// Apache HTTP Server
     pub fn httpd(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return httpdWithContext(allocator, port, null);
+    }
+
+    pub fn httpdWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
         const env_vars = std.StringHashMap([]const u8).init(allocator);
+        const home = getHome(allocator);
+        defer if (home) |h| allocator.free(h);
+
+        // The old /usr/local/etc/httpd/httpd.conf doesn't exist on a fresh
+        // machine. Generate a minimal foreground conf rooted at the installed
+        // package (for the bundled modules) with writable docroot/logs under the
+        // data dir. `Listen` is supplied via -c so it isn't defined twice.
+        const data_dir = try serviceDataDir(allocator, home, "httpd");
+        defer allocator.free(data_dir);
+        const docroot = try std.fmt.allocPrint(allocator, "{s}/docroot", .{data_dir});
+        defer allocator.free(docroot);
+        ensureDir(docroot);
+        const logs = try std.fmt.allocPrint(allocator, "{s}/logs", .{data_dir});
+        defer allocator.free(logs);
+        ensureDir(logs);
+
+        const pkg_home = (try resolvePackageHome(allocator, "httpd.apache.org", project_root, home)) orelse
+            try allocator.dupe(u8, "/usr/local");
+        defer allocator.free(pkg_home);
+
+        const conf = try std.fmt.allocPrint(allocator,
+            \\ServerRoot "{s}"
+            \\LoadModule mpm_event_module modules/mod_mpm_event.so
+            \\LoadModule unixd_module modules/mod_unixd.so
+            \\LoadModule authz_core_module modules/mod_authz_core.so
+            \\LoadModule dir_module modules/mod_dir.so
+            \\LoadModule mime_module modules/mod_mime.so
+            \\LoadModule log_config_module modules/mod_log_config.so
+            \\ServerName 127.0.0.1
+            \\DocumentRoot "{s}"
+            \\DirectoryIndex index.html
+            \\ErrorLog "{s}/error.log"
+            \\PidFile "{s}/httpd.pid"
+            \\
+        , .{ pkg_home, docroot, logs, logs });
+        defer allocator.free(conf);
+        const conf_path = try writeServiceFile(allocator, data_dir, "httpd.conf", conf);
+        defer allocator.free(conf_path);
+
+        const bin = try resolveServiceBinary(allocator, "httpd", project_root, home);
+        defer allocator.free(bin);
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "httpd"),
             .display_name = try allocator.dupe(u8, "Apache HTTP Server"),
             .description = try allocator.dupe(u8, "Apache web server"),
-            .start_command = try std.fmt.allocPrint(allocator, "httpd -DFOREGROUND -f /usr/local/etc/httpd/httpd.conf -c 'Listen {d}'", .{port}),
+            .start_command = try std.fmt.allocPrint(allocator, "{s} -d {s} -f {s} -DFOREGROUND -c \"Listen {d}\"", .{ bin, pkg_home, conf_path, port }),
             .env_vars = env_vars,
             .port = port,
+            .auto_start = false,
+            .keep_alive = true,
+            .working_directory = try allocator.dupe(u8, data_dir),
             .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/", .{port}),
         };
     }
@@ -1633,28 +2084,102 @@ pub const Services = struct {
 
     /// Apache Zookeeper service
     pub fn zookeeper(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
-        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return zookeeperWithContext(allocator, port, null);
+    }
+
+    pub fn zookeeperWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
+        var env_vars = std.StringHashMap([]const u8).init(allocator);
+        const home = getHome(allocator);
+        defer if (home) |h| allocator.free(h);
+
+        // zkServer.sh needs ZOOCFGDIR with a zoo.cfg (dataDir + clientPort) and a
+        // JDK. Generate the config under a writable conf dir; bare invocation
+        // can't find a config on a fresh machine.
+        const data_dir = try serviceDataDir(allocator, home, "zookeeper");
+        defer allocator.free(data_dir);
+        const conf_dir = try std.fmt.allocPrint(allocator, "{s}/conf", .{data_dir});
+        defer allocator.free(conf_dir);
+        ensureDir(conf_dir);
+
+        const cfg = try std.fmt.allocPrint(allocator,
+            \\tickTime=2000
+            \\initLimit=10
+            \\syncLimit=5
+            \\dataDir={s}/data
+            \\clientPort={d}
+            \\clientPortAddress=127.0.0.1
+            \\admin.enableServer=false
+            \\4lw.commands.whitelist=ruok,stat,srvr
+            \\
+        , .{ data_dir, port });
+        defer allocator.free(cfg);
+        const cfg_path = try writeServiceFile(allocator, conf_dir, "zoo.cfg", cfg);
+        defer allocator.free(cfg_path);
+
+        if (try resolveJavaHome(allocator, project_root, home)) |jh| {
+            try env_vars.put("JAVA_HOME", jh);
+        }
+        try env_vars.put("ZOOCFGDIR", try allocator.dupe(u8, conf_dir));
+        try env_vars.put("ZOO_LOG_DIR", try std.fmt.allocPrint(allocator, "{s}/logs", .{data_dir}));
+
+        const bin = try resolveServiceBinary(allocator, "zkServer.sh", project_root, home);
+        defer allocator.free(bin);
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "zookeeper"),
             .display_name = try allocator.dupe(u8, "Apache Zookeeper"),
             .description = try allocator.dupe(u8, "Distributed coordination service"),
-            .start_command = try std.fmt.allocPrint(allocator, "zkServer.sh start-foreground", .{}),
+            .start_command = try std.fmt.allocPrint(allocator, "{s} start-foreground", .{bin}),
             .env_vars = env_vars,
             .port = port,
+            .auto_start = false,
+            .keep_alive = true,
+            .working_directory = try allocator.dupe(u8, data_dir),
             .health_check = try std.fmt.allocPrint(allocator, "echo ruok | nc 127.0.0.1 {d}", .{port}),
         };
     }
 
     /// Apache Solr service
     pub fn solr(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
-        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return solrWithContext(allocator, port, null);
+    }
+
+    pub fn solrWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
+        var env_vars = std.StringHashMap([]const u8).init(allocator);
+        const home = getHome(allocator);
+        defer if (home) |h| allocator.free(h);
+
+        // `solr start -f` is foreground but needs a writable SOLR_HOME (with a
+        // solr.xml) and a JDK; otherwise it writes into the read-only package.
+        const data_dir = try serviceDataDir(allocator, home, "solr");
+        defer allocator.free(data_dir);
+        const solr_home = try std.fmt.allocPrint(allocator, "{s}/solrhome", .{data_dir});
+        defer allocator.free(solr_home);
+        ensureDir(solr_home);
+        // Seed a minimal solr.xml so Solr accepts the home dir.
+        const solr_xml = try writeServiceFile(allocator, solr_home, "solr.xml", "<solr></solr>\n");
+        defer allocator.free(solr_xml);
+
+        if (try resolveJavaHome(allocator, project_root, home)) |jh| {
+            try env_vars.put("JAVA_HOME", jh);
+        }
+        try env_vars.put("SOLR_LOGS_DIR", try std.fmt.allocPrint(allocator, "{s}/logs", .{data_dir}));
+        try env_vars.put("SOLR_PID_DIR", try std.fmt.allocPrint(allocator, "{s}/run", .{data_dir}));
+        try env_vars.put("SOLR_JETTY_HOST", try allocator.dupe(u8, "127.0.0.1"));
+
+        const bin = try resolveServiceBinary(allocator, "solr", project_root, home);
+        defer allocator.free(bin);
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "solr"),
             .display_name = try allocator.dupe(u8, "Apache Solr"),
             .description = try allocator.dupe(u8, "Enterprise search platform"),
-            .start_command = try std.fmt.allocPrint(allocator, "solr start -f -p {d}", .{port}),
+            .start_command = try std.fmt.allocPrint(allocator, "{s} start -f -p {d} -s {s}", .{ bin, port, solr_home }),
             .env_vars = env_vars,
             .port = port,
+            .auto_start = false,
+            .keep_alive = true,
+            .working_directory = try allocator.dupe(u8, data_dir),
             .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/solr/admin/info/system", .{port}),
         };
     }
@@ -1665,14 +2190,48 @@ pub const Services = struct {
 
     /// PHP-FPM service
     pub fn phpfpm(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return phpfpmWithContext(allocator, port, null);
+    }
+
+    pub fn phpfpmWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
         const env_vars = std.StringHashMap([]const u8).init(allocator);
+        const home = getHome(allocator);
+        defer if (home) |h| allocator.free(h);
+
+        // The hardcoded /usr/local/etc/php-fpm.conf doesn't exist on a fresh
+        // machine. Generate a minimal config with a TCP pool on the service port.
+        const data_dir = try serviceDataDir(allocator, home, "php-fpm");
+        defer allocator.free(data_dir);
+
+        const conf = try std.fmt.allocPrint(allocator,
+            \\[global]
+            \\error_log = {s}/php-fpm.log
+            \\daemonize = no
+            \\
+            \\[www]
+            \\listen = 127.0.0.1:{d}
+            \\pm = static
+            \\pm.max_children = 2
+            \\ping.path = /ping
+            \\
+        , .{ data_dir, port });
+        defer allocator.free(conf);
+        const conf_path = try writeServiceFile(allocator, data_dir, "php-fpm.conf", conf);
+        defer allocator.free(conf_path);
+
+        const fpm_bin = try resolveServiceBinary(allocator, "php-fpm", project_root, home);
+        defer allocator.free(fpm_bin);
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "php-fpm"),
             .display_name = try allocator.dupe(u8, "PHP-FPM"),
             .description = try allocator.dupe(u8, "PHP FastCGI process manager"),
-            .start_command = try std.fmt.allocPrint(allocator, "php-fpm --nodaemonize --fpm-config /usr/local/etc/php-fpm.conf", .{}),
+            .start_command = try std.fmt.allocPrint(allocator, "{s} --nodaemonize --fpm-config {s}", .{ fpm_bin, conf_path }),
             .env_vars = env_vars,
             .port = port,
+            .auto_start = false,
+            .keep_alive = true,
+            .working_directory = try allocator.dupe(u8, data_dir),
             .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/ping", .{port}),
         };
     }

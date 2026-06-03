@@ -792,9 +792,9 @@ fn getServiceConfigRaw(allocator: std.mem.Allocator, name: []const u8, project_r
     } else if (std.mem.eql(u8, name, "redis")) {
         return try Services.redisWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "mysql")) {
-        return try Services.mysql(allocator, port);
+        return try Services.mysqlWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "mariadb")) {
-        return try Services.mariadb(allocator, port);
+        return try Services.mariadbWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "mongodb")) {
         return try Services.mongodbWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "influxdb")) {
@@ -802,7 +802,7 @@ fn getServiceConfigRaw(allocator: std.mem.Allocator, name: []const u8, project_r
     } else if (std.mem.eql(u8, name, "cockroachdb")) {
         return try Services.cockroachdb(allocator, port);
     } else if (std.mem.eql(u8, name, "neo4j")) {
-        return try Services.neo4j(allocator, port);
+        return try Services.neo4jWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "clickhouse")) {
         return try Services.clickhouse(allocator, port);
     } else if (std.mem.eql(u8, name, "memcached")) {
@@ -814,9 +814,9 @@ fn getServiceConfigRaw(allocator: std.mem.Allocator, name: []const u8, project_r
     } else if (std.mem.eql(u8, name, "opensearch")) {
         return try Services.opensearchWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "couchdb")) {
-        return try Services.couchdb(allocator, port);
+        return try Services.couchdbWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "cassandra")) {
-        return try Services.cassandra(allocator, port);
+        return try Services.cassandraWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "surrealdb")) {
         return try Services.surrealdb(allocator, port);
     } else if (std.mem.eql(u8, name, "dragonflydb")) {
@@ -828,7 +828,7 @@ fn getServiceConfigRaw(allocator: std.mem.Allocator, name: []const u8, project_r
     } else if (std.mem.eql(u8, name, "tidb")) {
         return try Services.tidb(allocator, port);
     } else if (std.mem.eql(u8, name, "scylladb")) {
-        return try Services.scylladb(allocator, port);
+        return try Services.scylladbWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "keydb")) {
         return try Services.keydb(allocator, port);
     } else if (std.mem.eql(u8, name, "valkey")) {
@@ -836,9 +836,9 @@ fn getServiceConfigRaw(allocator: std.mem.Allocator, name: []const u8, project_r
     }
     // Search
     else if (std.mem.eql(u8, name, "zookeeper")) {
-        return try Services.zookeeper(allocator, port);
+        return try Services.zookeeperWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "solr")) {
-        return try Services.solr(allocator, port);
+        return try Services.solrWithContext(allocator, port, project_root);
     }
     // Message Queues
     else if (std.mem.eql(u8, name, "kafka")) {
@@ -872,11 +872,11 @@ fn getServiceConfigRaw(allocator: std.mem.Allocator, name: []const u8, project_r
     else if (std.mem.eql(u8, name, "traefik")) {
         return try Services.traefik(allocator, port);
     } else if (std.mem.eql(u8, name, "haproxy")) {
-        return try Services.haproxy(allocator, port);
+        return try Services.haproxyWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "varnish")) {
         return try Services.varnish(allocator, port);
     } else if (std.mem.eql(u8, name, "envoy")) {
-        return try Services.envoy(allocator, port);
+        return try Services.envoyWithContext(allocator, port, project_root);
     }
     // Infrastructure
     else if (std.mem.eql(u8, name, "vault")) {
@@ -888,7 +888,7 @@ fn getServiceConfigRaw(allocator: std.mem.Allocator, name: []const u8, project_r
     } else if (std.mem.eql(u8, name, "minio")) {
         return try Services.minioWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "sonarqube")) {
-        return try Services.sonarqube(allocator, port);
+        return try Services.sonarqubeWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "temporal")) {
         return try Services.temporal(allocator, port);
     } else if (std.mem.eql(u8, name, "nomad")) {
@@ -922,11 +922,11 @@ fn getServiceConfigRaw(allocator: std.mem.Allocator, name: []const u8, project_r
     } else if (std.mem.eql(u8, name, "caddy")) {
         return try Services.caddy(allocator, port);
     } else if (std.mem.eql(u8, name, "httpd")) {
-        return try Services.httpd(allocator, port);
+        return try Services.httpdWithContext(allocator, port, project_root);
     }
     // Application Servers
     else if (std.mem.eql(u8, name, "php-fpm")) {
-        return try Services.phpfpm(allocator, port);
+        return try Services.phpfpmWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "pocketbase")) {
         return try Services.pocketbase(allocator, port);
     }
@@ -971,9 +971,9 @@ fn getServiceConfigWithPortRaw(allocator: std.mem.Allocator, name: []const u8, p
     } else if (std.mem.eql(u8, name, "redis")) {
         return try Services.redisWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "mysql")) {
-        return try Services.mysql(allocator, port);
+        return try Services.mysqlWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "mariadb")) {
-        return try Services.mariadb(allocator, port);
+        return try Services.mariadbWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "mongodb")) {
         return try Services.mongodbWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "meilisearch")) {
@@ -985,7 +985,7 @@ fn getServiceConfigWithPortRaw(allocator: std.mem.Allocator, name: []const u8, p
     } else if (std.mem.eql(u8, name, "cockroachdb")) {
         return try Services.cockroachdb(allocator, port);
     } else if (std.mem.eql(u8, name, "neo4j")) {
-        return try Services.neo4j(allocator, port);
+        return try Services.neo4jWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "clickhouse")) {
         return try Services.clickhouse(allocator, port);
     } else if (std.mem.eql(u8, name, "memcached")) {
@@ -993,9 +993,9 @@ fn getServiceConfigWithPortRaw(allocator: std.mem.Allocator, name: []const u8, p
     } else if (std.mem.eql(u8, name, "opensearch")) {
         return try Services.opensearchWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "couchdb")) {
-        return try Services.couchdb(allocator, port);
+        return try Services.couchdbWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "cassandra")) {
-        return try Services.cassandra(allocator, port);
+        return try Services.cassandraWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "surrealdb")) {
         return try Services.surrealdb(allocator, port);
     } else if (std.mem.eql(u8, name, "dragonflydb")) {
@@ -1007,7 +1007,7 @@ fn getServiceConfigWithPortRaw(allocator: std.mem.Allocator, name: []const u8, p
     } else if (std.mem.eql(u8, name, "tidb")) {
         return try Services.tidb(allocator, port);
     } else if (std.mem.eql(u8, name, "scylladb")) {
-        return try Services.scylladb(allocator, port);
+        return try Services.scylladbWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "keydb")) {
         return try Services.keydb(allocator, port);
     } else if (std.mem.eql(u8, name, "valkey")) {
@@ -1039,11 +1039,11 @@ fn getServiceConfigWithPortRaw(allocator: std.mem.Allocator, name: []const u8, p
     } else if (std.mem.eql(u8, name, "traefik")) {
         return try Services.traefik(allocator, port);
     } else if (std.mem.eql(u8, name, "haproxy")) {
-        return try Services.haproxy(allocator, port);
+        return try Services.haproxyWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "varnish")) {
         return try Services.varnish(allocator, port);
     } else if (std.mem.eql(u8, name, "envoy")) {
-        return try Services.envoy(allocator, port);
+        return try Services.envoyWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "vault")) {
         return try Services.vault(allocator, port);
     } else if (std.mem.eql(u8, name, "consul")) {
@@ -1053,7 +1053,7 @@ fn getServiceConfigWithPortRaw(allocator: std.mem.Allocator, name: []const u8, p
     } else if (std.mem.eql(u8, name, "minio")) {
         return try Services.minioWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "sonarqube")) {
-        return try Services.sonarqube(allocator, port);
+        return try Services.sonarqubeWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "temporal")) {
         return try Services.temporal(allocator, port);
     } else if (std.mem.eql(u8, name, "nomad")) {
@@ -1081,9 +1081,9 @@ fn getServiceConfigWithPortRaw(allocator: std.mem.Allocator, name: []const u8, p
     } else if (std.mem.eql(u8, name, "caddy")) {
         return try Services.caddy(allocator, port);
     } else if (std.mem.eql(u8, name, "httpd")) {
-        return try Services.httpd(allocator, port);
+        return try Services.httpdWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "php-fpm")) {
-        return try Services.phpfpm(allocator, port);
+        return try Services.phpfpmWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "pocketbase")) {
         return try Services.pocketbase(allocator, port);
     } else if (std.mem.eql(u8, name, "dnsmasq")) {
@@ -1097,9 +1097,9 @@ fn getServiceConfigWithPortRaw(allocator: std.mem.Allocator, name: []const u8, p
     } else if (std.mem.eql(u8, name, "tor")) {
         return try Services.tor(allocator, port);
     } else if (std.mem.eql(u8, name, "zookeeper")) {
-        return try Services.zookeeper(allocator, port);
+        return try Services.zookeeperWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "solr")) {
-        return try Services.solr(allocator, port);
+        return try Services.solrWithContext(allocator, port, project_root);
     } else {
         return error.UnknownService;
     }
