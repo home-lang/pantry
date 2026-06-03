@@ -208,6 +208,32 @@ fn writeServiceFile(allocator: std.mem.Allocator, dir: []const u8, filename: []c
     return path;
 }
 
+/// Resolve a launcher script to its REAL path inside the installed package
+/// (`pantry/<domain>/v<ver>/bin/<name>`) rather than the `pantry/.bin` symlink.
+/// Scripts like zkServer.sh / solr / cassandra / neo4j derive their home from
+/// `$0` to locate their jars — run via the symlink, `$0` resolves to `.bin/`
+/// and the classpath breaks. Falls back to resolveServiceBinary when the
+/// package home can't be found. Caller owns the result.
+fn resolveLauncherInPackage(
+    allocator: std.mem.Allocator,
+    package_domain: []const u8,
+    binary_name: []const u8,
+    project_root: ?[]const u8,
+    home: ?[]const u8,
+) ![]const u8 {
+    const io_helper = @import("../io_helper.zig");
+    if (try resolvePackageHome(allocator, package_domain, project_root, home)) |ph| {
+        defer allocator.free(ph);
+        const candidate = try std.fmt.allocPrint(allocator, "{s}/bin/{s}", .{ ph, binary_name });
+        if (io_helper.accessAbsolute(candidate, .{})) |_| {
+            return candidate;
+        } else |_| {
+            allocator.free(candidate);
+        }
+    }
+    return resolveServiceBinary(allocator, binary_name, project_root, home);
+}
+
 /// Resolve a service binary path by searching pantry install locations
 /// Tries: project-local pantry/.bin, global Paths.globalBinDir(), $PATH, then falls back to bare name.
 pub fn resolveServiceBinary(allocator: std.mem.Allocator, binary_name: []const u8, project_root: ?[]const u8, home: ?[]const u8) ![]const u8 {
@@ -614,6 +640,12 @@ pub const Services = struct {
         // via NEO4J_* env overrides + writable data/logs/run dirs. Needs a JDK.
         const data_dir = try serviceDataDir(allocator, home, "neo4j");
         defer allocator.free(data_dir);
+        // Pre-create the dirs the NEO4J_server_directories_* env vars point at.
+        for ([_][]const u8{ "data", "logs", "run" }) |sub| {
+            const d = std.fmt.allocPrint(allocator, "{s}/{s}", .{ data_dir, sub }) catch continue;
+            defer allocator.free(d);
+            ensureDir(d);
+        }
 
         if (try resolveJavaHome(allocator, project_root, home)) |jh| {
             try env_vars.put("JAVA_HOME", jh);
@@ -629,7 +661,7 @@ pub const Services = struct {
         try env_vars.put("NEO4J_server_bolt_listen__address", try allocator.dupe(u8, ":7687"));
         try env_vars.put("NEO4J_dbms_security_auth__enabled", try allocator.dupe(u8, "false"));
 
-        const bin = try resolveServiceBinary(allocator, "neo4j", project_root, home);
+        const bin = try resolveLauncherInPackage(allocator, "neo4j.com", "neo4j", project_root, home);
         defer allocator.free(bin);
 
         return ServiceConfig{
@@ -1424,6 +1456,12 @@ pub const Services = struct {
         const conf_dir = try std.fmt.allocPrint(allocator, "{s}/conf", .{data_dir});
         defer allocator.free(conf_dir);
         ensureDir(conf_dir);
+        // Pre-create the data dirs referenced by the generated yaml.
+        for ([_][]const u8{ "data", "commitlog", "saved_caches", "hints" }) |sub| {
+            const d = std.fmt.allocPrint(allocator, "{s}/{s}", .{ data_dir, sub }) catch continue;
+            defer allocator.free(d);
+            ensureDir(d);
+        }
 
         const yaml = try std.fmt.allocPrint(allocator,
             \\cluster_name: 'pantry'
@@ -1459,7 +1497,7 @@ pub const Services = struct {
             try env_vars.put("JAVA_HOME", jh);
         }
 
-        const bin = try resolveServiceBinary(allocator, "cassandra", project_root, home);
+        const bin = try resolveLauncherInPackage(allocator, "cassandra.apache.org", "cassandra", project_root, home);
         defer allocator.free(bin);
 
         return ServiceConfig{
@@ -2100,6 +2138,13 @@ pub const Services = struct {
         const conf_dir = try std.fmt.allocPrint(allocator, "{s}/conf", .{data_dir});
         defer allocator.free(conf_dir);
         ensureDir(conf_dir);
+        // ZooKeeper requires dataDir to already exist (it won't create it).
+        const zk_data = try std.fmt.allocPrint(allocator, "{s}/data", .{data_dir});
+        defer allocator.free(zk_data);
+        ensureDir(zk_data);
+        const zk_logs = try std.fmt.allocPrint(allocator, "{s}/logs", .{data_dir});
+        defer allocator.free(zk_logs);
+        ensureDir(zk_logs);
 
         const cfg = try std.fmt.allocPrint(allocator,
             \\tickTime=2000
@@ -2122,7 +2167,7 @@ pub const Services = struct {
         try env_vars.put("ZOOCFGDIR", try allocator.dupe(u8, conf_dir));
         try env_vars.put("ZOO_LOG_DIR", try std.fmt.allocPrint(allocator, "{s}/logs", .{data_dir}));
 
-        const bin = try resolveServiceBinary(allocator, "zkServer.sh", project_root, home);
+        const bin = try resolveLauncherInPackage(allocator, "zookeeper.apache.org", "zkServer.sh", project_root, home);
         defer allocator.free(bin);
 
         return ServiceConfig{
@@ -2156,6 +2201,12 @@ pub const Services = struct {
         const solr_home = try std.fmt.allocPrint(allocator, "{s}/solrhome", .{data_dir});
         defer allocator.free(solr_home);
         ensureDir(solr_home);
+        // Pre-create the dirs the SOLR_LOGS_DIR / SOLR_PID_DIR env vars point at.
+        for ([_][]const u8{ "logs", "run", "data" }) |sub| {
+            const d = std.fmt.allocPrint(allocator, "{s}/{s}", .{ data_dir, sub }) catch continue;
+            defer allocator.free(d);
+            ensureDir(d);
+        }
         // Seed a minimal solr.xml so Solr accepts the home dir.
         const solr_xml = try writeServiceFile(allocator, solr_home, "solr.xml", "<solr></solr>\n");
         defer allocator.free(solr_xml);
@@ -2167,7 +2218,7 @@ pub const Services = struct {
         try env_vars.put("SOLR_PID_DIR", try std.fmt.allocPrint(allocator, "{s}/run", .{data_dir}));
         try env_vars.put("SOLR_JETTY_HOST", try allocator.dupe(u8, "127.0.0.1"));
 
-        const bin = try resolveServiceBinary(allocator, "solr", project_root, home);
+        const bin = try resolveLauncherInPackage(allocator, "solr.apache.org", "solr", project_root, home);
         defer allocator.free(bin);
 
         return ServiceConfig{
