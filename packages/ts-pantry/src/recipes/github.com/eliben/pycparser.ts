@@ -8,7 +8,7 @@ export const recipe: Recipe = {
     'python.org': '~3.11',
   },
   distributable: {
-    url: 'https://github.com/eliben/pycparser/archive/{{version.tag}}.tar.gz',
+    url: 'https://github.com/eliben/pycparser/archive/release_v{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {

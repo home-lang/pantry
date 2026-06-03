@@ -14,7 +14,7 @@ export const recipe: Recipe = {
     tagPattern: /^xpra (.+)$/,
   },
   distributable: {
-    url: 'https://github.com/Xpra-org/xpra/archive/refs/tags/{{version.tag}}.tar.gz',
+    url: 'https://github.com/Xpra-org/xpra/archive/refs/tags/xpra {{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

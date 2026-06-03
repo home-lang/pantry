@@ -8,7 +8,7 @@ export const recipe: Recipe = {
     'cmake.org': "^3",
   },
   distributable: {
-    url: "https://github.com/jbeder/yaml-cpp/archive/refs/tags/{{version.tag}}.tar.gz",
+    url: "https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-{{version}}.tar.gz",
     stripComponents: 1,
   },
   build: {

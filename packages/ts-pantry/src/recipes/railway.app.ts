@@ -33,7 +33,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       // 3.5.2 didn't bump version
-      'sed -i \'s/^version = ".*"$/version = {{version}}/\' Cargo.toml',
+      'sed -i \'s/^version = ".*"$/version = "{{version}}"/\' Cargo.toml',
       'cargo add proc-macro2',
       'cargo install $ARGS',
       // something weird links in unneeded iconv (seen in 4.27.5); strip it.

@@ -10,7 +10,7 @@ export const recipe: Recipe = {
     'curl.se': "*",
   },
   distributable: {
-    url: "https://github.com/apple-oss-distributions/remote_cmds/archive/refs/tags/{{version.tag}}.tar.gz",
+    url: "https://github.com/apple-oss-distributions/remote_cmds/archive/refs/tags/remote_cmds-{{version}}.tar.gz",
     stripComponents: 1,
   },
   build: {

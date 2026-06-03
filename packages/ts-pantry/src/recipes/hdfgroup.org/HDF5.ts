@@ -43,7 +43,7 @@ export const recipe: Recipe = {
     },
   },
   distributable: {
-    url: "https://github.com/HDFGroup/hdf5/releases/download/{{version.tag}}/hdf5-{{version}}.tar.gz",
+    url: "https://github.com/HDFGroup/hdf5/releases/download/hdf5_{{version}}/hdf5-{{version}}.tar.gz",
     stripComponents: 2,
   },
   build: {

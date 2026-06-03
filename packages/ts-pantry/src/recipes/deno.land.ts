@@ -57,7 +57,7 @@ export const recipe: Recipe = {
       'sed -i -e \'s/home_path.push(".deno")/home_path.push(".local")/\' $INSTALLER_RS',
       'grep home_path $INSTALLER_RS',
       'sed -i -e \'s/version = "4.1.2"/version = "4.1.1"/\' -e \'s/0a677b8922c94e01bdbb12126b0bc852f00447528dee1782229af9c720c3f348/e89b8c6a2e4b1f45971ad09761aafb85514a84744b67a95e32c3cc1352d1f65c/\' Cargo.lock',
-      'sed -i \'s/^version = .*/version = {{version}}/\' cli/Cargo.toml',
+      'sed -i \'s/^version = .*/version = "{{version}}"/\' cli/Cargo.toml',
       'cargo install --locked --path cli --root {{prefix}} $EXTRA_ARGS',
       'cargo install --locked --path cli/rt --root {{prefix}} $EXTRA_ARGS',
     ],

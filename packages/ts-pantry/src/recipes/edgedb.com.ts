@@ -33,7 +33,7 @@ export const recipe: Recipe = {
         if: '>=4',
       },
       // missed version bump
-      'sed -i \'1,40s/^version = .*$/version = {{version.raw}}/\' Cargo.toml',
+      'sed -i \'1,40s/^version = .*$/version = "{{version.raw}}"/\' Cargo.toml',
       'cargo install --locked --path . --root {{prefix}}',
       {
         run: [

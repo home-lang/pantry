@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     },
   },
   distributable: {
-    url: "https://github.com/libfuse/libfuse/releases/download/{{version.tag}}/{{version.tag}}.tar.gz",
+    url: "https://github.com/libfuse/libfuse/releases/download/fuse-{{version}}/fuse-{{version}}.tar.gz",
     stripComponents: 1,
   },
   build: {

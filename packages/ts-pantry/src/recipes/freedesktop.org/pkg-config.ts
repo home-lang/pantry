@@ -7,7 +7,7 @@ export const recipe: Recipe = {
     'pkg-config',
   ],
   distributable: {
-    url: 'https://pkgconfig.freedesktop.org/releases/{{version.tag}}.tar.gz',
+    url: 'https://pkgconfig.freedesktop.org/releases/pkg-config-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {

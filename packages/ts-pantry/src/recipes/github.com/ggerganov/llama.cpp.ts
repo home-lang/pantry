@@ -26,7 +26,7 @@ export const recipe: Recipe = {
     },
   },
   distributable: {
-    url: "https://github.com/ggerganov/llama.cpp/archive/refs/tags/{{version.tag}}.tar.gz",
+    url: "https://github.com/ggerganov/llama.cpp/archive/refs/tags/b{{version}}.tar.gz",
     stripComponents: 1,
   },
   build: {

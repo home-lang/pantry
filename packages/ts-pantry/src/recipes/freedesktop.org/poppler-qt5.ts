@@ -53,7 +53,7 @@ export const recipe: Recipe = {
     },
   },
   distributable: {
-    url: "https://poppler.freedesktop.org/{{version.tag}}.tar.xz",
+    url: "https://poppler.freedesktop.org/poppler-{{version}}.tar.xz",
     stripComponents: 1,
   },
   build: {

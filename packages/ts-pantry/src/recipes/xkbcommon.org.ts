@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^xkbcommon-(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/xkbcommon/libxkbcommon/archive/refs/tags/{{version.tag}}.tar.gz',
+    url: 'https://github.com/xkbcommon/libxkbcommon/archive/refs/tags/xkbcommon-{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

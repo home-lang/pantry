@@ -13,7 +13,7 @@ export const recipe: Recipe = {
   },
   distributable: {
     // The git tag is `c-X.Y.Z` and the release asset is `msgpack-c-X.Y.Z.tar.gz`.
-    // Use the hardcoded `c-` prefix on {{version}} rather than {{version.tag}}:
+    // Use the hardcoded `c-` prefix on {{version}} rather than c-{{version}}:
     // native recipes synthesize empty yamlContent, so the version.tag resolver
     // falls back to the `v{{version}}` heuristic and 404s on this repo.
     url: 'https://github.com/msgpack/msgpack-c/releases/download/c-{{version}}/msgpack-c-{{version}}.tar.gz',

@@ -14,7 +14,7 @@ export const recipe: Recipe = {
     tagPattern: /^gource-(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/acaudwell/Gource/releases/download/{{version.tag}}/{{version.tag}}.tar.gz',
+    url: 'https://github.com/acaudwell/Gource/releases/download/gource-{{version}}/gource-{{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {

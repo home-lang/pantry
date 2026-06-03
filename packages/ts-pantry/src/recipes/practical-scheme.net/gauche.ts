@@ -17,7 +17,7 @@ export const recipe: Recipe = {
     'zlib.net': '^1.3',
   },
   distributable: {
-    url: 'https://github.com/shirok/Gauche/releases/download/{{version.tag}}/Gauche-{{version}}.tgz',
+    url: 'https://github.com/shirok/Gauche/releases/download/release{{version}}/Gauche-{{version}}.tgz',
     stripComponents: 1,
   },
   build: {

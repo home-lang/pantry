@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     tagPattern: /^v(.+)$/,
   },
   distributable: {
-    url: 'https://github.com/nih-at/libzip/archive/refs/tags/{{version.tag}}.tar.gz',
+    url: 'https://github.com/nih-at/libzip/archive/refs/tags/libzip {{version}}.tar.gz',
     stripComponents: 1,
   },
   dependencies: {
