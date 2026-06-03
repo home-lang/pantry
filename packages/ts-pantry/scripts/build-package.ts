@@ -10,6 +10,7 @@ import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { generateBuildScript, getSkips, type PackageRecipe, type NormalizedRecipe, type RecipeScriptStep, type RecipeTest } from './buildkit.ts'
 import { fixUp } from './fix-up.ts'
+import { reportBuild } from './report-build.ts'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
 type ScriptStep = string | { run: string, 'working-directory'?: string, if?: string }
 const packageOverrides: Record<string, any> = {} // stub — overrides migrated to recipes
@@ -2034,16 +2035,35 @@ async function main() {
     process.exit(1)
   }
 
-  await buildPackage({
-    package: values.package,
-    version: values.version,
-    platform: values.platform,
-    buildDir: values['build-dir'],
-    prefix: values.prefix,
-    depsDir: values['deps-dir'],
-    bucket: values.bucket,
-    region: values.region,
-  })
+  // Report live build status to the registry dashboard so any build — a one-off
+  // `build-package.ts` run, a local publish, CI, the Hetzner driver — shows up
+  // on /packages. Suppressed when build-all-packages.ts already reports for us.
+  const reportSelf = process.env.PANTRY_REPORTED_BY_PARENT !== '1'
+  if (reportSelf)
+    reportBuild(values.package, values.version, values.platform, 'building', { message: `building ${values.version} on ${values.platform}` })
+
+  try {
+    await buildPackage({
+      package: values.package,
+      version: values.version,
+      platform: values.platform,
+      buildDir: values['build-dir'],
+      prefix: values.prefix,
+      depsDir: values['deps-dir'],
+      bucket: values.bucket,
+      region: values.region,
+    })
+    if (reportSelf)
+      await reportBuild(values.package, values.version, values.platform, 'built')
+  }
+  catch (error) {
+    if (reportSelf) {
+      const err = error as Error & { _downloadFailure?: boolean }
+      // await so the event flushes before main().catch calls process.exit().
+      await reportBuild(values.package, values.version, values.platform, 'failed', { error: err.message })
+    }
+    throw error
+  }
 }
 
 main().catch((error: unknown) => {

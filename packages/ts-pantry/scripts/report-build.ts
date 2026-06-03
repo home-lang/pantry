@@ -28,20 +28,21 @@ export function reportBuild(
   platform: string,
   state: BuildState,
   detail?: BuildReportDetail,
-): void {
+): Promise<void> {
   if (DISABLED)
-    return
+    return Promise.resolve()
   const body: Record<string, unknown> = { domain, version, platform, state, host: HOST }
   // Cap payloads so a runaway error/output tail can't bloat the request.
   if (detail?.message)
     body.message = String(detail.message).slice(0, 2000)
   if (detail?.error)
     body.error = String(detail.error).slice(-2000) // keep the TAIL of an error
-  // Fire-and-forget; never block or throw.
-  fetch(`${STATUS_URL}/api/build-events`, {
+  // Fire-and-forget by default; never throws. Callers about to process.exit can
+  // `await` the returned promise to make sure the event flushes first.
+  return fetch(`${STATUS_URL}/api/build-events`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(5000),
-  }).catch(() => {})
+  }).then(() => {}).catch(() => {})
 }

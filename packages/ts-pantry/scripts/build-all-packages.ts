@@ -1015,7 +1015,9 @@ function tryBuildVersion(
 
   execSync(`bun ${args.join(' ')}`, {
     cwd: join(process.cwd()),
-    env: { ...process.env },
+    // build-all already reports building/built/failed for this package, so tell
+    // the child build-package not to double-report.
+    env: { ...process.env, PANTRY_REPORTED_BY_PARENT: '1' },
     stdio: 'inherit',
     timeout: 60 * 60 * 1000, // 60 min per package (fbthrift/heavy C++ need >45 min)
   })
