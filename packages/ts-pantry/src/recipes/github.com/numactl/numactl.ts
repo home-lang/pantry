@@ -4,6 +4,7 @@ export const recipe: Recipe = {
   domain: 'github.com/numactl/numactl',
   name: 'numactl',
   programs: [],
+  platforms: ['linux'],
   buildDependencies: {
     'gnu.org/autoconf': 2,
     'gnu.org/automake': 1,

@@ -9,6 +9,7 @@ export const recipe: Recipe = {
     'pkexec',
     'pkttyagent',
   ],
+  platforms: ['linux'],
   dependencies: {
     'gnome.org/glib': '^2.78',
     'duktape.org': '^2.7',

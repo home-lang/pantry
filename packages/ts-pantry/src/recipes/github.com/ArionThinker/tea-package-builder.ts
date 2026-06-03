@@ -6,6 +6,7 @@ export const recipe: Recipe = {
   programs: [
     "tea-package-builder",
   ],
+  platforms: ['darwin'],
   dependencies: {
     linux: {
       'ffmpeg.org': "*",

@@ -6,6 +6,7 @@ export const recipe: Recipe = {
   programs: [
     "openplayground",
   ],
+  platforms: ['darwin'],
   dependencies: {
     'python.org': "~3.11",
     'gnu.org/bash': "*",

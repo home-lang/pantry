@@ -6,6 +6,7 @@ export const recipe: Recipe = {
   programs: [
     "text-generation-webui",
   ],
+  platforms: ['darwin'],
   dependencies: {
     'python.org': "~3.10",
     'pkgx.sh': ">=1",

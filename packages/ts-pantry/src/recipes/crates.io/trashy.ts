@@ -6,6 +6,7 @@ export const recipe: Recipe = {
   programs: [
     'trash',
   ],
+  platforms: ['linux'],
   buildDependencies: {
     'rust-lang.org': '^1.62',
     'rust-lang.org/cargo': '*',

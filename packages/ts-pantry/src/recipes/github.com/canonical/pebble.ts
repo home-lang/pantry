@@ -6,6 +6,7 @@ export const recipe: Recipe = {
   programs: [
     'pebble',
   ],
+  platforms: ['linux'],
   buildDependencies: {
     'go.dev': '*',
     'git-scm.org': '*',

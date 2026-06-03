@@ -6,6 +6,7 @@ export const recipe: Recipe = {
   programs: [
     'pants',
   ],
+  platforms: ['darwin/aarch64', 'linux'],
   dependencies: {
     'curl.se/ca-certs': '*',
   },

@@ -4,6 +4,7 @@ export const recipe: Recipe = {
   domain: 'kernel.org/linux-headers',
   name: 'linux-headers',
   programs: [],
+  platforms: ['linux'],
   distributable: {
     url: 'https://cdn.kernel.org/pub/linux/kernel/v{{version.major}}.x/linux-{{version}}.tar.xz',
     stripComponents: 1,

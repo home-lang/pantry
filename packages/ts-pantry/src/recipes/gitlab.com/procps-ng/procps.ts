@@ -18,6 +18,7 @@ export const recipe: Recipe = {
     'vmstat',
     'w',
   ],
+  platforms: ['linux'],
   dependencies: {
     'invisible-island.net/ncurses': '>=6.0',
   },

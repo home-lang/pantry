@@ -9,6 +9,7 @@ export const recipe: Recipe = {
     'getpcaps',
     'setcap',
   ],
+  platforms: ['linux/x86-64'],
   distributable: {
     url: 'https://mirrors.edge.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-{{ version.raw }}.tar.xz',
     stripComponents: 1,

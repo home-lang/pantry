@@ -4,6 +4,7 @@ export const recipe: Recipe = {
   domain: 'freedesktop.org/libbsd',
   name: 'libbsd',
   programs: [],
+  platforms: ['linux'],
   buildDependencies: {
     'hadrons.org/libmd': '*',
   },

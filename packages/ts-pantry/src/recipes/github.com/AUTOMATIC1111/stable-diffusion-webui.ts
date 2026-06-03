@@ -6,6 +6,7 @@ export const recipe: Recipe = {
   programs: [
     "stable-diffusion-webui",
   ],
+  platforms: ['darwin'],
   dependencies: {
     'python.org': "~3.10",
     'tea.xyz': "^0",

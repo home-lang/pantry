@@ -6,6 +6,7 @@ export const recipe: Recipe = {
   programs: [
     'create-dmg',
   ],
+  platforms: ['darwin'],
   distributable: {
     url: 'https://github.com/create-dmg/create-dmg/archive/v{{version}}.tar.gz',
     stripComponents: 1,
