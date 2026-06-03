@@ -45,7 +45,9 @@ export const recipe: Recipe = {
       // arm64 build bug
       // https://github.com/ollama/ollama/issues/7292#issuecomment-2427773036
       {
-        run: 'sed -i \'s/-D__ARM_FEATURE_MATMUL_INT8//g\' llama.go',
+        // ARM-only tweak; guard it because newer ollama (>=0.6) restructured the
+        // tree and llama/llama.go no longer exists, which hard-failed the build.
+        run: '[ -f llama.go ] && sed -i \'s/-D__ARM_FEATURE_MATMUL_INT8//g\' llama.go || true',
         'working-directory': 'llama',
         if: '>=0.4.0',
       },

@@ -53,12 +53,14 @@ export const recipe: Recipe = {
         run: 'sed -i \'s/GO_LD_EXTRAFLAGS :=/GO_LD_EXTRAFLAGS :=-buildmode=pie /\' Makefile',
         if: 'linux',
       },
-      'make $ARGS',
+      // The cross-build target embeds $ARCH, which must expand in the SHELL (where
+      // ARCH is exported) — NOT inside the ARGS env var, which buildkit bakes at
+      // export time before ARCH is set (yielding the empty `cross-build-linux-`).
+      'make cross-build-{{hw.platform}}-$ARCH $ARGS',
       'install -D _output/bin/{{hw.platform}}_${ARCH}/oc {{prefix}}/bin/oc',
     ],
     env: {
-      // Without declaring ARCH, cross-build-{{hw.platform}}-${ARCH} will execute like cross-build-{{hw.platform}}-
-      'ARGS': ['cross-build-{{hw.platform}}-${ARCH}', 'OS_GIT_VERSION={{version}}'],
+      'ARGS': ['OS_GIT_VERSION={{version}}'],
       'linux': {
         // https://github.com/openshift/oc/issues/562
         ARGS: ['SHELL=/bin/bash'],
