@@ -20,6 +20,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'build',
     workingDirectory: 'build',
     script: [
       // thirdparty header not packaged in the tarball for these versions
