@@ -1120,7 +1120,7 @@ else {
       }
 
       console.log(`   Building ${domain}@${candidateVersion} for ${platform}...`)
-      reportBuild(domain, candidateVersion, platform, 'building')
+      reportBuild(domain, candidateVersion, platform, 'building', { message: `building ${candidateVersion} on ${platform}` })
 
       tryBuildVersion(domain, candidateVersion, platform, buildDir, installDir, depsDir, bucket, region)
 
@@ -1151,7 +1151,7 @@ catch (error: any) {
   if (lastError) {
     const elapsed = Math.round((Date.now() - pkgStartTime) / 1000)
     console.error(`   ❌ Failed (${elapsed}s): ${lastError.message}`)
-    reportBuild(domain, usedVersion || version, platform, 'failed')
+    reportBuild(domain, usedVersion || version, platform, 'failed', { error: lastError.message })
     try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) }
     catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) }
@@ -1201,7 +1201,7 @@ catch (error: any) {
   }
 catch (error: any) {
     console.error(`   ❌ Failed packaging/upload: ${error.message}`)
-    reportBuild(domain, usedVersion || version, platform, 'failed')
+    reportBuild(domain, usedVersion || version, platform, 'failed', { error: error.message })
     try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) }
     catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) }

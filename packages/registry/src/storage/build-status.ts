@@ -26,6 +26,10 @@ export interface BuildEvent {
   state: BuildState
   host?: string
   ts: number
+  /** Optional progress line (for `building`) — a human-readable step. */
+  message?: string
+  /** Optional failure detail (for `failed`) — the error/output tail. */
+  error?: string
 }
 
 export interface PackageRow {
@@ -35,7 +39,22 @@ export interface PackageRow {
   lastBuilt: string | null // ISO
   building: string[] // platforms currently building (live)
   lastState?: BuildState // most recent reported outcome
+  /** True when the package has at least one published binary. */
+  published: boolean
+  /** Latest message (building progress) or error (failed) for inline display. */
+  lastMessage?: string
 }
+
+/** One captured build-log line for a domain (shown in the per-package log panel). */
+export interface BuildLogLine {
+  ts: number
+  platform: string
+  state: BuildState
+  text: string
+}
+
+const LOG_LIMIT = 200 // per-domain ring buffer of recent build-log lines
+const MESSAGE_MAX = 2000 // cap a single message/error so the snapshot can't bloat
 
 const RECENT_LIMIT = 500
 const BUILDING_TTL_MS = 60 * 60 * 1000 // a "building" event older than 1h is considered stale
@@ -63,6 +82,14 @@ export class BuildStatusStore {
   // Live subscribers (SSE connections on /api/build-events-stream). Each is
   // notified with a fresh status snapshot whenever build activity changes.
   private subscribers = new Set<(status: ReturnType<BuildStatusStore['getStatus']>) => void>()
+
+  // Full known-package catalog (domain -> versions), so the table lists every
+  // package — including those not yet built — not just ones with binaries.
+  private knownVersions = new Map<string, string[]>()
+
+  // Per-domain ring buffer of recent build-log lines (in-memory only; not
+  // persisted — these are live build diagnostics, capped per domain).
+  private logs = new Map<string, BuildLogLine[]>()
 
   constructor(private s3: S3Client, private bucket: string) {
     this.snapshot = new ObjectSnapshot(s3, bucket, 'build-status/status.json', () => this.captureState())
@@ -93,6 +120,34 @@ export class BuildStatusStore {
     return this.subscribers.size
   }
 
+  /**
+   * Seed the full package catalog (domain -> versions, newest-first or any
+   * order). Lets getPackages() list packages that have no binaries yet, so the
+   * dashboard shows the whole catalog and what's still to be built.
+   */
+  setKnownPackages(map: Map<string, string[]>): void {
+    this.knownVersions = map
+  }
+
+  /** Recent build-log lines for a domain (newest last), for the log panel. */
+  getLogs(domain: string): BuildLogLine[] {
+    return [...(this.logs.get(domain) || [])]
+  }
+
+  /** Append a captured log line to a domain's bounded ring buffer. */
+  private appendLog(e: BuildEvent, text: string): void {
+    if (!text)
+      return
+    let buf = this.logs.get(e.domain)
+    if (!buf) {
+      buf = []
+      this.logs.set(e.domain, buf)
+    }
+    buf.push({ ts: e.ts, platform: e.platform, state: e.state, text: text.slice(0, MESSAGE_MAX) })
+    if (buf.length > LOG_LIMIT)
+      buf.splice(0, buf.length - LOG_LIMIT)
+  }
+
   async load(): Promise<void> {
     const s = (await this.snapshot.load()) as PersistedState | null
     if (!s)
@@ -121,6 +176,8 @@ export class BuildStatusStore {
       state: raw.state,
       host: raw.host ? String(raw.host).slice(0, 64) : undefined,
       ts: Date.now(),
+      message: raw.message ? String(raw.message).slice(0, MESSAGE_MAX) : undefined,
+      error: raw.error ? String(raw.error).slice(0, MESSAGE_MAX) : undefined,
     }
     const k = this.key(event)
     if (event.state === 'building') {
@@ -134,6 +191,9 @@ export class BuildStatusStore {
       // A finished build changes coverage for this domain — invalidate cache.
       this.coverageAt = 0
     }
+    // Capture any progress/error text into the domain's log buffer so the UI
+    // can stream it (state transitions are always logged; messages/errors too).
+    this.appendLog(event, event.error || event.message || `${event.platform}: ${event.state}`)
     this.snapshot.scheduleSave()
     this.emit()
     return event
@@ -269,19 +329,43 @@ export class BuildStatusStore {
       }
       s.add(e.platform)
     }
-    // last reported outcome per domain
+    // last reported outcome + latest message/error per domain
     const lastStateByDomain = new Map<string, BuildState>()
+    const lastMessageByDomain = new Map<string, string>()
     for (const e of this.recent) {
-      if (!lastStateByDomain.has(e.domain))
+      if (!lastStateByDomain.has(e.domain)) {
         lastStateByDomain.set(e.domain, e.state)
+        const m = e.error || e.message
+        if (m)
+          lastMessageByDomain.set(e.domain, m)
+      }
+    }
+    // live building progress messages take precedence for inline display
+    for (const e of this.building.values()) {
+      if (e.message)
+        lastMessageByDomain.set(e.domain, e.message)
     }
 
-    const domains = new Set<string>([...this.coverage.keys(), ...buildingByDomain.keys()])
+    // The package universe = published (have binaries) ∪ currently building ∪
+    // recently-reported (so a failed first build is still visible) ∪ the full
+    // known catalog, so nothing is hidden just because it lacks a binary.
+    const domains = new Set<string>([
+      ...this.coverage.keys(),
+      ...buildingByDomain.keys(),
+      ...lastStateByDomain.keys(),
+      ...this.knownVersions.keys(),
+    ])
     const packages: PackageRow[] = []
     for (const domain of domains) {
       const versions = this.coverage.get(domain)
-      const latest = versions ? this.latestVersion(versions) : null
-      const latestPlats = latest && versions ? versions.get(latest)! : new Set<string>()
+      const published = !!versions && versions.size > 0
+      const latest = versions
+        ? this.latestVersion(versions)
+        : (this.knownVersions.get(domain) || []).reduce<string | null>(
+            (acc, v) => (acc === null || compareVersionLoose(v, acc) > 0 ? v : acc),
+            null,
+          )
+      const latestPlats = latest && versions ? versions.get(latest) ?? new Set<string>() : new Set<string>()
       const platforms: Record<string, boolean> = {}
       for (const p of BUILD_PLATFORMS)
         platforms[p] = latestPlats.has(p)
@@ -292,6 +376,8 @@ export class BuildStatusStore {
         lastBuilt: this.coverageLastBuilt.get(domain) || null,
         building: [...(buildingByDomain.get(domain) || [])],
         lastState: lastStateByDomain.get(domain),
+        published,
+        lastMessage: lastMessageByDomain.get(domain),
       })
     }
     packages.sort((a, b) => a.domain.localeCompare(b.domain))

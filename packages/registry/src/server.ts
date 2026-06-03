@@ -54,7 +54,9 @@ await loadKnownVersions()
 // internal use). Operators can `kill -SIGUSR2 $(pidof pantry-registry)`.
 process.on('SIGUSR2', () => {
   console.log('SIGUSR2 received — reloading known versions map')
-  loadKnownVersions().catch(err => console.error('Reload failed:', err))
+  loadKnownVersions()
+    .then(() => { if (_buildStatus) seedKnownPackages(_buildStatus) })
+    .catch(err => console.error('Reload failed:', err))
 })
 
 function isKnownVersion(domain: string, version: string): boolean {
@@ -332,11 +334,21 @@ export interface BinaryStorage {
 // provider, loaded once. Tracks live builds, recent outcomes, the rebuild queue,
 // and per-platform coverage (derived from the binaries/ prefix).
 let _buildStatus: BuildStatusStore | null = null
+/** Seed the build-status store with the full known-package catalog so the
+ *  dashboard lists every package, not only ones that already have binaries. */
+function seedKnownPackages(s: BuildStatusStore): void {
+  const map = new Map<string, string[]>()
+  for (const [domain, versions] of _knownVersions)
+    map.set(domain, [...versions])
+  s.setKnownPackages(map)
+}
+
 function getBuildStatus(): BuildStatusStore {
   if (!_buildStatus) {
     const storage = resolveStorageProvider()
     _buildStatus = new BuildStatusStore(createS3Client(storage), process.env.S3_BUCKET || 'pantry-registry')
     const s = _buildStatus
+    seedKnownPackages(s)
     s.load()
       // Warm the coverage cache in the background so the first /api/packages
       // request never waits on the full binaries/ listing.
@@ -512,6 +524,13 @@ export function createHandler(
       // The build-driver reads (and optionally clears) the rebuild queue.
       if (path === '/api/rebuild-queue' && req.method === 'GET') {
         return Response.json({ queue: getBuildStatus().getQueue() }, { headers: corsHeaders })
+      }
+      // Recent build-log lines for one package (the expandable per-row log panel).
+      if (path.startsWith('/api/build-logs/') && req.method === 'GET') {
+        const domain = decodeURIComponent(path.slice('/api/build-logs/'.length))
+        if (!/^[a-zA-Z0-9._/-]{1,128}$/.test(domain))
+          return Response.json({ error: 'valid domain required' }, { status: 400, headers: corsHeaders })
+        return Response.json({ domain, logs: getBuildStatus().getLogs(domain) }, { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } })
       }
 
       // ================================================================

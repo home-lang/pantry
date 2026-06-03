@@ -24,19 +24,37 @@
         <p class="text-2xl font-semibold font-mono" id="stat-building" style="color: var(--yellow);">&mdash;</p>
       </div>
       <div class="rounded-lg p-4" style="background: var(--bg-subtle); border: 1px solid var(--border);">
+        <p class="uppercase tracking-widest mb-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">Failed</p>
+        <p class="text-2xl font-semibold font-mono" id="stat-failed" style="color: var(--red, #f87171);">&mdash;</p>
+      </div>
+      <div class="rounded-lg p-4" style="background: var(--bg-subtle); border: 1px solid var(--border);">
+        <p class="uppercase tracking-widest mb-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">Unbuilt</p>
+        <p class="text-2xl font-semibold font-mono" id="stat-unbuilt" style="color: var(--fg-subtle);">&mdash;</p>
+      </div>
+      <div class="rounded-lg p-4" style="background: var(--bg-subtle); border: 1px solid var(--border);">
         <p class="uppercase tracking-widest mb-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">Queued</p>
         <p class="text-2xl font-semibold font-mono" id="stat-queued">&mdash;</p>
       </div>
     </div>
 
     <!-- Controls -->
-    <div class="flex flex-wrap items-center gap-3 mb-4">
+    <div class="flex flex-wrap items-center gap-3 mb-3">
       <input id="filter" type="text" placeholder="filter packages…" autocomplete="off" spellcheck="false"
         class="font-mono" style="flex: 1 1 220px; min-width: 200px; padding: 0.5rem 0.75rem; font-size: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--fg);" />
       <label class="flex items-center gap-2" style="font-size: 0.8125rem; color: var(--fg-muted);">
-        <input id="missing-only" type="checkbox" /> missing only
+        <input id="group-status" type="checkbox" checked /> group by status
       </label>
       <span id="rowcount" class="font-mono" style="font-size: 0.8125rem; color: var(--fg-subtle);"></span>
+    </div>
+    <!-- Status filter chips (building first so in-flight builds are easy to find) -->
+    <div class="flex flex-wrap items-center gap-2 mb-4" id="status-chips">
+      <button class="chip chip-on" data-status="all">all</button>
+      <button class="chip" data-status="building">● building</button>
+      <button class="chip" data-status="failed">✗ failed</button>
+      <button class="chip" data-status="queued">queued</button>
+      <button class="chip" data-status="incomplete">incomplete</button>
+      <button class="chip" data-status="unbuilt">unbuilt</button>
+      <button class="chip" data-status="ok">✓ complete</button>
     </div>
 
     <!-- Table -->
@@ -45,6 +63,7 @@
         <thead>
           <tr style="background: var(--bg-subtle); color: var(--fg-subtle);">
             <th style="text-align: left; padding: 0.6rem 0.75rem; font-weight: 500;">package</th>
+            <th style="text-align: left; padding: 0.6rem 0.5rem; font-weight: 500;">status</th>
             <th style="text-align: left; padding: 0.6rem 0.5rem; font-weight: 500;">version</th>
             <th style="text-align: center; padding: 0.6rem 0.4rem; font-weight: 500;" title="darwin-arm64">mac&nbsp;arm</th>
             <th style="text-align: center; padding: 0.6rem 0.4rem; font-weight: 500;" title="darwin-x86-64">mac&nbsp;x64</th>
@@ -55,7 +74,7 @@
           </tr>
         </thead>
         <tbody id="rows">
-          <tr><td colspan="8" style="padding: 2rem; text-align: center; color: var(--fg-subtle);">loading packages…</td></tr>
+          <tr><td colspan="9" style="padding: 2rem; text-align: center; color: var(--fg-subtle);">loading packages…</td></tr>
         </tbody>
       </table>
     </div>
@@ -67,12 +86,33 @@
     .pkg-building { animation: pantry-pulse 1.1s ease-in-out infinite; }
     #rows tr { border-top: 1px solid var(--border); }
     #rows tr:hover { background: var(--bg-subtle); }
+    #rows tr.group-head { background: var(--bg-subtle); }
+    #rows tr.group-head:hover { background: var(--bg-subtle); }
+    #rows tr.log-row:hover { background: transparent; }
     .cell-yes { color: var(--green); font-weight: 600; }
     .cell-no { color: var(--fg-subtle); opacity: 0.5; }
     .cell-build { color: var(--yellow); font-weight: 700; }
     .rebuild-btn { font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 0.4rem; border: 1px solid var(--border); background: var(--bg-subtle); color: var(--fg-muted); cursor: pointer; }
     .rebuild-btn:hover { border-color: var(--accent); color: var(--accent); }
     .rebuild-btn:disabled { opacity: 0.5; cursor: default; }
+    .logs-btn { font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--border); background: transparent; color: var(--fg-subtle); cursor: pointer; margin-right: 0.35rem; }
+    .logs-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .chip { font-size: 0.78rem; padding: 0.3rem 0.7rem; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-subtle); color: var(--fg-muted); cursor: pointer; }
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
+    .chip-on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .badge { font-size: 0.7rem; padding: 0.1rem 0.45rem; border-radius: 0.35rem; font-weight: 600; white-space: nowrap; }
+    .badge-building { color: var(--yellow); border: 1px solid var(--yellow); }
+    .badge-failed { color: var(--red, #f87171); border: 1px solid var(--red, #f87171); }
+    .badge-ok { color: var(--green); border: 1px solid var(--green); }
+    .badge-incomplete { color: var(--fg-muted); border: 1px solid var(--border); }
+    .badge-unbuilt { color: var(--fg-subtle); border: 1px solid var(--border); opacity: 0.8; }
+    .badge-queued { color: var(--accent); border: 1px solid var(--accent); }
+    .row-msg { font-size: 0.72rem; color: var(--fg-subtle); margin-top: 0.15rem; max-width: 38ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row-msg.err { color: var(--red, #f87171); }
+    .log-panel { margin: 0; padding: 0.6rem 0.9rem; background: #0b0b0d; color: #d4d4d8; font-family: ui-monospace, monospace; font-size: 0.72rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; max-height: 320px; overflow: auto; border-radius: 0.4rem; }
+    .log-panel .ll-failed { color: #f87171; }
+    .log-panel .ll-built { color: #4ade80; }
+    .log-panel .ll-building { color: #facc15; }
   </style>
 
   <script client>
@@ -81,6 +121,16 @@
       var packages = []
       var status = { building: [], recent: [], queue: [] }
       var queued = {}
+      var statusFilter = 'all'
+      var openLogs = {} // domain -> true while its log panel is expanded
+
+      // Group order — building first so in-flight builds are immediately visible.
+      var GROUP_ORDER = { building: 0, failed: 1, queued: 2, incomplete: 3, unbuilt: 4, ok: 5 }
+      var GROUP_LABEL = {
+        building: '● building', failed: '✗ failed', queued: 'queued for rebuild',
+        incomplete: 'incomplete · missing platforms', unbuilt: 'unbuilt · no binaries yet', ok: '✓ complete · all platforms',
+      }
+      var BADGE_LABEL = { building: 'building', failed: 'failed', queued: 'queued', incomplete: 'incomplete', unbuilt: 'unbuilt', ok: 'complete' }
 
       function relTime(iso) {
         if (!iso) return '—'
@@ -107,56 +157,126 @@
         })
       }
 
+      function cssId(domain) { return domain.replace(/[^a-z0-9]/gi, '_') }
+
       function cell(present, building) {
         if (building) return '<td style="text-align:center" class="cell-build pkg-building">●</td>'
         if (present) return '<td style="text-align:center" class="cell-yes">✓</td>'
         return '<td style="text-align:center" class="cell-no">–</td>'
       }
 
+      // Per-package build status used for grouping/filtering/the badge.
+      function statusOf(p, b) {
+        if (Object.keys(b).length > 0) return 'building'
+        if (queued[p.domain]) return 'queued'
+        if (p.lastState === 'failed') return 'failed'
+        if (!p.published) return 'unbuilt'
+        var full = PLATS.every(function (pl) { return p.platforms[pl] })
+        return full ? 'ok' : 'incomplete'
+      }
+
+      function badge(st) {
+        return '<span class="badge badge-' + st + (st === 'building' ? ' pkg-building' : '') + '">' + BADGE_LABEL[st] + '</span>'
+      }
+
+      function rowHtml(p, b, st) {
+        var cells = ''
+        for (var j = 0; j < PLATS.length; j++) cells += cell(p.platforms[PLATS[j]], b[PLATS[j]])
+        var btnLabel = queued[p.domain] ? 'queued' : 'rebuild'
+        var btnDis = queued[p.domain] ? ' disabled' : ''
+        var msg = ''
+        if (p.lastMessage) {
+          msg = '<div class="row-msg' + (st === 'failed' ? ' err' : '') + '" title="' + esc(p.lastMessage) + '">' + esc(p.lastMessage) + '</div>'
+        }
+        // Offer a log panel whenever there is build activity/history to show.
+        var hasLogs = st === 'building' || st === 'failed' || (p.lastState && p.lastState !== 'built')
+        var logsBtn = hasLogs ? '<button class="logs-btn" data-logs="' + esc(p.domain) + '">' + (openLogs[p.domain] ? 'hide' : 'logs') + '</button>' : ''
+        var tr =
+          '<tr' + (st === 'building' ? ' style="background:var(--bg-subtle)"' : '') + '>'
+          + '<td style="padding:0.5rem 0.75rem"><a class="font-mono hvr-accent" href="/package/' + encodeURIComponent(p.domain) + '" style="color:var(--fg)">' + esc(p.domain) + '</a>' + msg + '</td>'
+          + '<td style="padding:0.5rem">' + badge(st) + '</td>'
+          + '<td class="font-mono" style="padding:0.5rem;color:var(--fg-subtle)">' + esc(p.latestVersion || '—') + '</td>'
+          + cells
+          + '<td style="padding:0.5rem;color:var(--fg-subtle)">' + relTime(p.lastBuilt) + '</td>'
+          + '<td style="padding:0.5rem 0.75rem;text-align:right;white-space:nowrap">' + logsBtn + '<button class="rebuild-btn" data-domain="' + esc(p.domain) + '"' + btnDis + '>' + btnLabel + '</button></td>'
+          + '</tr>'
+        if (openLogs[p.domain]) {
+          tr += '<tr class="log-row"><td colspan="9" style="padding:0 0.75rem 0.6rem"><pre class="log-panel" id="log-' + cssId(p.domain) + '">loading logs…</pre></td></tr>'
+        }
+        return tr
+      }
+
       function render() {
         var bm = buildingMap()
         var q = (document.getElementById('filter').value || '').toLowerCase()
-        var missingOnly = document.getElementById('missing-only').checked
-        var rows = []
-        var shown = 0
+        var groupBy = document.getElementById('group-status').checked
+        // Annotate + filter.
+        var list = []
         for (var i = 0; i < packages.length; i++) {
           var p = packages[i]
           if (q && p.domain.toLowerCase().indexOf(q) === -1) continue
           var b = bm[p.domain] || {}
-          var full = PLATS.every(function (pl) { return p.platforms[pl] })
-          if (missingOnly && full && Object.keys(b).length === 0) continue
-          shown++
-          var anyBuild = Object.keys(b).length > 0
-          var cells = ''
-          for (var j = 0; j < PLATS.length; j++) cells += cell(p.platforms[PLATS[j]], b[PLATS[j]])
-          var btnLabel = queued[p.domain] ? 'queued' : 'rebuild'
-          var btnDis = queued[p.domain] ? ' disabled' : ''
-          rows.push(
-            '<tr' + (anyBuild ? ' style="background:var(--bg-subtle)"' : '') + '>'
-            + '<td style="padding:0.5rem 0.75rem"><a class="font-mono hvr-accent" href="/package/' + encodeURIComponent(p.domain) + '" style="color:var(--fg)">' + esc(p.domain) + '</a></td>'
-            + '<td class="font-mono" style="padding:0.5rem;color:var(--fg-subtle)">' + esc(p.latestVersion || '—') + '</td>'
-            + cells
-            + '<td style="padding:0.5rem;color:var(--fg-subtle)">' + relTime(p.lastBuilt) + '</td>'
-            + '<td style="padding:0.5rem 0.75rem;text-align:right"><button class="rebuild-btn" data-domain="' + esc(p.domain) + '"' + btnDis + '>' + btnLabel + '</button></td>'
-            + '</tr>'
-          )
+          var st = statusOf(p, b)
+          if (statusFilter !== 'all' && st !== statusFilter) continue
+          list.push({ p: p, b: b, st: st })
+        }
+        // Sort by group priority (building first), then domain.
+        list.sort(function (a, c) { return (GROUP_ORDER[a.st] - GROUP_ORDER[c.st]) || a.p.domain.localeCompare(c.p.domain) })
+        // Group counts for headers.
+        var counts = {}
+        for (var k = 0; k < list.length; k++) counts[list[k].st] = (counts[list[k].st] || 0) + 1
+        var rows = []
+        var curGroup = null
+        for (var m = 0; m < list.length; m++) {
+          var it = list[m]
+          if (groupBy && statusFilter === 'all' && it.st !== curGroup) {
+            curGroup = it.st
+            rows.push('<tr class="group-head"><td colspan="9" style="padding:0.45rem 0.75rem;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--fg-subtle)">' + GROUP_LABEL[curGroup] + ' · ' + counts[curGroup] + '</td></tr>')
+          }
+          rows.push(rowHtml(it.p, it.b, it.st))
         }
         document.getElementById('rows').innerHTML = rows.length
           ? rows.join('')
-          : '<tr><td colspan="8" style="padding:2rem;text-align:center;color:var(--fg-subtle)">no matches</td></tr>'
-        document.getElementById('rowcount').textContent = shown + ' / ' + packages.length
+          : '<tr><td colspan="9" style="padding:2rem;text-align:center;color:var(--fg-subtle)">no matches</td></tr>'
+        document.getElementById('rowcount').textContent = list.length + ' / ' + packages.length
         wireButtons()
+        // (Re)load any open log panels.
+        for (var d in openLogs) { if (openLogs[d]) loadLogs(d) }
       }
 
       function renderSummary() {
-        var full = 0
+        var bm = buildingMap()
+        var full = 0, failed = 0, unbuilt = 0
         for (var i = 0; i < packages.length; i++) {
-          if (PLATS.every(function (pl) { return packages[i].platforms[pl] })) full++
+          var st = statusOf(packages[i], bm[packages[i].domain] || {})
+          if (st === 'ok') full++
+          else if (st === 'failed') failed++
+          else if (st === 'unbuilt') unbuilt++
         }
         document.getElementById('stat-total').textContent = packages.length
         document.getElementById('stat-full').textContent = full
         document.getElementById('stat-building').textContent = status.building.length
+        document.getElementById('stat-failed').textContent = failed
+        document.getElementById('stat-unbuilt').textContent = unbuilt
         document.getElementById('stat-queued').textContent = status.queue.length
+      }
+
+      // Fetch + render the recent build-log lines for one package.
+      function loadLogs(domain) {
+        var pre = document.getElementById('log-' + cssId(domain))
+        if (!pre) return
+        fetch('/api/build-logs/' + encodeURIComponent(domain)).then(function (r) { return r.json() }).then(function (d) {
+          var lines = (d && d.logs) || []
+          if (!lines.length) { pre.textContent = 'no build logs captured yet'; return }
+          var html = ''
+          for (var i = 0; i < lines.length; i++) {
+            var l = lines[i]
+            var t = new Date(l.ts).toLocaleTimeString()
+            html += '<span class="ll-' + esc(l.state) + '">' + esc(t) + ' [' + esc(l.platform) + '] ' + esc(l.text) + '</span>\n'
+          }
+          pre.innerHTML = html
+          pre.scrollTop = pre.scrollHeight
+        }).catch(function () { pre.textContent = 'failed to load logs' })
       }
 
       function wireButtons() {
@@ -178,6 +298,14 @@
               btn.disabled = false
               btn.textContent = 'retry'
             })
+          }
+        }
+        var logBtns = document.querySelectorAll('.logs-btn')
+        for (var j = 0; j < logBtns.length; j++) {
+          logBtns[j].onclick = function () {
+            var domain = this.getAttribute('data-logs')
+            openLogs[domain] = !openLogs[domain]
+            render()
           }
         }
       }
@@ -226,7 +354,19 @@
       }
 
       document.getElementById('filter').addEventListener('input', render)
-      document.getElementById('missing-only').addEventListener('change', render)
+      document.getElementById('group-status').addEventListener('change', render)
+
+      // Status filter chips — pick a single status (building is first so it's
+      // trivial to jump to in-flight builds).
+      var chips = document.querySelectorAll('#status-chips .chip')
+      for (var ci = 0; ci < chips.length; ci++) {
+        chips[ci].onclick = function () {
+          statusFilter = this.getAttribute('data-status')
+          for (var k = 0; k < chips.length; k++) chips[k].className = 'chip'
+          this.className = 'chip chip-on'
+          render()
+        }
+      }
 
       refreshAll()
       // Coverage (which platforms are built) changes slowly — poll every 60s.
