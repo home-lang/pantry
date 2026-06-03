@@ -2755,13 +2755,24 @@ pub const Installer = struct {
             break :blk try self.installFromNetwork(spec, options, s3_url);
         };
 
-        // Create symlinks in data_dir/bin (e.g., Paths.globalBinDir() or /usr/local/bin)
+        // Create symlinks under the SAME base getGlobalPackageDir installs into:
+        // "/usr/local" for system installs, else Paths.globalDir() (whose /bin is
+        // the dir the shell hook puts on PATH). Passing self.data_dir was a bug —
+        // for user installs the package actually lives under data_dir/global/packages,
+        // so createPackageSymlinks(data_dir) looked in data_dir/packages (wrong) and
+        // linked into data_dir/bin (not on PATH), leaving global installs with no
+        // usable symlinks.
         const symlink_mod = @import("symlink.zig");
+        const symlink_base = if (std.mem.eql(u8, self.data_dir, "/usr/local"))
+            try self.allocator.dupe(u8, "/usr/local")
+        else
+            try Paths.globalDir(self.allocator);
+        defer self.allocator.free(symlink_base);
         symlink_mod.createPackageSymlinks(
             self.allocator,
             domain,
             spec.version,
-            self.data_dir,
+            symlink_base,
         ) catch |err| {
             // Log error but don't fail the install
             if (!style.isCI()) style.print("Warning: Failed to create symlinks: {}\n", .{err});
