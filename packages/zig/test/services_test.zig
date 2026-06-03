@@ -241,7 +241,10 @@ test "ServiceConfig creation - MariaDB" {
     try std.testing.expectEqualStrings("mariadb", svc.name);
     try std.testing.expectEqualStrings("MariaDB", svc.display_name);
     try std.testing.expect(svc.port.? == 3306);
-    try std.testing.expect(std.mem.indexOf(u8, svc.start_command, "3306") != null);
+    // Self-init services launch via a generated start script, so the port lives
+    // in that script + health_check rather than literally in start_command.
+    try std.testing.expect(svc.health_check != null);
+    try std.testing.expect(std.mem.indexOf(u8, svc.health_check.?, "3306") != null);
 }
 
 test "ServiceConfig creation - SurrealDB" {
@@ -1942,7 +1945,9 @@ test "getServiceConfigWithPort - MySQL with custom port" {
 
     try std.testing.expectEqualStrings("mysql", config.name);
     try std.testing.expect(config.port.? == 3307);
-    try std.testing.expect(std.mem.indexOf(u8, config.start_command, "3307") != null);
+    // Port now lives in the generated start script + health_check, not start_command.
+    try std.testing.expect(config.health_check != null);
+    try std.testing.expect(std.mem.indexOf(u8, config.health_check.?, "3307") != null);
 }
 
 test "getServiceConfigWithPort - Meilisearch with custom port" {
