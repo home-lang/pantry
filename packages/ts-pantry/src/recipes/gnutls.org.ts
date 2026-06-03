@@ -45,7 +45,9 @@ export const recipe: Recipe = {
       'make --jobs {{hw.concurrency}} install',
     ],
     env: {
-      'ARGS': ['--prefix={{prefix}}', '--disable-guile', '--disable-doc'],
+      // --with-included-unistring: libunistring isn't published in the registry,
+      // so use gnutls' bundled copy rather than chaining yet another dependency.
+      'ARGS': ['--prefix={{prefix}}', '--disable-guile', '--disable-doc', '--with-included-unistring'],
       darwin: {
         CFLAGS: '$CFLAGS -Wno-implicit-int',
       },
