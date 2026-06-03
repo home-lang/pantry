@@ -12,7 +12,7 @@ export const recipe: Recipe = {
     'gnu.org/automake': '*',
   },
   distributable: {
-    url: 'https://ftp.gnu.org/gnu/tar/tar-{{ version.raw }}.tar.gz',
+    url: 'https://ftp.gnu.org/gnu/tar/tar-{{ version.marketing }}.tar.gz',
     stripComponents: 1,
   },
   build: {
