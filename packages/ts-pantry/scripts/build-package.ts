@@ -1491,13 +1491,19 @@ else if (existingConstraint && newConstraint && existingConstraint !== newConstr
     const resolvedDomains = new Set(depByDomain.keys())
     for (let depth = 0; depth < 3; depth++) {
       const transitiveDeps: string[] = []
-      for (const domain of resolvedDomains) {
+      // Snapshot so we don't re-walk domains added during this depth pass.
+      for (const domain of Array.from(resolvedDomains)) {
         try {
-          const depYamlPath = join(process.cwd(), 'src', 'pantry', domain, 'package.yml')
-          if (!existsSync(depYamlPath)) continue
-          const depYaml = parseYaml(readFileSync(depYamlPath, 'utf-8')) as any
-          const depRuntimeDeps = extractYamlDeps(depYaml.dependencies, platform)
-          const depBuildDeps = extractYamlDeps(depYaml.build?.dependencies, platform)
+          // Load the dep's own recipe to read ITS deps. Use loadRecipe so this
+          // works for native TS recipes (src/recipes/*.ts) as well as legacy
+          // pantry YAML — reading only src/pantry/<domain>/package.yml silently
+          // skipped every TS-recipe dep, so transitive deps like x.org/protocol
+          // (xproto.pc, required by x.org/xau) were never downloaded and the
+          // whole X.org pkg-config chain failed to configure.
+          const depLoaded = await loadRecipe(domain, platform)
+          const depRecipe: any = depLoaded.recipe
+          const depRuntimeDeps = extractYamlDeps(depRecipe.dependencies, platform)
+          const depBuildDeps = extractYamlDeps(depRecipe.build?.dependencies, platform)
           for (const td of [...depRuntimeDeps, ...depBuildDeps]) {
             const tdDomain = parseDep(td)
             if (tdDomain && !resolvedDomains.has(tdDomain) && !removedDeps.has(tdDomain)) {
@@ -1506,7 +1512,7 @@ else if (existingConstraint && newConstraint && existingConstraint !== newConstr
             }
           }
         }
-catch { /* skip deps whose YAML can't be read */ }
+catch { /* skip deps whose recipe can't be loaded */ }
       }
       if (transitiveDeps.length === 0) break
       console.log(`\nResolving ${transitiveDeps.length} transitive dependencies (depth ${depth + 1})...`)
