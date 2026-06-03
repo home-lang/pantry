@@ -1,0 +1,123 @@
+import type { Recipe } from '../../../scripts/recipe-types'
+
+export const recipe: Recipe = {
+  domain: 'apache.org/arrow',
+  name: 'arrow',
+  programs: [
+    'parquet-dump-schema',
+    'parquet-reader',
+    'parquet-scan',
+  ],
+  dependencies: {
+    'github.com/aws/aws-sdk-cpp': '*',
+    'github.com/google/brotli': '*',
+    'sourceware.org/bzip2': '*',
+    'google.com/glog': '*',
+    'grpc.io': '*',
+    'lz4.org': '*',
+    'openssl.org': '*',
+    'rapidjson.org': '*',
+    'github.com/google/re2': '*',
+    'google.github.io/snappy': '*',
+    'apache.org/thrift': '*',
+    'github.com/JuliaStrings/utf8proc': '*',
+    'facebook.com/zstd': '*',
+    darwin: {
+      'c-ares.org': 1,
+      'libcxx.llvm.org': '~17',
+    },
+    linux: {
+      'protobuf.dev': '30.0.0',
+      'gnu.org/gcc/libstdcxx': 14,
+    },
+  },
+  buildDependencies: {
+    'boost.org': '*',
+    'cmake.org': 3,
+    'ninja-build.org': '*',
+    'python.org': '<3.12',
+    'llvm.org': '~17',
+    linux: {
+      'gnu.org/gcc': 14,
+    },
+  },
+  distributable: {
+    url: 'https://archive.apache.org/dist/arrow/arrow-{{version}}/apache-arrow-{{version}}.tar.gz',
+    stripComponents: 1,
+  },
+  build: {
+    script: [
+      'cmake -B $BUILD_DIR $CMAKE_ARGS',
+      'cmake --build $BUILD_DIR',
+      'cmake --install $BUILD_DIR',
+      {
+        run: 'sed -i "s|$PKGX_DIR|\\${pcfiledir}/../../../..|g" ./*.pc',
+        'working-directory': '{{prefix}}/lib/pkgconfig',
+      },
+    ],
+    env: {
+      BUILD_DIR: '$(mktemp -d)',
+      darwin: {
+        CC: 'clang',
+        CXX: 'clang++',
+        LD: 'clang',
+      },
+      CMAKE_ARGS: [
+        '-DCMAKE_INSTALL_PREFIX="{{prefix}}',
+        '-DCMAKE_INSTALL_LIBDIR=lib',
+        '-DCMAKE_BUILD_TYPE=Release',
+        '-DCMAKE_CXX_STANDARD=20',
+        '-DCMAKE_FIND_FRAMEWORK=LAST',
+        '-DCMAKE_VERBOSE_MAKEFILE=ON',
+        '-Wno-dev',
+        '-DBUILD_TESTING=OFF',
+        '-DCMAKE_INSTALL_RPATH={{prefix}}',
+        '-DARROW_ACERO=ON',
+        '-DARROW_COMPUTE=ON',
+        '-DARROW_CSV=ON',
+        '-DARROW_DATASET=ON',
+        '-DARROW_FILESYSTEM=ON',
+        '-DARROW_GANDIVA=ON',
+        '-DARROW_HDFS=ON',
+        '-DARROW_JSON=ON',
+        '-DARROW_ORC=OFF',
+        '-DARROW_PARQUET=ON',
+        '-DARROW_PROTOBUF_USE_SHARED=ON',
+        '-DARROW_S3=ON',
+        '-DARROW_WITH_BZ2=ON',
+        '-DARROW_WITH_ZLIB=ON',
+        '-DARROW_WITH_ZSTD=ON',
+        '-DARROW_WITH_LZ4=ON',
+        '-DARROW_WITH_SNAPPY=ON',
+        '-DARROW_WITH_BROTLI=ON',
+        '-DARROW_WITH_UTF8PROC=ON',
+        '-DARROW_INSTALL_NAME_RPATH=OFF',
+        '-DPARQUET_BUILD_EXECUTABLES=ON',
+        '-GNinja',
+      ],
+      linux: {
+        CC: 'gcc',
+        CXX: 'g++',
+        LD: 'gcc',
+        LDFLAGS: '$LDFLAGS -Wl,--undefined-version',
+        CMAKE_ARGS: [
+          '-DARROW_GANDIVA_PC_CXX_FLAGS=--gcc-install-dir=$(g++ -print-libgcc-file-name | xargs dirname)',
+        ],
+      },
+      'x86-64': {
+        CMAKE_ARGS: [
+          '-DARROW_MIMALLOC=ON',
+        ],
+      },
+    },
+  },
+  test: {
+    script: [
+      'c++ $FIXTURE -std=c++20 -larrow -o test',
+      './test',
+      'c++ $FIXTURE -std=c++20 -larrow -o version',
+      './version | grep {{version}}',
+      'pkg-config --modversion arrow | grep {{version}}',
+    ],
+  },
+}

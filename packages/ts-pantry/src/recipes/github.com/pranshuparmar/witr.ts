@@ -1,0 +1,31 @@
+import type { Recipe } from '../../../../scripts/recipe-types'
+
+export const recipe: Recipe = {
+  domain: 'github.com/pranshuparmar/witr',
+  name: 'witr',
+  programs: [
+    'witr',
+  ],
+  buildDependencies: {
+    'go.dev': '^1.25',
+    'git-scm.org': '*',
+  },
+  distributable: {
+    url: 'https://github.com/pranshuparmar/witr/archive/refs/tags/v{{version}}.tar.gz',
+    stripComponents: 1,
+  },
+  build: {
+    script: [
+      'mkdir -p "{{prefix}}"/bin',
+      'go build -ldflags "-X main.version=v{{version}} -X main.commit=$(git rev-parse --short HEAD) -X \'main.buildDate=$(date +%Y-%m-%d)\'" -o "{{prefix}}"/bin/witr ./cmd/witr',
+    ],
+    env: {
+      CGO_ENABLED: 0,
+    },
+  },
+  test: {
+    script: [
+      'witr --version | grep v{{version}}',
+    ],
+  },
+}

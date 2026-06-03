@@ -1,0 +1,71 @@
+import type { Recipe } from '../../../scripts/recipe-types'
+
+export const recipe: Recipe = {
+  domain: 'videolan.org/libplacebo',
+  name: 'libplacebo',
+  programs: [],
+  dependencies: {
+    'littlecms.com': '^2',
+    'github.com/KhronosGroup/Vulkan-Loader': '^1.3.272',
+  },
+  buildDependencies: {
+    'mesonbuild.com': '*',
+    'ninja-build.org': '*',
+    'python.org': '^3.11',
+    'github.com/KhronosGroup/Vulkan-Headers': '*',
+    'curl.se': '*',
+    linux: {
+      'gnu.org/gcc': '*',
+    },
+  },
+  distributable: {
+    url: 'https://code.videolan.org/videolan/libplacebo/-/archive/v{{version}}/libplacebo-v{{version}}.tar.bz2',
+    stripComponents: 1,
+  },
+  build: {
+    script: [
+      {
+        run: 'curl -L "$fast_float" | tar xz --strip-components=1',
+        'working-directory': '3rdparty/fast_float',
+      },
+      {
+        run: 'curl -L "$glad" | tar xz --strip-components=1',
+        'working-directory': '3rdparty/glad',
+      },
+      {
+        run: 'curl -L "$jinja" | tar xz --strip-components=1',
+        'working-directory': '3rdparty/jinja',
+      },
+      {
+        run: 'curl -L "$markupsafe" | tar xz --strip-components=1',
+        'working-directory': '3rdparty/markupsafe',
+      },
+      'meson setup build $MESON_ARGS',
+      'meson compile -C build --verbose',
+      'meson install -C build',
+    ],
+    env: {
+      linux: {
+        LDFLAGS: '-fPIC',
+      },
+      fast_float: 'https://github.com/fastfloat/fast_float/archive/refs/tags/v5.2.0.tar.gz',
+      glad: 'https://files.pythonhosted.org/packages/8b/b3/191508033476b6a409c070c6166b1c41ebb547cc6136260e9157343e6a2b/glad2-2.0.4.tar.gz',
+      jinja: 'https://files.pythonhosted.org/packages/7a/ff/75c28576a1d900e87eb6335b063fab47a8ef3c8b4d88524c4bf78f670cce/Jinja2-3.1.2.tar.gz',
+      markupsafe: 'https://files.pythonhosted.org/packages/6d/7c/59a3248f411813f8ccba92a55feaac4bf360d29e2ff05ee7d8e1ef2d7dbf/MarkupSafe-2.1.3.tar.gz',
+      MESON_ARGS: [
+        '--prefix="{{prefix}}"',
+        '--libdir="{{prefix}}/lib"',
+        '--buildtype=release',
+        '--wrap-mode=nofallback',
+        '-Dvulkan-registry="{{deps.github.com/KhronosGroup/Vulkan-Headers.prefix}}/share/vulkan/registry/vk.xml"',
+      ],
+    },
+  },
+  test: {
+    script: [
+      'pkg-config --modversion libplacebo | grep {{version}}',
+      'cc test.c -lplacebo -o test',
+      './test',
+    ],
+  },
+}

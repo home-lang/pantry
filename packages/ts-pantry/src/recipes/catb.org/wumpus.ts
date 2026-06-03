@@ -1,0 +1,32 @@
+import type { Recipe } from '../../../scripts/recipe-types'
+
+export const recipe: Recipe = {
+  domain: 'catb.org/wumpus',
+  name: 'wumpus',
+  programs: [
+    'wumpus',
+    'superhack',
+  ],
+  distributable: {
+    url: 'https://gitlab.com/esr/wumpus/-/archive/{{ version.raw }}/wumpus-{{ version.raw }}.tar.gz',
+    stripComponents: 1,
+  },
+  build: {
+    script: [
+      'make wumpus superhack',
+      '# When xmlto is packaged then switch the to `make ... install`',
+      'mkdir -p "{{prefix}}"/bin',
+      'mv wumpus superhack "{{prefix}}"/bin',
+      '# make prefix={{prefix}} install',
+    ],
+  },
+  test: {
+    script: [
+      'wumpus > wumpus.out &',
+      'superhack > superhack.out &',
+      'sleep 1',
+      'test "x$(head -n1 wumpus.out)" = "xINSTRUCTIONS (Y-N)" && \\',
+      'test "x$(head -n1 superhack.out)" = "xHunt the Superhack"',
+    ],
+  },
+}

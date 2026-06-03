@@ -1,0 +1,27 @@
+import type { Recipe } from '../../../../scripts/recipe-types'
+
+export const recipe: Recipe = {
+  domain: 'github.com/saagarjha/unxip',
+  name: 'unxip',
+  programs: [
+    'unxip',
+  ],
+  distributable: {
+    url: 'https://github.com/saagarjha/unxip/archive/refs/tags/v{{version.raw}}.tar.gz',
+    stripComponents: 1,
+  },
+  build: {
+    script: [
+      'curl -Lfo unxip "https://github.com/saagarjha/unxip/releases/download/v{{version.raw}}/unxip"',
+      'chmod +x unxip',
+      'mkdir -p "{{prefix}}/bin"',
+      'mv unxip "{{prefix}}/bin"',
+    ],
+  },
+  test: {
+    script: [
+      'if test "{{ hw.platform }}+{{ hw.arch }}" = "darwin+x86-64"; then exit 0; fi',
+      'unxip --help',
+    ],
+  },
+}

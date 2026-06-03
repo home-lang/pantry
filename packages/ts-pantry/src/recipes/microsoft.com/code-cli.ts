@@ -1,0 +1,43 @@
+import type { Recipe } from '../../../scripts/recipe-types'
+
+export const recipe: Recipe = {
+  domain: 'microsoft.com/code-cli',
+  name: 'code-cli',
+  programs: [
+    'code',
+  ],
+  dependencies: {
+    'openssl.org': 1.1,
+    'zlib.net': 1,
+  },
+  buildDependencies: {
+    'rust-lang.org': '^1.81',
+    'rust-lang.org/cargo': '*',
+  },
+  distributable: {
+    url: 'https://github.com/microsoft/vscode/archive/refs/tags/{{version.tag}}.tar.gz',
+    stripComponents: 1,
+  },
+  build: {
+    script: [
+      'sed -i \'1,10s/"version":.*/"version":"{{version}}",/\' ../package.json',
+      'cargo install --locked --path . --root {{prefix}}',
+      {
+        run: 'install_name_tool -change "@rpath/gnu.org/libiconv/v1/lib/libiconv.2.dylib" "/usr/lib/libiconv.2.dylib" code',
+        if: 'darwin',
+        'working-directory': '${{prefix}}/bin',
+      },
+    ],
+    env: {
+      OPENSSL_NO_VENDOR: 1,
+      OPENSSL_DIR: '{{deps.openssl.org.prefix}}',
+      VSCODE_CLI_VERSION: '{{version}}',
+    },
+  },
+  test: {
+    script: [
+      'test "$(code --version)" == "code-oss {{version}} (commit unknown)"',
+      'code tunnel prune | grep \'Successfully removed all unused servers\'',
+    ],
+  },
+}

@@ -1,0 +1,41 @@
+import type { Recipe } from '../../../scripts/recipe-types'
+
+export const recipe: Recipe = {
+  domain: 'videolan.org/x264',
+  name: 'x264',
+  programs: [
+    'x264',
+  ],
+  buildDependencies: {
+    'gnu.org/gcc': '*',
+    'nasm.us': '*',
+  },
+  distributable: {
+    url: 'http://deb.debian.org/debian/pool/main/x/x264/x264_0.164.3095+gitbaee400.orig.tar.gz',
+    stripComponents: 1,
+  },
+  build: {
+    script: [
+      './configure $ARGS',
+      'make --jobs {{ hw.concurrency }} install',
+    ],
+    env: {
+      ARGS: [
+        '--prefix="{{prefix}}"',
+        '--disable-lsmash',
+        '--disable-swscale',
+        '--disable-ffms',
+        '--enable-shared',
+        '--enable-static',
+        '--enable-strip',
+      ],
+    },
+  },
+  test: {
+    script: [
+      'cc test.c -lx264 -o test',
+      './test',
+      'x264 --version | grep {{ version.marketing }}',
+    ],
+  },
+}
