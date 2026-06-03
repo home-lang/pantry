@@ -14,6 +14,8 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
+      // Tcl ships its configure/Makefile in the unix/ subdir, not the tarball root.
+      'cd unix',
       './configure --prefix={{ prefix }}',
       'make --jobs {{ hw.concurrency }}',
       'make install',
