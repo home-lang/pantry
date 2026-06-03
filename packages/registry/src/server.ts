@@ -419,6 +419,74 @@ export function createHandler(
       if (path === '/api/build-status' && req.method === 'GET') {
         return Response.json(getBuildStatus().getStatus(), { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } })
       }
+      // Live build-status STREAM (Server-Sent Events). Pushes a full status
+      // snapshot on connect and again on every build event / queue change, so the
+      // /packages dashboard updates instantly instead of polling. A periodic
+      // comment line keeps the connection alive through proxies (Caddy/nginx).
+      if (path === '/api/build-events-stream' && req.method === 'GET') {
+        const store = getBuildStatus()
+        const encoder = new TextEncoder()
+        let unsubscribe: (() => void) | null = null
+        let heartbeat: ReturnType<typeof setInterval> | null = null
+        const cleanup = () => {
+          if (unsubscribe) {
+            unsubscribe()
+            unsubscribe = null
+          }
+          if (heartbeat) {
+            clearInterval(heartbeat)
+            heartbeat = null
+          }
+        }
+        const stream = new ReadableStream({
+          start(controller) {
+            const send = (payload: unknown): boolean => {
+              try {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`))
+                return true
+              }
+              catch {
+                return false // controller closed (client gone)
+              }
+            }
+            // Initial snapshot so the page renders immediately on connect.
+            send(store.getStatus())
+            unsubscribe = store.subscribe((status) => {
+              if (!send(status))
+                cleanup()
+            })
+            heartbeat = setInterval(() => {
+              try {
+                controller.enqueue(encoder.encode(': keepalive\n\n'))
+              }
+              catch {
+                cleanup()
+              }
+            }, 25_000)
+            // Stop work the moment the client disconnects.
+            req.signal?.addEventListener('abort', () => {
+              cleanup()
+              try {
+                controller.close()
+              }
+              catch { /* already closed */ }
+            })
+          },
+          cancel() {
+            cleanup()
+          },
+        })
+        return new Response(stream, {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'text/event-stream; charset=utf-8',
+            'Cache-Control': 'no-cache, no-transform',
+            'Connection': 'keep-alive',
+            // Disable proxy buffering (nginx) so events flush immediately.
+            'X-Accel-Buffering': 'no',
+          },
+        })
+      }
       // Builders report progress here (building/built/failed). Best-effort, unauthenticated.
       if (path === '/api/build-events' && req.method === 'POST') {
         const body = await req.json().catch(() => null)

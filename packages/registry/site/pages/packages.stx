@@ -206,13 +206,57 @@
         })
       }
 
+      var lastBuiltTs = 0
+      // Apply a status snapshot (from SSE or a poll) and re-render. When a build
+      // has just COMPLETED, refresh coverage too so the platform ✓ lands promptly
+      // instead of waiting for the next coverage poll.
+      function applyStatus(d) {
+        status = d || status
+        status.queue = status.queue || []
+        status.building = status.building || []
+        status.recent = status.recent || []
+        for (var i = 0; i < status.queue.length; i++) queued[status.queue[i]] = true
+        var r = status.recent[0]
+        if (r && r.state === 'built' && r.ts > lastBuiltTs) {
+          lastBuiltTs = r.ts
+          loadPackages().then(function () { renderSummary(); render() })
+        }
+        renderSummary()
+        render()
+      }
+
       document.getElementById('filter').addEventListener('input', render)
       document.getElementById('missing-only').addEventListener('change', render)
 
       refreshAll()
-      // Live status every 5s (cheap); full coverage every 60s.
-      setInterval(function () { loadStatus().then(function () { renderSummary(); render() }) }, 5000)
+      // Coverage (which platforms are built) changes slowly — poll every 60s.
       setInterval(function () { loadPackages().then(render) }, 60000)
+
+      // Live build status via Server-Sent Events: the server pushes a fresh
+      // snapshot on every build event, so rows pulse/settle in real time. Fall
+      // back to 5s polling if the stream is unavailable (old browser, proxy).
+      var statusPoll = null
+      function startStatusPolling() {
+        if (statusPoll) return
+        statusPoll = setInterval(function () { loadStatus().then(function () { renderSummary(); render() }) }, 5000)
+      }
+      function stopStatusPolling() {
+        if (statusPoll) { clearInterval(statusPoll); statusPoll = null }
+      }
+      if (window.EventSource) {
+        try {
+          var es = new EventSource('/api/build-events-stream')
+          es.onmessage = function (ev) {
+            stopStatusPolling() // stream is live — polling not needed
+            try { applyStatus(JSON.parse(ev.data)) } catch (e) {}
+          }
+          es.onerror = function () { startStatusPolling() } // dropped — poll until it recovers
+        } catch (e) {
+          startStatusPolling()
+        }
+      } else {
+        startStatusPolling()
+      }
     })()
   </script>
 </section>

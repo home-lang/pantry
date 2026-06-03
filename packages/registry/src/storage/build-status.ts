@@ -60,8 +60,37 @@ export class BuildStatusStore {
   private coverageAt = 0
   private coveragePromise: Promise<void> | null = null
 
+  // Live subscribers (SSE connections on /api/build-events-stream). Each is
+  // notified with a fresh status snapshot whenever build activity changes.
+  private subscribers = new Set<(status: ReturnType<BuildStatusStore['getStatus']>) => void>()
+
   constructor(private s3: S3Client, private bucket: string) {
     this.snapshot = new ObjectSnapshot(s3, bucket, 'build-status/status.json', () => this.captureState())
+  }
+
+  /**
+   * Subscribe to live status changes (used by the SSE endpoint). The callback
+   * fires with a full status snapshot on every change. Returns an unsubscribe fn.
+   */
+  subscribe(cb: (status: ReturnType<BuildStatusStore['getStatus']>) => void): () => void {
+    this.subscribers.add(cb)
+    return () => { this.subscribers.delete(cb) }
+  }
+
+  /** Push the current status to all live subscribers (best-effort, never throws). */
+  private emit(): void {
+    if (this.subscribers.size === 0)
+      return
+    const status = this.getStatus()
+    for (const cb of this.subscribers) {
+      try { cb(status) }
+      catch { /* a broken subscriber must not affect others or the caller */ }
+    }
+  }
+
+  /** Number of live SSE subscribers (for diagnostics). */
+  get subscriberCount(): number {
+    return this.subscribers.size
   }
 
   async load(): Promise<void> {
@@ -106,6 +135,7 @@ export class BuildStatusStore {
       this.coverageAt = 0
     }
     this.snapshot.scheduleSave()
+    this.emit()
     return event
   }
 
@@ -129,6 +159,7 @@ export class BuildStatusStore {
       return false
     this.queue.push(d)
     this.snapshot.scheduleSave()
+    this.emit()
     return true
   }
 
@@ -146,6 +177,7 @@ export class BuildStatusStore {
       this.queue = this.queue.filter(d => !drop.has(d))
     }
     this.snapshot.scheduleSave()
+    this.emit()
   }
 
   getStatus(): { building: BuildEvent[], recent: BuildEvent[], queue: string[] } {
