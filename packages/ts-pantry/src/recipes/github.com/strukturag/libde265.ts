@@ -37,7 +37,7 @@ export const recipe: Recipe = {
         ],
       },
       ARGS: [
-        "--prefix=\"{{prefix}}\"",
+        "--prefix={{prefix}}",
         "--disable-dependency-tracking",
         "--disable-silent-rules",
         "--disable-sherlock265",

@@ -54,8 +54,8 @@ export const recipe: Recipe = {
       },
       XML_CATALOG_FILES: "{{prefix}}/etc/xml/catalog",
       MESON_ARGS: [
-        "--prefix=\"{{prefix}}\"",
-        "--libdir=\"{{prefix}}/lib\"",
+        "--prefix={{prefix}}",
+        "--libdir={{prefix}}/lib",
         "--buildtype=release",
         "--wrap-mode=nofallback",
         "-Dgtk_doc=false",

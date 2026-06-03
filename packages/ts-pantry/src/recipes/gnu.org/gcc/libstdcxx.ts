@@ -41,7 +41,7 @@ export const recipe: Recipe = {
         'working-directory': "..",
       },
       {
-        run: "if test \"{{hw.platform}}/{{hw.arch}}\" = \"darwin/x86-64\"; then\npatch -p1 < props/disable-cfi-x86-64-darwin.patch\nif test {{version.major}} -ge 16; then\npatch -p1 < props/disable-msabi-darwin-v16.patch\nelse\npatch -p1 < props/disable-msabi-darwin.patch\nfi\npatch -p1 < props/remove-old-frame-symbols-darwin.patch\nfi",
+        run: "if test {{hw.platform}}/{{hw.arch}} = \"darwin/x86-64\"; then\npatch -p1 < props/disable-cfi-x86-64-darwin.patch\nif test {{version.major}} -ge 16; then\npatch -p1 < props/disable-msabi-darwin-v16.patch\nelse\npatch -p1 < props/disable-msabi-darwin.patch\nfi\npatch -p1 < props/remove-old-frame-symbols-darwin.patch\nfi",
         if: ">=15.2",
         'working-directory': "..",
       },
@@ -141,10 +141,10 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      "if test \"{{hw.platform}}/{{hw.arch}}\" = \"darwin/x86-64\" && test \"$(sw_vers -productVersion | cut -d . -f 1)\" -lt 15; then\necho \"Skipping test on darwin/x86-64 macOS < 15\"\nexit 0\nfi",
+      "if test {{hw.platform}}/{{hw.arch}} = \"darwin/x86-64\" && test \"$(sw_vers -productVersion | cut -d . -f 1)\" -lt 15; then\necho \"Skipping test on darwin/x86-64 macOS < 15\"\nexit 0\nfi",
       "clang++ -o test $FIXTURE $FLAGS",
       "test \"$(./test)\" = \"Hello, world!\"",
-      "ldd test | grep \"{{prefix}}/lib/libstdc++.so\"",
+      "ldd test | grep {{prefix}}/lib/libstdc++.so",
       "otool -L test | grep 'gnu.org/gcc/libstdcxx/.*/lib/libstdc++\\..*\\.dylib'",
     ],
   },

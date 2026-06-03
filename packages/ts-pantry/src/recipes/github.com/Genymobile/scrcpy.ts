@@ -56,7 +56,7 @@ export const recipe: Recipe = {
     env: {
       PREBUILT_SERVER_URL: "https://github.com/Genymobile/scrcpy/releases/download/v{{version.marketing}}/scrcpy-server-v{{version.marketing}}",
       ARGS: [
-        "--prefix=\"{{prefix}}\"",
+        "--prefix={{prefix}}",
         "--buildtype=release",
         "--wrap-mode=nofallback",
         "-Dprebuilt_server=\"build/scrcpy-server\"",

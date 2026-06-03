@@ -107,7 +107,7 @@ export const recipe: Recipe = {
   test: {
     script: [
       "pdfinfo lorem.pdf | grep \"Lorem Ipsum\"",
-      "pkg-config --modversion poppler-qt5 | grep \"{{version.raw}}\"",
+      "pkg-config --modversion poppler-qt5 | grep {{version.raw}}",
     ],
   },
 }

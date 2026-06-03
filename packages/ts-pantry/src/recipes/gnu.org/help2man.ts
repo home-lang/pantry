@@ -39,8 +39,8 @@ export const recipe: Recipe = {
       CONFIGURE_ARGS: [
         "--disable-debug",
         "--disable-dependency-tracking",
-        "--prefix=\"{{prefix}}\"",
-        "--libdir=\"{{prefix}}/lib\"",
+        "--prefix={{prefix}}",
+        "--libdir={{prefix}}/lib",
       ],
       darwin: {
         LDFLAGS: "$LDFLAGS -Wl,-headerpad_max_install_names",

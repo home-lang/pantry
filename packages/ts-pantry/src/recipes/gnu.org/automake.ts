@@ -20,7 +20,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      "./configure --build={{ hw.target }} --prefix=\"{{ prefix }}\"",
+      "./configure --build={{ hw.target }} --prefix={{ prefix }}",
       "make -j {{ hw.concurrency }} install",
       {
         run: "perl -pi -e \"s|'\\Q{{prefix}}\\E/|\\\\\\$prefix.'/|\" bin/* share/automake-{{version.marketing}}/Automake/Config.pm\nsed 's/automake-1.16/automake-{{version.marketing}}/g' \"$SRCROOT\"/props/relocatable.diff | patch -p1\nln -sf aclocal bin/aclocal-{{version.marketing}}\nln -sf automake bin/automake-{{version.marketing}}\nfix-shebangs.ts bin/*",

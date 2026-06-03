@@ -33,7 +33,7 @@ export const recipe: Recipe = {
   test: {
     script: [
       "test \"$(dasel --version)\" = \"dasel version {{version}}\"\nEXEC=\"-r json\"",
-      "test \"$(dasel version)\" = \"{{version}}\"\nEXEC=\"query\"",
+      "test \"$(dasel version)\" = {{version}}\nEXEC=\"query\"",
       "test \"$(cat $FIXTURE | dasel $EXEC 'hello.world')\" = '\"Hello, World!\"'",
     ],
   },

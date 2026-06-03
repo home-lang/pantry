@@ -45,13 +45,13 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: "if test \"{{hw.platform}}\" = \"darwin\"; then\n  sed -i -e 's/char \\*ttymsg (struct iovec \\*, int, char \\*, int);/char *ttymsg (struct iovec *, int, const char *, int);/' syslogd.c\nfi\n",
+        run: "if test {{hw.platform}} = \"darwin\"; then\n  sed -i -e 's/char \\*ttymsg (struct iovec \\*, int, char \\*, int);/char *ttymsg (struct iovec *, int, const char *, int);/' syslogd.c\nfi\n",
         if: "2.5.0",
         'working-directory': "src",
       },
       "./configure $ARGS",
       "make SUIDMODE= install",
-      "mkdir \"{{prefix}}\"/sbin",
+      "mkdir {{prefix}}/sbin",
       {
         run: "for x in *; do ln -s ../libexec/$x ../sbin; done",
         'working-directory': "{{prefix}}/libexec",
@@ -59,10 +59,10 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        "--prefix=\"{{prefix}}\"",
+        "--prefix={{prefix}}",
         "--disable-silent-rules",
         "--with-idn",
-        "--with-ncurses-include-dir=\"{{ deps.invisible-island.net/ncurses.prefix }}/include\"",
+        "--with-ncurses-include-dir={{ deps.invisible-island.net/ncurses.prefix }}/include",
       ],
       linux: {
         LDFLAGS: [

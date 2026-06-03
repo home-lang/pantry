@@ -43,7 +43,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      "test \"$(pkg-config --modversion py3cairo)\" = \"{{version}}\"",
+      "test \"$(pkg-config --modversion py3cairo)\" = {{version}}",
       "pkg-config --libs py3cairo",
       "cc $FIXTURE -o test -lcairo",
       "./test",

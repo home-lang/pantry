@@ -54,7 +54,7 @@ export const recipe: Recipe = {
         run: "mv glib-{{version.major}}.0/* .\nrmdir glib-{{version.major}}.0\nln -s . glib-{{version.major}}.0\nmv gio-unix-{{version.major}}.0/gio/* gio/\nrmdir -p gio-unix-{{version.major}}.0/gio\nln -s . gio-unix-{{version.major}}.0\nln -s ../lib/glib-{{version.major}}.0/include/* .",
         'working-directory': "{{prefix}}/include",
       },
-      "cp -a ../venv/lib/python{{deps.python.org.version.marketing}} \"{{prefix}}\"/lib",
+      "cp -a ../venv/lib/python{{deps.python.org.version.marketing}} {{prefix}}/lib",
       {
         run: "ln -s python{{deps.python.org.version.marketing}} python{{deps.python.org.version.major}}",
         'working-directory': "{{prefix}}/lib",

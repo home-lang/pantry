@@ -82,7 +82,7 @@ export const recipe: Recipe = {
         PERL: "${{deps.perl.org.prefix}}/bin/perl",
       },
       ARGS: [
-        "--prefix=\"{{prefix}}\"",
+        "--prefix={{prefix}}",
         "--without-x",
         "--with-uchardet",
       ],

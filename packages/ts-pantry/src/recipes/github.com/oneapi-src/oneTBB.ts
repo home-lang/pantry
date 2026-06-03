@@ -19,11 +19,11 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: "cmake -S ../.. $CMAKE_ARGS -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_RPATH=\"{{prefix}}\"\ncmake --build .\ncmake --install .\n",
+        run: "cmake -S ../.. $CMAKE_ARGS -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_RPATH={{prefix}}\ncmake --build .\ncmake --install .\n",
         'working-directory': "shared",
       },
       {
-        run: "cmake -S ../.. $CMAKE_ARGS -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_RPATH=\"{{prefix}}\"\ncmake --build .\ninstall ./*/libtbb*.a {{prefix}}/lib/\n",
+        run: "cmake -S ../.. $CMAKE_ARGS -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_RPATH={{prefix}}\ncmake --build .\ninstall ./*/libtbb*.a {{prefix}}/lib/\n",
         'working-directory': "static",
       },
       {

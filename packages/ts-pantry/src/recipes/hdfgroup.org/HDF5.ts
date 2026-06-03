@@ -64,7 +64,7 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        "--prefix=\"{{prefix}}\"",
+        "--prefix={{prefix}}",
         "--disable-dependency-tracking",
         "--disable-silent-rules",
         "--enable-build-mode=production",
@@ -78,7 +78,7 @@ export const recipe: Recipe = {
         ],
       },
       CMAKE_ARGS: [
-        "-DCMAKE_INSTALL_PREFIX=\"{{prefix}}\"",
+        "-DCMAKE_INSTALL_PREFIX={{prefix}}",
         "-DHDF5_USE_GNU_DIRS:BOOL=ON",
         "-DHDF5_INSTALL_CMAKE_DIR=lib/cmake/hdf5",
         "-DHDF5_BUILD_CPP_LIB:BOOL=ON",

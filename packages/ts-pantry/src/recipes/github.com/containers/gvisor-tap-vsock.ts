@@ -21,8 +21,8 @@ export const recipe: Recipe = {
         if: "linux",
       },
       "make --jobs {{ hw.concurrency }}",
-      "mkdir -p \"{{ prefix }}\"",
-      "cp -a bin \"{{ prefix }}\"",
+      "mkdir -p {{ prefix }}",
+      "cp -a bin {{ prefix }}",
     ],
   },
   test: {

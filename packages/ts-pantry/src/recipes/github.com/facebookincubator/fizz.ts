@@ -63,10 +63,10 @@ export const recipe: Recipe = {
       ARGS: [
         "-GNinja",
         "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_INSTALL_PREFIX=\"{{prefix}}\"",
+        "-DCMAKE_INSTALL_PREFIX={{prefix}}",
         "-DBUILD_TESTS=OFF",
         "-DBUILD_SHARED_LIBS=ON",
-        "-DCMAKE_INSTALL_RPATH=\"{{prefix}}\"",
+        "-DCMAKE_INSTALL_RPATH={{prefix}}",
       ],
       'linux/aarch64': {
         ARGS: [

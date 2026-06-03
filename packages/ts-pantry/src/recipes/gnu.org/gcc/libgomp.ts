@@ -41,7 +41,7 @@ export const recipe: Recipe = {
         'working-directory': "..",
       },
       {
-        run: "if test \"{{hw.platform}}/{{hw.arch}}\" = \"darwin/x86-64\"; then\npatch -p1 < props/disable-cfi-x86-64-darwin.patch\nif test {{version.major}} -ge 16; then\npatch -p1 < props/disable-msabi-darwin-v16.patch\nelse\npatch -p1 < props/disable-msabi-darwin.patch\nfi\npatch -p1 < props/remove-old-frame-symbols-darwin.patch\nfi",
+        run: "if test {{hw.platform}}/{{hw.arch}} = \"darwin/x86-64\"; then\npatch -p1 < props/disable-cfi-x86-64-darwin.patch\nif test {{version.major}} -ge 16; then\npatch -p1 < props/disable-msabi-darwin-v16.patch\nelse\npatch -p1 < props/disable-msabi-darwin.patch\nfi\npatch -p1 < props/remove-old-frame-symbols-darwin.patch\nfi",
         if: ">=15.2",
         'working-directory': "..",
       },
