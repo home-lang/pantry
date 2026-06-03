@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'github.com/ios-control/ios-deploy',
+  platforms: ['darwin/aarch64', 'darwin/x86-64'],
   name: 'ios-deploy',
   programs: [
     'ios-deploy',
