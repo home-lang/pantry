@@ -194,10 +194,28 @@ pub fn resolveServiceBinary(allocator: std.mem.Allocator, binary_name: []const u
     return resolveServiceBinaryGlobal(allocator, binary_name, home);
 }
 
-/// Search installed package directories under `packages_root` (one level deep)
-/// for an executable named `binary_name`, checking both `<pkg>/<bin>` and
-/// `<pkg>/bin/<bin>`. Returns the first absolute match (caller-owned) or null.
-/// This covers service binaries that were never symlinked into pantry/.bin.
+/// Check `base/<bin>`, `base/bin/<bin>` and `base/sbin/<bin>` for an executable.
+/// Returns the first existing absolute path (caller-owned) or null.
+fn tryBinaryAt(allocator: std.mem.Allocator, base: []const u8, binary_name: []const u8) !?[]const u8 {
+    const io_helper = @import("../io_helper.zig");
+    const subdirs = [_][]const u8{ "", "bin/", "sbin/" };
+    for (subdirs) |sub| {
+        const cand = try std.fmt.allocPrint(allocator, "{s}/{s}{s}", .{ base, sub, binary_name });
+        if (io_helper.accessAbsolute(cand, .{})) |_| {
+            return cand;
+        } else |_| {
+            allocator.free(cand);
+        }
+    }
+    return null;
+}
+
+/// Search installed package directories under `packages_root` for an executable
+/// named `binary_name`. Handles both flat installs (`<pkg>/<bin>`, `<pkg>/bin/<bin>`)
+/// and version-nested installs (`<pkg>/v<ver>/bin/<bin>` — the real on-disk layout
+/// for both project-local `pantry/` and global `.../packages/`), plus `sbin/`.
+/// Returns the first absolute match (caller-owned) or null. Covers service
+/// binaries that were never symlinked into the .bin dir.
 fn findBinaryInPackagesDir(allocator: std.mem.Allocator, packages_root: []const u8, binary_name: []const u8) !?[]const u8 {
     const io_helper = @import("../io_helper.zig");
     var dir = io_helper.openDirAbsoluteForIteration(packages_root) catch return null;
@@ -206,19 +224,23 @@ fn findBinaryInPackagesDir(allocator: std.mem.Allocator, packages_root: []const 
     while (try it.next()) |entry| {
         if (entry.kind == .file) continue;
         if (entry.name.len == 0 or entry.name[0] == '.') continue;
-        // <pkg>/<binary>
-        const direct = try std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ packages_root, entry.name, binary_name });
-        if (io_helper.accessAbsolute(direct, .{})) |_| {
-            return direct;
-        } else |_| {
-            allocator.free(direct);
-        }
-        // <pkg>/bin/<binary>
-        const nested = try std.fmt.allocPrint(allocator, "{s}/{s}/bin/{s}", .{ packages_root, entry.name, binary_name });
-        if (io_helper.accessAbsolute(nested, .{})) |_| {
-            return nested;
-        } else |_| {
-            allocator.free(nested);
+
+        const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ packages_root, entry.name });
+        defer allocator.free(pkg_dir);
+
+        // Flat layout: <pkg>/{,bin/,sbin/}<bin>
+        if (try tryBinaryAt(allocator, pkg_dir, binary_name)) |hit| return hit;
+
+        // Version-nested layout: <pkg>/v<ver>/{,bin/,sbin/}<bin>
+        var pkg_iter = io_helper.openDirAbsoluteForIteration(pkg_dir) catch continue;
+        defer pkg_iter.close();
+        var vit = pkg_iter.iterate();
+        while (try vit.next()) |ventry| {
+            if (ventry.kind == .file) continue;
+            if (ventry.name.len == 0 or ventry.name[0] != 'v') continue;
+            const ver_dir = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pkg_dir, ventry.name });
+            defer allocator.free(ver_dir);
+            if (try tryBinaryAt(allocator, ver_dir, binary_name)) |hit| return hit;
         }
     }
     return null;
@@ -237,6 +259,18 @@ fn resolveServiceBinaryGlobal(allocator: std.mem.Allocator, binary_name: []const
             } else |_| {
                 allocator.free(global_bin);
             }
+        } else |_| {}
+    }
+
+    // 2b. Global packages dir — for binaries not symlinked into globalBinDir.
+    //     Mirrors the project-local pantry/<pkg> scan so the two paths behave
+    //     symmetrically (layout: Paths.globalDir()/packages/<domain>/v<ver>/bin).
+    if (home) |_| {
+        if (Paths.globalDir(allocator)) |global_dir| {
+            defer allocator.free(global_dir);
+            const global_pkgs = try std.fmt.allocPrint(allocator, "{s}/packages", .{global_dir});
+            defer allocator.free(global_pkgs);
+            if (try findBinaryInPackagesDir(allocator, global_pkgs, binary_name)) |in_pkg| return in_pkg;
         } else |_| {}
     }
 
@@ -411,21 +445,45 @@ pub const Services = struct {
 
     /// MongoDB service
     pub fn mongodb(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return mongodbWithContext(allocator, port, null);
+    }
+
+    pub fn mongodbWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
+        const io_helper = @import("../io_helper.zig");
         const env_vars = std.StringHashMap([]const u8).init(allocator);
+
+        const home = io_helper.getEnvVarOwned(allocator, "HOME") catch null;
+        defer if (home) |h| allocator.free(h);
+
+        // mongod requires --dbpath to point at an existing, writable directory; it
+        // does NOT create it and exits immediately if missing. The old default
+        // /usr/local/var/mongodb exists on no fresh machine and isn't writable.
+        const data_dir = if (home) |h|
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/mongodb", .{h})
+        else
+            try allocator.dupe(u8, "/tmp/mongodb-data");
+        defer allocator.free(data_dir);
+        io_helper.makePath(data_dir) catch {};
+
+        const mongod_bin = try resolveServiceBinary(allocator, "mongod", project_root, home);
+        const start_cmd = try std.fmt.allocPrint(allocator, "{s} --port {d} --dbpath {s}", .{ mongod_bin, port, data_dir });
+        allocator.free(mongod_bin);
+
+        const working_dir = if (home) |h|
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/mongodb", .{h})
+        else
+            try allocator.dupe(u8, "/tmp/mongodb-data");
 
         return ServiceConfig{
             .name = try allocator.dupe(u8, "mongodb"),
             .display_name = try allocator.dupe(u8, "MongoDB"),
             .description = try allocator.dupe(u8, "MongoDB database server"),
-            .start_command = try std.fmt.allocPrint(
-                allocator,
-                "mongod --port {d} --dbpath /usr/local/var/mongodb",
-                .{port},
-            ),
+            .start_command = start_cmd,
             .env_vars = env_vars,
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .working_directory = working_dir,
             .health_check = try std.fmt.allocPrint(allocator, "mongosh --port {d} --eval 'db.runCommand({{ping:1}})' --quiet", .{port}),
         };
     }
@@ -845,16 +903,44 @@ pub const Services = struct {
 
     /// MinIO service
     pub fn minio(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return minioWithContext(allocator, port, null);
+    }
+
+    pub fn minioWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
+        const io_helper = @import("../io_helper.zig");
         const env_vars = std.StringHashMap([]const u8).init(allocator);
+
+        const home = io_helper.getEnvVarOwned(allocator, "HOME") catch null;
+        defer if (home) |h| allocator.free(h);
+
+        // MinIO's data path must exist/be writable; the old /usr/local/var/minio
+        // can't be created under a fresh, unprivileged macOS install.
+        const data_dir = if (home) |h|
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/minio", .{h})
+        else
+            try allocator.dupe(u8, "/tmp/minio-data");
+        defer allocator.free(data_dir);
+        io_helper.makePath(data_dir) catch {};
+
+        const minio_bin = try resolveServiceBinary(allocator, "minio", project_root, home);
+        const start_cmd = try std.fmt.allocPrint(allocator, "{s} server --address :{d} {s}", .{ minio_bin, port, data_dir });
+        allocator.free(minio_bin);
+
+        const working_dir = if (home) |h|
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/minio", .{h})
+        else
+            try allocator.dupe(u8, "/tmp/minio-data");
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "minio"),
             .display_name = try allocator.dupe(u8, "MinIO"),
             .description = try allocator.dupe(u8, "S3-compatible object storage"),
-            .start_command = try std.fmt.allocPrint(allocator, "minio server --address :{d} /usr/local/var/minio", .{port}),
+            .start_command = start_cmd,
             .env_vars = env_vars,
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .working_directory = working_dir,
             .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/minio/health/live", .{port}),
         };
     }

@@ -796,7 +796,7 @@ fn getServiceConfigRaw(allocator: std.mem.Allocator, name: []const u8, project_r
     } else if (std.mem.eql(u8, name, "mariadb")) {
         return try Services.mariadb(allocator, port);
     } else if (std.mem.eql(u8, name, "mongodb")) {
-        return try Services.mongodb(allocator, port);
+        return try Services.mongodbWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "influxdb")) {
         return try Services.influxdb(allocator, port);
     } else if (std.mem.eql(u8, name, "cockroachdb")) {
@@ -886,7 +886,7 @@ fn getServiceConfigRaw(allocator: std.mem.Allocator, name: []const u8, project_r
     } else if (std.mem.eql(u8, name, "etcd")) {
         return try Services.etcd(allocator, port);
     } else if (std.mem.eql(u8, name, "minio")) {
-        return try Services.minio(allocator, port);
+        return try Services.minioWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "sonarqube")) {
         return try Services.sonarqube(allocator, port);
     } else if (std.mem.eql(u8, name, "temporal")) {
@@ -975,7 +975,7 @@ fn getServiceConfigWithPortRaw(allocator: std.mem.Allocator, name: []const u8, p
     } else if (std.mem.eql(u8, name, "mariadb")) {
         return try Services.mariadb(allocator, port);
     } else if (std.mem.eql(u8, name, "mongodb")) {
-        return try Services.mongodb(allocator, port);
+        return try Services.mongodbWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "meilisearch")) {
         return try Services.meilisearchWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "elasticsearch")) {
@@ -1051,7 +1051,7 @@ fn getServiceConfigWithPortRaw(allocator: std.mem.Allocator, name: []const u8, p
     } else if (std.mem.eql(u8, name, "etcd")) {
         return try Services.etcd(allocator, port);
     } else if (std.mem.eql(u8, name, "minio")) {
-        return try Services.minio(allocator, port);
+        return try Services.minioWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "sonarqube")) {
         return try Services.sonarqube(allocator, port);
     } else if (std.mem.eql(u8, name, "temporal")) {
