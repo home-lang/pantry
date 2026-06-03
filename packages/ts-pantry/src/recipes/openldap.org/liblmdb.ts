@@ -15,7 +15,7 @@ export const recipe: Recipe = {
     },
   },
   distributable: {
-    url: 'https://git.openldap.org/openldap/openldap/-/archive/{{version.tag}}/openldap-{{version.tag}}.tar.gz',
+    url: 'https://git.openldap.org/openldap/openldap/-/archive/LMDB_{{version}}/openldap-LMDB_{{version}}.tar.gz',
     stripComponents: 3,
   },
   build: {
