@@ -128,6 +128,7 @@ download_package() {
   # Download
   log "   Downloading..."
   local tmp="$install_dir/package.tar.gz"
+  local dl_url="$tarball_url"
   if ! curl -fsSL -o "$tmp" "$tarball_url" 2>/dev/null; then
     # Fallback: legacy all-dashes filename (dots also replaced)
     local alt_url="https://${PANTRY_BUCKET}.s3.${PANTRY_REGION}.amazonaws.com/${base}/${pkg//./-}-${version}.tar.gz"
@@ -136,6 +137,23 @@ download_package() {
       rm -rf "$install_dir"
       return 1
     fi
+    dl_url="$alt_url"
+  fi
+
+  # Verify integrity against the published .sha256 before extracting. A missing
+  # checksum (older artifacts) is a warning, not a hard failure.
+  local expected_sha
+  expected_sha=$(curl -fsSL "${dl_url}.sha256" 2>/dev/null | awk '{print $1}' | head -1)
+  if [[ -n "$expected_sha" ]]; then
+    local actual_sha
+    actual_sha=$(shasum -a 256 "$tmp" 2>/dev/null | awk '{print $1}')
+    if [[ "$actual_sha" != "$expected_sha" ]]; then
+      log "   ${RED}✗${NC} Checksum mismatch (expected ${expected_sha}, got ${actual_sha})"
+      rm -rf "$install_dir"
+      return 1
+    fi
+  else
+    log "   ${YELLOW}!${NC} No published checksum; skipping verification"
   fi
 
   # Extract (with safety flags to prevent zip-slip / absolute path attacks)
