@@ -37,6 +37,10 @@ const WORKER_LABEL = 'pantry-build-worker' // label for elastic boxes we manage
 const SERVER_TYPE = process.env.WORKER_SERVER_TYPE || 'cpx41'
 const LOCATION = process.env.HETZNER_LOCATION || 'ash' // primary lives in ash-dc1
 const K_LOCAL = Number(process.env.WORKER_LOCAL_PARALLELISM || 8) // workers per box (≈ vCPUs; most workers skip/download, so this fills cores)
+// Build multiple important versions per package (not just latest). Single-version
+// work is nearly exhausted on linux-x86-64, leaving the fleet idle-skipping; this
+// gives every box a large real backlog and raises coverage. 0/1 = latest only.
+const MAX_VERSIONS = Number(process.env.MAX_VERSIONS || 3)
 const PLATFORM = process.env.WORKER_PLATFORM || 'linux-x86-64'
 // Watchdog caps (minutes). A worker's own BATCH_TIME_BUDGET_MS is 100 min and its
 // per-package timeout is 60 min, so a healthy worker exits well under these. These
@@ -114,6 +118,7 @@ while true; do
     BUILDKIT_ROOT="\$root" nohup bun scripts/build-all-packages.ts \\
       -b "\$S3_BUCKET" -r "\$S3_REGION" --platform "\$PLATFORM" \\
       --stripe "\$stripe/\$STRIPES" \\
+      --multi-version --max-versions ${MAX_VERSIONS} \\
       > "/root/sweep-\$PLATFORM-w\$i.log" 2>&1 &
   done
   # Bounded wait: never block forever on a wedged worker. We observed boxes sit
