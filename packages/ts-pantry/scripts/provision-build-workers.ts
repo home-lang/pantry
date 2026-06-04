@@ -40,7 +40,7 @@ const K_LOCAL = Number(process.env.WORKER_LOCAL_PARALLELISM || 8) // workers per
 // Build multiple important versions per package (not just latest). Single-version
 // work is nearly exhausted on linux-x86-64, leaving the fleet idle-skipping; this
 // gives every box a large real backlog and raises coverage. 0/1 = latest only.
-const MAX_VERSIONS = Number(process.env.MAX_VERSIONS || 3)
+const MAX_VERSIONS = Number(process.env.MAX_VERSIONS || 5)
 const PLATFORM = process.env.WORKER_PLATFORM || 'linux-x86-64'
 // Watchdog caps (minutes). A worker's own BATCH_TIME_BUDGET_MS is 100 min and its
 // per-package timeout is 60 min, so a healthy worker exits well under these. These
