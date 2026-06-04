@@ -14,10 +14,35 @@ export const recipe: Recipe = {
   },
   distributable: {
     url: 'git+https://github.com/project-copacetic/copacetic.git',
+    // Pin the checkout to the release tag so `git describe` and the version
+    // ldflags resolve to the version being built.
+    ref: 'v{{version}}',
+  },
+
+  buildDependencies: {
+    'go.dev': '^1.21',
   },
 
   build: {
     script: [
-      'echo "Build not yet configured for project-copacetic.github.io"',    ],
+      'go build $ARGS -ldflags="$GO_LDFLAGS"',
+    ],
+    env: {
+      ARGS: [
+        '-trimpath',
+        '-o={{prefix}}/bin/copa',
+      ],
+      GO_LDFLAGS: [
+        '-s',
+        '-w',
+        '-X github.com/project-copacetic/copacetic/pkg/version.GitVersion=v{{version}}',
+        '-X main.version={{version}}',
+      ],
+      linux: {
+        GO_LDFLAGS: [
+          '-buildmode=pie',
+        ],
+      },
+    },
   },
 }
