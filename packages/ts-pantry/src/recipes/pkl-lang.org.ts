@@ -7,19 +7,33 @@ export const recipe: Recipe = {
   homepage: 'https://pkl-lang.org',
   github: 'https://github.com/apple/pkl',
   programs: ['jpkl', 'pkl'],
+  // `pkl` is a self-contained native binary; `jpkl` is a self-executing jar
+  // that needs a JVM at runtime.
+  dependencies: { 'openjdk.org': '*' },
   versionSource: {
+    // Upstream release tags are bare X.Y.Z (no `v` prefix).
     type: 'github-releases',
     repo: 'apple/pkl',
-    tagPattern: /^v(.+)$/,
+    tagPattern: /^(\d.*)$/,
   },
-  distributable: {
-    url: 'https://github.com/apple/pkl/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
-
+  // Source build is a heavy GraalVM/Gradle native-image compile; upstream ships
+  // ready-to-run native binaries per platform, so download those directly.
+  distributable: null,
   build: {
+    skip: ['fix-machos', 'fix-patchelf'],
     script: [
-      './gradlew -DreleaseBuild=true $TARGETS',
+      'mkdir -p {{prefix}}/bin',
+      'case "{{hw.platform}}-{{hw.arch}}" in\n'
+      + '  darwin-aarch64) plat=macos-aarch64 ;;\n'
+      + '  darwin-x86-64)  plat=macos-amd64 ;;\n'
+      + '  linux-aarch64)  plat=linux-aarch64 ;;\n'
+      + '  linux-x86-64)   plat=linux-amd64 ;;\n'
+      + '  *) echo "unsupported platform {{hw.platform}}-{{hw.arch}}" >&2; exit 1 ;;\n'
+      + 'esac\n'
+      + 'base="https://github.com/apple/pkl/releases/download/{{version}}"\n'
+      + 'curl -fSL "$base/pkl-$plat" -o {{prefix}}/bin/pkl\n'
+      + 'curl -fSL "$base/jpkl" -o {{prefix}}/bin/jpkl\n'
+      + 'chmod +x {{prefix}}/bin/pkl {{prefix}}/bin/jpkl',
     ],
   },
 }
