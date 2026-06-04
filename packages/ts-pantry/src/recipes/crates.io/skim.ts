@@ -28,7 +28,9 @@ export const recipe: Recipe = {
         if: '>=1.3<2',
       },
       {
-        run: 'rustup default "$(sed -n \'s/^channel = "\\(.*\\)".*/\\1/p\' $SRCROOT/rust-toolchain.toml)"',
+        // buildkit strips rust-toolchain.toml before the build script runs, so the
+        // channel can't be read from the source. All skim >=2 releases pin "stable".
+        run: 'rustup default stable',
         if: '>=2',
       },
       {
