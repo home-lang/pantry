@@ -27,6 +27,9 @@ export const recipe: Recipe = {
         '-DJAS_ENABLE_DOC=OFF',
         '-DJAS_ENABLE_AUTOMATIC_DEPENDENCIES=false',
         '-DJAS_ENABLE_SHARED=ON',
+        // jasper's in-source-build guard only allows build dirs named "tmp*";
+        // the objdir build dir lives under the source tree, so opt out explicitly.
+        '-DALLOW_IN_SOURCE_BUILD=ON',
         '-DCMAKE_INSTALL_PREFIX={{prefix}}',
         '-DCMAKE_BUILD_TYPE=Release',
       ],
