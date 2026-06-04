@@ -38,6 +38,13 @@ const SERVER_TYPE = process.env.WORKER_SERVER_TYPE || 'cpx41'
 const LOCATION = process.env.HETZNER_LOCATION || 'ash' // primary lives in ash-dc1
 const K_LOCAL = Number(process.env.WORKER_LOCAL_PARALLELISM || 8) // workers per box (≈ vCPUs; most workers skip/download, so this fills cores)
 const PLATFORM = process.env.WORKER_PLATFORM || 'linux-x86-64'
+// Watchdog caps (minutes). A worker's own BATCH_TIME_BUDGET_MS is 100 min and its
+// per-package timeout is 60 min, so a healthy worker exits well under these. These
+// are the hard backstop that guarantees a box can never sit with a hung worker for
+// hours: kill any single worker older than WATCHDOG_WORKER_MIN, and force-restart
+// the whole pass after WATCHDOG_PASS_MIN.
+const WATCHDOG_WORKER_MIN = Number(process.env.WATCHDOG_WORKER_MIN || 110)
+const WATCHDOG_PASS_MIN = Number(process.env.WATCHDOG_PASS_MIN || 120)
 
 function log(m: string): void { process.stdout.write(`${new Date().toISOString().slice(11, 19)} ${m}\n`) }
 
@@ -109,14 +116,46 @@ while true; do
       --stripe "\$stripe/\$STRIPES" \\
       > "/root/sweep-\$PLATFORM-w\$i.log" 2>&1 &
   done
-  while pgrep -f "build-all-packages.*\$PLATFORM" >/dev/null 2>&1; do sleep 30; done
+  # Bounded wait: never block forever on a wedged worker. We observed boxes sit
+  # IDLE for hours because one hung build-all-packages process kept this loop in
+  # the wait below while the other K-1 workers had already exited. Track a pass
+  # deadline and a per-worker age cap; when exceeded, SIGKILL the stragglers and
+  # start a fresh pass. Worst case the box loses one pass-length, then self-heals.
+  PASS_DEADLINE_S=\$(( $WATCHDOG_PASS_MIN * 60 ))     # whole-pass cap
+  WORKER_MAX_S=\$(( $WATCHDOG_WORKER_MIN * 60 ))      # single-worker age cap
+  pass_start=\$(date +%s)
+  while pgrep -f "build-all-packages.*\$PLATFORM" >/dev/null 2>&1; do
+    now=\$(date +%s); elapsed=\$(( now - pass_start ))
+    if [ "\$elapsed" -ge "\$PASS_DEADLINE_S" ]; then
+      echo "\$(date -u +%H:%M:%S) watchdog: pass exceeded \$PASS_DEADLINE_S s — killing all workers, starting fresh pass"
+      pkill -9 -f "build-all-packages.*\$PLATFORM" 2>/dev/null
+      break
+    fi
+    # Kill any individual worker older than WORKER_MAX_S (etimes = elapsed seconds).
+    for pid in \$(pgrep -f "build-all-packages.*\$PLATFORM" 2>/dev/null); do
+      age=\$(ps -o etimes= -p "\$pid" 2>/dev/null | tr -d ' ')
+      [ -n "\$age" ] || continue
+      if [ "\$age" -ge "\$WORKER_MAX_S" ]; then
+        echo "\$(date -u +%H:%M:%S) watchdog: worker \$pid age \${age}s >= \${WORKER_MAX_S}s — SIGKILL"
+        kill -9 "\$pid" 2>/dev/null
+        # kill its descendants too (compiler/make/curl left behind)
+        pkill -9 -P "\$pid" 2>/dev/null
+      fi
+    done
+    sleep 30
+  done
   sleep 20
 done
 `
 }
 
-// disk guard: prune accumulated buildkit-* dirs when the box runs low.
+// disk guard: prune accumulated buildkit-* dirs when the box runs low, and
+// self-heal a wedged fleet (a last-resort backstop to the daemon's own watchdog).
 const GUARD_SCRIPT = `#!/usr/bin/env bash
+# STALL_MIN: if the fleet service is active but no worker log has been written in
+# this many minutes, the build pass is wedged in a way the in-loop watchdog isn't
+# catching — restart the unit so the box self-heals instead of idling for hours.
+STALL_MIN=90
 while true; do
   free=\$(df -k / | awk 'NR==2{print int(\$4/1024/1024)}')
   if [ "\${free:-99}" -lt 30 ]; then
@@ -125,6 +164,17 @@ while true; do
       find "\$r" -maxdepth 1 -type d -name 'buildkit-artifacts-*' -exec rm -rf {} + 2>/dev/null
     done
     rm -rf /root/.cargo/registry/cache/* /root/.cargo/registry/src/* /root/.cache/* /root/.bun/install/cache/* 2>/dev/null
+  fi
+  # stall detector: fleet active but zero forward progress (no sweep log touched
+  # in STALL_MIN minutes) ⇒ restart the fleet daemon.
+  if systemctl is-active --quiet pantry-fleet.service; then
+    if ls /root/sweep-*.log >/dev/null 2>&1; then
+      if [ -z "\$(find /root/sweep-*.log -mmin -\$STALL_MIN 2>/dev/null)" ]; then
+        echo "\$(date -u +%H:%M:%S) diskguard: no sweep-log progress in \${STALL_MIN}m — restarting pantry-fleet.service"
+        pkill -9 -f 'build-all-packages' 2>/dev/null
+        systemctl restart pantry-fleet.service 2>/dev/null || true
+      fi
+    fi
   fi
   sleep 60
 done
@@ -174,14 +224,21 @@ function configureBox(ip: string, boxIndex: number, boxCount: number): void {
   // Manage everything via systemd so it survives reboots and there is ONE daemon.
   // The snapshot bakes in pantry-sweep.service (the OLD full-set daemon); it must
   // be stopped+disabled or it respawns overlapping workers and wins.
+  // Every step is best-effort (`|| true`) so a single failure — e.g. a transient
+  // chmod hiccup during a live rebalance — can NEVER abort the daemon-reload +
+  // enable/restart that actually brings the box back. chmod each file
+  // independently so a missing/locked file doesn't take the other down with it.
+  // The trailing `is-active` is the one diagnostic we DO want a real exit code on.
   ssh(ip, [
-    'chmod +x /root/fleet-daemon.sh /root/box-disk-guard.sh',
+    'chmod +x /root/fleet-daemon.sh || true',
+    'chmod +x /root/box-disk-guard.sh || true',
     'systemctl disable --now pantry-sweep.service 2>/dev/null || true',
     'pkill -9 -f "sweep-daemon.sh|xorg-loop.sh|build-all-packages" 2>/dev/null || true',
     'sleep 1',
-    'systemctl daemon-reload',
-    'systemctl enable --now pantry-diskguard.service',
-    'systemctl enable --now pantry-fleet.service',
+    'systemctl daemon-reload || true',
+    'systemctl enable --now pantry-diskguard.service || true',
+    'systemctl enable pantry-fleet.service || true',
+    'systemctl restart pantry-fleet.service || true',
     'sleep 2',
     'systemctl is-active pantry-fleet.service',
   ].join('\n'))
