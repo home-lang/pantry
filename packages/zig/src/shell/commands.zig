@@ -441,13 +441,52 @@ pub const ShellCommands = struct {
         const new_path = try std.mem.join(self.allocator, ":", path_components.items);
         defer self.allocator.free(new_path);
 
-        // QoL: one-line activation banner so `dev` visibly "locks in". stdout
-        // carries the eval'd shell code, so this must go to stderr.
+        // QoL: activation banner + the project's deps so `dev` visibly "locks
+        // in". stdout carries the eval'd shell code, so this goes to stderr.
         {
+            const stderr_file = io_helper.File.stderr();
             const proj_name = std.fs.path.basename(project_root);
-            var banner: [512]u8 = undefined;
-            const line = std.fmt.bufPrint(&banner, "\x1b[36m⚡ pantry\x1b[0m env activated → \x1b[1m{s}\x1b[0m\n", .{proj_name}) catch "";
-            if (line.len > 0) io_helper.writeAllToFile(io_helper.File.stderr(), line) catch {};
+            var hdr: [512]u8 = undefined;
+            const hl = std.fmt.bufPrint(&hdr, "\x1b[36m⚡ pantry\x1b[0m env activated → \x1b[1m{s}\x1b[0m\n", .{proj_name}) catch "";
+            if (hl.len > 0) io_helper.writeAllToFile(stderr_file, hl) catch {};
+
+            // List the declared deps (name version), dimmed. Best-effort — never
+            // let banner work break activation.
+            const detector = @import("../deps/detector.zig");
+            const parser = @import("../deps/parser.zig");
+            if (detector.findDepsFile(self.allocator, project_root) catch null) |deps_file| {
+                defer self.allocator.free(deps_file.path);
+                if (parser.inferDependencies(self.allocator, deps_file) catch null) |deps| {
+                    defer {
+                        for (deps) |*d| {
+                            var dd = d.*;
+                            dd.deinit(self.allocator);
+                        }
+                        self.allocator.free(deps);
+                    }
+                    if (deps.len > 0) {
+                        var line_buf: std.ArrayList(u8) = .empty;
+                        defer line_buf.deinit(self.allocator);
+                        var seen = std.StringHashMap(void).init(self.allocator);
+                        defer seen.deinit();
+                        line_buf.appendSlice(self.allocator, "\x1b[2m  ") catch {};
+                        var first = true;
+                        for (deps) |dep| {
+                            if (seen.contains(dep.name)) continue; // dedupe (deps can repeat)
+                            seen.put(dep.name, {}) catch {};
+                            if (!first) line_buf.appendSlice(self.allocator, " · ") catch {};
+                            first = false;
+                            line_buf.appendSlice(self.allocator, dep.name) catch {};
+                            if (dep.version.len > 0) {
+                                line_buf.append(self.allocator, ' ') catch {};
+                                line_buf.appendSlice(self.allocator, dep.version) catch {};
+                            }
+                        }
+                        line_buf.appendSlice(self.allocator, "\x1b[0m\n") catch {};
+                        if (!first) io_helper.writeAllToFile(stderr_file, line_buf.items) catch {};
+                    }
+                }
+            }
         }
 
         // Generate shell code
