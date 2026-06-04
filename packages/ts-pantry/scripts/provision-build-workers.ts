@@ -153,7 +153,8 @@ WantedBy=multi-user.target
 // Dev libs that aren't in the S3 dep registry, so source builds fall back to the
 // system copy. Without the -dev packages the fallback has no headers/.pc/.so and
 // builds fail (libfido2→libudev, shared-mime-info→glib, yubikey-agent→pcsclite).
-const SYSTEM_DEV_LIBS = 'libudev-dev libglib2.0-dev libpcsclite-dev libsystemd-dev libdbus-1-dev'
+const SYSTEM_DEV_LIBS = 'libudev-dev libglib2.0-dev libpcsclite-dev libsystemd-dev libdbus-1-dev '
+  + 'libegl-dev libgl-dev libgles-dev libglvnd-dev mesa-common-dev'
 
 function configureBox(ip: string, boxIndex: number, boxCount: number): void {
   log(`  ${ip}: configuring as box ${boxIndex}/${boxCount}`)
