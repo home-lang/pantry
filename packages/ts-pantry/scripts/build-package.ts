@@ -217,13 +217,22 @@ function determineVersionTag(yamlContent: string, version: string): string {
  *
  * Returns { tag, rawVersion } or null if no match found.
  */
-async function resolveGitHubTag(yamlContent: string, version: string): Promise<{ tag: string, rawVersion: string } | null> {
-  // Extract GitHub repo from YAML versions section
+async function resolveGitHubTag(yamlContent: string, version: string, distUrl = ''): Promise<{ tag: string, rawVersion: string } | null> {
+  // Extract GitHub repo from the YAML versions section, OR — for native TS recipes
+  // (no YAML) — from a github.com distributable URL. Without this, native recipes that
+  // use {{version.tag}} (re2, cloc, p7zip, …) never resolve their real tag and 404 on
+  // zero-padded / date-style tags (e.g. catalog 2025.8.5 vs real tag 2025-08-05).
   const ghMatch = yamlContent.match(/github:\s*([^\s#]+)/)
-  if (!ghMatch) return null
-
-  // Strip /tags suffix if present (used for tag-based discovery like vim/vim/tags)
-  const repo = ghMatch[1].trim().replace(/\/tags$/, '').replace(/\/releases$/, '')
+  let repo: string
+  if (ghMatch) {
+    // Strip /tags suffix if present (used for tag-based discovery like vim/vim/tags)
+    repo = ghMatch[1].trim().replace(/\/tags$/, '').replace(/\/releases$/, '')
+  }
+  else {
+    const urlMatch = distUrl.match(/github\.com\/([^/]+\/[^/]+?)(?:\/|\.git|$)/)
+    if (!urlMatch) return null
+    repo = urlMatch[1]
+  }
 
   // Extract strip pattern (defaults to /^v/ for github sources)
   // Handle multi-line strip format (e.g. strip:\n  - /^release-/)
@@ -1589,7 +1598,7 @@ catch { /* skip deps whose recipe can't be loaded */ }
     || rawDistRef.includes('version.tag') || rawDistRef.includes('version.raw')
     || buildScriptsUseVersionTag) {
     console.log(`🔍 Resolving GitHub tag for version ${version} (URL uses version.tag/raw)...`)
-    const resolved = await resolveGitHubTag(yamlContent, version)
+    const resolved = await resolveGitHubTag(yamlContent, version, rawDistUrl)
     if (resolved) {
       versionTag = resolved.tag
       versionRaw = resolved.rawVersion
