@@ -17,7 +17,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'cargo install --locked --path . --root {{prefix}}',
+      'cargo install --locked --path rage --root {{prefix}}',
     ],
   },
   test: {
