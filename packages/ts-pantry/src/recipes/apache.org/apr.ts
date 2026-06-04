@@ -43,6 +43,19 @@ export const recipe: Recipe = {
           'rm apr_rules.mk.bak',
         ].join('\n'),
       },
+      // Sanitize the buildkit compiler-wrapper path that configure records into
+      // the installed config (apr_rules.mk's CC/CPP, apr-1-config, apr.exp).
+      // apr-util reads these via --with-apr and inherits CPP="<wrapper>/cc -E";
+      // the wrapper path only exists inside apr's transient buildkit sandbox, so
+      // apr-util's C-preprocessor sanity check fails. Replace any recorded
+      // ".../_cc_wrapper/cc" (or "/var/buildkit/.../cc") with a plain "cc".
+      {
+        'working-directory': '{{prefix}}',
+        run: [
+          'find . -type f \\( -name apr_rules.mk -o -name "apr-{{version.major}}-config" -o -name apr.exp -o -name "*.mk" -o -name "*-config" \\) \\',
+          '  -exec sed -i -E "s#[^ \\"]*/_cc_wrapper/cc#cc#g; s#/var/buildkit[^ \\"]*/cc#cc#g" {} +',
+        ].join('\n'),
+      },
     ],
     env: {
       ARGS: [
