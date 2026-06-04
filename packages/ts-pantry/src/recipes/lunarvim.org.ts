@@ -33,7 +33,12 @@ export const recipe: Recipe = {
     script: [
       './utils/installer/install.sh -y -l',
       './utils/installer/install_bin.sh',
-      './utils/installer/install-neovim-from-release',
+      // Upstream's install-neovim-from-release downloads `nvim-linux64.tar.gz`
+      // from neovim's `latest` release, but neovim renamed that asset to
+      // `nvim-linux-x86_64.tar.gz`, so it now 404s. We already depend on
+      // neovim.io, so symlink the provided nvim instead.
+      'mkdir -p "{{prefix}}/bin"',
+      'ln -sf "{{deps.neovim.io.prefix}}/bin/nvim" "{{prefix}}/bin/nvim"',
       'cd "${{prefix}}/share/lunarvim"',
       'rm lvim',
       'mkdir lvim',
