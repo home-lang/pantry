@@ -157,7 +157,8 @@ const SYSTEM_DEV_LIBS = 'libudev-dev libglib2.0-dev libpcsclite-dev libsystemd-d
   + 'libegl-dev libgl-dev libgles-dev libglvnd-dev mesa-common-dev '
   // g++-14: C++23 packages (btop's std::ranges::to etc.) need libstdc++14;
   // gnu.org/gcc@14 isn't in S3 so builds fall back to the system compiler.
-  + 'g++-14 gcc-14'
+  + 'g++-14 gcc-14 '
+  + 'python3-dev libcairo2-dev libffi-dev'
 
 function configureBox(ip: string, boxIndex: number, boxCount: number): void {
   log(`  ${ip}: configuring as box ${boxIndex}/${boxCount}`)
