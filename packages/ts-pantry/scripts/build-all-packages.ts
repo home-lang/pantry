@@ -1041,14 +1041,49 @@ async function tryBuildVersion(
   // Stream the child's output: tee it to our stdout (so CI logs are intact) AND
   // forward batched lines to the registry so the /packages log panel shows the
   // build live. Batched on a timer + line count to keep the POSTs reasonable.
+  //
+  // A build spawns a deep tree of subprocesses (make, cc, git, curl, configure…).
+  // Node's `timeout` option only signals the *direct* child (`bun`); a wedged
+  // grandchild (e.g. a hung cc or a curl stuck on a dead mirror) keeps the tree —
+  // and thus this worker — alive indefinitely past the 60-min budget. That is what
+  // left fleet boxes idle for hours with a single hung worker. To make the timeout
+  // actually fatal we spawn `bun` as a process-group leader (`detached: true` →
+  // setsid) and on timeout signal the WHOLE group via a negative PID, escalating
+  // SIGTERM → SIGKILL after a short grace period so no orphaned compiler/make
+  // survives.
+  const PER_PACKAGE_TIMEOUT_MS = 60 * 60 * 1000 // 60 min (fbthrift/heavy C++ need >45 min)
+  const KILL_GRACE_MS = 15 * 1000 // grace between SIGTERM and SIGKILL for the group
   await new Promise<void>((resolve, reject) => {
     const child = spawn('bun', args, {
       cwd: join(process.cwd()),
       // build-all already reports building/built/failed for this package, so the
       // child build-package shouldn't double-report state transitions.
       env: { ...process.env, PANTRY_REPORTED_BY_PARENT: '1' },
-      timeout: 60 * 60 * 1000, // 60 min per package (fbthrift/heavy C++ need >45 min)
+      // Own process group so we can kill the entire build subtree on timeout.
+      detached: true,
     })
+
+    // Signal the whole process group (negative PID). Falls back to the direct
+    // child if the group signal fails (e.g. the leader already reaped).
+    const signalGroup = (sig: NodeJS.Signals) => {
+      if (child.pid == null)
+        return
+      try { process.kill(-child.pid, sig) }
+      catch {
+        try { child.kill(sig) }
+        catch { /* already gone */ }
+      }
+    }
+
+    let timedOut = false
+    let sigkillTimer: ReturnType<typeof setTimeout> | undefined
+    const timeoutTimer = setTimeout(() => {
+      timedOut = true
+      console.error(`   ⏱️  ${domain}@${version} exceeded ${PER_PACKAGE_TIMEOUT_MS / 60000} min — killing build process group`)
+      signalGroup('SIGTERM')
+      // If SIGTERM didn't bring the group down within the grace period, SIGKILL it.
+      sigkillTimer = setTimeout(() => signalGroup('SIGKILL'), KILL_GRACE_MS)
+    }, PER_PACKAGE_TIMEOUT_MS)
 
     let pending = ''
     let batch: string[] = []
@@ -1075,12 +1110,24 @@ async function tryBuildVersion(
     child.stderr?.on('data', onData)
     const timer = setInterval(flush, 1500)
 
-    child.on('error', (err) => { clearInterval(timer); reject(err) })
-    child.on('close', (code) => {
+    const cleanupTimers = () => {
       clearInterval(timer)
+      clearTimeout(timeoutTimer)
+      if (sigkillTimer)
+        clearTimeout(sigkillTimer)
+    }
+
+    child.on('error', (err) => { cleanupTimers(); reject(err) })
+    child.on('close', (code) => {
+      cleanupTimers()
       if (pending) batch.push(pending)
       flush()
-      if (code === 0) {
+      if (timedOut) {
+        const err = new Error(`build-package.ts timed out after ${PER_PACKAGE_TIMEOUT_MS / 60000} min (killed)`) as Error & { status?: number | null }
+        err.status = code
+        reject(err)
+      }
+      else if (code === 0) {
         resolve()
       }
       else {
