@@ -154,7 +154,10 @@ WantedBy=multi-user.target
 // system copy. Without the -dev packages the fallback has no headers/.pc/.so and
 // builds fail (libfido2→libudev, shared-mime-info→glib, yubikey-agent→pcsclite).
 const SYSTEM_DEV_LIBS = 'libudev-dev libglib2.0-dev libpcsclite-dev libsystemd-dev libdbus-1-dev '
-  + 'libegl-dev libgl-dev libgles-dev libglvnd-dev mesa-common-dev'
+  + 'libegl-dev libgl-dev libgles-dev libglvnd-dev mesa-common-dev '
+  // g++-14: C++23 packages (btop's std::ranges::to etc.) need libstdc++14;
+  // gnu.org/gcc@14 isn't in S3 so builds fall back to the system compiler.
+  + 'g++-14 gcc-14'
 
 function configureBox(ip: string, boxIndex: number, boxCount: number): void {
   log(`  ${ip}: configuring as box ${boxIndex}/${boxCount}`)
