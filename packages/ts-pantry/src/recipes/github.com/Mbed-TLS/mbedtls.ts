@@ -61,6 +61,7 @@ export const recipe: Recipe = {
       },
       {
         run: "sed -i -f $PROP $CFG",
+        prop: "s://#define MBEDTLS_THREADING_PTHREAD:#define MBEDTLS_THREADING_PTHREAD:\ns://#define MBEDTLS_THREADING_C:#define MBEDTLS_THREADING_C:\ns://#define MBEDTLS_SSL_DTLS_SRTP:#define MBEDTLS_SSL_DTLS_SRTP:\n",
       },
       "cmake -S . -B build $ARGS",
       "cmake --build build",
