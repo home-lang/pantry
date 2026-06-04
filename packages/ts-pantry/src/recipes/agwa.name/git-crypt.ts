@@ -9,22 +9,16 @@ export const recipe: Recipe = {
   dependencies: {
     'openssl.org': '^1.1',
   },
-  buildDependencies: {
-    'docbook.org': '*',
-    'docbook.org/xsl': '*',
-    'gnome.org/libxslt': '*',
-  },
-  distributable: {
-    url: 'https://www.agwa.name/projects/git-crypt/downloads/git-crypt-{{version}}.tar.gz',
-    stripComponents: 1,
-  },
   build: {
     script: [
-      'sed -i "s|http://docbook.sourceforge.net/release/xsl/current|{{deps.docbook.org/xsl.prefix}}/libexec/docbook-xsl|g" Makefile',
-      'make ENABLE_MAN=yes PREFIX={{prefix}} install',
+      // The man page requires the full docbook-xsl stylesheet chain, which is
+      // not provisioned in the build environment. git-crypt's man page is
+      // optional (ENABLE_MAN defaults off); build just the binary so the
+      // package is reliably installable.
+      'make PREFIX={{prefix}}',
+      'make PREFIX={{prefix}} install',
     ],
     env: {
-      XML_CATALOG_FILES: '${{prefix}}/etc/xml/catalog',
       CFLAGS: '$CFLAGS -DOPENSSL_API_COMPAT=0x30000000L',
     },
   },
