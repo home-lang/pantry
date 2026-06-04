@@ -1322,7 +1322,13 @@ print(f'[cmake-scrub] done: {modified} files modified', file=sys.stderr)`)
       // to have ABI mismatches with Ubuntu system versions, overwrite the system .so files.
       // Only target specific libraries to avoid breaking system tools.
       sections.push('# Overwrite specific system libs with buildkit versions (ABI mismatch fix)')
-      sections.push(`sudo python3 << 'SYSLIB_OVERRIDE_EOF'
+      // `env -u LD_LIBRARY_PATH -u LD_PRELOAD` so sudo's own PAM stack loads the
+      // SYSTEM libpam, not a dep's libpam that a transitive dep (e.g. anything
+      // pulling linux-pam) put on LD_LIBRARY_PATH — otherwise sudo aborts with
+      // "PAM account management error" and `set -eo pipefail` kills the whole
+      // build before cmake runs. `|| true` keeps this best-effort optimization
+      // from ever failing a build.
+      sections.push(`env -u LD_LIBRARY_PATH -u LD_PRELOAD sudo python3 << 'SYSLIB_OVERRIDE_EOF' || true
 import os, shutil, sys
 # Only override libraries known to have ABI mismatches between system and buildkit
 # glog: Ubuntu has 0.6.0, buildkit has 0.7.1 (google::logging::internal namespace changes)
@@ -1718,7 +1724,9 @@ else {
   // These sit at /usr/lib/python3/dist-packages/ which has HIGHER priority than
   // where pip install --upgrade puts new versions
   sections.push('  if [ -f /usr/lib/python3/dist-packages/wheel/__init__.py ]; then')
-  sections.push('    sudo rm -rf /usr/lib/python3/dist-packages/setuptools* \\')
+  // env -u LD_LIBRARY_PATH/LD_PRELOAD so sudo's PAM uses the system libpam (a
+  // dep's libpam on LD_LIBRARY_PATH otherwise makes sudo fail → cleanup skipped)
+  sections.push('    env -u LD_LIBRARY_PATH -u LD_PRELOAD sudo rm -rf /usr/lib/python3/dist-packages/setuptools* \\')
   sections.push('                /usr/lib/python3/dist-packages/wheel* \\')
   sections.push('                /usr/lib/python3/dist-packages/pkg_resources* \\')
   sections.push('                /usr/lib/python3/dist-packages/_distutils_hack* 2>/dev/null || true')
