@@ -7,6 +7,9 @@ export const recipe: Recipe = {
   homepage: 'https://micro-editor.github.io',
   github: 'https://github.com/zyedidia/micro',
   programs: ['micro'],
+  buildDependencies: {
+    'go.dev': '^1.16',
+  },
   versionSource: {
     type: 'github-releases',
     repo: 'zyedidia/micro',
@@ -19,6 +22,29 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'echo "Build not yet configured for micro-editor.github.io"',    ],
+      'mkdir -p "{{ prefix }}"/bin "{{ prefix }}"/share/man/man1',
+      'go build -trimpath -ldflags "$LDFLAGS -X \'github.com/zyedidia/micro/v2/internal/util.CompileDate=$(go run tools/build-date.go)\'" ./cmd/micro',
+      'install -m755 micro "{{ prefix }}"/bin',
+      'cp assets/packaging/micro.1 "{{ prefix }}"/share/man/man1',
+    ],
+    env: {
+      GOOS: '$(go env GOHOSTOS)',
+      GOARCH: '$(go env GOHOSTARCH)',
+      LDFLAGS: [
+        '-s',
+        '-w',
+        '-X github.com/zyedidia/micro/v2/internal/util.Version={{ version }}',
+      ],
+      linux: {
+        LDFLAGS: [
+          '-buildmode=pie',
+        ],
+      },
+    },
+  },
+  test: {
+    script: [
+      'micro -version | grep {{ version }}',
+    ],
   },
 }
