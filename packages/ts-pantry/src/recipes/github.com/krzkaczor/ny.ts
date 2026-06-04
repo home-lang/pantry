@@ -23,6 +23,11 @@ export const recipe: Recipe = {
     ],
     env: {
       PATH: "$HOME/.cargo/bin:$PATH",
+      // ny needs nightly-only features (feature(proc_macro_diagnostic)) pulled in
+      // via mockall_derive. The buildkit may prepend a stable cargo to PATH ahead
+      // of the nightly symlinks, so the compile lands on stable and fails E0554.
+      // RUSTC_BOOTSTRAP=1 lets any rustc accept the unstable #![feature] gates.
+      RUSTC_BOOTSTRAP: "1",
     },
   },
   test: {
