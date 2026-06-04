@@ -73,7 +73,12 @@ export const recipe: Recipe = {
       ],
       linux: {
         ARGS: [
-          "--enable-fortran",
+          // Fortran bindings disabled: the gnu.org/gcc build dep does not ship a
+          // gfortran frontend here, so configure fell back to `cc` for Fortran
+          // and died with "Fortran could not compile .f90 files". The cmake
+          // (>=2) path already disables Fortran (-DHDF5_BUILD_FORTRAN=OFF); keep
+          // the autotools (<2) path consistent. The h5fc relocation step is
+          // already guarded behind `if test -f h5fc`.
           "--with-zlib={{deps.zlib.net.prefix}}",
         ],
       },
