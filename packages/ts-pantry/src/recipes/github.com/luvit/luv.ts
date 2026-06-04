@@ -37,7 +37,10 @@ export const recipe: Recipe = {
       "cmake -S . -B buildjit $CMAKE_ARGS -DWITH_LUA_ENGINE=LuaJIT -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=ON",
       "cmake --build buildjit",
       "cmake --install buildjit",
-      "cmake -S . -B buildlua $CMAKE_ARGS -DWITH_LUA_ENGINE=Lua -DBUILD_STATIC_LIBS=OFF -DBUILD_SHARED_LIBS=OFF",
+      // CMake 4.x's FindLua parses lua.h's version macros, which Lua 5.5
+      // moved to numeric *_N form — so find_package(Lua) fails ("missing
+      // LUA_INCLUDE_DIR"). Point luv directly at the resolved lua.org dep.
+      "cmake -S . -B buildlua $CMAKE_ARGS -DWITH_LUA_ENGINE=Lua -DBUILD_STATIC_LIBS=OFF -DBUILD_SHARED_LIBS=OFF -DLUA_INCLUDE_DIR={{deps.lua.org.prefix}}/include -DLUA_LIBRARIES={{deps.lua.org.prefix}}/lib/liblua.so -DLUA_LIBRARY={{deps.lua.org.prefix}}/lib/liblua.so",
       "cmake --build buildlua",
       "cmake --install buildlua",
       {
