@@ -22,7 +22,7 @@ export const recipe: Recipe = {
         run: "ln -sf {{deps.rust-lang.org/rustup.prefix}}/bin/rustup .\nrustup default nightly\nln -sf $HOME/.rustup/toolchains/*/bin/* .",
         'working-directory': "$HOME/.cargo/bin",
       },
-      "cargo install --locked --path . --root {{prefix}}",
+      "cargo install --path . --root {{prefix}}",
     ],
     env: {
       PATH: "$HOME/.cargo/bin:$PATH",
