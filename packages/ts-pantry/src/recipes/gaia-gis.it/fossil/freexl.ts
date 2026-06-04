@@ -22,13 +22,22 @@ export const recipe: Recipe = {
       // dependency staging. Build minizip from zlib's bundled contrib/minizip and
       // install it into freexl's own prefix (which is on CPATH/LDFLAGS), so the
       // ./configure check passes and the resulting libfreexl is self-contained.
+      // Compile the library objects directly rather than via autoreconf — the
+      // build sandbox's autoconf can't locate its m4sugar macros.
       'mkdir -p _minizip && cd _minizip',
       'curl -fsSL https://github.com/madler/zlib/archive/refs/tags/v1.3.1.tar.gz -o zlib.tar.gz',
       'tar xzf zlib.tar.gz',
       'cd zlib-1.3.1/contrib/minizip',
-      'autoreconf -fi',
-      './configure --prefix={{prefix}}',
-      'make --jobs {{ hw.concurrency }} install',
+      'mkdir -p {{prefix}}/include/minizip {{prefix}}/lib/pkgconfig',
+      'cc -O2 -fPIC -DUSE_FILE32API -c ioapi.c unzip.c zip.c mztools.c',
+      'cc -shared -Wl,-soname,libminizip.so.1 -o libminizip.so.1.0.0 ioapi.o unzip.o zip.o mztools.o -lz',
+      'ar rcs libminizip.a ioapi.o unzip.o zip.o mztools.o',
+      'cp libminizip.so.1.0.0 {{prefix}}/lib/',
+      'ln -sf libminizip.so.1.0.0 {{prefix}}/lib/libminizip.so.1',
+      'ln -sf libminizip.so.1.0.0 {{prefix}}/lib/libminizip.so',
+      'cp libminizip.a {{prefix}}/lib/',
+      'cp crypt.h ioapi.h unzip.h zip.h mztools.h {{prefix}}/include/minizip/',
+      'printf \'prefix={{prefix}}\\nexec_prefix=${prefix}\\nlibdir=${prefix}/lib\\nincludedir=${prefix}/include\\n\\nName: minizip\\nDescription: Minizip zip manipulation library\\nVersion: 1.3.1\\nRequires: zlib\\nLibs: -L${libdir} -lminizip\\nCflags: -I${includedir}\\n\' > {{prefix}}/lib/pkgconfig/minizip.pc',
       'cd "$SRCROOT"',
       // Now build freexl against the just-installed minizip.
       './configure $ARGS',
