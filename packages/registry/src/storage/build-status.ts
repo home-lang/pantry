@@ -231,9 +231,11 @@ export class BuildStatusStore {
     const s = (await this.snapshot.load()) as PersistedState | null
     if (!s)
       return
-    this.building = new Map((s.building || []).map(e => [this.key(e), e]))
-    this.recent = (s.recent || []).slice(0, RECENT_LIMIT)
-    this.queue = s.queue || []
+    // Filter out any non-package junk that was persisted before ingest validation
+    // existed (e.g. probe events) so a restart self-heals the dashboard data.
+    this.building = new Map((s.building || []).filter(e => isValidPackageDomain(e?.domain)).map(e => [this.key(e), e]))
+    this.recent = (s.recent || []).filter(e => isValidPackageDomain(e?.domain)).slice(0, RECENT_LIMIT)
+    this.queue = (s.queue || []).filter(d => isValidPackageDomain(d))
   }
 
   private key(e: { domain: string, version: string, platform: string }): string {
@@ -247,6 +249,12 @@ export class BuildStatusStore {
   /** Record a build event reported by a builder. */
   record(raw: Partial<BuildEvent>): BuildEvent | null {
     if (!raw.domain || !raw.platform || !raw.state)
+      return null
+    // Only accept real package domains. Every pantry domain is a hostname with a
+    // TLD (bun.sh, crates.io/ripgrep, go.uber.org/mock/mockgen), so it must start
+    // alphanumeric and contain a dot. This rejects test/probe junk (e.g.
+    // "__auth_probe__") so the dashboard only ever shows accurate package data.
+    if (!isValidPackageDomain(String(raw.domain)))
       return null
     const event: BuildEvent = {
       domain: String(raw.domain),
@@ -489,6 +497,24 @@ export class BuildStatusStore {
   async flush(): Promise<void> {
     await this.snapshot.flush()
   }
+}
+
+/**
+ * True for strings that look like a real pantry package domain: a hostname with
+ * a TLD, optionally followed by a path (bun.sh, crates.io/ripgrep,
+ * go.uber.org/mock/mockgen, people.engr.tamu.edu/davis/suitesparse). Must start
+ * alphanumeric and contain at least one dot. Rejects test/probe junk like
+ * "__auth_probe__" so build-status data stays accurate.
+ */
+export function isValidPackageDomain(d: unknown): boolean {
+  if (typeof d !== 'string')
+    return false
+  const s = d.trim()
+  if (s.length === 0 || s.length > 200)
+    return false
+  // Flat character classes (no nested quantifiers) to avoid catastrophic
+  // backtracking: <alnum><host chars> "." <alnum> <host/path chars>.
+  return /^[a-z0-9][a-z0-9.+-]*\.[a-z0-9][\w.+/-]*$/i.test(s)
 }
 
 /** Loose version compare: numeric-aware, good enough for picking a "latest". */

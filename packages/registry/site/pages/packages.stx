@@ -13,6 +13,7 @@
     <div class="grid gap-3 mb-6" style="grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));" id="summary">
       <div class="stat-card"><p class="stat-label">Packages</p><p class="stat-num" id="stat-total">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Versions published</p><p class="stat-num" id="stat-versions">&mdash;</p></div>
+      <div class="stat-card"><p class="stat-label">Binaries published</p><p class="stat-num" id="stat-binaries">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Projects complete</p><p class="stat-num" id="stat-complete" style="color: var(--green);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Updates available</p><p class="stat-num" id="stat-updates" style="color: var(--accent);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Building now</p><p class="stat-num" id="stat-building" style="color: var(--yellow);">&mdash;</p></div>
@@ -292,6 +293,9 @@
         }
         setStat('stat-total', packages.length)
         setStat('stat-versions', totals.publishedVersions || 0)
+        // Binaries = total per-platform artifacts (one version built on 4 OSs = 4),
+        // so this reflects everything installable across platforms, not just versions.
+        setStat('stat-binaries', totals.publishedArtifacts || 0)
         // "complete" = built on every supported platform (incl. macOS-only
         // packages that can never reach all 4); "updates" = complete projects
         // whose newest catalog version is newer than the newest one with binaries.
