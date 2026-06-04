@@ -78,7 +78,7 @@ export const recipe: Recipe = {
     env: {
       FONT_DATA: "https://poppler.freedesktop.org/poppler-data-0.4.12.tar.gz",
       CMAKE_ARGS: [
-        "-DCMAKE_INSTALL_PREFIX=\"{{prefix}}",
+        "-DCMAKE_INSTALL_PREFIX={{prefix}}",
         "-DCMAKE_INSTALL_LIBDIR=lib",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_FIND_FRAMEWORK=LAST",
