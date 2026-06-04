@@ -4,6 +4,9 @@ export const recipe: Recipe = {
   domain: "github.com/libfuse/libfuse",
   name: "libfuse",
   programs: [],
+  // libfuse is the Linux kernel FUSE userspace library; its meson.build aborts
+  // with "libfuse does not support OS-X" on macOS (macFUSE is the mac analog).
+  platforms: ['linux/x86-64', 'linux/aarch64'],
   buildDependencies: {
     'mesonbuild.com': "*",
     'ninja-build.org': "*",
