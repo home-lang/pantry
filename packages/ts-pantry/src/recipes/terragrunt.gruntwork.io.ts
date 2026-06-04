@@ -23,11 +23,14 @@ export const recipe: Recipe = {
   },
 
   build: {
+    // Use a dedicated GO_LDFLAGS var: buildkit injects C-linker rpath flags
+    // (-Wl,-rpath,...) into $LDFLAGS for dep linking, which the Go linker
+    // rejects ("flag provided but not defined: -Wl,...").
     script: [
-      'go build -v -ldflags="$LDFLAGS" -o {{prefix}}/bin/terragrunt',
+      'go build -v -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/terragrunt',
     ],
     env: {
-      'LDFLAGS': ['-s', '-w', '-X=main.VERSION={{version}}', '-X=github.com/gruntwork-io/go-commons/version.Version={{version}}'],
+      GO_LDFLAGS: ['-s', '-w', '-X=main.VERSION={{version}}', '-X=github.com/gruntwork-io/go-commons/version.Version={{version}}'],
     },
   },
 }
