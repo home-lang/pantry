@@ -37,8 +37,11 @@ export const recipe: Recipe = {
         run: [
           'fix-shebangs.ts bin/*',
 
-          // turn the hardcoded autoconf prefix into a $PREFIX reference
-          'perl -pi -e \'s|\\x27{{prefix}}|"$PREFIX"\\x27|g\' bin/autoconf',
+          // NB: removed a bin/autoconf-only rewrite `s|'{{prefix}}|"$PREFIX"'|` — its
+          // `"$PREFIX"` interpolated to an empty string inside single-quoted perl,
+          // mangling bin/autoconf into `""'/share/autoconf'` (adjacent strings → perl
+          // syntax error). The general `'<prefix>/ → $prefix.'/` rewrite below already
+          // relocates bin/autoconf correctly along with the rest of bin/*.
 
           // fix specific m4 and perl paths
           'perl -pi -e \'s|{{deps.perl.org.prefix}}/bin/perl|perl|g\' bin/*',
