@@ -12,9 +12,11 @@ export const recipe: Recipe = {
   dependencies: { 'openjdk.org': '*' },
 
   versionSource: {
+    // Only plain X.Y.Z release tags have a published -bin.tar.gz; the
+    // `release-3.9.5-0` style candidate tags 404 on archive.apache.org.
     type: 'github-tags',
     repo: 'apache/zookeeper',
-    tagPattern: /^release-(.+)$/,
+    tagPattern: /^release-(\d+\.\d+\.\d+)$/,
   },
   distributable: null,
 
