@@ -13,10 +13,15 @@ export const recipe: Recipe = {
   },
   distributable: {
     url: 'git+https://github.com/lemoony/snipkit',
-  },
+    // Pin the git checkout to the release tag. Without it the shallow clone
+    // builds from default-branch HEAD (untagged), so `goreleaser build` fails
+    // with "git doesn't contain any tags". GORELEASER_CURRENT_TAG injects the
+    // version into the build the same way pkgx does.
+    ref: 'v{{version}}',
+  } as Recipe['distributable'] & { ref: string },
   build: {
     script: [
-      'goreleaser build --clean --single-target --skip=validate',
+      'GORELEASER_CURRENT_TAG="v{{version}}" goreleaser build --clean --single-target --skip=validate',
       'install -Dm755 dist/$PLATFORM/snipkit "{{prefix}}"/bin/snipkit',
     ],
     env: {
