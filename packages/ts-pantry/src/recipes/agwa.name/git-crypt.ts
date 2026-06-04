@@ -9,6 +9,10 @@ export const recipe: Recipe = {
   dependencies: {
     'openssl.org': '^1.1',
   },
+  distributable: {
+    url: 'https://www.agwa.name/projects/git-crypt/downloads/git-crypt-{{version}}.tar.gz',
+    stripComponents: 1,
+  },
   build: {
     script: [
       // The man page requires the full docbook-xsl stylesheet chain, which is
