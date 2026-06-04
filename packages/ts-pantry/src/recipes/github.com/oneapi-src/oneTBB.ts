@@ -17,6 +17,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': 'build',
     script: [
       {
         run: "cmake -S ../.. $CMAKE_ARGS -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_RPATH={{prefix}}\ncmake --build .\ncmake --install .\n",

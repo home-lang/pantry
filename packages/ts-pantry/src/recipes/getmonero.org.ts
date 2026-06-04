@@ -25,6 +25,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'build',
     script: [
       'cmake -S .. $CMAKE_ARGS',
       'cmake --build .',

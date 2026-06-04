@@ -20,6 +20,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'build',
     workingDirectory: 'buildroot',
     script: [
       'cmake $ARGS ..',

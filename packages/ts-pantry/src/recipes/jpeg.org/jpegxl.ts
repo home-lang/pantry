@@ -27,6 +27,7 @@ export const recipe: Recipe = {
     url: "git+https://github.com/libjxl/libjxl.git",
   },
   build: {
+    'working-directory': 'build',
     script: [
       {
         run: "./deps.sh\nfind third_party -not -name sjpeg -and -not -name libjpeg-turbo -mindepth 1 -maxdepth 1 -type d | xargs rm -rf",

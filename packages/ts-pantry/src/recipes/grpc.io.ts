@@ -45,6 +45,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'build',
     workingDirectory: 'cmake/build',
     script: [
       // The loader does not forward distributable.ref, so the git+ url clones

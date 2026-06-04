@@ -32,6 +32,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'build',
     workingDirectory: 'build',
     script: [
       'python -m venv venv',
