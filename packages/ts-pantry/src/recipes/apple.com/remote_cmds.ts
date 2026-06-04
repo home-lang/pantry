@@ -3,6 +3,8 @@ import type { Recipe } from '../../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: "apple.com/remote_cmds",
   name: "remote_cmds",
+  // Apple OSS distribution built via xcodebuild — macOS only (matches upstream pkgx).
+  platforms: ["darwin"],
   programs: [
     "telnet",
   ],
