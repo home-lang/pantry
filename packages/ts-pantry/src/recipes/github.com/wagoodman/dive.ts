@@ -13,6 +13,7 @@ export const recipe: Recipe = {
   },
   distributable: {
     url: 'git+https://github.com/wagoodman/dive',
+    ref: 'v{{version}}',
   },
   build: {
     script: [
@@ -22,6 +23,7 @@ export const recipe: Recipe = {
     ],
     env: {
       CGO_ENABLED: 0,
+      GORELEASER_CURRENT_TAG: 'v{{version}}',
       'darwin/aarch64': {
         PLATFORM: 'darwin_arm64_v8.0',
       },
