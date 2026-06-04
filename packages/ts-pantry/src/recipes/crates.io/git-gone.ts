@@ -14,7 +14,8 @@ export const recipe: Recipe = {
     'rust-lang.org/cargo': '*',
   },
   distributable: {
-    url: 'https://github.com/swsnr/git-gone/archive/refs/tags/v{{ version }}.tar.gz',
+    // swsnr moved git-gone off GitHub to Codeberg; GitHub now 404s.
+    url: 'https://codeberg.org/swsnr/git-gone/archive/v{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
