@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'github.com/context-labs/mactop',
+  platforms: ['darwin/aarch64', 'darwin/x86-64'],
   name: 'mactop',
   programs: [
     'mactop',

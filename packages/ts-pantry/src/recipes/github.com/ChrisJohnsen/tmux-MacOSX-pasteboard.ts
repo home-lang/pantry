@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'github.com/ChrisJohnsen/tmux-MacOSX-pasteboard',
+  platforms: ['darwin/aarch64', 'darwin/x86-64'],
   name: 'tmux-MacOSX-pasteboard',
   programs: [
     'reattach-to-user-namespace',
