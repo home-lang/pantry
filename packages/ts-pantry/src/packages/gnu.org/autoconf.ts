@@ -3,7 +3,7 @@
  *
  * @domain `gnu.org/autoconf`
  * @programs `autoconf`, `autoheader`, `autom4te`, `autoreconf`, `autoscan`, ... (+2 more)
- * @version `2.73.0` (3 versions available)
+ * @version `2.72.0` (2 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install gnu.org/autoconf`
@@ -81,8 +81,12 @@ export const gnuorgautoconfPackage = {
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
+  // 2.73 is an upstream ALPHA whose autoreconf/autom4te scripts have a different
+  // structure than 2.72; the recipe's >=2.72 perl prefix-injection corrupts them
+  // (autoreconf dies with a perl syntax error), breaking every package that runs
+  // autoreconf against it (SDL2_gfx, ag, librttopo, numactl, pkcs11-helper,
+  // speexdsp, procps, gifsicle, ldns, …). Drop it so the resolver picks stable 2.72.
   versions: [
-    '2.73.0',
     '2.72.0',
     '2.71.0',
   ] as const,
