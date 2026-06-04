@@ -141,6 +141,20 @@ The Pantry action exports `PANTRY_TOKEN` and `PANTRY_REGISTRY_TOKEN` as env vars
 
 The pantry S3 registry (`registry.pantry.dev/binaries/`) hosts **system packages**(pre-built binaries like zig, curl, redis, bun) and**apps** (GUI applications like VS Code, Discord, Obsidian) uploaded via the `build.yml` / `sync-binaries.yml` workflows. JS/TS packages go to npm, not S3.
 
+### Prebuilt download vs custom source builds — do NOT convert custom builds
+
+A recipe can either **compile from source** or **download an official prebuilt binary** (the latter is faster/more reliable and covers platforms we can't compile). The download pattern lives in the recipe itself: the `build.script` cases on `{{hw.platform}}`/`{{hw.arch}}`, `curl`s the official per-platform asset, and extracts it (see `src/recipes/ziglang.org.ts` — Zig is a download recipe, not a source build). Versions come from the recipe's `versionSource`. The recipe is the single source of truth for *how to download every version per platform*. (The legacy `scripts/sync-packages.ts` hand-codes the same logic for ~19 domains — that mechanism is redundant with recipe-driven downloads and should not be grown; prefer making a package a zig-style download recipe.)
+
+**Prefer prebuilt download ONLY for simple, single-binary upstream tools with no custom value-add** (Go/Rust CLIs like gh, ripgrep, fd, jq, yq, k9s, helm, hashicorp tools — they ship official multi-platform release binaries).
+
+**NEVER convert a deliberately customized source build to a prebuilt download.** Some packages are intentionally compiled with our own configuration and must keep their source build:
+
+- **php.net** — built with a specific extension matrix (`--enable-fpm`/`--enable-gd`/`--enable-mbstring`/`--with-pgsql`/`--with-openssl`/`--with-sodium`/… ~30 flags) plus custom `php-config`/`phpize` patching and a load-verification step. A vanilla prebuilt PHP would drop all of it.
+- **postgresql.org** and other databases/servers where we control build-time options/extensions.
+- Anything whose recipe carries meaningful `--with-`/`--enable-` flags, patches, or bundled extensions — those flags ARE the reason we build from source.
+
+When expanding prebuilt coverage, the test is: *does upstream ship the exact binary we'd otherwise produce, with nothing we customize?* If not, keep compiling.
+
 ### Build-status dashboard reporting (authenticated — the same token)
 
 The live build dashboard at **pantry.dev/packages** is fed by builders POSTing `building`/`built`/`failed` events to `registry.pantry.dev/api/build-events` (and log lines to `/api/build-logs`). These endpoints are **authenticated** — the server (`packages/registry/src/server.ts`, `isAuthorizedRequest`) returns **401** without a valid `Authorization: Bearer <token>`. The reporter (`packages/ts-pantry/scripts/report-build.ts`) reads the token from `PANTRY_REGISTRY_TOKEN` → `PANTRY_TOKEN` → `PANTRY_BUILD_REPORT_TOKEN`, and **silently skips** reporting if none is set (a 401 never fails the build — reporting is fire-and-forget). The token is the **same `ptry_` registry token** documented above (AWS SSM `/pantry/registry-token`).
