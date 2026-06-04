@@ -27,16 +27,22 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: "curl 'https://github.com/plougher/squashfs-tools/commit/8b9288365fa0a0d80d8be82a3a6b42ea1c12629a.patch?full_index=1' | patch",
-        if: "=4.7",
+        run: "curl 'https://github.com/plougher/squashfs-tools/commit/8b9288365fa0a0d80d8be82a3a6b42ea1c12629a.patch?full_index=1' | patch -p1",
+        if: "darwin",
       },
       {
-        run: "curl 'https://github.com/plougher/squashfs-tools/commit/f88f4a659d6ab432a57e90fe2f6191149c6b343f.patch?full_index=1' | patch",
-        if: "=4.7.5",
+        run: "curl 'https://github.com/plougher/squashfs-tools/commit/f88f4a659d6ab432a57e90fe2f6191149c6b343f.patch?full_index=1' | patch -p1",
+        if: "darwin",
       },
-      "make $ARGS",
+      {
+        run: "make $ARGS",
+        'working-directory': "squashfs-tools",
+      },
       "mkdir -p {{prefix}}/bin",
-      "install mksquashfs unsquashfs sqfscat sqfstar {{prefix}}/bin",
+      {
+        run: "install mksquashfs unsquashfs sqfscat sqfstar {{prefix}}/bin",
+        'working-directory': "squashfs-tools",
+      },
     ],
     env: {
       ARGS: [
