@@ -6,22 +6,17 @@ export const recipe: Recipe = {
   programs: [
     'gost3411-2012',
   ],
-  buildDependencies: {
-    linux: {
-      'gnu.org/patch': '*',
-    },
-  },
   distributable: {
     url: 'https://github.com/adegtyarev/streebog/archive/{{version.raw}}.tar.gz',
     stripComponents: 1,
   },
   build: {
+    // Build with -fcommon so the build succeeds under GCC 10+ (default -fno-common),
+    // which otherwise rejects the multiple `uint512_u` tentative definitions with a
+    // "multiple definition" link error. This replaces the upstream pkgx `props/32.patch`
+    // (a large Fedora downstream patch that renames those symbols) with a one-flag fix.
     script: [
-      {
-        run: 'patch -p1 < props/32.patch',
-        if: 'linux',
-      },
-      'make',
+      'make OPTIMIZE="-O3 -fcommon"',
       {
         run: 'cp "$SRCROOT"/gost3411-2012 .',
         'working-directory': '${{prefix}}/bin',
