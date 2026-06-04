@@ -16,9 +16,21 @@ export const recipe: Recipe = {
     url: 'https://github.com/jenkins-x/jx/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
+  buildDependencies: {
+    'go.dev': '^1.24',
+    'git-scm.org': '^2',
+  },
 
   build: {
     script: [
-      'echo "Build not yet configured for jenkins-x.io"',    ],
+      'go build -v -ldflags="$LDFLAGS" -o {{prefix}}/bin/jx ./cmd',
+    ],
+    env: {
+      LDFLAGS: [
+        '-s',
+        '-w',
+        '-X github.com/jenkins-x/jx/pkg/cmd/version.Version={{version}}',
+      ],
+    },
   },
 }
