@@ -3,6 +3,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'darwinsys.com/file',
   name: 'file',
+  propsDir: '../props/darwinsys.com/file',
   programs: [
     'file',
   ],
