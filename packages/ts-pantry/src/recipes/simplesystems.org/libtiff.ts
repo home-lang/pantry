@@ -31,6 +31,12 @@ export const recipe: Recipe = {
         '--disable-dependency-tracking',
         '--disable-lzma',
         '--disable-webp',
+        // Lerc and libdeflate aren't pantry packages; without these flags
+        // configure auto-detects the build box's system -dev packages and bakes
+        // `Requires.private: Lerc libdeflate` into libtiff-4.pc, which then breaks
+        // every pkg-config consumer (openslide, gdal, …) that lacks those .pc files.
+        '--disable-lerc',
+        '--disable-libdeflate',
         '--with-jpeg-include-dir={{deps.libjpeg-turbo.org.prefix}}/include',
         '--with-jpeg-lib-dir={{deps.libjpeg-turbo.org.prefix}}/lib',
         '--without-x',

@@ -28,23 +28,22 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'freedesktop.org/pkg-config': '*',
+    'mesonbuild.com': '*',
+    'ninja-build.org': '*',
   },
 
   build: {
+    // openslide 4.x uses the Meson build system; autotools (configure) was removed.
     script: [
-      // versions didn't get bumped in 4.0.0 source; rewrite the hardcoded
-      // 3.4.1 string in configure to match the tarball version (no-op for 3.4.1).
-      {
-        run: [
-          'sed -i.bak -e \'s/3\\.4\\.1/{{version}}/g\' configure',
-          'rm configure.bak',
-        ],
-      },
-      './configure $ARGS',
-      'make --jobs {{hw.concurrency}} install',
+      'meson setup builddir $ARGS',
+      'meson compile -C builddir',
+      'meson install -C builddir',
     ],
     env: {
-      'ARGS': ['--prefix={{prefix}}'],
+      'ARGS': [
+        '--prefix={{prefix}}',
+        '--buildtype=release',
+      ],
     },
   },
 }
