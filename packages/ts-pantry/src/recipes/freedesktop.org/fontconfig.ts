@@ -30,6 +30,17 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    // The prebuilt freetype binary ships a freetype2.pc whose
+    // `Requires.private: zlib, libpng, libbrotlidec` lists libpng/libbrotlidec.
+    // Neither has an S3 binary nor a system .pc on the build box, so
+    // `pkg-config freetype2` fails ("Package 'libpng'/'libbrotlidec' not found").
+    // fontconfig links freetype dynamically, so the private static-link deps are
+    // irrelevant: hand configure FREETYPE_CFLAGS/FREETYPE_LIBS directly to skip
+    // the pkg-config probe entirely.
+    env: {
+      FREETYPE_CFLAGS: '-I{{deps.freetype.org.prefix}}/include/freetype2',
+      FREETYPE_LIBS: '-L{{deps.freetype.org.prefix}}/lib -lfreetype',
+    },
     script: [
       './configure --prefix={{ prefix }}',
       'make --jobs {{ hw.concurrency }} install RUN_FC_CACHE_TEST=false',
