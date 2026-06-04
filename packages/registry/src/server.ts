@@ -560,8 +560,12 @@ export function createHandler(
           },
         })
       }
-      // Builders report progress here (building/built/failed). Best-effort, unauthenticated.
+      // Builders report progress here (building/built/failed). Authenticated so
+      // outsiders can't inject fake build status — builders send the registry
+      // token (see report-build.ts). Best-effort on the builder side.
       if (path === '/api/build-events' && req.method === 'POST') {
+        if (!(await isAuthorizedRequest(req)))
+          return Response.json({ error: 'Authentication required' }, { status: 401, headers: corsHeaders })
         const body = await req.json().catch(() => null)
         if (!body)
           return Response.json({ error: 'invalid body' }, { status: 400, headers: corsHeaders })
@@ -574,7 +578,11 @@ export function createHandler(
         return Response.json({ ok: true, recorded: count }, { headers: corsHeaders })
       }
       // Queue a manual rebuild from the dashboard (drained by the build-driver).
+      // Rebuilds cost real CPU/$$, so this is gated: a valid Bearer token (admin or
+      // user API token) or a logged-in dashboard session is required.
       if (path === '/api/rebuild' && req.method === 'POST') {
+        if (!(await isAuthorizedRequest(req)))
+          return Response.json({ error: 'Authentication required' }, { status: 401, headers: corsHeaders })
         const body = await req.json().catch(() => null)
         const domain = typeof body?.domain === 'string' ? body.domain : ''
         if (!/^[a-zA-Z0-9._/-]{1,128}$/.test(domain))
@@ -594,8 +602,11 @@ export function createHandler(
         return Response.json({ domain, logs: getBuildStatus().getLogs(domain) }, { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } })
       }
       // Builders stream batches of build-output lines here while a build runs, so
-      // the per-package log panel updates live. Best-effort, unauthenticated.
+      // the per-package log panel updates live. Authenticated (registry token) so
+      // outsiders can't inject fake log output. Best-effort on the builder side.
       if (path === '/api/build-logs' && req.method === 'POST') {
+        if (!(await isAuthorizedRequest(req)))
+          return Response.json({ error: 'Authentication required' }, { status: 401, headers: corsHeaders })
         const body = await req.json().catch(() => null)
         const domain = typeof body?.domain === 'string' ? body.domain : ''
         const lines = Array.isArray(body?.lines) ? body.lines.filter((l: unknown) => typeof l === 'string') : []
@@ -1507,6 +1518,37 @@ async function validateToken(authHeader: string | null): Promise<{ valid: boolea
   }
 
   return { valid: true, userId: '_admin' }
+}
+
+/**
+ * Authorize a mutating dashboard/builder request. Accepts EITHER a valid Bearer
+ * token (the legacy registry/admin token OR a user `ptry_` API token — the same
+ * mechanism used for publishing) OR a logged-in web session cookie (so the
+ * dashboard's own buttons work for signed-in users). Read endpoints stay public;
+ * only state-changing endpoints (rebuild triggers, build-status/log ingestion)
+ * go through here. Never throws — returns false on any failure.
+ */
+async function isAuthorizedRequest(req: Request): Promise<boolean> {
+  try {
+    const authHeader = req.headers.get('authorization')
+    if (authHeader) {
+      const result = await validateToken(authHeader)
+      if (result.valid)
+        return true
+    }
+    if (_authService) {
+      const sessionToken = extractSessionToken(req)
+      if (sessionToken) {
+        const user = await _authService.validateSession(sessionToken)
+        if (user)
+          return true
+      }
+    }
+  }
+  catch {
+    // fall through to unauthorized
+  }
+  return false
 }
 
 /**

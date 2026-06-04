@@ -847,4 +847,58 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       expect(res.status).toBe(404)
     })
   })
+
+  describe('build-control endpoint auth', () => {
+    it('POST /api/rebuild rejects unauthenticated requests', async () => {
+      const res = await fetch(`${baseUrl}/api/rebuild`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain: 'curl.se' }),
+      })
+      expect(res.status).toBe(401)
+    })
+
+    it('POST /api/rebuild accepts a valid Bearer token', async () => {
+      const res = await fetch(`${baseUrl}/api/rebuild`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TEST_TOKEN}` },
+        body: JSON.stringify({ domain: 'curl.se' }),
+      })
+      expect(res.status).toBe(200)
+      const body = await res.json() as { domain?: string }
+      expect(body.domain).toBe('curl.se')
+    })
+
+    it('POST /api/build-events rejects unauthenticated requests', async () => {
+      const res = await fetch(`${baseUrl}/api/build-events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain: 'curl.se', version: '8.12.0', platform: 'linux-x86-64', state: 'building' }),
+      })
+      expect(res.status).toBe(401)
+    })
+
+    it('POST /api/build-events accepts the registry token', async () => {
+      const res = await fetch(`${baseUrl}/api/build-events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TEST_TOKEN}` },
+        body: JSON.stringify({ domain: 'curl.se', version: '8.12.0', platform: 'linux-x86-64', state: 'building' }),
+      })
+      expect(res.status).toBe(200)
+    })
+
+    it('POST /api/build-logs rejects unauthenticated requests', async () => {
+      const res = await fetch(`${baseUrl}/api/build-logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain: 'curl.se', platform: 'linux-x86-64', lines: ['x'] }),
+      })
+      expect(res.status).toBe(401)
+    })
+
+    it('GET /api/build-logs/:domain stays public (read-only)', async () => {
+      const res = await fetch(`${baseUrl}/api/build-logs/curl.se`)
+      expect(res.status).toBe(200)
+    })
+  })
 })

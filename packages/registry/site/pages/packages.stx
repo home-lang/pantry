@@ -140,6 +140,7 @@
       var queued = {}
       var statusFilter = 'all'
       var openLog = null   // domain whose log drawer is open
+      var IS_LOGGED_IN = false   // gates the rebuild button; set from /auth/me
       var logSig = ''      // last-painted log signature (skip redundant repaints)
 
       var GROUP_ORDER = { building: 0, failed: 1, queued: 2, incomplete: 3, unbuilt: 4, ok: 5 }
@@ -226,7 +227,7 @@
           + '<td class="font-mono" style="padding:0.55rem;color:var(--fg-subtle)">' + esc(p.latestVersion || '—') + '</td>'
           + cells
           + '<td style="padding:0.55rem;color:var(--fg-subtle)">' + relTime(p.lastBuilt) + '</td>'
-          + '<td style="padding:0.55rem 0.75rem;text-align:right;white-space:nowrap"><button class="rebuild-btn" data-domain="' + esc(p.domain) + '" onclick="event.stopPropagation()"' + btnDis + '>' + btnLabel + '</button></td>'
+          + '<td style="padding:0.55rem 0.75rem;text-align:right;white-space:nowrap">' + (IS_LOGGED_IN ? ('<button class="rebuild-btn" data-domain="' + esc(p.domain) + '" onclick="event.stopPropagation()"' + btnDis + '>' + btnLabel + '</button>') : '') + '</td>'
           + '</tr>'
       }
 
@@ -364,8 +365,9 @@
             ev.stopPropagation()
             var domain = this.getAttribute('data-domain'), btn = this
             btn.disabled = true; btn.textContent = '…'
-            fetch('/api/rebuild', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain: domain }) })
-              .then(function (r) { return r.json() }).then(function () { queued[domain] = true; btn.textContent = 'queued' })
+            fetch('/api/rebuild', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain: domain }) })
+              .then(function (r) { if (r.status === 401) { btn.disabled = false; btn.textContent = 'login'; return null } return r.json() })
+              .then(function (d) { if (d) { queued[domain] = true; btn.textContent = 'queued' } })
               .catch(function () { btn.disabled = false; btn.textContent = 'retry' })
           }
         }
@@ -408,6 +410,13 @@
           this.className = 'chip chip-on'; render()
         }
       }
+
+      // Only signed-in users get rebuild buttons. Check the session, then re-render
+      // so the buttons appear (rebuilds are gated server-side regardless).
+      fetch('/auth/me', { credentials: 'include' })
+        .then(function (r) { return r.ok ? r.json() : null })
+        .then(function (d) { if (d && d.user) { IS_LOGGED_IN = true; scheduleRender() } })
+        .catch(function () {})
 
       refreshAll()
       setInterval(function () { loadPackages().then(renderSummary) }, 60000) // coverage refresh
