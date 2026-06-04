@@ -559,6 +559,21 @@ export function generateBuildScript(
       ? recipe.build
       : undefined
 
+  // Detect Go builds. Go recipes pass the env LDFLAGS straight into `go build
+  // -ldflags="$LDFLAGS"`, where they're interpreted by the Go *internal* linker
+  // (`go tool link`), NOT the C/external linker. So injecting C-linker flags like
+  // -Wl,-rpath,<dir> into LDFLAGS (see darwin rpath block below) makes go tool link
+  // abort with "flag provided but not defined: -Wl,-rpath,...". Skip that injection
+  // for Go builds. Signal: go.dev in (build)dependencies, or a `go build`/`go install`
+  // in the build script.
+  const rawScript = typeof recipe.build === 'string'
+    ? recipe.build
+    : Array.isArray(recipe.build)
+      ? recipe.build.join('\n')
+      : (build?.script ? (Array.isArray(build.script) ? build.script.join('\n') : String(build.script)) : '')
+  const hasGoDep = !!(recipe.buildDependencies?.['go.dev'] || recipe.dependencies?.['go.dev'])
+  const usesGo = hasGoDep || /\bgo\s+(?:build|install)\b/.test(rawScript)
+
   const sections: string[] = []
 
   // Shebang and safety
@@ -1029,7 +1044,7 @@ else if (osName === 'darwin') {
     if (depLibPaths.length > 0) {
       sections.push(`export LIBRARY_PATH="${depLibPaths.join(':')}:\${LIBRARY_PATH:-}"`)
       sections.push(`export LD_LIBRARY_PATH="${depLibPaths.join(':')}:\${LD_LIBRARY_PATH:-}"`)
-      if (osName === 'darwin') {
+      if (osName === 'darwin' && !usesGo) {
         // Dep dylibs ship @rpath-style install names (e.g. @rpath/libxslt.1.dylib).
         // configure's compile-and-RUN probes (PostgreSQL's "checking test program")
         // must resolve those, but DYLD_* can't help: SIP strips DYLD_* from the
@@ -1040,6 +1055,12 @@ else if (osName === 'darwin') {
         // CMAKE_INSTALL_RPATH whose duplicates install_name_tool rejects.
         // Deduplicate: depLibPaths can repeat /usr/lib, /opt/homebrew/lib, etc. across
         // deps, and modern dyld (macOS 15+) aborts on a duplicate LC_RPATH at runtime.
+        //
+        // SKIP for Go builds (usesGo): Go recipes feed LDFLAGS into
+        // `go build -ldflags="$LDFLAGS"`, where it reaches the Go internal linker
+        // (`go tool link`), which rejects C-linker flags like -Wl,-rpath,<dir> with
+        // "flag provided but not defined". Go produces static binaries that don't need
+        // dep-dylib rpaths anyway, and any cgo external-link flags go via CGO_LDFLAGS.
         const rpathFlags = [...new Set(depLibPaths)].map(p => `-Wl,-rpath,${p}`).join(' ')
         sections.push(`export LDFLAGS="${rpathFlags} \${LDFLAGS:-}"`)
       }
