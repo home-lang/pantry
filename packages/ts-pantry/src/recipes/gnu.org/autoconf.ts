@@ -75,7 +75,13 @@ export const recipe: Recipe = {
       },
 
       {
-        run: 'perl -pi -e "s|$PREFIX|\\$PREFIX|" share/autoconf/autom4te.cfg',
+        // Same interpolation trap as the bin/* rewrite above: this turns the baked
+        // build prefix in autom4te.cfg into a literal `$PREFIX` (expanded at runtime
+        // from $ENV{PREFIX}). Double-quoted shell made perl interpolate `$PREFIX` at
+        // BUILD time (undefined → empty), so the cfg's prepend-include became
+        // `/share/autoconf` and autom4te couldn't find m4sugar/m4sugar.m4. Single-quoted
+        // perl emits a literal `$PREFIX`.
+        run: 'perl -pi -e \'s|\'"$PREFIX"\'|\\$PREFIX|g\' share/autoconf/autom4te.cfg',
         'working-directory': '{{prefix}}',
       },
     ],
