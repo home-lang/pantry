@@ -26,17 +26,25 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'if ! command -v glibtool &>/dev/null; then',
-      '  BREW_LIBTOOL="$(brew --prefix libtool 2>/dev/null)/bin"',
-      '  if [ -f "$BREW_LIBTOOL/glibtool" ]; then',
-      '    export PATH="$BREW_LIBTOOL:$PATH"',
-      '  fi',
-      'fi',
-      '# Ensure aclocal can find libtool M4 macros (needed for autoreconf)',
-      'BREW_LT_SHARE="$(brew --prefix libtool 2>/dev/null)/share/aclocal"',
-      'if [ -d "$BREW_LT_SHARE" ]; then',
-      '  export ACLOCAL_PATH="${BREW_LT_SHARE}${ACLOCAL_PATH:+:$ACLOCAL_PATH}"',
-      'fi',
+      // macOS only: point autoreconf/aclocal at Homebrew's glibtool + M4 macros.
+      // On linux `brew` doesn't exist and the `$(brew …)` substitution exits 127,
+      // which under `set -e` aborts the whole script before ./configure — so this
+      // block must be guarded to darwin (linux uses the system libtool).
+      {
+        run: [
+          'if ! command -v glibtool &>/dev/null; then',
+          '  BREW_LIBTOOL="$(brew --prefix libtool 2>/dev/null)/bin"',
+          '  if [ -f "$BREW_LIBTOOL/glibtool" ]; then',
+          '    export PATH="$BREW_LIBTOOL:$PATH"',
+          '  fi',
+          'fi',
+          'BREW_LT_SHARE="$(brew --prefix libtool 2>/dev/null)/share/aclocal"',
+          'if [ -d "$BREW_LT_SHARE" ]; then',
+          '  export ACLOCAL_PATH="${BREW_LT_SHARE}${ACLOCAL_PATH:+:$ACLOCAL_PATH}"',
+          'fi',
+        ],
+        if: 'darwin',
+      },
       // Only needed for <1.3.1, where common/utils.h redefines enumerators
       // (error: redefinition of enumerator 'PLIST_FORMAT_XML'/'PLIST_FORMAT_BINARY').
       // Fixed upstream in 1.3.1; applying the sed on newer trees corrupts the source.
