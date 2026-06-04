@@ -9,11 +9,7 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'cmake.org': "*",
-    // luv 1.45's CMake version-detection regex only understands Lua's
-    // pre-5.5 lua.h layout (string LUA_VERSION_MAJOR/MINOR). Lua 5.5
-    // switched to numeric *_N macros, so the regex grabs the whole
-    // #define block and corrupts the lib/lua/<ver> install dir. Pin 5.4.
-    'lua.org': "^5.4",
+    'lua.org': "*",
     'luajit.org': "*",
     linux: {
       'curl.se': "*",
@@ -29,6 +25,15 @@ export const recipe: Recipe = {
         run: "curl -L \"$lua_compact\" | tar -xz --strip-component=1",
         'working-directory': "deps/lua-compat-5.3",
       },
+      // luv 1.45's CMake parses the system lua.h to derive
+      // LUA_VERSION_MAJOR/MINOR, which feed the lib/lua/<maj>.<min>
+      // module install dir. Lua 5.5 changed lua.h from string
+      // LUA_VERSION_MAJOR/MINOR to numeric *_N macros, so the regex
+      // misses and leaves the whole #define block in those vars,
+      // corrupting the install path (cmake --install fails creating
+      // lib/lua/<garbage>). Force the vars to the resolved lua version
+      // right after the detection block so the path is always correct.
+      "perl -0pi -e 's/(\\nif \\(BUILD_MODULE\\))/\\nset(LUA_VERSION_MAJOR {{deps.lua.org.version.major}})\\nset(LUA_VERSION_MINOR {{deps.lua.org.version.minor}})\\1/' CMakeLists.txt",
       "cmake -S . -B buildjit $CMAKE_ARGS -DWITH_LUA_ENGINE=LuaJIT -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=ON",
       "cmake --build buildjit",
       "cmake --install buildjit",
