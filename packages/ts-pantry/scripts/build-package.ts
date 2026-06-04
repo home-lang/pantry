@@ -1072,7 +1072,20 @@ catch {
 
       // Resolve version using YAML constraint (e.g., "python.org: ~3.11" → pick 3.11.x)
       const constraint = parseDepConstraint(dep)
-      const availableVersions = Object.keys(metadata.versions || {})
+      let availableVersions = Object.keys(metadata.versions || {})
+
+      // Ghost-version guard: a builder on stale code can re-publish a version we've
+      // YANKED from the catalog (e.g. the autoconf 2.73 alpha) back into S3, where the
+      // resolver would otherwise pick it as "latest" and re-break consumers. Restrict to
+      // versions the catalog still declares — but only when we have catalog data for this
+      // dep (so deps absent from our local catalog still resolve straight from S3).
+      const _depCatalog = lookupPantryPackage(domain)
+      if (_depCatalog?.versions?.length) {
+        const allowed = new Set<string>(_depCatalog.versions as string[])
+        const filtered = availableVersions.filter(v => allowed.has(v))
+        if (filtered.length)
+          availableVersions = filtered
+      }
 
       // Helper: download and register a dep version
       const downloadAndRegisterDep = async (depVersion: string, info: any): Promise<boolean> => {
