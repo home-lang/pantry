@@ -15,6 +15,7 @@ export const recipe: Recipe = {
     'mesonbuild.com': "^0.63",
     'ninja-build.org': 1,
     'gnome.org/libxml2': 2,
+    'gnome.org/glib': 2,
   },
   distributable: {
     url: "https://gitlab.freedesktop.org/xdg/shared-mime-info/-/archive/{{version.raw}}/shared-mime-info-{{version.raw}}.tar.bz2",
