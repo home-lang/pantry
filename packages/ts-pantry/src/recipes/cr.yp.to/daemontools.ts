@@ -32,12 +32,12 @@ export const recipe: Recipe = {
   },
   distributable: {
     url: "https://cr.yp.to/daemontools/daemontools-{{version.marketing}}.tar.gz",
-    stripComponents: 1,
+    stripComponents: 2,
   },
   build: {
     script: [
       {
-        run: "curl -L \"$PATCH\"| patch -p1",
+        run: "curl -L \"$PATCH\"| patch -p2",
         if: "linux",
         'working-directory': "$SRCROOT",
       },
