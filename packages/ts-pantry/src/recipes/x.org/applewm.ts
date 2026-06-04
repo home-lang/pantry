@@ -10,13 +10,21 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'freedesktop.org/pkg-config': "*",
+    'x.org/util-macros': "*",
+    'gnu.org/autoconf': "*",
+    'gnu.org/automake': "*",
+    'gnu.org/libtool': "*",
   },
+  // www.x.org/releases tarballs were retired (404); the freedesktop GitLab
+  // mirror ships the raw sources (no pre-built configure), so bootstrap with
+  // autogen.sh. libAppleWM has no meson.build, so autotools is required.
   distributable: {
-    url: "https://www.x.org/releases/individual/lib/libAppleWM-{{version}}.tar.bz2",
+    url: "https://gitlab.freedesktop.org/xorg/lib/libapplewm/-/archive/libAppleWM-{{version}}/libapplewm-libAppleWM-{{version}}.tar.gz",
     stripComponents: 1,
   },
   build: {
     script: [
+      "NOCONFIGURE=1 ./autogen.sh",
       {
         run: "sed -i.bak \"s|-F|-iframeworkwithsysroot|g\" src/Makefile.in\nrm -f src/Makefile.in.bak\n",
         if: "1.4.1",
