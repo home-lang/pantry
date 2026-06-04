@@ -15,12 +15,11 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      {
-        run: 'sed -i -f $PROP diff-so-fancy',
-      },
       'mkdir -p {{prefix}}/bin',
-      'install -Dm755 diff-so-fancy {{prefix}}/bin',
-      'cp -a lib {{prefix}}',
+      // diff-so-fancy locates its lib/ via dirname(abs_path($0))."/lib",
+      // so the script and lib/ must stay siblings.
+      'install -Dm755 diff-so-fancy {{prefix}}/bin/diff-so-fancy',
+      'cp -a lib {{prefix}}/bin/lib',
     ],
   },
 }
