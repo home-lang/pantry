@@ -23,7 +23,11 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
+        // without this, scons just throws away our painstakingly crafted environment
         run: 'sed -i -f $PROP SConstruct',
+        prop: {
+          content: 's/env = Environment(variables=opts,/env = Environment(ENV = os.environ, variables=opts,/',
+        },
       },
       'scons $ARGS',
       'scons install',
