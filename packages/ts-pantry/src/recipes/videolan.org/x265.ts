@@ -15,6 +15,11 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    // The x265 tarball ships sibling 8bit/10bit/12bit/source dirs; the whole
+    // build is driven from 8bit/ (so `../source`, `../10bit`, `../12bit`
+    // resolve). This base working-directory was dropped in the port, leaving
+    // cmake looking for a non-existent top-level `source` dir.
+    workingDirectory: '8bit',
     script: [
       {
         run: "cmake ../source -DENABLE_HDR10_PLUS=ON $ARGS_DEFAULT $HIGHBITARGS\nmake\nmv libx265.a ../8bit/libx265_main10.a\n",
