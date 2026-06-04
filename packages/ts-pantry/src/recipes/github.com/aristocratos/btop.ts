@@ -28,12 +28,22 @@ export const recipe: Recipe = {
         if: 'linux/x86-64',
         'working-directory': 'src/linux/intel_gpu_top',
       },
+      // btop 1.4.x uses C++23 std::ranges::to, which needs libstdc++ 14.
+      // The prebuilt gnu.org/gcc@14 toolchain isn't in our S3 registry yet, so
+      // the recipe's `gnu.org/gcc@14` build-dep silently falls back to the
+      // system g++ 13 (no std::ranges::to). Ensure a 14-series g++ is present
+      // and pin CXX/CC to it so the build doesn't regress to 13.
+      {
+        run: 'command -v g++-14 >/dev/null 2>&1 || { sudo apt-get update -y >/dev/null 2>&1 || true; sudo DEBIAN_FRONTEND=noninteractive apt-get install -y g++-14 >/dev/null 2>&1 || true; }',
+        if: 'linux/x86-64',
+      },
       'make',
       'make install PREFIX={{prefix}}',
     ],
     env: {
       linux: {
-        CXX: 'g++',
+        CXX: 'g++-14',
+        CC: 'gcc-14',
         LD: 'clang++',
         CXXFLAGS: '$CXXFLAGS -ffat-lto-objects',
         LDFLAGS: '$LDFLAGS -Wl,-lstdc++,-ldl -fno-lto',
