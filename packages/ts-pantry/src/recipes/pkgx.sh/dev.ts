@@ -15,11 +15,18 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      "echo 'export default \{{version}}\' > ./src/app-version.ts",
+      "echo 'export default \"{{version}}\"' > ./src/app-version.ts",
       "mkdir -p {{prefix}}/bin {{prefix}}/share/pkgx/dev",
       "cp -r ./app.ts src deno.json deno.lock {{prefix}}/share/pkgx/dev",
       {
+        // The launcher shebang was an inline pkgx prop ($PROP) that was lost in
+        // the port, so `cp $PROP` had nothing to copy. Restore it.
         run: "cp $PROP {{prefix}}/bin/dev\nchmod +x {{prefix}}/bin/dev",
+        prop: [
+          '#!/bin/sh',
+          'd="$(cd "$(dirname $0)"/.. && pwd)"',
+          'exec "$d/share/pkgx/dev/app.ts" "$@"',
+        ].join('\n'),
       },
     ],
   },
