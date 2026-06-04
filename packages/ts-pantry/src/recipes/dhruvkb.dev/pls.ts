@@ -14,7 +14,10 @@ export const recipe: Recipe = {
     'rust-lang.org/cargo': '*',
   },
   distributable: {
-    url: 'https://github.com/pls-rs/pls/archive/refs/tags/v0.0.1-beta.3.tar.gz',
+    // beta.3's Cargo.lock pins a git dependency (dhruvkb/rust-users.git at a
+    // dead revision) whose repo no longer exists (404), so cargo cannot fetch
+    // it. beta.13 dropped that git dependency and builds cleanly.
+    url: 'https://github.com/pls-rs/pls/archive/refs/tags/v0.0.1-beta.13.tar.gz',
     stripComponents: 1,
   },
   build: {
@@ -24,7 +27,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      'test "$(pls --version 2>&1 || true)" = "pls 0.0.1-beta.3"',
+      'test "$(pls --version 2>&1 || true)" = "pls 0.0.1-beta.13"',
     ],
   },
 }
