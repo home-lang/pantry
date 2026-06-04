@@ -26,6 +26,10 @@ export const recipe: Recipe = {
         '--disable-dependency-tracking',
         '--with-boost={{deps.boost.org.prefix}}',
       ],
+      // source-highlight 3.x uses removed-in-C++17 dynamic exception
+      // specifications (throw()); build against the older standard that still
+      // permits them.
+      CXXFLAGS: '-std=gnu++14',
     },
   },
 }
