@@ -27,12 +27,11 @@ export const recipe: Recipe = {
     ],
   },
   test: {
-    // pip installs into {{prefix}}/lib/python{X.Y}/site-packages; point Python at it
-    // so the example can `import pycparser`.
-    env: {
-      PYTHONPATH: '{{prefix}}/lib/python{{deps.python.org.version.marketing}}/site-packages',
-    },
     script: [
+      // pip installs pycparser into {{prefix}}/lib/pythonX.Y/site-packages; the test
+      // runner doesn't set PYTHONPATH, so discover the dir and export it inline before
+      // running the example (which does `import pycparser`).
+      'export PYTHONPATH="$(dirname "$(find {{prefix}}/lib -name "c_lexer.py" -path "*pycparser*" | head -1)")/.."',
       'python {{prefix}}/pkgshare/examples/c-to-c.py {{prefix}}/pkgshare/examples/c_files/basic.c',
     ],
   },
