@@ -34,6 +34,10 @@ on:
         required: false
         type: boolean
         default: false
+      stripe:
+        description: 'Build only an even slice of the needs-build set, as "i/n" (e.g. "0/8"). Lets you fan out N parallel runners per platform without computing package lists. Empty = whole set.'
+        required: false
+        type: string
 
 env:
   # Object storage provider. Set the repo variable STORAGE_PROVIDER=hetzner (or
@@ -126,6 +130,10 @@ jobs:
           if [ -n "$PACKAGES" ]; then
             PACKAGES="${PACKAGES// /,}"
             ARGS="$ARGS -p $PACKAGES"
+          fi
+          STRIPE=$(echo "${{ github.event.inputs.stripe }}" | tr -cd '0-9/')
+          if [ -n "$STRIPE" ]; then
+            ARGS="$ARGS --stripe $STRIPE"
           fi
 
           NEEDS_BUILD=$(bun scripts/build-all-packages.ts $ARGS --needs-build | tail -1)
@@ -325,6 +333,11 @@ jobs:
             if [ -n "$PACKAGES" ]; then
               PACKAGES="${PACKAGES// /,}"
               ARGS="$ARGS -p $PACKAGES"
+            fi
+            # Even slice of the needs-build set for parallel fan-out (e.g. "0/8")
+            STRIPE=$(echo "${{ github.event.inputs.stripe }}" | tr -cd '0-9/')
+            if [ -n "$STRIPE" ]; then
+              ARGS="$ARGS --stripe $STRIPE"
             fi
           fi
 
