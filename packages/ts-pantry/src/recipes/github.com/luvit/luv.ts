@@ -9,7 +9,11 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'cmake.org': "*",
-    'lua.org': "*",
+    // luv 1.45's CMake version-detection regex only understands Lua's
+    // pre-5.5 lua.h layout (string LUA_VERSION_MAJOR/MINOR). Lua 5.5
+    // switched to numeric *_N macros, so the regex grabs the whole
+    // #define block and corrupts the lib/lua/<ver> install dir. Pin 5.4.
+    'lua.org': "^5.4",
     'luajit.org': "*",
     linux: {
       'curl.se': "*",
