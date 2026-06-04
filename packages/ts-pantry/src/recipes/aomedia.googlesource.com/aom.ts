@@ -17,10 +17,16 @@ export const recipe: Recipe = {
     url: 'https://aomedia.googlesource.com/aom/+archive/v{{version}}.tar.gz',
   },
   build: {
-    'working-directory': 'build',
     script: [
+      // The googlesource +archive tarball extracts flat (CMakeLists.txt at the
+      // root). Build out-of-tree from a dedicated dir we create ourselves —
+      // relying on a non-existent `working-directory` left cmake running from
+      // the root with `..` pointing above the source ("does not appear to
+      // contain CMakeLists.txt"). pkgx uses an `out/` subdir for the same reason.
+      'mkdir -p out',
+      'cd out',
       'cmake .. $ARGS',
-      'make',
+      'make --jobs {{ hw.concurrency }}',
       'make install',
     ],
     env: {
