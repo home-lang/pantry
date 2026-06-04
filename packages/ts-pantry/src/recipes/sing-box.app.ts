@@ -19,7 +19,23 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'go build $GO_ARGS -ldflags="$LDFLAGS" ./cmd/sing-box',
+      'go build $GO_ARGS -tags "with_gvisor,with_quic,with_dhcp,with_wireguard,with_utls,with_clash_api" -ldflags="$LDFLAGS" ./cmd/sing-box',
     ],
+    env: {
+      GO_ARGS: [
+        '-trimpath',
+        '-o={{prefix}}/bin/sing-box',
+      ],
+      LDFLAGS: [
+        '-s',
+        '-w',
+        '-X github.com/sagernet/sing-box/constant.Version={{version}}',
+      ],
+      linux: {
+        LDFLAGS: [
+          '-buildmode=pie',
+        ],
+      },
+    },
   },
 }
