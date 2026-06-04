@@ -23,7 +23,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: "sed -i 's/^const Version.*/const Version = \{{version.tag}}\/' internal/version/const.go\ngo build -v -ldflags=\"${GO_LDFLAGS_BINARY}\" -trimpath -buildvcs=false -o \{{ prefix }}\/bin/glauth",
+        run: "sed -i 's/^const Version.*/const Version = \"{{version.tag}}\"/' internal/version/const.go\ngo build -v -ldflags=\"${GO_LDFLAGS_BINARY}\" -trimpath -buildvcs=false -o \{{ prefix }}\/bin/glauth",
         'working-directory': "v2",
       },
       {
