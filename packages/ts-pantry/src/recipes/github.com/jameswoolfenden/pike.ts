@@ -11,14 +11,15 @@ export const recipe: Recipe = {
     'git-scm.org': '*',
   },
   distributable: {
+    // Pin the git checkout to the release tag. Without it the clone builds
+    // from default-branch HEAD instead of the requested version. There is no
+    // `set-version.sh` in the tree — the version is injected purely via the
+    // `-X .../src.Version=v{{version}}` ldflag (matching upstream goreleaser).
     url: 'git+https://github.com/JamesWoolfenden/pike',
-  },
+    ref: 'v{{version}}',
+  } as Recipe['distributable'] & { ref: string },
   build: {
     script: [
-      {
-        run: './set-version.sh',
-        if: '<0.4.7',
-      },
       'go mod download',
       'go build -v -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/pike main.go',
     ],
