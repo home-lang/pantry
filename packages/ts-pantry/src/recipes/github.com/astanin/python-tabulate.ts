@@ -14,10 +14,12 @@ export const recipe: Recipe = {
   },
   distributable: {
     url: 'git+https://github.com/astanin/python-tabulate.git',
+    ref: '{{version.tag}}',
   },
   build: {
     script: [
-      'rm -r props',
+      // poetry hates a stray props/ dir; -rf so it's a no-op when absent
+      'rm -rf props',
       'bkpyvenv stage {{prefix}} {{version}}',
       '${{prefix}}/venv/bin/pip install .',
       'bkpyvenv seal {{prefix}} tabulate',
