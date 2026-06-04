@@ -71,7 +71,7 @@ export const recipe: Recipe = {
         "--wrap-mode=nofallback",
         "--buildtype=release",
         "-Dtests=false",
-        "-Dintrospection=enabled",
+        "-Dintrospection=disabled",
       ],
     },
   },
