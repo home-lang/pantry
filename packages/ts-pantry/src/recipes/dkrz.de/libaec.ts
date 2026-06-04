@@ -24,10 +24,11 @@ export const recipe: Recipe = {
     ],
     env: {
       ARGS: [
-        "--prefix=\"{{prefix}}\"",
+        "--prefix={{prefix}}",
       ],
       CMAKE_ARGS: [
-        "-DCMAKE_INSTALL_PREFIX=\"{{prefix}}\"",
+        "-DCMAKE_INSTALL_PREFIX={{prefix}}",
+        "-DBUILD_SHARED_LIBS=ON",
       ],
     },
   },
