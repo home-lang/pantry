@@ -12,11 +12,9 @@ export const recipe: Recipe = {
     'facebook.com/zstd': 1,
   },
   buildDependencies: {
-    'gnome.org/gobject-introspection': '~1.86',
     'mesonbuild.com': '~1.9',
     'ninja-build.org': '*',
     'python.org': '~3.11',
-    'gnome.org/vala': '*',
   },
   distributable: {
     url: 'https://github.com/hughsie/libxmlb/releases/download/{{version.tag}}/libxmlb-{{version.tag}}.tar.xz',
@@ -24,7 +22,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'meson setup build --prefix={{prefix}} -Dgtkdoc=false',
+      'meson setup build --prefix={{prefix}} -Dgtkdoc=false -Dintrospection=false -Dtests=false',
       'meson compile -C build',
       'meson install -C build',
     ],
