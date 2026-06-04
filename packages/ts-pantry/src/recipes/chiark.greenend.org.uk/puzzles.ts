@@ -26,9 +26,28 @@ export const recipe: Recipe = {
       "cmake --build . -j {{ hw.concurrency }}",
       "cmake --install .",
       {
-        run: "install -Dm755 $PROP puzzles",
+        // On darwin the cmake build only produces Puzzles.app; install a small
+        // `puzzles` launcher wrapper. BSD install has no -D flag, so create the
+        // bin dir first and use plain `install -m755`.
+        run: "mkdir -p {{prefix}}/bin\ninstall -m755 $PROP {{prefix}}/bin/puzzles",
         if: "darwin",
-        'working-directory': "${{prefix}}/bin",
+        prop: {
+          content: [
+            "#!/bin/sh",
+            "",
+            "# add --help and --version flags",
+            "if [ \"$1\" = \"--help\" ]; then",
+            "  echo \"This is a simple wrapper to start the puzzles application.\"",
+            "  exit 0",
+            "elif [ \"$1\" = \"--version\" ]; then",
+            "  echo \"puzzles {{version}}-pkgx\"",
+            "  exit 0",
+            "fi",
+            "",
+            "cd \"$(dirname \"$(readlink -f \"$0\")\")/..\"",
+            "open Puzzles.app",
+          ],
+        },
       },
     ],
     env: {
