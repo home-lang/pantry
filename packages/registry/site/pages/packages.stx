@@ -53,8 +53,8 @@
             <th style="text-align: center; padding: 0.6rem 0.4rem; font-weight: 500;" title="darwin-x86-64">🍎&nbsp;x64</th>
             <th style="text-align: center; padding: 0.6rem 0.4rem; font-weight: 500;" title="linux-x86-64">🐧&nbsp;x64</th>
             <th style="text-align: center; padding: 0.6rem 0.4rem; font-weight: 500;" title="linux-arm64">🐧&nbsp;arm</th>
-            <th style="text-align: left; padding: 0.6rem 0.5rem; font-weight: 500;">last built</th>
-            <th style="text-align: right; padding: 0.6rem 0.75rem; font-weight: 500;"></th>
+            <th class="col-lastbuilt" style="padding: 0.6rem 0.5rem; font-weight: 500;">last built</th>
+            <th class="col-action" style="text-align: right; padding: 0.6rem 0.75rem; font-weight: 500;"></th>
           </tr>
         </thead>
         <tbody id="rows">
@@ -99,6 +99,12 @@
     .rebuild-btn { font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 0.4rem; border: 1px solid var(--border); background: var(--bg-subtle); color: var(--fg-muted); cursor: pointer; }
     .rebuild-btn:hover { border-color: var(--accent); color: var(--accent); }
     .rebuild-btn:disabled { opacity: 0.5; cursor: default; }
+    /* The action (rebuild) column only exists for signed-in users. Logged out it's
+       removed entirely and "last built" becomes the right-most, right-aligned column. */
+    .col-action { display: none; }
+    .col-lastbuilt { text-align: right; }
+    body.auth-in .col-action { display: table-cell; }
+    body.auth-in .col-lastbuilt { text-align: left; }
     .chip { font-size: 0.78rem; padding: 0.3rem 0.7rem; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-subtle); color: var(--fg-muted); cursor: pointer; }
     .chip:hover { border-color: var(--accent); color: var(--accent); }
     .chip-on { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -226,8 +232,8 @@
           + '<td style="padding:0.55rem">' + badge(st) + '</td>'
           + '<td class="font-mono" style="padding:0.55rem;color:var(--fg-subtle)">' + esc(p.latestVersion || '—') + '</td>'
           + cells
-          + '<td style="padding:0.55rem;color:var(--fg-subtle)">' + relTime(p.lastBuilt) + '</td>'
-          + '<td style="padding:0.55rem 0.75rem;text-align:right;white-space:nowrap">' + (IS_LOGGED_IN ? ('<button class="rebuild-btn" data-domain="' + esc(p.domain) + '" onclick="event.stopPropagation()"' + btnDis + '>' + btnLabel + '</button>') : '') + '</td>'
+          + '<td class="col-lastbuilt" style="padding:0.55rem;color:var(--fg-subtle)">' + relTime(p.lastBuilt) + '</td>'
+          + '<td class="col-action" style="padding:0.55rem 0.75rem;text-align:right;white-space:nowrap"><button class="rebuild-btn" data-domain="' + esc(p.domain) + '" onclick="event.stopPropagation()"' + btnDis + '>' + btnLabel + '</button></td>'
           + '</tr>'
       }
 
@@ -411,11 +417,11 @@
         }
       }
 
-      // Only signed-in users get rebuild buttons. Check the session, then re-render
-      // so the buttons appear (rebuilds are gated server-side regardless).
+      // Only signed-in users get the rebuild column. CSS (.col-action / body.auth-in)
+      // shows/hides it; rebuilds are gated server-side regardless of the UI.
       fetch('/auth/me', { credentials: 'include' })
         .then(function (r) { return r.ok ? r.json() : null })
-        .then(function (d) { if (d && d.user) { IS_LOGGED_IN = true; scheduleRender() } })
+        .then(function (d) { if (d && d.user) { IS_LOGGED_IN = true; document.body.classList.add('auth-in') } })
         .catch(function () {})
 
       refreshAll()

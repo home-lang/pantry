@@ -77,8 +77,11 @@ const RECENT_LIMIT = 500
 // worker (killed mid-build, OOM, crash) and pruned. Active builds stream log
 // lines via recordLogs(), which refreshes the entry's ts — so a genuinely long
 // compile stays "building" as long as it keeps producing output. Without that
-// heartbeat a stale 1h window let dozens of zombie entries inflate "Building now".
-const BUILDING_TTL_MS = 20 * 60 * 1000
+// heartbeat a stale window lets zombie entries inflate "Building now". The sweep
+// boxes are restarted often (provisioner churn) which SIGKILLs in-flight builds
+// with no "failed" event, so the heartbeat backstop must be tight — 10 min keeps
+// the count close to the ~15-20 genuinely-active workers.
+const BUILDING_TTL_MS = 10 * 60 * 1000
 const COVERAGE_TTL_MS = 15 * 60 * 1000
 
 interface PersistedState {
