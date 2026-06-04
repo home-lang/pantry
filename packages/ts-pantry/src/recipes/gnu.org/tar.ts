@@ -1,6 +1,7 @@
 import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: '../props/gnu.org/tar',
   domain: 'gnu.org/tar',
   name: 'tar',
   programs: [
@@ -24,5 +25,10 @@ export const recipe: Recipe = {
       './configure --prefix={{ prefix }} --disable-debug',
       'make --jobs {{ hw.concurrency }} install',
     ],
+    // GNU tar's configure refuses to run as root (the build box builds as root)
+    // unless FORCE_UNSAFE_CONFIGURE is set.
+    env: {
+      FORCE_UNSAFE_CONFIGURE: '1',
+    },
   },
 }

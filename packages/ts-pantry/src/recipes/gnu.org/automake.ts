@@ -1,6 +1,7 @@
 import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: '../props/gnu.org/automake',
   domain: "gnu.org/automake",
   name: "automake",
   programs: [
