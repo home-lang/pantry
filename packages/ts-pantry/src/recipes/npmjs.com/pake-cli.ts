@@ -27,7 +27,7 @@ export const recipe: Recipe = {
     },
   },
   distributable: {
-    url: 'https://github.com/tw93/Pake/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/tw93/Pake/archive/refs/tags/V{{ version }}.tar.gz',
     stripComponents: 1,
   },
   build: {
