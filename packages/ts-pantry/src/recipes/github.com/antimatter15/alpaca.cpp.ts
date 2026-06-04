@@ -16,11 +16,13 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'mkdir -p {{prefix}}/bin {{prefix}}/tbin {{prefix}}/share',
+      // The pkgx `props/` launcher scripts (alpaca.cpp, alpaca.cpp-fetch-model)
+      // no longer exist upstream and were never carried into this port, so the
+      // `mv props/...` steps aborted the build. Install the built `chat` binary
+      // directly as the `alpaca.cpp` program instead.
+      'mkdir -p {{prefix}}/bin',
       'make chat',
-      'mv chat {{prefix}}/tbin/alpaca.cpp',
-      'mv props/alpaca.cpp {{prefix}}/bin',
-      'mv props/alpaca.cpp-fetch-model {{prefix}}/tbin',
+      'mv chat {{prefix}}/bin/alpaca.cpp',
     ],
   },
 }
