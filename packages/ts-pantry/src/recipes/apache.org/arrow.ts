@@ -47,7 +47,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'cmake -B $BUILD_DIR $CMAKE_ARGS',
+      'cmake -S cpp -B $BUILD_DIR $CMAKE_ARGS',
       'cmake --build $BUILD_DIR',
       'cmake --install $BUILD_DIR',
       {
