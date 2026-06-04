@@ -8,7 +8,11 @@ export const recipe: Recipe = {
     'python.org': '~3.11',
   },
   distributable: {
-    url: 'https://github.com/eliben/pycparser/archive/release_v{{version}}.tar.gz',
+    // Upstream tags are `release_v{major}.{minor zero-padded to 2 digits}` with no
+    // patch component (e.g. 3.0.0 → release_v3.00, 2.23.0 → release_v2.23). The
+    // {{version}} catalog form (3.0.0) can't reproduce that zero-padding, so resolve
+    // the real tag via the GitHub API using {{version.tag}}.
+    url: 'https://github.com/eliben/pycparser/archive/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   build: {

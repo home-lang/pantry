@@ -322,6 +322,15 @@ catch { /* ignore parse errors — fall back to no transform */ }
           stripVariants.push(tagName.replace(/^v/, ''))
         }
 
+        // 3. If custom strip didn't change the tag, try stripping a leading
+        // `release[-_]v?` prefix (e.g. pycparser's `release_v3.00`, `release-1.2`).
+        // Without this such tags only match via an explicit YAML strip, which
+        // native TS recipes can't supply (they have no YAML content).
+        if (customStripped === tagName) {
+          const releaseStripped = tagName.replace(/^release[-_]v?/i, '')
+          if (releaseStripped !== tagName) stripVariants.push(releaseStripped)
+        }
+
         for (const stripped0 of stripVariants) {
           let stripped = stripped0
           // Apply transform if present (e.g. imagemagick: v.replace('-', '.'))
