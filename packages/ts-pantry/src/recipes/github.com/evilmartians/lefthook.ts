@@ -31,9 +31,9 @@ export const recipe: Recipe = {
       'mkdir -p {{ prefix }}/bin',
       'chmod +x lefthook',
       'if test {{hw.platform}} == "windows"; then',
-      '    mv lefthook bin/lefthook.exe',
+      '    mv lefthook {{ prefix }}/bin/lefthook.exe',
       'else',
-      '    mv lefthook bin/',
+      '    mv lefthook {{ prefix }}/bin/',
       'fi',
     ],
     env: {
