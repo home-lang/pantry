@@ -12,7 +12,9 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
-    'working-directory': 'build',
+    // The source ships a Bazel `BUILD` file; on case-insensitive (macOS)
+    // filesystems `mkdir build` collides with it, so use `_build`.
+    'working-directory': '_build',
     script: [
       'cmake .. $ARGS',
       'make --jobs {{ hw.concurrency }}',
