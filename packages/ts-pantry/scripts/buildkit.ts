@@ -972,12 +972,21 @@ else if (osName === 'linux' && archName === 'x86-64') {
   const depLibPaths: string[] = []
   const depIncludePaths: string[] = []
   const depPkgConfigPaths: string[] = []
+  const depAclocalPaths: string[] = []
+  // The autoconf dep's data dir (share/autoconf). autom4te/autoreconf locate their
+  // m4 macros (m4sugar/m4sugar.m4 etc.) relative to the binary via a fragile in-script
+  // relocation; pointing autom4te_perllibdir/AC_MACRODIR at the staged data dir bypasses
+  // that entirely (the script reads `$ENV{autom4te_perllibdir} || <fallback>`).
+  let autoconfDataDir = ''
 
   for (const [key, depPath] of Object.entries(depPaths)) {
     // Only use .prefix keys for PATH construction (skip .version, .version.major, etc.)
     if (!key.endsWith('.prefix')) continue
     depBinPaths.push(`${depPath}/bin`)
     depLibPaths.push(`${depPath}/lib`)
+    depAclocalPaths.push(`${depPath}/share/aclocal`)
+    if (key.includes('gnu.org/autoconf'))
+      autoconfDataDir = `${depPath}/share/autoconf`
     // A dep whose prefix fell back to a system root (/usr, /usr/local) would
     // contribute /usr/include to CPATH — which the comment below warns breaks
     // GCC header resolution: forcing /usr/include onto CPATH (≈ -I/usr/include)
@@ -1046,6 +1055,17 @@ else if (osName === 'darwin') {
         // into /opt/homebrew/lib/pkgconfig, so the static paths above miss them.
         sections.push('for _kp in /opt/homebrew/opt/*/lib/pkgconfig; do [ -d "$_kp" ] && PKG_CONFIG_PATH="$_kp:$PKG_CONFIG_PATH"; done; export PKG_CONFIG_PATH')
       }
+    }
+    if (depAclocalPaths.length > 0) {
+      // Let aclocal find dep-provided .m4 macros (libtool, pkg-config, gettext, …).
+      sections.push(`export ACLOCAL_PATH="${depAclocalPaths.join(':')}:\${ACLOCAL_PATH:-}"`)
+    }
+    if (autoconfDataDir) {
+      // autom4te reads `$ENV{autom4te_perllibdir} || <relocated fallback>` and
+      // `$ENV{AC_MACRODIR} || …`; setting these to the staged share/autoconf makes
+      // autoreconf find m4sugar/* regardless of the in-script relocation.
+      sections.push(`export autom4te_perllibdir="${autoconfDataDir}"`)
+      sections.push(`export AC_MACRODIR="${autoconfDataDir}"`)
     }
     if (osName === 'linux') {
       // On Linux, LD_LIBRARY_PATH is searched BEFORE default locations. S3 deps may
