@@ -15,7 +15,9 @@ export const recipe: Recipe = {
       'rm -rf ./gopass.tar.gz ./extracted ./bin',
       'curl -Lfo gopass.tar.gz "https://github.com/gopasspw/gopass/releases/download/v{{version}}/gopass-{{version}}-$PLATFORM.tar.gz"',
       'mkdir ./extracted && tar -xf gopass.tar.gz -C ./extracted',
-      'mkdir ./bin && mv ./extracted/gopass ./bin/ && chmod +x ./bin/*',
+      // Install into the package prefix — extracting to ./bin left the install dir
+      // empty ("Build produced no files").
+      'mkdir -p {{prefix}}/bin && mv ./extracted/gopass {{prefix}}/bin/ && chmod +x {{prefix}}/bin/gopass',
       'rm -rf ./gopass.tar.gz ./extracted',
     ],
     env: {
