@@ -4,6 +4,9 @@ export const recipe: Recipe = {
   domain: 'github.com/rrthomas/psutils',
   name: 'psutils',
   programs: [
+    'epsffit',
+    'extractres',
+    'includeres',
     'psbook',
     'psjoin',
     'psnup',
@@ -19,7 +22,7 @@ export const recipe: Recipe = {
     'python.org': '~3.12',
   },
   distributable: {
-    url: 'https://github.com/rrthomas/psutils/releases/download/v{{version}}/pspdfutils-{{version}}.tar.gz',
+    url: 'https://github.com/rrthomas/psutils/releases/download/v{{version}}/psutils-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
@@ -27,7 +30,7 @@ export const recipe: Recipe = {
       'rm -rf props',
       'bkpyvenv stage {{prefix}} {{version}}',
       '${{prefix}}/venv/bin/pip install .',
-      'bkpyvenv seal {{prefix}} psbook psjoin psnup psresize psselect pstops',
+      'bkpyvenv seal {{prefix}} epsffit extractres includeres psbook psjoin psnup psresize psselect pstops',
     ],
   },
   test: {
