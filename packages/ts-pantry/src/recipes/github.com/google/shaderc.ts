@@ -32,6 +32,9 @@ export const recipe: Recipe = {
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_INSTALL_PREFIX={{prefix}}",
         "-DSHADERC_SKIP_TESTS=ON",
+        // check-copyright is an ALL target that runs add_copyright.py over the
+        // tree and fails the build on any file lacking a header; skip it.
+        "-DSHADERC_SKIP_COPYRIGHT_CHECK=ON",
         "-DSKIP_GLSLANG_INSTALL=ON",
         "-DSKIP_SPIRV_TOOLS_INSTALL=ON",
         "-DSKIP_GOOGLETEST_INSTALL=ON",
