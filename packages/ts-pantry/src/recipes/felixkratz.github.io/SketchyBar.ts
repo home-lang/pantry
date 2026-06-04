@@ -3,6 +3,10 @@ import type { Recipe } from '../../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'felixkratz.github.io/SketchyBar',
   name: 'SketchyBar',
+  // macOS-only: a macOS menu-bar replacement built against Cocoa frameworks
+  // (its `make universal` target passes the clang `-target` flag) that depends
+  // on yabai, a macOS window manager.
+  platforms: ['darwin'],
   programs: [
     'sketchybar',
   ],
