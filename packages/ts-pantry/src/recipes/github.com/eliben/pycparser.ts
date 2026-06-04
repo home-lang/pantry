@@ -27,6 +27,11 @@ export const recipe: Recipe = {
     ],
   },
   test: {
+    // pip installs into {{prefix}}/lib/python{X.Y}/site-packages; point Python at it
+    // so the example can `import pycparser`.
+    env: {
+      PYTHONPATH: '{{prefix}}/lib/python{{deps.python.org.version.marketing}}/site-packages',
+    },
     script: [
       'python {{prefix}}/pkgshare/examples/c-to-c.py {{prefix}}/pkgshare/examples/c_files/basic.c',
     ],
