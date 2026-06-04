@@ -441,6 +441,15 @@ pub const ShellCommands = struct {
         const new_path = try std.mem.join(self.allocator, ":", path_components.items);
         defer self.allocator.free(new_path);
 
+        // QoL: one-line activation banner so `dev` visibly "locks in". stdout
+        // carries the eval'd shell code, so this must go to stderr.
+        {
+            const proj_name = std.fs.path.basename(project_root);
+            var banner: [512]u8 = undefined;
+            const line = std.fmt.bufPrint(&banner, "\x1b[36m⚡ pantry\x1b[0m env activated → \x1b[1m{s}\x1b[0m\n", .{proj_name}) catch "";
+            if (line.len > 0) io_helper.writeAllToFile(io_helper.File.stderr(), line) catch {};
+        }
+
         // Generate shell code
         if (has_pantry) {
             return try std.fmt.allocPrint(
