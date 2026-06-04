@@ -1067,6 +1067,19 @@ else if (osName === 'darwin') {
       sections.push(`export autom4te_perllibdir="${autoconfDataDir}"`)
       sections.push(`export AC_MACRODIR="${autoconfDataDir}"`)
     }
+    // setup.py / pip recipes that DON'T call bkpyvenv (e.g. `python setup.py install`)
+    // run the staged dep python directly, which ships without setuptools. Python 3.12+
+    // also dropped distutils (setuptools provides the shim), so these die with
+    // "No module named 'setuptools'/'distutils'". Ensure setuptools/wheel/packaging in
+    // the dep python on PATH. Best-effort; only when a python dep is staged.
+    if (Object.keys(depPaths).some(k => k.includes('python.org') && k.endsWith('.prefix'))) {
+      sections.push('# Ensure setuptools/wheel/packaging for direct python (setup.py/pip) builds')
+      sections.push('if command -v python3 >/dev/null 2>&1; then')
+      sections.push('  python3 -m ensurepip --upgrade >/dev/null 2>&1 || true')
+      sections.push('  python3 -c "import setuptools" >/dev/null 2>&1 || python3 -m pip install --quiet "setuptools<81" wheel >/dev/null 2>&1 || true')
+      sections.push('  python3 -m pip install --quiet --upgrade packaging >/dev/null 2>&1 || true')
+      sections.push('fi')
+    }
     if (osName === 'linux') {
       // On Linux, LD_LIBRARY_PATH is searched BEFORE default locations. S3 deps may
       // ship libcurl/libreadline that override system libraries, breaking system tools
