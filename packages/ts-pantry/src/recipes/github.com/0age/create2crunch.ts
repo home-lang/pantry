@@ -3,6 +3,10 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: "github.com/0age/create2crunch",
   name: "create2crunch",
+  // linux requires libOpenCL (an ICD loader) which pantry does not provide,
+  // so the binary cannot be linked there. Upstream pkgx also restricts this
+  // to darwin only.
+  platforms: ["darwin"],
   programs: [
     "create2crunch",
   ],
