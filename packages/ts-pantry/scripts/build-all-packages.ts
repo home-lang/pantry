@@ -1217,8 +1217,13 @@ catch (error: any) {
   try {
     // A build that exits 0 but installs nothing (no-op install step) must not be
     // packaged and uploaded — that publishes an empty tarball that passes its own
-    // checksum and registers as a valid-but-broken binary.
-    if (!existsSync(installDir) || readdirSync(installDir).length === 0) {
+    // checksum and registers as a valid-but-broken binary. Count actual *files*
+    // recursively, not just top-level entries: a build that only `mkdir`s empty
+    // bin/lib dirs would otherwise slip through and publish a ~109-byte empty
+    // tarball (this happened to 27 packages: ast-grep, gitleaks, traefik, …).
+    const hasFiles = existsSync(installDir)
+      && readdirSync(installDir, { recursive: true, withFileTypes: true }).some(e => e.isFile() || e.isSymbolicLink())
+    if (!hasFiles) {
       throw new Error(`Build produced no files in ${installDir}; refusing to package/upload`)
     }
 
