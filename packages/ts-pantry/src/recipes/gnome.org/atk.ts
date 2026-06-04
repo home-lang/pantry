@@ -12,7 +12,6 @@ export const recipe: Recipe = {
     'ninja-build.org': 1,
     'freedesktop.org/pkg-config': '^0.29',
     'gnu.org/gettext': '^0.21',
-    'gnome.org/gobject-introspection': 1,
   },
   distributable: {
     url: 'https://download.gnome.org/sources/atk/{{ version.major }}.{{ version.minor }}/atk-{{ version }}.tar.xz',
@@ -30,6 +29,8 @@ export const recipe: Recipe = {
         '--libdir={{prefix}}/lib',
         '--wrap-mode=nofallback',
         '--buildtype=release',
+        '-Dintrospection=false',
+        '-Ddocs=false',
       ],
     },
   },

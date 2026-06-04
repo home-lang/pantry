@@ -9,7 +9,6 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'gnu.org/gettext': '*',
-    'gnome.org/gobject-introspection': '*',
     'mesonbuild.com': '*',
     'ninja-build.org': '*',
   },
@@ -42,7 +41,7 @@ export const recipe: Recipe = {
         '--libdir={{prefix}}/lib',
         '--buildtype=release',
         '--wrap-mode=nofallback',
-        '-Dintrospection=enabled',
+        '-Dintrospection=disabled',
         '-Dman=false',
       ],
     },

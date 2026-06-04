@@ -9,7 +9,6 @@ export const recipe: Recipe = {
     'libexpat.github.io': '*',
   },
   buildDependencies: {
-    'gnome.org/gobject-introspection': '~1.86',
     'mesonbuild.com': '~1.9',
     'ninja-build.org': '*',
     'python.org': '~3.11',
@@ -35,6 +34,7 @@ export const recipe: Recipe = {
         '--libdir={{prefix}}/lib',
         '--buildtype=release',
         '--wrap-mode=nofallback',
+        '-Dintrospection=false',
       ],
     },
   },

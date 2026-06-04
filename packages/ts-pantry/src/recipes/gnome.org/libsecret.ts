@@ -12,11 +12,9 @@ export const recipe: Recipe = {
   buildDependencies: {
     'docbook.org/xsl': "*",
     'gnu.org/gettext': "*",
-    'gnome.org/gobject-introspection': "*",
     'mesonbuild.com': "*",
     'ninja-build.org': "*",
     'freedesktop.org/pkg-config': "*",
-    'gnome.org/vala': "*",
     'gnome.org/libxslt': "*",
     'freedesktop.org/dbus': "*",
     linux: {
@@ -60,6 +58,8 @@ export const recipe: Recipe = {
         "--buildtype=release",
         "--wrap-mode=nofallback",
         "-Dgtk_doc=false",
+        "-Dintrospection=false",
+        "-Dvapi=false",
       ],
     },
   },
