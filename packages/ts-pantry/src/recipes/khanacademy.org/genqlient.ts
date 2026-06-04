@@ -15,6 +15,11 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
+      // genqlient pins golang.org/x/tools v0.24.0 whose tokeninternal.go fails
+      // to compile under modern Go ("invalid array length -delta * delta").
+      // Bump x/tools to a Go 1.26-compatible release before building.
+      'go get golang.org/x/tools@v0.38.0',
+      'go mod tidy',
       'go mod download',
       'mkdir -p "{{ prefix }}"/bin',
       'go build -v -trimpath -ldflags="$LDFLAGS" -o $BUILDLOC .',
