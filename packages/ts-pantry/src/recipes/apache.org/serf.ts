@@ -29,8 +29,21 @@ export const recipe: Recipe = {
           content: 's/env = Environment(variables=opts,/env = Environment(ENV = os.environ, variables=opts,/',
         },
       },
-      'scons $ARGS',
-      'scons install',
+      // The scons.org S3 build-dep is a python venv whose internal shebangs are
+      // baked to its original build prefix; once relocated under buildkit-deps it
+      // execs `../venv/bin/scons` (a dead shebang) and fails with "not found".
+      // Provision a fresh, self-contained scons in a local venv and use it directly.
+      {
+        run: [
+          'if ! scons --version >/dev/null 2>&1; then',
+          '  python3 -m venv "$SRCROOT/.scons-venv"',
+          '  "$SRCROOT/.scons-venv/bin/pip" install --upgrade pip >/dev/null',
+          '  "$SRCROOT/.scons-venv/bin/pip" install scons >/dev/null',
+          'fi',
+        ],
+      },
+      'PATH="$SRCROOT/.scons-venv/bin:$PATH" scons $ARGS',
+      'PATH="$SRCROOT/.scons-venv/bin:$PATH" scons install',
     ],
     env: {
       ARGS: [
