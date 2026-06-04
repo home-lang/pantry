@@ -72,6 +72,7 @@ export const dozzledevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '10.6.5',
     '10.6.4',
     '10.6.3',
     '10.6.2',
