@@ -141,6 +141,20 @@ The Pantry action exports `PANTRY_TOKEN` and `PANTRY_REGISTRY_TOKEN` as env vars
 
 The pantry S3 registry (`registry.pantry.dev/binaries/`) hosts **system packages**(pre-built binaries like zig, curl, redis, bun) and**apps** (GUI applications like VS Code, Discord, Obsidian) uploaded via the `build.yml` / `sync-binaries.yml` workflows. JS/TS packages go to npm, not S3.
 
+### Build-status dashboard reporting (authenticated — the same token)
+
+The live build dashboard at **pantry.dev/packages** is fed by builders POSTing `building`/`built`/`failed` events to `registry.pantry.dev/api/build-events` (and log lines to `/api/build-logs`). These endpoints are **authenticated** — the server (`packages/registry/src/server.ts`, `isAuthorizedRequest`) returns **401** without a valid `Authorization: Bearer <token>`. The reporter (`packages/ts-pantry/scripts/report-build.ts`) reads the token from `PANTRY_REGISTRY_TOKEN` → `PANTRY_TOKEN` → `PANTRY_BUILD_REPORT_TOKEN`, and **silently skips** reporting if none is set (a 401 never fails the build — reporting is fire-and-forget). The token is the **same `ptry_` registry token** documented above (AWS SSM `/pantry/registry-token`).
+
+**The failure mode:** a build channel with no token compiles fine but is **invisible on the dashboard** (every POST 401s). So every channel that runs `build-all-packages.ts` MUST have the token in its environment:
+
+| Channel | Where the token comes from |
+|---------|----------------------------|
+| Hetzner build fleet | `PANTRY_REGISTRY_TOKEN` in each box's `/root/.pantry-hetzner.env` (sourced by `fleet-daemon.sh`) |
+| GitHub Actions | top-level `env: PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}` in **every** build workflow (`build.yml`, `sync-binaries.yml`, `build-registry.yml`, `build-versions.yml`) so all jobs/steps inherit it |
+| Local Mac | `PANTRY_REGISTRY_TOKEN` in `~/.pantry-hetzner.env` (sourced by `scripts/local-darwin-build.sh`) |
+
+**Rule going forward: any new build workflow or build host must export `PANTRY_REGISTRY_TOKEN` (= `secrets.PANTRY_TOKEN` in CI) or its builds won't show on the dashboard.** `report-build.ts` tags each event with a `hostKind` (`github` / `hetzner` / `local`), so a channel that has silently stopped reporting shows up as a missing `hostKind` in `GET /api/build-status` — the quickest way to detect a token/reporting regression. Set `PANTRY_BUILD_REPORT=0` only to intentionally disable reporting. `build-zig.yml` does not report (it doesn't run `build-all-packages.ts`), so it needs no token.
+
 ## Object storage provider (Hetzner / Backblaze / S3)
 
 Registry object storage is **provider-agnostic** (AWS S3, Hetzner Object Storage, Backblaze B2 — all S3-compatible, SigV4). **Hetzner is the chosen low-cost target.** Selection is via `STORAGE_PROVIDER` (`aws` default). Resolution lives in `packages/registry/src/storage/provider.ts` (which builds the vendored `S3Client`) and ts-cloud's `createObjectStorageClient` (used by the `ts-pantry` upload/download scripts). On a non-AWS provider, registry metadata is stored as a JSON object in the bucket (`ObjectMetadataStorage`, `metadata/registry-index.json`) instead of DynamoDB — so the registry runs fully off AWS while the **server stays on EC2**.
