@@ -8,26 +8,24 @@ export const recipe: Recipe = {
     'gext',
   ],
   dependencies: {
-    'pkgx.sh': '>=1',
+    'python.org': '>=3.8',
   },
   buildDependencies: {
-    'python.org': '~3.11',
-    'python-poetry.org': '^1',
+    'python.org': '>=3.8',
   },
   distributable: {
     url: 'git+https://github.com/essembeh/gnome-extensions-cli.git',
   },
   build: {
     script: [
-      'bkpyvenv stage --engine=poetry {{prefix}} {{version}}',
-      'poetry install',
-      'bkpyvenv seal --engine=poetry {{prefix}} gnome-extensions-cli gext',
+      'python3 -m pip install --break-system-packages --prefix={{prefix}} .',
     ],
   },
   test: {
     script: [
-      'test "$(gext --version)" = "gext {{version}}"',
-      'gext search code',
+      'export PYTHONPATH="$(echo {{prefix}}/lib/python*/site-packages)"',
+      '{{prefix}}/bin/gext --version',
+      'test "$({{prefix}}/bin/gext --version)" = "gext {{version}}"',
     ],
   },
 }
