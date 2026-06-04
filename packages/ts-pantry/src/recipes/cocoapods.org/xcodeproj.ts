@@ -11,7 +11,7 @@ export const recipe: Recipe = {
     'rubygems.org': "^3",
   },
   distributable: {
-    url: "https://github.com/CocoaPods/Xcodeproj/archive/refs/tags/{{version.tag}}.tar.gz",
+    url: "https://github.com/CocoaPods/Xcodeproj/archive/refs/tags/{{version}}.tar.gz",
     stripComponents: 1,
   },
   build: {

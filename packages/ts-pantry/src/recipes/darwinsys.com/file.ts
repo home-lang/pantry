@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     'gnu.org/patch': '*',
   },
   distributable: {
-    url: 'https://astron.com/pub/file/file-{{version.raw}}.tar.gz',
+    url: 'https://astron.com/pub/file/file-{{version.marketing}}.tar.gz',
     stripComponents: 1,
   },
   build: {

@@ -10,7 +10,7 @@ export const recipe: Recipe = {
     'curl.se': '*',
   },
   distributable: {
-    url: 'https://github.com/arduino/arduino-cli/archive/refs/tags/{{version}}.tar.gz',
+    url: 'https://github.com/arduino/arduino-cli/archive/refs/tags/v{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
