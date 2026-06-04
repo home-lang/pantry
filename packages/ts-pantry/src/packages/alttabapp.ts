@@ -22,6 +22,7 @@ export const alttabappPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   versions: [
+    '11.3.0',
     '11.2.0',
     '11.1.0',
     '11.0.1',
