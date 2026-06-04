@@ -30,15 +30,17 @@ export const recipe: Recipe = {
       },
       // btop 1.4.x uses C++23 std::ranges::to, which needs libstdc++ 14.
       // The prebuilt gnu.org/gcc@14 toolchain isn't in our S3 registry yet, so
-      // the recipe's `gnu.org/gcc@14` build-dep silently falls back to the
-      // system g++ 13 (no std::ranges::to). Ensure a 14-series g++ is present
-      // and pin CXX/CC to it so the build doesn't regress to 13.
+      // the recipe's `gnu.org/gcc@14` build-dep silently falls back to system
+      // g++ 13 (no std::ranges::to). Worse, buildkit's cc_wrapper re-exports
+      // CXX=cc_wrapper/c++ (wrapping system g++ 13) AFTER our `build.env`, so a
+      // recipe-level `CXX: g++-14` is clobbered. Install a 14-series g++ and
+      // pass CXX/CC on make's command line, where they override everything.
       {
         run: 'command -v g++-14 >/dev/null 2>&1 || { sudo apt-get update -y >/dev/null 2>&1 || true; sudo DEBIAN_FRONTEND=noninteractive apt-get install -y g++-14 >/dev/null 2>&1 || true; }',
         if: 'linux/x86-64',
       },
-      'make',
-      'make install PREFIX={{prefix}}',
+      'make CXX=g++-14',
+      'make install PREFIX={{prefix}} CXX=g++-14',
     ],
     env: {
       linux: {
