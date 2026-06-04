@@ -132,23 +132,47 @@ while true; do
 done
 `
 
+const FLEET_UNIT = `[Unit]
+Description=pantry fleet build daemon
+After=network-online.target
+[Service]
+ExecStart=/root/fleet-daemon.sh
+Restart=always
+RestartSec=10
+[Install]
+WantedBy=multi-user.target
+`
+const GUARD_UNIT = `[Unit]
+Description=pantry build-box disk guard
+[Service]
+ExecStart=/root/box-disk-guard.sh
+Restart=always
+RestartSec=10
+[Install]
+WantedBy=multi-user.target
+`
+
 function configureBox(ip: string, boxIndex: number, boxCount: number): void {
   log(`  ${ip}: configuring as box ${boxIndex}/${boxCount}`)
   // clear any build cruft inherited from the snapshot, refresh repo
   ssh(ip, 'rm -rf /root/pb-* /root/.cache/* 2>/dev/null; cd /root/pantry && git fetch origin main -q && git reset --hard origin/main -q')
   sshWrite(ip, '/root/fleet-daemon.sh', daemonScript(boxIndex, boxCount))
   sshWrite(ip, '/root/box-disk-guard.sh', GUARD_SCRIPT)
-  // newline-joined: a backgrounded `cmd &` must be followed by a newline, not
-  // `; ` — `&;` is a bash syntax error.
+  sshWrite(ip, '/etc/systemd/system/pantry-fleet.service', FLEET_UNIT)
+  sshWrite(ip, '/etc/systemd/system/pantry-diskguard.service', GUARD_UNIT)
+  // Manage everything via systemd so it survives reboots and there is ONE daemon.
+  // The snapshot bakes in pantry-sweep.service (the OLD full-set daemon); it must
+  // be stopped+disabled or it respawns overlapping workers and wins.
   ssh(ip, [
     'chmod +x /root/fleet-daemon.sh /root/box-disk-guard.sh',
-    'pkill -9 -f "fleet-daemon.sh|sweep-daemon.sh|xorg-loop.sh|build-all-packages" 2>/dev/null || true',
-    'pkill -f box-disk-guard 2>/dev/null || true',
+    'systemctl disable --now pantry-sweep.service 2>/dev/null || true',
+    'pkill -9 -f "sweep-daemon.sh|xorg-loop.sh|build-all-packages" 2>/dev/null || true',
     'sleep 1',
-    'setsid bash /root/box-disk-guard.sh >/root/box-disk-guard.log 2>&1 </dev/null &',
-    'setsid bash /root/fleet-daemon.sh >/root/fleet-daemon.log 2>&1 </dev/null &',
-    'sleep 1',
-    'pgrep -f fleet-daemon.sh >/dev/null && echo launched || { echo "fleet-daemon failed to start" >&2; exit 1; }',
+    'systemctl daemon-reload',
+    'systemctl enable --now pantry-diskguard.service',
+    'systemctl enable --now pantry-fleet.service',
+    'sleep 2',
+    'systemctl is-active pantry-fleet.service',
   ].join('\n'))
 }
 
