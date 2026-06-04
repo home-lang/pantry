@@ -28,11 +28,11 @@ export const recipe: Recipe = {
   build: {
     'working-directory': 'build',
     script: [
-      'meson .. --prefix={{prefix}} --libdir={{prefix}}/lib --buildtype=release -Dpython=python3.11',
+      'meson .. --prefix={{prefix}} --libdir={{prefix}}/lib --buildtype=release -Dgtk_doc=false -Dtests=false -Dpython=python3',
       'ninja -v',
       'ninja install',
       {
-        run: 'sed -i \'s|env {{deps.python.org.prefix}}/bin/python|env python|\' g-ir-annotation-tool g-ir-scanner',
+        run: 'sed -i \'1s|^#!.*python.*|#!/usr/bin/env python3|\' g-ir-annotation-tool g-ir-scanner',
         'working-directory': '${{prefix}}/bin',
       },
     ],
