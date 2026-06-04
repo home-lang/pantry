@@ -27,7 +27,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      "cmake ../cmake $ARGS",
+      "cmake build/cmake $ARGS",
       "cmake --build .",
       "cmake --install .",
       {
