@@ -12,7 +12,11 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'cp -a "$SRCROOT"/* .',
+      // swiftenv is a pure shell-script tool. bin/swiftenv resolves its
+      // siblings (libexec, completions, share) relative to bin/, so install
+      // those directories straight into {{prefix}} preserving the layout.
+      'mkdir -p "{{prefix}}"',
+      'cp -a "$SRCROOT"/bin "$SRCROOT"/libexec "$SRCROOT"/completions "$SRCROOT"/share "{{prefix}}/"',
     ],
   },
 }
