@@ -68,11 +68,14 @@ export const istioioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.30.1',
     '1.30.0',
+    '1.29.4',
     '1.29.3',
     '1.29.2',
     '1.29.1',
     '1.29.0',
+    '1.28.8',
     '1.28.7',
     '1.28.6',
     '1.28.5',
