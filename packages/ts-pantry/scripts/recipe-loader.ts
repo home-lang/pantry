@@ -143,7 +143,9 @@ function recipeDefToNormalized(def: Recipe): Record<string, any> {
       dependencies: def.buildDependencies || {},
       script: def.build.script,
       env: def.build.env || {},
-      'working-directory': def.build.workingDirectory,
+      // Recipes author this as kebab-case `working-directory` (matching buildkit's
+      // reader and the per-step field); fall back to camelCase for older defs.
+      'working-directory': (def.build as any)['working-directory'] ?? def.build.workingDirectory,
       skip: def.build.skip,
     },
     platforms: def.platforms,
