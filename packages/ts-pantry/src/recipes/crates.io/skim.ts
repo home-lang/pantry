@@ -10,7 +10,7 @@ export const recipe: Recipe = {
     'rust-lang.org/rustup': '*',
   },
   distributable: {
-    url: 'https://github.com/lotabout/skim/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/lotabout/skim/archive/refs/tags/v{{ version }}.tar.gz',
     stripComponents: 1,
   },
   build: {

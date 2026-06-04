@@ -15,7 +15,7 @@ export const recipe: Recipe = {
     'rust-lang.org/cargo': '*',
   },
   distributable: {
-    url: 'https://github.com/swsnr/mdcat/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/swsnr/mdcat/archive/refs/tags/mdcat-{{ version }}.tar.gz',
     stripComponents: 1,
   },
   build: {

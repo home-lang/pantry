@@ -11,7 +11,7 @@ export const recipe: Recipe = {
     'rust-lang.org/cargo': '*',
   },
   distributable: {
-    url: 'https://github.com/mstange/samply/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/mstange/samply/archive/refs/tags/samply-v{{ version }}.tar.gz',
     stripComponents: 1,
   },
   build: {
