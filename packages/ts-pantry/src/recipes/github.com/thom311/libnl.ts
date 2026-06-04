@@ -20,11 +20,17 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      // Pin the m4 bison invokes for its skeleton expansion to a binary we know
-      // resolves on PATH; bare `m4` can get lost to env scrubbing during the
-      // parallel parser-generation step and bison then fails the subprocess.
+      // Pin the m4 bison shells out to for skeleton expansion to whatever
+      // resolves on PATH, so the parser-generation step never dies with
+      // "m4 subprocess failed".
       'export M4="$(command -v m4)"',
       './configure $ARGS',
+      // libnl's Makefile has a parallel-build race: the flex/bison rules emit
+      // ematch_syntax.h / pktloc_syntax.h, but ematch.c / pktloc.c that
+      // #include them can start compiling before those headers exist, failing
+      // with "ematch_syntax.h: No such file or directory". Generate the parser
+      // sources + headers serially first, then run the parallel build.
+      'make lib/route/pktloc_syntax.c lib/route/pktloc_grammar.c lib/route/cls/ematch_syntax.c lib/route/cls/ematch_grammar.c',
       'make --jobs {{ hw.concurrency }} install',
     ],
     env: {
