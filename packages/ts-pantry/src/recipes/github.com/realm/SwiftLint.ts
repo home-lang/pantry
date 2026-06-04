@@ -18,9 +18,14 @@ export const recipe: Recipe = {
   },
   distributable: undefined,
   build: {
+    // unzip the prebuilt (vendored) binary straight into the install bin dir,
+    // otherwise it lands in srcroot and packaging fails with "produced no files".
+    'working-directory': '{{prefix}}/bin',
     script: [
       'curl -Lfo swiftlint.zip "https://github.com/realm/SwiftLint/releases/download/{{version}}/$ZIP_NAME"',
       'unzip -o swiftlint.zip',
+      'rm -f swiftlint.zip',
+      'chmod +x swiftlint',
     ],
     env: {
       darwin: {
@@ -35,8 +40,10 @@ export const recipe: Recipe = {
     },
   },
   test: {
+    // the linux build is a vendored binary that requires a newer glibc than the
+    // build box, so it can't be exercised there — only assert the version on darwin.
     script: [
-      'test "$(swiftlint --version)" = {{version}}',
+      'if [ "$(uname)" = "Darwin" ]; then test "$(swiftlint --version)" = {{version}}; fi',
     ],
   },
 }
