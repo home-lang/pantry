@@ -1537,11 +1537,22 @@ pub const ShellCommands = struct {
 
             const health_cmd = config.health_check orelse continue;
 
-            // Run health check with up to 10 retries, 500ms delay
+            // Resolve health-check binaries (pg_isready, redis-cli, mysqladmin…)
+            // via the project's pantry/.bin while keeping system bins (curl) on
+            // PATH — otherwise the check can't find them and never confirms
+            // readiness.
+            const wrapped = std.fmt.allocPrint(self.allocator, "PATH=\"{s}/pantry/.bin:$PATH\" {s}", .{ project_root, health_cmd }) catch health_cmd;
+            defer if (wrapped.ptr != health_cmd.ptr) self.allocator.free(wrapped);
+
+            // Wait up to ~30s (60 × 500ms), breaking as soon as the service is
+            // ready. A service's FIRST launch can be slow — postgres runs initdb
+            // (~10-15s) before it accepts connections — and the database
+            // creation / post-setup that follows must not race it. Subsequent
+            // starts pass on the first attempt, so this adds no steady-state lag.
             var attempts: u32 = 0;
-            while (attempts < 10) : (attempts += 1) {
+            while (attempts < 60) : (attempts += 1) {
                 const result = io_helper.childRun(self.allocator, &[_][]const u8{
-                    "sh", "-c", health_cmd,
+                    "sh", "-c", wrapped,
                 }) catch {
                     io_helper.nanosleep(0, 500 * std.time.ns_per_ms);
                     continue;
