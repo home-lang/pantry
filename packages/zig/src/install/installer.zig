@@ -4093,15 +4093,15 @@ pub fn flushAnalytics(allocator: std.mem.Allocator) void {
         analytics_mutex.unlock();
         return;
     }
-    // Take ownership of the list, reset the global
+    // Take ownership of the events. `owned_items` is a shallow copy, so it
+    // shares each event's domain/version allocations — the flush worker frees
+    // them when it's done. We must NOT free them here (doing so left owned_items
+    // dangling and the worker double-freed them). clearRetainingCapacity drops
+    // the entries without touching the strings they referenced.
     const owned_items = allocator.dupe(AnalyticsEvent, events) catch {
         analytics_mutex.unlock();
         return;
     };
-    for (analytics_events.items) |ev| {
-        allocator.free(ev.domain);
-        allocator.free(ev.version);
-    }
     analytics_events.clearRetainingCapacity();
     analytics_mutex.unlock();
 
