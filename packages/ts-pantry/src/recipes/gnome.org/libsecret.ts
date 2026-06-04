@@ -10,12 +10,10 @@ export const recipe: Recipe = {
     'gnupg.org/libgpg-error': "*",
   },
   buildDependencies: {
-    'docbook.org/xsl': "*",
     'gnu.org/gettext': "*",
     'mesonbuild.com': "*",
     'ninja-build.org': "*",
     'freedesktop.org/pkg-config': "*",
-    'gnome.org/libxslt': "*",
     'freedesktop.org/dbus': "*",
     linux: {
       'llvm.org': "*",
@@ -29,16 +27,8 @@ export const recipe: Recipe = {
     'working-directory': 'build',
     script: [
       "meson .. $MESON_ARGS",
-      {
-        run: "sed -i.bak \"s|http://docbook.sourceforge.net/release/xsl/current|{{deps.docbook.org/xsl.prefix}}/libexec/docbook-xsl|g\" meson.build\nrm meson.build.bak\n",
-        'working-directory': "$SRCROOT/docs/man",
-      },
       "ninja --verbose",
       "ninja install --verbose",
-      {
-        run: "ln -s libsecret-1/libsecret libsecret",
-        'working-directory': "{{prefix}}/include",
-      },
       {
         run: "ln -s libsecret-1/libsecret libsecret",
         'working-directory': "{{prefix}}/include",
@@ -60,6 +50,7 @@ export const recipe: Recipe = {
         "-Dgtk_doc=false",
         "-Dintrospection=false",
         "-Dvapi=false",
+        "-Dmanpage=false",
       ],
     },
   },
