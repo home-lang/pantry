@@ -17,6 +17,20 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
+      // zlib.net/minizip is not published as a standalone binary in the pantry
+      // registry, so freexl's configure can't find minizip/unzip.h via the usual
+      // dependency staging. Build minizip from zlib's bundled contrib/minizip and
+      // install it into freexl's own prefix (which is on CPATH/LDFLAGS), so the
+      // ./configure check passes and the resulting libfreexl is self-contained.
+      'mkdir -p _minizip && cd _minizip',
+      'curl -fsSL https://github.com/madler/zlib/archive/refs/tags/v1.3.1.tar.gz -o zlib.tar.gz',
+      'tar xzf zlib.tar.gz',
+      'cd zlib-1.3.1/contrib/minizip',
+      'autoreconf -fi',
+      './configure --prefix={{prefix}}',
+      'make --jobs {{ hw.concurrency }} install',
+      'cd "$SRCROOT"',
+      // Now build freexl against the just-installed minizip.
       './configure $ARGS',
       'make --jobs {{ hw.concurrency }} install',
     ],
