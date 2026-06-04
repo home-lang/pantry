@@ -23,15 +23,11 @@ export const recipe: Recipe = {
       "rm -r bin/*.bat bin/*.cmd",
       "mkdir -p {{prefix}}",
       "mv bin docs extras lib {{prefix}}/",
-      {
-        run: "wget -O $PLUGINS_MANAGER_FILE $PLUGINS_MANAGER_URL\nmv $PLUGINS_MANAGER_FILE {{prefix}}/lib/ext/\n",
-        'working-directory': "plugins-manager",
-      },
+      // Fetch the JMeter Plugins Manager jar into lib/ext. Inline the URL/file
+      // (the env vars weren't exported into the working-directory subshell, so
+      // wget saw empty args → "wget: missing URL").
+      "wget --no-check-certificate -O \"{{prefix}}/lib/ext/jmeter-plugins-manager-1.9.jar\" 'https://search.maven.org/remotecontent?filepath=kg/apc/jmeter-plugins-manager/1.9/jmeter-plugins-manager-1.9.jar'",
     ],
-    env: {
-      PLUGINS_MANAGER_URL: "https://search.maven.org/remotecontent?filepath=kg/apc/jmeter-plugins-manager/1.9/jmeter-plugins-manager-1.9.jar",
-      PLUGINS_MANAGER_FILE: "jmeter-plugins-manager-1.9.jar",
-    },
   },
   test: {
     script: [
