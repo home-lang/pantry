@@ -6,37 +6,27 @@ export const recipe: Recipe = {
   programs: [
     'fzf',
   ],
-  buildDependencies: {
-    'go.dev': '^1.18',
-  },
-  distributable: {
-    url: 'https://github.com/junegunn/fzf/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
+  // Prebuilt download: fzf ships official per-platform release tarballs
+  // (the bare `fzf` binary at the archive root).
+  distributable: null,
   build: {
     script: [
-      'go build -v -ldflags="$LDFLAGS"',
-      'mkdir -p {{ prefix }}/bin',
-      'mv fzf {{ prefix }}/bin',
-      'cp bin/fzf-tmux {{ prefix }}/bin',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="fzf-${VERSION}-darwin_arm64" ;;',
+      '  darwin+x86-64)  ASSET="fzf-${VERSION}-darwin_amd64" ;;',
+      '  linux+aarch64)  ASSET="fzf-${VERSION}-linux_arm64"  ;;',
+      '  linux+x86-64)   ASSET="fzf-${VERSION}-linux_amd64"  ;;',
+      'esac',
+      '',
+      'curl -Lfo fzf.tar.gz "https://github.com/junegunn/fzf/releases/download/v${VERSION}/${ASSET}.tar.gz"',
+      'tar xf fzf.tar.gz',
+      'install -Dm755 fzf {{prefix}}/bin/fzf',
     ],
-    env: {
-      LDFLAGS: [
-        '-s',
-        '-w',
-        '-X main.version={{ version }}',
-        '-X main.revision=tea',
-      ],
-      linux: {
-        LDFLAGS: [
-          '-buildmode=pie',
-        ],
-      },
-    },
   },
   test: {
     script: [
-      'out=$(cat data.txt | fzf -f wld)',
+      'out=$(printf "hello\\nworld\\n" | fzf -f wld)',
       'test "$out" = "world"',
     ],
   },

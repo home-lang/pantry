@@ -11,24 +11,23 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'helm/helm',
   },
-  distributable: {
-    url: 'https://github.com/helm/helm/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'go.dev': '^1.19',
-  },
+  // Prebuilt download: helm ships official per-platform release tarballs
+  // (binary under <os>-<arch>/helm).
+  distributable: null,
 
   build: {
     script: [
-      {
-        run: 'sed -i -f $PROP Makefile',
-        prop: {
-          content: 's/unreleased//g\ns/\\(shell find . .* -print\\)/\\1 | grep -v dev.pkgx./\n',
-        },
-      },
-      'mkdir -p {{prefix}}/bin',
-      'make install VERSION=v{{version}} INSTALL_PATH={{prefix}}/bin',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) PLATFORM="darwin-arm64" ;;',
+      '  darwin+x86-64)  PLATFORM="darwin-amd64" ;;',
+      '  linux+aarch64)  PLATFORM="linux-arm64"  ;;',
+      '  linux+x86-64)   PLATFORM="linux-amd64"  ;;',
+      'esac',
+      '',
+      'curl -Lfo helm.tar.gz "https://get.helm.sh/helm-v${VERSION}-${PLATFORM}.tar.gz"',
+      'tar xf helm.tar.gz',
+      'install -Dm755 "${PLATFORM}/helm" {{prefix}}/bin/helm',
     ],
   },
 }

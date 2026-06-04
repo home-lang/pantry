@@ -6,22 +6,28 @@ export const recipe: Recipe = {
   programs: [
     'rg',
   ],
-  buildDependencies: {
-    'rust-lang.org': '>=1.34',
-    'rust-lang.org/cargo': '*',
-  },
-  distributable: {
-    url: 'https://github.com/BurntSushi/ripgrep/archive/refs/tags/{{version}}.tar.gz',
-    stripComponents: 1,
-  },
+  // Prebuilt download: ripgrep ships official per-platform release tarballs.
+  distributable: null,
   build: {
     script: [
-      'cargo install --locked --path . --root {{prefix}}',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) TARGET="aarch64-apple-darwin"      ;;',
+      '  darwin+x86-64)  TARGET="x86_64-apple-darwin"       ;;',
+      '  linux+aarch64)  TARGET="aarch64-unknown-linux-gnu" ;;',
+      '  linux+x86-64)   TARGET="x86_64-unknown-linux-musl" ;;',
+      'esac',
+      '',
+      'DIR="ripgrep-${VERSION}-${TARGET}"',
+      'curl -Lfo rg.tar.gz "https://github.com/BurntSushi/ripgrep/releases/download/${VERSION}/${DIR}.tar.gz"',
+      'tar xf rg.tar.gz',
+      'install -Dm755 "${DIR}/rg" {{prefix}}/bin/rg',
     ],
   },
   test: {
     script: [
-      'rg hello $FIXTURE',
+      'echo hello > test.txt',
+      'rg hello test.txt',
     ],
   },
 }

@@ -11,21 +11,23 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'hashicorp/consul',
   },
-  distributable: {
-    url: 'https://github.com/hashicorp/consul/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'go.dev': '^1.20',
-  },
+  // Prebuilt download: hashicorp ships official per-platform release zips
+  // (bare binary at the archive root) on releases.hashicorp.com.
+  distributable: null,
 
   build: {
     script: [
-      'go mod download',
-      'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o \'{{prefix}}/bin/consul\' .',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) PLATFORM="darwin_arm64" ;;',
+      '  darwin+x86-64)  PLATFORM="darwin_amd64" ;;',
+      '  linux+aarch64)  PLATFORM="linux_arm64"  ;;',
+      '  linux+x86-64)   PLATFORM="linux_amd64"  ;;',
+      'esac',
+      '',
+      'curl -Lfo consul.zip "https://releases.hashicorp.com/consul/${VERSION}/consul_${VERSION}_${PLATFORM}.zip"',
+      'unzip -q consul.zip',
+      'install -Dm755 consul {{prefix}}/bin/consul',
     ],
-    env: {
-      'GO_LDFLAGS': ['-s', '-w', '-X github.com/hashicorp/consul/version.fullVersion={{version}}', '-X github.com/hashicorp/consul/version.BuildDate=$(date -u +\'%Y-%m-%dT%H:%M:%SZ\')'],
-    },
   },
 }

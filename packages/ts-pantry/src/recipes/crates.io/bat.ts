@@ -6,27 +6,29 @@ export const recipe: Recipe = {
   programs: [
     'bat',
   ],
-  dependencies: {
-    'zlib.net': '^1',
-    'libgit2.org': '~1.7',
-  },
-  buildDependencies: {
-    'rust-lang.org': '>=1.60',
-    'rust-lang.org/cargo': '*',
-  },
-  distributable: {
-    url: 'https://github.com/sharkdp/bat/archive/refs/tags/v{{ version }}.tar.gz',
-    stripComponents: 1,
-  },
+  // Prebuilt download: bat ships official per-platform release tarballs
+  // (statically linked, so no runtime zlib/libgit2 needed).
+  distributable: null,
   build: {
     script: [
-      'cargo install --locked --path . --root {{prefix}}',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) TARGET="aarch64-apple-darwin"      ;;',
+      '  darwin+x86-64)  TARGET="x86_64-apple-darwin"       ;;',
+      '  linux+aarch64)  TARGET="aarch64-unknown-linux-gnu" ;;',
+      '  linux+x86-64)   TARGET="x86_64-unknown-linux-musl" ;;',
+      'esac',
+      '',
+      'DIR="bat-v${VERSION}-${TARGET}"',
+      'curl -Lfo bat.tar.gz "https://github.com/sharkdp/bat/releases/download/v${VERSION}/${DIR}.tar.gz"',
+      'tar xf bat.tar.gz',
+      'install -Dm755 "${DIR}/bat" {{prefix}}/bin/bat',
     ],
   },
   test: {
     script: [
-      'mv $FIXTURE $FIXTURE.js',
-      'bat $FIXTURE.js',
+      'echo "const x = 1" > test.js',
+      'bat --style plain test.js',
     ],
   },
 }

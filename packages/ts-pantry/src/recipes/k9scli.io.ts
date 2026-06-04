@@ -11,22 +11,23 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'derailed/k9s',
   },
-  distributable: {
-    url: 'https://github.com/derailed/k9s/archive/refs/tags/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'go.dev': '^1.18',
-    'gnu.org/make': '*',
-    'git-scm.org': '*',
-  },
+  // Prebuilt download: k9s ships official per-platform release tarballs
+  // (capitalized OS in the asset name; bare `k9s` binary at the archive root).
+  distributable: null,
 
   build: {
     script: [
-      'make build',
-      'mkdir -p {{prefix}}/bin',
-      'mv ./execs/k9s {{prefix}}/bin',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="k9s_Darwin_arm64" ;;',
+      '  darwin+x86-64)  ASSET="k9s_Darwin_amd64" ;;',
+      '  linux+aarch64)  ASSET="k9s_Linux_arm64"  ;;',
+      '  linux+x86-64)   ASSET="k9s_Linux_amd64"  ;;',
+      'esac',
       '',
+      'curl -Lfo k9s.tar.gz "https://github.com/derailed/k9s/releases/download/v${VERSION}/${ASSET}.tar.gz"',
+      'tar xf k9s.tar.gz',
+      'install -Dm755 k9s {{prefix}}/bin/k9s',
     ],
   },
 }

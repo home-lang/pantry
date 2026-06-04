@@ -6,22 +6,27 @@ export const recipe: Recipe = {
   programs: [
     'fd',
   ],
-  buildDependencies: {
-    'rust-lang.org': '>=1.60',
-    'rust-lang.org/cargo': '*',
-  },
-  distributable: {
-    url: 'https://github.com/sharkdp/fd/archive/refs/tags/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
+  // Prebuilt download: fd ships official per-platform release tarballs.
+  distributable: null,
   build: {
     script: [
-      'cargo install --locked --path . --root {{prefix}}',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) TARGET="aarch64-apple-darwin"      ;;',
+      '  darwin+x86-64)  TARGET="x86_64-apple-darwin"       ;;',
+      '  linux+aarch64)  TARGET="aarch64-unknown-linux-gnu" ;;',
+      '  linux+x86-64)   TARGET="x86_64-unknown-linux-musl" ;;',
+      'esac',
+      '',
+      'DIR="fd-v${VERSION}-${TARGET}"',
+      'curl -Lfo fd.tar.gz "https://github.com/sharkdp/fd/releases/download/v${VERSION}/${DIR}.tar.gz"',
+      'tar xf fd.tar.gz',
+      'install -Dm755 "${DIR}/fd" {{prefix}}/bin/fd',
     ],
   },
   test: {
     script: [
-      'mv $FIXTURE test.cpp',
+      'touch test.cpp',
       'fd -e cpp test',
     ],
   },

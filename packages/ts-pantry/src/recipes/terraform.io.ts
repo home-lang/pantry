@@ -11,24 +11,23 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'hashicorp/terraform',
   },
-  distributable: {
-    url: 'https://github.com/hashicorp/terraform/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'go.dev': '~1.24.1',
-  },
+  // Prebuilt download: hashicorp ships official per-platform release zips
+  // (bare binary at the archive root) on releases.hashicorp.com.
+  distributable: null,
 
   build: {
     script: [
-      'EXTRA="-mod=mod"',
-      'sed -i \'/tlskyber/s|^|// |\' go.mod',
-      'go mod download',
-      'go build -v -ldflags="$LDFLAGS" $EXTRA -o {{prefix}}/bin/terraform',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) PLATFORM="darwin_arm64" ;;',
+      '  darwin+x86-64)  PLATFORM="darwin_amd64" ;;',
+      '  linux+aarch64)  PLATFORM="linux_arm64"  ;;',
+      '  linux+x86-64)   PLATFORM="linux_amd64"  ;;',
+      'esac',
+      '',
+      'curl -Lfo terraform.zip "https://releases.hashicorp.com/terraform/${VERSION}/terraform_${VERSION}_${PLATFORM}.zip"',
+      'unzip -q terraform.zip',
+      'install -Dm755 terraform {{prefix}}/bin/terraform',
     ],
-    env: {
-      'GO111MODULE': 'on',
-      'LDFLAGS': ['-s', '-w', '-X=github.com/hashicorp/terraform/version.Version={{version}}', '-X=github.com/hashicorp/terraform/version.dev=no'],
-    },
   },
 }

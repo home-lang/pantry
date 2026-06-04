@@ -6,33 +6,22 @@ export const recipe: Recipe = {
   programs: [
     'yq',
   ],
-  buildDependencies: {
-    'go.dev': '^1.18',
-    'pandoc.org': '*',
-  },
-  distributable: {
-    url: 'https://github.com/mikefarah/yq/archive/refs/tags/v{{ version }}.tar.gz',
-    stripComponents: 1,
-  },
+  // Prebuilt download: yq ships official per-platform release tarballs
+  // (binary named yq_<os>_<arch> at the archive root).
+  distributable: null,
   build: {
     script: [
-      'go build -v -ldflags="$LDFLAGS"',
-      './scripts/generate-man-page-md.sh',
-      './scripts/generate-man-page.sh',
-      'mkdir -p {{ prefix }}/bin',
-      'mv yq {{ prefix }}/bin',
-      'mkdir -p {{ prefix }}/share/man/man1',
-      'mv yq.1 {{ prefix }}/share/man/man1',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="yq_darwin_arm64" ;;',
+      '  darwin+x86-64)  ASSET="yq_darwin_amd64" ;;',
+      '  linux+aarch64)  ASSET="yq_linux_arm64"  ;;',
+      '  linux+x86-64)   ASSET="yq_linux_amd64"  ;;',
+      'esac',
+      '',
+      'curl -Lfo yq.tar.gz "https://github.com/mikefarah/yq/releases/download/v${VERSION}/${ASSET}.tar.gz"',
+      'tar xf yq.tar.gz',
+      'install -Dm755 "${ASSET}" {{prefix}}/bin/yq',
     ],
-    env: {
-      LDFLAGS: [
-        '-s -w',
-      ],
-      linux: {
-        LDFLAGS: [
-          '-buildmode=pie',
-        ],
-      },
-    },
   },
 }

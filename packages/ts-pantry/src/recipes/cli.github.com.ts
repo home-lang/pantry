@@ -11,30 +11,25 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'cli/cli',
   },
-  distributable: {
-    url: 'https://github.com/cli/cli/archive/refs/tags/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'go.dev': '^1.18',
-  },
+  // Prebuilt download: gh ships official per-platform release archives.
+  distributable: null,
 
   build: {
     script: [
-      'make bin/gh',
-      'mkdir -p {{prefix}}/bin',
-      'mv bin/gh {{prefix}}/bin',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="gh_${VERSION}_macOS_arm64";  EXT="zip"    ;;',
+      '  darwin+x86-64)  ASSET="gh_${VERSION}_macOS_amd64";  EXT="zip"    ;;',
+      '  linux+aarch64)  ASSET="gh_${VERSION}_linux_arm64";  EXT="tar.gz" ;;',
+      '  linux+x86-64)   ASSET="gh_${VERSION}_linux_amd64";  EXT="tar.gz" ;;',
+      'esac',
       '',
-      '# cleanup - gocache for some reason is not writeable',
-      'chmod -R u+w "$GOPATH" "$GOCACHE"',
-      'rm -rf "$GOPATH" "$GOCACHE"',
+      'URL="https://github.com/cli/cli/releases/download/v${VERSION}/${ASSET}.${EXT}"',
+      'curl -Lfo "gh.${EXT}" "$URL"',
+      'if test "$EXT" = "zip"; then unzip -q "gh.${EXT}"; else tar xf "gh.${EXT}"; fi',
       '',
+      '# The archive contains <asset>/bin/gh',
+      'install -Dm755 "${ASSET}/bin/gh" {{prefix}}/bin/gh',
     ],
-    env: {
-      'GOPATH': '${{prefix}}/gopath',
-      'GOCACHE': '${{prefix}}/gocache',
-      'GH_VERSION': '${{version}}',
-      'GO_LDFLAGS': ['-s -w'],
-    },
   },
 }

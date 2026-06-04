@@ -6,31 +6,27 @@ export const recipe: Recipe = {
   programs: [
     'stern',
   ],
-  buildDependencies: {
-    'go.dev': '^1.21',
-  },
-  distributable: {
-    url: 'https://github.com/stern/stern/archive/refs/tags/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
+  // Prebuilt download: stern ships official per-platform release tarballs
+  // (the bare `stern` binary at the archive root).
+  distributable: null,
   build: {
     script: [
-      'go mod download',
-      'go build -ldflags="$LDFLAGS" -o $BUILDLOC .',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="stern_${VERSION}_darwin_arm64" ;;',
+      '  darwin+x86-64)  ASSET="stern_${VERSION}_darwin_amd64" ;;',
+      '  linux+aarch64)  ASSET="stern_${VERSION}_linux_arm64"  ;;',
+      '  linux+x86-64)   ASSET="stern_${VERSION}_linux_amd64"  ;;',
+      'esac',
+      '',
+      'curl -Lfo stern.tar.gz "https://github.com/stern/stern/releases/download/v${VERSION}/${ASSET}.tar.gz"',
+      'tar xf stern.tar.gz',
+      'install -Dm755 stern {{prefix}}/bin/stern',
     ],
-    env: {
-      CGO_ENABLED: 0,
-      LDFLAGS: [
-        '-s',
-        '-w',
-        '-X github.com/stern/stern/cmd.version={{version}}',
-      ],
-      BUILDLOC: '{{prefix}}/bin/stern',
-    },
   },
   test: {
     script: [
-      'test "$(stern --version)" = "version: {{version}}"',
+      'test "$(stern --version | head -1)" = "version: {{version}}"',
     ],
   },
 }

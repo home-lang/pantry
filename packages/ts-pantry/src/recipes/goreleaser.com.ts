@@ -11,28 +11,23 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'goreleaser/goreleaser',
   },
-  distributable: {
-    url: 'https://github.com/goreleaser/goreleaser/archive/refs/tags/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'go.dev': '^1.21',
-  },
+  // Prebuilt download: goreleaser ships official per-platform release tarballs
+  // (capitalized OS + x86_64 for amd64; bare binary at the archive root).
+  distributable: null,
 
   build: {
     script: [
-      'go mod download',
-      'mkdir -p {{prefix}}/bin',
-      'go build -v -trimpath -ldflags="$LDFLAGS" -o $BUILDLOC .',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="goreleaser_Darwin_arm64"  ;;',
+      '  darwin+x86-64)  ASSET="goreleaser_Darwin_x86_64" ;;',
+      '  linux+aarch64)  ASSET="goreleaser_Linux_arm64"   ;;',
+      '  linux+x86-64)   ASSET="goreleaser_Linux_x86_64"  ;;',
+      'esac',
       '',
+      'curl -Lfo goreleaser.tar.gz "https://github.com/goreleaser/goreleaser/releases/download/v${VERSION}/${ASSET}.tar.gz"',
+      'tar xf goreleaser.tar.gz',
+      'install -Dm755 goreleaser {{prefix}}/bin/goreleaser',
     ],
-    env: {
-      'GOPROXY': 'https://proxy.golang.org,direct',
-      'GOSUMDB': 'sum.golang.org',
-      'GO111MODULE': 'on',
-      'CGO_ENABLED': '0',
-      'BUILDLOC': '{{prefix}}/bin/goreleaser',
-      'LDFLAGS': ['-s', '-w', '-X main.version={{version}}'],
-    },
   },
 }
