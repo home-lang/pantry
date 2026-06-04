@@ -52,7 +52,7 @@ export const recipe: Recipe = {
       {
         'working-directory': '{{prefix}}',
         run: [
-          'find . -type f \\( -name apr_rules.mk -o -name "apr-{{version.major}}-config" -o -name apr.exp -o -name "*.mk" -o -name "*-config" \\) \\',
+          'find . -type f \\( -name apr_rules.mk -o -name "apr-{{version.major}}-config" -o -name apr.exp -o -name libtool -o -name "*.mk" -o -name "*-config" \\) \\',
           '  -exec sed -i -E "s#/[^ \\"=]*/_cc_wrapper/cc#cc#g; s#/var/buildkit[^ \\"=]*/cc#cc#g" {} +',
         ].join('\n'),
       },
