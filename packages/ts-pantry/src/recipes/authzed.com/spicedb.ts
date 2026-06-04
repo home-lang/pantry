@@ -16,12 +16,13 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go mod download',
-      'go build -v -trimpath -tags netgo -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/spicedb .',
+      'go build -v -trimpath -tags netgo -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/spicedb ./cmd/spicedb',
     ],
     env: {
       GO_LDFLAGS: [
         '-s',
         '-w',
+        '-X github.com/jzelinskie/cobrautil/v2.Version=v{{version}}',
       ],
       linux: {
         GO_LDFLAGS: [
