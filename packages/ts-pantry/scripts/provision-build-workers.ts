@@ -36,7 +36,7 @@ const PRIMARY_ID = 136035759 // pantry-build-x86 — always-on template source
 const WORKER_LABEL = 'pantry-build-worker' // label for elastic boxes we manage
 const SERVER_TYPE = process.env.WORKER_SERVER_TYPE || 'cpx41'
 const LOCATION = process.env.HETZNER_LOCATION || 'ash' // primary lives in ash-dc1
-const K_LOCAL = Number(process.env.WORKER_LOCAL_PARALLELISM || 6) // workers per box
+const K_LOCAL = Number(process.env.WORKER_LOCAL_PARALLELISM || 8) // workers per box (≈ vCPUs; most workers skip/download, so this fills cores)
 const PLATFORM = process.env.WORKER_PLATFORM || 'linux-x86-64'
 
 function log(m: string): void { process.stdout.write(`${new Date().toISOString().slice(11, 19)} ${m}\n`) }
@@ -98,17 +98,15 @@ while true; do
   /root/.bun/bin/bun install --cwd /root/pantry >/dev/null 2>&1 || true
   cd /root/pantry/packages/ts-pantry
   set -a; source /root/.pantry-hetzner.env; set +a
-  TOTAL=\$(bun scripts/build-all-packages.ts -b "\$S3_BUCKET" -r "\$S3_REGION" --platform "\$PLATFORM" --count-only 2>/dev/null | tail -1)
-  PARTS=\$(( K * BOX_COUNT )); [ "\$PARTS" -lt 1 ] && PARTS=1
-  SIZE=\$(( (TOTAL + PARTS - 1) / PARTS )); [ "\$SIZE" -lt 1 ] && SIZE=1
-  echo "\$(date -u +%H:%M:%S) pass: TOTAL=\$TOTAL BOX \$BOX_INDEX/\$BOX_COUNT K=\$K SIZE=\$SIZE"
+  STRIPES=\$(( K * BOX_COUNT )); [ "\$STRIPES" -lt 1 ] && STRIPES=1
+  echo "\$(date -u +%H:%M:%S) pass: BOX \$BOX_INDEX/\$BOX_COUNT K=\$K STRIPES=\$STRIPES"
   pkill -f "build-all-packages.*\$PLATFORM" 2>/dev/null; sleep 1
   for i in \$(seq 0 \$((K-1))); do
-    batch=\$(( BOX_INDEX * K + i ))
+    stripe=\$(( BOX_INDEX * K + i ))   # global worker index across the fleet
     root="/root/pb-\$i"; rm -rf "\$root" 2>/dev/null; mkdir -p "\$root"
     BUILDKIT_ROOT="\$root" nohup bun scripts/build-all-packages.ts \\
       -b "\$S3_BUCKET" -r "\$S3_REGION" --platform "\$PLATFORM" \\
-      --batch "\$batch" --batch-size "\$SIZE" \\
+      --stripe "\$stripe/\$STRIPES" \\
       > "/root/sweep-\$PLATFORM-w\$i.log" 2>&1 &
   done
   while pgrep -f "build-all-packages.*\$PLATFORM" >/dev/null 2>&1; do sleep 30; done

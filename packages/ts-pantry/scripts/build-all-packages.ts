@@ -1289,6 +1289,7 @@ async function main() {
       region: { type: 'string', short: 'r', default: 'us-east-1' },
       batch: { type: 'string' },
       'batch-size': { type: 'string', default: '50' },
+      stripe: { type: 'string' },
       platform: { type: 'string' },
       package: { type: 'string', short: 'p' },
       force: { type: 'boolean', short: 'f', default: false },
@@ -1959,6 +1960,22 @@ Options:
     const end = start + batchSize
     packagesToBuild = allPackages.slice(start, end)
     console.log(`Batch ${batchIndex}: packages ${start}-${Math.min(end, allPackages.length) - 1} of ${allPackages.length}`)
+  }
+  else if (values.stripe !== undefined) {
+    // Interleaved striping: select every n-th package (index % n === i). Unlike
+    // contiguous --batch, every stripe gets an EVEN spread across the whole
+    // sorted list, so no worker's slice is "all already-built" while another's
+    // is "all hard" — which left fleet boxes idle once a contiguous region was
+    // exhausted. Used to balance the multi-box fleet (stripe = globalWorkerIdx).
+    const [iStr, nStr] = String(values.stripe).split('/')
+    const i = parseInt(iStr, 10)
+    const n = parseInt(nStr, 10)
+    if (Number.isNaN(i) || Number.isNaN(n) || n <= 0 || i < 0 || i >= n) {
+      console.error(`Invalid --stripe ${values.stripe} (expected i/n with 0<=i<n)`)
+      process.exit(1)
+    }
+    packagesToBuild = allPackages.filter((_, idx) => idx % n === i)
+    console.log(`Stripe ${i}/${n}: ${packagesToBuild.length} of ${allPackages.length} packages (interleaved)`)
   }
 
   if (packagesToBuild.length === 0 && values['needs-build']) {
