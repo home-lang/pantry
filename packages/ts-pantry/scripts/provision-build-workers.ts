@@ -121,8 +121,8 @@ while true; do
   # the wait below while the other K-1 workers had already exited. Track a pass
   # deadline and a per-worker age cap; when exceeded, SIGKILL the stragglers and
   # start a fresh pass. Worst case the box loses one pass-length, then self-heals.
-  PASS_DEADLINE_S=\$(( $WATCHDOG_PASS_MIN * 60 ))     # whole-pass cap
-  WORKER_MAX_S=\$(( $WATCHDOG_WORKER_MIN * 60 ))      # single-worker age cap
+  PASS_DEADLINE_S=\$(( ${WATCHDOG_PASS_MIN} * 60 ))     # whole-pass cap
+  WORKER_MAX_S=\$(( ${WATCHDOG_WORKER_MIN} * 60 ))      # single-worker age cap
   pass_start=\$(date +%s)
   while pgrep -f "build-all-packages.*\$PLATFORM" >/dev/null 2>&1; do
     now=\$(date +%s); elapsed=\$(( now - pass_start ))
