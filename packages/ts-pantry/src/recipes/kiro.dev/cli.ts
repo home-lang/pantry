@@ -2,6 +2,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'kiro.dev/cli',
+  propsDir: '../props/kiro.dev/cli',
   name: 'cli',
   programs: [
     'kiro-cli',
