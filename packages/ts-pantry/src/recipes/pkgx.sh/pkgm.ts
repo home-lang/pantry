@@ -12,6 +12,9 @@ export const recipe: Recipe = {
   },
   distributable: {
     url: 'https://github.com/pkgxdev/pkgm/releases/download/{{ version.tag }}/pkgm-{{ version }}.tgz',
+    // the tarball contains a single flat `pkgm` file at the root (no top dir),
+    // so the default strip-components=1 would strip the binary itself away.
+    stripComponents: 0,
   },
   build: {
     script: [

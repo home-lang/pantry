@@ -14,6 +14,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': '{{prefix}}',
     script: [
       '"$SRCROOT"/install.sh {{version}}',
     ],

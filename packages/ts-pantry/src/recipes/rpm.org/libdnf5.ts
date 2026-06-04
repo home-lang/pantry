@@ -37,9 +37,10 @@ export const recipe: Recipe = {
       {
         run: "cp $PROP pool_parserpmrichdep.h",
         'working-directory': ".compat-headers/solv",
+        prop: '#ifndef POOL_PARSERPMRICHDEP_H\n#define POOL_PARSERPMRICHDEP_H\n#include <solv/pool.h>\n#ifdef __cplusplus\nextern "C" {\n#endif\nextern Id pool_parserpmrichdep(Pool *pool, const char *dep);\n#ifdef __cplusplus\n}\n#endif\n#endif\n',
       },
       "export CPLUS_INCLUDE_PATH=\"$PWD/.compat-headers:$CPATH\"",
-      "sed -i 's|set(SYSTEMD_DIR \"/usr/lib/systemd/system\")|set(SYSTEMD_DIR \{{prefix}}/lib/systemd/system\)|' CMakeLists.txt",
+      "sed -i 's|set(SYSTEMD_DIR \"/usr/lib/systemd/system\")|set(SYSTEMD_DIR \"{{prefix}}/lib/systemd/system\")|' CMakeLists.txt",
       "cmake . $CMAKE_ARGS",
       "cmake --build .",
       "cmake --install .",
