@@ -133,11 +133,20 @@ pub const ShellCommands = struct {
             // when the cached entry predates this field, i.e. dep_size == 0).
             const mtime_ok = current_dep_mtime == cached_entry.dep_mtime;
             const size_ok = cached_entry.dep_size == 0 or current_dep_size == cached_entry.dep_size;
-            if (mtime_ok and size_ok) {
+            // Also require the project's install to still be on disk — a stale
+            // cache entry must not be served after `rm -rf pantry`, or `dev`
+            // emits dead PATH entries instead of reinstalling.
+            const install_present = blk: {
+                const proj_pantry = std.fmt.allocPrint(self.allocator, "{s}/pantry", .{project_root}) catch break :blk false;
+                defer self.allocator.free(proj_pantry);
+                io_helper.cwd().access(io_helper.io, proj_pantry, .{}) catch break :blk false;
+                break :blk true;
+            };
+            if (mtime_ok and size_ok and install_present) {
                 cached_entry.last_validated = now;
                 return try self.generateShellCode(project_root, cached_entry.path);
             }
-            // File changed: invalidate cache and do full activation
+            // File changed or install removed: fall through to full activation
         }
 
         // Cache miss or invalidated - proceed with full activation
@@ -190,6 +199,14 @@ pub const ShellCommands = struct {
 
         const env_exists = blk: {
             io_helper.cwd().access(io_helper.io, env_bin, .{}) catch break :blk false;
+            // The cached env dir (~/.local/share/pantry/envs/…) outlives a
+            // `rm -rf pantry` in the project, so also require the project's own
+            // install dir. Without this, `pantry env` emits dead PATH entries
+            // instead of reinstalling when the user deletes pantry/ (and the
+            // lockfile). Reinstalling recreates pantry/, so this won't loop.
+            const proj_pantry = std.fmt.allocPrint(self.allocator, "{s}/pantry", .{project_root}) catch break :blk true;
+            defer self.allocator.free(proj_pantry);
+            io_helper.cwd().access(io_helper.io, proj_pantry, .{}) catch break :blk false;
             break :blk true;
         };
 
