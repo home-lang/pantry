@@ -16,7 +16,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       'go mod download',
-      'go build -v -trimpath -ldflags="$LDFLAGS" -o $BUILDLOC ./',
+      'go build -v -trimpath -buildmode=pie -ldflags="$LDFLAGS" -o $BUILDLOC ./cmd/shovel',
     ],
     env: {
       BUILDLOC: '{{prefix}}/bin/shovel',
@@ -25,11 +25,6 @@ export const recipe: Recipe = {
         '-w',
         '-X main.Version={{version}}',
       ],
-      linux: {
-        LDFLAGS: [
-          '-buildmode=pie',
-        ],
-      },
     },
   },
   test: {
