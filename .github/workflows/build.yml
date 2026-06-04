@@ -38,6 +38,10 @@ on:
         description: 'Build only an even slice of the needs-build set, as "i/n" (e.g. "0/8"). Lets you fan out N parallel runners per platform without computing package lists. Empty = whole set.'
         required: false
         type: string
+      parallel:
+        description: 'Workers to run concurrently WITHIN this runner (build-all-packages has no in-process parallelism). Each splits the runner stripe into a sub-stripe, so effective concurrency = runners x parallel. Empty/1 = one worker. Use ~3 on Linux, ~2 on macOS (RAM).'
+        required: false
+        type: string
 
 env:
   # Build-status dashboard reporting is authenticated; without this token every
@@ -339,11 +343,32 @@ jobs:
             fi
             # Even slice of the needs-build set for parallel fan-out (e.g. "0/8")
             STRIPE=$(echo "${{ github.event.inputs.stripe }}" | tr -cd '0-9/')
-            if [ -n "$STRIPE" ]; then
-              ARGS="$ARGS --stripe $STRIPE"
-            fi
           fi
 
+          # Internal parallelism: build-all-packages has no in-process concurrency
+          # (the Hetzner fleet runs K separate processes per box to use all cores).
+          # Mirror that on a runner — run PAR workers, each on a sub-stripe of this
+          # runner's stripe, with its own BUILDKIT_ROOT so they don't clash. So the
+          # runner uses all its cores and effective concurrency = runners x PAR.
+          PAR=$(echo "${{ github.event.inputs.parallel }}" | tr -cd '0-9'); PAR=${PAR:-1}
+          [ "${PAR:-1}" -lt 1 ] && PAR=1
+          if [ -n "$STRIPE" ] && [ "$PAR" -gt 1 ]; then
+            i=${STRIPE%%/*}; n=${STRIPE##*/}; tot=$(( n * PAR ))
+            echo "Internal parallelism: $PAR workers, sub-stripes of $STRIPE over $tot total"
+            pids=""
+            for w in $(seq 0 $((PAR - 1))); do
+              sub=$(( i * PAR + w ))
+              echo "  worker $w -> --stripe $sub/$tot"
+              BUILDKIT_ROOT="/tmp/pb-$w" bun scripts/build-all-packages.ts $ARGS --stripe "$sub/$tot" > "/tmp/worker-$w.log" 2>&1 &
+              pids="$pids $!"
+            done
+            tail -f /tmp/worker-*.log & TAILPID=$!
+            rc=0; for p in $pids; do wait "$p" || rc=1; done
+            kill "$TAILPID" 2>/dev/null || true
+            exit $rc
+          fi
+
+          [ -n "$STRIPE" ] && ARGS="$ARGS --stripe $STRIPE"
           echo "Running: bun scripts/build-all-packages.ts $ARGS"
           bun scripts/build-all-packages.ts $ARGS
         timeout-minutes: 110
