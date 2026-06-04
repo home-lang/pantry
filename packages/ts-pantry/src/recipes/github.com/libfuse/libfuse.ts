@@ -26,11 +26,12 @@ export const recipe: Recipe = {
       {
         run: "meson setup build $ARGS",
         if: ">=3",
-        'working-directory': "..",
+        'working-directory': "$SRCROOT",
       },
       {
         run: "meson compile\nmeson install",
         if: ">=3",
+        'working-directory': "build",
       },
       {
         run: "sed 's/Name: fuse3/Name: fuse/' fuse3.pc > fuse.pc\n",
