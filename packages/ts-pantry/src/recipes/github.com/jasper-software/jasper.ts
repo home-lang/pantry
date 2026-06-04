@@ -17,7 +17,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
-    'working-directory': 'build',
+    'working-directory': 'objdir', // jasper source ships its own build/ dir; use objdir to avoid the in-source-build guard
     script: [
       'cmake .. $ARGS',
       'make --jobs {{ hw.concurrency }} install',
