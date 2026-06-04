@@ -46,6 +46,7 @@ export const recipe: Recipe = {
         "-Dsysconfdir={{prefix}}/etc",
         "-Duseroot=false",
         "--prefix={{prefix}}",
+        "--libdir={{prefix}}/lib",
       ],
       V2_ARGS: [
         "--prefix={{prefix}}",
