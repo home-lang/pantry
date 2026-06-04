@@ -16,7 +16,9 @@ export const recipe: Recipe = {
   },
   distributable: {
     url: 'https://github.com/docbook/xslt10-stylesheets/releases/download/release/{{version}}/docbook-xsl-{{version}}.zip',
-    stripComponents: 1,
+    // the build script copies the `docbook-xsl-{{version}}/` dir wholesale, so the
+    // top-level directory must be preserved (do NOT strip it).
+    stripComponents: 0,
   },
   build: {
     script: [

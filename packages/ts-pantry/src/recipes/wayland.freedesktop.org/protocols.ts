@@ -12,14 +12,16 @@ export const recipe: Recipe = {
     'wayland.freedesktop.org': '*',
     'curl.se': '*',
   },
-  distributable: undefined,
+  // The gitlab releases/downloads endpoint 403s for automated clients (so pkgx
+  // disabled its distributable). The gitlab `/-/archive/` tarball still works, and
+  // wayland-protocols tags are 2-component (e.g. `1.47`, == version.marketing).
+  distributable: {
+    url: 'https://gitlab.freedesktop.org/wayland/wayland-protocols/-/archive/{{version.marketing}}/wayland-protocols-{{version.marketing}}.tar.gz',
+    stripComponents: 1,
+  },
   build: {
     'working-directory': 'build',
     script: [
-      {
-        run: 'curl -L \'https://gitlab.freedesktop.org/wayland/wayland-protocols/-/releases/{{version.tag}}/downloads/wayland-protocols-{{version.tag}}.tar.xz\' | tar -xJ --strip-components=1',
-        'working-directory': '..',
-      },
       'meson $ARGS ..',
       'ninja -v',
       'ninja install -v',
