@@ -18,7 +18,7 @@ export const recipe: Recipe = {
     'rust-lang.org': '~1.94.0',
   },
   distributable: {
-    url: 'https://github.com/openai/codex/archive/refs/tags/{{ version.tag }}.tar.gz',
+    url: 'https://github.com/openai/codex/archive/refs/tags/rust-v{{ version }}.tar.gz',
     stripComponents: 1,
   },
   build: {
