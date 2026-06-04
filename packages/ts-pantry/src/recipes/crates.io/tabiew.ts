@@ -20,7 +20,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      "sed -i 's/^version = .*/version = \{{ version }}\/' Cargo.toml",
+      "sed -i 's/^version = .*/version = \"{{ version }}\"/' Cargo.toml",
       {
         run: "CHAIN=nightly\nPOLARS=\"--features 'polars/nightly'\"",
         if: "<0.12",

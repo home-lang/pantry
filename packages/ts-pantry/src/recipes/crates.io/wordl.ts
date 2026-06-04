@@ -16,7 +16,7 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      'patch -p1 < props/add-version.patch',
+      'sed -i \'s/^version = .*/version = "{{ version }}"/\' Cargo.toml',
       'cargo install --locked --path . --root {{prefix}}',
     ],
   },

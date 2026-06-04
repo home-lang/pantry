@@ -20,6 +20,7 @@ export const recipe: Recipe = {
         run: "sed -f $PROP -i Cargo.toml",
         if: "linux",
         'working-directory': "spider_cli",
+        prop: "/^serde_json =/a\\\nopenssl-sys = { version = \"*\", features = [\"vendored\"] }\n",
       },
       {
         run: "sed -i -E 's/,? *\"io_uring\"//' Cargo.toml",
