@@ -15,12 +15,15 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      // The release tarball is pre-modules (GOPATH-era) and ships a complete
-      // vendor/ dir but no go.mod. Create one with the correct module path and
-      // build straight from the vendored deps (no network, no tidy).
+      // The release tarball is pre-modules (GOPATH-era): it ships a vendor/
+      // dir but no go.mod and no vendor/modules.txt, so -mod=vendor cannot be
+      // used. Drop the stale vendor dir, create a go.mod with the correct
+      // module path, and resolve deps from the network with -mod=mod.
+      'rm -rf vendor',
       'test -f go.mod || go mod init github.com/pressly/sup',
+      'go mod tidy',
       'sed -i \'s/^const VERSION.*/const VERSION = "{{ version }}"/\' sup.go',
-      'go build ${GO_ARGS} -mod=vendor -ldflags="${GO_LDFLAGS}" ./cmd/sup',
+      'go build ${GO_ARGS} -ldflags="${GO_LDFLAGS}" ./cmd/sup',
     ],
     env: {
       GO_ARGS: [
@@ -31,7 +34,7 @@ export const recipe: Recipe = {
         '-w',
         '-X github.com/pressly/sup.VERSION={{ version }}',
       ],
-      GOFLAGS: '-mod=vendor',
+      GOFLAGS: '-mod=mod',
       linux: {
         CGO_ENABLED: 0,
       },
