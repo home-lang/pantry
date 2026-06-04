@@ -26,6 +26,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': 'build',
     script: [
       {
         run: 'export XDG_DATA_DIRS="$XDG_DATA_DIRS:/usr/share"',

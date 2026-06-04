@@ -28,6 +28,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': 'build',
     script: [
       "meson .. $MESON_ARGS",
       {

@@ -30,6 +30,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': 'build',
     script: [
       {
         run: "patch -p1 < props/4135c411af419f4f86dc9ec9301c88012d616c49.diff",

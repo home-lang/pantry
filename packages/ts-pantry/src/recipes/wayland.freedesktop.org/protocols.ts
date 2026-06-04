@@ -14,6 +14,7 @@ export const recipe: Recipe = {
   },
   distributable: undefined,
   build: {
+    'working-directory': 'build',
     script: [
       {
         run: 'curl -L \'https://gitlab.freedesktop.org/wayland/wayland-protocols/-/releases/{{version.tag}}/downloads/wayland-protocols-{{version.tag}}.tar.xz\' | tar -xJ --strip-components=1',

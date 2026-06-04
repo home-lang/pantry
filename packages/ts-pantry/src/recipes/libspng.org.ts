@@ -28,6 +28,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'build',
     workingDirectory: 'build',
     script: [
       'meson .. --prefix={{prefix}} --libdir={{prefix}}/lib --buildtype=release',

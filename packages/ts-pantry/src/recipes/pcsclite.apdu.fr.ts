@@ -23,6 +23,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'build',
     script: [
       // pre-2.2 used autotools
       {

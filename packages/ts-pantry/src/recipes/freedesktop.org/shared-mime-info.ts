@@ -21,6 +21,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': 'build',
     script: [
       {
         run: "sed -i.bak -e '/fdatasync/d' meson.build\nrm meson.build.bak\n",

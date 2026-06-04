@@ -16,6 +16,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': 'build',
     script: [
       {
         run: 'export ARGS="$(echo $ARGS | sed s\'/gtk_doc/hotdoc/\')"',

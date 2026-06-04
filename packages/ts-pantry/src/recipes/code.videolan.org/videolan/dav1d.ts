@@ -18,6 +18,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': 'build',
     script: [
       'meson .. --prefix={{prefix}} --libdir={{prefix}}/lib --buildtype=release',
       'ninja -v',

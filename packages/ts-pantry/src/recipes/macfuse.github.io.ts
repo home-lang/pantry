@@ -22,6 +22,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'build',
     script: [
       'git submodule update --init --recursive',
       'cd "Library-3/build"',

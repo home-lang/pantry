@@ -25,6 +25,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': 'build',
     script: [
       {
         run: "sed -i.bak \"s|revision=master|revision=main|g\" at-spi2-core.wrap\nrm at-spi2-core.wrap.bak\n",

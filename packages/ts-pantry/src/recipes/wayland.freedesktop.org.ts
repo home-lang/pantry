@@ -22,6 +22,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'build',
     script: [
       'cd ".."',
       // gitlab.freedesktop.org's `-/releases/.../downloads/` path 403s from GitHub
