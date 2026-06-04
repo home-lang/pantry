@@ -15,7 +15,9 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
-      "go install -ldflags=\"$GO_LDFLAGS\"",
+      // The CLI main package lives in ./cmd/dasel (root is the library package in
+      // both v2 and v3); `go install` with no path built the library → no binary.
+      "go install -ldflags=\"$GO_LDFLAGS\" ./cmd/dasel",
     ],
     env: {
       GOBIN: "{{prefix}}/bin",
