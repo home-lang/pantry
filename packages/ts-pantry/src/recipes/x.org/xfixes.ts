@@ -10,24 +10,29 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'freedesktop.org/pkg-config': '*',
+    'mesonbuild.com': '*',
+    'ninja-build.org': '*',
   },
+  // x.org's www.x.org/archive/ tarball tree was retired (404s); the
+  // freedesktop GitLab mirror ships the same sources but without a
+  // pre-bootstrapped ./configure, so build via meson (which only needs the
+  // pkg-config deps already declared above).
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libXfixes-{{version}}.tar.xz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxfixes/-/archive/libXfixes-{{version}}/libxfixes-libXfixes-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
-      './configure $ARGS',
-      'make --jobs {{ hw.concurrency }}',
-      'make --jobs {{ hw.concurrency }} install',
+      'meson setup build $ARGS',
+      'meson compile -C build --verbose',
+      'meson install -C build',
     ],
     env: {
       ARGS: [
         '--prefix={{prefix}}',
-        '--disable-dependency-tracking',
-        '--disable-silent-rules',
-        '--sysconfdir={{pkgx.prefix}}/x.org/etc',
-        '--localstatedir={{pkgx.prefix}}/x.org/var',
+        '--libdir={{prefix}}/lib',
+        '--buildtype=release',
+        '--wrap-mode=nofallback',
       ],
     },
   },
