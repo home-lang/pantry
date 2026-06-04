@@ -31,6 +31,11 @@ export const recipe: Recipe = {
   build: {
     script: [
       "./configure $CONFIGURE_ARGS",
+      // groff is relocated by buildkit, so its compiled-in font/macro paths are
+      // broken and `make install`'s man-page generation fails with
+      // "cannot load 'DESC' description file". Point groff at the dep's data dirs.
+      "export GROFF_FONT_PATH=\"$(dirname \"$(find {{deps.gnu.org/groff.prefix}}/share/groff -name DESC -path '*devps*' | head -1)\")/..\"",
+      "export GROFF_TMAC_PATH=\"$(find {{deps.gnu.org/groff.prefix}}/share/groff -name tmac -type d | head -1)\"",
       "make --jobs {{hw.concurrency}} install",
       "sed -i.bak \"s|$PKGX_DIR|\\$PKGX_DIR|g\" {{prefix}}/etc/systemd/system/man-db.service",
       "rm {{prefix}}/etc/systemd/system/man-db.service.bak",
