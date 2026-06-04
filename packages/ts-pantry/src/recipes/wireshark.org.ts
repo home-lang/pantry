@@ -13,7 +13,6 @@ export const recipe: Recipe = {
   dependencies: {
     'c-ares.org': '^1.23',
     'gnome.org/glib': '^2.78.3',
-    'gnutls.org': '^3.8.2',
     'gnupg.org/libgcrypt': '^1.10.3',
     'gnupg.org/libgpg-error': '^1.47',
     'github.com/maxmind/libmaxminddb': '^1.8',
@@ -49,7 +48,10 @@ export const recipe: Recipe = {
         '-DCMAKE_VERBOSE_MAKEFILE=ON',
         '-Wno-dev',
         '-DBUILD_wireshark=OFF',
-        '-DENABLE_GNUTLS=ON',
+        // GnuTLS does not yet build for linux-x86-64 (blocked on nettle 3.10.x),
+        // and it is an optional dependency (TLS decryption support only).
+        // Disable it so the rest of wireshark builds.
+        '-DENABLE_GNUTLS=OFF',
         '-DBUILD_wireshark_gtk=OFF',
         '-DENABLE_LUA=ON',
         '-DENABLE_SMI=ON',
@@ -61,7 +63,6 @@ export const recipe: Recipe = {
         '-DLUA_INCLUDE_DIR={{deps.lua.org.prefix}}/include/lua',
         '-DCARES_INCLUDE_DIR={{deps.c-ares.org.prefix}}/include',
         '-DGCRYPT_INCLUDE_DIR={{deps.gnupg.org/libgcrypt.prefix}}/include',
-        '-DGNUTLS_INCLUDE_DIR={{deps.gnutls.org.prefix}}/include',
         '-DMAXMINDDB_INCLUDE_DIR={{deps.github.com/maxmind/libmaxminddb.prefix}}/include',
       ],
       'darwin': {
