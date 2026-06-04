@@ -11,7 +11,8 @@ export const recipe: Recipe = {
     'zlib.net': '*',
   },
   distributable: {
-    url: 'https://github.com/ColinIanKing/stress-ng/archive/refs/tags/{{ version.tag }}.tar.gz',
+    // Upstream tags are capital-V, zero-padded patch: 0.20.1 -> V0.20.01
+    url: 'https://github.com/ColinIanKing/stress-ng/archive/refs/tags/V{{ version.major }}.{{ version.minor }}.0{{ version.patch }}.tar.gz',
     stripComponents: 1,
   },
   build: {
