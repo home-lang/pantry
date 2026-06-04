@@ -40,7 +40,7 @@ export const recipe: Recipe = {
       ARGS: [
         "-GNinja",
         "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_INSTALL_PREFIX=\"{{prefix}}\"",
+        "-DCMAKE_INSTALL_PREFIX={{prefix}}",
         "-DZSTD_PROGRAMS_LINK_SHARED=ON",
         "-DZSTD_BUILD_CONTRIB=ON",
         "-DZSTD_LEGACY_SUPPORT=ON",
@@ -50,7 +50,7 @@ export const recipe: Recipe = {
       ],
       darwin: {
         ARGS: [
-          "-DCMAKE_CXX_FLAGS=\"-std=c++11\"",
+          "-DCMAKE_CXX_FLAGS=-std=c++11",
         ],
       },
     },
