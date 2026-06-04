@@ -1,4 +1,5 @@
-import { resolve, dirname, relative } from 'node:path'
+import { resolve, dirname, relative, join, sep } from 'node:path'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import type { RegistryConfig, AuthStorage } from './types'
 import { Registry, createLocalRegistry, createRegistryFromEnv } from './registry'
@@ -50,11 +51,70 @@ async function loadKnownVersions(): Promise<void> {
   }
 }
 await loadKnownVersions()
+
+// domain -> platforms the package targets, derived from each recipe's
+// `platforms` constraint and mapped to the 4 dashboard build platforms. Absent
+// ⇒ supports all four. Lets the dashboard call a macOS-only package "complete"
+// once it has its darwin binaries, instead of forever short of "all 4".
+const _supportedPlatforms = new Map<string, string[]>()
+const ALL_PLATFORMS = ['darwin-arm64', 'darwin-x86-64', 'linux-x86-64', 'linux-arm64']
+function mapPlatformTokens(tokens: string[]): string[] {
+  const out = new Set<string>()
+  for (const raw of tokens) {
+    const t = raw.trim().replace(/^['"]|['"]$/g, '')
+    if (!t)
+      continue
+    const [os, arch] = t.split('/')
+    const archMap = (a?: string) => (a === 'aarch64' || a === 'arm64' ? 'arm64' : a === 'x86-64' || a === 'x86_64' ? 'x86-64' : a)
+    if (os === 'darwin')
+      arch ? out.add(`darwin-${archMap(arch)}`) : (out.add('darwin-arm64'), out.add('darwin-x86-64'))
+    else if (os === 'linux')
+      arch ? out.add(`linux-${archMap(arch)}`) : (out.add('linux-x86-64'), out.add('linux-arm64'))
+    // windows/* and anything else aren't tracked by the dashboard → ignored
+  }
+  return [...out].filter(p => ALL_PLATFORMS.includes(p))
+}
+async function loadSupportedPlatforms(): Promise<void> {
+  try {
+    const recipesDir = resolve(
+      typeof import.meta.dirname === 'string' ? import.meta.dirname : dirname(fileURLToPath(import.meta.url)),
+      '../../ts-pantry/src/recipes',
+    )
+    const next = new Map<string, string[]>()
+    const walk = (dir: string): void => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry)
+        if (statSync(p).isDirectory()) {
+          walk(p)
+          continue
+        }
+        if (!p.endsWith('.ts'))
+          continue
+        const m = readFileSync(p, 'utf8').match(/platforms:\s*\[([^\]]*)\]/)
+        if (!m)
+          continue // no constraint ⇒ defaults to all four (left out of the map)
+        const mapped = mapPlatformTokens(m[1].split(','))
+        if (mapped.length && mapped.length < ALL_PLATFORMS.length) {
+          const domain = relative(recipesDir, p).replace(/\.ts$/, '').split(sep).join('/')
+          next.set(domain, mapped)
+        }
+      }
+    }
+    walk(recipesDir)
+    _supportedPlatforms.clear()
+    for (const [k, v] of next) _supportedPlatforms.set(k, v)
+    console.log(`Loaded ${_supportedPlatforms.size} platform-constrained packages`)
+  }
+  catch (err) {
+    console.warn('Could not load recipe platform constraints:', err)
+  }
+}
+await loadSupportedPlatforms()
 // SIGUSR2 triggers a non-intrusive reload (SIGUSR1 is reserved by Bun for
 // internal use). Operators can `kill -SIGUSR2 $(pidof pantry-registry)`.
 process.on('SIGUSR2', () => {
   console.log('SIGUSR2 received — reloading known versions map')
-  loadKnownVersions()
+  Promise.all([loadKnownVersions(), loadSupportedPlatforms()])
     .then(() => { if (_buildStatus) seedKnownPackages(_buildStatus) })
     .catch(err => console.error('Reload failed:', err))
 })
@@ -341,6 +401,7 @@ function seedKnownPackages(s: BuildStatusStore): void {
   for (const [domain, versions] of _knownVersions)
     map.set(domain, [...versions])
   s.setKnownPackages(map)
+  s.setSupportedPlatforms(new Map(_supportedPlatforms))
 }
 
 function getBuildStatus(): BuildStatusStore {

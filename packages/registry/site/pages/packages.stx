@@ -13,11 +13,11 @@
     <div class="grid gap-3 mb-6" style="grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));" id="summary">
       <div class="stat-card"><p class="stat-label">Packages</p><p class="stat-num" id="stat-total">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Versions published</p><p class="stat-num" id="stat-versions">&mdash;</p></div>
-      <div class="stat-card"><p class="stat-label">All 4 platforms</p><p class="stat-num" id="stat-full" style="color: var(--green);">&mdash;</p></div>
+      <div class="stat-card"><p class="stat-label">Projects complete</p><p class="stat-num" id="stat-complete" style="color: var(--green);">&mdash;</p></div>
+      <div class="stat-card"><p class="stat-label">Updates available</p><p class="stat-num" id="stat-updates" style="color: var(--accent);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Building now</p><p class="stat-num" id="stat-building" style="color: var(--yellow);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Failed</p><p class="stat-num" id="stat-failed" style="color: var(--red, #f87171);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Unbuilt</p><p class="stat-num" id="stat-unbuilt" style="color: var(--fg-subtle);">&mdash;</p></div>
-      <div class="stat-card"><p class="stat-label">Queued</p><p class="stat-num" id="stat-queued">&mdash;</p></div>
     </div>
 
     <!-- Controls -->
@@ -184,12 +184,18 @@
         if (present) return '<td style="text-align:center" class="cell-yes">✓</td>'
         return '<td style="text-align:center" class="cell-no">–</td>'
       }
+      function supportedOf(p) {
+        // platforms the package actually targets; fall back to all 4 if absent
+        return (p.supportedPlatforms && p.supportedPlatforms.length) ? p.supportedPlatforms : PLATS
+      }
       function statusOf(p, b) {
         if (b && Object.keys(b.platforms).length > 0) return 'building'
         if (queued[p.domain]) return 'queued'
         if (p.lastState === 'failed') return 'failed'
         if (!p.published) return 'unbuilt'
-        return PLATS.every(function (pl) { return p.platforms[pl] }) ? 'ok' : 'incomplete'
+        // "complete" = built on every platform it supports (so a macOS-only
+        // package is complete with just its darwin binaries, not stuck < all 4)
+        return supportedOf(p).every(function (pl) { return p.platforms[pl] }) ? 'ok' : 'incomplete'
       }
       function badge(st) {
         return '<span class="badge badge-' + st + (st === 'building' ? ' pkg-building' : '') + '">' + BADGE_LABEL[st] + '</span>'
@@ -270,21 +276,26 @@
       function setStat(id, val) { var el = document.getElementById(id); if (el && el.textContent !== String(val)) { el.textContent = val; bump(el) } }
       function renderSummary() {
         var bm = buildingMap()
-        var full = 0, failed = 0, unbuilt = 0, building = 0
+        var complete = 0, updates = 0, failed = 0, unbuilt = 0, building = 0
         for (var i = 0; i < packages.length; i++) {
-          var st = statusOf(packages[i], bm[packages[i].domain])
-          if (st === 'ok') full++; else if (st === 'failed') failed++; else if (st === 'unbuilt') unbuilt++; else if (st === 'building') building++
+          var p = packages[i]
+          var st = statusOf(p, bm[p.domain])
+          if (st === 'ok') { complete++; if (p.hasUpdate) updates++ }
+          else if (st === 'failed') failed++; else if (st === 'unbuilt') unbuilt++; else if (st === 'building') building++
         }
         setStat('stat-total', packages.length)
         setStat('stat-versions', totals.publishedVersions || 0)
-        setStat('stat-full', full)
+        // "complete" = built on every supported platform (incl. macOS-only
+        // packages that can never reach all 4); "updates" = complete projects
+        // whose newest catalog version is newer than the newest one with binaries.
+        setStat('stat-complete', complete)
+        setStat('stat-updates', updates)
         // Count building *rows* (unique packages shown as building), not raw
         // events — multiple versions/platforms of one domain collapse to a
         // single row, so status.building.length over-counted the visible list.
         setStat('stat-building', building)
         setStat('stat-failed', failed)
         setStat('stat-unbuilt', unbuilt)
-        setStat('stat-queued', status.queue.length)
       }
 
       // ── Live log drawer (stable element, never rebuilt by the table) ──────────

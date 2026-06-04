@@ -47,6 +47,17 @@ export interface PackageRow {
   published: boolean
   /** Latest message (building progress) or error (failed) for inline display. */
   lastMessage?: string
+  /** Platforms this package targets (recipe `platforms` constraint mapped to the
+   *  4 build platforms; defaults to all 4 when unconstrained). A project is
+   *  "complete" when its latest version is built on every supported platform —
+   *  so a macOS-only package is complete with just its darwin binaries. */
+  supportedPlatforms: string[]
+  /** Newest version known from the catalog (may exceed latestVersion when a
+   *  published package has an unbuilt newer release ⇒ update available). */
+  newestVersion: string | null
+  /** True when the package is published but a newer version exists than the
+   *  newest one with binaries (i.e. an update is available to build). */
+  hasUpdate: boolean
 }
 
 /** One captured build-log line for a domain (shown in the per-package log panel). */
@@ -97,6 +108,10 @@ export class BuildStatusStore {
   // package — including those not yet built — not just ones with binaries.
   private knownVersions = new Map<string, string[]>()
 
+  // domain -> platforms the package targets (recipe `platforms`, mapped to
+  // BUILD_PLATFORMS). Absent ⇒ supports all four. Drives "complete".
+  private supportedPlatforms = new Map<string, string[]>()
+
   // Per-domain ring buffer of recent build-log lines (in-memory only; not
   // persisted — these are live build diagnostics, capped per domain).
   private logs = new Map<string, BuildLogLine[]>()
@@ -137,6 +152,13 @@ export class BuildStatusStore {
    */
   setKnownPackages(map: Map<string, string[]>): void {
     this.knownVersions = map
+  }
+
+  /** Seed domain -> supported build platforms (recipe `platforms` constraint,
+   *  already mapped to BUILD_PLATFORMS). Domains absent from the map support all
+   *  four platforms. Drives the "complete" status + the Projects-Complete stat. */
+  setSupportedPlatforms(map: Map<string, string[]>): void {
+    this.supportedPlatforms = map
   }
 
   /** Recent build-log lines for a domain (newest last), for the log panel. */
@@ -425,6 +447,11 @@ export class BuildStatusStore {
       const platforms: Record<string, boolean> = {}
       for (const p of BUILD_PLATFORMS)
         platforms[p] = latestPlats.has(p)
+      // newest version the catalog knows about (vs `latest` = newest *published*)
+      const newestVersion = (this.knownVersions.get(domain) || []).reduce<string | null>(
+        (acc, v) => (acc === null || compareVersionLoose(v, acc) > 0 ? v : acc),
+        null,
+      )
       packages.push({
         domain,
         latestVersion: latest,
@@ -434,6 +461,9 @@ export class BuildStatusStore {
         lastState: lastStateByDomain.get(domain),
         published,
         lastMessage: lastMessageByDomain.get(domain),
+        supportedPlatforms: this.supportedPlatforms.get(domain) || [...BUILD_PLATFORMS],
+        newestVersion: newestVersion ?? latest,
+        hasUpdate: published && !!newestVersion && !!latest && compareVersionLoose(newestVersion, latest) > 0,
       })
     }
     packages.sort((a, b) => a.domain.localeCompare(b.domain))
