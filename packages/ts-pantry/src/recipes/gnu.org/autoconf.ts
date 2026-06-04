@@ -47,7 +47,12 @@ export const recipe: Recipe = {
           // fix hardcoded paths
           // this was a patch, but patches are fragile. this is more robust. for now.
           'PREFIX="$(echo \'{{prefix}}\' | sed \'s/\\+/\\\\+/g\')"',
-          'perl -pi -e "s|\'$PREFIX/|\\$prefix.\'/|g" bin/*',
+          // NB: the replacement must emit a LITERAL `$prefix` (a runtime var in the
+          // relocated script). Double-quoted shell + perl made `$prefix` interpolate
+          // at BUILD time (undefined → empty), producing `|| .'/...'` which is a perl
+          // syntax error (`near "|| ."`) that broke autoreconf for ALL autotools deps.
+          // Single-quoted perl preserves the backslash so perl writes `$prefix` literally.
+          'perl -pi -e \'s|\\x27\'"$PREFIX"\'/|\\$prefix.\\x27/|g\' bin/*',
         ],
         'working-directory': '{{prefix}}',
       },
