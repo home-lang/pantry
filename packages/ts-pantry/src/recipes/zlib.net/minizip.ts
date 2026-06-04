@@ -17,6 +17,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': 'contrib/minizip',
     script: [
       'autoreconf -fi',
       './configure --prefix={{prefix}}',

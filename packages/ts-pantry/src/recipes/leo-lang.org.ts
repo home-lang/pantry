@@ -24,6 +24,7 @@ export const recipe: Recipe = {
   },
   distributable: {
     url: 'git+https://github.com/AleoHQ/leo',
+    ref: '{{version.tag}}',
   },
 
   build: {
