@@ -150,10 +150,18 @@ RestartSec=10
 WantedBy=multi-user.target
 `
 
+// Dev libs that aren't in the S3 dep registry, so source builds fall back to the
+// system copy. Without the -dev packages the fallback has no headers/.pc/.so and
+// builds fail (libfido2→libudev, shared-mime-info→glib, yubikey-agent→pcsclite).
+const SYSTEM_DEV_LIBS = 'libudev-dev libglib2.0-dev libpcsclite-dev libsystemd-dev libdbus-1-dev'
+
 function configureBox(ip: string, boxIndex: number, boxCount: number): void {
   log(`  ${ip}: configuring as box ${boxIndex}/${boxCount}`)
   // clear any build cruft inherited from the snapshot, refresh repo
   ssh(ip, 'rm -rf /root/pb-* /root/.cache/* 2>/dev/null; cd /root/pantry && git fetch origin main -q && git reset --hard origin/main -q')
+  // ensure system-fallback dev libs are present (idempotent; best-effort)
+  try { ssh(ip, `DEBIAN_FRONTEND=noninteractive apt-get install -y -q -o DPkg::Lock::Timeout=120 ${SYSTEM_DEV_LIBS} >/dev/null 2>&1 || true`) }
+  catch { /* non-fatal */ }
   sshWrite(ip, '/root/fleet-daemon.sh', daemonScript(boxIndex, boxCount))
   sshWrite(ip, '/root/box-disk-guard.sh', GUARD_SCRIPT)
   sshWrite(ip, '/etc/systemd/system/pantry-fleet.service', FLEET_UNIT)
