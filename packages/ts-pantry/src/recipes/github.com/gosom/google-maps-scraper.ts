@@ -23,8 +23,10 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
+      // Inject the version at build time (upstream reads it from build info,
+      // which is "(devel)" for a source tarball). Replaces the lost pkgx prop.
       {
-        run: 'sed -i -f $PROP runner/runner.go',
+        run: 'sed -i \'/version := info.Main.Version/a\\\n  if version == "(devel)" {\\\n    version = "{{version}}"\\\n  }\' runner/runner.go',
       },
       'go build $GO_ARGS -ldflags="$GO_LDFLAGS" .',
     ],
