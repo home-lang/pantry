@@ -801,7 +801,27 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'gnupg.org/v2.5': ['*'],
 }
 
+// The build target platform for this invocation, set in main(). Lets
+// isVersionSkipped() apply darwin-only skip rules only on darwin.
+let buildTargetPlatform = ''
+
+// Domains whose SKIP_VERSIONS entry exists ONLY because of a darwin build
+// failure (the "build failure on darwin" comments). These build fine on Linux,
+// so the skip must NOT apply there — otherwise apr-util etc. (and their
+// consumers like apache.org/serf) are blocked on Linux for no reason.
+const DARWIN_ONLY_BROKEN = new Set<string>([
+  'apache.org/apr-util',
+  'fukuchi.org/qrencode',
+  'graphicsmagick.org',
+  'jemalloc.net',
+  'leonerd.org.uk/libtermkey',
+  'sourceforge.net/faac',
+])
+
 function isVersionSkipped(domain: string, version: string): boolean {
+  // darwin-only-broken packages are buildable on non-darwin platforms
+  if (DARWIN_ONLY_BROKEN.has(domain) && buildTargetPlatform && !buildTargetPlatform.startsWith('darwin'))
+    return false
   const specs = SKIP_VERSIONS[domain]
   if (!specs) return false
   if (specs.includes(version) || specs.includes('*')) return true
@@ -1918,6 +1938,7 @@ Options:
   const region = values.region || 'us-east-1'
   const { platform: detectedPlatform } = detectPlatform()
   const platform = values.platform || detectedPlatform
+  buildTargetPlatform = platform // enables darwin-only skip scoping in isVersionSkipped
   const batchSize = parseInt(values['batch-size'] || '50', 10)
   const force = values.force || false
   const multiVersion = values['multi-version'] || false
