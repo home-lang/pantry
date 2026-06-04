@@ -138,6 +138,8 @@ function configureBox(ip: string, boxIndex: number, boxCount: number): void {
   ssh(ip, 'rm -rf /root/pb-* /root/.cache/* 2>/dev/null; cd /root/pantry && git fetch origin main -q && git reset --hard origin/main -q')
   sshWrite(ip, '/root/fleet-daemon.sh', daemonScript(boxIndex, boxCount))
   sshWrite(ip, '/root/box-disk-guard.sh', GUARD_SCRIPT)
+  // newline-joined: a backgrounded `cmd &` must be followed by a newline, not
+  // `; ` — `&;` is a bash syntax error.
   ssh(ip, [
     'chmod +x /root/fleet-daemon.sh /root/box-disk-guard.sh',
     'pkill -9 -f "fleet-daemon.sh|sweep-daemon.sh|xorg-loop.sh|build-all-packages" 2>/dev/null || true',
@@ -145,8 +147,9 @@ function configureBox(ip: string, boxIndex: number, boxCount: number): void {
     'sleep 1',
     'setsid bash /root/box-disk-guard.sh >/root/box-disk-guard.log 2>&1 </dev/null &',
     'setsid bash /root/fleet-daemon.sh >/root/fleet-daemon.log 2>&1 </dev/null &',
-    'echo launched',
-  ].join('; '))
+    'sleep 1',
+    'pgrep -f fleet-daemon.sh >/dev/null && echo launched || { echo "fleet-daemon failed to start" >&2; exit 1; }',
+  ].join('\n'))
 }
 
 // ── image (snapshot) discovery ───────────────────────────────────────────────────
