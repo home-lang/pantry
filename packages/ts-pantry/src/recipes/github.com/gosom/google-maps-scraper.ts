@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'github.com/gosom/google-maps-scraper',
+  propsDir: '../../props/github.com/gosom/google-maps-scraper',
   name: 'google-maps-scraper',
   programs: [
     'google-maps-scraper',

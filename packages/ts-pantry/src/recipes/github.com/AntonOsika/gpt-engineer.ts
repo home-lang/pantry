@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: "github.com/AntonOsika/gpt-engineer",
+  propsDir: '../../props/github.com/AntonOsika/gpt-engineer',
   name: "gpt-engineer",
   programs: [
     "gpte",

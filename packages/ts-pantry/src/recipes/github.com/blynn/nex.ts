@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'github.com/blynn/nex',
+  propsDir: '../../props/github.com/blynn/nex',
   name: 'nex',
   programs: [
     'nex',
