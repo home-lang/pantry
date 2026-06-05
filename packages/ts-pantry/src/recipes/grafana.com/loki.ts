@@ -6,46 +6,24 @@ export const recipe: Recipe = {
   programs: [
     'loki',
   ],
-  buildDependencies: {
-    'go.dev': '=1.24.8',
-    'git-scm.org': '*',
-    'curl.se': '*',
-    'gnu.org/patch': '*',
-  },
-  distributable: {
-    url: 'git+https://github.com/grafana/loki',
-  },
+  // Download official prebuilt binaries instead of compiling from source.
+  // Grafana ships per-version, multi-platform release zips for loki.
   build: {
     script: [
-      {
-        run: 'curl -L https://raw.githubusercontent.com/Homebrew/homebrew-core/1cf441a0/Patches/loki/loki-3.5.1-purego.patch | patch -p1',
-        if: '>=3.5<3.6',
-      },
-      'go build -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/loki ./cmd/loki',
-      'install -Dm755 cmd/loki/loki-local-config.yaml {{prefix}}/etc/loki-local-config.yaml',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="darwin-arm64" ;;',
+      '  darwin+x86-64)  ASSET="darwin-amd64" ;;',
+      '  linux+aarch64)  ASSET="linux-arm64" ;;',
+      '  linux+x86-64)   ASSET="linux-amd64" ;;',
+      'esac',
+      'URL="https://github.com/grafana/loki/releases/download/v${VERSION}/loki-${ASSET}.zip"',
+      'curl -Lfo loki.zip "$URL"',
+      'unzip -o loki.zip',
+      'install -Dm755 "loki-${ASSET}" {{prefix}}/bin/loki',
+      'curl -Lfo loki-local-config.yaml "https://raw.githubusercontent.com/grafana/loki/v${VERSION}/cmd/loki/loki-local-config.yaml"',
+      'install -Dm644 loki-local-config.yaml {{prefix}}/etc/loki-local-config.yaml',
     ],
-    env: {
-      GO_LDFLAGS: [
-        '-s',
-        '-w',
-        '-X github.com/grafana/loki/pkg/util/build.Branch=$(git rev-parse --abbrev-ref HEAD)',
-        '-X github.com/grafana/loki/pkg/util/build.Version={{version}}',
-        '-X github.com/grafana/loki/pkg/util/build.Revision=$(git rev-parse --short HEAD)',
-        '-X github.com/grafana/loki/pkg/util/build.BuildUser=pkgx',
-        '-X github.com/grafana/loki/pkg/util/build.BuildDate=$(date -u +"%Y-%m-%dT%H:%M:%SZ")',
-        '-X github.com/grafana/loki/v3/pkg/util/build.Branch=$(git rev-parse --abbrev-ref HEAD)',
-        '-X github.com/grafana/loki/v3/pkg/util/build.Version={{version}}',
-        '-X github.com/grafana/loki/v3/pkg/util/build.Revision=$(git rev-parse --short HEAD)',
-        '-X github.com/grafana/loki/v3/pkg/util/build.BuildUser=pkgx',
-        '-X github.com/grafana/loki/v3/pkg/util/build.BuildDate=$(date -u +"%Y-%m-%dT%H:%M:%SZ")',
-      ],
-      linux: {
-        GO_LDFLAGS: [
-          '-buildmode=pie',
-          '-extldflags "-static"',
-        ],
-      },
-    },
   },
   test: {
     script: [
