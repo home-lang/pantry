@@ -33,6 +33,12 @@ export const recipe: Recipe = {
         '--buildtype=release',
         '--wrap-mode=nofallback',
       ],
+      // meson otherwise resolves the host's stale wayland-scanner (1.22) via
+      // /usr/bin/pkg-config and fails the `wayland-scanner >= 1.23` check. Put
+      // our wayland's pkgconfig + bin ahead of the system paths so the fresh
+      // scanner (>=1.23) is the one meson finds.
+      PKG_CONFIG_PATH: '{{deps.wayland.freedesktop.org.prefix}}/lib/pkgconfig:$PKG_CONFIG_PATH',
+      PATH: '{{deps.wayland.freedesktop.org.prefix}}/bin:$PATH',
     },
   },
   test: {
