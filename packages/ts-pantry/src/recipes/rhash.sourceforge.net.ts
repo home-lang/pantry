@@ -18,7 +18,10 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      './configure --disable-gettext --prefix={{prefix}}',
+      // rhash ships a hand-rolled configure that probes `$CC`/gcc/cc and bails
+      // with "compiler not found" if none is detected; pin it to the buildkit
+      // compiler wrapper so the detection succeeds on macOS too.
+      './configure --cc="${CC:-cc}" --disable-gettext --prefix={{prefix}}',
       'make rhash',
       'make --jobs {{hw.concurrency}}',
       'make install',
