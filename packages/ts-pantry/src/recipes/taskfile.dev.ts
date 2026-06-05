@@ -11,30 +11,23 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'go-task/task',
   },
-  distributable: {
-    url: 'https://github.com/go-task/task/archive/refs/tags/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'go.dev': '~1.23',
-  },
+  // Prebuilt download: task ships official per-platform release tarballs
+  // (bare `task` binary at the archive root).
+  distributable: null,
 
   build: {
     script: [
-      {
-        run: 'sed -i \'s/info.Main.Version/{{version}}/g\' version.go',
-        'working-directory': 'internal/version',
-      },
-      'go build -o {{prefix}}/bin/task -ldflags="$GO_LDFLAGS" ./cmd/task',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="task_darwin_arm64" ;;',
+      '  darwin+x86-64)  ASSET="task_darwin_amd64" ;;',
+      '  linux+aarch64)  ASSET="task_linux_arm64"  ;;',
+      '  linux+x86-64)   ASSET="task_linux_amd64"  ;;',
+      'esac',
+      '',
+      'curl -Lfo task.tar.gz "https://github.com/go-task/task/releases/download/v${VERSION}/${ASSET}.tar.gz"',
+      'tar xf task.tar.gz',
+      'install -Dm755 task {{prefix}}/bin/task',
     ],
-    env: {
-      'GOBIN': '${{prefix}}/bin',
-      'GO_LDFLAGS': ['-s', '-w', '-X github.com/go-task/task/v3/internal/version.version={{version}}'],
-      // Linux needs -buildmode=pie or the resulting binary segfaults.
-      // https://github.com/docker-library/golang/issues/402#issuecomment-982204575
-      'linux': {
-        GO_LDFLAGS: ['-s', '-w', '-X github.com/go-task/task/v3/internal/version.version={{version}}', '-buildmode=pie'],
-      },
-    },
   },
 }
