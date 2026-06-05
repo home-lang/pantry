@@ -17,7 +17,10 @@ export const recipe: Recipe = {
     "tset",
   ],
   distributable: {
-    url: "https://ftp.gnu.org/gnu/ncurses/ncurses-{{ version.raw }}.tar.gz",
+    // Upstream ships two-component tarballs (ncurses-6.5.tar.gz), so use the
+    // marketing version. {{version.raw}} (6.5.0) 404s and only succeeds via
+    // buildkit's shortened-version retry.
+    url: "https://ftp.gnu.org/gnu/ncurses/ncurses-{{ version.marketing }}.tar.gz",
     stripComponents: 1,
   },
   build: {
