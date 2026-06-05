@@ -10,15 +10,19 @@ export const recipe: Recipe = {
     'x.org/exts': '*',
   },
   buildDependencies: {
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': '*',
     'x.org/util-macros': '*',
   },
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libXv-{{version}}.tar.xz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxv/-/archive/libXv-{{version}}/libxv-libXv-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure $ARGS',
       'make --jobs {{ hw.concurrency }}',
       'make --jobs {{ hw.concurrency }} install',

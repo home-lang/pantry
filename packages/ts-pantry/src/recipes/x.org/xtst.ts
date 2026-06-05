@@ -9,16 +9,20 @@ export const recipe: Recipe = {
     'x.org/protocol': '*',
   },
   buildDependencies: {
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'gnu.org/make': '*',
     'freedesktop.org/pkg-config': '*',
     'x.org/util-macros': '*',
   },
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libXtst-{{version}}.tar.gz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxtst/-/archive/libXtst-{{version}}/libxtst-libXtst-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure $ARGS',
       'make --jobs {{ hw.concurrency }}',
       'make --jobs {{ hw.concurrency }} install',

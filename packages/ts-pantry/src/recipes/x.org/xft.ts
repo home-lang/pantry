@@ -10,12 +10,20 @@ export const recipe: Recipe = {
     'sourceware.org/bzip2': '^1',
     'zlib.net': '^1',
   },
+  buildDependencies: {
+    'freedesktop.org/pkg-config': '*',
+    'x.org/util-macros': '*',
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
+  },
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libXft-{{version}}.tar.xz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxft/-/archive/libXft-{{version}}/libxft-libXft-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure $ARGS',
       'make --jobs {{ hw.concurrency }}',
       'make --jobs {{ hw.concurrency }} install',

@@ -9,14 +9,19 @@ export const recipe: Recipe = {
     'x.org/xt': '*',
   },
   buildDependencies: {
+    'x.org/util-macros': '*',
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': '~0.29',
   },
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libXmu-{{version}}.tar.gz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxmu/-/archive/libXmu-{{version}}/libxmu-libXmu-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure \\',
       '  --prefix={{prefix}} \\',
       '  --sysconfdir="$SHELF"/etc \\',

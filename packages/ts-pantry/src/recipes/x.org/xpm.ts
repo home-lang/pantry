@@ -9,15 +9,20 @@ export const recipe: Recipe = {
     'zlib.net': '^1.2',
   },
   buildDependencies: {
+    'x.org/util-macros': '*',
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': '~0.29',
     'gnu.org/gettext': 0.21,
   },
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libXpm-{{version}}.tar.gz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxpm/-/archive/libXpm-{{version}}/libxpm-libXpm-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure \\',
       '  --prefix={{prefix}} \\',
       '  --sysconfdir="$SHELF"/etc \\',

@@ -10,14 +10,19 @@ export const recipe: Recipe = {
     'x.org/xfixes': '*',
   },
   buildDependencies: {
+    'x.org/util-macros': '*',
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': '*',
   },
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libXdamage-{{version}}.tar.xz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxdamage/-/archive/libXdamage-{{version}}/libxdamage-libXdamage-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure $ARGS',
       'make --jobs {{ hw.concurrency }}',
       'make --jobs {{ hw.concurrency }} install',

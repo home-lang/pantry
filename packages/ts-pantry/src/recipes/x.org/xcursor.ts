@@ -10,15 +10,19 @@ export const recipe: Recipe = {
     'x.org/xrender': '*',
   },
   buildDependencies: {
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': '*',
     'x.org/util-macros': '*',
   },
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libXcursor-{{version}}.tar.xz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxcursor/-/archive/libXcursor-{{version}}/libxcursor-libXcursor-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure $ARGS',
       'make --jobs {{ hw.concurrency }}',
       'make --jobs {{ hw.concurrency }} install',

@@ -8,14 +8,19 @@ export const recipe: Recipe = {
     'x.org/protocol': '*',
   },
   buildDependencies: {
+    'x.org/util-macros': '*',
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': '*',
   },
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libxshmfence-{{version}}.tar.xz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxshmfence/-/archive/libxshmfence-{{version}}/libxshmfence-libxshmfence-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure $ARGS',
       'make --jobs {{ hw.concurrency }}',
       'make --jobs {{ hw.concurrency }} install',
