@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/hyperfine`
  * @programs `hyperfine`
- * @version `1.20.0` (8 versions available)
+ * @version `1.20.0` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install crates.io/hyperfine`
@@ -67,7 +67,6 @@ export const cratesiohyperfinePackage = {
     '1.16.1',
     '1.16.0',
     '1.15.0',
-    '0.17.0',
   ] as const,
   aliases: [] as const,
 }
