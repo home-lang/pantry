@@ -11,27 +11,32 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'caddyserver/caddy',
   },
-  distributable: {
-    url: 'https://github.com/caddyserver/caddy/archive/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'go.dev': '*',
-    'curl.se': '*',
-  },
+  // Prebuilt download: caddy (Go) ships official per-platform release archives
+  // (`caddy_<ver>_<os>_<arch>.tar.gz`). The recipe builds the vanilla caddy
+  // binary with no extra plugins, so the official prebuilt is identical.
+  distributable: null,
 
   build: {
     script: [
-      {
-        run: [
-          'curl -L "$XCADDY" | tar zxf - --strip-components 1',
-          'go run cmd/xcaddy/main.go build v{{version}} --output {{prefix}}/bin/caddy',
-        ],
-        'working-directory': 'xcaddy',
-      },
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) PLATFORM="mac_arm64"   ;;',
+      '  darwin+x86-64)  PLATFORM="mac_amd64"   ;;',
+      '  linux+aarch64)  PLATFORM="linux_arm64" ;;',
+      '  linux+x86-64)   PLATFORM="linux_amd64" ;;',
+      'esac',
+      '',
+      'URL="https://github.com/caddyserver/caddy/releases/download/v${VERSION}/caddy_${VERSION}_${PLATFORM}.tar.gz"',
+      'curl -Lfo caddy.tar.gz "$URL"',
+      'tar xf caddy.tar.gz',
+      '',
+      'install -Dm755 caddy {{prefix}}/bin/caddy',
     ],
-    env: {
-      XCADDY: 'https://github.com/caddyserver/xcaddy/archive/refs/tags/v0.3.5.tar.gz',
-    },
+  },
+
+  test: {
+    script: [
+      'caddy version',
+    ],
   },
 }

@@ -6,38 +6,29 @@ export const recipe: Recipe = {
   programs: [
     'lefthook',
   ],
-  buildDependencies: {
-    'curl.se': '*',
-  },
-  distributable: {
-    url: 'https://github.com/evilmartians/lefthook/archive/refs/tags/v{{version}}.tar.gz',
-  },
+  // Prebuilt download: lefthook (Go) ships official per-platform release assets
+  // as a single gzipped binary (`lefthook_<ver>_<OS>_<arch>.gz`).
+  distributable: null,
   build: {
     script: [
-      'if test {{hw.platform}}+{{hw.arch}} == "darwin+x86-64"; then',
-      '	curl -sSfL --output lefthook.gz "${DOWNLOAD_BASE}/v{{version}}/lefthook_{{version}}_MacOS_x86_64.gz"',
-      'elif test {{hw.platform}}+{{hw.arch}} == "darwin+aarch64"; then',
-      '	curl -sSfL --output lefthook.gz "${DOWNLOAD_BASE}/v{{version}}/lefthook_{{version}}_MacOS_arm64.gz"',
-      'elif test {{hw.platform}}+{{hw.arch}} == "linux+x86-64"; then',
-      '	curl -sSfL --output lefthook.gz "${DOWNLOAD_BASE}/v{{version}}/lefthook_{{version}}_Linux_x86_64.gz"',
-      'elif test {{hw.platform}}+{{hw.arch}} == "linux+aarch64"; then',
-      '	curl -sSfL --output lefthook.gz "${DOWNLOAD_BASE}/v{{version}}/lefthook_{{version}}_Linux_arm64.gz"',
-      'elif test {{hw.platform}}+{{hw.arch}} == "windows+x86-64"; then',
-      '	curl -sSfL --output lefthook.gz "${DOWNLOAD_BASE}/v{{version}}/lefthook_{{version}}_Windows_x86_64.gz"',
-      'elif test {{hw.platform}}+{{hw.arch}} == "windows+aarch64"; then',
-      '	curl -sSfL --output lefthook.gz "${DOWNLOAD_BASE}/v{{version}}/lefthook_{{version}}_Windows_arm64.gz"',
-      'fi',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="lefthook_${VERSION}_MacOS_arm64"  ;;',
+      '  darwin+x86-64)  ASSET="lefthook_${VERSION}_MacOS_x86_64" ;;',
+      '  linux+aarch64)  ASSET="lefthook_${VERSION}_Linux_arm64"  ;;',
+      '  linux+x86-64)   ASSET="lefthook_${VERSION}_Linux_x86_64" ;;',
+      'esac',
+      '',
+      'URL="https://github.com/evilmartians/lefthook/releases/download/v${VERSION}/${ASSET}.gz"',
+      'curl -Lfo lefthook.gz "$URL"',
       'gunzip --force lefthook.gz',
-      'mkdir -p {{ prefix }}/bin',
-      'chmod +x lefthook',
-      'if test {{hw.platform}} == "windows"; then',
-      '    mv lefthook {{ prefix }}/bin/lefthook.exe',
-      'else',
-      '    mv lefthook {{ prefix }}/bin/',
-      'fi',
+      '',
+      'install -Dm755 lefthook {{prefix}}/bin/lefthook',
     ],
-    env: {
-      DOWNLOAD_BASE: 'https://github.com/evilmartians/lefthook/releases/download',
-    },
+  },
+  test: {
+    script: [
+      '[[ "$(lefthook version)" == *{{version}}* ]]',
+    ],
   },
 }

@@ -6,34 +6,25 @@ export const recipe: Recipe = {
   programs: [
     'gopass',
   ],
-  buildDependencies: {
-    'curl.se': '*',
-  },
-  distributable: undefined,
+  // Prebuilt download: gopass (Go) ships official per-platform release archives
+  // (`gopass-<ver>-<os>-<arch>.tar.gz`) with the `gopass` binary at top-level.
+  distributable: null,
   build: {
     script: [
-      'rm -rf ./gopass.tar.gz ./extracted ./bin',
-      'curl -Lfo gopass.tar.gz "https://github.com/gopasspw/gopass/releases/download/v{{version}}/gopass-{{version}}-$PLATFORM.tar.gz"',
-      'mkdir ./extracted && tar -xf gopass.tar.gz -C ./extracted',
-      // Install into the package prefix — extracting to ./bin left the install dir
-      // empty ("Build produced no files").
-      'mkdir -p {{prefix}}/bin && mv ./extracted/gopass {{prefix}}/bin/ && chmod +x {{prefix}}/bin/gopass',
-      'rm -rf ./gopass.tar.gz ./extracted',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) PLATFORM="darwin-arm64" ;;',
+      '  darwin+x86-64)  PLATFORM="darwin-amd64" ;;',
+      '  linux+aarch64)  PLATFORM="linux-arm64"  ;;',
+      '  linux+x86-64)   PLATFORM="linux-amd64"  ;;',
+      'esac',
+      '',
+      'URL="https://github.com/gopasspw/gopass/releases/download/v${VERSION}/gopass-${VERSION}-${PLATFORM}.tar.gz"',
+      'curl -Lfo gopass.tar.gz "$URL"',
+      'tar xf gopass.tar.gz',
+      '',
+      'install -Dm755 gopass {{prefix}}/bin/gopass',
     ],
-    env: {
-      'darwin/aarch64': {
-        PLATFORM: 'darwin-arm64',
-      },
-      'darwin/x86-64': {
-        PLATFORM: 'darwin-amd64',
-      },
-      'linux/aarch64': {
-        PLATFORM: 'linux-arm64',
-      },
-      'linux/x86-64': {
-        PLATFORM: 'linux-amd64',
-      },
-    },
   },
   test: {
     script: [

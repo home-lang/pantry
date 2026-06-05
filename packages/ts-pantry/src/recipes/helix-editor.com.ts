@@ -1,7 +1,6 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
-  propsDir: 'props/helix-editor.com',
   domain: 'helix-editor.com',
   name: 'hx',
   description: 'A post-modern modal text editor.',
@@ -11,39 +10,57 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'helix-editor/helix',
-    tagPattern: /^v(.+)$/,
+    tagPattern: /^v?(.+)$/,
   },
-  distributable: {
-    url: 'https://github.com/helix-editor/helix/archive/refs/tags/{{version.raw}}.tar.gz',
-    stripComponents: 1,
-  },
-
-  buildDependencies: {
-    'rust-lang.org': '>=1.60',
-    'rust-lang.org/cargo': '*',
-    'git-scm.org': '^2',
-  },
+  // Prebuilt download: Helix ships official per-platform release archives
+  // (`helix-<tag>-<arch>-<os>.tar.xz`) that bundle the `hx` binary together with
+  // the `runtime/` tree (grammars, queries, themes) that helix needs at runtime.
+  // The source build is brittle — `helix-term/build.rs` fetches dozens of
+  // tree-sitter grammars over the network and panics if any upstream grammar
+  // repo has moved/disappeared (which broke CI repeatedly). The official
+  // prebuilt is the exact same toolchain with none of that risk, so install the
+  // whole tree into libexec and symlink the binary (V-compiler pattern).
+  distributable: null,
 
   build: {
     script: [
-      // https://github.com/helix-editor/helix/discussions/8440
-      { run: 'patch -p1 <props/v23.10.0.patch', if: '23.10.0' },
-      // The `gotmpl` tree-sitter grammar source used by some tagged releases
-      // (e.g. 25.07.1) points at `dannylongeuay/tree-sitter-go-template`, which
-      // has been deleted upstream (404 / "Repository not found"). helix's
-      // `helix-term/build.rs` calls `fetch_grammars().expect(..)` and panics
-      // when any grammar fails to fetch, breaking the whole build in CI with:
-      //   fatal: could not read Username for 'https://github.com'
-      // Repoint it at the maintained fork helix master switched to
-      // (`ngalaiko/tree-sitter-go-template`). This sed is a no-op on versions
-      // that don't reference the dead repo, so it's safe to run unconditionally.
-      'sed -i.bak -e "s#https://github.com/dannylongeuay/tree-sitter-go-template#https://github.com/ngalaiko/tree-sitter-go-template#" -e "s#395a33e08e69f4155156f0b90138a6c86764c979#ca26229bafcd3f37698a2496c2a5efa2f07e86bc#" languages.toml && rm -f languages.toml.bak',
-      'cargo install --locked --path helix-term --root {{prefix}}',
-      // This directory is not used by helix, and takes up >1GB of space, so do
-      // not include it in the helix package
-      'rm -rf runtime/grammars/sources',
-      'mkdir -p {{prefix}}/share',
-      'cp -a runtime {{prefix}}/share',
+      'VERSION={{version}}',
+      '',
+      '# Map our stored version (e.g. 25.7.1 / 24.3.0) to helix\'s upstream release',
+      '# tag, which zero-pads major+minor to two digits and DROPS a .0 patch:',
+      '#   25.7.1 -> 25.07.1   25.7.0 -> 25.07   24.3.0 -> 24.03   23.10.0 -> 23.10',
+      'MAJOR={{version.major}}',
+      'MINOR=$(printf "%02d" {{version.minor}})',
+      'PATCH={{version.patch}}',
+      'if test "$PATCH" = "0"; then',
+      '  TAG="${MAJOR}.${MINOR}"',
+      'else',
+      '  TAG="${MAJOR}.${MINOR}.${PATCH}"',
+      'fi',
+      '',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) TARGET="aarch64-macos" ;;',
+      '  darwin+x86-64)  TARGET="x86_64-macos" ;;',
+      '  linux+aarch64)  TARGET="aarch64-linux" ;;',
+      '  linux+x86-64)   TARGET="x86_64-linux" ;;',
+      'esac',
+      '',
+      'DIR="helix-${TAG}-${TARGET}"',
+      'curl -Lfo hx.tar.xz "https://github.com/helix-editor/helix/releases/download/${TAG}/${DIR}.tar.xz"',
+      'tar Jxf hx.tar.xz',
+      '',
+      '# helix locates its runtime/ relative to the real (symlink-resolved)',
+      '# binary, so install the whole extracted tree and link `hx` into bin.',
+      'mkdir -p {{prefix}}/libexec',
+      'cp -R "${DIR}" {{prefix}}/libexec/helix',
+      'mkdir -p {{prefix}}/bin',
+      'ln -sf ../libexec/helix/hx {{prefix}}/bin/hx',
+    ],
+  },
+
+  test: {
+    script: [
+      'hx --version',
     ],
   },
 }
