@@ -5,7 +5,7 @@ export const recipe: Recipe = {
   name: 'libcbor',
   programs: [],
   buildDependencies: {
-    'cmake.org': 3,
+    'cmake.org': '3',
   },
   distributable: {
     url: 'https://github.com/PJK/libcbor/archive/refs/tags/{{ version.tag }}.tar.gz',

@@ -14,7 +14,7 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'mesonbuild.com': '*',
-    'ninja-build.org': 1,
+    'ninja-build.org': '1',
   },
   distributable: {
     url: 'https://github.com/libsixel/libsixel/archive/refs/tags/v{{version}}.tar.gz',

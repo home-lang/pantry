@@ -11,7 +11,7 @@ export const recipe: Recipe = {
     'rust-lang.org/cargo': '*',
   },
   buildDependencies: {
-    'cmake.org': 3,
+    'cmake.org': '3',
   },
   distributable: {
     url: 'https://github.com/rustwasm/wasm-pack/archive/refs/tags/v{{version.raw}}.tar.gz',

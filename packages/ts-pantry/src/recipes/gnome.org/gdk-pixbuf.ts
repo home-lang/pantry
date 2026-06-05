@@ -9,16 +9,16 @@ export const recipe: Recipe = {
     'gdk-pixbuf-query-loaders',
   ],
   dependencies: {
-    'ijg.org': 9.6,
-    'gnome.org/glib': 2,
-    'libpng.org': 1,
-    'freedesktop.org/shared-mime-info': 2,
+    'ijg.org': '9.6',
+    'gnome.org/glib': '2',
+    'libpng.org': '1',
+    'freedesktop.org/shared-mime-info': '2',
   },
   buildDependencies: {
-    'mesonbuild.com': 1,
-    'ninja-build.org': 1,
+    'mesonbuild.com': '1',
+    'ninja-build.org': '1',
     'freedesktop.org/pkg-config': '^0.29',
-    'gnome.org/gobject-introspection': 1,
+    'gnome.org/gobject-introspection': '1',
     'python.org': '>=3<3.12',
   },
   distributable: {

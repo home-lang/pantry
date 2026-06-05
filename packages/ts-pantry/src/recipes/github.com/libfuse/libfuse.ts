@@ -11,7 +11,7 @@ export const recipe: Recipe = {
     'mesonbuild.com': "*",
     'ninja-build.org': "*",
     linux: {
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc': '14',
       'gnu.org/gettext': "*",
     },
   },

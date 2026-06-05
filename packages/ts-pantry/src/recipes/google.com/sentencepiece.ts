@@ -15,7 +15,7 @@ export const recipe: Recipe = {
     'python.org': '~3.11',
     'pip.pypa.io': '*',
     'freedesktop.org/pkg-config': '~0.29',
-    'protobuf.dev': 25,
+    'protobuf.dev': '25',
   },
   distributable: {
     url: 'https://github.com/google/sentencepiece/archive/v{{version}}.tar.gz',

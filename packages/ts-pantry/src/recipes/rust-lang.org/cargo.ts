@@ -10,7 +10,7 @@ export const recipe: Recipe = {
     'zlib.net': '^1',
     'libgit2.org': '~1.7',
     'curl.se/ca-certs': '*',
-    'curl.se': 8,
+    'curl.se': '8',
     linux: {
       'llvm.org': '*',
     },
@@ -34,8 +34,8 @@ export const recipe: Recipe = {
       'cargo install --root={{ prefix }} --locked --path=.',
     ],
     env: {
-      LIBGIT2_SYS_USE_PKG_CONFIG: 1,
-      LIBSSH2_SYS_USE_PKG_CONFIG: 1,
+      LIBGIT2_SYS_USE_PKG_CONFIG: '1',
+      LIBSSH2_SYS_USE_PKG_CONFIG: '1',
     },
   },
   test: {

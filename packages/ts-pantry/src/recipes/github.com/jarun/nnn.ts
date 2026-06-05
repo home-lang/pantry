@@ -7,8 +7,8 @@ export const recipe: Recipe = {
     'nnn',
   ],
   dependencies: {
-    'invisible-island.net/ncurses': 6,
-    'gnu.org/readline': 8,
+    'invisible-island.net/ncurses': '6',
+    'gnu.org/readline': '8',
   },
   distributable: {
     url: 'https://github.com/jarun/nnn/releases/download/{{version.tag}}/nnn-{{version.tag}}.tar.gz',

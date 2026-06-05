@@ -20,7 +20,7 @@ export const recipe: Recipe = {
     ],
     env: {
       GO111MODULE: 'on',
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       BUILDLOC: '{{prefix}}/bin/svu',
       GO_LDFLAGS: [
         '-s',

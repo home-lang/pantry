@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       'install -D props/${OPENBAO_SERVICE_FILE} {{prefix}}/etc/systemd/system/${OPENBAO_SERVICE_FILE}',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       GO_LDFLAGS: [
         '-s',
         '-w',

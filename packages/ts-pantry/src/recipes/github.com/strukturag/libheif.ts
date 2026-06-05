@@ -14,15 +14,15 @@ export const recipe: Recipe = {
     'github.com/strukturag/libde265': '*',
     'libpng.org': '*',
     'freedesktop.org/shared-mime-info': '*',
-    'videolan.org/x265': 3.2,
+    'videolan.org/x265': '3.2',
     linux: {
-      'gnu.org/gcc/libstdcxx': 14,
+      'gnu.org/gcc/libstdcxx': '14',
     },
   },
   buildDependencies: {
     'cmake.org': '*',
     linux: {
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc': '14',
     },
   },
   distributable: {

@@ -9,9 +9,9 @@ export const recipe: Recipe = {
   buildDependencies: {
     'rust-lang.org': '>=1.56',
     'rust-lang.org/cargo': '*',
-    'gnu.org/autoconf': 2,
-    'gnu.org/automake': 1,
-    'gnu.org/libtool': 2,
+    'gnu.org/autoconf': '2',
+    'gnu.org/automake': '1',
+    'gnu.org/libtool': '2',
   },
   distributable: {
     url: 'https://github.com/ynqa/jnv/archive/refs/tags/{{ version.tag }}.tar.gz',

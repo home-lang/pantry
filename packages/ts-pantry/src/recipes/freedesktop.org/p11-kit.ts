@@ -14,7 +14,7 @@ export const recipe: Recipe = {
     'gnu.org/gettext': "*",
   },
   buildDependencies: {
-    'python.org': 3,
+    'python.org': '3',
     'mesonbuild.com': "*",
     'ninja-build.org': "*",
   },

@@ -23,13 +23,13 @@ export const recipe: Recipe = {
       'zlib.net': "*",
     },
     linux: {
-      'gnu.org/gcc/libstdcxx': 14,
+      'gnu.org/gcc/libstdcxx': '14',
     },
   },
   buildDependencies: {
     'cmake.org': "^3",
     linux: {
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc': '14',
     },
   },
   distributable: {

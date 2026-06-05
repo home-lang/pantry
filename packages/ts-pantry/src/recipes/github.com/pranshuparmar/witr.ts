@@ -20,7 +20,7 @@ export const recipe: Recipe = {
       'go build -ldflags "-X main.version=v{{version}} -X main.commit=$(git rev-parse --short HEAD) -X \'main.buildDate=$(date +%Y-%m-%d)\'" -o {{prefix}}/bin/witr ./cmd/witr',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
     },
   },
   test: {

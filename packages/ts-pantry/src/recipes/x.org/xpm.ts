@@ -14,7 +14,7 @@ export const recipe: Recipe = {
     'gnu.org/automake': '*',
     'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': '~0.29',
-    'gnu.org/gettext': 0.21,
+    'gnu.org/gettext': '0.21',
   },
   distributable: {
     url: 'https://gitlab.freedesktop.org/xorg/lib/libxpm/-/archive/libXpm-{{version}}/libxpm-libXpm-{{version}}.tar.gz',

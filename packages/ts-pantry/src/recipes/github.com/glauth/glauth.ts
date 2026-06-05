@@ -49,7 +49,7 @@ export const recipe: Recipe = {
       GLAUTH_CONFIG_FILE: "glauth.toml",
       GLAUTH_SERVICE_ENVIRONMENT_FILE: "glauth.env",
       GLAUTH_SERVICE_SYSTEMD_FILE: "glauth.service",
-      CGO_ENABLED: 1,
+      CGO_ENABLED: '1',
       linux: {
         LIB_SUFFIX: "so",
         GO_LDFLAGS_BINARY: [

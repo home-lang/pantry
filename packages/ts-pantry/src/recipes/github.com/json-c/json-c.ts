@@ -5,7 +5,7 @@ export const recipe: Recipe = {
   name: 'json-c',
   programs: [],
   buildDependencies: {
-    'cmake.org': 3,
+    'cmake.org': '3',
   },
   distributable: {
     url: 'https://s3.amazonaws.com/json-c_releases/releases/json-c-{{ version.raw }}.tar.gz',

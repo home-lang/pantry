@@ -10,17 +10,17 @@ export const recipe: Recipe = {
   ],
   dependencies: {
     'pkgx.sh': ">=1",
-    'curl.se': 8,
+    'curl.se': '8',
     linux: {
-      'gnu.org/gcc/libstdcxx': 14,
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc/libstdcxx': '14',
+      'gnu.org/gcc': '14',
     },
   },
   buildDependencies: {
     'gnu.org/coreutils': "*",
     'git-scm.org': "*",
     'python.org': "~3.11",
-    'cmake.org': 3,
+    'cmake.org': '3',
     'linux/aarch64': {
       'kernel.org/linux-headers': "*",
     },

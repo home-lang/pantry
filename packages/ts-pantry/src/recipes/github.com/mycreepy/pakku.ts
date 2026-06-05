@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       "mv dist/pakku_$PLATFORM/pakku \{{ prefix }}\/bin",
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       'darwin/aarch64': {
         PLATFORM: "darwin_arm64",
       },

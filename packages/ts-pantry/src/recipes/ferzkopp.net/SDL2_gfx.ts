@@ -5,7 +5,7 @@ export const recipe: Recipe = {
   name: 'SDL2_gfx',
   programs: [],
   dependencies: {
-    'libsdl.org': 2,
+    'libsdl.org': '2',
   },
   buildDependencies: {
     'freedesktop.org/pkg-config': '*',

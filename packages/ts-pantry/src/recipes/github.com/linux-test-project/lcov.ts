@@ -12,7 +12,7 @@ export const recipe: Recipe = {
   ],
   dependencies: {
     'perl.org': ">=5",
-    'python.org': 3,
+    'python.org': '3',
   },
   buildDependencies: {
     'cpanmin.us': "^1",

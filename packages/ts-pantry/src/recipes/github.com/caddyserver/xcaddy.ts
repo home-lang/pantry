@@ -18,7 +18,7 @@ export const recipe: Recipe = {
       'go build -v -trimpath -ldflags="${LDFLAGS}" -o {{prefix}}/bin/xcaddy ./cmd/xcaddy',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       LDFLAGS: [
         '-s',
         '-w',

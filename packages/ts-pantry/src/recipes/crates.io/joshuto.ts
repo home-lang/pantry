@@ -7,7 +7,7 @@ export const recipe: Recipe = {
     'joshuto',
   ],
   dependencies: {
-    'libgit2.org': 1,
+    'libgit2.org': '1',
   },
   buildDependencies: {
     'rust-lang.org': '>=1.56',

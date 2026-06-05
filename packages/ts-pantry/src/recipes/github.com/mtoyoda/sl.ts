@@ -8,7 +8,7 @@ export const recipe: Recipe = {
     'sl',
   ],
   dependencies: {
-    'invisible-island.net/ncurses': 6,
+    'invisible-island.net/ncurses': '6',
   },
   buildDependencies: {
     'gnu.org/patch': '*',

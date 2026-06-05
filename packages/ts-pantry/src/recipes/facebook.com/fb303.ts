@@ -17,7 +17,7 @@ export const recipe: Recipe = {
     'github.com/Cyan4973/xxHash': '^0.8',
     linux: {
       'zlib.net': '^1',
-      'gnu.org/gcc/libstdcxx': 14,
+      'gnu.org/gcc/libstdcxx': '14',
     },
   },
   buildDependencies: {
@@ -25,7 +25,7 @@ export const recipe: Recipe = {
     'facebook.com/mvfst': '*',
     'boost.org': '^1.84',
     linux: {
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc': '14',
     },
   },
   distributable: {

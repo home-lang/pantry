@@ -24,8 +24,8 @@ export const recipe: Recipe = {
     'pcre.org/v2': "^10",
     'python.org': "~3.11",
     linux: {
-      'libcxx.llvm.org': 18,
-      'gnu.org/gcc/libstdcxx': 14,
+      'libcxx.llvm.org': '18',
+      'gnu.org/gcc/libstdcxx': '14',
     },
   },
   buildDependencies: {
@@ -36,7 +36,7 @@ export const recipe: Recipe = {
     'google.com/googletest': "*",
     'rust-lang.org': "*",
     linux: {
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc': '14',
     },
   },
   distributable: {

@@ -8,8 +8,8 @@ export const recipe: Recipe = {
   ],
   dependencies: {
     linux: {
-      'curl.se': 8,
-      'gnome.org/libxml2': 2,
+      'curl.se': '8',
+      'gnome.org/libxml2': '2',
     },
   },
   buildDependencies: {

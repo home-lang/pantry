@@ -18,7 +18,7 @@ export const recipe: Recipe = {
       'go build -ldflags="$LDFLAGS" -o $BUILDLOC .',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       LDFLAGS: [
         '-s',
         '-w',

@@ -8,7 +8,7 @@ export const recipe: Recipe = {
   ],
   dependencies: {
     'openssl.org': '^1.1',
-    'curl.se': 8,
+    'curl.se': '8',
   },
   buildDependencies: {
     'rust-lang.org': '>=1.56',

@@ -15,14 +15,14 @@ export const recipe: Recipe = {
     'fc-validate',
   ],
   dependencies: {
-    'sourceware.org/bzip2': 1,
-    'freetype.org': 2,
-    'zlib.net': 1,
-    'gnome.org/libxml2': 2,
-    'libexpat.github.io': 2,
+    'sourceware.org/bzip2': '1',
+    'freetype.org': '2',
+    'zlib.net': '1',
+    'gnome.org/libxml2': '2',
+    'libexpat.github.io': '2',
   },
   buildDependencies: {
-    'gnu.org/gperf': 3,
+    'gnu.org/gperf': '3',
     'python.org': '>=3<3.12',
   },
   distributable: {

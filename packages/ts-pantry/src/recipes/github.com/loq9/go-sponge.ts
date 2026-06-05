@@ -18,7 +18,7 @@ export const recipe: Recipe = {
       'go build -v -ldflags="${LDFLAGS}" -o {{ prefix }}/bin/go-sponge',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       LDFLAGS: [
         '-s',
         '-w',

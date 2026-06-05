@@ -14,7 +14,7 @@ export const recipe: Recipe = {
   buildDependencies: {
     'rust-lang.org': '>=1.65',
     'rust-lang.org/cargo': '*',
-    'cmake.org': 3,
+    'cmake.org': '3',
     linux: {
       'openssl.org': '*',
       'freedesktop.org/pkg-config': '*',

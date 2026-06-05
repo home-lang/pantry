@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   buildDependencies: {
     'go.dev': '^1.19',
     'linux/aarch64': {
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc': '14',
       'gnu.org/binutils': '~2.44',
     },
   },

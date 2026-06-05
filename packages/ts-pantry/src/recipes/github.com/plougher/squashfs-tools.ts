@@ -10,11 +10,11 @@ export const recipe: Recipe = {
     "sqfstar",
   ],
   dependencies: {
-    'lz4.org': 1,
-    'oberhumer.com/lzo': 2,
-    'tukaani.org/xz': 5,
-    'facebook.com/zstd': 1,
-    'zlib.net': 1,
+    'lz4.org': '1',
+    'oberhumer.com/lzo': '2',
+    'tukaani.org/xz': '5',
+    'facebook.com/zstd': '1',
+    'zlib.net': '1',
   },
   buildDependencies: {
     'curl.se': "*",

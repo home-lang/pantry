@@ -28,7 +28,7 @@ export const recipe: Recipe = {
       'mv -f ./bin/skopeo \'{{prefix}}/bin\'',
     ],
     env: {
-      DISABLE_DOCS: 1,
+      DISABLE_DOCS: '1',
     },
   },
   test: {

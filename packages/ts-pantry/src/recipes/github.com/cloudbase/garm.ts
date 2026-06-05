@@ -20,7 +20,7 @@ export const recipe: Recipe = {
       'go build $ARGS -ldflags="${GO_LDFLAGS}" -o {{ prefix }}/bin/garm-cli ./cmd/garm-cli',
     ],
     env: {
-      CGO_ENABLED: 1,
+      CGO_ENABLED: '1',
       GO_LDFLAGS: [
         '-s',
         '-w',

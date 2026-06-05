@@ -14,7 +14,7 @@ export const recipe: Recipe = {
     'sql',
   ],
   dependencies: {
-    'perl.org': 5,
+    'perl.org': '5',
   },
   distributable: {
     url: 'https://ftp.gnu.org/gnu/parallel/parallel-{{version.raw}}.tar.bz2',

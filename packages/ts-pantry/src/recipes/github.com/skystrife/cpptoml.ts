@@ -7,7 +7,7 @@ export const recipe: Recipe = {
   buildDependencies: {
     'cmake.org': "*",
     linux: {
-      'gnu.org/gcc': 13,
+      'gnu.org/gcc': '13',
     },
   },
   distributable: {

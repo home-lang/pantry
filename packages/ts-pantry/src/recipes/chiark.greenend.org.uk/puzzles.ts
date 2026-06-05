@@ -13,7 +13,7 @@ export const recipe: Recipe = {
     'cmake.org': ">=3.5",
     'chiark.greenend.org.uk/halibut': "*",
     linux: {
-      'llvm.org': 20,
+      'llvm.org': '20',
     },
   },
   distributable: {

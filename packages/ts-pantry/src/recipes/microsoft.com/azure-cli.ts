@@ -7,7 +7,7 @@ export const recipe: Recipe = {
     'az',
   ],
   dependencies: {
-    'openssl.org': 1.1,
+    'openssl.org': '1.1',
     'python.org': '>=3.10<3.12',
     'sourceware.org/libffi': '*',
   },

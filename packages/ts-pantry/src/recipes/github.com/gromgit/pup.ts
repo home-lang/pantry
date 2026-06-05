@@ -18,7 +18,7 @@ export const recipe: Recipe = {
       'go build ${GO_ARGS} -ldflags="${GO_LDFLAGS}" ./',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       GO_ARGS: [
         '-o {{prefix}}/bin/',
       ],

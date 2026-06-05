@@ -26,7 +26,7 @@ export const recipe: Recipe = {
       GOPROXY: 'https://proxy.golang.org,direct',
       GOSUMDB: 'sum.golang.org',
       GO111MODULE: 'on',
-      CGO_ENABLED: 1,
+      CGO_ENABLED: '1',
       BUILDLOC: '{{prefix}}/bin/heif-converter',
       LDFLAGS: [
         '-s',

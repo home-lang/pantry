@@ -21,7 +21,7 @@ export const recipe: Recipe = {
       'mv gomarkdoc "{{ prefix }}"/bin',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       LDFLAGS: [
         '-extldflags=-static',
         '-w',

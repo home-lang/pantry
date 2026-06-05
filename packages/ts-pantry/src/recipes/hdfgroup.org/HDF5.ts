@@ -25,9 +25,9 @@ export const recipe: Recipe = {
     "h5watch",
   ],
   dependencies: {
-    'dkrz.de/libaec': 1,
+    'dkrz.de/libaec': '1',
     linux: {
-      'zlib.net': 1,
+      'zlib.net': '1',
     },
   },
   buildDependencies: {
@@ -39,7 +39,7 @@ export const recipe: Recipe = {
       'gnu.org/gcc': "*",
     },
     darwin: {
-      'llvm.org': 20,
+      'llvm.org': '20',
     },
   },
   distributable: {

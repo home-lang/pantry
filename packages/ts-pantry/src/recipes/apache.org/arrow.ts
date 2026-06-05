@@ -23,22 +23,22 @@ export const recipe: Recipe = {
     'github.com/JuliaStrings/utf8proc': '*',
     'facebook.com/zstd': '*',
     darwin: {
-      'c-ares.org': 1,
+      'c-ares.org': '1',
       'libcxx.llvm.org': '~17',
     },
     linux: {
       'protobuf.dev': '30.0.0',
-      'gnu.org/gcc/libstdcxx': 14,
+      'gnu.org/gcc/libstdcxx': '14',
     },
   },
   buildDependencies: {
     'boost.org': '*',
-    'cmake.org': 3,
+    'cmake.org': '3',
     'ninja-build.org': '*',
     'python.org': '<3.12',
     'llvm.org': '~17',
     linux: {
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc': '14',
     },
   },
   distributable: {

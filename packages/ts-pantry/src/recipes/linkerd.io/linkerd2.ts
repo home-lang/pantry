@@ -21,8 +21,8 @@ export const recipe: Recipe = {
       'mv target/cli/$PLATFORM/linkerd "{{ prefix }}"/bin',
     ],
     env: {
-      CGO_ENABLED: 0,
-      CI_FORCE_CLEAN: 1,
+      CGO_ENABLED: '0',
+      CI_FORCE_CLEAN: '1',
       darwin: {
         PLATFORM: 'darwin',
       },

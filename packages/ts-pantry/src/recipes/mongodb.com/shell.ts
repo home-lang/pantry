@@ -12,7 +12,7 @@ export const recipe: Recipe = {
   buildDependencies: {
     'npmjs.com': '*',
     'curl.se': '*',
-    'python.org': 3,
+    'python.org': '3',
   },
   distributable: undefined,
   build: {

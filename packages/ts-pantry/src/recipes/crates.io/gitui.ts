@@ -15,7 +15,7 @@ export const recipe: Recipe = {
   buildDependencies: {
     'rust-lang.org': '^1.78',
     'rust-lang.org/cargo': '*',
-    'cmake.org': 3,
+    'cmake.org': '3',
   },
   distributable: {
     url: 'https://github.com/extrawurst/gitui/archive/refs/tags/{{version.tag}}.tar.gz',
@@ -29,7 +29,7 @@ export const recipe: Recipe = {
       linux: {
         AR: 'llvm-ar',
         RUSTFLAGS: '-C linker=cc',
-        OPENSSL_NO_VENDOR: true,
+        OPENSSL_NO_VENDOR: '1',
         OPENSSL_DIR: '{{ deps.openssl.org.prefix }}',
       },
     },

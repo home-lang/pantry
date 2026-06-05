@@ -105,7 +105,7 @@ export const recipe: Recipe = {
     'gnu.org/bison': "*",
     'gnu.org/coreutils': "*",
     'git-scm.org': "*",
-    'groonga.org': 15,
+    'groonga.org': '15',
     linux: {
       'fmt.dev': "^9",
     },

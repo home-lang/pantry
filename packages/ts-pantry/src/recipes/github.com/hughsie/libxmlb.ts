@@ -7,9 +7,9 @@ export const recipe: Recipe = {
     'xb-tool',
   ],
   dependencies: {
-    'gnome.org/glib': 2,
-    'tukaani.org/xz': 5,
-    'facebook.com/zstd': 1,
+    'gnome.org/glib': '2',
+    'tukaani.org/xz': '5',
+    'facebook.com/zstd': '1',
   },
   buildDependencies: {
     'mesonbuild.com': '~1.9',

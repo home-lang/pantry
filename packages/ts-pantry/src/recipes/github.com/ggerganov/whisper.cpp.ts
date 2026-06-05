@@ -10,15 +10,15 @@ export const recipe: Recipe = {
   dependencies: {
     'libsdl.org': "*",
     linux: {
-      'openmp.llvm.org': 18,
-      'gnu.org/gcc/libstdcxx': 14,
+      'openmp.llvm.org': '18',
+      'gnu.org/gcc/libstdcxx': '14',
     },
   },
   buildDependencies: {
     'freedesktop.org/pkg-config': "~0.29",
     'gnu.org/patch': "*",
     'gnu.org/coreutils': "*",
-    'cmake.org': 3,
+    'cmake.org': '3',
   },
   distributable: {
     url: "https://github.com/ggerganov/whisper.cpp/archive/refs/tags/{{version.tag}}.tar.gz",

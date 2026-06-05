@@ -21,7 +21,7 @@ export const recipe: Recipe = {
   // root CMakeLists.txt, llama/llama.cpp) and is pinned to the exact tag.
   distributable: {
     url: 'https://github.com/ollama/ollama/archive/refs/tags/v{{version}}.tar.gz',
-    'strip-components': 1,
+    stripComponents: 1,
   },
   dependencies: {
     'curl.se/ca-certs': '*',

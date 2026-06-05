@@ -6,8 +6,8 @@ export const recipe: Recipe = {
   programs: [],
   dependencies: {
     'curl.se': '*',
-    'zlib.net': 1,
-    'openssl.org': 1.1,
+    'zlib.net': '1',
+    'openssl.org': '1.1',
   },
   buildDependencies: {
     'cmake.org': '*',

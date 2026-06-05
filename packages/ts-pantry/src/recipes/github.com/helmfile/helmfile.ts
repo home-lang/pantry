@@ -23,7 +23,7 @@ export const recipe: Recipe = {
       'mv ./helmfile {{ prefix }}/bin',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       GOFLAGS: '-mod=readonly',
     },
   },

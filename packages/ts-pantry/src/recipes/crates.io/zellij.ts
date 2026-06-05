@@ -8,7 +8,7 @@ export const recipe: Recipe = {
   ],
   dependencies: {
     'zlib.net': '^1',
-    'curl.se': 8,
+    'curl.se': '8',
   },
   buildDependencies: {
     'rust-lang.org': '>=1.60',

@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'mesonbuild.com': '*',
-    'ninja-build.org': 1,
+    'ninja-build.org': '1',
     'freedesktop.org/pkg-config': '^0.29',
   },
   distributable: {

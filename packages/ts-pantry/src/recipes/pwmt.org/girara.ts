@@ -5,7 +5,7 @@ export const recipe: Recipe = {
   name: 'girara',
   programs: [],
   dependencies: {
-    'gtk.org/gtk3': 3,
+    'gtk.org/gtk3': '3',
     'gnome.org/glib': '^2.72',
     'gnome.org/json-glib': '^1',
   },

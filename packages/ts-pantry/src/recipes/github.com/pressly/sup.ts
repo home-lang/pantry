@@ -36,7 +36,7 @@ export const recipe: Recipe = {
       ],
       GOFLAGS: '-mod=mod',
       linux: {
-        CGO_ENABLED: 0,
+        CGO_ENABLED: '0',
       },
     },
   },

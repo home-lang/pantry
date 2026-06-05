@@ -7,8 +7,8 @@ export const recipe: Recipe = {
     'code',
   ],
   dependencies: {
-    'openssl.org': 1.1,
-    'zlib.net': 1,
+    'openssl.org': '1.1',
+    'zlib.net': '1',
   },
   buildDependencies: {
     'rust-lang.org': '^1.81',
@@ -29,7 +29,7 @@ export const recipe: Recipe = {
       },
     ],
     env: {
-      OPENSSL_NO_VENDOR: 1,
+      OPENSSL_NO_VENDOR: '1',
       OPENSSL_DIR: '{{deps.openssl.org.prefix}}',
       VSCODE_CLI_VERSION: '{{version}}',
     },

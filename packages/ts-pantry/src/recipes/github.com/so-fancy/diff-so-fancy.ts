@@ -7,7 +7,7 @@ export const recipe: Recipe = {
     'diff-so-fancy',
   ],
   dependencies: {
-    'perl.org': 5,
+    'perl.org': '5',
   },
   distributable: {
     url: 'https://github.com/so-fancy/diff-so-fancy/archive/refs/tags/{{version.tag}}.tar.gz',

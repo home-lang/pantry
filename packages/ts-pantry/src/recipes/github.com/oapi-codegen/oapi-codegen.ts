@@ -22,7 +22,7 @@ export const recipe: Recipe = {
       'go build -v -ldflags="$LDFLAGS" -o \'{{prefix}}\'/bin/oapi-codegen ./cmd/oapi-codegen',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       LDFLAGS: [
         '-extldflags=-static',
         '-w',

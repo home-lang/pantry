@@ -8,15 +8,15 @@ export const recipe: Recipe = {
   ],
   dependencies: {
     'pandoc.org': "^3.8",
-    'zlib.net': 1,
-    'gnu.org/gmp': 6,
+    'zlib.net': '1',
+    'gnu.org/gmp': '6',
   },
   buildDependencies: {
     'haskell.org': "~9.8.4",
     'haskell.org/cabal': "^3",
     'openssl.org': "^1.1",
     linux: {
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc': '14',
       'gnu.org/binutils': "~2.44",
     },
   },

@@ -8,7 +8,7 @@ export const recipe: Recipe = {
   ],
   dependencies: {
     'gnu.org/bash': '>=4',
-    'gnu.org/gcc/libstdcxx': 14,
+    'gnu.org/gcc/libstdcxx': '14',
   },
   distributable: {
     url: 'https://github.com/Cyfrin/safe-tx-hashes-util/archive/refs/tags/{{ version.tag }}.tar.gz',

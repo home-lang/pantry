@@ -8,12 +8,12 @@ export const recipe: Recipe = {
   ],
   dependencies: {
     linux: {
-      'gnu.org/gcc/libstdcxx': 14,
+      'gnu.org/gcc/libstdcxx': '14',
     },
   },
   buildDependencies: {
     linux: {
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc': '14',
       'llvm.org': '*',
     },
   },

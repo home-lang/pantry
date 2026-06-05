@@ -66,7 +66,7 @@ export const recipe: Recipe = {
         CXXFLAGS: '$CXXFLAGS -Wno-unused-but-set-variable -fPIC',
       },
       darwin: {
-        MACOSX_DEPLOYMENT_TARGET: 11,
+        MACOSX_DEPLOYMENT_TARGET: '11',
       },
     },
   },

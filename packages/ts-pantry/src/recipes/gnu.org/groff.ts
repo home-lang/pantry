@@ -51,12 +51,12 @@ export const recipe: Recipe = {
     'perl.org': "*",
     linux: {
       'gnome.org/glib': "*",
-      'gnu.org/gcc/libstdcxx': 14,
+      'gnu.org/gcc/libstdcxx': '14',
     },
   },
   buildDependencies: {
     linux: {
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc': '14',
     },
     'gnu.org/make': "*",
     'freedesktop.org/pkg-config': "*",

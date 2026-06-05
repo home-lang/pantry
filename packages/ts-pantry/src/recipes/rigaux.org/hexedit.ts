@@ -7,7 +7,7 @@ export const recipe: Recipe = {
     'hexedit',
   ],
   dependencies: {
-    'invisible-island.net/ncurses': 6,
+    'invisible-island.net/ncurses': '6',
   },
   buildDependencies: {
     'gnu.org/autoconf': '*',

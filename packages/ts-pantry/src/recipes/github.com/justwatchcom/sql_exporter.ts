@@ -19,7 +19,7 @@ export const recipe: Recipe = {
       'go build -v -ldflags="${LDFLAGS}" -o {{prefix}}/bin/sql_exporter',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       LDFLAGS: [
         '-s',
         '-w',

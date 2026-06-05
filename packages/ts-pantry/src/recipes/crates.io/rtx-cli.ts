@@ -11,7 +11,7 @@ export const recipe: Recipe = {
   buildDependencies: {
     'rust-lang.org': "^1.78",
     'rust-lang.org/cargo': "*",
-    'cmake.org': 3,
+    'cmake.org': '3',
   },
   distributable: {
     url: "https://github.com/jdx/mise/archive/refs/tags/{{version.tag}}.tar.gz",

@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   ],
   buildDependencies: {
     'gnu.org/autoconf': '^2.65.0',
-    'gnu.org/m4': 1,
+    'gnu.org/m4': '1',
   },
   distributable: {
     url: 'https://ftp.gnu.org/gnu/libtool/libtool-{{ version }}.tar.gz',

@@ -7,7 +7,7 @@ export const recipe: Recipe = {
     "session-manager-plugin",
   ],
   buildDependencies: {
-    'go.dev': 1.23,
+    'go.dev': '1.23',
     'gnu.org/make': "*",
   },
   distributable: {
@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       "mv ./bin/${BIN_DIR}/session-manager-plugin \{{prefix}}\/bin/",
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       'darwin/aarch64': {
         PLATFORM: "darwin-arm64",
         BIN_DIR: "darwin_arm64_plugin",

@@ -22,7 +22,7 @@ export const recipe: Recipe = {
       'mv dist/dive_$PLATFORM/dive {{ prefix }}/bin',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       GORELEASER_CURRENT_TAG: 'v{{version}}',
       'darwin/aarch64': {
         PLATFORM: 'darwin_arm64_v8.0',

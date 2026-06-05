@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   buildDependencies: {
     'rust-lang.org': '>=1.56',
     'rust-lang.org/cargo': '*',
-    'protobuf.dev': 25,
+    'protobuf.dev': '25',
   },
   distributable: {
     url: 'https://github.com/elichai/kaspa-miner/archive/refs/tags/v{{ version }}.tar.gz',

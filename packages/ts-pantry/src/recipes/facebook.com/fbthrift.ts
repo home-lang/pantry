@@ -20,7 +20,7 @@ export const recipe: Recipe = {
     'libsodium.org': "^1.0.19",
     'github.com/Cyan4973/xxHash': "^0.8",
     linux: {
-      'gnu.org/gcc/libstdcxx': 14,
+      'gnu.org/gcc/libstdcxx': '14',
     },
   },
   buildDependencies: {
@@ -30,7 +30,7 @@ export const recipe: Recipe = {
     'github.com/westes/flex': "*",
     'python.org': "^3.10",
     linux: {
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc': '14',
       'gnu.org/binutils': "*",
     },
   },

@@ -19,7 +19,7 @@ export const recipe: Recipe = {
     ],
     env: {
       GO111MODULE: 'on',
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       GO_LDFLAGS: [
         '-s',
         '-w',

@@ -5,11 +5,11 @@ export const recipe: Recipe = {
   name: 'atk',
   programs: [],
   dependencies: {
-    'gnome.org/glib': 2,
+    'gnome.org/glib': '2',
   },
   buildDependencies: {
     'mesonbuild.com': '^0.63',
-    'ninja-build.org': 1,
+    'ninja-build.org': '1',
     'freedesktop.org/pkg-config': '^0.29',
     'gnu.org/gettext': '^0.21',
   },

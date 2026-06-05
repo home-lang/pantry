@@ -36,7 +36,7 @@ export const recipe: Recipe = {
     'invisible-island.net/ncurses': "*",
   },
   buildDependencies: {
-    'gnu.org/help2man': 1,
+    'gnu.org/help2man': '1',
   },
   distributable: {
     url: "https://ftp.gnu.org/gnu/inetutils/inetutils-{{version.marketing}}.tar.gz",

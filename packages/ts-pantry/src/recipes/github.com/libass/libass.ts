@@ -5,21 +5,21 @@ export const recipe: Recipe = {
   name: 'libass',
   programs: [],
   dependencies: {
-    'freetype.org': 2,
-    'gnu.org/fribidi': 1,
+    'freetype.org': '2',
+    'gnu.org/fribidi': '1',
     'harfbuzz.org': '*',
     'github.com/adah1972/libunibreak': '*',
     linux: {
-      'freedesktop.org/fontconfig': 2,
+      'freedesktop.org/fontconfig': '2',
     },
     'x86-64': {
-      'nasm.us': 2,
+      'nasm.us': '2',
     },
   },
   buildDependencies: {
-    'gnu.org/autoconf': 2,
-    'gnu.org/automake': 1,
-    'gnu.org/libtool': 2,
+    'gnu.org/autoconf': '2',
+    'gnu.org/automake': '1',
+    'gnu.org/libtool': '2',
     'freedesktop.org/pkg-config': '*',
   },
   distributable: {

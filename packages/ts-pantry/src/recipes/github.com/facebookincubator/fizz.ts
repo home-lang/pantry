@@ -15,21 +15,21 @@ export const recipe: Recipe = {
     'google.com/glog': "^0.7",
     'libevent.org': "*",
     'libsodium.org': "*",
-    'lz4.org': 1,
+    'lz4.org': '1',
     'openssl.org': "^1.1",
     'google.github.io/snappy': "*",
-    'facebook.com/zstd': 1,
-    'sourceware.org/bzip2': 1,
+    'facebook.com/zstd': '1',
+    'sourceware.org/bzip2': '1',
     'zlib.net': "^1",
     linux: {
-      'gnu.org/gcc/libstdcxx': 14,
+      'gnu.org/gcc/libstdcxx': '14',
     },
   },
   buildDependencies: {
     'cmake.org': "^3",
     'ninja-build.org': "^1",
     linux: {
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc': '14',
     },
   },
   distributable: {
@@ -55,6 +55,7 @@ export const recipe: Recipe = {
       "cmake --build build",
       "cmake --install build",
       {
+        // eslint-disable-next-line no-super-linear-backtracking -- this is a sed program string, not a JS regex
         run: "sed -E -i -e \"s:{{pkgx.prefix}}:\\$\\{_IMPORT_PREFIX\\}/../../../..:g\" -e '/^  INTERFACE_INCLUDE_DIRECTORIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/include|/v\\1/include|g' -e '/^  INTERFACE_LINK_LIBRARIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/lib|/v\\1/lib|g' fizz-targets.cmake",
         'working-directory': "{{prefix}}/lib/cmake/fizz",
       },

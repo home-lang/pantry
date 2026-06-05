@@ -7,7 +7,7 @@ export const recipe: Recipe = {
     'make',
   ],
   buildDependencies: {
-    'gnu.org/m4': 1,
+    'gnu.org/m4': '1',
   },
   distributable: {
     url: 'https://ftp.gnu.org/gnu/make/make-{{ version.raw }}.tar.gz',

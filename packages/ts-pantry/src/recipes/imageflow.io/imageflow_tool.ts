@@ -7,7 +7,7 @@ export const recipe: Recipe = {
     'imageflow_tool',
   ],
   dependencies: {
-    'openssl.org': 1.1,
+    'openssl.org': '1.1',
   },
   buildDependencies: {
     'rust-lang.org': '>=1.65<1.78',

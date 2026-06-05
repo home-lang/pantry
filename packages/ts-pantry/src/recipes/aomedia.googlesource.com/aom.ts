@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   ],
   buildDependencies: {
     'x86-64': {
-      'nasm.us': 2,
+      'nasm.us': '2',
     },
     'cmake.org': '^3',
   },

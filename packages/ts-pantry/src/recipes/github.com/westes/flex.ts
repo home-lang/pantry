@@ -28,7 +28,7 @@ export const recipe: Recipe = {
         '--enable-shared',
       ],
       darwin: {
-        MACOSX_DEPLOYMENT_TARGET: 10.6,
+        MACOSX_DEPLOYMENT_TARGET: '10.6',
       },
       linux: {
         CPPFLAGS: '-D_GNU_SOURCE',

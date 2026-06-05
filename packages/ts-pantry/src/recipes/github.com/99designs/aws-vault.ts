@@ -24,14 +24,14 @@ export const recipe: Recipe = {
         '-X=main.Version=v{{version}}',
       ],
       linux: {
-        CGO_ENABLED: 0,
+        CGO_ENABLED: '0',
         LDFLAGS: [
           '-extldflags=-static',
         ],
       },
       darwin: {
         SDKROOT: '$(xcrun --sdk macosx --show-sdk-path)',
-        CGO_ENABLED: 1,
+        CGO_ENABLED: '1',
       },
     },
   },

@@ -14,7 +14,7 @@ export const recipe: Recipe = {
     'libssh2.org': '*',
     'openssl.org': '^1.1',
     'zlib.net': '*',
-    'curl.se': 8,
+    'curl.se': '8',
   },
   buildDependencies: {
     'rust-lang.org': '^1.70',
@@ -30,9 +30,9 @@ export const recipe: Recipe = {
       'cargo install $ARGS',
     ],
     env: {
-      LIBGIT2_SYS_USE_PKG_CONFIG: 1,
-      LIBSSH2_SYS_USE_PKG_CONFIG: 1,
-      OPENSSL_NO_VENDOR: 1,
+      LIBGIT2_SYS_USE_PKG_CONFIG: '1',
+      LIBSSH2_SYS_USE_PKG_CONFIG: '1',
+      OPENSSL_NO_VENDOR: '1',
       OPENSSL_DIR: '{{deps.openssl.org.prefix}}',
       ARGS: [
         '--root {{prefix}}',

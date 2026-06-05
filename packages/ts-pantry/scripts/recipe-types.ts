@@ -118,6 +118,11 @@ export interface Recipe {
     platformEnv?: Record<string, Record<string, string>>
     /** Working directory relative to build dir */
     workingDirectory?: string
+    /**
+     * Working directory relative to build dir (kebab-case form). Recipes author
+     * this matching buildkit's on-disk format; the loader accepts either spelling.
+     */
+    'working-directory'?: string
     /** Steps to skip (e.g. 'fix-machos', 'fix-patchelf') */
     skip?: string[]
   }

@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       'mv "dist/container-structure-test-${GOOS}-${GOARCH}" {{ prefix }}/bin/container-structure-test',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       'darwin/aarch64': {
         PLATFORM: 'darwin_arm64',
         GOARCH: 'arm64',

@@ -8,7 +8,7 @@ export const recipe: Recipe = {
     'file',
   ],
   dependencies: {
-    'zlib.net': 1,
+    'zlib.net': '1',
   },
   buildDependencies: {
     'gnu.org/patch': '*',

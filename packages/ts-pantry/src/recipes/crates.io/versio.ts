@@ -8,7 +8,7 @@ export const recipe: Recipe = {
   ],
   dependencies: {
     'openssl.org': '^1.1',
-    'gnupg.org/libgpg-error': 1,
+    'gnupg.org/libgpg-error': '1',
     'gnupg.org/gpgme': '^1.13',
     'gnupg.org/libassuan': '*',
     'zlib.net': '^1',

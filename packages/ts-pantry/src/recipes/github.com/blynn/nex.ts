@@ -22,7 +22,7 @@ export const recipe: Recipe = {
       'rsync -avH ./props/README.md {{prefix}}/share/',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       GO_LDFLAGS: [
         '-s',
         '-w',

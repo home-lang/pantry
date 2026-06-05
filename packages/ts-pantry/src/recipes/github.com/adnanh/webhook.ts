@@ -18,7 +18,7 @@ export const recipe: Recipe = {
       'go build -v -ldflags="${LDFLAGS}" -o {{prefix}}/bin/webhook',
     ],
     env: {
-      CGO_ENABLED: 1,
+      CGO_ENABLED: '1',
       LDFLAGS: [
         '-s',
         '-w',

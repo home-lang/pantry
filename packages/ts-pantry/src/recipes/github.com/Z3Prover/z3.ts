@@ -8,14 +8,14 @@ export const recipe: Recipe = {
   ],
   dependencies: {
     linux: {
-      'gnu.org/gcc/libstdcxx': 14,
+      'gnu.org/gcc/libstdcxx': '14',
     },
   },
   buildDependencies: {
     'cmake.org': "^3",
     'python.org': ">=3<3.12",
     linux: {
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc': '14',
     },
   },
   distributable: {

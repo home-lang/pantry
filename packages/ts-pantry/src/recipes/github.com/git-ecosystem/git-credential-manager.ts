@@ -33,7 +33,7 @@ export const recipe: Recipe = {
       },
     ],
     env: {
-      DOTNET_CLI_TELEMETRY_OPTOUT: 1,
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1',
       linux: {
         CSPROJ: "src/linux/Packaging.Linux/*.csproj",
         CONFIGURATION: "LinuxRelease",

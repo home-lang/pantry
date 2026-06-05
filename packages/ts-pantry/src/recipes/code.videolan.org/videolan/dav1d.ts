@@ -8,10 +8,10 @@ export const recipe: Recipe = {
   ],
   buildDependencies: {
     'x86-64': {
-      'nasm.us': 2.14,
+      'nasm.us': '2.14',
     },
     'mesonbuild.com': '>=0.49',
-    'ninja-build.org': 1,
+    'ninja-build.org': '1',
   },
   distributable: {
     url: 'https://code.videolan.org/videolan/dav1d/-/archive/{{version}}/dav1d-{{version}}.tar.gz',

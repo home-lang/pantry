@@ -5,9 +5,9 @@ export const recipe: Recipe = {
   name: "utfcpp",
   programs: [],
   buildDependencies: {
-    'cmake.org': 3,
+    'cmake.org': '3',
     darwin: {
-      'gnu.org/gcc': 13,
+      'gnu.org/gcc': '13',
     },
   },
   distributable: {

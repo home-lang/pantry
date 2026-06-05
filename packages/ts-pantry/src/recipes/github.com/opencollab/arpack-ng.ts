@@ -5,10 +5,10 @@ export const recipe: Recipe = {
   name: 'arpack-ng',
   programs: [],
   dependencies: {
-    'eigen.tuxfamily.org': 3,
+    'eigen.tuxfamily.org': '3',
     'gnu.org/gcc': '*',
-    'open-mpi.org': 5,
-    'netlib.org/lapack': 3,
+    'open-mpi.org': '5',
+    'netlib.org/lapack': '3',
   },
   buildDependencies: {
     'gnu.org/autoconf': '*',

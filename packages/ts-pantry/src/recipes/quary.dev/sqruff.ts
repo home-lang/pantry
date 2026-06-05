@@ -8,7 +8,7 @@ export const recipe: Recipe = {
   ],
   dependencies: {
     linux: {
-      'jemalloc.net': 5,
+      'jemalloc.net': '5',
     },
   },
   buildDependencies: {

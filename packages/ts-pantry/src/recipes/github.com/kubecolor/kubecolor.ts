@@ -18,7 +18,7 @@ export const recipe: Recipe = {
       'go build $ARGS -ldflags="$LDFLAGS" .',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       LDFLAGS: [
         '-s',
         '-w',

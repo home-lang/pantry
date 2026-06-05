@@ -122,7 +122,7 @@ export const recipe: Recipe = {
       'make --jobs {{ hw.concurrency }} install',
     ],
     env: {
-      FORCE_UNSAFE_CONFIGURE: 1,
+      FORCE_UNSAFE_CONFIGURE: '1',
     },
   },
   test: {

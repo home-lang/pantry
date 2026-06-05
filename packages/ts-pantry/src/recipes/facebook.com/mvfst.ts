@@ -14,13 +14,13 @@ export const recipe: Recipe = {
     'openssl.org': '*',
     linux: {
       'libsodium.org': '^1.0.19',
-      'gnu.org/gcc/libstdcxx': 14,
+      'gnu.org/gcc/libstdcxx': '14',
     },
   },
   buildDependencies: {
     'cmake.org': '*',
     linux: {
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc': '14',
       'gnu.org/binutils': '*',
       'gnu.org/make': '*',
       'kernel.org/linux-headers': '*',

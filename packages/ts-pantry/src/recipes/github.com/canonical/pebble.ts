@@ -27,7 +27,7 @@ export const recipe: Recipe = {
       'go build -v -ldflags="${LDFLAGS}" -o {{ prefix }}/bin/pebble --trimpath ./cmd/pebble',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       LDFLAGS: [
         '-w',
         '-s',

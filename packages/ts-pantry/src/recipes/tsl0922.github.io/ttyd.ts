@@ -7,13 +7,13 @@ export const recipe: Recipe = {
     'ttyd',
   ],
   dependencies: {
-    'libuv.org': 1,
+    'libuv.org': '1',
     'github.com/json-c/json-c': '^0.16',
     'libwebsockets.org': '~4.3',
-    'zlib.net': 1,
+    'zlib.net': '1',
   },
   buildDependencies: {
-    'cmake.org': 3,
+    'cmake.org': '3',
   },
   distributable: {
     url: 'https://github.com/tsl0922/ttyd/archive/{{version}}.tar.gz',

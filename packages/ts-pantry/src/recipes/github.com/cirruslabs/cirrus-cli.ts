@@ -30,7 +30,7 @@ export const recipe: Recipe = {
         ],
       },
       darwin: {
-        CGO_ENABLED: 1,
+        CGO_ENABLED: '1',
       },
     },
   },

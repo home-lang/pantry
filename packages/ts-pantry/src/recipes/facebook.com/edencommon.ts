@@ -14,14 +14,14 @@ export const recipe: Recipe = {
     'sourceware.org/bzip2': '^1',
     'boost.org': '~1.88',
     linux: {
-      'gnu.org/gcc/libstdcxx': 14,
+      'gnu.org/gcc/libstdcxx': '14',
     },
   },
   buildDependencies: {
     'cmake.org': '*',
     'google.com/googletest': '*',
     linux: {
-      'gnu.org/gcc': 14,
+      'gnu.org/gcc': '14',
     },
   },
   distributable: {

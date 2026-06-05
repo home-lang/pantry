@@ -9,7 +9,7 @@ export const recipe: Recipe = {
     'libexpat.github.io': '^2',
   },
   buildDependencies: {
-    'doxygen.nl': 1,
+    'doxygen.nl': '1',
   },
   distributable: {
     url: 'https://www.gaia-gis.it/gaia-sins/freexl-sources/freexl-{{version}}.tar.gz',

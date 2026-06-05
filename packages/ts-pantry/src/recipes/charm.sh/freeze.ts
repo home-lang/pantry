@@ -22,7 +22,7 @@ export const recipe: Recipe = {
       GOPROXY: 'https://proxy.golang.org,direct',
       GOSUMDB: 'sum.golang.org',
       GO111MODULE: 'on',
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       BUILDLOC: '{{prefix}}/bin/freeze',
       LDFLAGS: [
         '-s',

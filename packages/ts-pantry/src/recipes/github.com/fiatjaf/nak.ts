@@ -10,7 +10,7 @@ export const recipe: Recipe = {
     'go.dev': "~1.25",
     linux: {
       'gnu.org/gcc': "*",
-      'github.com/libfuse/libfuse': 2,
+      'github.com/libfuse/libfuse': '2',
     },
     darwin: {
       'macfuse.github.io/v2': "*",

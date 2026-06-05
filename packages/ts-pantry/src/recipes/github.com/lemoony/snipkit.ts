@@ -25,7 +25,7 @@ export const recipe: Recipe = {
       'install -Dm755 dist/$PLATFORM/snipkit "{{prefix}}"/bin/snipkit',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       'darwin/aarch64': {
         PLATFORM: 'macos_darwin_arm64_v8.0',
       },

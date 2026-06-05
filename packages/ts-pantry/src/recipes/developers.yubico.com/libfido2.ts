@@ -9,15 +9,15 @@ export const recipe: Recipe = {
     'fido2-token',
   ],
   dependencies: {
-    'github.com/PJK/libcbor': 0,
-    'openssl.org': 1,
-    'zlib.net': 1,
+    'github.com/PJK/libcbor': '0',
+    'openssl.org': '1',
+    'zlib.net': '1',
     linux: {
       'systemd.io': '*',
     },
   },
   buildDependencies: {
-    'cmake.org': 3,
+    'cmake.org': '3',
     'freedesktop.org/pkg-config': '^0.29',
   },
   distributable: {

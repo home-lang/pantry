@@ -11,15 +11,15 @@ export const recipe: Recipe = {
     'g-ir-scanner',
   ],
   dependencies: {
-    'gnome.org/glib': 2,
-    'sourceware.org/libffi': 3,
-    'gnu.org/bison': 3,
+    'gnome.org/glib': '2',
+    'sourceware.org/libffi': '3',
+    'gnu.org/bison': '3',
     'python.org': '~3.11',
-    'github.com/westes/flex': 2,
+    'github.com/westes/flex': '2',
   },
   buildDependencies: {
     'mesonbuild.com': '^1.2',
-    'ninja-build.org': 1,
+    'ninja-build.org': '1',
   },
   distributable: {
     url: 'https://download.gnome.org/sources/gobject-introspection/{{version.major}}.{{version.minor}}/gobject-introspection-{{version}}.tar.xz',

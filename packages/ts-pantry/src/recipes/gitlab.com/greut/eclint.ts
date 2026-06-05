@@ -25,7 +25,7 @@ export const recipe: Recipe = {
         '-w',
         '-X main.version=v{{version}}',
       ],
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
     },
   },
   test: {

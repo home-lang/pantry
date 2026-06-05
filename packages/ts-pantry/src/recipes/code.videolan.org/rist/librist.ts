@@ -10,10 +10,10 @@ export const recipe: Recipe = {
     "ristsrppasswd",
   ],
   buildDependencies: {
-    'mesonbuild.com': 1,
-    'ninja-build.org': 1,
+    'mesonbuild.com': '1',
+    'ninja-build.org': '1',
     linux: {
-      'sourceware.org/libffi': 3,
+      'sourceware.org/libffi': '3',
     },
   },
   distributable: {

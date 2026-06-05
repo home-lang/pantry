@@ -17,7 +17,7 @@ export const recipe: Recipe = {
     'nodejs.org': "*",
     'npmjs.com': "*",
     linux: {
-      'cmake.org': 3,
+      'cmake.org': '3',
     },
   },
   distributable: {

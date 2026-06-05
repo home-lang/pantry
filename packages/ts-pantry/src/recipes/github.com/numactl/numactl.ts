@@ -6,10 +6,10 @@ export const recipe: Recipe = {
   programs: [],
   platforms: ['linux'],
   buildDependencies: {
-    'gnu.org/autoconf': 2,
-    'gnu.org/automake': 1,
-    'gnu.org/libtool': 2,
-    'gnu.org/m4': 1,
+    'gnu.org/autoconf': '2',
+    'gnu.org/automake': '1',
+    'gnu.org/libtool': '2',
+    'gnu.org/m4': '1',
   },
   distributable: {
     url: 'https://github.com/numactl/numactl/archive/refs/tags/v{{ version }}/numactl-{{ version }}.tar.gz',

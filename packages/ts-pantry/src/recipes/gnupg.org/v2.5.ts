@@ -10,7 +10,7 @@ export const recipe: Recipe = {
     'gnupg.org/npth': "*",
     'gnupg.org/libgpg-error': "*",
     'gnupg.org/libksba': "*",
-    'gnupg.org/libassuan': 3,
+    'gnupg.org/libassuan': '3',
     'gnupg.org/libgcrypt': "^1.11",
     'gnupg.org/pinentry': "*",
     'gnutls.org': "^3",

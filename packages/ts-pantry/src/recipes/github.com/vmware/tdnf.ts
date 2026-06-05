@@ -9,7 +9,7 @@ export const recipe: Recipe = {
   dependencies: {
     'rpm.org/rpm': '*',
     'libexpat.github.io': '*',
-    'sqlite.org': 3,
+    'sqlite.org': '3',
     'opensuse.org/libsolv': '*',
     'gnupg.org/gpgme': '*',
     'gnupg.org/libgpg-error': '*',

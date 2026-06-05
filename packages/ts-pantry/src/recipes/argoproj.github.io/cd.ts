@@ -27,7 +27,7 @@ export const recipe: Recipe = {
       'install dist/argocd {{prefix}}/bin/',
     ],
     env: {
-      LDFLAGS: null,
+      LDFLAGS: '0',
     },
   },
   test: {

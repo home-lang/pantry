@@ -19,7 +19,7 @@ export const recipe: Recipe = {
       'ln -s sparsecat {{ prefix }}/bin/sparsecat-{{version}}',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       GO_LDFLAGS: [
         '-s',
         '-w',

@@ -14,7 +14,7 @@ export const recipe: Recipe = {
   ],
   dependencies: {
     linux: {
-      'llvm.org': 22,
+      'llvm.org': '22',
     },
   },
   buildDependencies: {

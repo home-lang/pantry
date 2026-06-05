@@ -28,9 +28,9 @@ export const recipe: Recipe = {
       'cargo install --locked --path codex-rs/tui --root {{prefix}}',
     ],
     env: {
-      OPENSSL_STATIC: 1,
+      OPENSSL_STATIC: '1',
       linux: {
-        CARGO_BUILD_JOBS: 1,
+        CARGO_BUILD_JOBS: '1',
         RUSTFLAGS: '-C codegen-units=1',
         CARGO_PROFILE_RELEASE_LTO: 'off',
       },

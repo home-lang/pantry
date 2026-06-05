@@ -19,7 +19,7 @@ export const recipe: Recipe = {
       'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/govulncheck ./cmd/govulncheck',
     ],
     env: {
-      CGO_ENABLED: 0,
+      CGO_ENABLED: '0',
       GO_LDFLAGS: [
         '-s',
         '-w',

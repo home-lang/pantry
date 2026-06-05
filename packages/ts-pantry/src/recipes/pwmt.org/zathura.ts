@@ -16,7 +16,7 @@ export const recipe: Recipe = {
     'freedesktop.org/desktop-file-utils': '*',
     'darwinsys.com/file': '*',
     'gtk.org/gtk3': '^3.22',
-    'sqlite.org': 3,
+    'sqlite.org': '3',
     darwin: {
       'gnome.org/gtk-mac-integration-gtk3': '*',
     },
@@ -24,7 +24,7 @@ export const recipe: Recipe = {
   buildDependencies: {
     'mesonbuild.com': '>=0.61',
     'ninja-build.org': '*',
-    'cmake.org': 3,
+    'cmake.org': '3',
     linux: {
       'nixos.org/patchelf': '*',
     },
@@ -50,7 +50,7 @@ export const recipe: Recipe = {
     ],
     env: {
       darwin: {
-        MACOSX_DEPLOYMENT_TARGET: 14,
+        MACOSX_DEPLOYMENT_TARGET: '14',
       },
     },
   },

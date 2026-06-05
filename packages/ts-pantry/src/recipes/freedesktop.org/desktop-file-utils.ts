@@ -10,7 +10,7 @@ export const recipe: Recipe = {
     'update-desktop-database',
   ],
   dependencies: {
-    'gnome.org/glib': 2,
+    'gnome.org/glib': '2',
   },
   buildDependencies: {
     'mesonbuild.com': '>=0.61',

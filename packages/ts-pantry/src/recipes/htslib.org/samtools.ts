@@ -30,7 +30,7 @@ export const recipe: Recipe = {
   dependencies: {
     'htslib.org': '*',
     'invisible-island.net/ncurses': '*',
-    'zlib.net': 1,
+    'zlib.net': '1',
   },
   distributable: {
     url: 'https://github.com/samtools/samtools/releases/download/{{version.raw}}/samtools-{{version.raw}}.tar.bz2',

@@ -18,7 +18,7 @@ export const recipe: Recipe = {
   buildDependencies: {
     'cmake.org': '*',
     'python.org': '~3.11',
-    'git-scm.org': 2,
+    'git-scm.org': '2',
   },
   distributable: {
     url: 'https://github.com/KhronosGroup/SPIRV-Tools/archive/{{version.tag}}.tar.gz',

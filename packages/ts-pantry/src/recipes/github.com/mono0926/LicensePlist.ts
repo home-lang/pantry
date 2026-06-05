@@ -8,7 +8,7 @@ export const recipe: Recipe = {
     "license-plist",
   ],
   buildDependencies: {
-    'swift.org': 6,
+    'swift.org': '6',
   },
   distributable: {
     url: "https://github.com/mono0926/LicensePlist/archive/refs/tags/{{version.tag}}.tar.gz",
