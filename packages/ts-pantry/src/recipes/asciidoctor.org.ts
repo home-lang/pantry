@@ -32,6 +32,11 @@ export const recipe: Recipe = {
     script: [
       {
         run: [
+          // Old asciidoctor gemspecs (e.g. 0.1.x) call `s.has_rdoc=` / `s.rubyforge_project=`,
+          // both removed from modern RubyGems — strip them so `gem build` doesn't abort
+          // with "undefined method 'has_rdoc='".
+          'sed -i.bak -e \'/has_rdoc/d\' -e \'/rubyforge_project/d\' asciidoctor.gemspec && rm -f asciidoctor.gemspec.bak',
+          '',
           'gem build asciidoctor.gemspec',
           '',
           'gem install \\',
