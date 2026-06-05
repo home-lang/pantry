@@ -13,6 +13,9 @@ export const recipe: Recipe = {
   buildDependencies: {
     'freedesktop.org/pkg-config': '*',
     'x.org/util-macros': '*',
+    // configure.ac aborts ("must install X.Org font-util 1.1 or later")
+    // without the fontutil.m4 macros that font-util installs.
+    'x.org/font-util': '*',
     'gnu.org/autoconf': '*',
     'gnu.org/automake': '*',
     'gnu.org/libtool': '*',
