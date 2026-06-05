@@ -11,44 +11,27 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'surrealdb/surrealdb',
   },
-  distributable: {
-    url: 'https://github.com/surrealdb/surrealdb/archive/refs/tags/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-  dependencies: {
-    'openssl.org': '^1',
-  },
-  buildDependencies: {
-    'rust-lang.org': '>=1.60',
-    'rust-lang.org/cargo': '*',
-    'gnu.org/patch': '*', // rquickjs-sys:build.rs:L132
-  },
+  // Prebuilt download: SurrealDB ships official per-platform release archives
+  // (`surreal-v<ver>.<os>-<arch>.tgz`) containing a single flat `surreal`
+  // binary. This is the upstream-distributed server binary — building it from
+  // source via cargo is slow and brittle (rquickjs-sys patches, recursion-limit
+  // tweaks, openssl) for no value-add over the official release.
+  distributable: null,
 
   build: {
     script: [
-      // async state machines can exceed the default recursion limit (128)
-      {
-        run: 'sed -i -f $PROP lib.rs',
-        if: '^3.0.3',
-        'working-directory': 'surrealdb/server/src',
-        prop: {
-          content: '1i #![recursion_limit = "256"]',
-        },
-      },
-      'cargo install --path . --locked --root {{prefix}}',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="darwin-arm64" ;;',
+      '  darwin+x86-64)  ASSET="darwin-amd64" ;;',
+      '  linux+aarch64)  ASSET="linux-arm64"  ;;',
+      '  linux+x86-64)   ASSET="linux-amd64"  ;;',
+      'esac',
+      '',
+      'curl -Lfo surreal.tgz "https://github.com/surrealdb/surrealdb/releases/download/v${VERSION}/surreal-v${VERSION}.${ASSET}.tgz"',
+      'tar xzf surreal.tgz',
+      'install -Dm755 surreal {{prefix}}/bin/surreal',
     ],
-    env: {
-      SURREAL_BUILD_METADATA: 'pkgx',
-      RUSTFLAGS: [
-        // required as of v1.4.0
-        '--cfg surrealdb_unstable',
-      ],
-      linux: {
-        // Needed to build `generic-array` for some odd reason. Keep the base
-        // `--cfg surrealdb_unstable` via shell expansion of $RUSTFLAGS.
-        RUSTFLAGS: '$RUSTFLAGS -C linker=cc',
-      },
-    },
   },
 
   test: {

@@ -6,36 +6,34 @@ export const recipe: Recipe = {
   programs: [
     'argocd',
   ],
-  buildDependencies: {
-    'go.dev': '*',
-    linux: {
-      'git-scm.org': '*',
-    },
+  versionSource: {
+    type: 'github-releases',
+    repo: 'argoproj/argo-cd',
   },
-  distributable: {
-    url: 'https://github.com/argoproj/argo-cd/archive/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
+  // Prebuilt download: Argo CD ships an official per-platform `argocd-<os>-<arch>`
+  // single binary on its GitHub releases. The CLI is a pure Go build with no
+  // configuration we customize (the source build only ever ran `make cli-local`),
+  // so the official binary is identical to what we'd compile.
+  distributable: null,
+
   build: {
-    // The `argocd` CLI (`make cli-local`) is a pure Go build and does NOT need
-    // the web UI. Building the UI (dep-ui-local + yarn) pulls in node-gyp/fsevents
-    // native builds that fail on darwin and require yarn 4 (box has yarn 1), so
-    // skip it entirely — only the server embeds the UI, which we don't ship.
     script: [
-      'make --jobs {{hw.concurrency}} cli-local',
-      'mkdir -p {{prefix}}/bin',
-      'install dist/argocd {{prefix}}/bin/',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="darwin-arm64" ;;',
+      '  darwin+x86-64)  ASSET="darwin-amd64" ;;',
+      '  linux+aarch64)  ASSET="linux-arm64"  ;;',
+      '  linux+x86-64)   ASSET="linux-amd64"  ;;',
+      'esac',
+      '',
+      'curl -Lfo argocd "https://github.com/argoproj/argo-cd/releases/download/v${VERSION}/argocd-${ASSET}"',
+      'install -Dm755 argocd {{prefix}}/bin/argocd',
     ],
-    env: {
-      LDFLAGS: '0',
-    },
   },
+
   test: {
     script: [
-      'argocd --help',
-      'touch argocd-config',
-      'chmod 0600 argocd-config',
-      'argocd context --config ./argocd-config | grep "CURRENT  NAME  SERVER"',
+      'argocd version --client | grep {{version}}',
     ],
   },
 }

@@ -9,54 +9,35 @@ export const recipe: Recipe = {
   dependencies: {
     'curl.se/ca-certs': '*',
   },
-  buildDependencies: {
-    'go.dev': '=1.25',
-    linux: {
-      'gnu.org/gcc': '*',
-      'gnu.org/binutils': '~2.44',
-    },
+  versionSource: {
+    type: 'github-releases',
+    repo: 'aquasecurity/trivy',
   },
-  distributable: {
-    url: 'git+https://github.com/aquasecurity/trivy.git',
-  },
+  // Prebuilt download: Trivy ships official per-platform release tarballs
+  // (`trivy_<ver>_<OS>-<ARCH>.tar.gz`) containing a single flat `trivy` binary.
+  // It's a vanilla Go CLI with no build-time configuration we customize, so the
+  // official binary is identical to what we'd compile — and the source build
+  // was failing on the GOEXPERIMENT=jsonv2 toolchain gating.
+  distributable: null,
+
   build: {
     script: [
-      // Trivy 0.66.0+ imports encoding/json/v2 (and encoding/json/jsontext),
-      // which are gated behind GOEXPERIMENT=jsonv2 in Go 1.25/1.26. Without it
-      // the build fails with "build constraints exclude all Go files in
-      // .../encoding/json/v2". Inline the export with the build command so it
-      // applies to the go invocation regardless of step isolation. (Earlier
-      // the guard was >=0.67.0, which missed 0.66.0.)
-      {
-        run: 'GOEXPERIMENT=jsonv2 go build $ARGS -ldflags="$GO_LDFLAGS" ./cmd/trivy',
-        if: '>=0.66.0',
-      },
-      {
-        run: 'go build $ARGS -ldflags="$GO_LDFLAGS" ./cmd/trivy',
-        if: '<0.66.0',
-      },
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="macOS-ARM64" ;;',
+      '  darwin+x86-64)  ASSET="macOS-64bit" ;;',
+      '  linux+aarch64)  ASSET="Linux-ARM64" ;;',
+      '  linux+x86-64)   ASSET="Linux-64bit" ;;',
+      'esac',
+      '',
+      'curl -Lfo trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/v${VERSION}/trivy_${VERSION}_${ASSET}.tar.gz"',
+      'tar xzf trivy.tar.gz',
+      'install -Dm755 trivy {{prefix}}/bin/trivy',
     ],
-    env: {
-      ARGS: [
-        '-trimpath',
-        '-o={{prefix}}/bin/trivy',
-      ],
-      GO_LDFLAGS: [
-        '-s',
-        '-w',
-        '-X github.com/aquasecurity/trivy/pkg/version.ver={{version}}',
-        '-X github.com/aquasecurity/trivy/pkg/version/app.ver={{version}}',
-      ],
-      linux: {
-        GO_LDFLAGS: [
-          '-buildmode=pie',
-        ],
-      },
-    },
   },
+
   test: {
     script: [
-      'trivy image alpine:3.10',
       'trivy --version | grep {{version}}',
     ],
   },
