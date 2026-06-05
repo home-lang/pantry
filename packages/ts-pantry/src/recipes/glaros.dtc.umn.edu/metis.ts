@@ -25,7 +25,10 @@ export const recipe: Recipe = {
       "cmake --build build --parallel",
       "cmake --install build",
       {
-        run: "mkdir -p {{prefix}}/pkgshare/graphs\nmv ./src/graphs/* {{prefix}}/pkgshare/graphs/\n",
+        // The scivision/METIS mirror does not ship the example graphs/ tree,
+        // so only copy them when present (a bare glob would expand to itself
+        // and break `mv` with "usage: mv ...").
+        run: "if ls ./src/graphs/* >/dev/null 2>&1; then mkdir -p {{prefix}}/pkgshare/graphs; mv ./src/graphs/* {{prefix}}/pkgshare/graphs/; fi\n",
         if: "<5.2",
       },
     ],
