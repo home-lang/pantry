@@ -283,6 +283,13 @@ async function handleZigPublish(
       version = match[2]
     }
 
+    // Canonicalize the package name. Zig's `.name` field must be a valid enum
+    // literal, so packages declare it with underscores (e.g. `.zig_test_framework`),
+    // but the registry's canonical name — and what the site/search index list — uses
+    // hyphens (`zig-test-framework`). Normalize here so every publish, regardless of
+    // client, lands under the canonical name instead of a parallel `_` namespace.
+    name = name.replace(/_/g, '-')
+
     // Check if version already exists
     const exists = await storage.exists(name, version)
     if (exists) {

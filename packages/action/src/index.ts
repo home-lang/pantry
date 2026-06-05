@@ -1003,7 +1003,14 @@ async function publishZigPackage(registryUrl: string, token: string, cwd: string
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pantry-publish-'))
   const manifestPath = path.join(tmpDir, 'manifest.zon')
   const headerFile = path.join(tmpDir, 'auth-header')
-  fs.writeFileSync(manifestPath, zonContent)
+  // Send the manifest with the *normalized* (hyphenated) name so the registry
+  // stores under the canonical name. The server parses `.name` from this manifest,
+  // and zonContent's `.name` is the raw enum-literal form (underscores). Rewrite it
+  // to the quoted form `.@"<name>"` (hyphens aren't valid bare enum literals).
+  const manifestContent = name === rawName
+    ? zonContent
+    : zonContent.replace(/\.name\s*=\s*(?:\.@"[^"]+"|\.\w+|"[^"]+")/, `.name = .@"${name}"`)
+  fs.writeFileSync(manifestPath, manifestContent)
   fs.writeFileSync(headerFile, `Authorization: Bearer ${token}`, { mode: 0o600 })
 
   let output = ''
