@@ -12,33 +12,23 @@ export const recipe: Recipe = {
     repo: 'dotenv-linter/dotenv-linter',
     tagPattern: /^v(.+)$/,
   },
-  distributable: {
-    url: 'https://github.com/dotenv-linter/dotenv-linter/archive/refs/tags/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-
-  buildDependencies: {
-    'rust-lang.org': '>=1.56',
-    'rust-lang.org/cargo': '*',
-  },
+  // Prebuilt download: dotenv-linter ships official per-platform release
+  // tarballs (bare `dotenv-linter` binary at the archive root).
+  distributable: null,
 
   build: {
     script: [
-      // linux/aarch64 looks for aarch64-linux-gnu-gcc
-      {
-        run: 'ln -s "$(command -v clang)" aarch64-linux-gnu-gcc',
-        if: 'linux/aarch64',
-        'working-directory': '$HOME/.local/bin',
-      },
-      // <4: the crate root is an installable package
-      { run: 'cargo install --locked --path . --root {{prefix}}', if: '<4' },
-      // >=4: the workspace root is a virtual manifest; the binary lives in dotenv-cli
-      { run: 'cargo install --locked --path dotenv-cli --root {{prefix}}', if: '>=4' },
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="dotenv-linter-darwin-arm64"   ;;',
+      '  darwin+x86-64)  ASSET="dotenv-linter-darwin-x86_64"  ;;',
+      '  linux+aarch64)  ASSET="dotenv-linter-linux-aarch64"  ;;',
+      '  linux+x86-64)   ASSET="dotenv-linter-linux-x86_64"   ;;',
+      'esac',
+      '',
+      'curl -Lfo dotenv-linter.tar.gz "https://github.com/dotenv-linter/dotenv-linter/releases/download/v${VERSION}/${ASSET}.tar.gz"',
+      'tar xf dotenv-linter.tar.gz',
+      'install -Dm755 dotenv-linter {{prefix}}/bin/dotenv-linter',
     ],
-    env: {
-      'linux/aarch64': {
-        PATH: '$HOME/.local/bin:$PATH',
-      },
-    },
   },
 }
