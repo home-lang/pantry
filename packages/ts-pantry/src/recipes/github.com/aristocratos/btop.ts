@@ -24,9 +24,11 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: 'sed -i -e \'s/ifdef __clang__/if 1/\' -e \'1i\\#define _GNU_SOURCE\' intel_gpu_top.c',
+        // intel_gpu_top.c only exists in btop 1.4.x+; guard so the 1.3.x tree
+        // (which has neither the dir nor the file) doesn't abort on the
+        // missing path.
+        run: 'f=src/linux/intel_gpu_top/intel_gpu_top.c; test -f "$f" && sed -i -e \'s/ifdef __clang__/if 1/\' -e \'1i\\#define _GNU_SOURCE\' "$f" || true',
         if: 'linux/x86-64',
-        'working-directory': 'src/linux/intel_gpu_top',
       },
       // btop 1.4.x uses C++23 std::ranges::to, which needs libstdc++ 14.
       // The prebuilt gnu.org/gcc@14 toolchain isn't in our S3 registry yet, so
@@ -39,8 +41,19 @@ export const recipe: Recipe = {
         run: 'command -v g++-14 >/dev/null 2>&1 || { sudo apt-get update -y >/dev/null 2>&1 || true; sudo DEBIAN_FRONTEND=noninteractive apt-get install -y g++-14 >/dev/null 2>&1 || true; }',
         if: 'linux/x86-64',
       },
-      'make CXX=g++-14',
-      'make install PREFIX={{prefix}} CXX=g++-14',
+      // Linux: build with the 14-series g++ (C++23 std::ranges::to).
+      {
+        run: 'make CXX=g++-14 && make install PREFIX={{prefix}} CXX=g++-14',
+        if: 'linux/x86-64',
+      },
+      // macOS: btop's own Makefile appends -Wno-error=incompatible-function-pointer-types
+      // (a clang-only flag) for the macos target. buildkit's cc_wrapper points
+      // CXX at gcc, which rejects that flag, so force the real Apple clang where
+      // the flag is valid.
+      {
+        run: 'make CXX="$(xcrun -f clang++ 2>/dev/null || echo clang++)" && make install PREFIX={{prefix}} CXX="$(xcrun -f clang++ 2>/dev/null || echo clang++)"',
+        if: 'darwin',
+      },
     ],
     env: {
       linux: {
