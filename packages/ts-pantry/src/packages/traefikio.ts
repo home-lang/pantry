@@ -68,10 +68,12 @@ export const traefikioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.7.4',
     '3.7.3',
     '3.7.1',
     '3.7.0',
     '3.7.0-ea.2',
+    '3.6.20',
     '3.6.19',
     '3.6.18',
     '3.6.17',
