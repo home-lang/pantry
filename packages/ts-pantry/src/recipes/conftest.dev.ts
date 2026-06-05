@@ -11,21 +11,23 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'open-policy-agent/conftest',
   },
-  distributable: {
-    url: 'https://github.com/open-policy-agent/conftest/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'go.dev': '~1.25.3',
-  },
+  // Prebuilt download: conftest ships official per-platform release tarballs
+  // (capitalized OS + x86_64; bare `conftest` binary at the archive root).
+  distributable: null,
 
   build: {
     script: [
-      'go build -ldflags="$LDFLAGS" -o \'{{prefix}}/bin/conftest\' .',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="conftest_${VERSION}_Darwin_arm64"  ;;',
+      '  darwin+x86-64)  ASSET="conftest_${VERSION}_Darwin_x86_64" ;;',
+      '  linux+aarch64)  ASSET="conftest_${VERSION}_Linux_arm64"   ;;',
+      '  linux+x86-64)   ASSET="conftest_${VERSION}_Linux_x86_64"  ;;',
+      'esac',
+      '',
+      'curl -Lfo conftest.tar.gz "https://github.com/open-policy-agent/conftest/releases/download/v${VERSION}/${ASSET}.tar.gz"',
+      'tar xf conftest.tar.gz',
+      'install -Dm755 conftest {{prefix}}/bin/conftest',
     ],
-    env: {
-      'CGO_ENABLED': '0',
-      'LDFLAGS': ['-X github.com/open-policy-agent/conftest/internal/commands.version={{version}}', '-X github.com/open-policy-agent/conftest/internal/version.Version={{version}}'],
-    },
   },
 }
