@@ -11,30 +11,24 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'watchexec/watchexec',
   },
-  distributable: {
-    url: 'https://github.com/watchexec/watchexec/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'rust-lang.org': '>=1.56',
-    'rust-lang.org/cargo': '*',
-    'linux/aarch64': {
-      'gnu.org/gcc': '*',
-    },
-  },
+  // Prebuilt download: watchexec ships official per-platform release archives
+  // (.tar.xz; Rust target triples; binary under watchexec-<version>-<triple>/).
+  distributable: null,
 
   build: {
     script: [
-      // linux/aarch64 looks for aarch64-linux-gnu-gcc
-      {
-        run: 'ln -s {{deps.gnu.org/gcc.prefix}}/bin/aarch64-unknown-linux-gnu-gcc aarch64-linux-gnu-gcc',
-        'working-directory': '$HOME/.local/bin',
-        if: 'linux/aarch64',
-      },
-      'cargo install --locked --path crates/cli --root {{prefix}}',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) TRIPLE="aarch64-apple-darwin"      ;;',
+      '  darwin+x86-64)  TRIPLE="x86_64-apple-darwin"       ;;',
+      '  linux+aarch64)  TRIPLE="aarch64-unknown-linux-gnu" ;;',
+      '  linux+x86-64)   TRIPLE="x86_64-unknown-linux-gnu"  ;;',
+      'esac',
+      'ASSET="watchexec-${VERSION}-${TRIPLE}"',
+      '',
+      'curl -Lfo watchexec.tar.xz "https://github.com/watchexec/watchexec/releases/download/v${VERSION}/${ASSET}.tar.xz"',
+      'tar Jxf watchexec.tar.xz',
+      'install -Dm755 "${ASSET}/watchexec" {{prefix}}/bin/watchexec',
     ],
-    env: {
-      PATH: '$HOME/.local/bin:$PATH',
-    },
   },
 }
