@@ -11,43 +11,32 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'diggerhq/digger',
   },
-  distributable: {
-    url: 'https://github.com/diggerhq/digger/archive/refs/tags/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'go.dev': '^1.21',
-  },
+  // Download the official prebuilt `digger-cli` binary instead of building from
+  // source. Upstream ships a per-platform single binary for every 0.6.x release
+  // (github.com/diggerhq/digger releases: digger-cli-<os>-<arch>), which matches
+  // exactly what we'd produce — and the source build is brittle (vendored dep
+  // patches, missing modules per version).
+  distributable: null,
 
   build: {
     script: [
-      { run: 'cd cli', if: '>=0.3.2' },
-      'go mod download',
-      // 0.4.24 is missing a dep: https://github.com/diggerhq/digger/issues/1440
-      { run: 'go get github.com/caarlos0/env/v8', if: '>=0.4.24' },
-      // Fix merged but not released https://github.com/diggerhq/digger/issues/581
-      {
-        run: [
-          'sed -i.bak -e \'s/^const version =/var version =/\' version.go',
-          'rm version.go.bak',
-        ],
-        'working-directory': 'pkg/utils',
-        if: '<0.3.2',
-      },
-      'go build -v -trimpath -ldflags="$LDFLAGS" -o $BUILDLOC ./cmd/digger',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) TARGET="darwin-arm64" ;;',
+      '  darwin+x86-64)  TARGET="darwin-amd64" ;;',
+      '  linux+aarch64)  TARGET="linux-arm64"  ;;',
+      '  linux+x86-64)   TARGET="linux-amd64"  ;;',
+      '  *) echo "unsupported platform {{hw.platform}}/{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      '',
+      'URL="https://github.com/diggerhq/digger/releases/download/v${VERSION}/digger-cli-${TARGET}"',
+      'curl -Lfo digger "$URL"',
+      'install -Dm755 digger {{prefix}}/bin/digger',
     ],
-    env: {
-      'GOPROXY': 'https://proxy.golang.org,direct',
-      'GOSUMDB': 'sum.golang.org',
-      'GO111MODULE': 'on',
-      'CGO_ENABLED': '0',
-      'BUILDLOC': '{{prefix}}/bin/digger',
-      'LDFLAGS': ['-s', '-w', '-X digger/pkg/utils.version={{version}}', '-X github.com/diggerhq/digger/pkg/utils.version={{version}}', '-X github.com/diggerhq/digger/cli/pkg/utils.version={{version}}'],
-      // or segmentation fault on linux (array values supplement the base LDFLAGS)
-      // https://github.com/docker-library/golang/issues/402#issuecomment-982204575
-      'linux': {
-        LDFLAGS: ['-buildmode=pie'],
-      },
-    },
+  },
+  test: {
+    script: [
+      'digger --help',
+    ],
   },
 }
