@@ -607,8 +607,11 @@ export function generateBuildScript(
     sections.push('export CFLAGS="-Wno-error=incompatible-function-pointer-types -Wno-error=int-conversion -Wno-error=implicit-function-declaration ${CFLAGS:-}"')
     sections.push('export CXXFLAGS="-Wno-error=incompatible-function-pointer-types ${CXXFLAGS:-}"')
   }
-else if (osName === 'linux' && archName === 'x86-64') {
-    // Modern GCC/Clang treat certain warnings as errors (C23 defaults) — relax them
+else if (osName === 'linux') {
+    // Modern GCC/Clang treat certain warnings as errors (C23 defaults) — relax them.
+    // This applies to ALL linux arches (x86-64 AND aarch64); previously it was gated to
+    // x86-64 only, which left arm64 C/autotools builds without -fPIC and the relaxed
+    // warning flags, causing a large arm64-only failure cohort (ncurses, libnl, etc.).
     // Note: -Wno-error=incompatible-function-pointer-types is Clang-only; GCC has
     // -Wno-error=incompatible-pointer-types instead (GCC errors on the Clang form)
     sections.push('export CFLAGS="-fPIC -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=incompatible-pointer-types ${CFLAGS:-}"')
@@ -774,11 +777,13 @@ else if (osName === 'linux' && archName === 'x86-64') {
   sections.push('export PIP_IGNORE_INSTALLED=1')
   sections.push('')
 
-  // Linux multiarch: ensure linker can find libs in /usr/lib/x86_64-linux-gnu
+  // Linux multiarch: ensure linker can find libs in the arch-specific multiarch dir
+  // (x86_64-linux-gnu on amd64, aarch64-linux-gnu on arm64).
   if (osName === 'linux') {
+    const multiarchTriple = archName === 'aarch64' ? 'aarch64-linux-gnu' : 'x86_64-linux-gnu'
     sections.push('# Multiarch library paths (Debian/Ubuntu)')
-    sections.push('if [ -d "/usr/lib/x86_64-linux-gnu" ]; then')
-    sections.push('  export LIBRARY_PATH="/usr/lib/x86_64-linux-gnu:${LIBRARY_PATH:-}"')
+    sections.push(`if [ -d "/usr/lib/${multiarchTriple}" ]; then`)
+    sections.push(`  export LIBRARY_PATH="/usr/lib/${multiarchTriple}:\${LIBRARY_PATH:-}"`)
     sections.push('fi')
     sections.push('')
   }
@@ -1018,10 +1023,12 @@ else if (osName === 'linux' && archName === 'x86-64') {
 
   // Also include system pkg-config paths so configure can find system-installed dev packages
   if (osName === 'linux') {
-    depPkgConfigPaths.push('/usr/lib/x86_64-linux-gnu/pkgconfig')
+    // Arch-specific multiarch dir: aarch64-linux-gnu on arm64, x86_64-linux-gnu on amd64.
+    const multiarchTriple = archName === 'aarch64' ? 'aarch64-linux-gnu' : 'x86_64-linux-gnu'
+    depPkgConfigPaths.push(`/usr/lib/${multiarchTriple}/pkgconfig`)
     depPkgConfigPaths.push('/usr/lib/pkgconfig')
     depPkgConfigPaths.push('/usr/share/pkgconfig')
-    depLibPaths.push('/usr/lib/x86_64-linux-gnu')
+    depLibPaths.push(`/usr/lib/${multiarchTriple}`)
     // NOTE: Do NOT add /usr/include to depIncludePaths. It's already in GCC's
     // default search path, and adding it to CPATH causes CMake to emit
     // -isystem /usr/include, which changes header search order and breaks
@@ -1355,7 +1362,7 @@ import os, shutil, sys
 # glog: Ubuntu has 0.6.0, buildkit has 0.7.1 (google::logging::internal namespace changes)
 # gflags: Ubuntu has 2.2.2, buildkit has 2.3.0
 ALLOW_OVERRIDE = {"libglog", "libgflags"}
-SYS_LIB = "/usr/lib/x86_64-linux-gnu"
+SYS_LIB = "/usr/lib/${archName === 'aarch64' ? 'aarch64-linux-gnu' : 'x86_64-linux-gnu'}"
 if not os.path.isdir(SYS_LIB):
     sys.exit(0)
 deps = [${depPrefixes.map(p => `"${p}"`).join(', ')}]
