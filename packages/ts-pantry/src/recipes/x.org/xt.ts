@@ -9,12 +9,20 @@ export const recipe: Recipe = {
     'x.org/sm': '*',
     'x.org/x11': '*',
   },
+  buildDependencies: {
+    'freedesktop.org/pkg-config': '*',
+    'x.org/util-macros': '*',
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
+  },
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libXt-{{version}}.tar.gz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxt/-/archive/libXt-{{version}}/libxt-libXt-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure --prefix="{{prefix}}" --sysconfdir="$SHELF"/etc --localstatedir="$SHELF"/var --with-appdefaultdir="$SHELF"/etc/X11/app-defaults',
       'make --jobs {{ hw.concurrency }} install',
     ],

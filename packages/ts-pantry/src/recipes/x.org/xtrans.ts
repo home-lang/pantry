@@ -8,15 +8,19 @@ export const recipe: Recipe = {
     'x.org/protocol': '*',
   },
   buildDependencies: {
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'x.org/util-macros': '*',
     'freedesktop.org/pkg-config': '~0.29',
   },
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/xtrans-{{ version.raw }}.tar.bz2',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/archive/xtrans-{{ version.raw }}/libxtrans-xtrans-{{ version.raw }}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       '# otherwise X11 fails to build on all platforms we support at least lol',
       'sed -i.bak \'s|# include <sys/stropts.h>|# include <sys/ioctl.h>|g\' Xtranslcl.c',
       './configure \\',

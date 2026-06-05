@@ -9,14 +9,18 @@ export const recipe: Recipe = {
     'x.org/protocol': '*',
   },
   buildDependencies: {
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': '~0.29',
   },
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libXau-{{version}}.tar.gz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxau/-/archive/libXau-{{version}}/libxau-libXau-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure \\',
       '  --prefix={{prefix}} \\',
       '  --sysconfdir="$SHELF"/etc \\',

@@ -8,15 +8,20 @@ export const recipe: Recipe = {
     'x.org/ice': '*',
   },
   buildDependencies: {
+    'x.org/util-macros': '*',
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': '~0.29',
     'x.org/xtrans': '*',
   },
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libSM-{{version}}.tar.gz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libsm/-/archive/libSM-{{version}}/libsm-libSM-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure --prefix="{{prefix}}" --sysconfdir="$SHELF"/etc --localstatedir="$SHELF"/var',
       'make --jobs {{ hw.concurrency }} install',
     ],

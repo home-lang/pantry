@@ -8,14 +8,19 @@ export const recipe: Recipe = {
     'x.org/protocol': "*",
   },
   buildDependencies: {
+    'x.org/util-macros': '*',
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': "~0.29",
   },
   distributable: {
-    url: "https://www.x.org/archive/individual/lib/libXdmcp-{{version}}.tar.gz",
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxdmcp/-/archive/libXdmcp-{{version}}/libxdmcp-libXdmcp-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      "NOCONFIGURE=1 ./autogen.sh",
       "./configure \\\n  --prefix=\{{prefix}}\ \\\n  --sysconfdir=\"$SHELF\"/etc \\\n  --localstatedir=\"$SHELF\"/var\n",
       "make --jobs {{ hw.concurrency }} install",
       {

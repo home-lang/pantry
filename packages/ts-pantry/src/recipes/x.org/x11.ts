@@ -9,17 +9,21 @@ export const recipe: Recipe = {
     'x.org/protocol': '*',
   },
   buildDependencies: {
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': '~0.29',
     'x.org/util-macros': '*',
     'x.org/xtrans': '^1',
     'gnu.org/sed': '*',
   },
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libX11-{{version}}.tar.gz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libx11/-/archive/libX11-{{version}}/libx11-libX11-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure $ARGS',
       'make --jobs {{ hw.concurrency }} install',
     ],
