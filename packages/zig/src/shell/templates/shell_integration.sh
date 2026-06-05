@@ -83,6 +83,26 @@ __pantry_find_dep_up() {
     return 1
 }
 
+# OPT-IN gate for auto-activation. Returns 0 only if the nearest deps file
+# (walking up from $1) sets `autoActivate: true` — matched across YAML
+# (`autoActivate: true`), JSON/JSONC (`"autoActivate": true`) and TS configs.
+# Projects that don't opt in are ignored by the cd hook entirely.
+__pantry_autocd_enabled() {
+    local dir="$1" depth=0 fname
+    while (( depth < 16 )); do
+        for fname in "${__PANTRY_DEP_FILES[@]}"; do
+            if [[ -f "$dir/$fname" ]]; then
+                grep -qiE '^[[:space:]]*"?autoActivate"?[[:space:]]*:[[:space:]]*"?true"?' "$dir/$fname" 2>/dev/null
+                return $?
+            fi
+        done
+        [[ "$dir" == "/" || -z "$dir" ]] && break
+        dir="${dir%/*}"; [[ -z "$dir" ]] && dir="/"
+        (( depth++ ))
+    done
+    return 1
+}
+
 # Shell-side cache lookup (pure shell, zero subprocesses)
 # Format per line: dir|env_dir|dep_file|mtime
 __pantry_cache_lookup() {
@@ -241,6 +261,15 @@ __pantry_switch_environment() {
             __pantry_deactivate
             return 0
         fi
+    fi
+
+    # OPT-IN GATE: only auto-activate projects that explicitly enable it with
+    # `autoActivate: true` in their deps file. Without it, plain `cd` never
+    # activates uninvited — ensure we're deactivated and stop here.
+    if ! __pantry_autocd_enabled "$PWD"; then
+        [[ -n "${PANTRY_CURRENT_PROJECT:-}" ]] && __pantry_deactivate
+        __PANTRY_LAST_NO_ENV="$PWD"
+        return 0
     fi
 
     # SHELL-SIDE CACHE: Check for this dir first (covers subdirs cached from parent lookups)
