@@ -247,12 +247,12 @@
         return !!p.published && supportedOf(p).every(function (pl) { return p.platforms[pl] })
       }
       function statusOf(p, b) {
-        if (queued[p.domain]) return 'queued'
-        // "complete" is a STABLE coverage fact — check it BEFORE failed/building so a
-        // fully-published project stays complete while it rebuilds a newer version or
-        // after an OLD version's build failed (that churn is what made the count jump).
-        if (isComplete(p)) return 'ok'
+        // "Building" is LIVE activity — a package actively building counts as building
+        // even if it's already complete (it's rebuilding a newer version), so the
+        // "Building now" count + chip reflect the REAL number of builds in flight.
         if (b && Object.keys(b.platforms).length > 0) return 'building'
+        if (queued[p.domain]) return 'queued'
+        if (isComplete(p)) return 'ok'
         if (p.lastState === 'failed') return 'failed'
         if (!p.published) return 'unbuilt'
         return 'incomplete'
@@ -341,11 +341,15 @@
         // derives from the SAME statusOf classification, so the card and the
         // "● building · N" chip can never disagree. Both recompute on each poll.
         for (var i = 0; i < packages.length; i++) {
-          var st = statusOf(packages[i], bm[packages[i].domain])
-          if (st === 'ok') { complete++; if (packages[i].hasUpdate) updates++ }
+          var p = packages[i]
+          var st = statusOf(p, bm[p.domain])
+          if (st === 'building') building++
+          // Complete is a STABLE coverage fact, counted independently — a complete
+          // project rebuilding a newer version still counts as complete (doesn't flip
+          // the number). So "building" and "complete" can overlap, both accurate.
+          if (isComplete(p)) { complete++; if (p.hasUpdate) updates++ }
           else if (st === 'failed') failed++
           else if (st === 'unbuilt') unbuilt++
-          else if (st === 'building') building++
         }
         setStat('stat-total', packages.length)
         setStat('stat-versions', totals.publishedVersions || 0)
