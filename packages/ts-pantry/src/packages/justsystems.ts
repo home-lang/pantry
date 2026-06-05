@@ -61,6 +61,11 @@ export const justsystemsPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.51.0',
+    '1.50.0',
+    '1.49.0',
+    '1.48.1',
+    '1.48.0',
     '1.47.1',
     '1.47.0',
     '1.46.0',

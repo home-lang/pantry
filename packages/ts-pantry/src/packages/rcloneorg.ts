@@ -71,6 +71,7 @@ export const rcloneorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.74.3',
     '1.74.2',
     '1.74.1',
     '1.74.0',
