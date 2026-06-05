@@ -277,6 +277,24 @@ export class BuildStatusStore {
       this.recent.unshift(event)
       if (this.recent.length > RECENT_LIMIT)
         this.recent.length = RECENT_LIMIT
+      // Optimistically merge a SUCCESSFUL build into coverage so the package
+      // doesn't flash "unbuilt" in the window between the `built` report and the
+      // next S3 listing (the listing then reconciles it). Only `built`, never
+      // `failed` — a failure must not look like coverage.
+      if (event.state === 'built' && event.version) {
+        let vers = this.coverage.get(event.domain)
+        if (!vers) {
+          vers = new Map()
+          this.coverage.set(event.domain, vers)
+        }
+        let plats = vers.get(event.version)
+        if (!plats) {
+          plats = new Set()
+          vers.set(event.version, plats)
+        }
+        plats.add(event.platform)
+        this.coverageLastBuilt.set(event.domain, new Date().toISOString())
+      }
       // A finished build changes coverage for this domain — invalidate cache.
       this.coverageAt = 0
     }
@@ -382,6 +400,16 @@ export class BuildStatusStore {
         if (obj.LastModified && (!lastBuilt.has(domain) || obj.LastModified > lastBuilt.get(domain)!))
           lastBuilt.set(domain, obj.LastModified)
       }
+      // Sanity guard: a transient/partial S3 listing (network hiccup, truncation)
+      // would otherwise REPLACE good coverage with a much smaller map, spiking
+      // "unbuilt" and dropping "complete" until the next refresh. If we already
+      // have substantial coverage and the new listing collapsed to <50% of it,
+      // treat it as bad and keep the existing coverage (just bump the timestamp
+      // so we retry on the next TTL).
+      if (this.coverage.size >= 50 && cov.size < this.coverage.size * 0.5) {
+        this.coverageAt = Date.now()
+        return
+      }
       this.coverage = cov
       this.coverageLastBuilt = lastBuilt
       this.coverageAt = Date.now()
@@ -478,17 +506,21 @@ export class BuildStatusStore {
       })
     }
     packages.sort((a, b) => a.domain.localeCompare(b.domain))
-    // Totals across ALL published versions (not just the latest per package):
-    // publishedVersions = unique (domain, version) with ≥1 platform built;
+    // Totals across ALL versions (not just the latest per package):
+    // publishedVersions = COMPLETE versions — a (domain, version) where every
+    //   platform the package supports has been uploaded (a partially-built version
+    //   does NOT count; "everything for that version was uploaded").
     // publishedArtifacts = total per-platform binaries published.
     let publishedVersions = 0
     let publishedArtifacts = 0
-    for (const versions of this.coverage.values()) {
+    for (const [domain, versions] of this.coverage) {
+      const supported = this.supportedPlatforms.get(domain) || [...BUILD_PLATFORMS]
       for (const plats of versions.values()) {
-        if (plats.size > 0) {
+        if (plats.size === 0)
+          continue
+        publishedArtifacts += plats.size
+        if (supported.length > 0 && supported.every(p => plats.has(p)))
           publishedVersions++
-          publishedArtifacts += plats.size
-        }
       }
     }
     return { packages, generatedAt: new Date().toISOString(), totals: { publishedVersions, publishedArtifacts } }

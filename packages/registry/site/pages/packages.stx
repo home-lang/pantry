@@ -196,14 +196,21 @@
         // platforms the package actually targets; fall back to all 4 if absent
         return (p.supportedPlatforms && p.supportedPlatforms.length) ? p.supportedPlatforms : PLATS
       }
+      function isComplete(p) {
+        // built on every platform it supports (a macOS-only package is complete
+        // with just its darwin binaries, not stuck < all 4)
+        return !!p.published && supportedOf(p).every(function (pl) { return p.platforms[pl] })
+      }
       function statusOf(p, b) {
-        if (b && Object.keys(b.platforms).length > 0) return 'building'
         if (queued[p.domain]) return 'queued'
+        // "complete" is a STABLE coverage fact — check it BEFORE failed/building so a
+        // fully-published project stays complete while it rebuilds a newer version or
+        // after an OLD version's build failed (that churn is what made the count jump).
+        if (isComplete(p)) return 'ok'
+        if (b && Object.keys(b.platforms).length > 0) return 'building'
         if (p.lastState === 'failed') return 'failed'
         if (!p.published) return 'unbuilt'
-        // "complete" = built on every platform it supports (so a macOS-only
-        // package is complete with just its darwin binaries, not stuck < all 4)
-        return supportedOf(p).every(function (pl) { return p.platforms[pl] }) ? 'ok' : 'incomplete'
+        return 'incomplete'
       }
       function badge(st) {
         return '<span class="badge badge-' + st + (st === 'building' ? ' pkg-building' : '') + '">' + BADGE_LABEL[st] + '</span>'
@@ -287,9 +294,14 @@
         var complete = 0, updates = 0, failed = 0, unbuilt = 0, building = 0
         for (var i = 0; i < packages.length; i++) {
           var p = packages[i]
-          var st = statusOf(p, bm[p.domain])
+          var b = bm[p.domain]
+          // "Building now" is live activity and can overlap a complete project
+          // (it's rebuilding a newer version) — count it independently.
+          if (b && b.platforms && Object.keys(b.platforms).length > 0) building++
+          var st = statusOf(p, b)
           if (st === 'ok') { complete++; if (p.hasUpdate) updates++ }
-          else if (st === 'failed') failed++; else if (st === 'unbuilt') unbuilt++; else if (st === 'building') building++
+          else if (st === 'failed') failed++
+          else if (st === 'unbuilt') unbuilt++
         }
         setStat('stat-total', packages.length)
         setStat('stat-versions', totals.publishedVersions || 0)
