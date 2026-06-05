@@ -11,22 +11,23 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'a-h/templ',
   },
-  distributable: {
-    url: 'https://github.com/a-h/templ/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'go.dev': '^1.20',
-  },
+  // Prebuilt download: templ ships official per-platform release tarballs
+  // (capitalized OS + x86_64; bare `templ` binary at the archive root).
+  distributable: null,
 
   build: {
     script: [
-      'echo -n {{version}} >.version',
-      'go build -v -ldflags="$LDFLAGS" -o {{prefix}}/bin/templ ./cmd/templ',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="templ_Darwin_arm64"  ;;',
+      '  darwin+x86-64)  ASSET="templ_Darwin_x86_64" ;;',
+      '  linux+aarch64)  ASSET="templ_Linux_arm64"   ;;',
+      '  linux+x86-64)   ASSET="templ_Linux_x86_64"  ;;',
+      'esac',
+      '',
+      'curl -Lfo templ.tar.gz "https://github.com/a-h/templ/releases/download/v${VERSION}/${ASSET}.tar.gz"',
+      'tar xf templ.tar.gz',
+      'install -Dm755 templ {{prefix}}/bin/templ',
     ],
-    env: {
-      'CGO_ENABLED': '0',
-      'LDFLAGS': ['-extldflags=-static', '-w', '-s'],
-    },
   },
 }
