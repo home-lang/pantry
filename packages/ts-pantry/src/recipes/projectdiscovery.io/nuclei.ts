@@ -6,29 +6,22 @@ export const recipe: Recipe = {
   programs: [
     'nuclei',
   ],
-  buildDependencies: {
-    'go.dev': '~1.22.2',
-  },
-  distributable: {
-    url: 'https://github.com/projectdiscovery/nuclei/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
+  // Download official prebuilt binaries instead of compiling from source.
+  // Upstream ships multi-platform release zips for every version.
   build: {
     script: [
-      'go build -o {{prefix}}/bin/nuclei -ldflags="$GO_LDFLAGS" ./cmd/nuclei',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="macOS_arm64" ;;',
+      '  darwin+x86-64)  ASSET="macOS_amd64" ;;',
+      '  linux+aarch64)  ASSET="linux_arm64" ;;',
+      '  linux+x86-64)   ASSET="linux_amd64" ;;',
+      'esac',
+      'URL="https://github.com/projectdiscovery/nuclei/releases/download/v${VERSION}/nuclei_${VERSION}_${ASSET}.zip"',
+      'curl -Lfo nuclei.zip "$URL"',
+      'unzip -o nuclei.zip',
+      'install -Dm755 nuclei {{prefix}}/bin/nuclei',
     ],
-    env: {
-      GOBIN: '${{prefix}}/bin',
-      GO_LDFLAGS: [
-        '-s',
-        '-w',
-      ],
-      linux: {
-        GO_LDFLAGS: [
-          '-buildmode=pie',
-        ],
-      },
-    },
   },
   test: {
     script: [
