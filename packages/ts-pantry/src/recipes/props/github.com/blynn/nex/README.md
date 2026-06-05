@@ -7,4 +7,3 @@ Nex is a lexer similar to Lex/Flex that:
 - supports UTF-8
 
 - supports nested structural regular expressions.
-
