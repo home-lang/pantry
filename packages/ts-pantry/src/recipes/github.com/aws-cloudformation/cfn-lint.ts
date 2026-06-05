@@ -22,7 +22,10 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: 'sed -i \'s/__version__ = ".*"/__version__ = {{version}}/\' version.py',
+        // Keep the surrounding quotes — older cfn-lint setup.py parses the
+        // version with a regex that expects `__version__ = "<v>"`; dropping the
+        // quotes made re.search return None ("'NoneType' object has no attribute 'group'").
+        run: 'sed -i \'s/__version__ = ".*"/__version__ = "{{version}}"/\' version.py',
         'working-directory': 'src/cfnlint',
       },
       'bkpyvenv stage {{prefix}} {{version}}',
