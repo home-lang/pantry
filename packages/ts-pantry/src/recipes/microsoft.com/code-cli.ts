@@ -6,37 +6,39 @@ export const recipe: Recipe = {
   programs: [
     'code',
   ],
-  dependencies: {
-    'openssl.org': '1.1',
-    'zlib.net': '1',
-  },
-  buildDependencies: {
-    'rust-lang.org': '^1.81',
-    'rust-lang.org/cargo': '*',
-  },
-  distributable: {
-    url: 'https://github.com/microsoft/vscode/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
+  // Prebuilt download: Microsoft publishes the standalone VS Code `code` CLI as
+  // per-platform, per-version archives through the update service at
+  // `https://update.code.visualstudio.com/<version>/cli-<os>-<arch>/stable`.
+  // darwin archives are a zip, linux archives are a tar.gz; both contain a single
+  // bare `code` binary. Maps darwin x64/arm64 + linux x64/arm64. This is the
+  // official signed CLI — no source build needed.
+  distributable: null,
+
   build: {
     script: [
-      'sed -i \'1,10s/"version":.*/"version":{{version}},/\' ../package.json',
-      'cargo install --locked --path . --root {{prefix}}',
-      {
-        run: 'install_name_tool -change "@rpath/gnu.org/libiconv/v1/lib/libiconv.2.dylib" "/usr/lib/libiconv.2.dylib" code',
-        if: 'darwin',
-        'working-directory': '${{prefix}}/bin',
-      },
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) PLATFORM="cli-darwin-arm64"; FMT=zip ;;',
+      '  darwin+x86-64)  PLATFORM="cli-darwin-x64";   FMT=zip ;;',
+      '  linux+aarch64)  PLATFORM="cli-linux-arm64";  FMT=tgz ;;',
+      '  linux+x86-64)   PLATFORM="cli-linux-x64";    FMT=tgz ;;',
+      'esac',
+      '',
+      'URL="https://update.code.visualstudio.com/${VERSION}/${PLATFORM}/stable"',
+      'mkdir -p {{prefix}}/bin',
+      'if [ "$FMT" = zip ]; then',
+      '  curl -Lfo code.zip "$URL"',
+      '  unzip -o code.zip',
+      'else',
+      '  curl -Lfo code.tgz "$URL"',
+      '  tar zxf code.tgz',
+      'fi',
+      'install -Dm755 code {{prefix}}/bin/code',
     ],
-    env: {
-      OPENSSL_NO_VENDOR: '1',
-      OPENSSL_DIR: '{{deps.openssl.org.prefix}}',
-      VSCODE_CLI_VERSION: '{{version}}',
-    },
   },
   test: {
     script: [
-      'test "$(code --version)" == "code-oss {{version}} (commit unknown)"',
+      'code --version | grep {{version}}',
       'code tunnel prune | grep \'Successfully removed all unused servers\'',
     ],
   },

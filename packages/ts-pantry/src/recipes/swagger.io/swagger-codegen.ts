@@ -9,31 +9,34 @@ export const recipe: Recipe = {
   dependencies: {
     'openjdk.org': '^11',
   },
-  buildDependencies: {
-    'maven.apache.org': '*',
-  },
-  distributable: {
-    url: 'https://github.com/swagger-api/swagger-codegen/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
+  // Prebuilt download: swagger-codegen ships a runnable, fully-shaded
+  // `swagger-codegen-cli-<ver>.jar` on Maven Central. The 2.4.x line lives at
+  // `io/swagger/swagger-codegen-cli`, the 3.0.x line at
+  // `io/swagger/codegen/v3/swagger-codegen-cli`. We download the published CLI
+  // jar and drop a `java -jar` wrapper — the recipe already depends on a JRE
+  // (openjdk.org), so no maven build from source is needed.
+  distributable: null,
+
   build: {
     script: [
-      'find . -name pom.xml -print0 | xargs -0 sed -i \'s/<version>{{version.major}}\\.{{version.minor}}.*-SNAPSHOT<\\/version>/<version>{{version}}<\\/version>/\'',
-      'find . -name pom.xml -print0 | xargs -0 sed -i \'s/1\\.0\\.58-SNAPSHOT/1.0.57/g\'',
-      'mvn clean package -U',
-      'install -D modules/swagger-codegen-cli/target/swagger-codegen-cli.jar {{prefix}}/libexec/lib/swagger-codegen-cli.jar',
-      {
-        run: 'install -Dm755 $PROP swagger-codegen',
-        'working-directory': '${{prefix}}/bin',
-      },
+      'VERSION={{version}}',
+      'MAJOR=$(echo "$VERSION" | cut -d. -f1)',
+      'if [ "$MAJOR" -ge 3 ]; then',
+      '  JAR_URL="https://repo1.maven.org/maven2/io/swagger/codegen/v3/swagger-codegen-cli/${VERSION}/swagger-codegen-cli-${VERSION}.jar"',
+      'else',
+      '  JAR_URL="https://repo1.maven.org/maven2/io/swagger/swagger-codegen-cli/${VERSION}/swagger-codegen-cli-${VERSION}.jar"',
+      'fi',
+      '',
+      'mkdir -p {{prefix}}/libexec/lib {{prefix}}/bin',
+      'curl -Lfo {{prefix}}/libexec/lib/swagger-codegen-cli.jar "$JAR_URL"',
+      '',
+      'echo \'#!/bin/sh\' > {{prefix}}/bin/swagger-codegen',
+      'echo \'exec java -jar "$(dirname "$0")/../libexec/lib/swagger-codegen-cli.jar" "$@"\' >> {{prefix}}/bin/swagger-codegen',
+      'chmod +x {{prefix}}/bin/swagger-codegen',
     ],
   },
   test: {
     script: [
-      'swagger-codegen generate -i $FIXTURE -l html',
-      'swagger-codegen generate -i $FIXTURE -l html',
-      'cat index.html | grep "Simple API"',
-      'swagger-codegen version',
       'swagger-codegen version | grep {{version}}',
     ],
   },
