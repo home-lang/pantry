@@ -7,7 +7,10 @@ export const recipe: Recipe = {
     "code-server",
   ],
   dependencies: {
-    'nodejs.org': 22,
+    // code-server's postinstall hard-requires Node 22 ("code-server currently
+    // requires node v22"). A bare `22` resolved forward to node 26; pin the
+    // major so the 22.x line is selected.
+    'nodejs.org': '^22',
     linux: {
       'gnome.org/libsecret': "^0.21",
       'x.org/x11': "^1.8",
