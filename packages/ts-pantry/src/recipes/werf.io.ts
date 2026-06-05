@@ -11,31 +11,21 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'werf/werf',
   },
-  distributable: {
-    url: 'https://github.com/werf/werf/archive/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'go.dev': '^1.23',
-    linux: {
-      'gnu.org/gcc': '14',
-      'gnu.org/binutils': '~2.44', // some go packages demand ld.gold, but it's being deprecated
-      'github.com/kdave/btrfs-progs': '^6.7',
-    },
-  },
 
+  // Download official prebuilt binaries instead of compiling from source.
+  // Upstream publishes per-version, per-platform binaries via its TUF CDN.
   build: {
     script: [
-      'go build $ARGS -ldflags="$LD_FLAGS" -tags="$TAGS" ./cmd/werf',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) PLATFORM="darwin-arm64" ;;',
+      '  darwin+x86-64)  PLATFORM="darwin-amd64" ;;',
+      '  linux+aarch64)  PLATFORM="linux-arm64" ;;',
+      '  linux+x86-64)   PLATFORM="linux-amd64" ;;',
+      'esac',
+      'URL="https://tuf.werf.io/targets/releases/${VERSION}/${PLATFORM}/bin/werf"',
+      'curl -Lfo werf "$URL"',
+      'install -Dm755 werf {{prefix}}/bin/werf',
     ],
-    env: {
-      'TAGS': ['dfrunsecurity', 'dfrunnetwork', 'dfrunmount', 'dfssh', 'containers_image_openpgp'],
-      'LD_FLAGS': ['-s', '-w', '-X github.com/werf/werf/pkg/werf.Version={{version}}', '-X github.com/werf/werf/v2/pkg/werf.Version={{version}}'],
-      'ARGS': ['-v', '-trimpath', '-o={{prefix}}/bin/werf'],
-      'linux': {
-        LD_FLAGS: ['-linkmode external', '-extldflags=-static', '-buildmode=pie'],
-        TAGS: ['osusergo', 'exclude_graphdriver_devicemapper', 'netgo', 'no_devmapper', 'static_build', 'cni'],
-      },
-    },
   },
 }
