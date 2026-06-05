@@ -5,45 +5,39 @@ export const recipe: Recipe = {
   name: 'openbao',
   programs: [
     'bao',
-    'bao-setup',
   ],
-  buildDependencies: {
-    'go.dev': '*',
-    'gnu.org/coreutils': '*',
-    'git-scm.org': '*',
+  versionSource: {
+    type: 'github-releases',
+    repo: 'openbao/openbao',
+    tagPattern: /^v(.+)$/,
   },
-  distributable: {
-    url: 'git+https://github.com/openbao/openbao',
-  },
+  // OpenBao (the Vault fork) ships official prebuilt per-platform release
+  // archives on GitHub (bao_<ver>_<OS>_<arch>.tar.gz, e.g.
+  // bao_2.5.4_Darwin_arm64.tar.gz / bao_2.5.4_Linux_x86_64.tar.gz), each a
+  // single static `bao` binary — so we download the upstream asset instead of
+  // compiling from source. Asset OS is capitalized (Darwin/Linux) and arch is
+  // x86_64/arm64.
+  distributable: null,
   build: {
     script: [
-      'go build -v -ldflags="${GO_LDFLAGS}" -o {{ prefix }}/bin/${OPENBAO_BINARY}',
-      'install -D props/${OPENBAO_SETUP_SCRIPT} {{prefix}}/bin/bao-setup',
-      'install -D props/${OPENBAO_README_FILE} {{prefix}}/doc/${OPENBAO_README_FILE}',
-      'install -D props/${OPENBAO_CONFIG_FILE} {{prefix}}/etc/openbao/${OPENBAO_CONFIG_FILE}',
-      'install -D props/${OPENBAO_SERVICE_ENVIRONMENT_FILE} {{prefix}}/etc/openbao/${OPENBAO_SERVICE_ENVIRONMENT_FILE}',
-      'install -D props/${OPENBAO_SERVICE_FILE} {{prefix}}/etc/systemd/system/${OPENBAO_SERVICE_FILE}',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="bao_${VERSION}_Darwin_arm64.tar.gz" ;;',
+      '  darwin+x86-64)  ASSET="bao_${VERSION}_Darwin_x86_64.tar.gz" ;;',
+      '  linux+aarch64)  ASSET="bao_${VERSION}_Linux_arm64.tar.gz" ;;',
+      '  linux+x86-64)   ASSET="bao_${VERSION}_Linux_x86_64.tar.gz" ;;',
+      '  *) echo "unsupported platform: {{hw.platform}}+{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      '',
+      'URL="https://github.com/openbao/openbao/releases/download/v${VERSION}/${ASSET}"',
+      'curl -Lfo bao.tar.gz "$URL"',
+      'tar zxf bao.tar.gz',
+      '',
+      '# tarballs ship the binary at ./bao alongside LICENSE/README/CHANGELOG',
+      'install -Dm755 bao {{prefix}}/bin/bao',
     ],
-    env: {
-      CGO_ENABLED: '0',
-      GO_LDFLAGS: [
-        '-s',
-        '-w',
-        '-X github.com/openbao/openbao/version.fullVersion={{version}}',
-        '-X github.com/openbao/openbao/version.GitCommit=$( git rev-parse HEAD )',
-        '-X github.com/openbao/openbao/version.BuildDate=$( date --iso-8601=seconds )',
-      ],
-      linux: {
-        GO_LDFLAGS: [
-          '-buildmode=pie',
-        ],
-      },
-      OPENBAO_BINARY: 'bao',
-      OPENBAO_SETUP_SCRIPT: 'setup.bash',
-      OPENBAO_README_FILE: 'README.md',
-      OPENBAO_CONFIG_FILE: 'openbao.hcl',
-      OPENBAO_SERVICE_ENVIRONMENT_FILE: 'openbao.env',
-      OPENBAO_SERVICE_FILE: 'openbao.service',
-    },
+  },
+  test: {
+    script: ['{{prefix}}/bin/bao version'],
   },
 }

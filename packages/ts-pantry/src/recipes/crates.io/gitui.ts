@@ -6,32 +6,38 @@ export const recipe: Recipe = {
   programs: [
     'gitui',
   ],
-  dependencies: {
-    'perl.org': '*',
-    'openssl.org': '^1.1',
-    'zlib.net': '^1',
-    'libgit2.org': '~1.7',
+  versionSource: {
+    type: 'github-releases',
+    repo: 'gitui-org/gitui',
+    tagPattern: /^v(.+)$/,
   },
-  buildDependencies: {
-    'rust-lang.org': '^1.78',
-    'rust-lang.org/cargo': '*',
-    'cmake.org': '3',
-  },
-  distributable: {
-    url: 'https://github.com/extrawurst/gitui/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
+  // gitui ships official prebuilt per-platform binaries on its GitHub releases
+  // (gitui-mac.tar.gz / gitui-mac-x86.tar.gz / gitui-linux-x86_64.tar.gz /
+  // gitui-linux-aarch64.tar.gz), each a single `gitui` binary — so we download
+  // the upstream release asset instead of compiling from source. The repo was
+  // renamed extrawurst/gitui -> gitui-org/gitui; GitHub redirects old release
+  // asset URLs, so older tags resolve too.
+  distributable: null,
   build: {
     script: [
-      'cargo install --path . --locked --root {{prefix}}',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="gitui-mac.tar.gz" ;;',
+      '  darwin+x86-64)  ASSET="gitui-mac-x86.tar.gz" ;;',
+      '  linux+aarch64)  ASSET="gitui-linux-aarch64.tar.gz" ;;',
+      '  linux+x86-64)   ASSET="gitui-linux-x86_64.tar.gz" ;;',
+      '  *) echo "unsupported platform: {{hw.platform}}+{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      '',
+      'URL="https://github.com/gitui-org/gitui/releases/download/v${VERSION}/${ASSET}"',
+      'curl -Lfo gitui.tar.gz "$URL"',
+      'tar zxf gitui.tar.gz',
+      '',
+      '# tarballs ship the binary at ./gitui',
+      'install -Dm755 gitui {{prefix}}/bin/gitui',
     ],
-    env: {
-      linux: {
-        AR: 'llvm-ar',
-        RUSTFLAGS: '-C linker=cc',
-        OPENSSL_NO_VENDOR: '1',
-        OPENSSL_DIR: '{{ deps.openssl.org.prefix }}',
-      },
-    },
+  },
+  test: {
+    script: ['{{prefix}}/bin/gitui --version'],
   },
 }
