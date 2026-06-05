@@ -12,8 +12,12 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      // config.guess from 2011 doesn't recognize aarch64
-      { run: 'cp props/config.guess props/config.sub .', if: '^8' },
+      // ijg's bundled config.guess (2011) doesn't recognize aarch64, so overwrite it
+      // with our modern props copies. The `if: '^8'` gate was dropped: ijg versions are
+      // letter-suffixed (e.g. "8d", "9e"), which the numeric range parser reads as 0, so
+      // `^8` never matched and the override silently skipped — breaking arm64 (and any
+      // non-x86 host whose triple the 2011 config.guess can't recognize).
+      { run: 'cp props/config.guess props/config.sub .' },
       './configure --disable-dependency-tracking --disable-silent-rules --prefix={{prefix}}',
       'make --jobs {{hw.concurrency}} install',
     ],
