@@ -9,12 +9,20 @@ export const recipe: Recipe = {
     'x.org/exts': '*',
     'x.org/protocol': '*',
   },
+  buildDependencies: {
+    'freedesktop.org/pkg-config': '*',
+    'x.org/util-macros': '*',
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
+  },
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libXres-{{version}}.tar.gz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxres/-/archive/libXres-{{version}}/libxres-libXres-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure --prefix="{{prefix}}" --sysconfdir="{{prefix}}"/etc --localstatedir="{{prefix}}"/var --enable-spec=no',
       'make --jobs {{ hw.concurrency }} install',
     ],

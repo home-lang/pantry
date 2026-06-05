@@ -8,17 +8,22 @@ export const recipe: Recipe = {
     'x.org/x11': "*",
   },
   buildDependencies: {
+    'freedesktop.org/pkg-config': '*',
+    'x.org/util-macros': '*',
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'mesonbuild.com': "*",
     'ninja-build.org': "*",
   },
   distributable: {
-    url: "https://www.x.org/archive/individual/lib/libxkbfile-{{version}}.tar.xz",
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxkbfile/-/archive/libxkbfile-{{version}}/libxkbfile-libxkbfile-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
       {
-        run: "./configure $CONFIGURE_ARGS\nmake --jobs {{ hw.concurrency }}\nmake --jobs {{ hw.concurrency }} install",
+        run: "NOCONFIGURE=1 ./autogen.sh\n./configure $CONFIGURE_ARGS\nmake --jobs {{ hw.concurrency }}\nmake --jobs {{ hw.concurrency }} install",
         if: "<1.2",
       },
       {

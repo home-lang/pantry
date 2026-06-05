@@ -13,12 +13,20 @@ export const recipe: Recipe = {
     'zlib.net': '*',
     'x.org/libfontenc': '*',
   },
+  buildDependencies: {
+    'freedesktop.org/pkg-config': '*',
+    'x.org/util-macros': '*',
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
+  },
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libXfont2-{{version}}.tar.gz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxfont/-/archive/libXfont2-{{version}}/libxfont-libXfont2-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure --prefix={{prefix}}',
       'make',
       'make install',

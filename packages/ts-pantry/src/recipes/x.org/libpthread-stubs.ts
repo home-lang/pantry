@@ -5,14 +5,19 @@ export const recipe: Recipe = {
   name: 'libpthread-stubs',
   programs: [],
   buildDependencies: {
+    'x.org/util-macros': '*',
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': '*',
   },
   distributable: {
-    url: 'https://www.x.org/releases/individual/xcb/libpthread-stubs-{{version.marketing}}.tar.gz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libpthread-stubs/-/archive/libpthread-stubs-{{version.marketing}}/libpthread-stubs-libpthread-stubs-{{version.marketing}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure $ARGS',
       'make --jobs {{ hw.concurrency }} install',
     ],

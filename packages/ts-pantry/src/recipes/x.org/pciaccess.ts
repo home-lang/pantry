@@ -7,13 +7,20 @@ export const recipe: Recipe = {
   buildDependencies: {
     'freedesktop.org/pkg-config': '*',
     'x.org/util-macros': '*',
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
   },
+  // www.x.org/pub tarballs were retired (404); fetch from the freedesktop
+  // GitLab mirror, which ships sources without a pre-built ./configure, so
+  // bootstrap with autogen.sh before the autotools build.
   distributable: {
-    url: 'https://www.x.org/pub/individual/lib/libpciaccess-{{version.marketing}}.tar.gz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libpciaccess/-/archive/libpciaccess-{{version.marketing}}/libpciaccess-libpciaccess-{{version.marketing}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure $ARGS',
       'make --jobs {{ hw.concurrency }} install',
     ],
