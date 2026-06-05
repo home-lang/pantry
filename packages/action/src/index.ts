@@ -954,8 +954,15 @@ async function publishZigPackage(registryUrl: string, token: string, cwd: string
   if (!nameMatch) throw new Error('Could not parse .name from build.zig.zon')
   if (!versionMatch) throw new Error('Could not parse .version from build.zig.zon')
 
-  const name = nameMatch[1] || nameMatch[2] || nameMatch[3]
+  // Zig's `.name` field must be a valid enum literal, so packages use
+  // underscores (e.g. `.zig_tls`). The pantry registry's canonical package
+  // name uses hyphens (`zig-tls`) — normalize so Actions publish under the
+  // same name the registry/site lists instead of a parallel `_` namespace.
+  const rawName = nameMatch[1] || nameMatch[2] || nameMatch[3]
+  const name = rawName.replace(/_/g, '-')
   const version = versionMatch[1]
+  if (name !== rawName)
+    core.info(`Normalized package name ${rawName} -> ${name}`)
   core.info(`Package: ${name}@${version}`)
 
   // Collect paths from build.zig.zon .paths field
