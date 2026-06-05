@@ -12,22 +12,23 @@ export const recipe: Recipe = {
     repo: 'orhun/git-cliff',
     tagPattern: /^v(.+)$/,
   },
-  distributable: {
-    url: 'https://github.com/orhun/git-cliff/archive/refs/tags/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-  dependencies: {
-    'libgit2.org': '~1.7', // links to libgit2.so.1.7
-  },
-  buildDependencies: {
-    'rust-lang.org': '>=1.65',
-    'rust-lang.org/cargo': '*',
-  },
+  // Prebuilt download: git-cliff ships official per-platform release tarballs
+  // (Rust target triples; binary under git-cliff-<version>/git-cliff).
+  distributable: null,
 
   build: {
-    workingDirectory: 'git-cliff',
     script: [
-      'cargo install --locked --path . --root {{prefix}}',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="git-cliff-${VERSION}-aarch64-apple-darwin"      ;;',
+      '  darwin+x86-64)  ASSET="git-cliff-${VERSION}-x86_64-apple-darwin"       ;;',
+      '  linux+aarch64)  ASSET="git-cliff-${VERSION}-aarch64-unknown-linux-gnu" ;;',
+      '  linux+x86-64)   ASSET="git-cliff-${VERSION}-x86_64-unknown-linux-gnu"  ;;',
+      'esac',
+      '',
+      'curl -Lfo git-cliff.tar.gz "https://github.com/orhun/git-cliff/releases/download/v${VERSION}/${ASSET}.tar.gz"',
+      'tar xf git-cliff.tar.gz',
+      'install -Dm755 "git-cliff-${VERSION}/git-cliff" {{prefix}}/bin/git-cliff',
     ],
   },
 
