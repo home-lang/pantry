@@ -43,6 +43,10 @@ export const recipe: Recipe = {
         if: '^3',
       },
       'echo {{version}} >version',
+      // The cmake configure/build/install steps run from an out-of-source
+      // `build/` directory; buildkit does not create the working-directory
+      // for us, so create it explicitly before cmake runs.
+      'mkdir -p build',
       // fish 4.x build: cmake configures + drives Cargo (corrosion), then
       // cmake --build / cmake --install. `make install` no longer works
       // because the Rust build is not a plain Makefile target.
