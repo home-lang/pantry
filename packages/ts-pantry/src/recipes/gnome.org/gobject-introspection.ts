@@ -28,7 +28,16 @@ export const recipe: Recipe = {
   build: {
     'working-directory': 'build',
     script: [
-      'meson .. --prefix={{prefix}} --libdir={{prefix}}/lib --buildtype=release -Dgtk_doc=false -Dtests=false -Dpython=python3',
+      // The `tests` meson option was only introduced in 1.84.0; passing
+      // -Dtests=false to 1.82.0 errors with `Unknown option: "tests"`.
+      {
+        run: 'meson .. --prefix={{prefix}} --libdir={{prefix}}/lib --buildtype=release -Dgtk_doc=false -Dtests=false -Dpython=python3',
+        if: '>=1.84.0',
+      },
+      {
+        run: 'meson .. --prefix={{prefix}} --libdir={{prefix}}/lib --buildtype=release -Dgtk_doc=false -Dpython=python3',
+        if: '<1.84.0',
+      },
       'ninja -v',
       'ninja install',
       {
