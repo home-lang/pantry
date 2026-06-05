@@ -43,7 +43,10 @@ export const recipe: Recipe = {
         run: 'sed -i "s|linker_flags=.*|linker_flags=|g" *-wrapper-data.txt',
         'working-directory': '{{prefix}}/share/openmpi',
       },
-      'install {{prefix}}/lib/*.mod {{prefix}}/include/',
+      // Only copy Fortran .mod files if the build actually produced any —
+      // a bare `install {{prefix}}/lib/*.mod` aborts with "cannot stat '*.mod'"
+      // when the glob matches nothing (e.g. no gfortran modules emitted).
+      'for _m in {{prefix}}/lib/*.mod; do [ -e "$_m" ] && install "$_m" {{prefix}}/include/ || true; done',
     ],
     env: {
       CXXFLAGS: ['-std=c++11'],
