@@ -1,5 +1,10 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
+// biome ships official prebuilt CLI binaries for every platform we target as a
+// single plain binary named `biome-<os>-<arch>`. The release tag differs by major
+// version: 1.x is tagged `cli/v<version>`, 2.x is tagged `@biomejs/biome@<version>`
+// (the monorepo uses scoped per-crate tags). Download the official binary instead
+// of compiling the CLI crate from source via cargo.
 export const recipe: Recipe = {
   domain: 'biomejs.dev',
   name: 'biome',
@@ -12,28 +17,33 @@ export const recipe: Recipe = {
     repo: 'biomejs/biome',
     tagPattern: /(cli\/v|@biomejs\/biome@)(.+)$/,
   },
-  // Biome's CLI is tagged on GitHub as `@biomejs/biome@<version>` (the monorepo
-  // uses scoped per-crate tags). The `{{version.tag}}` machinery can't recover
-  // this for native recipes (it falls back to the `v<version>` heuristic, which
-  // 404s), so hardcode the real 2.x tag scheme directly. The literal `@`/`/` are
-  // passed through verbatim by the templating + curl and resolve to a 200.
-  distributable: {
-    url: 'https://github.com/biomejs/biome/archive/refs/tags/@biomejs/biome@{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'rust-lang.org': '>=1.83',
-    'rust-lang.org/cargo': '*',
-  },
-
   build: {
-    workingDirectory: 'crates/biome_cli',
     script: [
-      'cargo install --locked --path . --root {{prefix}}',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="biome-darwin-arm64" ;;',
+      '  darwin+x86-64)  ASSET="biome-darwin-x64" ;;',
+      '  linux+aarch64)  ASSET="biome-linux-arm64" ;;',
+      '  linux+x86-64)   ASSET="biome-linux-x64" ;;',
+      'esac',
+      '',
+      '# 1.x releases are tagged cli/v<version>; 2.x as @biomejs/biome@<version>.',
+      'MAJOR=$(echo "$VERSION" | cut -d. -f1)',
+      'if [ "$MAJOR" -ge 2 ]; then',
+      '  TAG="@biomejs/biome@${VERSION}"',
+      'else',
+      '  TAG="cli/v${VERSION}"',
+      'fi',
+      '',
+      'URL="https://github.com/biomejs/biome/releases/download/${TAG}/${ASSET}"',
+      'curl -Lfo biome "$URL"',
+      'install -Dm755 biome {{prefix}}/bin/biome',
     ],
-    env: {
-      RUSTFLAGS: '-C strip=symbols',
-      BIOME_VERSION: 'v{{version}}',
-    },
+  },
+  test: {
+    script: [
+      'biome --version',
+      'biome --version | grep {{version}}',
+    ],
   },
 }
