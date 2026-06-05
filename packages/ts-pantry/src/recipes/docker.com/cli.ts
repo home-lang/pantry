@@ -22,7 +22,7 @@ export const recipe: Recipe = {
         run: "go build $ARGS -ldflags=\"$LD_FLAGS -X \\\"github.com/docker/cli/cli/version.PlatformName=Docker Engine - Community\\\"\" github.com/docker/cli/cmd/docker\n",
       },
       {
-        run: "for md in man/*.[1-8].md; do\n  section=$(basename \"$md\" | sed 's/.*\\.\\([1-8]\\)\\.md/\\1/')\n  mkdir -p \{{prefix}}/man/man${section}\\n  go-md2man -in=\"$md\" -out=\{{prefix}}/man/man${section}/$(basename \$md\" .md)\"\ndone\n",
+        run: "for md in man/*.[1-8].md; do\n  section=$(basename \"$md\" | sed 's/.*\\.\\([1-8]\\)\\.md/\\1/')\n  mkdir -p \"{{prefix}}/man/man${section}\"\n  go-md2man -in=\"$md\" -out=\"{{prefix}}/man/man${section}/$(basename \"$md\" .md)\"\ndone\n",
       },
     ],
     env: {
