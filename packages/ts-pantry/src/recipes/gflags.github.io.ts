@@ -21,7 +21,7 @@ export const recipe: Recipe = {
 
   build: {
     'working-directory': 'build',
-    workingDirectory: 'buildroot',
+    workingDirectory: 'build',
     script: [
       'cmake $ARGS ..',
       'make --jobs {{hw.concurrency}}',
