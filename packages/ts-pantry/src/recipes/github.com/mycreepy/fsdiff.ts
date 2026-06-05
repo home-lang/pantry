@@ -6,35 +6,22 @@ export const recipe: Recipe = {
   programs: [
     'fsdiff',
   ],
-  buildDependencies: {
-    'go.dev': '^1.26',
-    'goreleaser.com': '*',
-    'git-scm.org': '*',
-  },
-  distributable: {
-    url: 'git+https://github.com/mycreepy/fsdiff',
-  },
+  // Download official prebuilt binaries instead of compiling from source.
+  // Upstream (goreleaser) ships multi-platform release tarballs for every version.
   build: {
     script: [
-      'goreleaser build --clean --single-target --skip=validate',
-      'mkdir -p {{prefix}}/bin',
-      'mv dist/fsdiff_$PLATFORM/fsdiff {{prefix}}/bin',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="darwin_arm64" ;;',
+      '  darwin+x86-64)  ASSET="darwin_amd64" ;;',
+      '  linux+aarch64)  ASSET="linux_arm64" ;;',
+      '  linux+x86-64)   ASSET="linux_amd64" ;;',
+      'esac',
+      'URL="https://github.com/mycreepy/fsdiff/releases/download/v${VERSION}/fsdiff_${VERSION}_${ASSET}.tar.gz"',
+      'curl -Lfo fsdiff.tar.gz "$URL"',
+      'tar xzf fsdiff.tar.gz',
+      'install -Dm755 fsdiff {{prefix}}/bin/fsdiff',
     ],
-    env: {
-      CGO_ENABLED: 0,
-      'darwin/aarch64': {
-        PLATFORM: 'darwin_arm64_v8.0',
-      },
-      'darwin/x86-64': {
-        PLATFORM: 'darwin_amd64_v1',
-      },
-      'linux/aarch64': {
-        PLATFORM: 'linux_arm64_v8.0',
-      },
-      'linux/x86-64': {
-        PLATFORM: 'linux_amd64_v1',
-      },
-    },
   },
   test: {
     script: [
