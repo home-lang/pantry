@@ -16,6 +16,12 @@ export const recipe: Recipe = {
     'freedesktop.org/pkg-config': "*",
     'python.org': "~3.11",
     'git-scm.org': "*",
+    // The bundled at-spi2-core meson subproject builds atk with
+    // introspection, so it needs gobject-introspection-1.0 and glib-2.0 at
+    // build time (configure errors with "Dependency gobject-introspection-1.0
+    // not found" otherwise).
+    'gnome.org/gobject-introspection': "*",
+    'gnome.org/glib': "*",
     linux: {
       'llvm.org': "*",
     },
