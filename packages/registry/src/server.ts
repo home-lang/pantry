@@ -594,6 +594,18 @@ export function createHandler(
       if (path === '/api/rebuild-queue' && req.method === 'GET') {
         return Response.json({ queue: getBuildStatus().getQueue() }, { headers: corsHeaders })
       }
+      // Requested-but-unavailable versions: versions a build attempted but that
+      // don't exist upstream (no source tarball AND no prebuilt binary — every
+      // attempt 404'd). These are NOT failures; they're surfaced so the dashboard
+      // can show which requested versions are phantom. A version that later builds
+      // successfully is reconciled out of this list (see BuildStatusStore.record).
+      if (path === '/api/unavailable-versions' && req.method === 'GET') {
+        const versions = getBuildStatus().getUnavailableVersions()
+        return Response.json(
+          { versions, count: versions.length, generatedAt: new Date().toISOString() },
+          { headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=30' } },
+        )
+      }
       // Recent build-log lines for one package (the expandable per-row log panel).
       if (path.startsWith('/api/build-logs/') && req.method === 'GET') {
         const domain = decodeURIComponent(path.slice('/api/build-logs/'.length))

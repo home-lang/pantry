@@ -17,7 +17,12 @@ export const BUILD_PLATFORMS = ['darwin-arm64', 'darwin-x86-64', 'linux-x86-64',
 export type BuildPlatform = typeof BUILD_PLATFORMS[number]
 const PLATFORM_SET = new Set<string>(BUILD_PLATFORMS)
 
-export type BuildState = 'building' | 'built' | 'failed'
+// 'unavailable' = a builder requested a version that does not exist upstream (no
+// source tarball AND no prebuilt binary — every attempt 404'd). It is NOT a build
+// failure: it is never counted as failed or built and never penalises coverage.
+// These are stored separately (see UnavailableVersion) so the dashboard can
+// surface phantom/requested-but-missing versions.
+export type BuildState = 'building' | 'built' | 'failed' | 'unavailable'
 
 export interface BuildEvent {
   domain: string
@@ -60,6 +65,22 @@ export interface PackageRow {
   hasUpdate: boolean
 }
 
+/**
+ * A version a builder REQUESTED but that does not exist upstream — no source
+ * tarball AND no prebuilt binary (every build attempt 404'd). Surfaced on the
+ * dashboard so phantom/requested-but-missing versions are visible separately
+ * from genuine build failures. De-duplicated by domain|version|platform.
+ */
+export interface UnavailableVersion {
+  domain: string
+  version: string
+  platform: string
+  /** The 404 URL / download-failure detail tail, if the builder reported one. */
+  reason?: string
+  /** Last time this exact (domain, version, platform) was reported unavailable. */
+  lastSeen: number // epoch ms
+}
+
 /** One captured build-log line for a domain (shown in the per-package log panel). */
 export interface BuildLogLine {
   ts: number
@@ -84,17 +105,29 @@ const RECENT_LIMIT = 500
 const BUILDING_TTL_MS = 10 * 60 * 1000
 const COVERAGE_TTL_MS = 15 * 60 * 1000
 
+// Bound the persisted unavailable-versions list so a long-running grind can't grow
+// it without limit: keep the most-recently-seen N entries per domain, and an
+// overall hard cap across all domains.
+const UNAVAILABLE_PER_DOMAIN = 50
+const UNAVAILABLE_TOTAL_CAP = 5000
+
 interface PersistedState {
   version: 1
   building: BuildEvent[]
   recent: BuildEvent[]
   queue: string[]
+  /** Requested-but-missing versions (no source/binary upstream). Persisted. */
+  unavailable?: UnavailableVersion[]
 }
 
 export class BuildStatusStore {
   private building = new Map<string, BuildEvent>() // key: domain|version|platform
   private recent: BuildEvent[] = [] // newest first
   private queue: string[] = [] // domains requested for rebuild (FIFO, deduped)
+  // Requested-but-missing versions, de-duplicated by domain|version|platform.
+  // Persisted; capped per-domain + overall. Reconciled (entry removed) when the
+  // same domain@version later builds successfully.
+  private unavailable = new Map<string, UnavailableVersion>()
   private snapshot: ObjectSnapshot
 
   // Derived coverage cache (domain -> version -> set of platforms) + freshness.
@@ -236,6 +269,18 @@ export class BuildStatusStore {
     this.building = new Map((s.building || []).filter(e => isValidPackageDomain(e?.domain)).map(e => [this.key(e), e]))
     this.recent = (s.recent || []).filter(e => isValidPackageDomain(e?.domain)).slice(0, RECENT_LIMIT)
     this.queue = (s.queue || []).filter(d => isValidPackageDomain(d))
+    this.unavailable = new Map(
+      (s.unavailable || [])
+        .filter(u => u && isValidPackageDomain(u.domain) && u.version && u.platform)
+        .map(u => [this.key(u), {
+          domain: String(u.domain),
+          version: String(u.version),
+          platform: String(u.platform),
+          reason: u.reason ? String(u.reason).slice(0, MESSAGE_MAX) : undefined,
+          lastSeen: Number(u.lastSeen) || Date.now(),
+        }]),
+    )
+    this.capUnavailable()
   }
 
   private key(e: { domain: string, version: string, platform: string }): string {
@@ -243,7 +288,13 @@ export class BuildStatusStore {
   }
 
   private captureState(): PersistedState {
-    return { version: 1, building: [...this.building.values()], recent: this.recent.slice(0, RECENT_LIMIT), queue: this.queue }
+    return {
+      version: 1,
+      building: [...this.building.values()],
+      recent: this.recent.slice(0, RECENT_LIMIT),
+      queue: this.queue,
+      unavailable: [...this.unavailable.values()],
+    }
   }
 
   /** Record a build event reported by a builder. */
@@ -269,6 +320,17 @@ export class BuildStatusStore {
       hostUrl: raw.hostUrl ? String(raw.hostUrl).slice(0, 300) : undefined,
     }
     const k = this.key(event)
+    if (event.state === 'unavailable') {
+      // A requested-but-missing version. It is NOT a build outcome: don't add it to
+      // `recent` (so it never shows as failed/built, never becomes lastState) and
+      // don't touch coverage. Just record/refresh it in the dedicated list.
+      this.building.delete(k) // clear any stale "building" entry for this attempt
+      this.recordUnavailable(event)
+      this.appendLog(event, event.error || `${event.platform}: unavailable (no source upstream)`)
+      this.snapshot.scheduleSave()
+      this.emit()
+      return event
+    }
     if (event.state === 'building') {
       this.building.set(k, event)
     }
@@ -277,6 +339,11 @@ export class BuildStatusStore {
       this.recent.unshift(event)
       if (this.recent.length > RECENT_LIMIT)
         this.recent.length = RECENT_LIMIT
+      // A version that LATER becomes available must drop off the unavailable list:
+      // reconcile every unavailable entry for this exact domain@version (any
+      // platform) when it builds successfully.
+      if (event.state === 'built' && event.version)
+        this.reconcileUnavailable(event.domain, event.version)
       // Optimistically merge a SUCCESSFUL build into coverage so the package
       // doesn't flash "unbuilt" in the window between the `built` report and the
       // next S3 listing (the listing then reconciles it). Only `built`, never
@@ -304,6 +371,67 @@ export class BuildStatusStore {
     this.snapshot.scheduleSave()
     this.emit()
     return event
+  }
+
+  /** Insert/refresh a requested-but-missing version (deduped by domain|version|platform). */
+  private recordUnavailable(event: BuildEvent): void {
+    if (!event.version)
+      return // a phantom version with no version string is meaningless
+    const k = this.key(event)
+    this.unavailable.set(k, {
+      domain: event.domain,
+      version: event.version,
+      platform: event.platform,
+      reason: event.error,
+      lastSeen: event.ts,
+    })
+    this.capUnavailable()
+  }
+
+  /** Remove every unavailable entry for a domain@version (any platform) — called
+   *  when that version later builds successfully, so it leaves the list. */
+  private reconcileUnavailable(domain: string, version: string): void {
+    let changed = false
+    for (const [k, u] of this.unavailable) {
+      if (u.domain === domain && u.version === version) {
+        this.unavailable.delete(k)
+        changed = true
+      }
+    }
+    if (changed)
+      this.snapshot.scheduleSave()
+  }
+
+  /** Enforce the per-domain + overall caps on the unavailable list (drop oldest). */
+  private capUnavailable(): void {
+    // Per-domain cap: keep the newest UNAVAILABLE_PER_DOMAIN entries per domain.
+    const byDomain = new Map<string, UnavailableVersion[]>()
+    for (const u of this.unavailable.values()) {
+      let arr = byDomain.get(u.domain)
+      if (!arr) {
+        arr = []
+        byDomain.set(u.domain, arr)
+      }
+      arr.push(u)
+    }
+    for (const [, arr] of byDomain) {
+      if (arr.length <= UNAVAILABLE_PER_DOMAIN)
+        continue
+      arr.sort((a, b) => a.lastSeen - b.lastSeen) // oldest first
+      for (const u of arr.slice(0, arr.length - UNAVAILABLE_PER_DOMAIN))
+        this.unavailable.delete(this.key(u))
+    }
+    // Overall cap: if still too large, drop the globally-oldest entries.
+    if (this.unavailable.size > UNAVAILABLE_TOTAL_CAP) {
+      const all = [...this.unavailable.values()].sort((a, b) => a.lastSeen - b.lastSeen)
+      for (const u of all.slice(0, this.unavailable.size - UNAVAILABLE_TOTAL_CAP))
+        this.unavailable.delete(this.key(u))
+    }
+  }
+
+  /** The requested-but-missing versions list (newest-seen first), for the API/UI. */
+  getUnavailableVersions(): UnavailableVersion[] {
+    return [...this.unavailable.values()].sort((a, b) => b.lastSeen - a.lastSeen)
   }
 
   /** Drop stale "building" entries (builder died without reporting completion). */

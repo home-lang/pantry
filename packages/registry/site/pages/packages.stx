@@ -64,6 +64,42 @@
       </table>
     </div>
     <p class="mt-3" style="font-size: 0.75rem; color: var(--fg-subtle);" id="updated"></p>
+
+    <!-- Unavailable versions: requested by a build but don't exist upstream
+         (no source tarball AND no prebuilt binary — every attempt 404'd). NOT
+         build failures; surfaced so you can see which versions are phantom. -->
+    <div id="unavail-wrap" class="mt-10" style="display:none">
+      <button id="unavail-toggle" class="unavail-head" aria-expanded="false">
+        <span id="unavail-caret" style="display:inline-block;width:0.9em">▸</span>
+        <span>Unavailable versions <span style="color:var(--fg-subtle);font-weight:400">(requested but don't exist upstream)</span></span>
+        <span id="unavail-count" class="unavail-count">0</span>
+      </button>
+      <div id="unavail-body" style="display:none">
+        <p class="leading-relaxed mt-2 mb-3" style="font-size: 0.85rem; color: var(--fg-muted);">
+          These versions were requested by a build but have no source tarball and no prebuilt binary upstream — they 404. They are not failures and don't count against coverage. A version disappears from this list once it builds successfully.
+        </p>
+        <div class="flex flex-wrap items-center gap-3 mb-3">
+          <input id="unavail-filter" type="text" placeholder="filter by domain / version…" autocomplete="off" spellcheck="false"
+            class="font-mono" style="flex: 1 1 220px; min-width: 200px; padding: 0.45rem 0.7rem; font-size: 0.82rem; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--fg);" />
+          <span id="unavail-rowcount" class="font-mono" style="font-size: 0.8125rem; color: var(--fg-subtle);"></span>
+        </div>
+        <div class="rounded-lg overflow-hidden" style="border: 1px solid var(--border);">
+          <table class="w-full" style="border-collapse: collapse; font-size: 0.82rem;">
+            <thead>
+              <tr style="background: var(--bg-subtle); color: var(--fg-subtle);">
+                <th class="unavail-th" data-sort="domain" style="text-align:left;padding:0.55rem 0.75rem;font-weight:500;cursor:pointer">package &amp; version</th>
+                <th class="unavail-th" data-sort="platform" style="text-align:left;padding:0.55rem 0.5rem;font-weight:500;cursor:pointer">platform</th>
+                <th style="text-align:left;padding:0.55rem 0.5rem;font-weight:500">reason</th>
+                <th class="unavail-th col-lastseen" data-sort="lastSeen" style="text-align:right;padding:0.55rem 0.75rem;font-weight:500;cursor:pointer">last seen</th>
+              </tr>
+            </thead>
+            <tbody id="unavail-rows">
+              <tr><td colspan="4" style="padding:1.5rem;text-align:center;color:var(--fg-subtle)">loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Live log drawer (lives OUTSIDE the table so re-renders never disturb it) -->
@@ -136,6 +172,15 @@
     .log-panel .ll-failed { color: #f87171; font-weight:600; }
     .log-panel .ll-built { color: #4ade80; }
     .log-panel .ll-building { color: #cdd0d4; }
+    .log-panel .ll-unavailable { color: #fbbf24; }
+    /* Unavailable-versions section (collapsible) */
+    .unavail-head { display:flex; align-items:center; gap:0.5rem; width:100%; text-align:left; background:transparent; border:none; cursor:pointer; padding:0.55rem 0; font-size:1.05rem; font-weight:600; color:var(--fg); }
+    .unavail-head:hover { color:var(--accent); }
+    .unavail-count { margin-left:auto; font-family:ui-monospace,monospace; font-size:0.78rem; font-weight:600; padding:0.1rem 0.5rem; border-radius:999px; border:1px solid var(--border); color:#fbbf24; }
+    #unavail-rows tr { border-top:1px solid var(--border); }
+    #unavail-rows td { padding:0.5rem 0.75rem; vertical-align:top; }
+    .unavail-th:hover { color:var(--accent); }
+    .unavail-reason { color:var(--fg-subtle); max-width:48ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-block; vertical-align:bottom; }
   </style>
 
   <script client>
@@ -454,6 +499,71 @@
           es.onerror = function () { startStatusPolling() }
         } catch (e) { startStatusPolling() }
       } else { startStatusPolling() }
+
+      // ── Unavailable versions (requested but don't exist upstream) ─────────────
+      var unavail = []           // [{domain, version, platform, reason, lastSeen}]
+      var unavailSort = 'lastSeen'
+      var unavailDir = -1        // -1 = desc (newest / z-a), 1 = asc
+      var unavailOpen = false
+      function renderUnavail() {
+        var wrap = document.getElementById('unavail-wrap')
+        if (!wrap) return
+        document.getElementById('unavail-count').textContent = unavail.length
+        wrap.style.display = unavail.length ? 'block' : 'none'
+        if (!unavailOpen) return
+        var q = (document.getElementById('unavail-filter').value || '').toLowerCase()
+        var list = unavail.filter(function (u) {
+          if (!q) return true
+          return (u.domain + ' ' + u.version + ' ' + u.platform).toLowerCase().indexOf(q) !== -1
+        })
+        list.sort(function (a, b) {
+          var av, bv
+          if (unavailSort === 'lastSeen') { av = a.lastSeen || 0; bv = b.lastSeen || 0; return (av - bv) * unavailDir }
+          av = String(a[unavailSort] || ''); bv = String(b[unavailSort] || '')
+          return av.localeCompare(bv) * unavailDir
+        })
+        var rows = ''
+        for (var i = 0; i < list.length; i++) {
+          var u = list[i]
+          rows += '<tr>'
+            + '<td><a class="font-mono hvr-accent" href="/package/' + encodeURIComponent(u.domain) + '" style="color:var(--fg)">' + esc(u.domain) + '</a> <span class="font-mono" style="color:var(--fg-subtle)">@' + esc(u.version) + '</span></td>'
+            + '<td class="font-mono" style="color:var(--fg-subtle)">' + esc(u.platform || '—') + '</td>'
+            + '<td><span class="unavail-reason" title="' + esc(u.reason || '') + '">' + (u.reason ? esc(u.reason) : '<span style="opacity:0.5">no source / 404</span>') + '</span></td>'
+            + '<td class="col-lastseen" style="text-align:right;color:var(--fg-subtle);white-space:nowrap">' + relTime(u.lastSeen ? new Date(u.lastSeen).toISOString() : null) + '</td>'
+            + '</tr>'
+        }
+        document.getElementById('unavail-rows').innerHTML = rows
+          || '<tr><td colspan="4" style="padding:1.5rem;text-align:center;color:var(--fg-subtle)">no matches</td></tr>'
+        document.getElementById('unavail-rowcount').textContent = list.length + ' / ' + unavail.length
+      }
+      function loadUnavail() {
+        return fetch('/api/unavailable-versions').then(function (r) { return r.json() }).then(function (d) {
+          unavail = (d && d.versions) || []
+          renderUnavail()
+        }).catch(function () {})
+      }
+      var unavailToggle = document.getElementById('unavail-toggle')
+      if (unavailToggle) {
+        unavailToggle.onclick = function () {
+          unavailOpen = !unavailOpen
+          this.setAttribute('aria-expanded', unavailOpen ? 'true' : 'false')
+          document.getElementById('unavail-caret').textContent = unavailOpen ? '▾' : '▸'
+          document.getElementById('unavail-body').style.display = unavailOpen ? 'block' : 'none'
+          renderUnavail()
+        }
+        document.getElementById('unavail-filter').addEventListener('input', renderUnavail)
+        var uths = document.querySelectorAll('.unavail-th')
+        for (var ui = 0; ui < uths.length; ui++) {
+          uths[ui].onclick = function () {
+            var key = this.getAttribute('data-sort')
+            if (unavailSort === key) unavailDir = -unavailDir
+            else { unavailSort = key; unavailDir = key === 'lastSeen' ? -1 : 1 }
+            renderUnavail()
+          }
+        }
+        loadUnavail()
+        setInterval(loadUnavail, 60000)
+      }
     })()
   </script>
 </section>
