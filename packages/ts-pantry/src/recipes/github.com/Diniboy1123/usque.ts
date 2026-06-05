@@ -6,21 +6,21 @@ export const recipe: Recipe = {
   programs: [
     'usque',
   ],
-  buildDependencies: {
-    'go.dev': '~1.24.2',
-    'goreleaser.com': '*',
-  },
-  distributable: {
-    url: 'git+https://github.com/Diniboy1123/usque',
-  },
+  // Download official prebuilt binaries instead of compiling from source.
+  // Upstream (goreleaser) ships multi-platform release zips for every version.
   build: {
     script: [
-      'goreleaser build --clean --single-target --skip=validate',
-      'mkdir -p {{ prefix }}/bin',
-      'mv dist/{{hw.platform}}*/usque {{ prefix }}/bin',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="darwin_arm64" ;;',
+      '  darwin+x86-64)  ASSET="darwin_amd64" ;;',
+      '  linux+aarch64)  ASSET="linux_arm64" ;;',
+      '  linux+x86-64)   ASSET="linux_amd64" ;;',
+      'esac',
+      'URL="https://github.com/Diniboy1123/usque/releases/download/v${VERSION}/usque_${VERSION}_${ASSET}.zip"',
+      'curl -Lfo usque.zip "$URL"',
+      'unzip -o usque.zip',
+      'install -Dm755 usque {{prefix}}/bin/usque',
     ],
-    env: {
-      CGO_ENABLED: 0,
-    },
   },
 }
