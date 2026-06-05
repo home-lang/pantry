@@ -7,6 +7,11 @@ export const recipe: Recipe = {
   dependencies: {
     'gnome.org/gobject-introspection': '*',
     'cairographics.org/pycairo': '*',
+    // PyGObject 3.50+ depends on the girepository-2.0 pkg-config module, which
+    // moved out of gobject-introspection and into glib (2.80+). Without glib on
+    // the build, meson errors "Dependency 'girepository-2.0' is required but
+    // not found".
+    'gnome.org/glib': '>=2.80',
   },
   buildDependencies: {
     'mesonbuild.com': '*',
