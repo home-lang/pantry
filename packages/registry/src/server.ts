@@ -583,7 +583,7 @@ export function createHandler(
       if (path === '/api/rebuild' && req.method === 'POST') {
         if (!(await isAuthorizedRequest(req)))
           return Response.json({ error: 'Authentication required' }, { status: 401, headers: corsHeaders })
-        const body = await req.json().catch(() => null)
+        const body = await req.json().catch(() => null) as any
         const domain = typeof body?.domain === 'string' ? body.domain : ''
         if (!/^[a-zA-Z0-9._/-]{1,128}$/.test(domain))
           return Response.json({ error: 'valid domain required' }, { status: 400, headers: corsHeaders })
@@ -607,7 +607,7 @@ export function createHandler(
       if (path === '/api/build-logs' && req.method === 'POST') {
         if (!(await isAuthorizedRequest(req)))
           return Response.json({ error: 'Authentication required' }, { status: 401, headers: corsHeaders })
-        const body = await req.json().catch(() => null)
+        const body = await req.json().catch(() => null) as any
         const domain = typeof body?.domain === 'string' ? body.domain : ''
         const lines = Array.isArray(body?.lines) ? body.lines.filter((l: unknown) => typeof l === 'string') : []
         if (!/^[a-zA-Z0-9._/-]{1,128}$/.test(domain))
