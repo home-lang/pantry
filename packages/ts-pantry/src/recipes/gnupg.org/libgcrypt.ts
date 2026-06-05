@@ -32,6 +32,14 @@ export const recipe: Recipe = {
 
   build: {
     script: [
+      // Modern libgcrypt prefers gpgrt-config over gpg-error-config and resolves
+      // it from PATH, ignoring --with-libgpg-error-prefix. On Debian/Ubuntu arm64
+      // runners a SYSTEM /usr/bin/gpgrt-config (older libgpg-error, reporting via
+      // /usr/lib/aarch64-linux-gnu) shadows our dep and fails the ">= 1.49" check
+      // ("libgpg-error is needed"). Pin GPGRT_CONFIG/GPG_ERROR_CONFIG to the
+      // pantry-built dep so configure uses the correct version.
+      'export GPGRT_CONFIG="{{deps.gnupg.org/libgpg-error.prefix}}/bin/gpgrt-config"',
+      'export GPG_ERROR_CONFIG="{{deps.gnupg.org/libgpg-error.prefix}}/bin/gpg-error-config"',
       // Point configure at the pantry-built libgpg-error (pkgx finds it via PATH).
       './configure --prefix={{prefix}} --disable-dependency-tracking --enable-static --enable-shared --disable-asm --with-libgpg-error-prefix={{deps.gnupg.org/libgpg-error.prefix}} $ARGS',
       // pkgx: build the jitter-entropy RNG object without optimization to avoid miscompiles.
