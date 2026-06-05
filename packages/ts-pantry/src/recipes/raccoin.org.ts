@@ -32,7 +32,7 @@ export const recipe: Recipe = {
         run: [
           'sed -i \\',
           '    -e\'1a\\',
-          'const VERSION: &str = {{version}};\' \\',
+          'const VERSION: &str = "{{version}}";\' \\',
           'main.rs',
         ],
         'working-directory': 'src',
