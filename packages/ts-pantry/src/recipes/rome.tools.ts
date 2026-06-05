@@ -1,5 +1,10 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
+// rome.tools is an archived/deprecated tool (succeeded by Biome). Its CLI
+// releases (tagged `cli/v<version>`) ship official prebuilt binaries named
+// `rome-<os>-<arch>` from v11.0.0 onward. Download the official binary instead
+// of compiling the rome_cli crate from source. (The ancient v0.4.2 predates both
+// the cli/v tag scheme and prebuilt assets, so it is not buildable.)
 export const recipe: Recipe = {
   domain: 'rome.tools',
   name: 'rome',
@@ -14,24 +19,24 @@ export const recipe: Recipe = {
     // `lsp/v*`, `js-api/v*` and `*-nightly`/`*-next` prerelease tags).
     tagPattern: /^cli\/v(.+)$/,
   },
-  distributable: {
-    // Tag is `cli/v{{version}}`, so the source tarball path includes the prefix.
-    url: 'https://github.com/rome/tools/archive/refs/tags/cli/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'rust-lang.org': '>=1.65',
-    'rust-lang.org/cargo': '*',
-  },
-
   build: {
-    // pkgx builds from the `crates/rome_cli` workspace member, not the
-    // workspace root (the root Cargo.toml is a virtual manifest with no bin).
-    workingDirectory: 'crates/rome_cli',
     script: [
-      'sed -i.bak \'s/version = "0.0.0"/version = "{{version}}"/\' Cargo.toml',
-      'rm Cargo.toml.bak',
-      'cargo install --locked --path . --root {{prefix}}',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="rome-darwin-arm64" ;;',
+      '  darwin+x86-64)  ASSET="rome-darwin-x64" ;;',
+      '  linux+aarch64)  ASSET="rome-linux-arm64" ;;',
+      '  linux+x86-64)   ASSET="rome-linux-x64" ;;',
+      'esac',
+      '',
+      'URL="https://github.com/rome/tools/releases/download/cli/v${VERSION}/${ASSET}"',
+      'curl -Lfo rome "$URL"',
+      'install -Dm755 rome {{prefix}}/bin/rome',
+    ],
+  },
+  test: {
+    script: [
+      'rome --version',
     ],
   },
 }
