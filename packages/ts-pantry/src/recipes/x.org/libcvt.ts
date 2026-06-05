@@ -12,11 +12,14 @@ export const recipe: Recipe = {
     'x.org/protocol': '*',
   },
   buildDependencies: {
+    'freedesktop.org/pkg-config': '*',
     'mesonbuild.com': '*',
     'ninja-build.org': '*',
   },
+  // www.x.org/archive tarballs were retired (404); fetch from the freedesktop
+  // GitLab mirror. libxcvt is meson-only (no autotools), so no autogen needed.
   distributable: {
-    url: 'https://www.x.org/archive/individual/lib/libxcvt-{{version}}.tar.xz',
+    url: 'https://gitlab.freedesktop.org/xorg/lib/libxcvt/-/archive/libxcvt-{{version}}/libxcvt-libxcvt-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {

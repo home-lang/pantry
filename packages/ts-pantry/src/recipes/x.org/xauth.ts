@@ -17,6 +17,9 @@ export const recipe: Recipe = {
     },
   },
   buildDependencies: {
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': '*',
     'x.org/util-macros': '*',
     linux: {
@@ -25,11 +28,12 @@ export const recipe: Recipe = {
     },
   },
   distributable: {
-    url: 'https://www.x.org/releases/individual/app/xauth-{{version}}.tar.xz',
+    url: 'https://gitlab.freedesktop.org/xorg/app/xauth/-/archive/xauth-{{version}}/xauth-xauth-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure $CONFIGURE_ARGS',
       'make --jobs {{ hw.concurrency }}',
       'make --jobs {{ hw.concurrency }} install',

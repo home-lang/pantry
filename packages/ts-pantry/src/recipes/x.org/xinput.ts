@@ -14,15 +14,20 @@ export const recipe: Recipe = {
     'x.org/xrandr': '*',
   },
   buildDependencies: {
+    'x.org/util-macros': '*',
+    'gnu.org/autoconf': '*',
+    'gnu.org/automake': '*',
+    'gnu.org/libtool': '*',
     'freedesktop.org/pkg-config': '*',
     'x.org/protocol': '*',
   },
   distributable: {
-    url: 'https://www.x.org/archive/individual/app/xinput-{{version}}.tar.xz',
+    url: 'https://gitlab.freedesktop.org/xorg/app/xinput/-/archive/xinput-{{version}}/xinput-xinput-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
+      'NOCONFIGURE=1 ./autogen.sh',
       './configure $ARGS',
       'make --jobs {{ hw.concurrency }}',
       'make --jobs {{ hw.concurrency }} install',
