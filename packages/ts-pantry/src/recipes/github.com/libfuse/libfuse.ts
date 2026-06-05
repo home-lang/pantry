@@ -22,7 +22,7 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: "if test \{{hw.arch}}\ = \"aarch64\"; then sed -i -f $PROP include/fuse_kernel.h; fi\nsed -i 's/closefrom/fuse_closefrom/g' util/ulockmgr_server.c\n./configure $V2_ARGS\nmake -j {{hw.concurrency}}\nmake install",
+        run: "if test \{{hw.arch}}\ = \"aarch64\" && test -n \"${PROP:-}\" && test -f \"$PROP\"; then sed -i -f \"$PROP\" include/fuse_kernel.h; fi\nsed -i 's/closefrom/fuse_closefrom/g' util/ulockmgr_server.c\n./configure $V2_ARGS\nmake -j {{hw.concurrency}}\nmake install",
         if: "<3",
         'working-directory': "$SRCROOT",
       },
