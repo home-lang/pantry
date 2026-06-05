@@ -22,11 +22,20 @@ export const recipe: Recipe = {
   build: {
     script: [
       'NOCONFIGURE=1 ./autogen.sh',
-      './configure --prefix="{{prefix}}" --sysconfdir="$SHELF"/etc --localstatedir="$SHELF"/var',
+      './configure $ARGS',
       'make --jobs {{ hw.concurrency }} install',
     ],
     env: {
       SHELF: '${{pkgx.prefix}}/x.org',
+      ARGS: [
+        '--prefix={{prefix}}',
+        '--sysconfdir=$SHELF/etc',
+        '--localstatedir=$SHELF/var',
+        '--disable-dependency-tracking',
+        '--disable-silent-rules',
+        '--enable-docs=no',
+        '--enable-specs=no',
+      ],
     },
   },
   test: {
