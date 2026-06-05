@@ -14,6 +14,7 @@
       <div class="stat-card"><p class="stat-label">Packages</p><p class="stat-num" id="stat-total">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Versions published</p><p class="stat-num" id="stat-versions">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Binaries published</p><p class="stat-num" id="stat-binaries">&mdash;</p></div>
+      <div class="stat-card"><p class="stat-label">Partial</p><p class="stat-num" id="stat-partial" style="color: var(--accent);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Projects complete</p><p class="stat-num" id="stat-complete" style="color: var(--green);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Updates available</p><p class="stat-num" id="stat-updates" style="color: var(--accent);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Building now</p><p class="stat-num" id="stat-building" style="color: var(--yellow);">&mdash;</p></div>
@@ -291,7 +292,7 @@
       function setStat(id, val) { var el = document.getElementById(id); if (el && el.textContent !== String(val)) { el.textContent = val; bump(el) } }
       function renderSummary() {
         var bm = buildingMap()
-        var complete = 0, updates = 0, failed = 0, unbuilt = 0, building = 0
+        var complete = 0, updates = 0, failed = 0, unbuilt = 0, building = 0, partial = 0
         for (var i = 0; i < packages.length; i++) {
           var p = packages[i]
           var b = bm[p.domain]
@@ -302,6 +303,7 @@
           if (st === 'ok') { complete++; if (p.hasUpdate) updates++ }
           else if (st === 'failed') failed++
           else if (st === 'unbuilt') unbuilt++
+          else if (st === 'incomplete') partial++
         }
         setStat('stat-total', packages.length)
         setStat('stat-versions', totals.publishedVersions || 0)
@@ -319,6 +321,7 @@
         setStat('stat-building', building)
         setStat('stat-failed', failed)
         setStat('stat-unbuilt', unbuilt)
+        setStat('stat-partial', partial)
       }
 
       // ── Live log drawer (stable element, never rebuilt by the table) ──────────
