@@ -11,23 +11,22 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'hairyhenderson/gomplate',
   },
-  distributable: {
-    url: 'https://github.com/hairyhenderson/gomplate/archive/refs/tags/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    // gomplate v5 requires Go >= 1.25 (go.mod: `go 1.25.6`); the old ~1.22.3
-    // pin made `go build` fail before it even read the module.
-    'go.dev': '>=1.25',
-  },
+  // Prebuilt download: gomplate ships official per-platform bare binaries
+  // (named gomplate_<os>-<arch>, no archive).
+  distributable: null,
 
   build: {
     script: [
-      'go mod download',
-      'go build -v -ldflags="$LDFLAGS" -o "{{prefix}}"/bin/gomplate ./cmd/gomplate',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="gomplate_darwin-arm64" ;;',
+      '  darwin+x86-64)  ASSET="gomplate_darwin-amd64" ;;',
+      '  linux+aarch64)  ASSET="gomplate_linux-arm64"  ;;',
+      '  linux+x86-64)   ASSET="gomplate_linux-amd64"  ;;',
+      'esac',
+      '',
+      'curl -Lfo gomplate "https://github.com/hairyhenderson/gomplate/releases/download/v${VERSION}/${ASSET}"',
+      'install -Dm755 gomplate {{prefix}}/bin/gomplate',
     ],
-    env: {
-      'LDFLAGS': ['-s', '-w', '-X $(go list ./version).Version={{version}}'],
-    },
   },
 }
