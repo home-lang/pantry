@@ -18,10 +18,11 @@ export const recipe: Recipe = {
   build: {
     'working-directory': 'build',
     script: [
-      {
-        run: 'sed -i -f $PROP CMakeLists.txt',
-        'working-directory': '..',
-      },
+      // Note: a previous `sed -i -f $PROP CMakeLists.txt` step was removed —
+      // $PROP was never defined (no prop file ships with this recipe), so sed
+      // treated CMakeLists.txt itself as the script file and aborted with
+      // "extra characters after command". The patch is unnecessary: LAPACK's
+      // CMakeLists already declares a compatible cmake_minimum_required.
       'cmake .. $CMAKE_ARGS',
       'make --jobs {{hw.concurrency}} install',
     ],
