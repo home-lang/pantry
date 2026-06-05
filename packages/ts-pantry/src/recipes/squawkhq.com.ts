@@ -11,22 +11,22 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'sbdchd/squawk',
   },
-  distributable: {
-    url: 'https://github.com/sbdchd/squawk/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'rust-lang.org': '>=1.65',
-    'rust-lang.org/cargo': '*',
-    'openssl.org': '*',
-    'perl.org': '*',
-  },
+  // Prebuilt download: squawk ships official per-platform bare binaries
+  // (named squawk-<os>-<arch>, no archive).
+  distributable: null,
 
   build: {
     script: [
-      'cd crates/squawk',
-      'sed -i \'1,/dependencies/s/version = ".*"/version = "{{version}}"/\' Cargo.toml',
-      'cargo install --path . --root {{prefix}}',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="squawk-darwin-arm64" ;;',
+      '  darwin+x86-64)  ASSET="squawk-darwin-x64"   ;;',
+      '  linux+aarch64)  ASSET="squawk-linux-arm64"  ;;',
+      '  linux+x86-64)   ASSET="squawk-linux-x64"    ;;',
+      'esac',
+      '',
+      'curl -Lfo squawk "https://github.com/sbdchd/squawk/releases/download/v${VERSION}/${ASSET}"',
+      'install -Dm755 squawk {{prefix}}/bin/squawk',
     ],
   },
 }
