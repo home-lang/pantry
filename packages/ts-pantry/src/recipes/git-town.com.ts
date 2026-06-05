@@ -12,16 +12,23 @@ export const recipe: Recipe = {
     repo: 'git-town/git-town',
     tagPattern: /^v(.+)$/,
   },
-  distributable: {
-    url: 'https://github.com/git-town/git-town/archive/refs/tags/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
+  // Prebuilt download: git-town ships official per-platform release tarballs
+  // (bare `git-town` binary at the archive root; intel/arm arch tokens).
+  distributable: null,
 
   build: {
     script: [
-      'sed -i \\/charmbracelet\\/x\\/ansi/d\\ go.sum',
-      'go mod download',
-      'go build -v -trimpath -ldflags="$GO_LDFLAGS" -o \\{{prefix}}/bin/git-town\\ .',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="git-town_macos_arm_64"   ;;',
+      '  darwin+x86-64)  ASSET="git-town_macos_intel_64" ;;',
+      '  linux+aarch64)  ASSET="git-town_linux_arm_64"   ;;',
+      '  linux+x86-64)   ASSET="git-town_linux_intel_64" ;;',
+      'esac',
+      '',
+      'curl -Lfo git-town.tar.gz "https://github.com/git-town/git-town/releases/download/v${VERSION}/${ASSET}.tar.gz"',
+      'tar xf git-town.tar.gz',
+      'install -Dm755 git-town {{prefix}}/bin/git-town',
     ],
   },
 }
