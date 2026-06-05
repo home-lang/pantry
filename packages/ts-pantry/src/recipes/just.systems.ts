@@ -10,20 +10,26 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'casey/just',
-    tagPattern: /^v(.+)$/,
+    tagPattern: /^v?(.+)$/,
   },
-  distributable: {
-    url: 'https://github.com/casey/just/archive/refs/tags/{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'rust-lang.org': '^1.47.0',
-    'rust-lang.org/cargo': '^0.75',
-  },
+  // Prebuilt download: just ships official per-platform release tarballs
+  // (Rust target triples; bare `just` binary at the archive root). Linux ships
+  // statically-linked musl builds (run on glibc too). Tags have no `v` prefix.
+  distributable: null,
 
   build: {
     script: [
-      'cargo install --path=. --root={{prefix}}',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="just-${VERSION}-aarch64-apple-darwin"        ;;',
+      '  darwin+x86-64)  ASSET="just-${VERSION}-x86_64-apple-darwin"         ;;',
+      '  linux+aarch64)  ASSET="just-${VERSION}-aarch64-unknown-linux-musl"  ;;',
+      '  linux+x86-64)   ASSET="just-${VERSION}-x86_64-unknown-linux-musl"   ;;',
+      'esac',
+      '',
+      'curl -Lfo just.tar.gz "https://github.com/casey/just/releases/download/${VERSION}/${ASSET}.tar.gz"',
+      'tar xf just.tar.gz',
+      'install -Dm755 just {{prefix}}/bin/just',
     ],
   },
 }
