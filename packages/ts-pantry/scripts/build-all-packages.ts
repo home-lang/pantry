@@ -1142,8 +1142,30 @@ async function tryBuildVersion(
 }
 
 interface BuildResult {
-  status: 'skipped' | 'uploaded' | 'failed'
+  // 'unavailable' = the requested version's source genuinely does not exist
+  // upstream (tarball 404 / git tag missing). These are PHANTOM versions that
+  // leaked into our generated version index, NOT build failures — they must not
+  // be reported as failed nor counted against coverage.
+  status: 'skipped' | 'uploaded' | 'failed' | 'unavailable'
   error?: string
+}
+
+/**
+ * Classify a build-attempt error as a pure "source unavailable" (404 / missing
+ * git tag) signal vs. a genuine build/compile failure.
+ *
+ * build-package.ts exits with code 42 *specifically* for download failures
+ * (curl 404, git clone fail) and 1 for everything else. Exit 42 is therefore the
+ * authoritative signal that a version's source does not exist upstream. We also
+ * pattern-match the message as a fallback for older/wrapped error shapes.
+ */
+function isSourceUnavailableError(error: any): boolean {
+  if (error?.status === 42)
+    return true
+  const errMsg = (error?.message as string) || ''
+  return errMsg.includes('DOWNLOAD_FAILED')
+    || errMsg.includes('All distributable URLs failed')
+    || errMsg.includes('The requested URL returned error: 404')
 }
 
 async function buildAndUpload(
@@ -1224,6 +1246,11 @@ else {
 
   let lastError: Error | null = null
   let usedVersion = version
+  // Track whether EVERY candidate that was attempted failed purely because its
+  // source was unavailable (404 / missing tag). If so, this is a phantom version
+  // — report it as 'unavailable', not 'failed'.
+  let attemptedAny = false
+  let allUnavailable = true
 
   for (const candidateVersion of versionCandidates) {
     try {
@@ -1242,6 +1269,7 @@ else {
       console.log(`   Building ${domain}@${candidateVersion} for ${platform}...`)
       reportBuild(domain, candidateVersion, platform, 'building', { message: `building ${candidateVersion} on ${platform}` })
 
+      attemptedAny = true
       await tryBuildVersion(domain, candidateVersion, platform, buildDir, installDir, depsDir, bucket, region)
 
       usedVersion = candidateVersion
@@ -1250,17 +1278,14 @@ else {
     }
 catch (error: any) {
       lastError = error
-      const errMsg = error.message || ''
 
-      // Only try fallback versions if the error is a source download failure
-      // Exit code 42 from build-package.ts = download failure (curl 404, git clone fail, etc.)
-      const isDownloadError = error.status === 42 ||
-        errMsg.includes('DOWNLOAD_FAILED') ||
-        errMsg.includes('curl') ||
-        errMsg.includes('404') ||
-        errMsg.includes('The requested URL returned error')
-      if (!isDownloadError) {
-        // Not a download error — don't try other versions, this is a build error
+      const unavailable = isSourceUnavailableError(error)
+      if (!unavailable)
+        allUnavailable = false
+
+      if (!unavailable) {
+        // A genuine build/compile error (exit 1) — don't try older versions, and
+        // make sure this is reported as a real failure below.
         break
       }
 
@@ -1270,14 +1295,24 @@ catch (error: any) {
 
   if (lastError) {
     const elapsed = Math.round((Date.now() - pkgStartTime) / 1000)
-    console.error(`   ❌ Failed (${elapsed}s): ${lastError.message}`)
-    reportBuild(domain, usedVersion || version, platform, 'failed', { error: lastError.message })
     try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) }
     catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) }
     catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
     try { execSync(`rm -rf "${depsDir}"`, { stdio: 'pipe' }) }
     catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
+
+    // Phantom version: every attempted candidate 404'd / had no upstream source.
+    // This is NOT a build failure — skip it quietly (no 'failed' dashboard event,
+    // no coverage penalty). Only the requested versions were tried, so if they all
+    // came back "source unavailable" the version simply does not exist upstream.
+    if (attemptedAny && allUnavailable) {
+      console.log(`   ⏭️  ${domain}@${version} source unavailable upstream (no tarball/tag) — skipping as phantom version (not a failure)`)
+      return { status: 'unavailable', error: lastError.message }
+    }
+
+    console.error(`   ❌ Failed (${elapsed}s): ${lastError.message}`)
+    reportBuild(domain, usedVersion || version, platform, 'failed', { error: lastError.message })
     return { status: 'failed', error: lastError.message }
   }
 
@@ -2158,6 +2193,10 @@ else {
   const uploaded = Object.entries(results).filter(([_, r]) => r.status === 'uploaded')
   const skipped = Object.entries(results).filter(([_, r]) => r.status === 'skipped')
   const failed = Object.entries(results).filter(([_, r]) => r.status === 'failed')
+  // Phantom versions whose source 404'd upstream — neither a success nor a
+  // failure. Surfaced separately so they don't inflate the failure count or
+  // count against build coverage.
+  const unavailable = Object.entries(results).filter(([_, r]) => r.status === 'unavailable')
 
   // In multi-version mode, the key already includes @version
   const formatEntry = multiVersion
@@ -2174,13 +2213,18 @@ else {
     skipped.forEach(e => console.log(`   - ${formatEntry(e)}`))
   }
 
+  if (unavailable.length > 0) {
+    console.log(`\nSkipped — source unavailable upstream / phantom versions (${unavailable.length}):`)
+    unavailable.forEach(e => console.log(`   - ${formatEntry(e)}`))
+  }
+
   if (failed.length > 0) {
     console.log(`\nFailed (${failed.length}):`)
     failed.forEach(e => console.log(`   - ${formatEntry(e)}: ${e[1].error}`))
   }
 
   const attempted = uploaded.length + failed.length
-  console.log(`\nTotal: ${uploaded.length} uploaded, ${skipped.length} skipped, ${failed.length} failed`)
+  console.log(`\nTotal: ${uploaded.length} uploaded, ${skipped.length} skipped, ${unavailable.length} unavailable, ${failed.length} failed`)
 
   // Write GitHub Actions Job Summary so failures are visible on the run page
   const summaryPath = process.env.GITHUB_STEP_SUMMARY
@@ -2192,6 +2236,7 @@ else {
     lines.push(`|--------|-------|`)
     lines.push(`| Uploaded | ${uploaded.length} |`)
     lines.push(`| Skipped (already in S3) | ${skipped.length} |`)
+    lines.push(`| Unavailable (phantom / source 404) | ${unavailable.length} |`)
     lines.push(`| Failed | ${failed.length} |`)
     lines.push('')
 
