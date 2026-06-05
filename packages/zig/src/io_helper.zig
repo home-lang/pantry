@@ -96,6 +96,32 @@ var io_instance: Threaded = blk: {
     break :blk inst;
 };
 
+/// One-time flag: have we pointed the global Io's child-process environment at
+/// the real OS environment yet?
+var environ_initialized = false;
+
+/// Populate the global Io instance's `process_environ` from the real OS
+/// environment (libc `environ`) on POSIX.
+///
+/// `Threaded.init_single_threaded` ships an EMPTY `process_environ` on non-Windows
+/// targets, and `std.process.run`/`spawn` pass that environ to children whenever
+/// `environ_map == null`. The practical effect: every child process pantry spawns
+/// (git, bump, changelog, …) ran with an EMPTY environment — no `HOME`, so git
+/// could not read `~/.gitconfig` (commits failed with "Author identity unknown")
+/// or `~/.config/git/ignore`. Capturing the libc `environ` here makes spawned
+/// children inherit pantry's full environment, exactly as a shell-launched child
+/// would. (Windows already uses the global block via `init_single_threaded`.)
+fn ensureEnvironInitialized() void {
+    if (is_windows or environ_initialized) return;
+    environ_initialized = true;
+    // libc `environ` is a null-terminated array of "KEY=VALUE" C strings. Span it
+    // into the [:null] slice shape PosixBlock expects; the memory is owned by libc
+    // and lives for the whole process, so no allocation/free is needed.
+    // Populate the raw OS block; leave `io_instance.environ_initialized = false`
+    // so std's lazy `scanEnviron` still memoizes PATH/HOME from this block.
+    io_instance.environ.process_environ = .{ .block = .{ .slice = std.mem.span(c.environ) } };
+}
+
 /// Get the global Io instance for blocking operations
 /// This can be used anywhere an Io is needed for synchronous file operations
 pub fn getIo() Io {
@@ -103,6 +129,7 @@ pub fn getIo() Io {
     if (@import("builtin").is_test) {
         return std.testing.io;
     }
+    ensureEnvironInitialized();
     return io_instance.io();
 }
 
