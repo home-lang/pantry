@@ -43,6 +43,15 @@ export const recipe: Recipe = {
         '--buildtype=release',
         '--prefix={{prefix}}',
         '--libdir={{prefix}}/lib',
+        // Pango 1.57+ requires glib >= 2.82. If the build host's system glib is
+        // older, meson silently falls back to the bundled `glib.wrap` subproject
+        // (which clones glib `main`), compiling pango against bleeding-edge glib
+        // headers (e.g. g_variant_builder_init_static) while the result ends up
+        // linked against the older system glib at runtime → "undefined symbol:
+        // g_variant_builder_init_static". --wrap-mode=nodownload forbids the
+        // bundled-glib fallback so pango must use our dependency glib (resolved
+        // via PKG_CONFIG_PATH), keeping headers and runtime glib in sync.
+        '--wrap-mode=nodownload',
       ],
     },
   },
