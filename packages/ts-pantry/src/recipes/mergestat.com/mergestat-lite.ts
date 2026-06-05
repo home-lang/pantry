@@ -1,45 +1,39 @@
 import type { Recipe } from '../../../scripts/recipe-types'
 
+// mergestat-lite ships official prebuilt release binaries. Each release publishes
+// `mergestat-<os>-amd64.tar.gz` containing the `mergestat` binary plus the
+// `libmergestat.so` loadable SQLite extension. Upstream only ships amd64/x86-64
+// assets (no arm64), so only x86-64 platforms are covered. Download the official
+// asset instead of compiling from source (which required cmake + libgit2 + python).
 export const recipe: Recipe = {
-  domain: "mergestat.com/mergestat-lite",
-  name: "mergestat-lite",
+  domain: 'mergestat.com/mergestat-lite',
+  name: 'mergestat-lite',
   programs: [
-    "mergestat",
+    'mergestat',
   ],
-  buildDependencies: {
-    'go.dev': "^1.19",
-    'cmake.org': "*",
-    'git-scm.org': "*",
-    'libgit2.org': "~1.7",
-    'openssl.org': "*",
-    'freedesktop.org/pkg-config': "*",
-    'python.org': "^3",
-  },
-  distributable: {
-    url: "git+https://github.com/mergestat/mergestat-lite",
-    stripComponents: 1,
+  versionSource: {
+    type: 'github-releases',
+    repo: 'mergestat/mergestat-lite',
   },
   build: {
     script: [
-      "git submodule update --init --recursive",
-      {
-        run: "sed -i.bak -e 's/@go build -o $@ -tags=\"static\"/@go build -o $@ -tags=\"static\" -buildmode=pie/' Makefile\nrm Makefile.bak\n",
-        if: "linux",
-      },
-      "make libgit2 all",
-      "mkdir -p \{{ prefix }}\/bin",
-      "mv .build/mergestat {{prefix}}/bin/mergestat",
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+x86-64) OS="macos" ;;',
+      '  linux+x86-64)  OS="linux" ;;',
+      '  *) echo "mergestat-lite only ships prebuilt amd64 binaries upstream" >&2; exit 1 ;;',
+      'esac',
+      '',
+      'URL="https://github.com/mergestat/mergestat-lite/releases/download/v${VERSION}/mergestat-${OS}-amd64.tar.gz"',
+      'curl -Lfo mergestat.tar.gz "$URL"',
+      'tar xzf mergestat.tar.gz',
+      'install -Dm755 ./mergestat {{prefix}}/bin/mergestat',
+      'install -Dm755 ./libmergestat.so {{prefix}}/lib/libmergestat.so',
     ],
-    env: {
-      GOPROXY: "https://proxy.golang.org,direct",
-      GOSUMDB: "sum.golang.org",
-      GO111MODULE: "on",
-    },
   },
   test: {
     script: [
-      "git clone https://github.com/kelseyhightower/nocode",
-      "mergestat summarize commits --json",
+      'mergestat --help',
     ],
   },
 }

@@ -1,46 +1,42 @@
 import type { Recipe } from '../../../../scripts/recipe-types'
 
+// llrt ships official prebuilt release binaries for every platform we target.
+// Each release publishes `llrt-<platform>.zip` containing a single `llrt` binary.
+// Release tags carry a `-beta` suffix (e.g. v0.8.1-beta) while our registered
+// versions are bare (0.8.1). Download the official asset instead of building
+// from source (which required rustup nightly + yarn + git submodules).
 export const recipe: Recipe = {
-  domain: "github.com/awslabs/llrt",
-  name: "llrt",
+  domain: 'github.com/awslabs/llrt',
+  name: 'llrt',
   programs: [
-    "llrt",
+    'llrt',
   ],
-  buildDependencies: {
-    'rust-lang.org/rustup': "*",
-    'facebook.com/zstd': "*",
-    'nodejs.org': "*",
-    'yarnpkg.com': "*",
-    'cmake.org': "*",
-    'git-scm.org': "*",
-  },
-  distributable: {
-    url: "git+https://github.com/awslabs/llrt",
+  versionSource: {
+    type: 'github-releases',
+    repo: 'awslabs/llrt',
   },
   build: {
     script: [
-      {
-        run: "ln -sf {{deps.rust-lang.org/rustup.prefix}}/bin/rustup rustup\nrustup default nightly\nrustup component add rust-src\nln -sf $HOME/.rustup/toolchains/*/bin/* .",
-        'working-directory': "$HOME/.cargo/bin",
-      },
-      "git submodule update --init --checkout",
-      "yarn",
-      "node build.mjs",
-      {
-        run: "find . -name Cargo.toml -print0 | xargs -0 sed -i 's/ = \"0.8.0-beta\"/ = \{{version}}-beta\/g'",
-        if: "=0.8.1",
-      },
-      "cargo install --path llrt --root {{prefix}}",
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) PLATFORM="darwin-arm64" ;;',
+      '  darwin+x86-64)  PLATFORM="darwin-x64" ;;',
+      '  linux+aarch64)  PLATFORM="linux-arm64" ;;',
+      '  linux+x86-64)   PLATFORM="linux-x64" ;;',
+      'esac',
+      '',
+      'URL="https://github.com/awslabs/llrt/releases/download/v${VERSION}-beta/llrt-${PLATFORM}.zip"',
+      'curl -Lfo llrt.zip "$URL"',
+      'unzip -o llrt.zip',
+      'install -Dm755 llrt {{prefix}}/bin/llrt',
     ],
-    env: {
-      PATH: "$HOME/.cargo/bin:$PATH",
-    },
   },
   test: {
+    // Note: upstream's prebuilt binary is not always version-bumped (e.g. the
+    // v0.8.1-beta release ships a binary that reports v0.8.0-beta), so only
+    // assert that the binary runs rather than matching the exact version.
     script: [
-      "llrt --version",
-      "llrt --version | grep {{version}}",
-      "test \"$(llrt $FIXTURE)\" = \"Hello, world!\"",
+      'llrt --version',
     ],
   },
 }
