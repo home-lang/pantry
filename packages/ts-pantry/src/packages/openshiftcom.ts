@@ -78,6 +78,7 @@ export const openshiftcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.22.0',
     '4.21.18',
     '4.21.17',
     '4.21.16',
@@ -315,6 +316,7 @@ export const openshiftcomPackage = {
     '4.16.2',
     '4.16.1',
     '4.16.0',
+    '4.15.65',
     '4.15.64',
     '4.15.63',
     '4.15.62',
