@@ -16,7 +16,9 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   buildDependencies: {
-    'go.dev': '~1.22.3',
+    // gomplate v5 requires Go >= 1.25 (go.mod: `go 1.25.6`); the old ~1.22.3
+    // pin made `go build` fail before it even read the module.
+    'go.dev': '>=1.25',
   },
 
   build: {
