@@ -14,8 +14,11 @@ export const recipe: Recipe = {
   buildDependencies: {
     'gnu.org/wget': "*",
   },
+  // Use the permanent Apache archive mirror. The live `dlcdn.apache.org` mirror
+  // only keeps the latest release(s) and purges older versions (5.6.1/5.6.2 now
+  // 404 there), whereas `archive.apache.org` retains every published release.
   distributable: {
-    url: "https://dlcdn.apache.org/jmeter/binaries/apache-jmeter-{{version.raw}}.tgz",
+    url: "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-{{version.raw}}.tgz",
     stripComponents: 1,
   },
   build: {
