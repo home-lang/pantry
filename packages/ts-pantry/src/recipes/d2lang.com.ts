@@ -11,28 +11,23 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'terrastruct/d2',
   },
-  distributable: {
-    url: 'https://github.com/terrastruct/d2/archive/refs/tags/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'go.dev': '^1.20',
-  },
+  // Prebuilt download: d2 ships official per-platform release tarballs
+  // (macos/linux OS tokens; binary under d2-v<version>/bin/d2).
+  distributable: null,
 
   build: {
     script: [
-      'go mod download',
-      'mkdir -p "{{prefix}}"/bin',
-      'go build -v -trimpath -ldflags="$LDFLAGS" -o $BUILDLOC .',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="d2-v${VERSION}-macos-arm64" ;;',
+      '  darwin+x86-64)  ASSET="d2-v${VERSION}-macos-amd64" ;;',
+      '  linux+aarch64)  ASSET="d2-v${VERSION}-linux-arm64" ;;',
+      '  linux+x86-64)   ASSET="d2-v${VERSION}-linux-amd64" ;;',
+      'esac',
       '',
+      'curl -Lfo d2.tar.gz "https://github.com/terrastruct/d2/releases/download/v${VERSION}/${ASSET}.tar.gz"',
+      'tar xf d2.tar.gz',
+      'install -Dm755 "d2-v${VERSION}/bin/d2" {{prefix}}/bin/d2',
     ],
-    env: {
-      'GOPROXY': 'https://proxy.golang.org,direct',
-      'GOSUMDB': 'sum.golang.org',
-      'GO111MODULE': 'on',
-      'CGO_ENABLED': '0',
-      'BUILDLOC': '{{prefix}}/bin/d2',
-      'LDFLAGS': ['-s', '-w', '-X oss.terrastruct.com/d2/lib/version.Version={{version}}'],
-    },
   },
 }
