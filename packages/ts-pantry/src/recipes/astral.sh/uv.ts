@@ -1,52 +1,34 @@
 import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
-  domain: "astral.sh/uv",
-  name: "uv",
+  domain: 'astral.sh/uv',
+  name: 'uv',
   programs: [
-    "uv",
-    "uvx",
+    'uv',
+    'uvx',
   ],
-  dependencies: {
-    'libgit2.org': ">=1.7<2",
-  },
-  buildDependencies: {
-    linux: {
-      'nixos.org/patchelf': "^0.18",
-      'sqlite.org': "*",
-    },
-    'cmake.org': ">=3.28",
-    'rust-lang.org/cargo': "^0",
-    'maturin.rs': "^1.4.0",
-    'info-zip.org/unzip': "^6",
-  },
-  distributable: {
-    url: "https://github.com/astral-sh/uv/releases/download/{{version}}/source.tar.gz",
-    stripComponents: 1,
-  },
+  // Download official prebuilt binaries instead of compiling from source.
+  // Astral ships per-version, multi-platform release tarballs (uv + uvx).
   build: {
     script: [
-      "maturin build --locked --release --out ./out",
-      {
-        run: "unzip ./uv-{{version}}-*.whl\ninstall -D ./uv-{{version}}.data/scripts/uv {{prefix}}/bin/uv\ninstall -D ./uv-{{version}}.data/scripts/uvx {{prefix}}/bin/uvx",
-        'working-directory': "out",
-      },
-      {
-        run: "install_name_tool -change \"@rpath/gnu.org/libiconv/v1/lib/libiconv.2.dylib\" \"/usr/lib/libiconv.2.dylib\" uv\ninstall_name_tool -change \"@rpath/gnu.org/libiconv/v1/lib/libiconv.2.dylib\" \"/usr/lib/libiconv.2.dylib\" uvx",
-        if: "darwin",
-        'working-directory': "${{prefix}}/bin",
-      },
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) TRIPLE="aarch64-apple-darwin" ;;',
+      '  darwin+x86-64)  TRIPLE="x86_64-apple-darwin" ;;',
+      '  linux+aarch64)  TRIPLE="aarch64-unknown-linux-gnu" ;;',
+      '  linux+x86-64)   TRIPLE="x86_64-unknown-linux-gnu" ;;',
+      'esac',
+      'URL="https://github.com/astral-sh/uv/releases/download/${VERSION}/uv-${TRIPLE}.tar.gz"',
+      'curl -Lfo uv.tar.gz "$URL"',
+      'tar xzf uv.tar.gz',
+      'install -Dm755 "uv-${TRIPLE}/uv" {{prefix}}/bin/uv',
+      'install -Dm755 "uv-${TRIPLE}/uvx" {{prefix}}/bin/uvx',
     ],
-    env: {
-      'linux/aarch64': {
-        JEMALLOC_SYS_WITH_LG_PAGE: 16,
-      },
-    },
   },
   test: {
     script: [
-      "uv --version | grep {{version}}",
-      "if command -v flask; then\n  false\nfi\n\nuv venv\nsource .venv/bin/activate\nuv pip install flask\n\nmv $FIXTURE app.py\nset -m\nflask run --port $PORT &\nPID=$!\n\nfor i in $(seq 1 15); do\n  curl -sf 127.0.0.1:$PORT && break\n  sleep 1\ndone\n\ntest \"$(curl 127.0.0.1:$PORT)\" = \"<p>Hello, World!</p>\"\nkill $PID || true",
+      'uv --version | grep {{version}}',
+      'if command -v flask; then\n  false\nfi\n\nuv venv\nsource .venv/bin/activate\nuv pip install flask\n\nmv $FIXTURE app.py\nset -m\nflask run --port $PORT &\nPID=$!\n\nfor i in $(seq 1 15); do\n  curl -sf 127.0.0.1:$PORT && break\n  sleep 1\ndone\n\ntest "$(curl 127.0.0.1:$PORT)" = "<p>Hello, World!</p>"\nkill $PID || true',
     ],
   },
 }
