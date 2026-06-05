@@ -24,6 +24,11 @@ export const recipe: Recipe = {
       // resolves on PATH, so the parser-generation step never dies with
       // "m4 subprocess failed".
       'export M4="$(command -v m4)"',
+      // Modern Bison (3.x, provisioned via gnu.org/bison) rejects the deprecated
+      // `%error-verbose` directive in libnl's vendored grammars. Rewrite it to the
+      // current `%define parse.error verbose` form before configure/build.
+      'sed -i.bak \'s/^%error-verbose/%define parse.error verbose/\' lib/route/pktloc_syntax.y lib/route/cls/ematch_syntax.y',
+      'rm -f lib/route/pktloc_syntax.y.bak lib/route/cls/ematch_syntax.y.bak',
       './configure $ARGS',
       // libnl's Makefile has a parallel-build race: the flex/bison rules emit
       // ematch_syntax.h / pktloc_syntax.h, but ematch.c / pktloc.c that
