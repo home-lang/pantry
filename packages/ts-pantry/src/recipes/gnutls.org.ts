@@ -17,7 +17,10 @@ export const recipe: Recipe = {
     // gnutls' configure hard-requires Libnettle >= 3.10 (PKG_CHECK_MODULES
     // aborts with "Libnettle 3.10 was not found" otherwise). The plain `^3`
     // constraint let the resolver pick an older 3.8/3.9 nettle; pin >=3.10.
-    'gnu.org/nettle': '>=3.10',
+    // Cap below 4: nettle 4.0 changed the hash API (e.g. nettle_md5_digest lost
+    // an argument), so gnutls 3.8.x fails to compile lib/x509 against it with
+    // "too many arguments to function 'nettle_md5_digest'".
+    'gnu.org/nettle': '>=3.10<4',
     'gnu.org/gettext': '*',
     'gnu.org/gmp': '*',
     'unbound.net': '^1',
