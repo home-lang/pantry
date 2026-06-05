@@ -3,7 +3,7 @@
  *
  * @domain `vamp-plugins.org`
  * @programs `vamp-simple-host`, `vamp-rdf-template-generator`
- * @version `2.10.0` (2 versions available)
+ * @version `2.10.0` (1 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install vamp-plugins.org`
@@ -80,7 +80,6 @@ export const vamppluginsorgPackage = {
   */
   versions: [
     '2.10.0',
-    '2.9.0',
   ] as const,
   aliases: [] as const,
 }
