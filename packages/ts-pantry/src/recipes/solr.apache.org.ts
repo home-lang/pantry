@@ -14,7 +14,11 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-tags',
     repo: 'apache/solr',
-    tagPattern: /^releases\/solr\/(.+)$/,
+    // Only match standalone-Solr releases (9.x and 10+). Solr <9 lived under the
+    // Lucene umbrella and is published at a different archive path
+    // (archive.apache.org/dist/lucene/solr/...), so the download URL below 404s
+    // for those ancient tags (e.g. 1.4.0).
+    tagPattern: /^releases\/solr\/((?:9|[1-9]\d+)\.\d+\.\d+)$/,
   },
   distributable: null,
 
