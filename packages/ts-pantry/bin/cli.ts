@@ -1272,6 +1272,40 @@ cli
     }
   })
 
+// Release a Zig package: changelog → bump → commit → tag → push → publish
+cli
+  .command('release [type]', 'Release a Zig package (changelog, bump, commit, tag, push, publish)')
+  .option('-y, --yes', 'Non-interactive mode (skip confirmation prompts)')
+  .option('--dry-run', 'Preview the release without changing anything')
+  .option('--no-changelog', 'Skip changelog generation')
+  .option('--no-push', 'Skip pushing the commit and tag')
+  .option('--no-publish', 'Skip publishing to the pantry registry')
+  .action(async (type: string | undefined, options: {
+    yes?: boolean
+    dryRun?: boolean
+    changelog?: boolean
+    push?: boolean
+    publish?: boolean
+  }) => {
+    const releaseType = (type ?? 'patch').toLowerCase()
+    if (!['patch', 'minor', 'major'].includes(releaseType)) {
+      console.error(`error: invalid release type "${releaseType}" (expected: patch | minor | major)`)
+      process.exit(1)
+    }
+
+    const { runRelease } = await import('../src/release')
+    const result = await runRelease({
+      type: releaseType as 'patch' | 'minor' | 'major',
+      yes: options.yes,
+      dryRun: options.dryRun,
+      // clapp maps `--no-changelog` → changelog:false, etc.
+      noChangelog: options.changelog === false,
+      noPush: options.push === false,
+      noPublish: options.publish === false,
+    })
+    process.exit(result.exitCode)
+  })
+
 // Desktop app management commands
 cli
   .command('apps', 'List installed desktop applications with version info')
