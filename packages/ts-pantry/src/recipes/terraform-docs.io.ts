@@ -12,15 +12,23 @@ export const recipe: Recipe = {
     repo: 'terraform-docs/terraform-docs',
     tagPattern: /^v(.+)$/,
   },
-  distributable: {
-    url: 'https://github.com/terraform-docs/terraform-docs/archive/refs/tags/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
+  // Prebuilt download: terraform-docs ships official per-platform release
+  // tarballs (bare `terraform-docs` binary at the archive root).
+  distributable: null,
 
   build: {
     script: [
-      'go mod download',
-      'go build -v -ldflags="$LDFLAGS" -o {{prefix}}/bin/terraform-docs',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="terraform-docs-v${VERSION}-darwin-arm64" ;;',
+      '  darwin+x86-64)  ASSET="terraform-docs-v${VERSION}-darwin-amd64" ;;',
+      '  linux+aarch64)  ASSET="terraform-docs-v${VERSION}-linux-arm64"  ;;',
+      '  linux+x86-64)   ASSET="terraform-docs-v${VERSION}-linux-amd64"  ;;',
+      'esac',
+      '',
+      'curl -Lfo terraform-docs.tar.gz "https://github.com/terraform-docs/terraform-docs/releases/download/v${VERSION}/${ASSET}.tar.gz"',
+      'tar xf terraform-docs.tar.gz',
+      'install -Dm755 terraform-docs {{prefix}}/bin/terraform-docs',
     ],
   },
 }
