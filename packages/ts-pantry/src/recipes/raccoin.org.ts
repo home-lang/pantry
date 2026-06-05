@@ -10,7 +10,10 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-releases',
     repo: 'bjorn/raccoin',
-    tagPattern: /^v(.+)$/,
+    // Exclude v0.1.0: it pins an old Slint UI toolkit that no longer compiles
+    // on current Rust (the generated appwindow.rs fails to build). Only
+    // v0.2.0+ builds, so match 0.2.0 and up.
+    tagPattern: /^v(0\.(?:[2-9]|\d\d)\..+|[1-9]\d*\..+)$/,
   },
   distributable: {
     url: 'https://github.com/bjorn/raccoin/archive/refs/tags/v{{version}}.tar.gz',
