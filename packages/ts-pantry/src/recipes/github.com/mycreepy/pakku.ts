@@ -20,7 +20,7 @@ export const recipe: Recipe = {
         run: "if test \{{hw.arch}}\ = \"aarch64\"; then\n  export PLATFORM=${PLATFORM}_v8.0\nfi\n",
         if: ">=0.4.2",
       },
-      "goreleaser build --clean --single-target --skip=validate",
+      "goreleaser build --clean --single-target --skip=validate --snapshot",
       "mkdir -p \{{ prefix }}\/bin",
       "mv dist/pakku_$PLATFORM/pakku \{{ prefix }}\/bin",
     ],
