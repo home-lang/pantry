@@ -222,6 +222,19 @@ function configureBox(ip: string, boxIndex: number, boxCount: number): void {
   // ensure system-fallback dev libs are present (idempotent; best-effort)
   try { ssh(ip, `DEBIAN_FRONTEND=noninteractive apt-get install -y -q -o DPkg::Lock::Timeout=120 ${SYSTEM_DEV_LIBS} >/dev/null 2>&1 || true`) }
   catch { /* non-fatal */ }
+  // Ensure the build-status reporting token is present in the box env. The
+  // snapshot predates the token, so without this every report-build POST 401s and
+  // the box builds INVISIBLY (no `hetzner` on the dashboard). Inject it from the
+  // local ~/.pantry-hetzner.env (idempotent) so every provision/rebalance is seamless.
+  try {
+    const localEnv = join(homedir(), '.pantry-hetzner.env')
+    const tok = existsSync(localEnv)
+      ? (readFileSync(localEnv, 'utf8').match(/^PANTRY_REGISTRY_TOKEN=(.+)$/m)?.[1] || '').trim()
+      : ''
+    if (tok)
+      ssh(ip, `grep -q '^PANTRY_REGISTRY_TOKEN=' /root/.pantry-hetzner.env 2>/dev/null || printf 'PANTRY_REGISTRY_TOKEN=%s\\n' '${tok}' >> /root/.pantry-hetzner.env`)
+  }
+  catch { /* non-fatal: reporting just stays off if the local token is missing */ }
   sshWrite(ip, '/root/fleet-daemon.sh', daemonScript(boxIndex, boxCount))
   sshWrite(ip, '/root/box-disk-guard.sh', GUARD_SCRIPT)
   sshWrite(ip, '/etc/systemd/system/pantry-fleet.service', FLEET_UNIT)
