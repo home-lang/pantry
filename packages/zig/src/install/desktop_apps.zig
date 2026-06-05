@@ -269,9 +269,10 @@ fn printOk(name: []const u8, label: []const u8) void {
 
 fn printFail(name: []const u8, label: []const u8, reason: []const u8) void {
     style.printForced("{s}{s}{s} {s}{s}{s} {s}({s}: {s}){s}\n", .{
-        style.red, style.minus, style.reset,
-        style.bold, name,       style.reset,
-        style.dim,  label,      reason, style.reset,
+        style.red,   style.minus, style.reset,
+        style.bold,  name,        style.reset,
+        style.dim,   label,       reason,
+        style.reset,
     });
 }
 
