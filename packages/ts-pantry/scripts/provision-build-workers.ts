@@ -273,7 +273,18 @@ async function elasticServers(c: HetznerClient): Promise<Array<{ id: number, ip:
     .map(s => ({ id: s.id, ip: s.public_net?.ipv4?.ip || '', name: s.name }))
 }
 
-function primaryIp(): string { return process.env.PRIMARY_BUILD_IP || '178.156.228.227' }
+// The always-on primary box may have been torn down (cost saving). Only include
+// it in the fleet if a server with PRIMARY_ID actually still exists, otherwise
+// the elastic boxes ARE the whole fleet (and rebalance must not SSH a dead IP).
+async function primaryBox(c: HetznerClient): Promise<{ ip: string, name: string } | null> {
+  try {
+    const servers = await c.listServers()
+    const p = servers.find(s => s.id === PRIMARY_ID)
+    const ip = p?.public_net?.ipv4?.ip
+    return ip ? { ip, name: `primary (${PRIMARY_ID})` } : null
+  }
+  catch { return null }
+}
 
 // ── commands ─────────────────────────────────────────────────────────────────────
 async function up(count: number): Promise<void> {
@@ -307,8 +318,9 @@ async function up(count: number): Promise<void> {
 async function rebalance(): Promise<void> {
   const c = client()
   const elastic = (await elasticServers(c)).filter(s => s.ip)
-  // fleet = primary (index 0) + elastic boxes
-  const fleet = [{ ip: primaryIp(), name: 'primary' }, ...elastic.map(e => ({ ip: e.ip, name: e.name }))]
+  // fleet = primary (index 0, only if it still exists) + elastic boxes
+  const primary = await primaryBox(c)
+  const fleet = [...(primary ? [primary] : []), ...elastic.map(e => ({ ip: e.ip, name: e.name }))]
   log(`rebalancing fleet of ${fleet.length} box(es) (K=${K_LOCAL} → ${fleet.length * K_LOCAL} partitions)`)
   for (let i = 0; i < fleet.length; i++) {
     try { configureBox(fleet[i].ip, i, fleet.length) }
@@ -331,7 +343,8 @@ async function down(): Promise<void> {
 async function list(): Promise<void> {
   const c = client()
   const elastic = await elasticServers(c)
-  const fleet = [{ ip: primaryIp(), name: 'primary (136035759)' }, ...elastic.map(e => ({ ip: e.ip, name: `${e.name} (${e.id})` }))]
+  const primary = await primaryBox(c)
+  const fleet = [...(primary ? [primary] : []), ...elastic.map(e => ({ ip: e.ip, name: `${e.name} (${e.id})` }))]
   log(`fleet: ${fleet.length} box(es)`)
   for (const b of fleet) {
     let act = '?'
