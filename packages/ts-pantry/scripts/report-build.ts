@@ -42,12 +42,17 @@ const { HOST_KIND, HOST_URL, HOST_LABEL } = (() => {
   return { HOST_KIND: 'local', HOST_URL: '', HOST_LABEL: HOST || 'local' }
 })()
 
-export type BuildState = 'building' | 'built' | 'failed'
+// 'unavailable' = a build attempted a version that doesn't exist upstream — no
+// source tarball AND no prebuilt binary (every attempt failed purely with a
+// source-download / 404 signal). It is NOT a build failure; it's reported so the
+// dashboard can surface "phantom" requested-but-missing versions separately from
+// real compile failures.
+export type BuildState = 'building' | 'built' | 'failed' | 'unavailable'
 
 export interface BuildReportDetail {
   /** Progress step for a `building` event (e.g. "downloading", "compiling"). */
   message?: string
-  /** Failure detail for a `failed` event (error message / output tail). */
+  /** Failure / 404 detail for a `failed` or `unavailable` event (the URL/error tail). */
   error?: string
 }
 

@@ -1303,11 +1303,15 @@ catch (error: any) {
     catch (e) { console.warn(`Warning: cleanup failed: ${(e as Error).message}`) }
 
     // Phantom version: every attempted candidate 404'd / had no upstream source.
-    // This is NOT a build failure — skip it quietly (no 'failed' dashboard event,
-    // no coverage penalty). Only the requested versions were tried, so if they all
-    // came back "source unavailable" the version simply does not exist upstream.
+    // This is NOT a build failure — it must not produce a 'failed' dashboard event
+    // nor a coverage penalty. Only the requested versions were tried, so if they
+    // all came back "source unavailable" the version simply does not exist upstream.
+    // Report it as 'unavailable' so the dashboard can surface these requested-but-
+    // missing versions on a dedicated list (the server stores them separately and
+    // never counts them as failed/built).
     if (attemptedAny && allUnavailable) {
-      console.log(`   ⏭️  ${domain}@${version} source unavailable upstream (no tarball/tag) — skipping as phantom version (not a failure)`)
+      console.log(`   ⏭️  ${domain}@${version} source unavailable upstream (no tarball/tag) — reporting as phantom version (not a failure)`)
+      reportBuild(domain, usedVersion || version, platform, 'unavailable', { error: lastError.message })
       return { status: 'unavailable', error: lastError.message }
     }
 
