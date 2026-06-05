@@ -4,6 +4,9 @@ export const recipe: Recipe = {
   domain: 'hadrons.org/libmd',
   name: 'libmd',
   programs: [],
+  // patch-symbol-alias.diff disables __attribute__((alias)) on __APPLE__ so
+  // libmd <1.1 compiles on macOS; carried from pkgx as a sibling props file.
+  propsDir: '../props/hadrons.org/libmd',
   buildDependencies: {
     'gnu.org/patch': '*',
   },
