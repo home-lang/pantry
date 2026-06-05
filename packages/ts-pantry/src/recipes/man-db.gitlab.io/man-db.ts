@@ -44,7 +44,12 @@ export const recipe: Recipe = {
         'working-directory': "{{prefix}}/bin",
       },
       {
-        run: "if test -d man-db; then\n  mv man-db/* .\n  rmdir man-db\n  ln -s . man-db\nfi\n",
+        // Flatten {{prefix}}/lib/man-db/* into {{prefix}}/lib. The previous
+        // `ln -s . man-db` created a self-referential symlink (lib/man-db -> lib),
+        // an infinite loop that made the packager's scandir fail with ELOOP
+        // ("too many symbolic links encountered"). The files are already moved
+        // up, so no compatibility symlink is needed.
+        run: "if test -d man-db; then\n  mv man-db/* .\n  rmdir man-db\nfi\n",
         'working-directory': "{{prefix}}/lib",
       },
     ],
