@@ -2,13 +2,12 @@
  * **LLaMA.cpp** - LLM inference in C/C++
  *
  * @domain `github.com/ggerganov/llama.cpp`
- * @programs `llama-cli`, `llama.cpp`, `convert.py`
- * @version `8487.0.0` (4692 versions available)
+ * @programs `llama-cli`, `llama.cpp`
+ * @version `9544` (4742 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/ggerganov/llama.cpp`
- * @dependencies `pkgx.sh>=1`, `curl.se^8 # libcurl, since b5064`, `linux:gnu.org/gcc/libstdcxx^14 # clang doesn`, ... (+1 more) (includes OS-specific dependencies with `os:package` format)
- * @buildDependencies `gnu.org/coreutils`, `python.org@~3.11`, `cmake.org@3` - required only when building from source
+ * @dependencies `linux:gnu.org/gcc/libstdcxx^14`, `linux:gnu.org/gcc^14` (includes OS-specific dependencies with `os:package` format)
  *
  * @example
  * ```typescript
@@ -17,8 +16,8 @@
  * const pkg = pantry.githubcomggerganovllamacpp
  * console.log(pkg.name)        // "LLaMA.cpp"
  * console.log(pkg.description) // "LLM inference in C/C++"
- * console.log(pkg.programs)    // ["llama-cli", "llama.cpp", ...]
- * console.log(pkg.versions[0]) // "8487.0.0" (latest)
+ * console.log(pkg.programs)    // ["llama-cli", "llama.cpp"]
+ * console.log(pkg.versions[0]) // "9544" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/ggerganov/llama-cpp.md
@@ -54,7 +53,6 @@ export const llamacppPackage = {
   programs: [
     'llama-cli',
     'llama.cpp',
-    'convert.py',
   ] as const,
   companions: [] as const,
   /**
@@ -63,25 +61,69 @@ export const llamacppPackage = {
   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
   */
   dependencies: [
-    'pkgx.sh>=1',
-    'curl.se^8 # libcurl, since b5064',
-    'linux:gnu.org/gcc/libstdcxx^14 # clang doesn',
-    'linux:gnu.org/gcc^14 # needs libgomp.so.1',
+    'linux:gnu.org/gcc/libstdcxx^14',
+    'linux:gnu.org/gcc^14',
   ] as const,
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
   */
-  buildDependencies: [
-    'gnu.org/coreutils',
-    'python.org@~3.11',
-    'cmake.org@3',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '9544',
+    '9543',
+    '9542',
+    '9541',
+    '9538',
+    '9537',
+    '9536',
+    '9535',
+    '9534',
+    '9533',
+    '9531',
+    '9530',
+    '9529',
+    '9528',
+    '9524',
+    '9523',
+    '9522',
+    '9521',
+    '9519',
+    '9518',
+    '9515',
+    '9512',
+    '9510',
+    '9509',
+    '9505',
+    '9504',
+    '9503',
+    '9500',
+    '9499',
+    '9498',
+    '9496',
+    '9495',
+    '9494',
+    '9493',
+    '9491',
+    '9490',
+    '9489',
+    '9488',
+    '9487',
+    '9486',
+    '9485',
+    '9484',
+    '9483',
+    '9482',
+    '9481',
+    '9480',
+    '9479',
+    '9478',
+    '9474',
+    '9473',
     '8487.0.0',
     '8485.0.0',
     '8480.0.0',

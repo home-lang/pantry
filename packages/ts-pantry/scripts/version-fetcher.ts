@@ -151,8 +151,11 @@ function domainToKey(domain: string): string {
 
 function updatePackageVersions(domain: string, newVersions: string[]): boolean {
   const key = domainToKey(domain)
-  const filePath = join(packagesDir, `${key}.ts`)
-  if (!existsSync(filePath)) return false
+  const filePath = [
+    join(packagesDir, `${key}.ts`),
+    join(packagesDir, `${domain}.ts`),
+  ].find(path => existsSync(path))
+  if (!filePath) return false
 
   const content = readFileSync(filePath, 'utf-8')
 
