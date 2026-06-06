@@ -41,6 +41,12 @@ const K_LOCAL = Number(process.env.WORKER_LOCAL_PARALLELISM || 8) // workers per
 // work is nearly exhausted on linux-x86-64, leaving the fleet idle-skipping; this
 // gives every box a large real backlog and raises coverage. 0/1 = latest only.
 const MAX_VERSIONS = Number(process.env.MAX_VERSIONS || 5)
+// Breadth-first mode: build only each package's LATEST version so the fleet drains
+// the UNBUILT backlog (every package built on every platform) as fast as possible,
+// rather than spending capacity on older versions. Set MULTI_VERSION=1 to restore
+// the multi-version sweep. Default is latest-only (the teardown goal: latest built
+// everywhere, then delete the builders).
+const VERSION_ARGS = process.env.MULTI_VERSION === '1' ? `--multi-version --max-versions ${MAX_VERSIONS}` : ''
 const PLATFORM = process.env.WORKER_PLATFORM || 'linux-x86-64'
 // Watchdog caps (minutes). A worker's own BATCH_TIME_BUDGET_MS is 100 min and its
 // per-package timeout is 60 min, so a healthy worker exits well under these. These
@@ -117,8 +123,7 @@ while true; do
     root="/root/pb-\$i"; rm -rf "\$root" 2>/dev/null; mkdir -p "\$root"
     BUILDKIT_ROOT="\$root" nohup bun scripts/build-all-packages.ts \\
       -b "\$S3_BUCKET" -r "\$S3_REGION" --platform "\$PLATFORM" \\
-      --stripe "\$stripe/\$STRIPES" \\
-      --multi-version --max-versions ${MAX_VERSIONS} \\
+      --stripe "\$stripe/\$STRIPES" ${VERSION_ARGS} \\
       > "/root/sweep-\$PLATFORM-w\$i.log" 2>&1 &
   done
   # Bounded wait: never block forever on a wedged worker. We observed boxes sit
@@ -230,8 +235,8 @@ while true; do
   for i in $(seq 0 $((XDL_WORKERS-1))); do
     mkdir -p "/root/pb-xdl-$i"
     BUILDKIT_ROOT="/root/pb-xdl-$i" /root/.bun/bin/bun scripts/build-all-packages.ts \\
-      --platform "$PLAT" --download-only --stripe "$i/$XDL_WORKERS" \\
-      --multi-version --max-versions ${MAX_VERSIONS} --bucket pantry-registry --region fsn1 \\
+      --platform "$PLAT" --download-only --stripe "$i/$XDL_WORKERS" ${VERSION_ARGS} \\
+      --bucket pantry-registry --region fsn1 \\
       >> "/root/xdl-$PLAT-$i.log" 2>&1 &
   done
   wait
