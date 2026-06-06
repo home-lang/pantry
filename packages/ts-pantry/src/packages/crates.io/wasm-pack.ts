@@ -9,7 +9,7 @@
  * @install `pantry install crates.io/wasm-pack`
  * @homepage https://rustwasm.github.io/wasm-pack/
  * @dependencies `rust-lang.org`, `rust-lang.org/cargo`
- * @buildDependencies `cmake.org@3` - required only when building from source
+ * @buildDependencies `curl.se` - required only when building from source
  *
  * @example
  * ```typescript
@@ -69,7 +69,7 @@ export const cratesiowasmpackPackage = {
   * These are only required when building the package from source.
   */
   buildDependencies: [
-    'cmake.org@3',
+    'curl.se',
   ] as const,
   /**
   * Available versions from newest to oldest.
