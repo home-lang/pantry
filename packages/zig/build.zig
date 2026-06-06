@@ -154,8 +154,10 @@ pub fn build(b: *std.Build) void {
     run_step.dependOn(&run_cmd.step);
     run_cmd.step.dependOn(b.getInstallStep());
 
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
+    if (@hasField(std.Build, "args")) {
+        if (b.args) |args| {
+            run_cmd.addArgs(args);
+        }
     }
 
     // Tests for library module
