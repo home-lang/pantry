@@ -15,29 +15,29 @@ export const recipe: Recipe = {
     },
   },
   buildDependencies: {
-    'rust-lang.org': ">=1.60",
-    'rust-lang.org/cargo': "*",
+    'curl.se': '*',
   },
-  distributable: {
-    url: "https://github.com/aome510/spotify-player/archive/refs/tags/{{version.tag}}.tar.gz",
-    stripComponents: 1,
-  },
+  distributable: null,
   build: {
     script: [
-      "sed -i '1,10s/^version = \".*\"/version = \{{version}}\/' spotify_player/Cargo.toml",
-      "cargo install $ARGS",
-      {
-        run: "SIXEL=$(otool -l {{prefix}}/bin/spotify_player | grep 'libsixel.1.dylib' | sed 's/.*name \\(.*\\) (offset .*/\\1/')\ninstall_name_tool -change \"$SIXEL\" {{deps.github.com/libsixel/libsixel.prefix}}/lib/libsixel.1.dylib {{prefix}}/bin/spotify_player",
-        if: "darwin",
-      },
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) TARGET="aarch64-apple-darwin" ;;',
+      '  darwin+x86-64)  TARGET="x86_64-apple-darwin" ;;',
+      '  linux+aarch64)  TARGET="aarch64-unknown-linux-gnu" ;;',
+      '  linux+x86-64)   TARGET="x86_64-unknown-linux-gnu" ;;',
+      '  *) echo "unsupported platform {{hw.platform}}/{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      'curl -Lfo spotify_player.tar.gz "https://github.com/aome510/spotify-player/releases/download/v${VERSION}/spotify_player-${TARGET}.tar.gz"',
+      'tar xzf spotify_player.tar.gz',
+      'install -Dm755 spotify_player {{prefix}}/bin/spotify_player',
     ],
-    env: {
-      ARGS: [
-        "--locked",
-        "--path spotify_player",
-        "--root {{prefix}}",
-        "--features sixel,notify,fzf",
-      ],
-    },
+    skip: ['fix-machos'],
+  },
+  test: {
+    script: [
+      '{{prefix}}/bin/spotify_player --version > out',
+      'grep {{version}} out',
+    ],
   },
 }

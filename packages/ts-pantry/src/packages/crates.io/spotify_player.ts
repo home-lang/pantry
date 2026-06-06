@@ -8,6 +8,7 @@
  *
  * @install `pantry install crates.io/spotify_player`
  * @dependencies `openssl.org^1.1`, `github.com/libsixel/libsixel^1`, `linux:alsa-project.org/alsa-lib^1`, ... (+1 more) (includes OS-specific dependencies with `os:package` format)
+ * @buildDependencies `curl.se` - required only when building from source
  *
  * @example
  * ```typescript
@@ -65,7 +66,9 @@ export const cratesiospotify_playerPackage = {
     'linux:alsa-project.org/alsa-lib^1',
     'linux:freedesktop.org/dbus^1',
   ] as const,
-  buildDependencies: [] as const,
+  buildDependencies: [
+    'curl.se',
+  ] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
