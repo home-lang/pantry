@@ -760,7 +760,6 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'apache.org/httpd': ['<2.4.67'],
   // Rust crate build failures (old versions incompatible with current Rust)
   'amber-lang.com': ['<0.6.0'],
-  'amp.rs': ['<0.8.0'],
   'crates.io/git-trim': ['*'],
   'crates.io/eza': ['<0.20.0'],
   'cocogitto.io': ['<7.0.0'],
