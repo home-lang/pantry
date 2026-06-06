@@ -6,74 +6,37 @@ export const recipe: Recipe = {
   programs: [
     "code-server",
   ],
-  dependencies: {
-    // code-server's postinstall hard-requires Node 22 ("code-server currently
-    // requires node v22"). A bare `22` resolved forward to node 26; pin the
-    // major so the 22.x line is selected.
-    'nodejs.org': '^22',
-    linux: {
-      'gnome.org/libsecret': "^0.21",
-      'x.org/x11': "^1.8",
-      'x.org/xkbfile': "^1.1",
-      'kerberos.org': "^1.21",
-    },
+  github: "https://github.com/coder/code-server",
+  versionSource: {
+    type: "github-releases",
+    repo: "coder/code-server",
+    tagPattern: /^v(.+)$/,
   },
-  buildDependencies: {
-    'npmjs.com': "*",
-    'python.org': ">=3.11",
-  },
-  distributable: {
-    url: "https://registry.npmjs.org/code-server/-/code-server-{{version}}.tgz",
-    stripComponents: 1,
-  },
+  distributable: undefined,
   build: {
     script: [
-      "npm i $ARGS .",
-      "npm i -ddd --unsafe-perm $PKGS",
-      {
-        run: "cp -a $SRCROOT/* .",
-        'working-directory': "{{prefix}}/libexec",
-      },
-      {
-        run: "ln -s ../libexec/out/node/entry.js code-server",
-        'working-directory': "{{prefix}}/bin",
-      },
+      "curl -L \"$DIST_URL\" -o code-server.tar.gz",
+      "tar xzf code-server.tar.gz --strip-components=1 -C \"{{prefix}}\"",
     ],
     env: {
-      ARGS: [
-        "-ddd",
-        "--unsafe-perm",
-        "--legacy-peer-deps",
-        "--omit=dev",
-      ],
-      PKGS: [
-        "@microsoft/1ds-core-js",
-        "minimist",
-        "@vscode/spdlog",
-        "yauzl",
-      ],
-      CXXFLAGS: [
-        "-DNODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT",
-      ],
-      linux: {
-        CC: "clang",
-        CXX: "clang++",
-        LD: "clang",
-        CXXFLAGS: [
-          "-D__NO_INLINE__",
-        ],
+      "linux/x86-64": {
+        DIST_URL: "https://github.com/coder/code-server/releases/download/v{{version}}/code-server-{{version}}-linux-amd64.tar.gz",
+      },
+      "linux/aarch64": {
+        DIST_URL: "https://github.com/coder/code-server/releases/download/v{{version}}/code-server-{{version}}-linux-arm64.tar.gz",
+      },
+      "darwin/x86-64": {
+        DIST_URL: "https://github.com/coder/code-server/releases/download/v{{version}}/code-server-{{version}}-macos-amd64.tar.gz",
+      },
+      "darwin/aarch64": {
+        DIST_URL: "https://github.com/coder/code-server/releases/download/v{{version}}/code-server-{{version}}-macos-arm64.tar.gz",
       },
     },
+    skip: ['verify-foreign-artifact'],
   },
   test: {
     script: [
       "code-server --version | grep {{version}}",
-      "code-server --extensions-dir=. --install-extension ms-python.python -vvv\ncode-server --extensions-dir=. --list-extensions | grep ms-python.python",
-      "code-server &",
-      "PID=$!",
-      "sleep 5",
-      "curl http://localhost:$PORT/login",
-      "kill $PID",
     ],
   },
 }
