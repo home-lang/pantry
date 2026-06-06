@@ -502,8 +502,9 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'x.org/xrender': ['<0.9.12'],
   // Old watchexec Rust build fails on darwin; 2.3.3+ works
   'watchexec.github.io': ['<2.3.0'],
-  // Android cmdline-tools: corrupted S3 data and build failures on all versions
-  'android.com/cmdline-tools': ['*'],
+  // Android cmdline-tools: older versions had corrupted S3 data/build failures;
+  // latest official ZIP URL is fixed in the native recipe.
+  'android.com/cmdline-tools': ['<14742923.0.0'],
   // Old spdlog cmake failures; 1.15.3+ works on both
   'github.com/gabime/spdlog': ['<1.15.0'],
   // All versions fail (not installable via current recipe)
