@@ -6,28 +6,29 @@ export const recipe: Recipe = {
   programs: [
     'sccache',
   ],
-  dependencies: {
-    'openssl.org': '^1.1',
-    'curl.se/ca-certs': '*',
-  },
   buildDependencies: {
-    'rust-lang.org': '>=1.70',
-    'rust-lang.org/cargo': '*',
-    'openssl.org': '^1.1',
-    'curl.se/ca-certs': '*',
+    'curl.se': '*',
   },
-  distributable: {
-    url: 'https://github.com/mozilla/sccache/archive/refs/tags/v{{ version }}.tar.gz',
-    stripComponents: 1,
-  },
+  distributable: null,
   build: {
+    skip: ['fix-machos', 'fix-patchelf'],
     script: [
-      'cargo install --locked --path . --root {{prefix}}',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) TARGET="aarch64-apple-darwin" ;;',
+      '  darwin+x86-64)  TARGET="x86_64-apple-darwin" ;;',
+      '  linux+aarch64)  TARGET="aarch64-unknown-linux-musl" ;;',
+      '  linux+x86-64)   TARGET="x86_64-unknown-linux-musl" ;;',
+      '  *) echo "unsupported platform {{hw.platform}}/{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      'curl -Lfo sccache.tar.gz "https://github.com/mozilla/sccache/releases/download/v${VERSION}/sccache-v${VERSION}-${TARGET}.tar.gz"',
+      'tar xzf sccache.tar.gz',
+      'install -Dm755 "sccache-v${VERSION}-${TARGET}/sccache" {{prefix}}/bin/sccache',
     ],
   },
   test: {
     script: [
-      'test "$(sccache --version)" = "sccache {{version}}"',
+      'test "$({{prefix}}/bin/sccache --version)" = "sccache {{version}}"',
     ],
   },
 }

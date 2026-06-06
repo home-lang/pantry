@@ -7,8 +7,8 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install crates.io/sccache`
- * @dependencies `openssl.org^1.1`, `curl.se/ca-certs`
- * @buildDependencies `openssl.org@^1.1` - required only when building from source
+ * @dependencies none
+ * @buildDependencies `curl.se` - required only when building from source
  *
  * @example
  * ```typescript
@@ -60,15 +60,13 @@ export const cratesiosccachePackage = {
   * These are required when running the package.
   */
   dependencies: [
-    'openssl.org^1.1',
-    'curl.se/ca-certs',
   ] as const,
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
   */
   buildDependencies: [
-    'openssl.org@^1.1',
+    'curl.se',
   ] as const,
   /**
   * Available versions from newest to oldest.
