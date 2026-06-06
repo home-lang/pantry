@@ -132,9 +132,12 @@ jobs:
           fi
 
           ARGS="-b $S3_BUCKET -r $AWS_REGION --platform ${{ matrix.platform.name }}"
-          # Build multiple important versions per package, not just latest — much
-          # more real work + coverage now that single-version sets are exhausted.
-          ARGS="$ARGS --multi-version --max-versions 5"
+          # Latest-only by default to drain the UNBUILT backlog (breadth-first,
+          # pre-teardown). Set the 'multi_version' dispatch input to 'true' to
+          # build multiple versions per package again.
+          if [ "${{ github.event.inputs.multi_version }}" = "true" ]; then
+            ARGS="$ARGS --multi-version --max-versions 5"
+          fi
           PACKAGES="${{ github.event.inputs.packages }}"
           PACKAGES=$(echo "$PACKAGES" | tr -cd 'a-zA-Z0-9._\-/, ')
           if [ -n "$PACKAGES" ]; then
@@ -325,9 +328,12 @@ jobs:
 
           FORCE="${{ github.event.inputs.force || 'true' }}"
           ARGS="-b $S3_BUCKET -r $AWS_REGION --platform ${{ matrix.platform.name }}"
-          # Build multiple important versions per package, not just latest — much
-          # more real work + coverage now that single-version sets are exhausted.
-          ARGS="$ARGS --multi-version --max-versions 5"
+          # Latest-only by default to drain the UNBUILT backlog (breadth-first,
+          # pre-teardown). Set the 'multi_version' dispatch input to 'true' to
+          # build multiple versions per package again.
+          if [ "${{ github.event.inputs.multi_version }}" = "true" ]; then
+            ARGS="$ARGS --multi-version --max-versions 5"
+          fi
 
           if [ "$FORCE" = "true" ]; then
             ARGS="$ARGS --force"
