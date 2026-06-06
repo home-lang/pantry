@@ -59,7 +59,10 @@ export const gnuorgsedPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.10',
+    '4.9',
     '4.9.0',
+    '4.8',
   ] as const,
   aliases: [] as const,
 }

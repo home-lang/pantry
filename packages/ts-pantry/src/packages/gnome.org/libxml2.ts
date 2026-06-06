@@ -78,6 +78,7 @@ export const gnomeorglibxml2Package = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.15.3',
     '2.15.2',
     '2.15.1',
     '2.15.0',
@@ -98,6 +99,7 @@ export const gnomeorglibxml2Package = {
     '2.13.2',
     '2.13.1',
     '2.13.0',
+    '2.12.10',
     '2.12.9',
     '2.12.8',
     '2.12.7',
@@ -112,6 +114,7 @@ export const gnomeorglibxml2Package = {
     '2.11.8',
     '2.11.7',
     '2.11.6',
+    '2.11.5',
     '2.11.4',
     '2.11.3',
     '2.11.2',
@@ -119,6 +122,12 @@ export const gnomeorglibxml2Package = {
     '2.11.0',
     '2.10.4',
     '2.10.3',
+    '2.10.2',
+    '2.10.1',
+    '2.10.0',
+    '2.9.14',
+    '2.9.13',
+    '2.9.12',
   ] as const,
   aliases: [] as const,
 }

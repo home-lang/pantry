@@ -70,6 +70,9 @@ export const openbaoorgopenbaoPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.5.4',
+    '2.5.3',
+    '2.5.2',
     '2.5.1',
     '2.5.0',
     '2.4.4',
@@ -81,6 +84,7 @@ export const openbaoorgopenbaoPackage = {
     '2.2.2',
     '2.2.1',
     '2.2.0',
+    '2.2.0-beta20250213',
     '2.1.1',
     '2.1.0',
     '2.0.3',

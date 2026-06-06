@@ -77,6 +77,8 @@ export const mongodbcomshellPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.8.3',
+    '2.8.2',
     '2.8.1',
     '2.7.0',
     '2.6.0',
@@ -121,6 +123,9 @@ export const mongodbcomshellPackage = {
     '2.1.0',
     '2.0.2',
     '2.0.1',
+    '2.0.0',
+    '1.10.6',
+    '1.10.5',
   ] as const,
   aliases: [] as const,
 }
