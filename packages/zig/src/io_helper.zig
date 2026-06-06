@@ -666,10 +666,7 @@ pub fn openDirAbsoluteForIteration(path: []const u8) !FsDir {
 fn hasField(comptime T: type, comptime name: []const u8) bool {
     const info = @typeInfo(T);
     if (info != .@"struct") return false;
-    for (info.@"struct".fields) |field| {
-        if (std.mem.eql(u8, field.name, name)) return true;
-    }
-    return false;
+    return @hasField(T, name);
 }
 
 /// Open a file with absolute path
