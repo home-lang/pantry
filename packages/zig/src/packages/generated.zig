@@ -1,6 +1,6 @@
 //! Package definitions generated from ts-pantry
 //! DO NOT EDIT MANUALLY - This file is auto-generated
-//! Generated on: 2026-06-06T17:03:09.604Z
+//! Generated on: 2026-06-06T18:41:02.768Z
 //! Total packages: 1727
 
 const std = @import("std");
@@ -705,8 +705,8 @@ pub const packages = [_]PackageInfo{ .{
     .description = "Decentralized, peer to peer payment network",
     .homepage_url = "https://bitcoincore.org/",
     .programs = &[_][]const u8{ "bitcoin-cli", "bitcoin-tx", "bitcoin-util", "bitcoin-wallet", "bitcoind" },
-    .dependencies = &[_][]const u8{ "oracle.com/berkeley-db^18", "boost.org^1", "libevent.org^2", "zeromq.org^4", "sqlite.org^3", "capnproto.org^1 # since 30.0", "linux:gnu.org/gcc/libstdcxx" },
-    .build_dependencies = &[_][]const u8{ "gnu.org/autoconf@^2", "gnu.org/automake@^1", "gnu.org/libtool@^2", "cmake.org@^3.22", "linux:gnu.org/gcc", "linux:nixos.org/patchelf" },
+    .dependencies = &[_][]const u8{},
+    .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "30.2.0", "30.1.0", "30.0.0", "29.3.0", "29.2.0", "29.1.0", "29.0.0", "28.3.0", "28.2.0", "28.1.0", "28.0.0", "27.2.0", "27.1.0", "27.0.0", "26.2.0", "26.1.0", "26.0.0", "25.2.0", "25.1.0", "25.0.0", "24.2.0", "24.1.0", "24.0.1", "23.2.0" },
 }, .{
@@ -3246,9 +3246,9 @@ pub const packages = [_]PackageInfo{ .{
     .homepage_url = "https://docs.digitalocean.com/reference/doctl/",
     .programs = &[_][]const u8{"doctl"},
     .dependencies = &[_][]const u8{},
-    .build_dependencies = &[_][]const u8{"go.dev@^1.21"},
+    .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
-    .versions = &[_][]const u8{ "2.59.3", "2.59.2", "1.152.0", "1.151.0", "1.150.0", "1.149.0", "1.148.0", "1.147.0", "1.146.0", "1.145.0", "1.144.0", "1.143.0", "1.142.0", "1.141.0", "1.140.0", "1.139.0", "1.138.0", "1.137.0", "1.136.0", "1.135.0", "1.134.0", "1.133.0", "1.132.0", "1.131.0", "1.130.0", "1.129.0", "1.128.0", "1.127.0", "1.126.0", "1.125.1", "1.125.0", "1.124.0", "1.123.0", "1.122.0", "1.121.0", "1.120.2", "1.120.1", "1.120.0", "1.119.1", "1.119.0", "1.118.0", "1.117.0", "1.116.1", "1.116.0", "1.115.0", "1.114.0", "1.113.0", "1.112.0", "1.111.0", "1.110.0", "1.109.1", "1.109.0", "1.108.0", "1.107.0", "1.106.0", "1.105.0", "1.104.0" },
+    .versions = &[_][]const u8{ "1.160.1", "1.159.0", "1.158.0", "1.157.0", "1.155.0", "1.154.0", "1.153.0", "1.152.0", "1.151.0", "1.150.0", "1.149.0", "1.148.0", "1.147.0", "1.146.0", "1.145.0", "1.144.0", "1.143.0", "1.142.0", "1.141.0", "1.140.0", "1.139.0", "1.138.0", "1.137.0", "1.136.0", "1.135.0", "1.134.0", "1.133.0", "1.132.0", "1.131.0", "1.130.0", "1.129.0", "1.128.0", "1.127.0", "1.126.0", "1.125.1", "1.125.0", "1.124.0", "1.123.0", "1.122.0", "1.121.0", "1.120.2", "1.120.1", "1.120.0", "1.119.1", "1.119.0", "1.118.0", "1.117.0", "1.116.1", "1.116.0", "1.115.0", "1.114.0", "1.113.0", "1.112.0", "1.111.0", "1.110.0", "1.109.1", "1.109.0", "1.108.0", "1.107.0", "1.106.0", "1.105.0", "1.104.0" },
 }, .{
     .name = "direnv",
     .domain = "direnv.net",
@@ -3833,10 +3833,10 @@ pub const packages = [_]PackageInfo{ .{
     .name = "spin",
     .domain = "fermyon.com/spin",
     .description = "Spin is the open source developer tool for building and running serverless applications powered by WebAssembly.",
-    .homepage_url = "https://spinroot.com/spin/whatispin.html",
+    .homepage_url = "https://www.fermyon.com/spin",
     .programs = &[_][]const u8{"spin"},
     .dependencies = &[_][]const u8{},
-    .build_dependencies = &[_][]const u8{"linux:llvm.org"},
+    .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "3.6.2", "3.6.1", "3.6.0", "3.5.1", "3.4.1", "3.4.0", "3.3.1", "3.3.0", "3.2.0", "3.1.2", "3.1.1", "3.1.0", "3.0.0", "2.7.0" },
 }, .{
@@ -6016,7 +6016,7 @@ pub const packages = [_]PackageInfo{ .{
     .homepage_url = null,
     .programs = &[_][]const u8{"hadolint"},
     .dependencies = &[_][]const u8{},
-    .build_dependencies = &[_][]const u8{ "haskell.org@~9.10", "haskell.org/cabal@^3", "linux:gnu.org/binutils@~2.44" },
+    .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "2.14.0", "2.12.0" },
 }, .{
