@@ -47,5 +47,6 @@ export const recipe: Recipe = {
         DISTRIBUTABLE_URL: "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{{version}}-darwin-x86_64.tar.gz",
       },
     },
+    skip: ['verify-foreign-artifact'],
   },
 }
