@@ -3,13 +3,12 @@
  *
  * @domain `github.com/mamba-org/micro`
  * @programs `micromamba`
- * @version `2.5.0` (30 versions available)
+ * @version `2.8.0` (34 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/mamba-org/micro`
  * @homepage https://mamba.readthedocs.io
  * @dependencies `curl.se/ca-certs`
- * @buildDependencies `curl.se`, `sourceware.org/bzip2` - required only when building from source
  *
  * @example
  * ```typescript
@@ -19,7 +18,7 @@
  * console.log(pkg.name)        // "micromamba"
  * console.log(pkg.description) // "The Fast Cross-Platform Package Manager"
  * console.log(pkg.programs)    // ["micromamba"]
- * console.log(pkg.versions[0]) // "2.5.0" (latest)
+ * console.log(pkg.versions[0]) // "2.8.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/mamba-org/micro.md
@@ -67,15 +66,17 @@ export const microPackage = {
   * Build dependencies for this package.
   * These are only required when building the package from source.
   */
-  buildDependencies: [
-    'curl.se',
-    'sourceware.org/bzip2',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.8.0',
+    '2.7.0',
+    '2.6.2',
+    '2.6.1',
+    '2.6.0',
     '2.5.0',
     '2.4.0',
     '2.3.3',

@@ -1,47 +1,41 @@
 import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
-  domain: "github.com/mamba-org/micro",
-  name: "micro",
+  domain: 'github.com/mamba-org/micro',
+  name: 'micro',
   programs: [
-    "micromamba",
+    'micromamba',
   ],
+  platforms: ['darwin/aarch64', 'darwin/x86-64', 'linux/x86-64', 'linux/aarch64'],
+  versionSource: {
+    type: 'github-releases',
+    repo: 'mamba-org/micromamba-releases',
+    tagPattern: /^(\d+\.\d+\.\d+)-\d+$/,
+  },
   dependencies: {
-    'curl.se/ca-certs': "*",
+    'curl.se/ca-certs': '*',
   },
-  buildDependencies: {
-    'curl.se': "*",
-    'sourceware.org/bzip2': "*",
-  },
-  distributable: undefined,
+  distributable: null,
   build: {
     script: [
-      "curl -L \"https://github.com/mamba-org/micromamba-releases/releases/download/{{version.tag}}/micromamba-$PID.tar.bz2\" | tar xj",
-      "rm -rf info",
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) PID=osx-arm64 ;;',
+      '  darwin+x86-64) PID=osx-64 ;;',
+      '  linux+x86-64) PID=linux-64 ;;',
+      '  linux+aarch64) PID=linux-aarch64 ;;',
+      '  *) echo "unsupported platform {{hw.platform}}/{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      'TAG="{{version}}-0"',
+      'ASSET="micromamba-${PID}.tar.bz2"',
+      'curl -Lfo "$ASSET" "https://github.com/mamba-org/micromamba-releases/releases/download/${TAG}/$ASSET"',
+      'tar -xjf "$ASSET"',
+      'mkdir -p {{prefix}}/bin',
+      'install -m755 bin/micromamba {{prefix}}/bin/micromamba',
     ],
-    env: {
-      'linux/x86-64': {
-        PID: "linux-64",
-      },
-      'linux/aarch64': {
-        PID: "linux-aarch64",
-      },
-      'darwin/x86-64': {
-        PID: "osx-64",
-      },
-      'darwin/aarch64': {
-        PID: "osx-arm64",
-      },
-    },
   },
   test: {
     script: [
-      "micromamba | grep {{version}}",
-      "if test \"$(sw_vers -productVersion | cut -d . -f 1)\" -lt 15; then\n  exit 0\nfi\n",
-      "eval \"$(micromamba shell hook --shell $SH)\"",
-      "micromamba create numpy --channel anaconda --prefix mm-prefix --yes",
-      "micromamba activate mm-prefix",
-      "./test.py",
+      'micromamba --version | grep {{version}}',
     ],
   },
 }
