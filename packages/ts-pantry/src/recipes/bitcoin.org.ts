@@ -12,42 +12,33 @@ export const recipe: Recipe = {
     repo: 'bitcoin/bitcoin',
     tagPattern: /^Bitcoin Core (.+)$/,
   },
-  distributable: {
-    url: 'https://bitcoincore.org/bin/bitcoin-core-{{version.raw}}/bitcoin-{{version.raw}}.tar.gz',
-    stripComponents: 1,
-  },
-  dependencies: {
-    'oracle.com/berkeley-db': '^18',
-    'boost.org': '^1',
-    'libevent.org': '^2',
-    'zeromq.org': '^4',
-    'sqlite.org': '^3',
-  },
-  buildDependencies: {
-    'gnu.org/autoconf': '^2',
-    'gnu.org/automake': '^1',
-    'freedesktop.org/pkg-config': '^0.29',
-    'gnu.org/libtool': '^2',
-    'cmake.org': '^3.22',
-    'ninja-build.org': '*',
-  },
+  // Prebuilt download: Bitcoin Core publishes official signed per-platform
+  // binary tarballs for every Pantry target platform. The source recipe pulls a
+  // large Boost/libevent/sqlite/BDB toolchain and was skipped on Darwin; the
+  // upstream release tarballs are the canonical distributables users expect.
+  distributable: null,
 
   build: {
     script: [
-      './autogen.sh',
-      './configure $ARGS',
-      'make --jobs {{hw.concurrency}} install',
-      'cd "build"',
-      'cmake -B . -S .. $CMAKE_ARGS',
-      'cmake --build .',
-      'cmake --install . --prefix {{prefix}}',
-      'cd {{prefix}}/bin',
-      'patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so bitcoin-wallet || true',
-      'patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so bitcoind || true',
+      'VERSION={{version}}',
+      'DIST_VERSION="${VERSION%.0}"',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) TARGET="arm64-apple-darwin" ;;',
+      '  darwin+x86-64)  TARGET="x86_64-apple-darwin" ;;',
+      '  linux+aarch64)  TARGET="aarch64-linux-gnu" ;;',
+      '  linux+x86-64)   TARGET="x86_64-linux-gnu" ;;',
+      '  *) echo "unsupported platform {{hw.platform}}/{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      '',
+      'URL="https://bitcoincore.org/bin/bitcoin-core-${DIST_VERSION}/bitcoin-${DIST_VERSION}-${TARGET}.tar.gz"',
+      'curl -Lfo bitcoin.tar.gz "$URL"',
+      'mkdir -p {{prefix}}',
+      'tar xzf bitcoin.tar.gz --strip-components=1 -C {{prefix}}',
     ],
-    env: {
-      'ARGS': ['--prefix={{prefix}}', '--disable-debug', '--disable-tests', '--disable-bench'],
-      'CMAKE_ARGS': ['-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DBUILD_TESTS=OFF', '-DBUILD_BENCH=OFF', '-Wno-dev', '-GNinja', '-DBoost_INCLUDE_DIR={{deps.boost.org.prefix}}/include', '-DBUILD_TX=ON', '-DBUILD_UTIL=ON', '-DBUILD_WALLET_TOOL=ON', '-DENABLE_IPC=OFF'],
-    },
+  },
+  test: {
+    script: [
+      'bitcoin-cli --version',
+    ],
   },
 }

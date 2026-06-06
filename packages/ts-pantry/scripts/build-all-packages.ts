@@ -695,8 +695,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'facebook.com/wangle': ['*'],
   'facebook.com/fb303': ['<2026.2.16.0'],
   'github.com/facebookincubator/fizz': ['<2026.2.16.0'],
-  // bitcoin.org: Boost 1.90 in S3 missing version.hpp — all versions fail on darwin
-  'bitcoin.org': ['*'],
+  // bitcoin.org removed — switched to official Bitcoin Core release archives
   // localai.io: curl ABI mismatch (linux) + gRPC cmake (darwin); complex dep issues
   'localai.io': ['*'],
   // libsoup: meson/vala build fails on linux (glib-networking/TLS issues)

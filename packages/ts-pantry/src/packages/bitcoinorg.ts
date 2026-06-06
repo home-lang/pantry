@@ -8,8 +8,6 @@
  *
  * @install `pantry install bitcoin.org`
  * @homepage https://bitcoincore.org/
- * @dependencies `oracle.com/berkeley-db^18`, `boost.org^1`, `libevent.org^2`, ... (+4 more) (includes OS-specific dependencies with `os:package` format)
- * @buildDependencies `gnu.org/autoconf@^2`, `gnu.org/automake@^1`, `gnu.org/libtool@^2`, ... (+3 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
  * @example
  * ```typescript
@@ -65,28 +63,13 @@ export const bitcoinorgPackage = {
   * These are required when running the package.
   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
   */
-  dependencies: [
-    'oracle.com/berkeley-db^18',
-    'boost.org^1',
-    'libevent.org^2',
-    'zeromq.org^4',
-    'sqlite.org^3',
-    'capnproto.org^1 # since 30.0',
-    'linux:gnu.org/gcc/libstdcxx',
-  ] as const,
+  dependencies: [] as const,
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
   */
-  buildDependencies: [
-    'gnu.org/autoconf@^2',
-    'gnu.org/automake@^1',
-    'gnu.org/libtool@^2',
-    'cmake.org@^3.22',
-    'linux:gnu.org/gcc',
-    'linux:nixos.org/patchelf',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
