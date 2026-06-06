@@ -155,6 +155,19 @@ A recipe can either **compile from source** or **download an official prebuilt b
 
 When expanding prebuilt coverage, the test is: *does upstream ship the exact binary we'd otherwise produce, with nothing we customize?* If not, keep compiling.
 
+### Cross-platform download fanout — produce ALL platforms from ANY box
+
+A download recipe has **no compile step** — its "build" is just `curl the official per-platform asset + repackage`. So **any single box can produce the artifact for any target platform**: a linux-x86-64 box can `curl` the darwin-arm64 prebuilt and upload it under the `darwin-arm64` key just as easily as its own. This eliminates the need for macOS / ARM hardware to fill download-recipe coverage across platforms.
+
+How it works:
+- `build-package.ts` already derives `hw.platform`/`hw.arch` from the **`--platform <target>` arg**, not the host. Running `--platform darwin-arm64` on a Linux box curls the darwin-arm64 asset.
+- The health-check can't *execute* a foreign binary (no running a Mach-O on Linux). So when target os/arch ≠ host, `build-package.ts` **skips the execution test** and instead runs `verifyForeignArtifact()` — a `file -bL` magic check asserting the installed binary is the right type/arch (`Mach-O`+`arm64`/`x86_64` or `ELF`+`aarch64`/`x86-64`). This catches arch-mapping bugs without running the binary. Same-platform builds still run the full execution test.
+- `build-all-packages.ts --download-only` filters the sweep to **only** download recipes (no real `distributable.url` + a `build.script` that curls a per-platform asset). Source recipes are skipped — a source build with a foreign `--platform` would try to cross-compile and fail, so they must stay on their native channel.
+
+Fleet wiring (`provision-build-workers.ts`): each box is assigned **one foreign platform** (partitioned by box index: `['darwin-arm64','linux-arm64','darwin-x86-64'][i % 3]`) and runs a continuous download-only sweep for it via `pantry-xdl.service` (script `/root/xdl-daemon.sh`, platform in `/root/xdl-platform`). This is baked into `configureBox()` so re-provisioned boxes set it up automatically — alongside `pantry-fleet.service` (native linux-x86-64 source+download sweep) and `pantry-diskguard.service`. Check it in the fleet sweep: `systemctl is-active pantry-xdl.service`.
+
+**Division of labor:** download recipes → filled on every platform by the x86-64 Linux fleet (cheap, no macOS/ARM needed). Source-only-with-no-prebuilt → GitHub Actions runners (the only place that can natively compile darwin / linux-arm64) — **monitor those runners actively** (they're expensive, esp. macOS 10×) so they don't break or go stale.
+
 ### Build-status dashboard reporting (authenticated — the same token)
 
 The live build dashboard at **pantry.dev/packages** is fed by builders POSTing `building`/`built`/`failed` events to `registry.pantry.dev/api/build-events` (and log lines to `/api/build-logs`). These endpoints are **authenticated** — the server (`packages/registry/src/server.ts`, `isAuthorizedRequest`) returns **401** without a valid `Authorization: Bearer <token>`. The reporter (`packages/ts-pantry/scripts/report-build.ts`) reads the token from `PANTRY_REGISTRY_TOKEN` → `PANTRY_TOKEN` → `PANTRY_BUILD_REPORT_TOKEN`, and **silently skips** reporting if none is set (a 401 never fails the build — reporting is fire-and-forget). The token is the **same `ptry_` registry token** documented above (AWS SSM `/pantry/registry-token`).
