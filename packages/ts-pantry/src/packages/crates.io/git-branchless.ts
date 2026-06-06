@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/git-branchless`
  * @programs `git-branchless`
- * @version `0.10.0` (4 versions available)
+ * @version `0.11.1` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install crates.io/git-branchless`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "git-branchless"
  * console.log(pkg.description) // "High-velocity, monorepo-scale workflow for Git"
  * console.log(pkg.programs)    // ["git-branchless"]
- * console.log(pkg.versions[0]) // "0.10.0" (latest)
+ * console.log(pkg.versions[0]) // "0.11.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/crates-io/git-branchless.md
@@ -67,6 +67,7 @@ export const cratesiogitbranchlessPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.11.1',
     '0.10.0',
     '0.9.0',
     '0.8.0',

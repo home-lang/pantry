@@ -6,6 +6,7 @@ export const recipe: Recipe = {
   programs: [
     'git-branchless',
   ],
+  platforms: ['darwin/aarch64', 'linux'],
   versionSource: {
     type: 'github-releases',
     repo: 'arxanas/git-branchless',
