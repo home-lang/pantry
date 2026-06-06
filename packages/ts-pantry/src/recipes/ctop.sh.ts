@@ -11,21 +11,36 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'bcicen/ctop',
   },
-  distributable: {
-    url: 'https://github.com/bcicen/ctop/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
-  buildDependencies: {
-    'go.dev': '~1.18',
-  },
+  // Pre-built download recipe: upstream ships bare per-platform binaries
+  // (ctop-<ver>-<os>-<arch>) for every release from 0.7.6 onward. There is no
+  // darwin-arm64 asset, so on Apple Silicon we fall back to the darwin-amd64
+  // binary (Rosetta 2 runs it). Older releases (<=0.7.5) ship no binaries.
+  distributable: null,
 
   build: {
     script: [
-      'go mod download',
-      'go build -tags release -ldflags="$GO_LDFLAGS" -o {{prefix}}/bin/ctop',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+x86-64)  ASSET="ctop-${VERSION}-darwin-amd64" ;;',
+      '  darwin+aarch64) ASSET="ctop-${VERSION}-darwin-amd64" ;;', // no arm64 build — Rosetta 2
+      '  linux+x86-64)   ASSET="ctop-${VERSION}-linux-amd64"  ;;',
+      '  linux+aarch64)  ASSET="ctop-${VERSION}-linux-arm64"  ;;',
+      '  *) echo "unsupported platform {{hw.platform}}/{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      '',
+      // The upstream git-tag prefix is inconsistent across releases (0.7.6 is
+      // tagged "0.7.6", 0.7.7 is tagged "v0.7.7"). The asset filename always
+      // uses the bare version. Try both tag forms so the recipe is robust
+      // regardless of how {{version.tag}} resolves.
+      'BASE="https://github.com/bcicen/ctop/releases/download"',
+      'curl -Lfo ctop "${BASE}/v${VERSION}/${ASSET}" \\',
+      '  || curl -Lfo ctop "${BASE}/${VERSION}/${ASSET}"',
+      'install -Dm755 ctop {{prefix}}/bin/ctop',
     ],
-    env: {
-      'GO_LDFLAGS': ['-s', '-w', '-X main.version={{version}}', '-X main.build=pkgx'],
-    },
+  },
+  test: {
+    script: [
+      '{{prefix}}/bin/ctop -v',
+    ],
   },
 }
