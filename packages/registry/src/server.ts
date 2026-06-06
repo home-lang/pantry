@@ -442,6 +442,62 @@ interface GitHubActionsStatus {
 let _githubActionsCache: { at: number, data: GitHubActionsStatus } | null = null
 const GITHUB_ACTIONS_TTL_MS = 30_000
 
+function githubActionsFromBuildEvents(repository: string): GitHubActionsStatus | null {
+  const status = getBuildStatus().getStatus()
+  const byRun = new Map<string, GitHubActionRun>()
+  const events = [
+    ...(Array.isArray(status.building) ? status.building : []),
+    ...(Array.isArray(status.recent) ? status.recent : []),
+  ]
+
+  for (const event of events) {
+    if (event.hostKind !== 'github' || !event.hostUrl)
+      continue
+
+    const id = Number(event.hostUrl.match(/\/actions\/runs\/(\d+)/)?.[1] || 0)
+    if (!id)
+      continue
+
+    const existing = byRun.get(event.hostUrl)
+    const createdAt = new Date(event.ts || Date.now()).toISOString()
+    const isBuilding = event.state === 'building'
+    const conclusion = event.state === 'failed' ? 'failure' : event.state === 'built' ? 'success' : null
+    const next: GitHubActionRun = {
+      id,
+      name: 'Build Download Recipes',
+      displayTitle: 'Build Download Recipes',
+      status: isBuilding ? 'in_progress' : 'completed',
+      conclusion,
+      headSha: '',
+      createdAt,
+      htmlUrl: event.hostUrl,
+    }
+
+    if (!existing || new Date(existing.createdAt).getTime() < (event.ts || 0)) {
+      if (existing?.status === 'in_progress' && !isBuilding) {
+        next.status = 'in_progress'
+        next.conclusion = null
+      }
+      byRun.set(event.hostUrl, next)
+    }
+  }
+
+  const recent = [...byRun.values()]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 12)
+  if (recent.length === 0)
+    return null
+
+  return {
+    repository,
+    running: recent.filter(run => run.status === 'in_progress').length,
+    queued: 0,
+    recent,
+    generatedAt: new Date().toISOString(),
+    error: 'GitHub API unavailable; using build-event fallback',
+  }
+}
+
 async function getGitHubActionsStatus(): Promise<GitHubActionsStatus> {
   const now = Date.now()
   if (_githubActionsCache && now - _githubActionsCache.at < GITHUB_ACTIONS_TTL_MS)
@@ -484,6 +540,11 @@ async function getGitHubActionsStatus(): Promise<GitHubActionsStatus> {
   }
   catch (err) {
     data.error = (err as Error).message
+    const fallback = githubActionsFromBuildEvents(repository)
+    if (fallback) {
+      _githubActionsCache = { at: now, data: fallback }
+      return fallback
+    }
   }
   _githubActionsCache = { at: now, data }
   return data
