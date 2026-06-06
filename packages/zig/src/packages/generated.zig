@@ -1,6 +1,6 @@
 //! Package definitions generated from ts-pantry
 //! DO NOT EDIT MANUALLY - This file is auto-generated
-//! Generated on: 2026-06-06T23:06:16.955Z
+//! Generated on: 2026-06-06T23:18:20.085Z
 //! Total packages: 1727
 
 const std = @import("std");
@@ -7895,7 +7895,7 @@ pub const packages = [_]PackageInfo{ .{
     .description = "A system to programmatically run data pipelines",
     .homepage_url = "http://snowplowanalytics.com/blog/2016/04/09/introducing-factotum-data-pipeline-runner/",
     .programs = &[_][]const u8{"factotum"},
-    .dependencies = &[_][]const u8{"openssl.org^1.1"},
+    .dependencies = &[_][]const u8{"openssl.org^3"},
     .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "0.7.0", "0.6.1", "0.6.0" },

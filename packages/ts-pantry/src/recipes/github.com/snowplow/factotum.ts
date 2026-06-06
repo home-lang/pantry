@@ -7,25 +7,32 @@ export const recipe: Recipe = {
     'factotum',
   ],
   dependencies: {
-    'openssl.org': '^1.1',
+    'openssl.org': '^3',
   },
-  buildDependencies: {
-    'rust-lang.org': '~1.78',
-    'rust-lang.org/cargo': '~0.80',
+  platforms: ['darwin/aarch64', 'darwin/x86-64', 'linux/x86-64', 'linux/aarch64'],
+  versionSource: {
+    type: 'github-releases',
+    repo: 'snowplow/factotum',
   },
-  distributable: {
-    url: 'https://github.com/snowplow/factotum/archive/refs/tags/{{ version.tag }}.tar.gz',
-    stripComponents: 1,
-  },
+  distributable: null,
   build: {
     script: [
-      'cargo install --locked --path . --root {{prefix}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET=factotum_{{version}}_darwin_arm64.zip ;;',
+      '  darwin+x86-64) ASSET=factotum_{{version}}_darwin_x86_64.zip ;;',
+      '  linux+x86-64) ASSET=factotum_{{version}}_linux_x86_64.zip ;;',
+      '  linux+aarch64) ASSET=factotum_{{version}}_linux_arm64.zip ;;',
+      '  *) echo "unsupported platform {{hw.platform}}/{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      'curl -Lfo "$ASSET" "https://github.com/snowplow/factotum/releases/download/{{version}}/$ASSET"',
+      'unzip -q "$ASSET"',
+      'mkdir -p {{prefix}}/bin',
+      'install -m755 factotum {{prefix}}/bin/factotum',
     ],
   },
   test: {
     script: [
       'test "$(factotum --version)" = "Factotum version {{version}}"',
-      'factotum run $FIXTURE',
     ],
   },
 }

@@ -8,7 +8,7 @@
  *
  * @install `pantry install github.com/snowplow/factotum`
  * @homepage http://snowplowanalytics.com/blog/2016/04/09/introducing-factotum-data-pipeline-runner/
- * @dependencies `openssl.org^1.1`
+ * @dependencies `openssl.org^3`
  *
  * @example
  * ```typescript
@@ -60,7 +60,7 @@ export const factotumPackage = {
   * These are required when running the package.
   */
   dependencies: [
-    'openssl.org^1.1',
+    'openssl.org^3',
   ] as const,
   buildDependencies: [] as const,
   /**
