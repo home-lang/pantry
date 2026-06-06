@@ -7,8 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install fermyon.com/spin`
- * @homepage https://spinroot.com/spin/whatispin.html
- * @buildDependencies `linux:llvm.org` (includes OS-specific dependencies with `os:package` format) - required only when building from source
+ * @homepage https://www.fermyon.com/spin
  *
  * @example
  * ```typescript
@@ -38,7 +37,7 @@ export const fermyoncomspinPackage = {
   */
   description: 'Spin is the open source developer tool for building and running serverless applications powered by WebAssembly.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/fermyon.com/spin/package.yml' as const,
-  homepageUrl: 'https://spinroot.com/spin/whatispin.html' as const,
+  homepageUrl: 'https://www.fermyon.com/spin' as const,
   githubUrl: 'https://github.com/fermyon/spin' as const,
   /**
   * Command to install this package using pantry.
@@ -61,9 +60,7 @@ export const fermyoncomspinPackage = {
   * These are only required when building the package from source.
   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
   */
-  buildDependencies: [
-    'linux:llvm.org',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions

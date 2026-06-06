@@ -232,6 +232,9 @@ set -a; . /root/.pantry-hetzner.env 2>/dev/null; set +a
 export PATH="/root/.bun/bin:$PATH"
 cd /root/pantry/packages/ts-pantry || exit 1
 while true; do
+  git -C /root/pantry fetch origin main -q && git -C /root/pantry reset --hard origin/main -q
+  /root/.bun/bin/bun install --cwd /root/pantry >/dev/null 2>&1 || true
+  cd /root/pantry/packages/ts-pantry || exit 1
   for i in $(seq 0 $((XDL_WORKERS-1))); do
     mkdir -p "/root/pb-xdl-$i"
     BUILDKIT_ROOT="/root/pb-xdl-$i" /root/.bun/bin/bun scripts/build-all-packages.ts \\
