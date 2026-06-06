@@ -1760,7 +1760,7 @@ Options:
     // musepack.net removed — subpackages build successfully, main package needs investigation
     // pagure.io/xmlto removed — xsltproc/docbook now in CI
     // python.org/typing_extensions removed — switched from flit to pip install
-    'radicle.org', // old wasm-bindgen incompatible with current Rust (needs >= 0.2.88)
+    // radicle.org removed — pre-built binary download from GitHub releases
     // rclone.org removed — removed stale darwin patch and cmount tag
     // snaplet.dev/cli removed — added --legacy-peer-deps override
     // tsl0922.github.io/ttyd removed — added compiler flags override

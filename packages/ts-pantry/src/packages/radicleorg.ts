@@ -8,8 +8,6 @@
  *
  * @install `pantry install radicle.org`
  * @homepage https://app.radicle.network/alt-clients.radicle.eth/radicle-cli
- * @dependencies `openssl.org^1.1.1`
- * @buildDependencies `cmake.org@^3` - required only when building from source
  *
  * @example
  * ```typescript
@@ -85,16 +83,12 @@ export const radicleorgPackage = {
   * Runtime dependencies for this package.
   * These are required when running the package.
   */
-  dependencies: [
-    'openssl.org^1.1.1',
-  ] as const,
+  dependencies: [] as const,
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
   */
-  buildDependencies: [
-    'cmake.org@^3',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions

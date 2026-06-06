@@ -14265,8 +14265,8 @@ pub const packages = [_]PackageInfo{ .{
     .description = "Radicle CLI",
     .homepage_url = "https://app.radicle.network/alt-clients.radicle.eth/radicle-cli",
     .programs = &[_][]const u8{ "rad", "git-remote-rad", "rad-account", "rad-auth", "rad-checkout", "rad-clone", "rad-edit", "rad-ens", "rad-gov", "rad-help", "rad-init", "rad-inspect", "rad-issue", "rad-ls", "rad-merge", "rad-patch", "rad-path", "rad-pull", "rad-push", "rad-remote", "rad-reward", "rad-rm", "rad-self", "rad-sync", "rad-track", "rad-untrack" },
-    .dependencies = &[_][]const u8{"openssl.org^1.1.1"},
-    .build_dependencies = &[_][]const u8{"cmake.org@^3"},
+    .dependencies = &[_][]const u8{},
+    .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "0.6.1", "0.6.0", "0.5.1", "0.5.0", "0.4.0", "0.3.1", "0.3.0", "0.2.1", "0.2.0", "0.1.2", "0.0.1", "0.0.0" },
 }, .{
