@@ -218,17 +218,24 @@ const XDL_PLATFORMS = ['darwin-arm64', 'linux-arm64', 'darwin-x86-64']
 const XDL_DAEMON_SCRIPT = `#!/bin/bash
 # Cross-platform download fanout: fills prebuilt-download artifacts for one FOREIGN
 # target platform from this box. Only download recipes (--download-only); source skipped.
+# Runs XDL_WORKERS striped processes in parallel (downloads are I/O-bound + cheap),
+# so the foreign-platform fill is fast and the box stays visibly busy.
 PLAT="\${1:-$(cat /root/xdl-platform 2>/dev/null)}"
 [ -z "$PLAT" ] && { echo "no platform (arg or /root/xdl-platform)"; exit 1; }
+XDL_WORKERS="\${XDL_WORKERS:-6}"
 set -a; . /root/.pantry-hetzner.env 2>/dev/null; set +a
 export PATH="/root/.bun/bin:$PATH"
 cd /root/pantry/packages/ts-pantry || exit 1
-mkdir -p /root/pb-xdl
 while true; do
-  BUILDKIT_ROOT=/root/pb-xdl /root/.bun/bin/bun scripts/build-all-packages.ts \\
-    --platform "$PLAT" --download-only --multi-version --max-versions ${MAX_VERSIONS} \\
-    --bucket pantry-registry --region fsn1 >> "/root/xdl-$PLAT.log" 2>&1
-  sleep 600
+  for i in $(seq 0 $((XDL_WORKERS-1))); do
+    mkdir -p "/root/pb-xdl-$i"
+    BUILDKIT_ROOT="/root/pb-xdl-$i" /root/.bun/bin/bun scripts/build-all-packages.ts \\
+      --platform "$PLAT" --download-only --stripe "$i/$XDL_WORKERS" \\
+      --multi-version --max-versions ${MAX_VERSIONS} --bucket pantry-registry --region fsn1 \\
+      >> "/root/xdl-$PLAT-$i.log" 2>&1 &
+  done
+  wait
+  sleep 300
 done
 `
 const XDL_UNIT = `[Unit]
