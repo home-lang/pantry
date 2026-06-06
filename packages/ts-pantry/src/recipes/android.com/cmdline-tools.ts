@@ -46,6 +46,7 @@ export const recipe: Recipe = {
         DIST_URL: "https://dl.google.com/android/repository/commandlinetools-mac-{{version.major}}_latest.zip",
       },
     },
+    skip: ['verify-foreign-artifact'],
   },
   test: {
     script: [

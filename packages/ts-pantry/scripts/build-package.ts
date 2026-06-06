@@ -2050,9 +2050,14 @@ catch {
 
   if (isForeignTarget) {
     console.log(`\n⏭️  foreign target ${platform} on host ${hostPlatform}: skipping execution health-check, verifying artifact instead`)
-    // verifyForeignArtifact throws on failure — propagate so the build fails and
-    // nothing bad gets packaged/uploaded.
-    verifyForeignArtifact(prefix, platform)
+    if (skips.includes('verify-foreign-artifact')) {
+      verifyForeignInstallPresent(prefix, platform)
+    }
+    else {
+      // verifyForeignArtifact throws on failure — propagate so the build fails and
+      // nothing bad gets packaged/uploaded.
+      verifyForeignArtifact(prefix, platform)
+    }
   }
 else if (recipe.test) {
     console.log('\n🧪 Running health check...')
@@ -2104,9 +2109,49 @@ function normalizePlatform(platform: string): [string, string] {
  * main risk of cross-building). Tolerates non-binary helpers (scripts, data).
  */
 function verifyForeignArtifact(prefix: string, platform: string): void {
+  const candidates = foreignArtifactCandidates(prefix)
+  if (candidates.length === 0)
+    throw new Error(`verifyForeignArtifact: no non-empty binaries found under ${prefix}/bin or ${prefix}/sbin — the download/extract for ${platform} produced nothing`)
+
   const [os, arch] = normalizePlatform(platform)
 
-  // Collect candidate files under bin/ and sbin/.
+  // Expected magic substrings for the target os/arch.
+  const expectFormat = os === 'darwin' ? 'Mach-O' : 'ELF'
+  const expectArch = os === 'darwin'
+    ? (arch === 'aarch64' ? ['arm64'] : ['x86_64'])
+    : (arch === 'aarch64' ? ['aarch64', 'ARM aarch64'] : ['x86-64', 'x86_64'])
+
+  let matched: { path: string, out: string } | undefined
+  const inspected = inspectForeignCandidates(candidates)
+  for (const item of inspected) {
+    if (item.out.includes(expectFormat) && expectArch.some(a => item.out.includes(a))) {
+      matched = item
+      break
+    }
+  }
+
+  if (!matched) {
+    console.error(`❌ foreign-target sanity FAILED for ${platform}: no installed binary matches ${expectFormat} + [${expectArch.join(', ')}]`)
+    for (const { path, out } of inspected)
+      console.error(`   - ${path} → ${out}`)
+    throw new Error(`verifyForeignArtifact: no installed binary under ${prefix} matches the expected ${platform} magic (${expectFormat} + [${expectArch.join(', ')}]) — likely an arch-mapping or download bug`)
+  }
+
+  console.log(`🔎 foreign-target sanity: ${matched.path} → ${matched.out} (OK)`)
+}
+
+function verifyForeignInstallPresent(prefix: string, platform: string): void {
+  const candidates = foreignArtifactCandidates(prefix)
+  if (candidates.length === 0)
+    throw new Error(`verifyForeignInstallPresent: no non-empty launchers found under ${prefix}/bin or ${prefix}/sbin — the download/extract for ${platform} produced nothing`)
+
+  const inspected = inspectForeignCandidates(candidates)
+  console.log(`🔎 foreign-target sanity: ${platform} installed ${inspected.length} launcher(s); recipe opted out of ELF/Mach-O magic check`)
+  for (const { path, out } of inspected.slice(0, 8))
+    console.log(`   - ${path} → ${out}`)
+}
+
+function foreignArtifactCandidates(prefix: string): string[] {
   const candidates: string[] = []
   for (const sub of ['bin', 'sbin']) {
     const dir = join(prefix, sub)
@@ -2129,16 +2174,10 @@ catch {
     }
   }
 
-  if (candidates.length === 0)
-    throw new Error(`verifyForeignArtifact: no non-empty binaries found under ${prefix}/bin or ${prefix}/sbin — the download/extract for ${platform} produced nothing`)
+  return candidates
+}
 
-  // Expected magic substrings for the target os/arch.
-  const expectFormat = os === 'darwin' ? 'Mach-O' : 'ELF'
-  const expectArch = os === 'darwin'
-    ? (arch === 'aarch64' ? ['arm64'] : ['x86_64'])
-    : (arch === 'aarch64' ? ['aarch64', 'ARM aarch64'] : ['x86-64', 'x86_64'])
-
-  let matched: { path: string, out: string } | undefined
+function inspectForeignCandidates(candidates: string[]): Array<{ path: string, out: string }> {
   const inspected: Array<{ path: string, out: string }> = []
   for (const p of candidates) {
     let out = ''
@@ -2150,20 +2189,8 @@ catch (e) {
       out = `(file failed: ${(e as Error).message})`
     }
     inspected.push({ path: p, out })
-    if (out.includes(expectFormat) && expectArch.some(a => out.includes(a))) {
-      matched = { path: p, out }
-      break
-    }
   }
-
-  if (!matched) {
-    console.error(`❌ foreign-target sanity FAILED for ${platform}: no installed binary matches ${expectFormat} + [${expectArch.join(', ')}]`)
-    for (const { path, out } of inspected)
-      console.error(`   - ${path} → ${out}`)
-    throw new Error(`verifyForeignArtifact: no installed binary under ${prefix} matches the expected ${platform} magic (${expectFormat} + [${expectArch.join(', ')}]) — likely an arch-mapping or download bug`)
-  }
-
-  console.log(`🔎 foreign-target sanity: ${matched.path} → ${matched.out} (OK)`)
+  return inspected
 }
 
 // CLI entry point
