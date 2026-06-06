@@ -7,12 +7,19 @@ export const recipe: Recipe = {
   programs: [
     'swiftgen',
   ],
-  distributable: {
-    url: 'https://github.com/SwiftGen/SwiftGen/releases/download/{{version}}/swiftgen-{{version}}.zip',
+  versionSource: {
+    type: 'github-releases',
+    repo: 'SwiftGen/SwiftGen',
   },
+  distributable: null,
   build: {
     script: [
-      'cp -a "$SRCROOT"/bin/swiftgen "$SRCROOT"/bin/SwiftGen_SwiftGenCLI.bundle .',
+      'ASSET=swiftgen-{{version}}.zip',
+      'curl -Lfo "$ASSET" "https://github.com/SwiftGen/SwiftGen/releases/download/{{version}}/$ASSET"',
+      'unzip -q "$ASSET"',
+      'mkdir -p {{prefix}}/bin',
+      'cp -a bin/swiftgen bin/SwiftGen_SwiftGenCLI.bundle {{prefix}}/bin/',
+      'chmod +x {{prefix}}/bin/swiftgen',
     ],
   },
   test: {
