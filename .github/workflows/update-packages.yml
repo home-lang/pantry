@@ -90,28 +90,8 @@ jobs:
         id: commit-message
         if: steps.git-check.outputs.changes == 'true'
         run: |
-          # Extract package names from changed files
-          CHANGED_FILES=$(git status --porcelain packages/ts-pantry/src/packages/ | grep "^ M " | awk '{print $2}')
-          PACKAGES=""
-          while IFS= read -r filepath; do
-            [ -z "$filepath" ] && continue
-            [ -f "$filepath" ] || continue
-            case "$filepath" in */aliases.ts|*/generated-*|*/index.ts) continue ;; esac
-            NAME=$(grep -m 1 "name: '" "$filepath" 2>/dev/null | sed "s/.*name: '//" | sed "s/' as const.*//" | tr -d '\n\r')
-            [ -z "$NAME" ] && continue
-            PACKAGES="${PACKAGES:+$PACKAGES, }$NAME"
-          done <<< "$CHANGED_FILES"
-
-          TOTAL="${{ steps.git-check.outputs.total_updated }}"
-          if [ "$TOTAL" -le 4 ] && [ -n "$PACKAGES" ]; then
-            echo "commit_message=chore: update $PACKAGES" >> $GITHUB_OUTPUT
-          elif [ -n "$PACKAGES" ]; then
-            SHORT=$(echo "$PACKAGES" | cut -d',' -f1-3)
-            REMAINING=$((TOTAL - 3))
-            echo "commit_message=chore: update $SHORT and $REMAINING others" >> $GITHUB_OUTPUT
-          else
-            echo "commit_message=chore: update $TOTAL packages" >> $GITHUB_OUTPUT
-          fi
+          bun packages/ts-pantry/scripts/generate-update-commit-message.ts \
+            --message-file /tmp/pantry-update-commit-message.txt
 
       - name: Safeguard
         id: deletion-check
@@ -137,7 +117,7 @@ jobs:
           fi
 
           git add packages/ts-pantry/src/packages/ packages/zig/src/packages/generated.zig
-          git commit -m "${{ steps.commit-message.outputs.commit_message }}" -m "Automated version update via GitHub API"
+          git commit -F /tmp/pantry-update-commit-message.txt
           git stash --include-untracked
           if ! git pull --rebase origin refs/heads/main; then
             echo "::warning::Rebase failed, aborting rebase and retrying with merge"
