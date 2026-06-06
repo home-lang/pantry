@@ -7,8 +7,6 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/withered-magic/starpls`
- * @buildDependencies `github.com/bazelbuild/bazelisk` - required only when building from source
- *
  * @example
  * ```typescript
  * import { pantry } from 'ts-pantry'
@@ -55,13 +53,7 @@ export const starplsPackage = {
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
-  /**
-  * Build dependencies for this package.
-  * These are only required when building the package from source.
-  */
-  buildDependencies: [
-    'github.com/bazelbuild/bazelisk',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions

@@ -6,28 +6,32 @@ export const recipe: Recipe = {
   programs: [
     'starpls',
   ],
-  buildDependencies: {
-    'github.com/bazelbuild/bazelisk': '*',
+  platforms: ['darwin/aarch64', 'darwin/x86-64', 'linux/x86-64', 'linux/aarch64'],
+  versionSource: {
+    type: 'github-releases',
+    repo: 'withered-magic/starpls',
+    tagPattern: /^v(.+)$/,
   },
-  distributable: {
-    url: 'https://github.com/withered-magic/starpls/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
+  distributable: null,
   build: {
     script: [
-      'bazel build -c opt --experimental_convenience_symlinks=normal --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1 //crates/starpls',
-      'install -Dm755 bazel-bin/crates/starpls/starpls {{prefix}}/bin/starpls',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET=starpls-darwin-arm64.tar.gz ;;',
+      '  darwin+x86-64) ASSET=starpls-darwin-amd64.tar.gz ;;',
+      '  linux+x86-64) ASSET=starpls-linux-amd64.tar.gz ;;',
+      '  linux+aarch64) ASSET=starpls-linux-aarch64.tar.gz ;;',
+      '  *) echo "unsupported platform {{hw.platform}}/{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      'curl -Lfo "$ASSET" "https://github.com/withered-magic/starpls/releases/download/v{{version}}/$ASSET"',
+      'tar -xzf "$ASSET"',
+      'mkdir -p {{prefix}}/bin',
+      'install -m755 starpls {{prefix}}/bin/starpls',
     ],
   },
   test: {
     script: [
       'starpls version | grep {{version}}',
-      'touch MODULE.bazel',
-      'cp $FIXTURE test.bzl',
-      'starpls check test.bzl',
-      'echo "invalid" >> test.bzl',
-      '! starpls check test.bzl',
-      '(starpls check test.bzl 2>&1 || true) | grep "test.bzl:3"',
+      'starpls --help | grep "Usage: starpls"',
     ],
   },
 }

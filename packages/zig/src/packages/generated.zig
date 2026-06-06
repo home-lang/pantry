@@ -1,6 +1,6 @@
 //! Package definitions generated from ts-pantry
 //! DO NOT EDIT MANUALLY - This file is auto-generated
-//! Generated on: 2026-06-06T23:40:31.621Z
+//! Generated on: 2026-06-06T23:50:56.257Z
 //! Total packages: 1727
 
 const std = @import("std");
@@ -8346,7 +8346,7 @@ pub const packages = [_]PackageInfo{ .{
     .homepage_url = null,
     .programs = &[_][]const u8{"starpls"},
     .dependencies = &[_][]const u8{},
-    .build_dependencies = &[_][]const u8{"github.com/bazelbuild/bazelisk"},
+    .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "0.1.22", "0.1.21" },
 }, .{
