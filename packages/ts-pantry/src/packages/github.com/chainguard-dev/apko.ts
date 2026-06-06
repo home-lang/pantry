@@ -3,12 +3,11 @@
  *
  * @domain `github.com/chainguard-dev/apko`
  * @programs `apko`
- * @version `1.1.16` (120 versions available)
+ * @version `1.2.15` (121 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/chainguard-dev/apko`
  * @homepage https://apko.dev
- * @buildDependencies `go.dev@^1.21`, `cmake.org@^3` - required only when building from source
  *
  * @example
  * ```typescript
@@ -18,7 +17,7 @@
  * console.log(pkg.name)        // "apko"
  * console.log(pkg.description) // "Build OCI images from APK packages directly wit..."
  * console.log(pkg.programs)    // ["apko"]
- * console.log(pkg.versions[0]) // "1.1.16" (latest)
+ * console.log(pkg.versions[0]) // "1.2.15" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/chainguard-dev/apko.md
@@ -56,19 +55,13 @@ export const apkoPackage = {
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
-  /**
-  * Build dependencies for this package.
-  * These are only required when building the package from source.
-  */
-  buildDependencies: [
-    'go.dev@^1.21',
-    'cmake.org@^3',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.2.15',
     '1.1.16',
     '1.1.15',
     '1.1.14',

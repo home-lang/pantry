@@ -6,23 +6,27 @@ export const recipe: Recipe = {
   programs: [
     'apko',
   ],
-  buildDependencies: {
-    'git-scm.org': '*',
-    'go.dev': '^1.21',
-    'cmake.org': '^3',
+  versionSource: {
+    type: 'github-releases',
+    repo: 'chainguard-dev/apko',
   },
-  distributable: {
-    url: 'git+https://github.com/chainguard-dev/apko',
-  },
+  // Prebuilt download: apko ships official per-platform release tarballs.
+  distributable: null,
   build: {
     script: [
-      'make apko',
-      'make install',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) OS=darwin; ARCH=arm64 ;;',
+      '  darwin+x86-64)  OS=darwin; ARCH=amd64 ;;',
+      '  linux+aarch64)  OS=linux;  ARCH=arm64 ;;',
+      '  linux+x86-64)   OS=linux;  ARCH=amd64 ;;',
+      'esac',
+      '',
+      'DIR="apko_${VERSION}_${OS}_${ARCH}"',
+      'curl -Lfo apko.tar.gz "https://github.com/chainguard-dev/apko/releases/download/v${VERSION}/${DIR}.tar.gz"',
+      'tar xzf apko.tar.gz',
+      'install -Dm755 "${DIR}/apko" {{prefix}}/bin/apko',
     ],
-    env: {
-      DESTDIR: '${{ prefix }}/',
-      BINDIR: 'bin',
-    },
   },
   test: {
     script: [
