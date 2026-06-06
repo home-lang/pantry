@@ -662,8 +662,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'elizaOS.github.io': ['*'],
   // PHP: 8.5.x unreleased (download 404), 8.4.18+ phantom, older than 8.2 EOL/incompatible
   'php.net': ['<8.2.0', '8.4.18', '8.5.0', '8.5.1', '8.5.2', '8.5.3'],
-  // opencode.ai: native module resolution fails (parcel watcher darwin, husky linux)
-  'opencode.ai': ['*'],
+  // opencode.ai removed: pre-built binary download from GitHub releases
   // openresty: mercurial Python library path issue on darwin; 502 on linux
   'openresty.org': ['*'],
   // opensearch older versions fail (nmslib cmake unrecognized compiler)

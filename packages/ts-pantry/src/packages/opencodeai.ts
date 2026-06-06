@@ -1,13 +1,13 @@
 /**
- * **opencode.ai** - pkgx package
+ * **opencode.ai** - The open source coding agent.
  *
  * @domain `opencode.ai`
  * @programs `opencode`
- * @version `1.3.0` (510 versions available)
+ * @version `1.16.2` (510 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install opencode.ai`
- * @buildDependencies `stedolan.github.io/jq`, `pkgx.sh`, `go.dev@^1.24`, ... (+2 more) - required only when building from source
+ * @homepage https://opencode.ai
  *
  * @example
  * ```typescript
@@ -15,8 +15,9 @@
  *
  * const pkg = pantry.opencodeai
  * console.log(pkg.name)        // "opencode.ai"
+ * console.log(pkg.description) // "The open source coding agent."
  * console.log(pkg.programs)    // ["opencode"]
- * console.log(pkg.versions[0]) // "1.3.0" (latest)
+ * console.log(pkg.versions[0]) // "1.16.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/opencode-ai.md
@@ -34,10 +35,10 @@ export const opencodeaiPackage = {
   /**
   * Brief description of what this package does.
   */
-  description: '' as const,
+  description: 'The open source coding agent.' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/opencode.ai/package.yml' as const,
-  homepageUrl: '' as const,
-  githubUrl: '' as const,
+  homepageUrl: 'https://opencode.ai' as const,
+  githubUrl: 'https://github.com/anomalyco/opencode' as const,
   /**
   * Command to install this package using pantry.
   * @example pantry install package-name
@@ -58,13 +59,7 @@ export const opencodeaiPackage = {
   * Build dependencies for this package.
   * These are only required when building the package from source.
   */
-  buildDependencies: [
-    'stedolan.github.io/jq',
-    'pkgx.sh',
-    'go.dev@^1.24',
-    'python.org@3',
-    'npmjs.com',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
