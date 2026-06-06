@@ -10,6 +10,7 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'ogham/exa',
   },
+  platforms: ['darwin/x86-64', 'linux/x86-64'],
   // Prebuilt download: exa is abandoned (superseded by eza) and never builds
   // cleanly on current toolchains, but upstream's final release ships official
   // prebuilt zips (`exa-<os>-x86_64-v<ver>.zip` → `bin/exa` + completions/man).

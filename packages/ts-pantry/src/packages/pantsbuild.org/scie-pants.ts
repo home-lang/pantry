@@ -3,7 +3,7 @@
  *
  * @domain `pantsbuild.org/scie-pants`
  * @programs `pants`
- * @version `0.12.5` (5 versions available)
+ * @version `0.13.2` (6 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install pantsbuild.org/scie-pants`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "scie-pants"
  * console.log(pkg.description) // "Protects your Pants from the elements."
  * console.log(pkg.programs)    // ["pants"]
- * console.log(pkg.versions[0]) // "0.12.5" (latest)
+ * console.log(pkg.versions[0]) // "0.13.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/pantsbuild-org/scie-pants.md
@@ -75,6 +75,7 @@ export const pantsbuildorgsciepantsPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.13.2',
     '0.12.5',
     '0.12.3',
     '0.12.2',

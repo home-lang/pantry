@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/termusic`
  * @programs `termusic`, `termusic-server`
- * @version `0.12.1` (6 versions available)
+ * @version `0.13.2` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install crates.io/termusic`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "termusic"
  * console.log(pkg.description) // "Music Player TUI written in Rust"
  * console.log(pkg.programs)    // ["termusic", "termusic-server"]
- * console.log(pkg.versions[0]) // "0.12.1" (latest)
+ * console.log(pkg.versions[0]) // "0.13.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/crates-io/termusic.md
@@ -78,6 +78,7 @@ export const cratesiotermusicPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.13.2',
     '0.12.1',
     '0.12.0',
     '0.11.0',
