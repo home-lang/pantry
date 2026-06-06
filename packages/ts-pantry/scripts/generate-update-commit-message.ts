@@ -127,11 +127,8 @@ function subject(): string {
     const update = packageUpdates[0]
     return `chore: update ${update.domain} to ${update.newVersion}`
   }
-  if (packageLabels.length > 1 && packageLabels.length <= 3) {
+  if (packageLabels.length > 1) {
     return `chore: update ${packageLabels.join(', ')}`
-  }
-  if (packageLabels.length > 3) {
-    return `chore: update ${packageLabels.slice(0, 3).join(', ')} and ${packageLabels.length - 3} others`
   }
   return 'chore: update package metadata'
 }
