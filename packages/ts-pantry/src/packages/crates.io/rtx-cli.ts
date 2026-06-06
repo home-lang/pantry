@@ -7,8 +7,9 @@
  *
  * @install `pantry install crates.io/rtx-cli`
  * @homepage https://mise.jdx.dev
- * @dependencies `openssl.org^1.1 # newer RTX after 1.35.2 versions require openssl`, `libgit2.org^1 # newer mise after 2024.5.12 versions require libgit2`
- * @buildDependencies `cmake.org@3` - required only when building from source
+ * @programs `mise`, `rtx`
+ * @dependencies none
+ * @buildDependencies `curl.se` - required only when building from source
  *
  * @example
  * ```typescript
@@ -46,22 +47,23 @@ export const cratesiortxcliPackage = {
   installCommand: 'pantry install crates.io/rtx-cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/rtx-cli -- $SHELL -i' as const,
   pantryInstallCommand: 'pantry install crates.io/rtx-cli' as const,
-  programs: [] as const,
+  programs: [
+    'mise',
+    'rtx',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.
   * These are required when running the package.
   */
   dependencies: [
-    'openssl.org^1.1 # newer RTX after 1.35.2 versions require openssl',
-    'libgit2.org^1 # newer mise after 2024.5.12 versions require libgit2',
   ] as const,
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
   */
   buildDependencies: [
-    'cmake.org@3',
+    'curl.se',
   ] as const,
   /**
   * Available versions from newest to oldest.
