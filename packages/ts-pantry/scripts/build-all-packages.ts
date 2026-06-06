@@ -1724,7 +1724,7 @@ Options:
     // gdal.org removed — disabled Arrow/Parquet dep + fixed cmake/sed in override
     // quickwit.io removed — pre-built binary download from GitHub releases
     // raccoin.org removed — reduced parallelism + codegen-units to avoid linker OOM
-    'replibyte.com', // Locked wasm-bindgen v0.2.80 incompatible with current Rust (needs >= 0.2.88)
+    // replibyte.com removed — pre-built binary download from GitHub releases
     // wezfurlong.org/wezterm removed — pre-built binary download from GitHub releases
     // x.org/libSM removed — already has clean ARGS (no $SHELF), ice/sm fixed
     // x.org/xmu removed — fixed $SHELF variable references in script

@@ -8,7 +8,6 @@
  *
  * @install `pantry install replibyte.com`
  * @homepage https://www.replibyte.com
- * @dependencies `openssl.org^1.1`
  *
  * @example
  * ```typescript
@@ -59,9 +58,7 @@ export const replibytecomPackage = {
   * Runtime dependencies for this package.
   * These are required when running the package.
   */
-  dependencies: [
-    'openssl.org^1.1',
-  ] as const,
+  dependencies: [] as const,
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
