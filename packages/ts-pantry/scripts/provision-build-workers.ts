@@ -307,7 +307,13 @@ function configureBox(ip: string, boxIndex: number, boxCount: number): void {
     'chmod +x /root/fleet-daemon.sh || true',
     'chmod +x /root/box-disk-guard.sh || true',
     'systemctl disable --now pantry-sweep.service 2>/dev/null || true',
-    'pkill -9 -f "sweep-daemon.sh|xorg-loop.sh|build-all-packages" 2>/dev/null || true',
+    // Do not use `pkill -f "...build-all-packages..."` directly inside this
+    // multi-line SSH command: the remote shell's argv contains that pattern and
+    // pkill can kill the setup shell before systemd is enabled.
+    'for pat in sweep-daemon.sh xorg-loop.sh build-all-packages; do',
+    '  self="$$"',
+    '  ps -eo pid=,args= | awk -v self="$self" -v pat="$pat" \'$1 != self && index($0, pat) {print $1}\' | xargs -r kill -9 || true',
+    'done',
     'sleep 1',
     'systemctl daemon-reload || true',
     'systemctl enable --now pantry-diskguard.service || true',
