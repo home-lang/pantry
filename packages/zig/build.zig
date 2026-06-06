@@ -1,5 +1,34 @@
 const std = @import("std");
 
+fn buildRootPathExists(b: *std.Build, sub_path: []const u8) bool {
+    if (@hasField(std.Build, "root")) {
+        const path = b.root.join(b.allocator, sub_path) catch return false;
+        path.root_dir.handle.access(b.graph.io, path.sub_path, .{}) catch return false;
+        return true;
+    }
+
+    if (@hasField(std.Build.Graph, "io")) {
+        b.build_root.handle.access(b.graph.io, sub_path, .{}) catch return false;
+        return true;
+    }
+
+    b.build_root.handle.access(sub_path, .{}) catch return false;
+    return true;
+}
+
+fn readBuildRootFileAlloc(b: *std.Build, sub_path: []const u8, max_bytes: usize) ![]u8 {
+    if (@hasField(std.Build, "root")) {
+        const path = try b.root.join(b.allocator, sub_path);
+        return path.root_dir.handle.readFileAlloc(b.graph.io, path.sub_path, b.allocator, .limited(max_bytes));
+    }
+
+    if (@hasField(std.Build.Graph, "io")) {
+        return b.build_root.handle.readFileAlloc(b.graph.io, sub_path, b.allocator, .limited(max_bytes));
+    }
+
+    return b.build_root.handle.readFileAlloc(b.allocator, sub_path, max_bytes);
+}
+
 /// Resolve dependency path - uses workspace root pantry/ directory (created by `pantry install`)
 /// For local dev: `pantry install` symlinks from ~/Code/Libraries/*
 /// For CI: workflow clones deps into pantry/ at workspace root
@@ -7,24 +36,12 @@ fn resolveDependencyPath(b: *std.Build, package_name: []const u8, entry_point: [
     // pantry/ folder is at the workspace root (../../ from packages/zig/)
     const primary = b.fmt("../../pantry/{s}/{s}", .{ package_name, entry_point });
     // Try primary path first, fall back to fallback
-    const primary_exists = if (@hasField(std.Build.Graph, "io")) blk: {
-        b.build_root.handle.access(b.graph.io, primary, .{}) catch break :blk false;
-        break :blk true;
-    } else blk: {
-        b.build_root.handle.access(primary, .{}) catch break :blk false;
-        break :blk true;
-    };
+    const primary_exists = buildRootPathExists(b, primary);
     if (primary_exists) {
         return primary;
     }
     // Try fallback path
-    const fallback_exists = if (@hasField(std.Build.Graph, "io")) blk: {
-        b.build_root.handle.access(b.graph.io, fallback_path, .{}) catch break :blk false;
-        break :blk true;
-    } else blk: {
-        b.build_root.handle.access(fallback_path, .{}) catch break :blk false;
-        break :blk true;
-    };
+    const fallback_exists = buildRootPathExists(b, fallback_path);
     if (fallback_exists) {
         return fallback_path;
     }
@@ -556,10 +573,7 @@ pub fn build(b: *std.Build) void {
 /// Get package version from package.json
 fn getPackageVersion(b: *std.Build) ![]const u8 {
     // Read version directly from root package.json (../../ from packages/zig/)
-    const content = if (@hasField(std.Build.Graph, "io"))
-        b.build_root.handle.readFileAlloc(b.graph.io, "../../package.json", b.allocator, .limited(1024 * 1024)) catch return "0.0.0"
-    else
-        b.build_root.handle.readFileAlloc(b.allocator, "../../package.json", 1024 * 1024) catch return "0.0.0";
+    const content = readBuildRootFileAlloc(b, "../../package.json", 1024 * 1024) catch return "0.0.0";
     // Find "version": "x.y.z" (first occurrence)
     const needle = "\"version\"";
     const idx = std.mem.indexOf(u8, content, needle) orelse return "0.0.0";
