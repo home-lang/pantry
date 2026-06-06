@@ -8,7 +8,6 @@
  *
  * @install `pantry install amp.rs`
  * @homepage https://amp.rs
- * @dependencies `zlib.net@1`, `libgit2.org@1`, `linux:openssl.org@1.1` (includes OS-specific dependencies with `os:package` format)
  *
  * @example
  * ```typescript
@@ -60,11 +59,7 @@ export const amprsPackage = {
   * These are required when running the package.
   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
   */
-  dependencies: [
-    'zlib.net@1',
-    'libgit2.org@1',
-    'linux:openssl.org@1.1',
-  ] as const,
+  dependencies: [] as const,
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.

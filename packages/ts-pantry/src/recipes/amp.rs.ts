@@ -7,28 +7,29 @@ export const recipe: Recipe = {
   homepage: 'https://amp.rs',
   github: 'https://github.com/jmacdonald/amp',
   programs: ['amp'],
+  platforms: ['darwin/aarch64', 'linux/x86-64'],
   versionSource: {
     type: 'github-releases',
     repo: 'jmacdonald/amp',
   },
-  distributable: {
-    url: 'https://github.com/jmacdonald/amp/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
-  dependencies: {
-    'zlib.net': '1',
-    'libgit2.org': '1',
-  },
-  buildDependencies: {
-    'rust-lang.org': '^1.56',
-    'rust-lang.org/cargo': '*',
-  },
+  distributable: null,
 
   build: {
     script: [
-      'cd "src"',
-      'sed -f $PROP main.rs > main.rs.new && mv main.rs.new main.rs',
-      'cargo install --locked --path . --root {{prefix}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET=amp-aarch64-apple-darwin ;;',
+      '  linux+x86-64) ASSET=amp-x86_64-unknown-linux-musl ;;',
+      '  *) echo "unsupported platform {{hw.platform}}/{{hw.arch}} (upstream ships darwin/aarch64 and linux/x86-64 only)" >&2; exit 1 ;;',
+      'esac',
+      'curl -Lfo amp "https://github.com/jmacdonald/amp/releases/download/{{version.raw}}/$ASSET"',
+      'mkdir -p {{prefix}}/bin',
+      'install -m755 amp {{prefix}}/bin/amp',
+    ],
+  },
+  test: {
+    script: [
+      'test -s {{prefix}}/bin/amp',
+      'test -x {{prefix}}/bin/amp',
     ],
   },
 }
