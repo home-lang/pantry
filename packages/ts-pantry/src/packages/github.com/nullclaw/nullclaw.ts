@@ -2,13 +2,12 @@
  * **nullclaw** - pkgx package
  *
  * @domain `github.com/nullclaw/nullclaw`
- * @programs `nullclaw`, `nullclaw-init`
- * @version `2026.3.21` (18 versions available)
+ * @programs `nullclaw`
+ * @version `2026.5.29` (19 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/nullclaw/nullclaw`
- * @dependencies `github.com/mikefarah/yq`, `stedolan.github.io/jq`, `gnu.org/sed`
- * @buildDependencies `curl.se`, `gnu.org/coreutils` - required only when building from source
+ * @buildDependencies `curl.se` - required only when building from source
  *
  * @example
  * ```typescript
@@ -16,8 +15,8 @@
  *
  * const pkg = pantry.githubcomnullclawnullclaw
  * console.log(pkg.name)        // "nullclaw"
- * console.log(pkg.programs)    // ["nullclaw", "nullclaw-init"]
- * console.log(pkg.versions[0]) // "2026.3.21" (latest)
+ * console.log(pkg.programs)    // ["nullclaw"]
+ * console.log(pkg.versions[0]) // "2026.5.29" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/nullclaw/nullclaw.md
@@ -38,7 +37,7 @@ export const nullclawPackage = {
   description: '' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/nullclaw/nullclaw/package.yml' as const,
   homepageUrl: '' as const,
-  githubUrl: '' as const,
+  githubUrl: 'https://github.com/nullclaw/nullclaw' as const,
   /**
   * Command to install this package using pantry.
   * @example pantry install package-name
@@ -52,31 +51,26 @@ export const nullclawPackage = {
   */
   programs: [
     'nullclaw',
-    'nullclaw-init',
   ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.
   * These are required when running the package.
   */
-  dependencies: [
-    'github.com/mikefarah/yq',
-    'stedolan.github.io/jq',
-    'gnu.org/sed',
-  ] as const,
+  dependencies: [] as const,
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
   */
   buildDependencies: [
     'curl.se',
-    'gnu.org/coreutils',
   ] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2026.5.29',
     '2026.3.21',
     '2026.3.18',
     '2026.3.17',

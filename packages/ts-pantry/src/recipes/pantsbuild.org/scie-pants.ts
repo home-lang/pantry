@@ -18,6 +18,7 @@ export const recipe: Recipe = {
     script: [
       'curl -Lfo pants https://github.com/pantsbuild/scie-pants/releases/download/v{{version}}/scie-pants-$PLATFORM',
       'chmod u+x pants',
+      'install -Dm755 pants {{prefix}}/bin/pants',
     ],
     env: {
       'darwin/aarch64': {
