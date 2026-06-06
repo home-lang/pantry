@@ -3,13 +3,11 @@
  *
  * @domain `digitalocean.com/doctl`
  * @programs `doctl`
- * @version `2.59.3` (57 versions available)
+ * @version `1.160.1` (62 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install digitalocean.com/doctl`
  * @homepage https://docs.digitalocean.com/reference/doctl/
- * @buildDependencies `go.dev@^1.21` - required only when building from source
- *
  * @example
  * ```typescript
  * import { pantry } from 'ts-pantry'
@@ -18,7 +16,7 @@
  * console.log(pkg.name)        // "doctl"
  * console.log(pkg.description) // "The official command line interface for the Dig..."
  * console.log(pkg.programs)    // ["doctl"]
- * console.log(pkg.versions[0]) // "2.59.3" (latest)
+ * console.log(pkg.versions[0]) // "1.160.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/digitalocean-com/doctl.md
@@ -56,20 +54,19 @@ export const digitaloceancomdoctlPackage = {
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
-  /**
-  * Build dependencies for this package.
-  * These are only required when building the package from source.
-  */
-  buildDependencies: [
-    'go.dev@^1.21',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
-    '2.59.3',
-    '2.59.2',
+    '1.160.1',
+    '1.159.0',
+    '1.158.0',
+    '1.157.0',
+    '1.155.0',
+    '1.154.0',
+    '1.153.0',
     '1.152.0',
     '1.151.0',
     '1.150.0',
