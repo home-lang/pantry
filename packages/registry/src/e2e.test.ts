@@ -231,7 +231,8 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
         const data = tarballs.get(href)
         if (data) {
           upstreamRequests += 1
-          return new Response(data, { status: 200, headers: { 'Content-Type': 'application/octet-stream' } })
+          const body = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer
+          return new Response(body, { status: 200, headers: { 'Content-Type': 'application/octet-stream' } })
         }
         return realFetch(input, init)
       }) as typeof fetch

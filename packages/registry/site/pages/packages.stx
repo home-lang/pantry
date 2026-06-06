@@ -17,6 +17,7 @@
       <div class="stat-card"><p class="stat-label">Projects complete</p><p class="stat-num" id="stat-complete" style="color: var(--green);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Updates available</p><p class="stat-num" id="stat-updates" style="color: var(--accent);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Building now</p><p class="stat-num" id="stat-building" style="color: var(--yellow);">&mdash;</p></div>
+      <div class="stat-card" id="stat-actions-card"><p class="stat-label">GitHub Actions</p><p class="stat-num" id="stat-actions" style="color: var(--green);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Failed</p><p class="stat-num" id="stat-failed" style="color: var(--red, #f87171);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Unbuilt</p><p class="stat-num" id="stat-unbuilt" style="color: var(--fg-subtle);">&mdash;</p></div>
     </div>
@@ -333,6 +334,16 @@
 
       function bump(el) { if (!el) return; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump') }
       function setStat(id, val) { var el = document.getElementById(id); if (el && el.textContent !== String(val)) { el.textContent = val; bump(el) } }
+      function renderActionsSummary() {
+        var gh = status.githubActions || {}
+        var recent = gh.recent || []
+        var active = (gh.running || 0) + (gh.queued || 0)
+        var card = document.getElementById('stat-actions-card')
+        var num = document.getElementById('stat-actions')
+        if (card) card.title = gh.error ? gh.error : (active + ' active · ' + recent.length + ' recent')
+        if (num) num.style.color = gh.error ? 'var(--red, #f87171)' : (recent.length ? 'var(--green)' : 'var(--fg-subtle)')
+        setStat('stat-actions', gh.error ? 'err' : recent.length)
+      }
       function renderSummary() {
         var bm = buildingMap()
         var complete = 0, updates = 0, failed = 0, unbuilt = 0
@@ -361,6 +372,7 @@
         // Count raw live build jobs so this card reflects worker activity; the
         // table filters still collapse by package row for scanability.
         setStat('stat-building', (status.building || []).length)
+        renderActionsSummary()
         setStat('stat-failed', failed)
         setStat('stat-unbuilt', unbuilt)
       }
