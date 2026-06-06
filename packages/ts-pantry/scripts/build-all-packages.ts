@@ -361,9 +361,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'gleam.run': ['<1.0.0'],
   // gnu.org/diffutils 3.2.0: gets() removed from glibc 2.32+ — FIXED via override
   // (prependScript patches c-stack.c SIGSTKSZ and stdio.h gets() warning)
-  // fermyon.com/spin: wasm32-wasi target renamed to wasm32-wasip1 in Rust 1.93+;
-  // spin's build.rs hardcodes wasm32-wasi which can't be fixed via overrides
-  'fermyon.com/spin': ['*'],
+  // fermyon.com/spin removed — switched to official per-platform release archives
   // dhall 1.42.3 on Hackage but no pre-built binary on GitHub (latest release is 1.42.2)
   'dhall-lang.org': ['>=1.42.3'],
   // Go 1.26 breaks vendored tokeninternal + linker/timeout issues.
