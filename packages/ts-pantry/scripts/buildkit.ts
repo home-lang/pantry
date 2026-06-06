@@ -553,6 +553,18 @@ export function generateBuildScript(
   const osName = os === 'darwin' ? 'darwin' : 'linux'
   const archName = (arch === 'arm64' || arch === 'aarch64') ? 'aarch64' : 'x86-64'
 
+  // Cross-platform download fanout: when the TARGET os/arch differs from the
+  // HOST (e.g. a linux-x86-64 box producing a darwin-x86-64 download artifact),
+  // the build script still RUNS ON THE HOST, but the resolved dependency `bin`
+  // binaries (curl, tar, unzip, …) were downloaded for the TARGET arch and
+  // cannot execute on the host ("Exec format error"). For foreign targets we
+  // must NOT prepend the target-arch dep bin dirs to PATH — the host's system
+  // tools have to win. Headers/libs (LIBRARY_PATH/CPATH/pkgconfig) are
+  // arch-independent enough to keep; only executable bins are gated.
+  const hostOsName = process.platform === 'darwin' ? 'darwin' : 'linux'
+  const hostArchName = (process.arch === 'arm64' || process.arch === 'aarch64') ? 'aarch64' : 'x86-64'
+  const isForeignTarget = osName !== hostOsName || archName !== hostArchName
+
   // Narrow build to object form (or undefined) for property access throughout this function
   const build: RecipeBuildConfig | undefined =
     recipe.build && typeof recipe.build === 'object' && !Array.isArray(recipe.build)
@@ -1046,7 +1058,20 @@ else if (osName === 'darwin') {
   if (depBinPaths.length > 0 || depLibPaths.length > 0 || depPkgConfigPaths.length > 0) {
     sections.push('# Dependency paths')
     if (depBinPaths.length > 0) {
-      sections.push(`export PATH="${depBinPaths.join(':')}:$PATH"`)
+      if (isForeignTarget) {
+        // Foreign-target download build: the dep bins are the TARGET arch and
+        // can't run on this host. Make sure the host's system tool dirs are on
+        // PATH, then append (not prepend) the dep bins so the host's curl/tar/
+        // unzip/etc. win. The download script only needs basic host tools.
+        sections.push('# Foreign-target build: prefer HOST system tools over target-arch dep bins')
+        sections.push('case ":$PATH:" in *:/usr/local/bin:*) ;; *) export PATH="$PATH:/usr/local/bin" ;; esac')
+        sections.push('case ":$PATH:" in *:/usr/bin:*) ;; *) export PATH="$PATH:/usr/bin" ;; esac')
+        sections.push('case ":$PATH:" in *:/bin:*) ;; *) export PATH="$PATH:/bin" ;; esac')
+        sections.push(`export PATH="$PATH:${depBinPaths.join(':')}"`)
+      }
+      else {
+        sections.push(`export PATH="${depBinPaths.join(':')}:$PATH"`)
+      }
     }
     if (depLibPaths.length > 0) {
       sections.push(`export LIBRARY_PATH="${depLibPaths.join(':')}:\${LIBRARY_PATH:-}"`)
