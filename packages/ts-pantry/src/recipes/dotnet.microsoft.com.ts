@@ -10,12 +10,9 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-tags',
     repo: 'dotnet/sdk',
-    tagPattern: /^v(.+)$/,
+    tagPattern: /^v(10\..+)$/,
   },
-  distributable: {
-    url: 'https://github.com/dotnet/sdk/archive/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
+  distributable: null,
   dependencies: {
     linux: {
       'unicode.org': '^71',

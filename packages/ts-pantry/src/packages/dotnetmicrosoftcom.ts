@@ -1,9 +1,9 @@
 /**
- * **dotnet** - Home of .NET's Virtual Monolithic Repository which includes all the code needed to build the .NET SDK from source
+ * **dotnet** - Home of the .NET platform
  *
  * @domain `dotnet.microsoft.com`
  * @programs `dotnet`
- * @version `10.0.201` (52 versions available)
+ * @version `10.0.300` (50 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install dotnet.microsoft.com`
@@ -17,9 +17,9 @@
  *
  * const pkg = pantry.dotnetmicrosoftcom
  * console.log(pkg.name)        // "dotnet"
- * console.log(pkg.description) // "Home of .NET's Virtual Monolithic Repository wh..."
+ * console.log(pkg.description) // "Home of the .NET platform"
  * console.log(pkg.programs)    // ["dotnet"]
- * console.log(pkg.versions[0]) // "10.0.201" (latest)
+ * console.log(pkg.versions[0]) // "10.0.300" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/dotnet-microsoft-com.md
@@ -37,7 +37,7 @@ export const dotnetmicrosoftcomPackage = {
   /**
   * Brief description of what this package does.
   */
-  description: 'Home of .NET\'s Virtual Monolithic Repository which includes all the code needed to build the .NET SDK from source' as const,
+  description: 'Home of the .NET platform' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/dotnet.microsoft.com/package.yml' as const,
   homepageUrl: 'https://dotnet.microsoft.com/' as const,
   githubUrl: 'https://github.com/dotnet/dotnet' as const,
@@ -77,8 +77,6 @@ export const dotnetmicrosoftcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
-    '11.0.100',
-    '11.0.0',
     '10.0.300',
     '10.0.204',
     '10.0.203',
