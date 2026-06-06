@@ -8,6 +8,7 @@ export const recipe: Recipe = {
   ],
   distributable: null,
   build: {
+    skip: ['fix-patchelf'],
     script: [
       'VERSION={{version}}',
       'case {{hw.platform}}+{{hw.arch}} in',
@@ -27,7 +28,8 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      '{{prefix}}/bin/rav1e --version | grep {{version}}',
+      '{{prefix}}/bin/rav1e --version > out',
+      'grep {{version}} out',
     ],
   },
 }
