@@ -6,50 +6,27 @@ export const recipe: Recipe = {
   programs: [
     'hadolint',
   ],
-  buildDependencies: {
-    'haskell.org': '~9.10',
-    'haskell.org/cabal': '^3',
-    'git-scm.org': '^2',
-    linux: {
-      'gnu.org/binutils': '~2.44',
-    },
-  },
-  distributable: {
-    url: 'https://github.com/hadolint/hadolint/archive/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
+  distributable: null,
   build: {
     script: [
-      {
-        run: 'sed -i \'s|Merge objects command.*|Merge objects command", "/usr/bin/ld")|\' settings',
-        if: 'darwin',
-        'working-directory': '${{deps.haskell.org.prefix}}/.ghcup/ghc/9.10.3/lib/ghc-9.10.3/lib',
-      },
-      {
-        run: 'sed -i \'s|Merge objects command.*|Merge objects command", {{deps.gnu.org/binutils.prefix}}/bin/ld)|\' settings',
-        if: 'linux',
-        'working-directory': '${{deps.haskell.org.prefix}}/.ghcup/ghc/9.10.3/lib/ghc-9.10.3/lib',
-      },
-      'export LDFLAGS="$(echo $LDFLAGS | tr \' \' \'\\n\' | grep -v -- \'-rpath\' | tr \'\\n\' \' \')"',
-      {
-        run: 'sed -i -f $PROP hadolint.cabal',
-        if: 'darwin',
-      },
-      'cabal v2-update',
-      'cabal v2-install $ARGS',
+      'VERSION={{version.tag}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="hadolint-macos-arm64" ;;',
+      '  darwin+x86-64)  ASSET="hadolint-macos-x86_64" ;;',
+      '  linux+aarch64)  ASSET="hadolint-linux-arm64" ;;',
+      '  linux+x86-64)   ASSET="hadolint-linux-x86_64" ;;',
+      '  *) echo "unsupported platform {{hw.platform}}/{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      'curl -Lfo hadolint "https://github.com/hadolint/hadolint/releases/download/${VERSION}/${ASSET}"',
+      'install -Dm755 hadolint {{prefix}}/bin/hadolint',
     ],
-    env: {
-      ARGS: [
-        '--jobs={{hw.concurrency}}',
-        '--install-method=copy',
-        '--installdir={{prefix}}/bin',
-      ],
-    },
   },
   test: {
     script: [
       'hadolint --version | grep {{version}}',
-      'echo $(hadolint $FIXTURE || true) | grep DL3006',
+      'printf "FROM ubuntu\\nRUN apt-get update\\n" > Dockerfile',
+      'hadolint Dockerfile 2>&1 | tee out || true',
+      'grep DL3006 out',
     ],
   },
 }
