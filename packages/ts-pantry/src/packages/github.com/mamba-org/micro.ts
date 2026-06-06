@@ -3,7 +3,7 @@
  *
  * @domain `github.com/mamba-org/micro`
  * @programs `micromamba`
- * @version `2.8.0` (34 versions available)
+ * @version `2.8.0` (35 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/mamba-org/micro`

@@ -508,7 +508,6 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // Old spdlog cmake failures; 1.15.3+ works on both
   'github.com/gabime/spdlog': ['<1.15.0'],
   // All versions fail (not installable via current recipe)
-  'github.com/mamba-org/micro': ['*'],
   // inetutils 2.4.0/2.5.0 fail on linux; 2.6.0 works on darwin, 2.7.0+ works on both
   'gnu.org/inetutils': ['2.4.0', '2.5.0'],
   // bc 1.7.1 fails on linux; 1.8.0+ works on both
