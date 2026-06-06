@@ -6,20 +6,28 @@ export const recipe: Recipe = {
   programs: [
     'rav1e',
   ],
-  dependencies: {
-    'nasm.us': '^2.14.02',
-  },
-  buildDependencies: {
-    'rust-lang.org': '^1.70',
-    'rust-lang.org/cargo': '*',
-  },
-  distributable: {
-    url: 'https://github.com/xiph/rav1e/archive/refs/tags/v{{ version }}.tar.gz',
-    stripComponents: 1,
-  },
+  distributable: null,
   build: {
     script: [
-      'cargo install --locked --path . --root {{prefix}}',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="rav1e-${VERSION}-macos-aarch64.zip"; ARCHIVE="rav1e.zip" ;;',
+      '  darwin+x86-64)  ASSET="rav1e-${VERSION}-macos.zip"; ARCHIVE="rav1e.zip" ;;',
+      '  linux+aarch64)  ASSET="rav1e-${VERSION}-linux-aarch64.tar.gz"; ARCHIVE="rav1e.tar.gz" ;;',
+      '  linux+x86-64)   ASSET="rav1e-${VERSION}-linux-generic.tar.gz"; ARCHIVE="rav1e.tar.gz" ;;',
+      '  *) echo "unsupported platform {{hw.platform}}/{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      'curl -Lfo "$ARCHIVE" "https://github.com/xiph/rav1e/releases/download/v${VERSION}/${ASSET}"',
+      'case "$ARCHIVE" in',
+      '  *.zip) unzip -q "$ARCHIVE" ;;',
+      '  *.tar.gz) tar xzf "$ARCHIVE" ;;',
+      'esac',
+      'install -Dm755 rav1e {{prefix}}/bin/rav1e',
+    ],
+  },
+  test: {
+    script: [
+      'rav1e --version | grep {{version}}',
     ],
   },
 }

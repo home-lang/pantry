@@ -7,8 +7,6 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/xiph/rav1e`
- * @dependencies `nasm.us^2.14.02`
- *
  * @example
  * ```typescript
  * import { pantry } from 'ts-pantry'
@@ -54,13 +52,7 @@ export const rav1ePackage = {
     'rav1e',
   ] as const,
   companions: [] as const,
-  /**
-  * Runtime dependencies for this package.
-  * These are required when running the package.
-  */
-  dependencies: [
-    'nasm.us^2.14.02',
-  ] as const,
+  dependencies: [] as const,
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.

@@ -418,8 +418,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'gnupg.org/pinentry': ['1.2.1'],
   // Old samtools fail on linux (hts_version symbol mismatch); 1.23.0 works on both
   'htslib.org/samtools': ['<1.23.0'],
-  // rav1e old versions Rust build failure on darwin; 0.9+ works
-  'github.com/xiph/rav1e': ['<0.9.0'],
+  // github.com/xiph/rav1e removed — official 0.8.x release binaries avoid Rust source build failure
   // Old time crate v0.3.x incompatible with Rust 1.93+ (type inference error);
   // lychee 0.15.1 (latest) builds fine
   'lychee.cli.rs': ['<0.15.1'],
