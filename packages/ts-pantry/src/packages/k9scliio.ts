@@ -69,6 +69,7 @@ export const k9scliioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.51.0',
     '0.50.18',
     '0.50.17',
     '0.50.16',
