@@ -2033,8 +2033,28 @@ catch {
     // Ignore errors listing directory
   }
 
-  // Run health check / test from the recipe (if defined)
-  if (recipe.test) {
+  // Run health check / test from the recipe (if defined).
+  //
+  // Cross-platform download fanout: when building a FOREIGN target (e.g. a
+  // linux-arm64 download recipe on a darwin-arm64 host), we cannot execute the
+  // installed binary, so the recipe's `test` (which runs `foo --version`) would
+  // fail spuriously. For foreign targets we SKIP execution and instead run
+  // `verifyForeignArtifact`, which inspects the installed binaries with `file`
+  // and asserts the magic matches the target os/arch. That check THROWS on
+  // failure so a bad foreign artifact (failed download/extract, arch-mapping
+  // bug) is caught here, before build-all-packages.ts packages/uploads it.
+  const hostPlatform = getHostPlatform()
+  const [tgtOs, tgtArch] = normalizePlatform(platform)
+  const [hostOs, hostArch] = normalizePlatform(hostPlatform)
+  const isForeignTarget = tgtOs !== hostOs || tgtArch !== hostArch
+
+  if (isForeignTarget) {
+    console.log(`\n⏭️  foreign target ${platform} on host ${hostPlatform}: skipping execution health-check, verifying artifact instead`)
+    // verifyForeignArtifact throws on failure — propagate so the build fails and
+    // nothing bad gets packaged/uploaded.
+    verifyForeignArtifact(prefix, platform)
+  }
+else if (recipe.test) {
     console.log('\n🧪 Running health check...')
     try {
       runHealthCheck(recipe.test, prefix, templateVars, depPaths, platform)
@@ -2047,6 +2067,103 @@ catch (error: unknown) {
       // or network requirements that aren't available in CI.
     }
   }
+}
+
+/**
+ * Compute the HOST platform string (matching the `--platform` format, e.g.
+ * `darwin-arm64`, `linux-x86-64`) from the current process.
+ */
+function getHostPlatform(): string {
+  const hostOs = process.platform === 'darwin' ? 'darwin' : 'linux'
+  const procArch = String(process.arch)
+  const hostArch = (procArch === 'arm64' || procArch === 'aarch64') ? 'aarch64' : 'x86-64'
+  return `${hostOs}-${hostArch}`
+}
+
+/**
+ * Parse a `<os>-<arch>` platform string into a normalized [os, arch] tuple.
+ * os ∈ {darwin, linux}; arch ∈ {aarch64, x86-64}. Accepts `arm64`/`aarch64`
+ * for ARM and anything else maps to `x86-64`.
+ */
+function normalizePlatform(platform: string): [string, string] {
+  const [rawOs, ...rest] = platform.split('-')
+  const rawArch = rest.join('-')
+  const os = rawOs === 'darwin' ? 'darwin' : 'linux'
+  const arch = (rawArch === 'arm64' || rawArch === 'aarch64') ? 'aarch64' : 'x86-64'
+  return [os, arch]
+}
+
+/**
+ * Verify a FOREIGN-target install without executing it. Globs binaries under
+ * {{prefix}}/bin and {{prefix}}/sbin, then runs `file -L` (follow symlinks, so
+ * the helix/powershell libexec+symlink pattern resolves to the real binary) and
+ * asserts at least one binary's magic matches the TARGET os/arch.
+ *
+ * Throws if the install produced no files (download/extract failed) or if no
+ * installed binary matches the expected magic (catches arch-mapping bugs — the
+ * main risk of cross-building). Tolerates non-binary helpers (scripts, data).
+ */
+function verifyForeignArtifact(prefix: string, platform: string): void {
+  const [os, arch] = normalizePlatform(platform)
+
+  // Collect candidate files under bin/ and sbin/.
+  const candidates: string[] = []
+  for (const sub of ['bin', 'sbin']) {
+    const dir = join(prefix, sub)
+    if (!existsSync(dir))
+      continue
+    let entries: string[] = []
+    try { entries = readdirSync(dir) }
+    catch { continue }
+    for (const name of entries) {
+      const p = join(dir, name)
+      try {
+        // statSync follows symlinks — a dangling symlink throws and is skipped.
+        const st = statSync(p)
+        if (st.isFile() && st.size > 0)
+          candidates.push(p)
+      }
+catch {
+        // Skip dangling symlinks / unreadable entries.
+      }
+    }
+  }
+
+  if (candidates.length === 0)
+    throw new Error(`verifyForeignArtifact: no non-empty binaries found under ${prefix}/bin or ${prefix}/sbin — the download/extract for ${platform} produced nothing`)
+
+  // Expected magic substrings for the target os/arch.
+  const expectFormat = os === 'darwin' ? 'Mach-O' : 'ELF'
+  const expectArch = os === 'darwin'
+    ? (arch === 'aarch64' ? ['arm64'] : ['x86_64'])
+    : (arch === 'aarch64' ? ['aarch64', 'ARM aarch64'] : ['x86-64', 'x86_64'])
+
+  let matched: { path: string, out: string } | undefined
+  const inspected: Array<{ path: string, out: string }> = []
+  for (const p of candidates) {
+    let out = ''
+    try {
+      // -b: brief, -L: follow symlinks so we inspect the real binary, not the link.
+      out = execSync(`file -bL "${p}"`, { encoding: 'utf-8' }).trim()
+    }
+catch (e) {
+      out = `(file failed: ${(e as Error).message})`
+    }
+    inspected.push({ path: p, out })
+    if (out.includes(expectFormat) && expectArch.some(a => out.includes(a))) {
+      matched = { path: p, out }
+      break
+    }
+  }
+
+  if (!matched) {
+    console.error(`❌ foreign-target sanity FAILED for ${platform}: no installed binary matches ${expectFormat} + [${expectArch.join(', ')}]`)
+    for (const { path, out } of inspected)
+      console.error(`   - ${path} → ${out}`)
+    throw new Error(`verifyForeignArtifact: no installed binary under ${prefix} matches the expected ${platform} magic (${expectFormat} + [${expectArch.join(', ')}]) — likely an arch-mapping or download bug`)
+  }
+
+  console.log(`🔎 foreign-target sanity: ${matched.path} → ${matched.out} (OK)`)
 }
 
 // CLI entry point

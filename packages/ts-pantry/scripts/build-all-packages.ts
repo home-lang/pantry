@@ -68,6 +68,29 @@ interface BuildablePackage {
   hasProps: boolean
   depDomains: string[] // Domains this package depends on (for ordering)
   isApp: boolean // true for GUI applications (non-CLI)
+  // true for zig-style "download recipes": no real source distributable, but a
+  // build.script that cases on {{hw.platform}}/{{hw.arch}} to curl an official
+  // prebuilt per-platform binary. These are the ONLY recipes safe to fan out to
+  // foreign --platform targets (no compilation happens).
+  isDownloadRecipe: boolean
+}
+
+/**
+ * Detect a zig-style download recipe: no real source distributable AND a build
+ * script that fetches a prebuilt per-platform asset.
+ *
+ * @param hasDistributable whether the recipe declares a real source tarball URL
+ * @param hasBuildScript   whether the recipe has any build.script
+ * @param sourceText       raw recipe/YAML text to scan for download signals
+ */
+function detectDownloadRecipe(hasDistributable: boolean, hasBuildScript: boolean, sourceText: string): boolean {
+  if (hasDistributable || !hasBuildScript)
+    return false
+  return /\{\{\s*hw\.platform\s*\}\}/.test(sourceText)
+    || /hw\.platform/.test(sourceText)
+    || /releases\/download/.test(sourceText)
+    || /\bcurl\b/.test(sourceText)
+    || /\bfetch\b/.test(sourceText)
 }
 
 function domainToKey(domain: string): string {
@@ -218,6 +241,7 @@ else if (entry.name === 'package.yml') {
             hasProps: hasPropsDir,
             depDomains,
             isApp: desktopApp,
+            isDownloadRecipe: detectDownloadRecipe(hasDistributable, hasBuildScript, content),
           })
         }
 catch {
@@ -274,6 +298,13 @@ catch {
           .map((d: string) => d.replace(/@.*$/, '').replace(/\^.*$/, '').replace(/>=.*$/, '').replace(/:.*$/, '').trim())
           .filter(Boolean)
 
+        // A TS recipe is a zig-style download recipe when it declares no real
+        // source distributable (`distributable: null` / absent url) AND its
+        // build.script fetches a prebuilt per-platform asset. recipeSrc holds
+        // the recipe's TS source; reuse the shared detector against it.
+        const recipeHasRealDistributable = /distributable\s*:\s*(?!null\b)['"{]/.test(recipeSrc)
+        const recipeIsDownload = detectDownloadRecipe(recipeHasRealDistributable, true, recipeSrc)
+
         packages.push({
           domain,
           name: pkg.name || domain,
@@ -286,6 +317,7 @@ catch {
           hasProps: false,
           depDomains,
           isApp,
+          isDownloadRecipe: recipeIsDownload,
         })
       }
     }
@@ -1406,6 +1438,7 @@ async function main() {
       list: { type: 'boolean', short: 'l', default: false },
       'dry-run': { type: 'boolean', default: false },
       'apps-only': { type: 'boolean', default: false },
+      'download-only': { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h' },
     },
     strict: true,
@@ -1436,6 +1469,7 @@ Options:
   -l, --list               List all buildable packages
   --dry-run                Show what would be built
   --apps-only           Only build apps (GUI applications)
+  --download-only          Only build zig-style download recipes (cross-platform safe)
   -h, --help               Show help
 `)
     process.exit(0)
@@ -1460,6 +1494,20 @@ Options:
   const withoutScript = values.package ? [] : allPackages.filter(p => !p.hasBuildScript)
   if (!values.package) {
     allPackages = allPackages.filter(p => p.hasBuildScript)
+  }
+
+  // --download-only: restrict the sweep to zig-style download recipes. These are
+  // the only recipes safe to fan out to a foreign --platform target (no
+  // compilation happens — they just curl the official prebuilt binary). A SOURCE
+  // recipe built with a foreign --platform would try to compile for the wrong
+  // target and fail, so we must exclude them. Quietly drop non-download recipes
+  // and log a one-line summary at the end.
+  let downloadOnlySkipped = 0
+  if (values['download-only']) {
+    const before = allPackages.length
+    allPackages = allPackages.filter(p => p.isDownloadRecipe)
+    downloadOnlySkipped = before - allPackages.length
+    logDiscovery(`download-only mode: including ${allPackages.length} download recipes, skipping ${downloadOnlySkipped} source recipes`)
   }
 
   // Platform-aware filtering: skip packages that can't build on this platform
@@ -2229,6 +2277,9 @@ else {
 
   const attempted = uploaded.length + failed.length
   console.log(`\nTotal: ${uploaded.length} uploaded, ${skipped.length} skipped, ${unavailable.length} unavailable, ${failed.length} failed`)
+
+  if (values['download-only'])
+    console.log(`download-only mode: built ${uploaded.length} download recipes, skipped ${downloadOnlySkipped} source recipes`)
 
   // Write GitHub Actions Job Summary so failures are visible on the run page
   const summaryPath = process.env.GITHUB_STEP_SUMMARY
