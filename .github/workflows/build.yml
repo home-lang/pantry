@@ -42,6 +42,11 @@ on:
         description: 'Workers to run concurrently WITHIN this runner (build-all-packages has no in-process parallelism). Each splits the runner stripe into a sub-stripe, so effective concurrency = runners x parallel. Empty/1 = one worker. Use ~3 on Linux, ~2 on macOS (RAM).'
         required: false
         type: string
+      multi_version:
+        description: 'Build multiple important versions instead of only latest'
+        required: false
+        type: boolean
+        default: false
 
 env:
   # Build-status dashboard reporting is authenticated; without this token every
@@ -146,7 +151,22 @@ jobs:
             PACKAGES="${PACKAGES// /,}"
             ARGS="$ARGS -p $PACKAGES"
           fi
-          STRIPE=$(echo "${{ github.event.inputs.stripe }}" | tr -cd '0-9/')
+          STRIPE_INPUT="${{ github.event.inputs.stripe || '' }}"
+          STRIPE=""
+          if [ -n "$STRIPE_INPUT" ]; then
+            if [[ "$STRIPE_INPUT" =~ ^[0-9]+/[0-9]+$ ]]; then
+              STRIPE="$STRIPE_INPUT"
+              stripe_i="${STRIPE%%/*}"
+              stripe_n="${STRIPE##*/}"
+              if [ "$stripe_n" -le 0 ] || [ "$stripe_i" -ge "$stripe_n" ]; then
+                echo "::error::Invalid stripe '$STRIPE_INPUT' (expected i/n with 0<=i<n, e.g. 0/6)"
+                exit 1
+              fi
+            else
+              echo "::error::Invalid stripe '$STRIPE_INPUT' (use a numeric i/n like 0/6; dispatch separate runs for 0/6, 1/6, ...)"
+              exit 1
+            fi
+          fi
           if [ -n "$STRIPE" ]; then
             ARGS="$ARGS --stripe $STRIPE"
           fi
@@ -326,6 +346,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           cd packages/ts-pantry
 
           FORCE="${{ github.event.inputs.force || 'true' }}"
@@ -355,8 +376,25 @@ jobs:
               PACKAGES="${PACKAGES// /,}"
               ARGS="$ARGS -p $PACKAGES"
             fi
-            # Even slice of the needs-build set for parallel fan-out (e.g. "0/8")
-            STRIPE=$(echo "${{ github.event.inputs.stripe }}" | tr -cd '0-9/')
+            # Even slice of the needs-build set for parallel fan-out (e.g. "0/8").
+            # Validate instead of stripping characters: a literal "i/8" would
+            # otherwise become "/8" and fail after more runner setup.
+            STRIPE_INPUT="${{ github.event.inputs.stripe || '' }}"
+            STRIPE=""
+            if [ -n "$STRIPE_INPUT" ]; then
+              if [[ "$STRIPE_INPUT" =~ ^[0-9]+/[0-9]+$ ]]; then
+                STRIPE="$STRIPE_INPUT"
+                stripe_i="${STRIPE%%/*}"
+                stripe_n="${STRIPE##*/}"
+                if [ "$stripe_n" -le 0 ] || [ "$stripe_i" -ge "$stripe_n" ]; then
+                  echo "::error::Invalid stripe '$STRIPE_INPUT' (expected i/n with 0<=i<n, e.g. 0/8)"
+                  exit 1
+                fi
+              else
+                echo "::error::Invalid stripe '$STRIPE_INPUT' (use a numeric i/n like 0/8; dispatch separate runs for 0/8, 1/8, ...)"
+                exit 1
+              fi
+            fi
           fi
 
           # Internal parallelism: build-all-packages has no in-process concurrency
@@ -366,6 +404,9 @@ jobs:
           # runner uses all its cores and effective concurrency = runners x PAR.
           PAR=$(echo "${{ github.event.inputs.parallel }}" | tr -cd '0-9'); PAR=${PAR:-1}
           [ "${PAR:-1}" -lt 1 ] && PAR=1
+          if [ -z "${STRIPE:-}" ] && [ "$PAR" -gt 1 ]; then
+            STRIPE="0/1"
+          fi
           if [ -n "$STRIPE" ] && [ "$PAR" -gt 1 ]; then
             i=${STRIPE%%/*}; n=${STRIPE##*/}; tot=$(( n * PAR ))
             echo "Internal parallelism: $PAR workers, sub-stripes of $STRIPE over $tot total"
