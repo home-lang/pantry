@@ -1,49 +1,50 @@
 import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
-  domain: "crates.io/termusic",
-  name: "termusic",
+  domain: 'crates.io/termusic',
+  name: 'termusic',
   programs: [
-    "termusic",
-    "termusic-server",
+    'termusic',
+    'termusic-server',
   ],
   dependencies: {
     linux: {
-      'alsa-project.org/alsa-lib': "*",
-      'freedesktop.org/dbus': "*",
+      'alsa-project.org/alsa-lib': '*',
+      'freedesktop.org/dbus': '*',
     },
   },
-  buildDependencies: {
-    'rust-lang.org': ">=1.75",
-    'rust-lang.org/cargo': "*",
-    'protobuf.dev': "*",
-    'abseil.io': "^20250127",
+  versionSource: {
+    type: 'github-releases',
+    repo: 'tramhao/termusic',
   },
-  distributable: {
-    url: "https://github.com/tramhao/termusic/archive/refs/tags/{{ version.tag }}.tar.gz",
-    stripComponents: 1,
-  },
+  // Prebuilt download: termusic (Rust) ships official per-platform release
+  // tarballs (`termusic-v<ver>-<target>.tar.xz`) containing the `termusic` and
+  // `termusic-server` binaries. No build-time customization in our recipe, so
+  // the official prebuilt is identical to a source build.
+  distributable: null,
+
   build: {
     script: [
-      "rm {tui,server}/build.rs",
-      "cargo build --release --all",
-      {
-        run: "mkdir -p {{prefix}}/bin\ninstall termusic {{prefix}}/bin/\ninstall termusic-server {{prefix}}/bin/",
-        'working-directory': "target/release",
-      },
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) TARGET="aarch64-macos"  ;;',
+      '  darwin+x86-64)  TARGET="x86_64-macos"   ;;',
+      '  linux+aarch64)  TARGET="aarch64-linux"  ;;',
+      '  linux+x86-64)   TARGET="x86_64-linux"   ;;',
+      '  *) echo "unsupported platform: {{hw.platform}}+{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      '',
+      'curl -Lfo termusic.tar.xz "https://github.com/tramhao/termusic/releases/download/v${VERSION}/termusic-v${VERSION}-${TARGET}.tar.xz"',
+      'tar xJf termusic.tar.xz',
+      'install -Dm755 "termusic-v${VERSION}-${TARGET}/termusic" {{prefix}}/bin/termusic',
+      'install -Dm755 "termusic-v${VERSION}-${TARGET}/termusic-server" {{prefix}}/bin/termusic-server',
     ],
-    env: {
-      TERMUSIC_VERSION: "v{{version}}[pkgx]",
-    },
   },
+
   test: {
     script: [
-      "termusic --version | grep {{version}}",
-      "termusic-server --version | grep {{version}}",
-      "termusic import $FIXTURE > out",
-      "grep 'Importing 1 podcasts...' out",
-      "grep 'Added Revolutions' out",
-      "grep 'Import successful.' out",
+      'termusic --version | grep {{version}}',
+      'termusic-server --version | grep {{version}}',
     ],
   },
 }

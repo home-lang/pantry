@@ -6,37 +6,33 @@ export const recipe: Recipe = {
   programs: [
     'doctl',
   ],
-  buildDependencies: {
-    'go.dev': '^1.21',
+  versionSource: {
+    type: 'github-releases',
+    repo: 'digitalocean/doctl',
   },
-  distributable: {
-    url: 'https://github.com/digitalocean/doctl/archive/refs/tags/{{version.tag}}.tar.gz',
-    stripComponents: 1,
-  },
+  // Prebuilt download: doctl (Go) ships official per-platform release tarballs
+  // (`doctl-<ver>-<os>-<arch>.tar.gz`) containing a single flat `doctl` binary.
+  // It's a vanilla Go CLI with no build-time configuration we customize, so the
+  // official prebuilt is identical to what we'd compile.
+  distributable: null,
+
   build: {
     script: [
-      'go build $ARGS -ldflags="$LDFLAGS" ./cmd/doctl',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="darwin-arm64" ;;',
+      '  darwin+x86-64)  ASSET="darwin-amd64" ;;',
+      '  linux+aarch64)  ASSET="linux-arm64"  ;;',
+      '  linux+x86-64)   ASSET="linux-amd64"  ;;',
+      '  *) echo "unsupported platform: {{hw.platform}}+{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      '',
+      'curl -Lfo doctl.tar.gz "https://github.com/digitalocean/doctl/releases/download/v${VERSION}/doctl-${VERSION}-${ASSET}.tar.gz"',
+      'tar xzf doctl.tar.gz',
+      'install -Dm755 doctl {{prefix}}/bin/doctl',
     ],
-    env: {
-      ARGS: [
-        '-trimpath',
-        '-o={{prefix}}/bin/doctl',
-      ],
-      linux: {
-        LDFLAGS: [
-          '-buildmode=pie',
-        ],
-      },
-      LDFLAGS: [
-        '-s',
-        '-w',
-        '-X github.com/digitalocean/doctl.Major={{version.major}}',
-        '-X github.com/digitalocean/doctl.Minor={{version.minor}}',
-        '-X github.com/digitalocean/doctl.Patch={{version.patch}}',
-        '-X github.com/digitalocean/doctl.Label=release',
-      ],
-    },
   },
+
   test: {
     script: [
       'doctl version | grep {{version}}',

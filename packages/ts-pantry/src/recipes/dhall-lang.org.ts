@@ -5,43 +5,35 @@ export const recipe: Recipe = {
   name: 'dhall',
   description: 'Interpreter for the Dhall language',
   homepage: 'https://dhall-lang.org/',
+  github: 'https://github.com/dhall-lang/dhall-haskell',
   programs: ['dhall'],
-  dependencies: {
-    'invisible-island.net/ncurses': '^6.4',
-    'zlib.net': '^1.3',
+  versionSource: {
+    type: 'github-releases',
+    repo: 'dhall-lang/dhall-haskell',
   },
-  buildDependencies: {
-    'haskell.org': '~9.8',
-    'haskell.org/cabal': '*',
-  },
-  distributable: {
-    url: 'https://hackage.haskell.org/package/dhall-{{version}}/dhall-{{version}}.tar.gz',
-    stripComponents: 1,
-  },
+  // Prebuilt download: the Haskell `dhall` interpreter is slow and brittle to
+  // compile (GHC + cabal). Upstream ships official statically-prepared release
+  // tarballs (`dhall-<ver>-<arch>-<os>.tar.bz2`) containing `bin/dhall` and the
+  // man page — identical to what we'd produce, with no custom build options.
+  // Upstream ships darwin (aarch64 + x86-64) and linux (x86-64 only); there is
+  // no linux-aarch64 prebuilt, so that platform is gated out.
+  distributable: null,
 
   build: {
     script: [
-      {
-        // zlib 0.7.0 fails to find zlib.dylib on macOS — pin to < 0.7
-        run: 'sed -i \'/unordered-containers/i\\\n        -- zlib 0.7.0 fails to find zlib.dylib on macOS\\\n        zlib                        >= 0.6.0    \\&\\& < 0.7 ,\' \\\ndhall.cabal',
-        if: 'darwin',
-      },
-      // The prebuilt haskell.org/cabal binary is not always provisioned on
-      // linux-x86-64 (cabal: command not found). haskell.org ships `ghcup`,
-      // which can install cabal-install — fall back to it when cabal is absent.
-      'command -v cabal >/dev/null 2>&1 || { ghcup install cabal --set && export PATH="$HOME/.ghcup/bin:$PATH"; }',
-      'cabal v2-update',
-      'mkdir -p {{prefix}}/bin',
-      'cabal v2-install $ARGS',
-      'install -D man/dhall.1 {{prefix}}/share/man/man1/dhall.1',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="aarch64-darwin" ;;',
+      '  darwin+x86-64)  ASSET="x86_64-darwin"  ;;',
+      '  linux+x86-64)   ASSET="x86_64-linux"   ;;',
+      '  *) echo "unsupported platform: {{hw.platform}}+{{hw.arch}} (no upstream prebuilt)" >&2; exit 1 ;;',
+      'esac',
+      '',
+      'curl -Lfo dhall.tar.bz2 "https://github.com/dhall-lang/dhall-haskell/releases/download/${VERSION}/dhall-${VERSION}-${ASSET}.tar.bz2"',
+      'mkdir -p {{prefix}}',
+      'tar xjf dhall.tar.bz2 -C {{prefix}}',
+      'chmod 755 {{prefix}}/bin/dhall',
     ],
-    env: {
-      ARGS: [
-        '--install-method=copy',
-        '--installdir={{prefix}}/bin',
-        '--jobs={{hw.concurrency}}',
-      ],
-    },
   },
 
   test: {

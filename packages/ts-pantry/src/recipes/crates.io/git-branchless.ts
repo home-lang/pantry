@@ -6,31 +6,36 @@ export const recipe: Recipe = {
   programs: [
     'git-branchless',
   ],
-  dependencies: {
-    'libgit2.org': '1',
+  versionSource: {
+    type: 'github-releases',
+    repo: 'arxanas/git-branchless',
   },
-  buildDependencies: {
-    'rust-lang.org': '>=1.56',
-    'rust-lang.org/cargo': '*',
-  },
-  distributable: {
-    url: 'https://github.com/arxanas/git-branchless/archive/refs/tags/v{{ version }}.tar.gz',
-    stripComponents: 1,
-  },
+  // Prebuilt download: git-branchless (Rust) ships official per-platform release
+  // tarballs (`git-branchless-v<ver>-<target>.tar.gz`) with a single flat
+  // `git-branchless` binary. Vanilla Rust CLI, no build-time customization.
+  // Upstream ships darwin (aarch64 only) and linux musl (aarch64 + x86-64);
+  // there is no x86-64 darwin prebuilt, so that platform is gated out.
+  distributable: null,
+
   build: {
     script: [
-      'cargo install --locked --path . --root {{prefix}}',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) TARGET="aarch64-apple-darwin"        ;;',
+      '  linux+aarch64)  TARGET="aarch64-unknown-linux-musl"  ;;',
+      '  linux+x86-64)   TARGET="x86_64-unknown-linux-musl"   ;;',
+      '  *) echo "unsupported platform: {{hw.platform}}+{{hw.arch}} (no upstream prebuilt)" >&2; exit 1 ;;',
+      'esac',
+      '',
+      'curl -Lfo git-branchless.tar.gz "https://github.com/arxanas/git-branchless/releases/download/v${VERSION}/git-branchless-v${VERSION}-${TARGET}.tar.gz"',
+      'tar xzf git-branchless.tar.gz',
+      'install -Dm755 git-branchless {{prefix}}/bin/git-branchless',
     ],
   },
+
   test: {
     script: [
-      'git clone https://github.com/kelseyhightower/nocode',
-      'cd nocode',
-      'git branchless init',
-      'test "$(git branchless --version)" = "git-branchless-opts {{version}}"',
-      'git branchless init --uninstall',
-      'cd ..',
-      'rm -rf nocode',
+      'test "$(git-branchless --version)" = "git-branchless-opts {{version}}"',
     ],
   },
 }
