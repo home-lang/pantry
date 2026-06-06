@@ -7,14 +7,18 @@ export const recipe: Recipe = {
   programs: [
     'sourcery',
   ],
-  distributable: {
-    url: 'https://github.com/krzysztofzablocki/Sourcery/releases/download/{{version}}/Sourcery-{{version}}.zip',
+  versionSource: {
+    type: 'github-releases',
+    repo: 'krzysztofzablocki/Sourcery',
   },
+  distributable: null,
   build: {
     script: [
-      'test -f "$SRCROOT"/bin/sourcery && install "$SRCROOT"/bin/sourcery .',
-      'test -f "$SRCROOT"/sourcery-{{version}}/bin/sourcery && install "$SRCROOT"/sourcery-{{version}}/bin/sourcery .',
-      'test -f sourcery',
+      'ASSET=sourcery-{{version}}.zip',
+      'curl -Lfo "$ASSET" "https://github.com/krzysztofzablocki/Sourcery/releases/download/{{version}}/$ASSET"',
+      'unzip -q "$ASSET"',
+      'mkdir -p {{prefix}}/bin',
+      'install -m755 bin/sourcery {{prefix}}/bin/sourcery',
     ],
   },
   test: {
