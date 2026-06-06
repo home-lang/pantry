@@ -90,6 +90,23 @@ jobs:
             exit 1
           fi
 
+          ACTIONS_STATUS=$(curl -fsSL \
+            'https://registry.pantry.dev/api/github-actions-status' \
+            --max-time 15)
+          ACTIONS_ERROR=$(echo "$ACTIONS_STATUS" | jq -r '.error // ""')
+          ACTIONS_RECENT=$(echo "$ACTIONS_STATUS" | jq -r '.recent | length')
+          ACTIONS_RUNNING=$(echo "$ACTIONS_STATUS" | jq -r '.running')
+          ACTIONS_QUEUED=$(echo "$ACTIONS_STATUS" | jq -r '.queued')
+          echo "GitHub Actions status: running=$ACTIONS_RUNNING queued=$ACTIONS_QUEUED recent=$ACTIONS_RECENT"
+          if [ -n "$ACTIONS_ERROR" ]; then
+            echo "::error::GitHub Actions status endpoint returned error: $ACTIONS_ERROR"
+            exit 1
+          fi
+          if [ "$ACTIONS_RECENT" -eq 0 ]; then
+            echo "::error::GitHub Actions status endpoint returned no recent runs"
+            exit 1
+          fi
+
   notify:
     name: discord-notification
     needs: deploy
