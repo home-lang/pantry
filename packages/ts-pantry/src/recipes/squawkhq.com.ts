@@ -29,4 +29,10 @@ export const recipe: Recipe = {
       'install -Dm755 squawk {{prefix}}/bin/squawk',
     ],
   },
+
+  test: {
+    script: [
+      'squawk --version',
+    ],
+  },
 }
