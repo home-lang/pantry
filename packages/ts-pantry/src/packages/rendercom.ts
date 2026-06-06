@@ -8,7 +8,6 @@
  *
  * @install `pantry install render.com`
  * @homepage https://render.com/docs/cli
- * @buildDependencies `deno.land@^1.30` - required only when building from source
  *
  * @example
  * ```typescript
@@ -39,7 +38,7 @@ export const rendercomPackage = {
   description: 'Command-line interface for Render' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/render.com/package.yml' as const,
   homepageUrl: 'https://render.com/docs/cli' as const,
-  githubUrl: 'https://github.com/render-oss/cli' as const,
+  githubUrl: 'https://github.com/render-oss/render-cli-deprecated' as const,
   /**
   * Command to install this package using pantry.
   * @example pantry install package-name
@@ -60,9 +59,7 @@ export const rendercomPackage = {
   * Build dependencies for this package.
   * These are only required when building the package from source.
   */
-  buildDependencies: [
-    'deno.land@^1.30',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions

@@ -14386,7 +14386,7 @@ pub const packages = [_]PackageInfo{ .{
     .homepage_url = "https://render.com/docs/cli",
     .programs = &[_][]const u8{"render"},
     .dependencies = &[_][]const u8{},
-    .build_dependencies = &[_][]const u8{"deno.land@^1.30"},
+    .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "0.1.11", "0.1.10", "0.1.9", "0.1.8", "0.1.7", "0.1.6", "0.1.5", "0.1.4", "0.1.3", "0.1.2", "0.1.1", "0.1.0" },
 }, .{
