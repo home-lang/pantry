@@ -220,9 +220,9 @@ fn reconcileVersionDrift(allocator: std.mem.Allocator) void {
     style.print(
         "{s}>{s} build.zig.zon version ({s}{s}{s}) is behind latest tag ({s}v{s}{s}); syncing zon to {s}v{s}{s} before bump\n",
         .{
-            style.dim,    style.reset, style.yellow,     zon_str, style.reset,
-            style.yellow, synced,      style.reset,      style.green_bold,
-            synced,       style.reset,
+            style.dim,    style.reset, style.yellow, zon_str,          style.reset,
+            style.yellow, synced,      style.reset,  style.green_bold, synced,
+            style.reset,
         },
     );
 
