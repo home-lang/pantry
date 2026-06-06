@@ -205,6 +205,43 @@ RestartSec=10
 WantedBy=multi-user.target
 `
 
+// Cross-platform download fanout: a download recipe (distributable:null + a
+// build.script that curls a per-platform prebuilt asset) has NO compile step, so
+// ANY box can produce the artifact for ANY target platform — it just curls the
+// foreign asset and uploads it under that platform's key. build-package skips the
+// execution health-check for a foreign target (you can't run a Mach-O on Linux)
+// and instead sanity-checks the binary's `file` magic (ELF/Mach-O + arch). This
+// lets the x86-64 Linux fleet fill darwin-arm64 / darwin-x86-64 / linux-arm64 for
+// every download recipe with no macOS or ARM hardware. Each box is assigned ONE
+// foreign platform (partitioned by box index) to avoid redundant racing.
+const XDL_PLATFORMS = ['darwin-arm64', 'linux-arm64', 'darwin-x86-64']
+const XDL_DAEMON_SCRIPT = `#!/bin/bash
+# Cross-platform download fanout: fills prebuilt-download artifacts for one FOREIGN
+# target platform from this box. Only download recipes (--download-only); source skipped.
+PLAT="\${1:-$(cat /root/xdl-platform 2>/dev/null)}"
+[ -z "$PLAT" ] && { echo "no platform (arg or /root/xdl-platform)"; exit 1; }
+set -a; . /root/.pantry-hetzner.env 2>/dev/null; set +a
+export PATH="/root/.bun/bin:$PATH"
+cd /root/pantry/packages/ts-pantry || exit 1
+mkdir -p /root/pb-xdl
+while true; do
+  BUILDKIT_ROOT=/root/pb-xdl /root/.bun/bin/bun scripts/build-all-packages.ts \\
+    --platform "$PLAT" --download-only --multi-version --max-versions ${MAX_VERSIONS} \\
+    --bucket pantry-registry --region fsn1 >> "/root/xdl-$PLAT.log" 2>&1
+  sleep 600
+done
+`
+const XDL_UNIT = `[Unit]
+Description=Pantry cross-platform download fanout
+After=network-online.target
+[Service]
+ExecStart=/root/xdl-daemon.sh
+Restart=always
+RestartSec=30
+[Install]
+WantedBy=multi-user.target
+`
+
 // Dev libs that aren't in the S3 dep registry, so source builds fall back to the
 // system copy. Without the -dev packages the fallback has no headers/.pc/.so and
 // builds fail (libfido2→libudev, shared-mime-info→glib, yubikey-agent→pcsclite).
@@ -239,6 +276,13 @@ function configureBox(ip: string, boxIndex: number, boxCount: number): void {
   sshWrite(ip, '/root/box-disk-guard.sh', GUARD_SCRIPT)
   sshWrite(ip, '/etc/systemd/system/pantry-fleet.service', FLEET_UNIT)
   sshWrite(ip, '/etc/systemd/system/pantry-diskguard.service', GUARD_UNIT)
+  // Cross-platform download fanout: assign this box ONE foreign platform (partitioned
+  // by index) and run a download-only sweep for it continuously. Source builds stay on
+  // their native channel; only prebuilt-download recipes are fanned out cross-platform.
+  const xdlPlatform = XDL_PLATFORMS[boxIndex % XDL_PLATFORMS.length]
+  ssh(ip, `printf '%s\\n' '${xdlPlatform}' > /root/xdl-platform`)
+  sshWrite(ip, '/root/xdl-daemon.sh', XDL_DAEMON_SCRIPT)
+  sshWrite(ip, '/etc/systemd/system/pantry-xdl.service', XDL_UNIT)
   // Manage everything via systemd so it survives reboots and there is ONE daemon.
   // The snapshot bakes in pantry-sweep.service (the OLD full-set daemon); it must
   // be stopped+disabled or it respawns overlapping workers and wins.
@@ -257,6 +301,10 @@ function configureBox(ip: string, boxIndex: number, boxCount: number): void {
     'systemctl enable --now pantry-diskguard.service || true',
     'systemctl enable pantry-fleet.service || true',
     'systemctl restart pantry-fleet.service || true',
+    'chmod +x /root/xdl-daemon.sh || true',
+    'systemctl reset-failed pantry-xdl.service 2>/dev/null || true',
+    'systemctl enable pantry-xdl.service || true',
+    'systemctl restart pantry-xdl.service || true',
     'sleep 2',
     'systemctl is-active pantry-fleet.service',
   ].join('\n'))
