@@ -17,7 +17,6 @@
       <div class="stat-card"><p class="stat-label">Projects complete</p><p class="stat-num" id="stat-complete" style="color: var(--green);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Updates available</p><p class="stat-num" id="stat-updates" style="color: var(--accent);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Building now</p><p class="stat-num" id="stat-building" style="color: var(--yellow);">&mdash;</p></div>
-      <div class="stat-card"><p class="stat-label">GitHub Actions</p><p class="stat-num" id="stat-actions" style="color: var(--accent);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Failed</p><p class="stat-num" id="stat-failed" style="color: var(--red, #f87171);">&mdash;</p></div>
       <div class="stat-card"><p class="stat-label">Unbuilt</p><p class="stat-num" id="stat-unbuilt" style="color: var(--fg-subtle);">&mdash;</p></div>
     </div>
@@ -41,14 +40,6 @@
       <button class="chip" data-status="incomplete">incomplete</button>
       <button class="chip" data-status="unbuilt">unbuilt</button>
       <button class="chip" data-status="ok">✓ complete</button>
-    </div>
-
-    <div id="actions-panel" class="rounded-lg mb-4" style="display:none; border:1px solid var(--border); background:var(--bg-subtle); padding:0.65rem 0.75rem;">
-      <div class="flex items-center justify-between gap-3 mb-2">
-        <span style="font-size:0.78rem; color:var(--fg-muted); text-transform:uppercase; letter-spacing:0.05em;">GitHub Actions</span>
-        <a id="actions-link" href="https://github.com/pantry-pm/pantry/actions" target="_blank" rel="noopener" style="font-size:0.78rem; color:var(--fg-subtle);">view runs ↗</a>
-      </div>
-      <div id="actions-runs" class="flex flex-wrap gap-2"></div>
     </div>
 
     <!-- Table -->
@@ -167,7 +158,6 @@
     .host-chip { font-size: 0.66rem; padding: 0.05rem 0.4rem; border-radius: 0.3rem; border: 1px solid var(--border); color: var(--fg-muted); text-decoration: none; white-space: nowrap; }
     a.host-chip:hover { border-color: var(--accent); color: var(--accent); }
     .host-github { border-color: #8b5cf6; color: #a78bfa; }
-    .host-chip.err { border-color: var(--red, #f87171); color: var(--red, #f87171); }
     .host-hetzner { border-color: #d50c2d; color: #f87171; }
     .host-local { border-color: var(--border); }
     /* live log drawer — fixed to the bottom, never rebuilt by the table render */
@@ -198,7 +188,7 @@
       var PLATS = ['darwin-arm64', 'darwin-x86-64', 'linux-x86-64', 'linux-arm64']
       var packages = []
       var totals = { publishedVersions: 0 }
-      var status = { building: [], recent: [], queue: [], githubActions: null }
+      var status = { building: [], recent: [], queue: [] }
       var queued = {}
       var statusFilter = 'all'
       var openLog = null   // domain whose log drawer is open
@@ -277,49 +267,6 @@
           return '<a class="host-chip host-' + kind + '" href="' + esc(b.hostUrl) + '" target="_blank" rel="noopener" title="' + esc(b.hostUrl) + '" onclick="event.stopPropagation()">' + label + ' ↗</a>'
         return '<span class="host-chip host-' + kind + '" title="' + esc(kind) + ' build host">' + label + '</span>'
       }
-      function actionClass(run) {
-        if (!run) return ''
-        if (run.status === 'in_progress' || run.status === 'queued' || run.status === 'waiting' || run.status === 'requested') return ' pkg-building'
-        if (run.conclusion === 'success') return ''
-        if (run.conclusion === 'failure' || run.conclusion === 'cancelled' || run.conclusion === 'timed_out') return ' err'
-        return ''
-      }
-      function actionLabel(run) {
-        if (run.status === 'in_progress') return 'running'
-        if (run.status === 'queued' || run.status === 'waiting' || run.status === 'requested') return 'queued'
-        return run.conclusion || run.status || 'unknown'
-      }
-      function renderActions() {
-        var a = status.githubActions || null
-        var running = a ? ((a.running || 0) + (a.queued || 0)) : 0
-        setStat('stat-actions', running)
-        var panel = document.getElementById('actions-panel')
-        var runsEl = document.getElementById('actions-runs')
-        if (!panel || !runsEl) return
-        if (!a) { panel.style.display = 'none'; return }
-        panel.style.display = 'block'
-        var link = document.getElementById('actions-link')
-        if (link && a.repository) link.href = 'https://github.com/' + encodeURIComponent(a.repository).replace('%2F', '/') + '/actions'
-        if (a.error) {
-          runsEl.innerHTML = '<span style="font-size:0.8rem;color:var(--red,#f87171)">Actions unavailable: ' + esc(a.error) + '</span>'
-          return
-        }
-        var runs = (a.recent || []).slice(0, 6)
-        if (!runs.length) {
-          runsEl.innerHTML = '<span style="font-size:0.8rem;color:var(--fg-subtle)">no recent runs</span>'
-          return
-        }
-        var html = ''
-        for (var i = 0; i < runs.length; i++) {
-          var r = runs[i]
-          var cls = actionClass(r)
-          var title = (r.name || 'workflow') + ' · ' + (r.displayTitle || '') + ' · ' + actionLabel(r)
-          html += '<a class="host-chip host-github' + cls + '" href="' + esc(r.htmlUrl || '#') + '" target="_blank" rel="noopener" title="' + esc(title) + '">'
-            + esc((r.name || 'workflow').slice(0, 28)) + ' · ' + esc(actionLabel(r)) + '</a>'
-        }
-        runsEl.innerHTML = html
-      }
-
       function rowHtml(p, b, st) {
         var cells = ''
         for (var j = 0; j < PLATS.length; j++) cells += cell(p.platforms[PLATS[j]], b && b.platforms[PLATS[j]])
@@ -414,7 +361,6 @@
         // Count raw live build jobs so this card reflects worker activity; the
         // table filters still collapse by package row for scanability.
         setStat('stat-building', (status.building || []).length)
-        renderActions()
         setStat('stat-failed', failed)
         setStat('stat-unbuilt', unbuilt)
       }
@@ -510,9 +456,7 @@
 
       var lastBuiltTs = 0
       function applyStatus(d) {
-        var oldActions = status.githubActions || null
         status = d || status
-        if (!status.githubActions && oldActions) status.githubActions = oldActions
         status.queue = status.queue || []; status.building = status.building || []; status.recent = status.recent || []
         for (var i = 0; i < status.queue.length; i++) queued[status.queue[i]] = true
         renderSummary()      // cards: live, cheap
@@ -542,7 +486,6 @@
 
       refreshAll()
       setInterval(function () { loadPackages().then(renderSummary) }, 60000) // coverage refresh
-      setInterval(function () { loadStatus().then(function () { renderSummary(); scheduleRender() }) }, 30000) // GitHub Actions + backstop
       setInterval(updateDrawer, 1500) // live log tail while a drawer is open
 
       function setLive(on) { var d = document.getElementById('live-dot'); if (d) { d.textContent = on ? '● live' : '○ reconnecting'; d.style.color = on ? 'var(--green)' : 'var(--fg-subtle)' } }
