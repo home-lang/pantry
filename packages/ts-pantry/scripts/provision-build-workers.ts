@@ -36,7 +36,8 @@ const PRIMARY_ID = 136035759 // pantry-build-x86 — always-on template source
 const WORKER_LABEL = 'pantry-build-worker' // label for elastic boxes we manage
 const SERVER_TYPE = process.env.WORKER_SERVER_TYPE || 'cpx41'
 const LOCATION = process.env.HETZNER_LOCATION || 'ash' // primary lives in ash-dc1
-const K_LOCAL = Number(process.env.WORKER_LOCAL_PARALLELISM || 8) // workers per box (≈ vCPUs; most workers skip/download, so this fills cores)
+const K_LOCAL = Number(process.env.WORKER_LOCAL_PARALLELISM || 4) // source-build workers per box; keep memory headroom for heavy builds
+const XDL_WORKERS = Number(process.env.XDL_WORKERS || 3) // cross-platform download workers per box; dependency hydration still uses RAM
 // Build multiple important versions per package (not just latest). Single-version
 // work is nearly exhausted on linux-x86-64, leaving the fleet idle-skipping; this
 // gives every box a large real backlog and raises coverage. 0/1 = latest only.
@@ -223,11 +224,11 @@ const XDL_PLATFORMS = ['darwin-arm64', 'linux-arm64', 'darwin-x86-64']
 const XDL_DAEMON_SCRIPT = `#!/bin/bash
 # Cross-platform download fanout: fills prebuilt-download artifacts for one FOREIGN
 # target platform from this box. Only download recipes (--download-only); source skipped.
-# Runs XDL_WORKERS striped processes in parallel (downloads are I/O-bound + cheap),
-# so the foreign-platform fill is fast and the box stays visibly busy.
+# Runs XDL_WORKERS striped processes in parallel. Downloads are I/O-bound, but
+# dependency hydration still uses memory, so keep this below native parallelism.
 PLAT="\${1:-$(cat /root/xdl-platform 2>/dev/null)}"
 [ -z "$PLAT" ] && { echo "no platform (arg or /root/xdl-platform)"; exit 1; }
-XDL_WORKERS="\${XDL_WORKERS:-6}"
+XDL_WORKERS="\${XDL_WORKERS:-${XDL_WORKERS}}"
 set -a; . /root/.pantry-hetzner.env 2>/dev/null; set +a
 export PATH="/root/.bun/bin:$PATH"
 cd /root/pantry/packages/ts-pantry || exit 1
