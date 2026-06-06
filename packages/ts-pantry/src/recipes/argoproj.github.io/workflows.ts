@@ -6,25 +6,27 @@ export const recipe: Recipe = {
   programs: [
     'argo',
   ],
-  buildDependencies: {
-    'go.dev': '*',
+  versionSource: {
+    type: 'github-releases',
+    repo: 'argoproj/argo-workflows',
+    tagPattern: /^v(.+)$/,
   },
-  distributable: {
-    url: 'https://github.com/argoproj/argo-workflows/archive/v{{version}}.tar.gz',
-    stripComponents: 1,
-  },
+  distributable: null,
   build: {
     script: [
-      'make GIT_TAG="v{{version}}" GIT_COMMIT="v{{version}}" RELEASE_TAG=true STATIC_FILES=false GIT_TREE_STATE=clean GOARGS= dist/argo-linux-amd64',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="argo-darwin-arm64" ;;',
+      '  darwin+x86-64)  ASSET="argo-darwin-amd64" ;;',
+      '  linux+aarch64)  ASSET="argo-linux-arm64" ;;',
+      '  linux+x86-64)   ASSET="argo-linux-amd64" ;;',
+      '  *) echo "unsupported platform {{hw.platform}}/{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      'curl -Lfo argo.gz "https://github.com/argoproj/argo-workflows/releases/download/v${VERSION}/${ASSET}.gz"',
+      'gzip -dc argo.gz > argo',
       'mkdir -p {{prefix}}/bin',
-      'install dist/argo-linux-amd64 {{prefix}}/bin/argo',
+      'install -m755 argo {{prefix}}/bin/argo',
     ],
-    env: {
-      LDFLAGS: [
-        '-s',
-        '-w',
-      ],
-    },
   },
   test: {
     script: [

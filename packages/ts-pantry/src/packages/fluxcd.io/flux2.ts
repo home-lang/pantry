@@ -8,7 +8,6 @@
  *
  * @install `pantry install fluxcd.io/flux2`
  * @homepage https://fluxcd.io
- * @buildDependencies `go.dev@^1.20`, `kubernetes.io/kustomize@^5`, `gnu.org/make` - required only when building from source
  *
  * @example
  * ```typescript
@@ -56,15 +55,7 @@ export const fluxcdioflux2Package = {
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
-  /**
-  * Build dependencies for this package.
-  * These are only required when building the package from source.
-  */
-  buildDependencies: [
-    'go.dev@^1.20',
-    'kubernetes.io/kustomize@^5',
-    'gnu.org/make',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions

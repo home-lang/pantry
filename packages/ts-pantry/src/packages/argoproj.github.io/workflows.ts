@@ -8,7 +8,6 @@
  *
  * @install `pantry install argoproj.github.io/workflows`
  * @homepage https://argoproj.io
- * @buildDependencies `go.dev` - required only when building from source
  *
  * @example
  * ```typescript
@@ -56,13 +55,7 @@ export const argoprojgithubioworkflowsPackage = {
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
-  /**
-  * Build dependencies for this package.
-  * These are only required when building the package from source.
-  */
-  buildDependencies: [
-    'go.dev',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions

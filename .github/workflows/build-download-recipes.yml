@@ -1,0 +1,115 @@
+name: Build Download Recipes
+
+on:
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: 'Comma-separated package domains to build'
+        required: true
+        type: string
+      platforms:
+        description: 'Target platforms to build from Ubuntu'
+        required: true
+        type: choice
+        default: 'all'
+        options:
+          - all
+          - darwin-arm64
+          - darwin-x86-64
+          - linux-x86-64
+          - linux-arm64
+      force:
+        description: 'Force re-upload even if already in S3'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: build-download-recipes-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
+  STORAGE_PROVIDER: ${{ vars.STORAGE_PROVIDER || 'aws' }}
+  S3_BUCKET: ${{ vars.S3_BUCKET || 'pantry-registry' }}
+  S3_REGION: ${{ vars.S3_REGION || 'us-east-1' }}
+  S3_ENDPOINT: ${{ vars.S3_ENDPOINT }}
+  AWS_REGION: ${{ vars.S3_REGION || 'us-east-1' }}
+  S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+  S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    name: Prepare matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Set target matrix
+        id: matrix
+        run: |
+          PLATFORMS="${{ github.event.inputs.platforms }}"
+          if [ "$PLATFORMS" = "all" ]; then
+            MATRIX='{"include":[{"platform":"darwin-arm64"},{"platform":"darwin-x86-64"},{"platform":"linux-x86-64"},{"platform":"linux-arm64"}]}'
+          elif [ "$PLATFORMS" = "darwin-arm64" ]; then
+            MATRIX='{"include":[{"platform":"darwin-arm64"}]}'
+          elif [ "$PLATFORMS" = "darwin-x86-64" ]; then
+            MATRIX='{"include":[{"platform":"darwin-x86-64"}]}'
+          elif [ "$PLATFORMS" = "linux-x86-64" ]; then
+            MATRIX='{"include":[{"platform":"linux-x86-64"}]}'
+          elif [ "$PLATFORMS" = "linux-arm64" ]; then
+            MATRIX='{"include":[{"platform":"linux-arm64"}]}'
+          else
+            echo "::error::Unsupported platforms input: $PLATFORMS"
+            exit 1
+          fi
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Download recipe (${{ matrix.platform }})
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Pantry
+        uses: ./packages/action
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Install artifact tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y file patchelf
+
+      - name: Build and upload download recipes
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -o pipefail
+          cd packages/ts-pantry
+
+          PKGS=$(echo "${{ github.event.inputs.packages }}" | tr -cd 'a-zA-Z0-9._\-/,' | sed 's/^,*//; s/,*$//')
+          if [ -z "$PKGS" ]; then
+            echo "::error::No valid packages provided"
+            exit 1
+          fi
+
+          ARGS="-b $S3_BUCKET -r $AWS_REGION --platform ${{ matrix.platform }} --download-only -p $PKGS"
+          if [ "${{ github.event.inputs.force || 'false' }}" = "true" ]; then
+            ARGS="$ARGS --force"
+          fi
+
+          echo "Running: bun scripts/build-all-packages.ts $ARGS"
+          bun scripts/build-all-packages.ts $ARGS
