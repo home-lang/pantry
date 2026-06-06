@@ -29,4 +29,10 @@ export const recipe: Recipe = {
       'install -Dm755 gomplate {{prefix}}/bin/gomplate',
     ],
   },
+
+  test: {
+    script: [
+      '{{prefix}}/bin/gomplate --version',
+    ],
+  },
 }

@@ -8,6 +8,9 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'PlakarKorp/plakar',
   },
+  // Prebuilt download: plakar (Go) ships official per-platform release archives
+  // (`plakar_<ver>_<os>_<arch>.tar.gz`) containing the single `plakar` binary.
+  distributable: null,
 
   build: {
     script: [
@@ -25,6 +28,12 @@ export const recipe: Recipe = {
       'mkdir -p "{{prefix}}/bin"',
       'cp /tmp/plakar-extract/plakar "{{prefix}}/bin/"',
       'chmod +x "{{prefix}}/bin/plakar"',
+    ],
+  },
+
+  test: {
+    script: [
+      '{{prefix}}/bin/plakar version',
     ],
   },
 }
