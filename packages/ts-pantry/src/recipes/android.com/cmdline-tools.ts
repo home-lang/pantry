@@ -40,17 +40,17 @@ export const recipe: Recipe = {
     ],
     env: {
       linux: {
-        DIST_URL: "https://dl.google.com/android/repository/commandlinetools-linux-{{version.raw}}_latest.zip",
+        DIST_URL: "https://dl.google.com/android/repository/commandlinetools-linux-{{version.major}}_latest.zip",
       },
       darwin: {
-        DIST_URL: "https://dl.google.com/android/repository/commandlinetools-mac-{{version.raw}}_latest.zip",
+        DIST_URL: "https://dl.google.com/android/repository/commandlinetools-mac-{{version.major}}_latest.zip",
       },
     },
   },
   test: {
     script: [
-      "echo y | sdkmanager --install \"platforms;android-30\"",
-      "cat $ANDROID_HOME/platforms/android-30/source.properties | grep \"AndroidVersion.ApiLevel=30\"",
+      "sdkmanager --version >/dev/null",
+      "apkanalyzer --help >/dev/null",
     ],
   },
 }

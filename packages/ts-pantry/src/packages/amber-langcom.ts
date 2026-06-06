@@ -3,7 +3,7 @@
  *
  * @domain `amber-lang.com`
  * @programs `amber`
- * @version `0.5.1` (8 versions available)
+ * @version `0.6.0-alpha` (13 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install amber-lang.com`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "amber"
  * console.log(pkg.description) // "Crystal web framework. Bare metal performance, ..."
  * console.log(pkg.programs)    // ["amber"]
- * console.log(pkg.versions[0]) // "0.5.1" (latest)
+ * console.log(pkg.versions[0]) // "0.6.0-alpha" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/amber-lang-com.md
@@ -38,7 +38,7 @@ export const amberlangcomPackage = {
   description: 'Crystal web framework. Bare metal performance, productivity and happiness' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/amber-lang.com/package.yml' as const,
   homepageUrl: 'https://amberframework.org/' as const,
-  githubUrl: 'https://github.com/Ph0enixKM/Amber' as const,
+  githubUrl: 'https://github.com/amber-lang/amber' as const,
   /**
   * Command to install this package using pantry.
   * @example pantry install package-name
@@ -61,9 +61,14 @@ export const amberlangcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.6.0-alpha',
+    '0.5.1-alpha',
     '0.5.1',
+    '0.5.0-alpha',
     '0.5.0',
+    '0.4.0-alpha',
     '0.4.0',
+    '0.3.5-alpha',
     '0.3.5',
     '0.3.4',
     '0.3.3',
