@@ -6,39 +6,36 @@ export const recipe: Recipe = {
   programs: [
     'qsv',
   ],
-  dependencies: {
-    linux: {
-      'wayland.freedesktop.org': '*',
-    },
+  versionSource: {
+    type: 'github-releases',
+    repo: 'dathere/qsv',
   },
-  buildDependencies: {
-    'rust-lang.org': '>=1.85',
-    'rust-lang.org/cargo': '^0.86',
-    'cmake.org': '^3',
-    'python.org': '>=3.8',
-  },
-  distributable: {
-    url: 'https://github.com/dathere/qsv/archive/refs/tags/{{ version.tag }}.tar.gz',
-    stripComponents: 1,
-  },
+  // Prebuilt download: qsv (Rust) ships official per-platform release zips
+  // (`qsv-<ver>-<target>.zip`) on github.com/dathere/qsv. The archives carry a
+  // flat `qsv` binary (plus variants) — identical to a `cargo install`, but the
+  // source build was failing on the heavy Rust/luau/cmake toolchain.
+  // NOTE: upstream stopped shipping `x86_64-apple-darwin` after v2.0.0, so
+  // darwin/x86-64 only resolves for older versions.
+  distributable: null,
+
   build: {
     script: [
-      'cargo install $CARGO_ARGS',
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) TARGET="aarch64-apple-darwin" ;;',
+      '  darwin+x86-64)  TARGET="x86_64-apple-darwin" ;;',
+      '  linux+aarch64)  TARGET="aarch64-unknown-linux-gnu" ;;',
+      '  linux+x86-64)   TARGET="x86_64-unknown-linux-gnu" ;;',
+      'esac',
+      '',
+      'URL="https://github.com/dathere/qsv/releases/download/${VERSION}/qsv-${VERSION}-${TARGET}.zip"',
+      'curl -Lfo qsv.zip "$URL"',
+      'unzip -o qsv.zip',
+      '',
+      'install -Dm755 qsv {{prefix}}/bin/qsv',
     ],
-    env: {
-      CARGO_ARGS: [
-        '--locked',
-        '--features feature_capable,apply,luau,clipboard,fetch,foreach,geocode,prompt,sled,to',
-        '--path .',
-        '--root {{prefix}}',
-      ],
-      'darwin/x86-64': {
-        RUSTFLAGS: [
-          '-C target-cpu=generic',
-        ],
-      },
-    },
   },
+
   test: {
     script: [
       'mv $FIXTURE test.csv',

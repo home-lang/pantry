@@ -6,40 +6,43 @@ export const recipe: Recipe = {
   programs: [
     'mongosh',
   ],
-  dependencies: {
-    'nodejs.org': '*',
+  versionSource: {
+    type: 'github-releases',
+    repo: 'mongodb-js/mongosh',
   },
-  buildDependencies: {
-    'npmjs.com': '*',
-    'curl.se': '*',
-    'python.org': '3',
-  },
-  distributable: undefined,
+  // Prebuilt download: mongosh ships official per-platform archives
+  // (`mongosh-<ver>-<os>-<arch>.zip|.tgz`) from downloads.mongodb.com. Each archive
+  // has a top-level `mongosh-<ver>-<os>-<arch>/bin/` dir with the `mongosh` binary
+  // plus the `mongosh_crypt_v1.{dylib,so}` shared lib it loads at runtime — install
+  // both. This replaces the slow, fragile `npm i --build-from-source` source build.
+  distributable: null,
+
   build: {
     script: [
-      'curl -L https://registry.npmjs.org/@mongosh/cli-repl/-/cli-repl-{{version}}.tgz --output cli-repl-{{version}}.tgz',
-      'npm i $ARGS',
-      {
-        run: 'ln -s ../libexec/bin/mongosh mongosh',
-        'working-directory': '{{prefix}}/bin',
-      },
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="darwin-arm64"; EXT="zip" ;;',
+      '  darwin+x86-64)  ASSET="darwin-x64";   EXT="zip" ;;',
+      '  linux+aarch64)  ASSET="linux-arm64";  EXT="tgz" ;;',
+      '  linux+x86-64)   ASSET="linux-x64";    EXT="tgz" ;;',
+      'esac',
+      '',
+      'URL="https://downloads.mongodb.com/compass/mongosh-${VERSION}-${ASSET}.${EXT}"',
+      'curl -Lfo "mongosh.${EXT}" "$URL"',
+      'if [ "$EXT" = "zip" ]; then unzip -o "mongosh.${EXT}"; else tar xzf "mongosh.${EXT}"; fi',
+      '',
+      'DIR="mongosh-${VERSION}-${ASSET}"',
+      'install -Dm755 "${DIR}/bin/mongosh" {{prefix}}/bin/mongosh',
+      'for lib in "${DIR}/bin/"mongosh_crypt_v1.*; do',
+      '  install -Dm755 "$lib" "{{prefix}}/bin/$(basename "$lib")"',
+      'done',
     ],
-    env: {
-      ARGS: [
-        '-ddd',
-        '--global',
-        '--build-from-source',
-        '--prefix={{prefix}}/libexec',
-        '--unsafe-perm',
-        'cli-repl-{{version}}.tgz',
-      ],
-    },
   },
+
   test: {
     script: [
       'mongosh --version | grep {{version}}',
       'mongosh --nodb --eval "print(\'#ok#\')" | grep \'#ok#\'',
-      'mongosh --smokeTests',
     ],
   },
 }

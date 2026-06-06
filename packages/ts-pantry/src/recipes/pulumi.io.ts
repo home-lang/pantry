@@ -6,52 +6,45 @@ export const recipe: Recipe = {
   description: 'Pulumi - Infrastructure as Code in any programming language 🚀',
   homepage: 'https://pulumi.io/',
   github: 'https://github.com/pulumi/pulumi',
-  programs: ['pulumi', 'pulumi-analyzer-policy', 'pulumi-analyzer-policy-python', 'pulumi-language-dotnet', 'pulumi-language-go', 'pulumi-language-java', 'pulumi-language-nodejs', 'pulumi-language-python', 'pulumi-language-python-exec', 'pulumi-language-yaml', 'pulumi-resource-pulumi-nodejs', 'pulumi-resource-pulumi-python', 'pulumi-watch'],
+  programs: ['pulumi', 'pulumi-language-bun', 'pulumi-language-dotnet', 'pulumi-language-go', 'pulumi-language-java', 'pulumi-language-nodejs', 'pulumi-language-pcl', 'pulumi-language-python', 'pulumi-language-python-exec', 'pulumi-language-yaml', 'pulumi-resource-pulumi-nodejs', 'pulumi-resource-pulumi-python', 'pulumi-watch'],
   versionSource: {
     type: 'github-releases',
     repo: 'pulumi/pulumi',
   },
-  distributable: {
-    url: 'git+https://github.com/pulumi/pulumi.git',
-  },
   dependencies: {
     'curl.se/ca-certs': '*',
   },
-  buildDependencies: {
-    'go.dev': '^1.20',
-    'classic.yarnpkg.com': '*',
-    'nodejs.org': '*',
-  },
+  // Prebuilt download: pulumi (Go) ships official per-platform release tarballs
+  // (`pulumi-v<ver>-<os>-<arch>.tar.gz`) on github.com/pulumi/pulumi. Each archive
+  // contains a `pulumi/` dir with the full CLI + language/resource plugin bin set
+  // — identical to what the source build produced (which was failing on the Go
+  // toolchain + the buildmode=pie segfault workaround). Install the whole bin set.
+  distributable: null,
 
   build: {
     script: [
-      { run: 'go mod download', 'working-directory': 'sdk' },
-      { run: 'go mod download', 'working-directory': 'pkg' },
+      'VERSION={{version}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) ASSET="darwin-arm64" ;;',
+      '  darwin+x86-64)  ASSET="darwin-x64"   ;;',
+      '  linux+aarch64)  ASSET="linux-arm64"  ;;',
+      '  linux+x86-64)   ASSET="linux-x64"    ;;',
+      'esac',
+      '',
+      'URL="https://github.com/pulumi/pulumi/releases/download/v${VERSION}/pulumi-v${VERSION}-${ASSET}.tar.gz"',
+      'curl -Lfo pulumi.tar.gz "$URL"',
+      'tar xzf pulumi.tar.gz',
+      '',
       'mkdir -p {{prefix}}/bin',
-      // needs this fix to prevent segfaults
-      { run: 'sed -i.bak \'s/-ldflags "/-ldflags "-buildmode=pie /\' */Makefile', 'working-directory': 'sdk' },
-      {
-        run: [
-          'for DIR in go nodejs python; do',
-          '  make -C $DIR install_plugin PULUMI_BIN={{prefix}}/bin',
-          'done',
-        ],
-        'working-directory': 'sdk',
-      },
-      // The next steps are modified from scripts/brew.sh
-      {
-        run: 'go build -ldflags "$GO_LDFLAGS" -o {{prefix}}/bin/pulumi ./cmd/pulumi',
-        'working-directory': 'pkg',
-      },
-      { run: './scripts/prep-for-goreleaser.sh "local"', 'working-directory': 'pkg' },
-      { run: 'cp -a bin/$(go env GOOS)*/* {{prefix}}/bin/', 'working-directory': 'pkg' },
+      'for f in pulumi/*; do',
+      '  install -Dm755 "$f" "{{prefix}}/bin/$(basename "$f")"',
+      'done',
     ],
-    env: {
-      'GOPATH': '$PWD/build',
-      'GO_LDFLAGS': ['-X github.com/pulumi/pulumi/pkg/v3/version.Version={{version}}'],
-      'linux': {
-        GO_LDFLAGS: ['-buildmode=pie'],
-      },
-    },
+  },
+
+  test: {
+    script: [
+      'pulumi version | grep {{version}}',
+    ],
   },
 }
