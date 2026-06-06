@@ -7,12 +7,23 @@ export const recipe: Recipe = {
   programs: [
     'rswift',
   ],
-  distributable: {
-    url: 'https://github.com/mac-cain13/R.swift/releases/download/{{version}}/rswift-{{version}}.zip',
+  versionSource: {
+    type: 'github-releases',
+    repo: 'mac-cain13/R.swift',
   },
+  distributable: null,
   build: {
     script: [
-      'mv "$SRCROOT"/rswift .',
+      'ASSET=rswift-{{version}}.zip',
+      'curl -Lfo "$ASSET" "https://github.com/mac-cain13/R.swift/releases/download/{{version}}/$ASSET"',
+      'unzip -q "$ASSET"',
+      'mkdir -p {{prefix}}/bin',
+      'install -m755 rswift {{prefix}}/bin/rswift',
+    ],
+  },
+  test: {
+    script: [
+      'test "$(rswift --version)" = "{{version}}"',
     ],
   },
 }
