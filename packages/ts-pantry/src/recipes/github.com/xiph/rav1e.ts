@@ -27,7 +27,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      'rav1e --version | grep {{version}}',
+      '{{prefix}}/bin/rav1e --version | grep {{version}}',
     ],
   },
 }
