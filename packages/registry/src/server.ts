@@ -419,6 +419,76 @@ function getBuildStatus(): BuildStatusStore {
   return _buildStatus
 }
 
+interface GitHubActionRun {
+  id: number
+  name: string
+  displayTitle: string
+  status: string
+  conclusion: string | null
+  headSha: string
+  createdAt: string
+  htmlUrl: string
+}
+
+interface GitHubActionsStatus {
+  repository: string
+  running: number
+  queued: number
+  recent: GitHubActionRun[]
+  generatedAt: string
+  error?: string
+}
+
+let _githubActionsCache: { at: number, data: GitHubActionsStatus } | null = null
+const GITHUB_ACTIONS_TTL_MS = 30_000
+
+async function getGitHubActionsStatus(): Promise<GitHubActionsStatus> {
+  const now = Date.now()
+  if (_githubActionsCache && now - _githubActionsCache.at < GITHUB_ACTIONS_TTL_MS)
+    return _githubActionsCache.data
+
+  const repository = process.env.GITHUB_REPOSITORY || process.env.PANTRY_GITHUB_REPOSITORY || 'pantry-pm/pantry'
+  const data: GitHubActionsStatus = {
+    repository,
+    running: 0,
+    queued: 0,
+    recent: [],
+    generatedAt: new Date(now).toISOString(),
+  }
+  try {
+    const token = process.env.GITHUB_TOKEN || process.env.PAT_TOKEN || process.env.GH_TOKEN
+    const headers: Record<string, string> = {
+      'Accept': 'application/vnd.github+json',
+      'User-Agent': 'pantry-registry-build-status',
+      'X-GitHub-Api-Version': '2022-11-28',
+    }
+    if (token)
+      headers.Authorization = `Bearer ${token}`
+    const res = await fetch(`https://api.github.com/repos/${repository}/actions/runs?branch=main&per_page=12`, { headers })
+    if (!res.ok)
+      throw new Error(`GitHub API ${res.status}`)
+    const json = await res.json() as any
+    const runs = Array.isArray(json.workflow_runs) ? json.workflow_runs : []
+    data.recent = runs.map((run: any) => ({
+      id: Number(run.id || 0),
+      name: String(run.name || ''),
+      displayTitle: String(run.display_title || run.name || ''),
+      status: String(run.status || ''),
+      conclusion: run.conclusion == null ? null : String(run.conclusion),
+      headSha: String(run.head_sha || ''),
+      createdAt: String(run.created_at || ''),
+      htmlUrl: String(run.html_url || ''),
+    })).filter((run: GitHubActionRun) => run.id && run.status)
+    data.running = data.recent.filter(run => run.status === 'in_progress').length
+    data.queued = data.recent.filter(run => run.status === 'queued' || run.status === 'waiting' || run.status === 'requested').length
+  }
+  catch (err) {
+    data.error = (err as Error).message
+  }
+  _githubActionsCache = { at: now, data }
+  return data
+}
+
 // The /packages dashboard shell is identical for every visitor (data is loaded
 // client-side via /api/*), but stx render + crosswind CSS injection costs ~4s.
 // Render it once and serve the cached HTML; a deploy restarts the process and
@@ -490,7 +560,13 @@ export function createHandler(
       }
       // Live build status: what's building now, recent outcomes, rebuild queue.
       if (path === '/api/build-status' && req.method === 'GET') {
-        return Response.json(getBuildStatus().getStatus(), { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } })
+        return Response.json({
+          ...getBuildStatus().getStatus(),
+          githubActions: await getGitHubActionsStatus(),
+        }, { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } })
+      }
+      if (path === '/api/github-actions-status' && req.method === 'GET') {
+        return Response.json(await getGitHubActionsStatus(), { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } })
       }
       // Live build-status STREAM (Server-Sent Events). Pushes a full status
       // snapshot on connect and again on every build event / queue change, so the
