@@ -527,7 +527,7 @@ pub fn build(b: *std.Build) void {
         // Use zig-config from build.zig.zon dependency (target-agnostic module)
         const cross_zig_config_mod = zig_config_mod;
 
-        const cross_lib_mod = b.addModule("pantry", .{
+        const cross_lib_mod = b.createModule(.{
             .root_source_file = b.path("src/lib.zig"),
             .target = resolved_target,
             .link_libc = true,
