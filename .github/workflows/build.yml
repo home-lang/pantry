@@ -92,7 +92,9 @@ jobs:
     runs-on: ${{ matrix.platform.os }}
     permissions:
       contents: read
-    timeout-minutes: 120
+    # macOS runners bill 10x — cap them tighter so a hung mac job can't burn money.
+    # Latest-only builds never need anywhere near this; the cap is a runaway backstop.
+    timeout-minutes: ${{ contains(matrix.platform.os, 'macos') && 70 || 120 }}
 
     steps:
       - name: Checkout repository
@@ -383,7 +385,7 @@ jobs:
           [ -n "$STRIPE" ] && ARGS="$ARGS --stripe $STRIPE"
           echo "Running: bun scripts/build-all-packages.ts $ARGS"
           bun scripts/build-all-packages.ts $ARGS
-        timeout-minutes: 110
+        timeout-minutes: ${{ contains(matrix.platform.os, 'macos') && 60 || 110 }}
 
   notify:
     name: discord-notification
