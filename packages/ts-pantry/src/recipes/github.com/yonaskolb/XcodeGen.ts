@@ -6,27 +6,24 @@ export const recipe: Recipe = {
   name: 'XcodeGen',
   programs: [
     'xcodegen',
-    'xcodegen-init',
   ],
-  distributable: {
-    url: 'https://github.com/yonaskolb/XcodeGen/releases/download/{{version}}/xcodegen.zip',
+  versionSource: {
+    type: 'github-releases',
+    repo: 'yonaskolb/XcodeGen',
   },
+  distributable: null,
   build: {
     script: [
-      'cp "$SRCROOT"/xcodegen/bin/xcodegen .',
-      'install -m755 "$SRCROOT"/props/xcodegen-init ./xcodegen-init',
+      'ASSET=xcodegen.zip',
+      'curl -Lfo "$ASSET" "https://github.com/yonaskolb/XcodeGen/releases/download/{{version}}/$ASSET"',
+      'unzip -q "$ASSET"',
+      'mkdir -p {{prefix}}/bin',
+      'install -m755 xcodegen/bin/xcodegen {{prefix}}/bin/xcodegen',
     ],
   },
   test: {
     script: [
       '[[ "$(xcodegen --version)" = "Version: {{version}}" ]]',
-      'xcodegen-init --help | grep -q xcodegen-init',
-      'mkdir -p ./Sources',
-      'xcodegen-init $FIXTURE --write-only --output ./project.yml',
-      'test -f ./project.yml',
-      'grep -q "^name: SampleApp\\$" ./project.yml',
-      'grep -q "^  SampleApp:\\$" ./project.yml',
-      'xcodegen dump --spec ./project.yml --type yaml >/dev/null',
     ],
   },
 }
