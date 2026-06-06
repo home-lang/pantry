@@ -407,7 +407,6 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/maxbrunsfeld/counterfeiter': ['<7.0.0'],
   'github.com/gotestyourself/gotestsum': ['<1.12.3'],
   // Rust linker failure on darwin with old versions (newer versions succeed)
-  'crates.io/joshuto': ['<1.0.0'],
   'crates.io/rucola-notes': ['<1.0.0'],
   // Swift is macOS-only; old versions fail on linux
   'github.com/realm/SwiftLint': ['0.59.1'],
@@ -439,7 +438,6 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'crates.io/broot': ['<1.56.0'],
   'github.com/peltoche/lsd': ['<1.2.0'],
   // TryLockError API change in newer Rust; all versions fail
-  'crates.io/git-branchless': ['*'],
   // npm TAR_ENTRY_ERROR on both platforms; 1.18+ works
   'github.com/Everduin94/better-commits': ['<1.18.0'],
   // Linux linker flags (-z, -soname) on macOS; 1.15.1+ works on both
@@ -484,8 +482,6 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'nasm.us': ['<2.17', '3.0.0', '3.1.0'],
   // download 404s (tags removed or phantom versions)
   'github.com/sharkdp/hyperfine': ['<0.18.0'],
-  'github.com/digitalocean/doctl': ['<2.60.0'],
-  'digitalocean.com/doctl': ['<2.60.0'],
   // HDF5 2.x changed tag format — handled by shell-based URL in override now
   // But keep skip for versions that may have other issues
   'hdfgroup.org/HDF5': ['2.0.0', '2.1.0'],
@@ -564,7 +560,6 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // Old rtx-cli Rust build fails on darwin; 2025.12.13+ works on both
   'crates.io/rtx-cli': ['<2025.0.0'],
   // termusic Rust build fails (missing libprotoc); 0.13.0+ works
-  'crates.io/termusic': ['<0.13.0'],
   // eas-cli npm/yarn build fails; 18.1.0+ works
   'expo.dev/eas-cli': ['<18.1.0'],
   // Old kubebuilder Go build fails; 4.10.1+ works
@@ -769,7 +764,6 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // Rust crate build failures (old versions incompatible with current Rust)
   'amber-lang.com': ['<0.6.0'],
   'amp.rs': ['<0.8.0'],
-  'crates.io/exa': ['*'],
   'crates.io/git-trim': ['*'],
   'crates.io/eza': ['<0.20.0'],
   'cocogitto.io': ['<7.0.0'],
