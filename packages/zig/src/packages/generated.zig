@@ -8206,9 +8206,9 @@ pub const packages = [_]PackageInfo{ .{
     .homepage_url = "https://github.com/tw93/Mole",
     .programs = &[_][]const u8{ "mole", "mo" },
     .dependencies = &[_][]const u8{},
-    .build_dependencies = &[_][]const u8{"curl.se"},
+    .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
-    .versions = &[_][]const u8{ "1.31.0", "1.30.0", "1.29.0", "1.28.1", "1.28.0", "1.27.0", "1.26.0", "1.25.0", "1.24.0", "1.23.2", "1.22.1", "1.21.0", "1.20.0", "1.19.0", "1.18.0", "1.17.0", "1.16.1", "1.15.8", "1.15.7", "1.15.6" },
+    .versions = &[_][]const u8{ "1.41.0", "1.40.0", "1.39.1", "1.39.0", "1.38.1", "1.38.0", "1.37.0", "1.36.3", "1.36.2", "1.36.0", "1.35.0", "1.34.0", "1.33.0", "1.32.0", "1.31.0", "1.30.0", "1.29.0", "1.28.1", "1.28.0", "1.27.0", "1.26.0", "1.25.0", "1.24.0", "1.23.2" },
 }, .{
     .name = "swift-create-xcframework",
     .domain = "github.com/unsignedapps/swift-create-xcframework",

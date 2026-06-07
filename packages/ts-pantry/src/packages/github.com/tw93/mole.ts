@@ -3,12 +3,12 @@
  *
  * @domain `github.com/tw93/mole`
  * @programs `mole`, `mo`
- * @version `1.31.0` (20 versions available)
+ * @version `1.41.0` (24 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/tw93/mole`
  * @homepage https://github.com/tw93/Mole
- * @buildDependencies `curl.se` - required only when building from source
+ * @buildDependencies none
  *
  * @example
  * ```typescript
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "mole"
  * console.log(pkg.description) // "Deep clean and optimize your Mac"
  * console.log(pkg.programs)    // ["mole", "mo"]
- * console.log(pkg.versions[0]) // "1.31.0" (latest)
+ * console.log(pkg.versions[0]) // "1.41.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/tw93/mole.md
@@ -39,7 +39,7 @@ export const molePackage = {
   description: 'Deep clean and optimize your Mac' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/github.com/tw93/mole/package.yml' as const,
   homepageUrl: 'https://github.com/tw93/Mole' as const,
-  githubUrl: '' as const,
+  githubUrl: 'https://github.com/tw93/mole' as const,
   /**
   * Command to install this package using pantry.
   * @example pantry install package-name
@@ -61,14 +61,26 @@ export const molePackage = {
   * Build dependencies for this package.
   * These are only required when building the package from source.
   */
-  buildDependencies: [
-    'curl.se',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.41.0',
+    '1.40.0',
+    '1.39.1',
+    '1.39.0',
+    '1.38.1',
+    '1.38.0',
+    '1.37.0',
+    '1.36.3',
+    '1.36.2',
+    '1.36.0',
+    '1.35.0',
+    '1.34.0',
+    '1.33.0',
+    '1.32.0',
     '1.31.0',
     '1.30.0',
     '1.29.0',
@@ -79,16 +91,6 @@ export const molePackage = {
     '1.25.0',
     '1.24.0',
     '1.23.2',
-    '1.22.1',
-    '1.21.0',
-    '1.20.0',
-    '1.19.0',
-    '1.18.0',
-    '1.17.0',
-    '1.16.1',
-    '1.15.8',
-    '1.15.7',
-    '1.15.6',
   ] as const,
   aliases: [] as const,
 }
