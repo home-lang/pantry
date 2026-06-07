@@ -1,0 +1,67 @@
+name: Build Orchestrator
+
+# Keeps re-dispatching the `Build` workflow at the live coverage gap until each
+# platform plateaus, then stops on its own. The Hetzner fleet auto-sweeps
+# linux-x86-64 + download recipes continuously (systemd); this drives the CI-only
+# native source gap (darwin-arm64/x86-64 on macOS, linux-arm64 on ubuntu-arm).
+#
+# Guards (in scripts/orchestrate-builds.ts): anti-pileup (skip if too many Build
+# runs already draining) + plateau detection (stop dispatching a platform whose
+# missing count hasn't dropped for several cycles — that's the broken-recipe tail,
+# which needs recipe-grind, not more runners). force=false => runners only build
+# the still-missing slice. Disable from the Actions tab if you want to pause spend.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Compute the gap and log what WOULD be dispatched, without dispatching'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: build-orchestrator
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  orchestrate:
+    name: Drive CI build waves at the gap
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Pantry
+        uses: ./packages/action
+        with:
+          install: 'false'
+
+      - name: Restore orchestrator state
+        uses: actions/cache/restore@v4
+        with:
+          path: orchestrator-state.json
+          key: orch-state-${{ github.run_id }}
+          restore-keys: |
+            orch-state-
+
+      - name: Orchestrate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ORCH_REPO: ${{ github.repository }}
+          ORCH_DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '0' }}
+        run: bun packages/ts-pantry/scripts/orchestrate-builds.ts
+
+      - name: Save orchestrator state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: orchestrator-state.json
+          key: orch-state-${{ github.run_id }}
