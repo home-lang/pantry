@@ -9975,8 +9975,8 @@ pub const packages = [_]PackageInfo{ .{
     .description = "Official upstream development repository for Cabal and cabal-install",
     .homepage_url = "https://www.haskell.org/cabal/",
     .programs = &[_][]const u8{"cabal"},
-    .dependencies = &[_][]const u8{ "haskell.org@9", "gnu.org/gmp@6", "zlib.net@1" },
-    .build_dependencies = &[_][]const u8{ "haskell.org@<9.6.4", "curl.se", "tukaani.org/xz@5" },
+    .dependencies = &[_][]const u8{ "gnu.org/gmp@6", "zlib.net@1" },
+    .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "3.16.1.0", "3.16.0.0", "3.14.2.0", "3.14.1.1", "3.14.1.0", "3.12.1.0", "3.10.3.0", "3.10.2.1", "3.10.1.0", "3.10.1", "3.8.1.0", "3.8.1", "3.6.2.0", "3.6.1.0", "3.6.0.0", "2.0.0.2", "2.0.0.0" },
 }, .{

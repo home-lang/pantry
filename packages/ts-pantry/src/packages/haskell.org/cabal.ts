@@ -3,13 +3,13 @@
  *
  * @domain `haskell.org/cabal`
  * @programs `cabal`
- * @version `3.14.2.0` (7 versions available)
+ * @version `3.16.1.0` (17 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install haskell.org/cabal`
  * @homepage https://www.haskell.org/cabal/
- * @dependencies `haskell.org@9`, `gnu.org/gmp@6`, `zlib.net@1`
- * @buildDependencies `haskell.org@<9.6.4`, `curl.se`, `tukaani.org/xz@5` - required only when building from source
+ * @dependencies `gnu.org/gmp@6`, `zlib.net@1`
+ * @buildDependencies none
  *
  * @example
  * ```typescript
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "cabal"
  * console.log(pkg.description) // "Official upstream development repository for Ca..."
  * console.log(pkg.programs)    // ["cabal"]
- * console.log(pkg.versions[0]) // "3.14.2.0" (latest)
+ * console.log(pkg.versions[0]) // "3.16.1.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/haskell-org/cabal.md
@@ -61,7 +61,6 @@ export const haskellorgcabalPackage = {
   * These are required when running the package.
   */
   dependencies: [
-    'haskell.org@9',
     'gnu.org/gmp@6',
     'zlib.net@1',
   ] as const,
@@ -69,11 +68,7 @@ export const haskellorgcabalPackage = {
   * Build dependencies for this package.
   * These are only required when building the package from source.
   */
-  buildDependencies: [
-    'haskell.org@<9.6.4',
-    'curl.se',
-    'tukaani.org/xz@5',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
