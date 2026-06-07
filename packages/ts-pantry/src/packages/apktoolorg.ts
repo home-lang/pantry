@@ -3,13 +3,13 @@
  *
  * @domain `apktool.org`
  * @programs `apktool`
- * @version `3.0.1` (7 versions available)
+ * @version `3.0.2` (29 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install apktool.org`
  * @homepage https://apktool.org/
  * @dependencies `openjdk.org^21`
- * @buildDependencies `curl.se` - required only when building from source
+ * @buildDependencies none
  *
  * @example
  * ```typescript
@@ -68,7 +68,6 @@ export const apktoolorgPackage = {
   * These are only required when building the package from source.
   */
   buildDependencies: [
-    'curl.se',
   ] as const,
   /**
   * Available versions from newest to oldest.

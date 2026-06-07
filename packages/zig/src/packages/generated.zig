@@ -316,7 +316,7 @@ pub const packages = [_]PackageInfo{ .{
     .homepage_url = "https://apktool.org/",
     .programs = &[_][]const u8{"apktool"},
     .dependencies = &[_][]const u8{"openjdk.org^21"},
-    .build_dependencies = &[_][]const u8{"curl.se"},
+    .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "3.0.2", "3.0.1", "2.12.1", "2.12.0", "2.11.1", "2.11.0", "2.10.0", "2.9.3", "2.9.2", "2.9.1", "2.9.0", "2.8.1", "2.8.0", "2.7.0", "2.6.1", "2.6.0", "2.5.0", "2.4.1", "2.4.0", "2.3.4", "2.3.3", "2.3.2", "2.3.1", "2.3.0", "2.2.4", "2.2.3", "2.2.2", "2.2.1", "2.0.3" },
 }, .{

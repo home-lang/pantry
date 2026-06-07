@@ -11,28 +11,34 @@ export const recipe: Recipe = {
     type: 'github-releases',
     repo: 'iBotPeaches/Apktool',
   },
-  distributable: {
-    url: 'https://github.com/iBotPeaches/Apktool/releases/download/v{{version}}/apktool_{{version}}.jar',
-  },
+  distributable: null,
   dependencies: {
     'openjdk.org': '^21',
   },
 
   build: {
+    skip: ['verify-foreign-artifact'],
     script: [
+      'curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 15 --max-time 600 -o apktool.jar https://github.com/iBotPeaches/Apktool/releases/download/v{{version}}/apktool_{{version}}.jar',
       {
         run: 'mkdir -p bin libexec/lib',
         'working-directory': '${{prefix}}',
       },
-      'cp apktool.org-{{version}}.jar {{prefix}}/libexec/lib/',
+      'install -m644 apktool.jar {{prefix}}/libexec/lib/apktool.org-{{version}}.jar',
       {
         run: [
           'echo \'#!/bin/sh\' > apktool',
-          'echo \'java -jar $(dirname $0)/../libexec/lib/apktool.org-{{version}}.jar "$@"\' >> apktool',
+          'echo \'exec java -jar "$(dirname "$0")/../libexec/lib/apktool.org-{{version}}.jar" "$@"\' >> apktool',
           'chmod +x apktool',
         ],
         'working-directory': '${{prefix}}/bin',
       },
+    ],
+  },
+  test: {
+    script: [
+      'test -x "$(command -v apktool)"',
+      'test -f "{{prefix}}/libexec/lib/apktool.org-{{version}}.jar"',
     ],
   },
 }
