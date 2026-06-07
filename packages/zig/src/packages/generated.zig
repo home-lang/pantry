@@ -305,8 +305,8 @@ pub const packages = [_]PackageInfo{ .{
     .description = "",
     .homepage_url = null,
     .programs = &[_][]const u8{ "zkCleanup", "zkCli", "zkEnv", "zkServer-initialize", "zkServer", "zkSnapshotComparer", "zkSnapshotRecursiveSummaryToolkit", "zkSnapShotToolkit", "zkTxnLogToolkit" },
-    .dependencies = &[_][]const u8{ "openjdk.org", "openssl.org" },
-    .build_dependencies = &[_][]const u8{ "gnu.org/autoconf", "gnu.org/automake", "freedesktop.org/cppunit", "gnu.org/libtool", "maven.apache.org", "linux:gnu.org/gcc" },
+    .dependencies = &[_][]const u8{"openjdk.org"},
+    .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "3.9.5", "3.9.4", "3.9.3", "3.9.2", "3.9.1", "3.8.6" },
 }, .{

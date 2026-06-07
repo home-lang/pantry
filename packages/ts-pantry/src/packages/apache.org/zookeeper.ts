@@ -7,8 +7,8 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install apache.org/zookeeper`
- * @dependencies `openjdk.org`, `openssl.org`
- * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `freedesktop.org/cppunit`, ... (+3 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
+ * @dependencies `openjdk.org`
+ * @buildDependencies none
  *
  * @example
  * ```typescript
@@ -68,7 +68,6 @@ export const apacheorgzookeeperPackage = {
   */
   dependencies: [
     'openjdk.org',
-    'openssl.org',
   ] as const,
   /**
   * Build dependencies for this package.
@@ -76,12 +75,6 @@ export const apacheorgzookeeperPackage = {
   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
   */
   buildDependencies: [
-    'gnu.org/autoconf',
-    'gnu.org/automake',
-    'freedesktop.org/cppunit',
-    'gnu.org/libtool',
-    'maven.apache.org',
-    'linux:gnu.org/gcc',
   ] as const,
   /**
   * Available versions from newest to oldest.
