@@ -3,7 +3,7 @@
  *
  * @domain `github.com/mas-cli/mas`
  * @programs `mas`
- * @version `6.0.1` (23 versions available)
+ * @version `7.0.0` (24 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/mas-cli/mas`
@@ -16,7 +16,7 @@
  * console.log(pkg.name)        // "mas"
  * console.log(pkg.description) // ":package: Mac App Store command line interface"
  * console.log(pkg.programs)    // ["mas"]
- * console.log(pkg.versions[0]) // "6.0.1" (latest)
+ * console.log(pkg.versions[0]) // "7.0.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/mas-cli/mas.md
@@ -60,6 +60,7 @@ export const masPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '7.0.0',
     '6.0.1',
     '6.0.0',
     '5.2.0',
