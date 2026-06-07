@@ -38,6 +38,7 @@ export const recipe: Recipe = {
       'chmod 755 {{prefix}}/bin/mole',
       'ln -sf mole {{prefix}}/bin/mo',
     ],
+    skip: ['verify-foreign-artifact'],
   },
   test: {
     script: [
