@@ -1427,6 +1427,7 @@ async function main() {
       'dry-run': { type: 'boolean', default: false },
       'apps-only': { type: 'boolean', default: false },
       'download-only': { type: 'boolean', default: false },
+      'source-only': { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h' },
     },
     strict: true,
@@ -1458,6 +1459,7 @@ Options:
   --dry-run                Show what would be built
   --apps-only           Only build apps (GUI applications)
   --download-only          Only build zig-style download recipes (cross-platform safe)
+  --source-only            Only build source recipes (skip downloads — for paid native runners)
   -h, --help               Show help
 `)
     process.exit(0)
@@ -1496,6 +1498,21 @@ Options:
     allPackages = allPackages.filter(p => p.isDownloadRecipe)
     downloadOnlySkipped = before - allPackages.length
     logDiscovery(`download-only mode: including ${allPackages.length} download recipes, skipping ${downloadOnlySkipped} source recipes`)
+  }
+
+  // --source-only: the inverse — exclude zig-style download recipes, keeping only
+  // source builds. Used by the EXPENSIVE GitHub runners (macOS especially, 10x
+  // billing): download recipes are just a curl+repackage that the free Linux XDL
+  // fleet already fans out to every platform, so attempting them on a paid runner
+  // is pure waste (a redundant success at best, a stale-version 404 at worst).
+  // Reserving paid native runners for source-only keeps them on the one job they
+  // are uniquely needed for — compiling for a target the fleet can't cross-build.
+  let sourceOnlySkipped = 0
+  if (values['source-only']) {
+    const before = allPackages.length
+    allPackages = allPackages.filter(p => !p.isDownloadRecipe)
+    sourceOnlySkipped = before - allPackages.length
+    logDiscovery(`source-only mode: including ${allPackages.length} source recipes, skipping ${sourceOnlySkipped} download recipes (left to the Linux XDL fleet)`)
   }
 
   // Platform-aware filtering: skip packages that can't build on this platform
