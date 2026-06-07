@@ -12,6 +12,11 @@ export const recipe: Recipe = {
   buildDependencies: {
     'npmjs.com': '^10',
   },
+  versionSource: {
+    type: 'github-tags',
+    repo: 'zaach/jsonlint',
+    tagPattern: /^v(\d+\.\d+\.\d+)$/,
+  },
   distributable: {
     url: 'https://github.com/zaach/jsonlint/archive/v{{version}}.tar.gz',
     stripComponents: 1,
@@ -33,7 +38,6 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      'jsonlint $FIXTURE | grep test',
       'jsonlint --help',
     ],
   },

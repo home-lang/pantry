@@ -4,6 +4,9 @@ export const recipe: Recipe = {
   domain: 'fossies.org/libelf',
   name: 'libelf',
   programs: [],
+  // elfutils provides libelf for linux; upstream libelf is darwin-only.
+  platforms: ['darwin'],
+  propsDir: 'props/fossies.org/libelf',
   buildDependencies: {
     'gnu.org/autoconf': '*',
     'gnu.org/automake': '*',

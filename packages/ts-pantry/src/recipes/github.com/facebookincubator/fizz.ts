@@ -1,89 +1,98 @@
 import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
-  domain: "github.com/facebookincubator/fizz",
-  name: "fizz",
+  domain: 'github.com/facebookincubator/fizz',
+  name: 'fizz',
   programs: [
-    "fizz",
+    'fizz',
   ],
   dependencies: {
-    'boost.org': "*",
-    'google.com/double-conversion': "^3",
-    'fmt.dev': "^12",
-    'facebook.com/folly': "*",
-    'gflags.github.io': "*",
-    'google.com/glog': "^0.7",
-    'libevent.org': "*",
-    'libsodium.org': "*",
+    'boost.org': '*',
+    'google.com/double-conversion': '^3',
+    'fmt.dev': '^12',
+    'facebook.com/folly': '*',
+    'gflags.github.io': '*',
+    'google.com/glog': '^0.7',
+    'libevent.org': '*',
+    'libsodium.org': '*',
     'lz4.org': '1',
-    'openssl.org': "^1.1",
-    'google.github.io/snappy': "*",
+    'openssl.org': '^1.1',
+    'google.github.io/snappy': '*',
     'facebook.com/zstd': '1',
     'sourceware.org/bzip2': '1',
-    'zlib.net': "^1",
+    'zlib.net': '^1',
     linux: {
       'gnu.org/gcc/libstdcxx': '14',
     },
   },
   buildDependencies: {
-    'cmake.org': "^3",
-    'ninja-build.org': "^1",
+    'cmake.org': '^3',
+    'ninja-build.org': '^1',
     linux: {
       'gnu.org/gcc': '14',
     },
   },
   distributable: {
-    url: "https://github.com/facebookincubator/fizz/archive/refs/tags/{{version.tag}}.tar.gz",
+    url: 'https://github.com/facebookincubator/fizz/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   build: {
     script: [
       {
-        run: "sed -i -f $PROP FizzServerCommand.cpp",
-        if: ">=2023.12.18.0",
-        'working-directory': "fizz/tool",
+        // compilation errors in 2023.12.18.0 and beyond — inject missing includes
+        run: 'sed -i -f $PROP FizzServerCommand.cpp',
+        prop: {
+          content: [
+            '/#include <fizz\\/crypto\\/aead\\/AESGCM128.h>/a\\',
+            '#include <fizz/crypto/exchange/X25519.h>\\',
+            '#include <fizz/protocol/OpenSSLFactory.h>',
+          ],
+        },
+        if: '>=2023.12.18.0',
+        'working-directory': 'fizz/tool',
       },
       {
-        run: "sed -i 's/FIZZ_CHECK_EQ(awaiter_, nullptr)/FIZZ_CHECK(awaiter_ == nullptr)/' fizz/experimental/psp/PSP.cpp",
-        if: "darwin",
+        // glog <0.7 lacks MakeCheckOpValueString<std::nullptr_t> (libc++ only)
+        run: 'sed -i \'s/FIZZ_CHECK_EQ(awaiter_, nullptr)/FIZZ_CHECK(awaiter_ == nullptr)/\' fizz/experimental/psp/PSP.cpp',
+        if: 'darwin',
       },
       {
-        run: "if ! grep -q 'Folly::folly_benchmark[^_]' {{deps.facebook.com/folly.prefix}}/lib/cmake/folly/folly-targets.cmake; then\n  sed -i 's/Folly::folly_benchmark/Folly::follybenchmark/' fizz/CMakeLists.txt\nfi\n",
-        if: ">=2026.2.2.0",
+        // fizz references Folly::folly_benchmark but folly exports Folly::follybenchmark
+        run: 'if ! grep -q \'Folly::folly_benchmark[^_]\' {{deps.facebook.com/folly.prefix}}/lib/cmake/folly/folly-targets.cmake; then\n  sed -i \'s/Folly::folly_benchmark/Folly::follybenchmark/\' fizz/CMakeLists.txt\nfi\n',
+        if: '>=2026.2.2.0',
       },
-      "cmake -S fizz -B build $ARGS",
-      "cmake --build build",
-      "cmake --install build",
+      'cmake -S fizz -B build $ARGS',
+      'cmake --build build',
+      'cmake --install build',
       {
         // eslint-disable-next-line no-super-linear-backtracking -- this is a sed program string, not a JS regex
-        run: "sed -E -i -e \"s:{{pkgx.prefix}}:\\$\\{_IMPORT_PREFIX\\}/../../../..:g\" -e '/^  INTERFACE_INCLUDE_DIRECTORIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/include|/v\\1/include|g' -e '/^  INTERFACE_LINK_LIBRARIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/lib|/v\\1/lib|g' fizz-targets.cmake",
-        'working-directory': "{{prefix}}/lib/cmake/fizz",
+        run: 'sed -E -i -e "s:{{pkgx.prefix}}:\\$\\{_IMPORT_PREFIX\\}/../../../..:g" -e \'/^  INTERFACE_INCLUDE_DIRECTORIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/include|/v\\1/include|g\' -e \'/^  INTERFACE_LINK_LIBRARIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/lib|/v\\1/lib|g\' fizz-targets.cmake',
+        'working-directory': '{{prefix}}/lib/cmake/fizz',
       },
     ],
     env: {
       ARGS: [
-        "-GNinja",
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_INSTALL_PREFIX={{prefix}}",
-        "-DBUILD_TESTS=OFF",
-        "-DBUILD_SHARED_LIBS=ON",
-        "-DCMAKE_INSTALL_RPATH={{prefix}}",
+        '-GNinja',
+        '-DCMAKE_BUILD_TYPE=Release',
+        '-DCMAKE_INSTALL_PREFIX={{prefix}}',
+        '-DBUILD_TESTS=OFF',
+        '-DBUILD_SHARED_LIBS=ON',
+        '-DCMAKE_INSTALL_RPATH={{prefix}}',
       ],
       'linux/aarch64': {
         ARGS: [
-          "-DCMAKE_C_FLAGS=-fPIC",
-          "-DCMAKE_CXX_FLAGS=-fPIC",
-          "-DCMAKE_EXE_LINKER_FLAGS=-pie",
+          '-DCMAKE_C_FLAGS=-fPIC',
+          '-DCMAKE_CXX_FLAGS=-fPIC',
+          '-DCMAKE_EXE_LINKER_FLAGS=-pie',
         ],
       },
     },
   },
   test: {
     script: [
-      "STD=c++17",
-      "STD=c++20",
-      "c++ -std=$STD -DGLOG_USE_GLOG_EXPORT $FIXTURE -lfizz -lfolly -lgflags -lglog -levent -lsodium -lcrypto -lssl -lboost_context -o fixture",
-      "./fixture | grep TLS",
+      'STD=c++20',
+      'c++ -std=$STD -DGLOG_USE_GLOG_EXPORT $FIXTURE -lfizz -lfolly -lgflags -lglog -levent -lsodium -lcrypto -lssl -lboost_context -o fixture',
+      './fixture | grep TLS',
     ],
   },
 }

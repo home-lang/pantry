@@ -6,6 +6,9 @@ export const recipe: Recipe = {
   programs: [
     'dnf5',
   ],
+  platforms: [
+    'linux',
+  ],
   dependencies: {
     'rpm.org/rpm': '*',
     'rpm.org/libdnf5': '*',

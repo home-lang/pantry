@@ -58,6 +58,12 @@ export const recipe: Recipe = {
         run: "sed -i -f $PROP Checksum.cpp",
         if: ">=2024.08",
         'working-directory': "folly/hash",
+        prop: {
+          content: [
+            "/ChecksumDetail.h/a\\",
+            "#include <stdexcept>",
+          ],
+        },
       },
       "sed -i '/linux\\.cpp/d' folly/system/os/CMakeLists.txt",
       "cmake $ARGS -DBUILD_SHARED_LIBS=ON -S . -B shared",

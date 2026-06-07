@@ -6,6 +6,9 @@ export const recipe: Recipe = {
   programs: [
     'swift-outdated',
   ],
+  platforms: [
+    'darwin',
+  ],
   distributable: {
     url: 'https://github.com/kiliankoe/swift-outdated/archive/refs/tags/{{version}}.tar.gz',
     stripComponents: 1,
@@ -15,6 +18,9 @@ export const recipe: Recipe = {
       {
         run: 'sed -i -f $PROP SwiftOutdated.swift',
         'working-directory': 'Sources/SwiftOutdated',
+        prop: {
+          content: 's/version: ".*"$/version: "{{version}}"/',
+        },
       },
       'swift build --configuration release',
       'mkdir -p {{prefix}}/bin',

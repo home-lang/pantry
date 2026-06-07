@@ -3,6 +3,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: "github.com/oobabooga/text-generation-webui",
   name: "text-generation-webui",
+  propsDir: "../../props/github.com/oobabooga/text-generation-webui",
   programs: [
     "text-generation-webui",
   ],

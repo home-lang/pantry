@@ -52,6 +52,12 @@ export const recipe: Recipe = {
       },
       {
         run: "sed -i -f $PROP RoundRobinRequestPile.h",
+        prop: {
+          content: [
+            "/AsyncProcessor\\.h/a\\",
+            "#include <fmt/ranges.h>",
+          ],
+        },
         'working-directory': "thrift/lib/cpp2/server",
       },
       {
@@ -68,7 +74,7 @@ export const recipe: Recipe = {
     ],
     env: {
       CMAKE_ARGS: [
-        "-DCMAKE_INSTALL_PREFIX=\"{{prefix}}",
+        "-DCMAKE_INSTALL_PREFIX={{prefix}}",
         "-DCMAKE_INSTALL_LIBDIR=lib",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_FIND_FRAMEWORK=LAST",

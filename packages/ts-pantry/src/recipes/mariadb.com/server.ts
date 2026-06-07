@@ -110,8 +110,19 @@ export const recipe: Recipe = {
       'fmt.dev': "^9",
     },
   },
+  // pkgx limits to these two: x86-64 darwin started core-dumping in 12.2.1,
+  // and linux/aarch64 is not provided upstream.
+  platforms: [
+    "darwin/aarch64",
+    "linux/x86-64",
+  ],
   distributable: {
     url: "git+https://github.com/MariaDB/server",
+    // pkgx pins the git checkout to the requested release tag (`ref: mariadb-{{version.raw}}`).
+    // Without this, downloadSource() clones the default branch HEAD instead of the
+    // version's tag, so submodules and the version-gated build steps don't match {{version}}.
+    // build-package.ts forwards `distributable.ref` as `git clone --branch <ref> --single-branch`.
+    ref: "mariadb-{{version.raw}}",
   },
   build: {
     script: [

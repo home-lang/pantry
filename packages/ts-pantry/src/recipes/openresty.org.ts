@@ -30,19 +30,46 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'make',
-      'cd "openresty-{{version}}"',
-      './configure --prefix={{prefix}}',
-      'make -j {{hw.concurrency}}',
-      'make install',
-      'cd "${{prefix}}/bin"',
-      'ln -sf ../nginx/sbin/nginx openresty',
-      'sed -i -e \'2i use File::Basename qw(dirname);\' -e "s|\'{{prefix}}|dirname(\\$0) . \'/..|g" resty',
-      'cd "${{prefix}}/bin"',
-      'mv ../nginx/sbin/nginx .',
-      'ln -s ../../bin/nginx ../nginx/sbin/',
-      'cd "${{prefix}}"',
-      'ln -s luajit/lib .',
+      // Step 1: Rebuild the tar-ball
+      // https://github.com/openresty/openresty?tab=readme-ov-file#for-bundle-maintainers
+      { run: 'make' },
+      // Step 2: Building OpenResty
+      // https://openresty.org/en/installation.html#building-from-source
+      {
+        run: [
+          './configure --prefix={{prefix}}',
+          'make -j {{hw.concurrency}}',
+          'make install',
+        ],
+        'working-directory': 'openresty-{{version}}',
+      },
+      {
+        run: [
+          'ln -sf ../nginx/sbin/nginx openresty',
+          // need to clean up paths in the scripts
+          'sed -i -e \'2i use File::Basename qw(dirname);\' -e "s|\'{{prefix}}|dirname(\\$0) . \'/..|g" resty',
+        ],
+        'working-directory': '${{prefix}}/bin',
+      },
+      // ensure this is patched
+      {
+        run: [
+          'mv ../nginx/sbin/nginx .',
+          'ln -s ../../bin/nginx ../nginx/sbin/',
+        ],
+        'working-directory': '${{prefix}}/bin',
+      },
+      // move this so pantry can manage it
+      {
+        run: 'ln -s luajit/lib .',
+        'working-directory': '${{prefix}}',
+      },
+    ],
+  },
+  test: {
+    script: [
+      'resty -V',
+      'resty -V 2>&1 | grep \'openresty/{{version}}\'',
     ],
   },
 }

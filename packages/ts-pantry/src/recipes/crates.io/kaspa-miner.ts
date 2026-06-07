@@ -11,6 +11,12 @@ export const recipe: Recipe = {
     'rust-lang.org/cargo': '*',
     'protobuf.dev': '25',
   },
+  versionSource: {
+    type: 'github-releases',
+    repo: 'elichai/kaspa-miner',
+    tagPattern: /^v(.+)$/,
+    stable: true,
+  },
   distributable: {
     url: 'https://github.com/elichai/kaspa-miner/archive/refs/tags/v{{ version }}.tar.gz',
     stripComponents: 1,

@@ -37,6 +37,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': "wangle",
     script: [
       "cmake . -DBUILD_SHARED_LIBS=ON $ARGS",
       "make install",

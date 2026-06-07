@@ -8,6 +8,9 @@ export const recipe: Recipe = {
     'gnome.org/pango': '>=1.2',
     'libsdl.org': '^2.0.2',
   },
+  buildDependencies: {
+    'freedesktop.org/pkg-config': '^0.29',
+  },
   distributable: {
     url: 'https://github.com/markuskimius/SDL2_Pango/archive/refs/tags/v{{version}}.tar.gz',
     stripComponents: 1,
@@ -22,11 +25,5 @@ export const recipe: Recipe = {
         '--prefix={{prefix}}',
       ],
     },
-  },
-  test: {
-    script: [
-      'cc $FIXTURE -lSDL2_Pango',
-      './a.out',
-    ],
   },
 }

@@ -6,6 +6,11 @@ export const recipe: Recipe = {
   programs: [
     'chatblade',
   ],
+  versionSource: {
+    type: 'github-releases',
+    repo: 'npiv/chatblade',
+    tagPattern: /^v(.+)$/,
+  },
   dependencies: {
     'python.org': '>=3<3.12',
   },

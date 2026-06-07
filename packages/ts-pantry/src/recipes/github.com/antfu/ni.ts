@@ -51,6 +51,9 @@ export const recipe: Recipe = {
         'working-directory': "${{prefix}}/bin",
       },
     ],
+    // in v29 @rolldown/binding-darwin-arm64 has binary blobs that don't have enough room
+    // to rewrite the headers (and don't need it anyway)
+    skip: ['fix-machos'],
   },
   test: {
     script: [

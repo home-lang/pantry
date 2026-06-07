@@ -15,7 +15,6 @@ export const recipe: Recipe = {
     script: [
       './configure $ARGS',
       'make --jobs {{hw.concurrency}} install',
-      '',
     ],
     env: {
       'ARGS': ['--prefix={{prefix}}', '--disable-debug', '--disable-dependency-tracking', '--mandir={{prefix}}/man'],

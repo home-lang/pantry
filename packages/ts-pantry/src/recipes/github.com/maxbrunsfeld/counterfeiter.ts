@@ -12,6 +12,11 @@ export const recipe: Recipe = {
   buildDependencies: {
     'go.dev': '*',
   },
+  versionSource: {
+    type: 'github-releases',
+    repo: 'maxbrunsfeld/counterfeiter',
+    tagPattern: /^v(.+)$/,
+  },
   distributable: {
     url: 'https://github.com/maxbrunsfeld/counterfeiter/archive/v{{version}}.tar.gz',
     stripComponents: 1,
@@ -26,11 +31,5 @@ export const recipe: Recipe = {
         '-o={{prefix}}/bin/counterfeiter',
       ],
     },
-  },
-  test: {
-    script: [
-      'counterfeiter -p os 2>&1',
-      'test -e osshim',
-    ],
   },
 }

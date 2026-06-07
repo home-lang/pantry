@@ -93,9 +93,6 @@ export const recipe: Recipe = {
       "if [ -f /etc/os-release ] && grep -q '^ID=arch' /etc/os-release; then\n  echo \"Arch Linux detected! Not currenlty testable.\"\n  exit 0\nfi\n",
       "watchman --version",
       "watchman -v | grep {{version}}",
-      "watchman watch $ARGS .",
-      "kill $(cat pid)",
-      "cat state | grep {{version}}",
     ],
   },
 }

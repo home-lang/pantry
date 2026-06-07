@@ -4,6 +4,7 @@ export const recipe: Recipe = {
   domain: 'opensuse.org/libsolv',
   name: 'libsolv',
   programs: [],
+  platforms: ['linux'],
   dependencies: {
     'zlib.net': '*',
     'tukaani.org/xz': '*',
@@ -24,6 +25,22 @@ export const recipe: Recipe = {
       {
         run: 'cp $PROP pool_parserpmrichdep.h',
         'working-directory': '.compat-headers/solv',
+        prop: {
+          extname: 'h',
+          content: [
+            '#ifndef POOL_PARSERPMRICHDEP_H',
+            '#define POOL_PARSERPMRICHDEP_H',
+            '#include <solv/pool.h>',
+            '#ifdef __cplusplus',
+            'extern "C" {',
+            '#endif',
+            'extern Id pool_parserpmrichdep(Pool *pool, const char *dep);',
+            '#ifdef __cplusplus',
+            '}',
+            '#endif',
+            '#endif',
+          ],
+        },
       },
       'cmake -S . -B build $CMAKE_ARGS',
       'cmake --build build',
@@ -57,7 +74,8 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      'cc $FIXTURE -o test -lsolv',
+      'printf \'#include <solv/pool.h>\\n#include <solv/repo.h>\\nint main(void){Pool *pool=pool_create();Repo *repo=repo_create(pool,"test");(void)repo;pool_free(pool);return 0;}\\n\' > fixture.c',
+      'cc fixture.c -o test -lsolv',
       './test',
     ],
   },

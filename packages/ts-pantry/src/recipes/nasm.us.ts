@@ -19,13 +19,25 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cd "include"',
-      'sed -i \'s/l32toh(/le32toh(/g\' bytesex.h',
+      // https://github.com/netwide-assembler/nasm/commit/dc247c9f9913e336200ecf8bb72152fdabdb3585#r167178007
+      { run: 'sed -i \'s/l32toh(/le32toh(/g\' bytesex.h', 'working-directory': 'include' },
       './configure --prefix={{prefix}}',
-      'make --jobs {{hw.concurrency}} rdf',
-      'make install install_rdf',
-      'make --jobs {{hw.concurrency}}',
-      'make install',
+      // rdoff tools removed as unfixable in 2.16
+      // https://github.com/netwide-assembler/nasm/commit/93548c2de2a3c218b3d0ab4061b26d9781cb6b37
+      {
+        run: [
+          'make --jobs {{hw.concurrency}} rdf',
+          'make install install_rdf',
+        ],
+        if: '<2.16',
+      },
+      {
+        run: [
+          'make --jobs {{hw.concurrency}}',
+          'make install',
+        ],
+        if: '>=2.16',
+      },
     ],
   },
 }

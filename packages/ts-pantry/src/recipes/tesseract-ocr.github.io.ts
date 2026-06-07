@@ -8,9 +8,13 @@ export const recipe: Recipe = {
   github: 'https://github.com/tesseract-ocr/tesseract',
   programs: ['tesseract'],
   versionSource: {
-    type: 'github-releases',
+    // Tesseract tags have no `v` prefix (e.g. `5.5.2`) and are published as
+    // plain git tags, not GitHub releases with assets — mirror pkgx's
+    // `versions: { github: tesseract-ocr/tesseract }` by reading tags and
+    // matching only stable x.y.z tags (skip `-rcN` candidates).
+    type: 'github-tags',
     repo: 'tesseract-ocr/tesseract',
-    tagPattern: /^v(.+)$/,
+    tagPattern: /^(\d+\.\d+\.\d+)$/,
   },
   distributable: {
     url: 'https://github.com/tesseract-ocr/tesseract/archive/refs/tags/{{version}}.tar.gz',

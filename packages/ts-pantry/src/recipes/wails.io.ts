@@ -22,6 +22,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'v2',
     script: [
       'go build -v -ldflags="$LDFLAGS" -o wails ./cmd/wails',
       'install -D wails {{prefix}}/bin/wails',

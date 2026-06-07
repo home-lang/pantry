@@ -21,6 +21,12 @@ export const recipe: Recipe = {
     script: [
       {
         run: "WRAP=$(mktemp -d)\ninstall -Dm755 $PROP $WRAP/cc\nPATH=\"$WRAP:$PATH\" CC=\"$WRAP/cc\" cpanm -l {{prefix}} Locale::gettext\nrm -rf \"$WRAP\"",
+        prop: {
+          content: [
+            "#!/bin/sh",
+            "exec /usr/bin/cc -Wl,-headerpad_max_install_names -Wl,-rpath,{{pkgx.prefix}} \"$@\"",
+          ],
+        },
         if: "darwin",
       },
       {

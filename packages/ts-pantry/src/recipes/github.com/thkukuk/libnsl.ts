@@ -3,6 +3,10 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'github.com/thkukuk/libnsl',
   name: 'libnsl',
+  // libnsl is the NIS/NSS (Name Service Switch) glibc companion library; it is
+  // Linux-only (depends on glibc internals and libtirpc). pkgx restricts it to
+  // linux — building on darwin fails. Mirror that restriction.
+  platforms: ['linux'],
   programs: [],
   dependencies: {
     'sourceforge.net/libtirpc': '*',

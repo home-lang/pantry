@@ -10,6 +10,12 @@ export const recipe: Recipe = {
     'gnu.org/libiconv': '^1',
     'invisible-island.net/ncurses': '^6',
   },
+  buildDependencies: {
+    // tig's `configure` hard-errors with "pkg-config not found" — it uses
+    // pkg-config to locate ncursesw. pkgx's base build env provides it
+    // implicitly, but native recipes must declare it explicitly.
+    'freedesktop.org/pkg-config': '*',
+  },
   distributable: {
     url: 'https://github.com/jonas/tig/releases/download/{{version.tag}}/{{version.tag}}.tar.gz',
     stripComponents: 1,

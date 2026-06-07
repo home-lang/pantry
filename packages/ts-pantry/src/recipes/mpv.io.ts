@@ -12,7 +12,10 @@ export const recipe: Recipe = {
     repo: 'mpv-player/mpv',
   },
   distributable: {
+    // pkgx pins the git checkout to the release tag (`ref: ${{version.tag}}`).
+    // Without this the clone builds the default branch instead of the version.
     url: 'git+https://github.com/mpv-player/mpv',
+    ref: '{{version.tag}}',
   },
   dependencies: {
     'ffmpeg.org': '*',

@@ -50,7 +50,7 @@ export const recipe: Recipe = {
     ],
     env: {
       darwin: {
-        MACOSX_DEPLOYMENT_TARGET: '14',
+        MACOSX_DEPLOYMENT_TARGET: '14.0',
       },
     },
   },

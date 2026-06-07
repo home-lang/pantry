@@ -35,7 +35,6 @@ export const recipe: Recipe = {
     script: [
       './configure $ARGS',
       'make --jobs {{hw.concurrency}} install',
-      '',
     ],
     env: {
       'ARGS': ['--prefix={{prefix}}', '--without-x', '--with-boost={{deps.boost.org.prefix}}'],

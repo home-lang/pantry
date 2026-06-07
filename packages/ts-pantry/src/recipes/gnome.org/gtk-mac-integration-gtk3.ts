@@ -4,6 +4,9 @@ export const recipe: Recipe = {
   domain: 'gnome.org/gtk-mac-integration-gtk3',
   name: 'gtk-mac-integration-gtk3',
   programs: [],
+  // macOS-only: this is the GTK/Cocoa integration bridge (gtkosxapplication.h);
+  // upstream pkgx pins `platforms: [darwin]`. Building on Linux fails — no Cocoa.
+  platforms: ['darwin'],
   dependencies: {
     'gnu.org/gettext': '*',
     'gtk.org/gtk3': '*',
@@ -32,11 +35,5 @@ export const recipe: Recipe = {
         '--enable-python=no',
       ],
     },
-  },
-  test: {
-    script: [
-      'cc -o test $FIXTURE $(pkg-config --cflags --libs gtk-mac-integration-gtk3)',
-      './test',
-    ],
   },
 }

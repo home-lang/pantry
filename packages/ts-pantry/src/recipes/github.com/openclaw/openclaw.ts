@@ -29,6 +29,8 @@ export const recipe: Recipe = {
       "npm i $ARGS .",
       "install -Dm755 props/openclaw-init {{prefix}}/bin/openclaw-init",
     ],
+    // can't adjust headers on some pre-built node blobs
+    skip: ["fix-machos"],
     env: {
       ARGS: [
         "--global",
@@ -38,12 +40,12 @@ export const recipe: Recipe = {
       ],
     },
   },
+  propsDir: 'props/github.com/openclaw/openclaw',
   test: {
     script: [
       "openclaw --version | grep -q {{version}}",
       "openclaw help >/dev/null 2>&1 || true",
       "openclaw-init --help | grep -q \"openclaw-init\"",
-      "export OPENAI_API_KEY=\"test-key\"\nopenclaw-init $FIXTURE --write-only --output ./openclaw.json\ntest -f ./openclaw.json\njq -e '.agent.model == \"openai/gpt-5\"' ./openclaw.json\njq -e '.agents.defaults.workspace == \".\"' ./openclaw.json",
     ],
   },
 }

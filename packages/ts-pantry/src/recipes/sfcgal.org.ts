@@ -18,6 +18,10 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'cmake.org': '*',
+    'linux': {
+      'gnu.org/gcc': '*',
+      'gnu.org/make': '*',
+    },
   },
 
   build: {
@@ -25,10 +29,13 @@ export const recipe: Recipe = {
       'cmake -S . -B build $CMAKE_ARGS',
       'cmake --build build',
       'cmake --install build',
-      'cd {{prefix}}/bin',
-      'sed -i.bak "s|{{prefix}}|\\$(dirname \\$0)/..|g" sfcgal-config',
-      'rm sfcgal-config.bak',
-      '',
+      {
+        run: [
+          'sed -i.bak "s|{{prefix}}|\\$(dirname \\$0)/..|g" sfcgal-config',
+          'rm sfcgal-config.bak',
+        ],
+        'working-directory': '{{prefix}}/bin',
+      },
     ],
     env: {
       'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_LIBDIR=lib', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_VERBOSE_MAKEFILE=ON', '-Wno-dev', '-DBUILD_TESTING=OFF'],

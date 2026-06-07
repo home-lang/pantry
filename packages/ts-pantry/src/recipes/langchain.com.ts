@@ -7,9 +7,16 @@ export const recipe: Recipe = {
   homepage: 'https://python.langchain.com',
   github: 'https://github.com/langchain-ai/langchain',
   programs: ['f2py', 'jsondiff', 'jsonpatch', 'jsonpointer', 'langchain-server', 'langsmith', 'normalizer'],
+  // langchain stopped publishing `v`-prefixed GitHub *releases* after v0.1.16;
+  // current releases are per-library (`langchain==1.3.4`) whose archive URL
+  // `archive/v{{version}}.tar.gz` does not exist (404). The buildable line
+  // (where `pip install .` in libs/langchain + the v-tag tarball both work)
+  // is the `v0.1.x` tags, which only exist as git *tags*, not releases.
+  // Gate version discovery to those stable `v`-prefixed tags.
   versionSource: {
-    type: 'github-releases',
+    type: 'github-tags',
     repo: 'langchain-ai/langchain',
+    tagPattern: /^v(\d+\.\d+\.\d+)$/,
   },
   distributable: {
     url: 'https://github.com/langchain-ai/langchain/archive/v{{version}}.tar.gz',

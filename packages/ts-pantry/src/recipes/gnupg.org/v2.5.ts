@@ -1,8 +1,11 @@
 import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: "../props/gnupg.org",
   domain: "gnupg.org/v2.5",
   name: "v2.5",
+  // pkgx: "currently not ready for darwin"; build/test only on linux
+  platforms: ["linux"],
   programs: [],
   dependencies: {
     'zlib.net': "^1.1",
@@ -19,6 +22,14 @@ export const recipe: Recipe = {
     'sqlite.org': "^3",
     darwin: {
       'gnu.org/gettext': "^0.21",
+    },
+  },
+  buildDependencies: {
+    linux: {
+      'gnu.org/gcc': "*",
+    },
+    darwin: {
+      'gnu.org/patch': "*",
     },
   },
   distributable: {

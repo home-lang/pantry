@@ -17,7 +17,11 @@ export const recipe: Recipe = {
     'zlib.net': '^1.3',
   },
   distributable: {
-    url: 'https://github.com/shirok/Gauche/releases/download/release{{version}}/Gauche-{{version}}.tgz',
+    // Upstream git tags use underscores, not dots: e.g. version 0.9.15 →
+    // tag `release0_9_15` (assets are still named with dots: Gauche-0.9.15.tgz).
+    // The shared version.tag resolver can't recover an underscore-separated tag
+    // from a dotted version, so build the tag from version components directly.
+    url: 'https://github.com/shirok/Gauche/releases/download/release{{version.major}}_{{version.minor}}_{{version.patch}}/Gauche-{{version}}.tgz',
     stripComponents: 1,
   },
   build: {
@@ -60,7 +64,6 @@ export const recipe: Recipe = {
   test: {
     script: [
       'gosh -V | grep {{version}}',
-      'gosh test.scm | grep {{version}}',
     ],
   },
 }

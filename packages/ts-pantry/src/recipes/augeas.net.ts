@@ -28,11 +28,17 @@ export const recipe: Recipe = {
     'freedesktop.org/pkg-config': '*',
     'curl.se': '*',
     'gnu.org/patch': '*',
+    'linux': {
+      'gnu.org/gcc': '*',
+    },
   },
 
   build: {
     script: [
-      'curl -L https://github.com/hercules-team/augeas/commit/7b26cbb74ed634d886ed842e3d5495361d8fd9b1.patch?full_index=1 | patch -p1',
+      {
+        run: 'curl -L https://github.com/hercules-team/augeas/commit/7b26cbb74ed634d886ed842e3d5495361d8fd9b1.patch?full_index=1 | patch -p1',
+        if: '<1.14.1',
+      },
       'autoreconf --force --install',
       './configure $ARGS',
       'make --jobs {{hw.concurrency}} install',

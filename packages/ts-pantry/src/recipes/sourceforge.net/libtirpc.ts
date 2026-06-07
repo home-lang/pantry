@@ -4,6 +4,7 @@ export const recipe: Recipe = {
   domain: 'sourceforge.net/libtirpc',
   name: 'libtirpc',
   programs: [],
+  platforms: ['linux'],
   dependencies: {
     'kerberos.org': '*',
   },

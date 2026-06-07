@@ -1,6 +1,7 @@
 import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: '../../props/github.com/AUTOMATIC1111/stable-diffusion-webui',
   domain: "github.com/AUTOMATIC1111/stable-diffusion-webui",
   name: "stable-diffusion-webui",
   programs: [

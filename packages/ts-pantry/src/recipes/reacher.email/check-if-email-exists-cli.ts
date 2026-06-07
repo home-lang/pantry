@@ -19,6 +19,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': 'cli',
     script: [
       {
         run: 'sed -i -e \'1,20s/^version = ".*"/version = "{{version}}"/\' core/Cargo.toml cli/Cargo.toml backend/Cargo.toml',

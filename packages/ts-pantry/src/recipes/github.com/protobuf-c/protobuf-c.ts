@@ -11,6 +11,10 @@ export const recipe: Recipe = {
     'protobuf.dev': '^25.1',
     'abseil.io': '^20250127',
   },
+  versionSource: {
+    type: 'github-releases',
+    repo: 'protobuf-c/protobuf-c',
+  },
   distributable: {
     url: 'https://github.com/protobuf-c/protobuf-c/releases/download/v{{version}}/protobuf-c-{{version}}.tar.gz',
     stripComponents: 1,

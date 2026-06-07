@@ -18,13 +18,17 @@ export const recipe: Recipe = {
       './configure --prefix={{prefix}} --syslibdir={{prefix}}/lib',
       'make --jobs {{hw.concurrency}}',
       'make install',
-      'cd "{{prefix}}/lib"',
-      'ln -sf libc.so ld-musl-{{hw.arch}}.so.1',
-      'cd "{{prefix}}/bin"',
-      'sed -i -e \'s/-dynamic-linker "\\$ldso"//\' -e \'s/^sflags=$/sflags="-static"/\' -e \'s/^libc=".*/libc="$(dirname $(dirname $(command -v ld.musl-clang)))"/\' -e \'s#^libc_inc=".*#libc_inc="$libc/include"#\' -e \'s#^libc_lib=".*#libc_lib="$libc/lib"#\' -e \'s/print-prog-name=ld/print-prog-name=ld.lld/\' musl-clang ld.musl-clang',
+      {
+        run: 'ln -sf libc.so ld-musl-{{hw.arch}}.so.1',
+        'working-directory': '{{prefix}}/lib',
+      },
+      {
+        run: 'sed -i -e \'s/-dynamic-linker "\\$ldso"//\' -e \'s/^sflags=$/sflags="-static"/\' -e \'s/^libc=".*/libc="$(dirname $(dirname $(command -v ld.musl-clang)))"/\' -e \'s#^libc_inc=".*#libc_inc="$libc/include"#\' -e \'s#^libc_lib=".*#libc_lib="$libc/lib"#\' -e \'s/print-prog-name=ld/print-prog-name=ld.lld/\' musl-clang ld.musl-clang',
+        'working-directory': '{{prefix}}/bin',
+      },
     ],
     env: {
-      'CC': 'clang',
+      CC: 'clang',
     },
   },
 }

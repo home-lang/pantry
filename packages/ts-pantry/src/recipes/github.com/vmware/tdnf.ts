@@ -19,6 +19,8 @@ export const recipe: Recipe = {
   buildDependencies: {
     'cmake.org': '^3',
   },
+  // rpm doesn't support darwin, and patching is a nightmare.
+  platforms: ['linux'],
   distributable: {
     url: 'https://github.com/vmware/tdnf/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
@@ -27,7 +29,15 @@ export const recipe: Recipe = {
     'working-directory': 'build',
     script: [
       {
+        // tdnf hardcodes /etc paths, patch to use CMAKE_INSTALL_PREFIX
         run: 'sed -i -f $PROP ../CMakeLists.txt',
+        prop: {
+          content: [
+            's|set(CMAKE_INSTALL_FULL_SYSCONDIR "/etc")|set(CMAKE_INSTALL_FULL_SYSCONDIR "${CMAKE_INSTALL_PREFIX}/etc")|',
+            's|set(SYSCONFDIR /etc)|set(SYSCONFDIR "${CMAKE_INSTALL_PREFIX}/etc")|',
+            's|set(MOTGEN_DIR /etc/motdgen.d)|set(MOTGEN_DIR "${CMAKE_INSTALL_PREFIX}/etc/motdgen.d")|',
+          ],
+        },
       },
       'mkdir -p {{prefix}}/etc {{prefix}}/var/lib/tdnf',
       'cmake .. $CMAKE_ARGS',

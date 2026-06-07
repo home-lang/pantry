@@ -17,8 +17,19 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
 
+  buildDependencies: {
+    linux: {
+      // as of v7, configure needs a newer time_types.h than the build host may ship
+      'kernel.org/linux-headers': '>=6.20',
+    },
+  },
+
   build: {
     script: [
+      {
+        run: 'cp {{deps.kernel.org/linux-headers.prefix}}/include/linux/time_types.h bundled/linux/include/uapi/linux/',
+        if: '>=7',
+      },
       './configure $ARGS',
       'make --jobs {{hw.concurrency}} install',
       '',

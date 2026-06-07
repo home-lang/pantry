@@ -20,8 +20,10 @@ export const recipe: Recipe = {
     ],
   },
   test: {
+    // pkgx gates the test by version: <1 expects "himalaya {{version}}", >=1
+    // expects "himalaya v{{version}}". All current releases are 1.x, so mirror
+    // the >=1 form only (the <1 form would falsely fail the health check on 1.x).
     script: [
-      'test "$(himalaya --version)" = "himalaya {{version}}"',
       'himalaya --version | grep "himalaya v{{version}}"',
     ],
   },

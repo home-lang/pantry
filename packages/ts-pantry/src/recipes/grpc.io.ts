@@ -13,6 +13,9 @@ export const recipe: Recipe = {
   },
   distributable: {
     url: 'git+https://github.com/grpc/grpc',
+    // Check out the requested release tag so submodules/build match {{version}}.
+    // downloadSource() forwards this as `git clone --branch <ref> --single-branch`.
+    ref: 'v{{version}}',
   },
   dependencies: {
     // grpc 1.81.0 vendors abseil 20250512.1 (third_party/abseil-cpp submodule +
@@ -45,18 +48,11 @@ export const recipe: Recipe = {
   },
 
   build: {
-    'working-directory': 'build',
-    workingDirectory: 'cmake/build',
+    'working-directory': 'cmake/build',
     script: [
-      // The loader does not forward distributable.ref, so the git+ url clones
-      // the default branch. Fetch and check out the requested release tag here
-      // so submodules/build match {{version}}.
+      // distributable.ref already checked out the release tag; just init submodules.
       {
-        run: [
-          'git fetch --depth 1 origin "tag" "v{{version}}" 2>/dev/null || git fetch origin "tag" "v{{version}}" || true',
-          'git checkout "v{{version}}" 2>/dev/null || true',
-          'git submodule update --init --recursive',
-        ],
+        run: 'git submodule update --init --recursive',
         'working-directory': '../..',
       },
 

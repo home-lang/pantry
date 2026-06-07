@@ -17,14 +17,22 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      'cd "ntpdc"',
-      'sed -i.bak \'s_^#!.*perl_#!{{deps.perl.org.prefix}}/bin/perl_\' nl.pl',
+      {
+        run: 'sed -i.bak \'s_^#!.*perl_#!{{deps.perl.org.prefix}}/bin/perl_\' nl.pl',
+        'working-directory': 'ntpdc',
+      },
       './configure --disable-debug --disable-dependency-tracking --disable-silent-rules --prefix={{prefix}} --with-openssl-libdir={{deps.openssl.org.prefix}}/lib --with-openssl-incdir={{deps.openssl.org.prefix}}/include --with-net-snmp-config=no',
-      'LDADD_LIBNTP="-undefined dynamic_lookup $LDADD_LIBNTP"',
+      {
+        run: 'LDADD_LIBNTP="-undefined dynamic_lookup $LDADD_LIBNTP"',
+        if: 'darwin',
+      },
       'make install LDADD_LIBNTP="$LDADD_LIBNTP"',
     ],
     env: {
       'LDADD_LIBNTP': '-lresolv',
+      linux: {
+        CFLAGS: '$CFLAGS -Wno-int-conversion',
+      },
     },
   },
 }

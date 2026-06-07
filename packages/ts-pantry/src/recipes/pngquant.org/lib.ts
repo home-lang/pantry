@@ -14,6 +14,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   build: {
+    'working-directory': 'imagequant-sys',
     script: [
       'cargo cinstall --prefix {{prefix}}',
     ],

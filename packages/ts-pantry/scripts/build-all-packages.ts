@@ -1623,6 +1623,8 @@ Options:
   //     macvim.org, github.com/facebookincubator/fizz — GitHub tag resolution now
   //     handles leading-zero normalization via API lookup (resolveGitHubTag)
   const knownBrokenDomains = new Set([
+    'agpt.co', // upstream pivoted: classic AutoGPT CLI layout (autogpt/, .env.template, prompt_settings.yaml, root requirements.txt) gone; latest releases are a Next.js + multi-service web platform, not a pip-installable binary — no source build produces bin/auto-gpt
+    'snaplet.dev/cli', // discontinued upstream (Snaplet shut down 2024); npm latest dist-tag no longer ships the buildable CLI artifact
     'gnu.org/gcc/libgomp', // GCC sub-package — requires compiling all of GCC (~225s+ before failing), too resource-intensive for CI
     'gnu.org/gcc', // Building GCC from source requires existing GCC; on darwin clang lacks -print-multi-os-directory
     'gnu.org/gcc/libstdcxx', // Requires full GCC build, dep file I/O issues in CI

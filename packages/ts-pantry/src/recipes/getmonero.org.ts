@@ -22,6 +22,9 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'cmake.org': '^3',
+    linux: {
+      'llvm.org': '20', // 21 has name mangling issues with boost
+    },
   },
 
   build: {
@@ -33,6 +36,10 @@ export const recipe: Recipe = {
     ],
     env: {
       'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_BUILD_TYPE=Release', '-DARCH=default', '-Wno-dev', '-DMANUAL_SUBMODULES=1'],
+      // linux doesn't like -static with libunbound.a
+      darwin: {
+        CMAKE_ARGS: ['-DSTATIC=ON'],
+      },
     },
   },
 }

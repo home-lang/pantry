@@ -1,6 +1,7 @@
 import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
+  propsDir: '../props/rtomayko.github.io/ronn',
   domain: 'rtomayko.github.io/ronn',
   name: 'ronn',
   programs: [
@@ -35,7 +36,8 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      'ronn --date 1970-01-01 $FIXTURE',
+      'printf \'simple(7) -- a simple ronn example\\n==================================\\nThis document is created by ronn.\\n\' > fixture.ronn',
+      'ronn --date 1970-01-01 fixture.ronn',
     ],
   },
 }

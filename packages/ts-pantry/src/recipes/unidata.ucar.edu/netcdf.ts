@@ -40,6 +40,18 @@ export const recipe: Recipe = {
       "if ! test -f {{prefix}}/lib/libnetcdf.a; then\n  install build_static/liblib/libnetcdf.a {{prefix}}/lib/\nfi\n",
       {
         run: "sed -i \"s/::LIB_SUFFIX::/$LIB_SUFFIX/g\" $PROP\nsed -E -i -f $PROP *.cmake",
+        prop: {
+          contents: [
+            "s:{{pkgx.prefix}}:${CMAKE_CURRENT_LIST_DIR}/../../../../../..:g",
+            // eslint-disable-next-line no-super-linear-backtracking -- sed script string, not a JS regex
+            "/^  INTERFACE_INCLUDE_DIRECTORIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/include|/v\\1/include|g",
+            // eslint-disable-next-line no-super-linear-backtracking -- sed script string, not a JS regex
+            "/^  INTERFACE_LINK_LIBRARIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/lib|/v\\1/lib|g",
+            "s/\\+brewing//g",
+            "s|\\\\\\\\\\\\$<LINK_ONLY:hdf5::hdf5_hl>|${CMAKE_CURRENT_LIST_DIR}/../../../../../../hdfgroup.org/HDF5/v1/lib/libhdf5_hl.::LIB_SUFFIX::|g",
+            "",
+          ],
+        },
         'working-directory': "${{prefix}}/lib/cmake/netCDF",
       },
       {

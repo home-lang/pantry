@@ -23,6 +23,15 @@ export const recipe: Recipe = {
     'zlib.net': '*',
     'invisible-island.net/ncurses': '*',
     'libexpat.github.io': '*',
+    // needs newer libstdc++
+    linux: {
+      'gnu.org/gcc/libstdcxx': '14',
+    },
+  },
+  buildDependencies: {
+    linux: {
+      'gnu.org/gcc': '14',
+    },
   },
 
   build: {
@@ -32,6 +41,10 @@ export const recipe: Recipe = {
     ],
     env: {
       'ARGS': ['--prefix={{prefix}}', '--with-openssl={{deps.openssl.org.prefix}}', '--with-readline={{deps.gnu.org/readline.prefix}}', '--with-libidn2={{deps.gnu.org/libidn2.prefix}}'],
+      // https://github.com/lavv17/lftp/issues/611
+      darwin: {
+        CFLAGS: '$CFLAGS -Wno-implicit-function-declaration',
+      },
     },
   },
 }

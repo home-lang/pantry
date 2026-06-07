@@ -24,11 +24,15 @@ export const recipe: Recipe = {
   build: {
     'working-directory': 'build',
     script: [
-      'cd ".."',
       // gitlab.freedesktop.org's `-/releases/.../downloads/` path 403s from GitHub
       // Actions runners; the generic `-/archive/` endpoint serves the same source
       // tree (top-level `wayland-{{version}}/`, full meson build) and is reachable.
-      'curl -L \'https://gitlab.freedesktop.org/wayland/wayland/-/archive/{{version}}/wayland-{{version}}.tar.gz\' | tar -xz --strip-components=1',
+      // Extract one level up (in the buildDir root, the parent of `build/`) so the
+      // subsequent `meson $ARGS ..` from inside `build/` sees the source tree.
+      {
+        run: 'curl -L \'https://gitlab.freedesktop.org/wayland/wayland/-/archive/{{version}}/wayland-{{version}}.tar.gz\' | tar -xz --strip-components=1',
+        'working-directory': '..',
+      },
       'meson $ARGS ..',
       'ninja -v',
       'ninja install -v',

@@ -24,6 +24,20 @@ export const recipe: Recipe = {
     script: [
       {
         run: 'cat $PROP >> requirements.txt',
+        prop: {
+          content: [
+            'mkdocs-mermaid2-plugin',
+            'mkdocs-plugin-progress',
+            'mkdocs-include-markdown-plugin',
+            'mkdocs-macros-plugin',
+            'mkdocs-encriptmail-plugin',
+            'mkdocs-exporter',
+            'mkdocs-static-i18n',
+            'mkdocs-git-revision-date-localized-plugin',
+            'mkdocs-git-committers-plugin-2',
+            'mkdocs-git-authors-plugin',
+          ],
+        },
       },
       'bkpyvenv stage {{prefix}} {{version}}',
       '${{prefix}}/venv/bin/pip install .',

@@ -32,6 +32,7 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'cmake.org': "*",
+    'freedesktop.org/pkg-config': "*",
     'gnu.org/autoconf': "*",
     'gnu.org/automake': "*",
     'gnu.org/libtool': "*",
@@ -60,6 +61,20 @@ export const recipe: Recipe = {
       {
         run: "sed \"s|HOME|$HOME|\" $PROP >prop.sed\nsed -i -f prop.sed h5cc h5c++\nif test -f h5fc; then sed -i -f prop.sed h5fc; fi\nCC=\"$(command -v cc)\"\nsed -i \"s|${CC}|cc|g\" h5cc h5c++",
         'working-directory': "${{prefix}}/bin",
+        // Relocation sed-script materialized as $PROP by buildkit. Mirrors the
+        // pkgx recipe's `prop:` field (which was dropped on conversion, leaving
+        // $PROP undefined and the relocation step aborting under set -e). Strips
+        // absolute compiler bin paths from the generated h5cc/h5c++/h5fc wrapper
+        // scripts and makes {{prefix}} self-relative so the wrappers work after
+        // the package is moved to its final install location.
+        prop: {
+          content: [
+            "s|{{deps.llvm.org.prefix}}/bin/||g",
+            "s|{{deps.gnu.org/gcc.prefix}}/bin/||g",
+            "s|{{prefix}}|\\$(cd \\$(dirname \\$0)/.. \\&\\& pwd)|g",
+            "s|\\+brewing||g",
+          ].join('\n'),
+        },
       },
     ],
     env: {

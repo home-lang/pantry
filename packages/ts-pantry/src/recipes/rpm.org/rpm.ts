@@ -6,6 +6,9 @@ export const recipe: Recipe = {
   programs: [
     'rpm',
   ],
+  // pkgx: "they don't officially support darwin, and it's a bear to patch".
+  // The build also hard-codes Linux .so library paths (liblua.so, libmagic.so).
+  platforms: ['linux'],
   dependencies: {
     'lua.org': '~5.4',
     'gnu.org/gmp': '*',
@@ -94,6 +97,9 @@ export const recipe: Recipe = {
     },
   },
   test: {
+    env: {
+      RPM_CONFIGDIR: '{{prefix}}/lib/rpm',
+    },
     script: [
       'test "$(rpm --version)" = "RPM version {{version}}"',
       'rpm --eval \'%{lua:print(_VERSION)}\' | grep -q \'^Lua 5\\.4$\'',

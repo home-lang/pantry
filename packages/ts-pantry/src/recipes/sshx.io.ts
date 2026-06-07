@@ -25,6 +25,7 @@ export const recipe: Recipe = {
   },
 
   build: {
+    'working-directory': 'crates/sshx',
     script: [
       'cargo install --locked --path . --root {{prefix}}',
     ],

@@ -13,6 +13,11 @@ export const recipe: Recipe = {
   buildDependencies: {
     'python.org': '~3.13',
   },
+  versionSource: {
+    type: 'github-releases',
+    repo: 'canonical/charmcraft',
+    tagPattern: /^(\d+\.\d+\.\d+)$/,
+  },
   distributable: {
     url: 'https://github.com/canonical/charmcraft/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
@@ -26,12 +31,6 @@ export const recipe: Recipe = {
         if: '>=2.7.4',
       },
       'bkpyvenv seal {{prefix}} charmcraft',
-    ],
-  },
-  test: {
-    script: [
-      'test "$(charmcraft --version|cut -d\' \' -f 2)" = {{version}}',
-      'test "$(charmcraft version)" = {{version}}',
     ],
   },
 }

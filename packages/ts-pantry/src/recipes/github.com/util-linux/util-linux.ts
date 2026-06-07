@@ -3,6 +3,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: "github.com/util-linux/util-linux",
   name: "util-linux",
+  propsDir: "../../../props/github.com/util-linux/util-linux",
   programs: [],
   dependencies: {
     'gnu.org/gettext': "^0",
@@ -35,6 +36,7 @@ export const recipe: Recipe = {
       "sed -i 's/build_waitpid=yes ;;/build_waitpid=no ;;/g' configure",
       {
         run: "if test darwin = {{hw.platform}}; then\n  sed -i -f $PROP configure\nfi\n",
+        prop: "s/build_bits=yes/build_bits=no/\ns/enable_bits=yes/enable_bits=no/\n",
         if: ">=2.41",
       },
       "./configure $ARGS",
