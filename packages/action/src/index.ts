@@ -639,7 +639,27 @@ export async function run(): Promise<void> {
 
     // If setup-only with no packages, skip to publish/release (if any)
     if (inputs.setupOnly && !inputs.packages) {
-      // Still configure PATH so pantry-installed bins are available
+      // `install: false` skips `pantry install` of *project* deps, but the
+      // action's core contract is to provide the bun runtime — always install
+      // it so downstream steps can run `bun …` without a separate setup-bun.
+      // (Without this, setup-only returned before any bun install, so a
+      // workflow that only wanted the CLI got `bun: command not found`.)
+      try {
+        await installSystemPackage('bun.sh', pantryDir, readLockedVersions())
+        const bunPath = path.join(pantryBinDir, 'bun')
+        const bunxPath = path.join(pantryBinDir, 'bunx')
+        if (fs.existsSync(bunPath)) {
+          try { fs.unlinkSync(bunxPath) }
+          catch { /* doesn't exist */ }
+          fs.symlinkSync(bunPath, bunxPath)
+          core.exportVariable('BUN_INSTALL', pantryDir)
+        }
+      }
+      catch (err) {
+        core.warning(`bun setup (install:false): ${err instanceof Error ? err.message : 'failed'}`)
+      }
+
+      // Configure PATH so pantry-installed bins (incl. bun) are available
       if (fs.existsSync(pantryBinDir))
         core.addPath(pantryBinDir)
       core.addPath(path.join(homeDir, '.pantry', 'bin'))

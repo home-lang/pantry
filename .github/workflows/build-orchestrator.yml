@@ -39,8 +39,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Pantry
+        uses: ./packages/action
+        with:
+          install: 'false'
 
       - name: Restore orchestrator state
         uses: actions/cache/restore@v4
