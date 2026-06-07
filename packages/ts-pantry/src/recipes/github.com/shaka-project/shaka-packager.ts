@@ -7,28 +7,34 @@ export const recipe: Recipe = {
     'packager',
     'mpd_generator',
   ],
-  dependencies: {
-    linux: {
-      'gnu.org/gcc/libstdcxx': '*',
-    },
+  platforms: ['darwin/aarch64', 'darwin/x86-64', 'linux/x86-64', 'linux/aarch64'],
+  versionSource: {
+    type: 'github-releases',
+    repo: 'shaka-project/shaka-packager',
+    tagPattern: /^v(.+)$/,
   },
-  buildDependencies: {
-    'ninja-build.org': '*',
-    'cmake.org': '^3',
-    'python.org': '^3.10',
-    linux: {
-      'gnu.org/gcc': '*',
-    },
-  },
-  distributable: {
-    url: 'git+https://github.com/shaka-project/shaka-packager.git',
-  },
+  distributable: null,
   build: {
     script: [
-      'git submodule update --init --recursive',
-      'cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release',
-      'cmake --build build --parallel',
-      'cmake --install build/ --strip --config Release --prefix={{prefix}}',
+      'case {{hw.platform}}+{{hw.arch}} in',
+      '  darwin+aarch64) SUFFIX=osx-arm64 ;;',
+      '  darwin+x86-64) SUFFIX=osx-x64 ;;',
+      '  linux+x86-64) SUFFIX=linux-x64 ;;',
+      '  linux+aarch64) SUFFIX=linux-arm64 ;;',
+      '  *) echo "unsupported platform {{hw.platform}}/{{hw.arch}}" >&2; exit 1 ;;',
+      'esac',
+      'mkdir -p {{prefix}}/bin',
+      'for PROGRAM in packager mpd_generator; do',
+      '  ASSET="$PROGRAM-$SUFFIX"',
+      '  curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 15 --max-time 300 -o "$ASSET" "https://github.com/shaka-project/shaka-packager/releases/download/v{{version}}/$ASSET"',
+      '  install -m755 "$ASSET" "{{prefix}}/bin/$PROGRAM"',
+      'done',
+    ],
+  },
+  test: {
+    script: [
+      'packager --version | grep "v{{version}}"',
+      'mpd_generator --version | grep "v{{version}}"',
     ],
   },
 }

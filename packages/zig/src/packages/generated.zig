@@ -7815,10 +7815,10 @@ pub const packages = [_]PackageInfo{ .{
     .description = "A media packaging and development framework for VOD and Live DASH and HLS applications, supporting Common Encryption for Widevine and other DRM Systems.",
     .homepage_url = "https://shaka-project.github.io/shaka-packager/",
     .programs = &[_][]const u8{ "packager", "mpd_generator" },
-    .dependencies = &[_][]const u8{"linux:gnu.org/gcc/libstdcxx"},
-    .build_dependencies = &[_][]const u8{ "cmake.org@^3", "python.org@^3.10", "linux:gnu.org/gcc" },
+    .dependencies = &[_][]const u8{},
+    .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
-    .versions = &[_][]const u8{ "3.7.0", "3.6.1", "3.6.0", "3.5.0", "3.4.2", "3.4.1", "3.4.0" },
+    .versions = &[_][]const u8{ "3.7.2", "3.7.1", "3.7.0", "3.6.1", "3.6.0", "3.5.0", "3.4.2", "3.4.1", "3.4.0" },
 }, .{
     .name = "conform",
     .domain = "github.com/siderolabs/conform",

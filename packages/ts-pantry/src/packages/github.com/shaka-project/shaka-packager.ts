@@ -3,13 +3,13 @@
  *
  * @domain `github.com/shaka-project/shaka-packager`
  * @programs `packager`, `mpd_generator`
- * @version `3.7.0` (7 versions available)
+ * @version `3.7.2` (9 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/shaka-project/shaka-packager`
  * @homepage https://shaka-project.github.io/shaka-packager/
- * @dependencies `linux:gnu.org/gcc/libstdcxx` (includes OS-specific dependencies with `os:package` format)
- * @buildDependencies `cmake.org@^3`, `python.org@^3.10`, `linux:gnu.org/gcc` (includes OS-specific dependencies with `os:package` format) - required only when building from source
+ * @dependencies none
+ * @buildDependencies none
  *
  * @example
  * ```typescript
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "shaka-packager"
  * console.log(pkg.description) // "A media packaging and development framework for..."
  * console.log(pkg.programs)    // ["packager", "mpd_generator"]
- * console.log(pkg.versions[0]) // "3.7.0" (latest)
+ * console.log(pkg.versions[0]) // "3.7.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/shaka-project/shaka-packager.md
@@ -62,24 +62,20 @@ export const shakapackagerPackage = {
   * These are required when running the package.
   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
   */
-  dependencies: [
-    'linux:gnu.org/gcc/libstdcxx',
-  ] as const,
+  dependencies: [] as const,
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
   */
-  buildDependencies: [
-    'cmake.org@^3',
-    'python.org@^3.10',
-    'linux:gnu.org/gcc',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.7.2',
+    '3.7.1',
     '3.7.0',
     '3.6.1',
     '3.6.0',
