@@ -17,19 +17,20 @@ export const recipe: Recipe = {
   dependencies: {
     'openjdk.org': "*",
   },
-  distributable: {
-    url: "https://downloads.apache.org/zookeeper/zookeeper-{{version}}/apache-zookeeper-{{version}}-bin.tar.gz",
-    stripComponents: 1,
-  },
+  distributable: null,
   build: {
     skip: ['verify-foreign-artifact'],
     script: [
+      "curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 15 --max-time 600 -o zookeeper.tar.gz https://downloads.apache.org/zookeeper/zookeeper-{{version}}/apache-zookeeper-{{version}}-bin.tar.gz",
+      "mkdir extract",
+      "tar -xzf zookeeper.tar.gz -C extract --strip-components=1",
       {
         run: "mkdir -p etc/zookeeper var/log/zookeeper var/run/zookeeper/data",
         'working-directory': "{{prefix}}",
       },
       {
         run: "rm -f bin/*.cmd bin/*.txt\ncp -r ./* {{prefix}}/\n",
+        'working-directory': "extract",
       },
       {
         run: "rm -f *.txt *.md",
