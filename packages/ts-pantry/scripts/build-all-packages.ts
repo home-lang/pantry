@@ -971,14 +971,92 @@ function selectRecentVersions(pkg: BuildablePackage, maxVersions: number): strin
     .slice(0, maxVersions)
 }
 
+// Popular packages keep a DEEPER version history (POPULAR_MAX_VERSIONS, default 20)
+// — people pin older releases of languages/runtimes/databases/core CLIs far more
+// than of a random tool, so we mirror more of their back-catalog. Everyone else gets
+// the standard --max-versions (default 5). Tune via --popular-max-versions. Domains
+// must match pkg.domain exactly (every entry verified against the live registry index).
+let POPULAR_MAX_VERSIONS = 20
+const POPULAR_PACKAGES = new Set<string>([
+  // languages & runtimes
+  'bun.sh', 'nodejs.org', 'python.org', 'go.dev', 'rust-lang.org', 'rust-lang.org/cargo',
+  'rust-lang.org/rustup', 'ruby-lang.org', 'rubygems.org', 'php.net', 'deno.land',
+  'ziglang.org', 'perl.org', 'lua.org', 'luajit.org', 'openjdk.org', 'elixir-lang.org',
+  'haskell.org', 'crystal-lang.org', 'nim-lang.org', 'kotlinlang.org', 'scala-lang.org',
+  'swift.org', 'julialang.org', 'gleam.run', 'dart.dev', 'erlang.org', 'groovy-lang.org',
+  'gnu.org/gcc', 'llvm.org', 'dotnet.microsoft.com', 'tcl-lang.org',
+  // version & package managers
+  'mise.jdx.dev', 'volta.sh', 'github.com/rbenv/rbenv', 'crates.io/fnm', 'getcomposer.org',
+  'python-poetry.org', 'pipenv.pypa.io', 'astral.sh/uv', 'pnpm.io', 'yarnpkg.com',
+  'classic.yarnpkg.com',
+  // databases & stores
+  'postgresql.org', 'postgresql.org/libpq', 'redis.io', 'valkey.io', 'sqlite.org',
+  'mongodb.com', 'etcd.io', 'duckdb.org', 'neo4j.com', 'surrealdb.com', 'min.io',
+  'memcached.org',
+  // web servers & proxies
+  'nginx.org', 'apache.org/httpd', 'caddyserver.com', 'traefik.io',
+  // cloud / kubernetes / devops
+  'kubernetes.io/kubectl', 'kubernetes.io/minikube', 'kubernetes.io/kustomize', 'helm.sh',
+  'terraform.io', 'terraform.io/cdk', 'k9scli.io', 'docker.com/cli', 'docker.com/compose',
+  'docker.com/buildx', 'docker.com/machine', 'podman.io', 'aws.amazon.com/cli', 'ansible.com',
+  'packer.io', 'vaultproject.io', 'consul.io', 'nomadproject.io', 'skaffold.dev', 'istio.io',
+  'kind.sigs.k8s.io', 'k3d.io', 'eksctl.io', 'kubectx.dev', 'github.com/stern/stern',
+  'pulumi.io', 'fluxcd.io/flux2', 'argoproj.github.io/cd', 'argoproj.github.io/workflows',
+  'cilium.io/cilium', 'github.com/jesseduffield/lazydocker', 'github.com/jesseduffield/lazygit',
+  'dagger.io', 'goreleaser.com', 'github.com/anchore/grype', 'anchore.com/syft',
+  'aquasecurity.github.io/trivy', 'github.com/bazelbuild/bazelisk',
+  // core unix CLIs
+  'curl.se', 'gnu.org/wget', 'git-scm.org', 'git-lfs.com', 'gnu.org/bash', 'gnu.org/coreutils',
+  'gnu.org/make', 'gnu.org/tar', 'gnu.org/grep', 'gnu.org/sed', 'gnu.org/gawk',
+  'gnu.org/findutils', 'gnu.org/which', 'cmake.org', 'ninja-build.org', 'mesonbuild.com',
+  'openssl.org', 'gnupg.org', 'gnu.org/gettext', 'freedesktop.org/pkg-config', 'gnu.org/autoconf',
+  'gnu.org/automake', 'gnu.org/libtool', 'htop.dev', 'github.com/aristocratos/btop',
+  'github.com/tmux/tmux', 'gnu.org/parallel', 'nano-editor.org',
+  // compression
+  'tukaani.org/xz', 'facebook.com/zstd', 'lz4.org', 'sourceware.org/bzip2', 'libzip.org',
+  'github.com/google/brotli', 'github.com/p7zip-project/p7zip',
+  // modern CLI tools
+  'crates.io/ripgrep', 'crates.io/fd-find', 'crates.io/bat', 'crates.io/eza', 'crates.io/exa',
+  'starship.rs', 'crates.io/bottom', 'crates.io/du-dust', 'crates.io/tokei', 'crates.io/hyperfine',
+  'crates.io/sd', 'crates.io/zellij', 'crates.io/git-delta', 'github.com/junegunn/fzf',
+  'crates.io/zoxide', 'crates.io/xh', 'crates.io/gitui', 'crates.io/broot', 'numbat.dev',
+  'watchexec.github.io',
+  // editors & shells
+  'neovim.io', 'vim.org', 'helix-editor.com', 'micro-editor.github.io', 'fishshell.com',
+  'zsh.sourceforge.io', 'nushell.sh', 'gnu.org/emacs',
+  // data / json / http
+  'stedolan.github.io/jq', 'github.com/mikefarah/yq', 'httpie.io', 'k6.io', 'github.com/TomWright/dasel',
+  // build & language tooling
+  'gradle.org', 'maven.apache.org', 'scala-sbt.org', 'scons.org', 'golangci-lint.run',
+  'golang.org/tools', 'astral.sh/ruff', 'github.com/psf/black', 'prettier.io', 'biomejs.dev',
+  'vitejs.dev', 'tailwindcss.com', 'typescriptlang.org',
+  // protobuf / rpc / wasm
+  'protobuf.dev', 'grpc.io', 'capnproto.org', 'msgpack.org', 'wasmer.io',
+  // security & networking
+  'nmap.org', 'wireshark.org', 'openssh.com', 'filippo.io/age', 'getsops.io', 'gitleaks.io',
+  'mitmproxy.org',
+  // observability / docs / web
+  'grafana.com/loki', 'gohugo.io', 'mkdocs.org', 'sphinx-doc.org', 'pandoc.org', 'asciidoctor.org',
+  'graphviz.org', 'plantuml.com',
+  // media
+  'ffmpeg.org', 'imagemagick.org', 'exiftool.org', 'ghostscript.com', 'libsdl.org', 'handbrake.fr',
+  'vlc.app',
+  // misc heavy hitters
+  'cli.github.com', 'direnv.net', 'rclone.org', 'syncthing.net', 'wezfurlong.org/wezterm',
+  'alacritty.org', 'charm.sh/glow', 'charm.sh/gum', 'restic.net/restic',
+])
+
 async function selectVersionsForBuild(pkg: BuildablePackage, maxVersions: number): Promise<string[]> {
+  // Tier the version count: popular packages get POPULAR_MAX_VERSIONS (deeper history),
+  // everyone else the standard maxVersions.
+  const effectiveMax = POPULAR_PACKAGES.has(pkg.domain) ? Math.max(maxVersions, POPULAR_MAX_VERSIONS) : maxVersions
   // pkgx-mirror is a cheap download (no compile), so we mirror the most POPULAR
   // versions — the N most recent we track — rather than a semver spread across
   // ancient majors that nobody installs. Source builds keep the important-version
   // spread (compat coverage justifies the heavier compile of an old major).
   let versions = PKGX_MIRROR_MODE
-    ? selectRecentVersions(pkg, maxVersions)
-    : selectImportantVersions(pkg, maxVersions)
+    ? selectRecentVersions(pkg, effectiveMax)
+    : selectImportantVersions(pkg, effectiveMax)
 
   // For ziglang.org, build ALL versions >= 0.14.1 + latest dev from ziglang.org index.
   if (pkg.domain === 'ziglang.org') {
@@ -1227,6 +1305,11 @@ let PKGX_MIRROR_MODE = false
 // mirror-only: never source-build on a pkgx miss (for foreign --platform fanout
 // from a Linux box, where a source build would cross-compile-fail).
 let MIRROR_ONLY = false
+// True when the target --platform differs from the host (cross-platform fanout).
+// A CUSTOM build (php/postgres) compiles from source, which CANNOT cross-compile,
+// so we skip custom domains on a foreign target in mirror mode (they're built on
+// their own native runner instead).
+let BUILD_IS_FOREIGN = false
 
 // Domains we build from source even in mirror mode, because our recipe diverges
 // from pkgx's vanilla build (custom configure flags / extensions / patches).
@@ -1391,6 +1474,14 @@ else {
   // — report it as 'unavailable', not 'failed'.
   let attemptedAny = false
   let allUnavailable = true
+
+  // A CUSTOM build compiles from source, which can't cross-compile. On a foreign
+  // target (e.g. mirroring darwin from a Linux runner) skip it — it's built on its
+  // own native runner. Without this it would fall through to a doomed source build.
+  if (PKGX_MIRROR_MODE && BUILD_IS_FOREIGN && CUSTOM_BUILD_DOMAINS.has(domain)) {
+    console.log(`   ⏭️  ${domain} is a custom source build; can't cross-compile for ${platform}, skipping (native runner builds it)`)
+    return { status: 'skipped' }
+  }
 
   // pkgx-mirror FIRST (download-first): for non-custom packages, grab the official
   // prebuilt from pkgx instead of compiling. On success installDir is populated and
@@ -1571,6 +1662,7 @@ async function main() {
       force: { type: 'boolean', short: 'f', default: false },
       'multi-version': { type: 'boolean', default: false },
       'max-versions': { type: 'string', default: '5' },
+      'popular-max-versions': { type: 'string', default: '20' },
       'count-only': { type: 'boolean', default: false },
       'needs-build': { type: 'boolean', default: false },
       list: { type: 'boolean', short: 'l', default: false },
@@ -1605,6 +1697,7 @@ Options:
   -f, --force              Re-upload even if exists
   --multi-version          Build multiple important versions per package
   --max-versions <N>       Max versions per package (default: 5, requires --multi-version)
+  --popular-max-versions <N>  Max versions for POPULAR packages (default: 20, requires --multi-version)
   --count-only             Print total buildable count and exit
   --needs-build            Print true when at least one selected artifact is missing from S3
   -l, --list               List all buildable packages
@@ -2260,10 +2353,12 @@ Options:
   const { platform: detectedPlatform } = detectPlatform()
   const platform = values.platform || detectedPlatform
   buildTargetPlatform = platform // enables darwin-only skip scoping in isVersionSkipped
+  BUILD_IS_FOREIGN = platform !== detectedPlatform // cross-platform fanout target
   const batchSize = parseInt(values['batch-size'] || '50', 10)
   const force = values.force || false
   const multiVersion = values['multi-version'] || false
   const maxVersions = parseInt(values['max-versions'] || '5', 10)
+  POPULAR_MAX_VERSIONS = parseInt(values['popular-max-versions'] || '20', 10)
 
   // Filter to apps only if requested
   if (values['apps-only']) {

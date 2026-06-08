@@ -1,0 +1,100 @@
+name: Mirror (pkgx download-only)
+
+# Going-forward build channel (replaces the deleted Hetzner fleet). Downloads
+# official prebuilt binaries from pkgx (dist.pkgx.dev) — NO compiling — and slowly
+# but surely grows coverage: the 5 most-popular versions of every package, and the
+# 20 most-popular versions of popular packages (languages/runtimes/databases/core
+# CLIs). All jobs run on CHEAP ubuntu runners: a download recipe is just a curl, so
+# one Linux box mirrors every target platform (darwin/arm included) via --platform.
+# Custom builds (php/postgres) are NOT mirrored — on their native platform they
+# compile from source; on a foreign target they're skipped (built on their own runner).
+on:
+  schedule:
+    # every 6h — incremental: each run fills versions still missing from S3, skips
+    # what's already there (no --force), so coverage grows steadily and cheaply.
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Single platform to mirror (darwin-arm64 / darwin-x86-64 / linux-x86-64 / linux-arm64). Empty = all four.'
+        required: false
+        type: string
+      max-versions:
+        description: 'Versions per normal package (default 5)'
+        required: false
+        type: string
+      popular-max-versions:
+        description: 'Versions per popular package (default 20)'
+        required: false
+        type: string
+
+env:
+  # Authenticated build-status reporting → pantry.dev/packages (401s without it).
+  PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
+  # Object storage (provider-agnostic; defaults to AWS S3 if vars unset).
+  STORAGE_PROVIDER: ${{ vars.STORAGE_PROVIDER || 'aws' }}
+  S3_BUCKET: ${{ vars.S3_BUCKET || 'pantry-registry' }}
+  S3_REGION: ${{ vars.S3_REGION || 'us-east-1' }}
+  S3_ENDPOINT: ${{ vars.S3_ENDPOINT }}
+  AWS_REGION: ${{ vars.S3_REGION || 'us-east-1' }}
+  S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+  S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    name: Mirror (${{ matrix.platform.name }})
+    # Skip platforms not selected on a manual single-platform dispatch.
+    if: ${{ github.event.inputs.platform == '' || github.event.inputs.platform == matrix.platform.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every job runs on a cheap Linux runner — downloads fan out to any target
+        # platform. linux-arm64 uses an arm runner only so its own native custom
+        # builds (php/postgres) compile; the downloads would work from x86 too.
+        platform:
+          - { name: linux-x86-64, os: ubuntu-latest }
+          - { name: linux-arm64, os: ubuntu-24.04-arm }
+          - { name: darwin-arm64, os: ubuntu-latest }
+          - { name: darwin-x86-64, os: ubuntu-latest }
+    runs-on: ${{ matrix.platform.os }}
+    timeout-minutes: 120
+    concurrency:
+      # One in-flight run per platform; a newer run supersedes a still-running one.
+      group: mirror-${{ matrix.platform.name }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Pantry
+        uses: ./packages/action
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Mirror from pkgx
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd packages/ts-pantry
+          MAXV="${{ github.event.inputs.max-versions || '5' }}"
+          POPV="${{ github.event.inputs.popular-max-versions || '20' }}"
+          # --mirror-only: download pkgx prebuilts, skip on a miss, never compile
+          #   (except custom builds on their native platform). No --force, so each
+          #   run only fills versions still missing from S3 → steady, cheap growth.
+          bun scripts/build-all-packages.ts \
+            -b "$S3_BUCKET" -r "$AWS_REGION" \
+            --platform "${{ matrix.platform.name }}" \
+            --mirror-only --multi-version \
+            --max-versions "$MAXV" --popular-max-versions "$POPV"
