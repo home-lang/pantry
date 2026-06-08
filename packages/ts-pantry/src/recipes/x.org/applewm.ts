@@ -2,6 +2,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: "x.org/applewm",
+  platforms: ['darwin'],
   name: "applewm",
   programs: [],
   dependencies: {

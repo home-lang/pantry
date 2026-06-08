@@ -2,6 +2,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'wayland.freedesktop.org/protocols',
+  platforms: ['linux'],
   name: 'protocols',
   programs: [],
   buildDependencies: {

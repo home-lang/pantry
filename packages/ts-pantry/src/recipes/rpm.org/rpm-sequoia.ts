@@ -2,6 +2,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'rpm.org/rpm-sequoia',
+  platforms: ['linux'],
   name: 'rpm-sequoia',
   programs: [],
   dependencies: {

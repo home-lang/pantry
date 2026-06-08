@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'github.com/seccomp/libseccomp',
+  platforms: ['linux'],
   name: 'libseccomp',
   programs: [
     'scmp_sys_resolver',

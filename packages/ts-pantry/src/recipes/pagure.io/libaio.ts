@@ -2,6 +2,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'pagure.io/libaio',
+  platforms: ['linux'],
   name: 'libaio',
   programs: [],
   distributable: {

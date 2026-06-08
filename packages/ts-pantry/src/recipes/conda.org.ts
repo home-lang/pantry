@@ -3,6 +3,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   propsDir: 'props/conda.org',
   domain: 'conda.org',
+  platforms: ['darwin/arm64', 'linux'],
   name: 'conda',
   programs: ['conda'],
   dependencies: {

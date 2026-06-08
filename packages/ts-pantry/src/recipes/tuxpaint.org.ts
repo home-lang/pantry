@@ -18,6 +18,7 @@ const SDL2_PANGO_VERSION = '2.1.5'
 export const recipe: Recipe = {
   propsDir: 'props/tuxpaint.org',
   domain: 'tuxpaint.org',
+  platforms: ['linux/x86-64'],
   name: 'tuxpaint',
   programs: ['tp-magic-config', 'tuxpaint', 'tuxpaint-import'],
   distributable: {

@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'github.com/Genymobile/scrcpy',
+  platforms: ['darwin', 'linux/x86-64'],
   name: 'scrcpy',
   propsDir: '../../props/github.com/Genymobile/scrcpy',
   programs: [

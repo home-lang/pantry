@@ -2,6 +2,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'pipenv.pypa.io',
+  platforms: ['darwin'],
   name: 'pipenv',
   description: ' Python Development Workflow for Humans.',
   homepage: 'https://pipenv.pypa.io',

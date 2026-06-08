@@ -2,6 +2,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'taku910.github.io/mecab-ipadic',
+  platforms: ['darwin', 'linux/x86-64'],
   name: 'mecab-ipadic',
   programs: [],
   dependencies: {

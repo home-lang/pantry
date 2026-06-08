@@ -2,6 +2,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'apple.com/container',
+  platforms: ['darwin/arm64'],
   name: 'container',
   programs: [
     'container',

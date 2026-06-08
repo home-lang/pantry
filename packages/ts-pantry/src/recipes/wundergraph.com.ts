@@ -2,6 +2,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'wundergraph.com',
+  platforms: ['darwin/arm64', 'linux'],
   name: 'wunderctl',
   description: 'WunderGraph is a Backend for Frontend Framework to optimize frontend, fullstack and backend developer workflows through API Composition.',
   homepage: 'https://wundergraph.com',

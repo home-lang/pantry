@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'github.com/lm-sensors/lm-sensors',
+  platforms: ['linux'],
   name: 'lm-sensors',
   programs: [
     'sensors',

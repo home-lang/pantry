@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'github.com/XcodesOrg/xcodes',
+  platforms: ['darwin'],
   name: 'xcodes',
   programs: [
     'xcodes',

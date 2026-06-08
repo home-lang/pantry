@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'people.redhat.com/sgrubb/libcap-ng',
+  platforms: ['linux'],
   name: 'libcap-ng',
   programs: [
     'captest',

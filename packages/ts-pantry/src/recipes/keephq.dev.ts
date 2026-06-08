@@ -2,6 +2,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'keephq.dev',
+  platforms: ['linux/x86-64'],
   name: 'keep',
   description: 'The open-source AIOps and alert management platform',
   homepage: 'https://keephq.dev',

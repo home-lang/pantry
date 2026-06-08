@@ -2,6 +2,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'mun-lang.org',
+  platforms: ['darwin', 'linux/x86-64'],
   name: 'mun',
   description: 'Source code for the Mun language and runtime.',
   homepage: 'https://mun-lang.org',

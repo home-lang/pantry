@@ -2,6 +2,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'haskell.org',
+  platforms: ['darwin/arm64', 'linux'],
   name: 'haskell',
   description: 'The Glasgow Haskell Compiler',
   homepage: 'https://www.haskell.org/ghc/',

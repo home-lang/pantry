@@ -115,12 +115,22 @@ jobs:
           cd packages/ts-pantry
           MAXV="${{ github.event.inputs.max-versions || '5' }}"
           POPV="${{ github.event.inputs.popular-max-versions || '20' }}"
-          # --mirror-only: download pkgx prebuilts, skip on a miss, never compile
-          #   (except custom builds on their native platform). No --force, so each
-          #   run only fills versions still missing from S3 → steady, cheap growth.
+          # Pass 1 — --mirror-only: download pkgx prebuilts, skip on a miss, never
+          #   compile (except custom builds on their native platform). No --force, so
+          #   each run only fills versions still missing from S3 → steady, cheap growth.
           bun scripts/build-all-packages.ts \
             -b "$S3_BUCKET" -r "$AWS_REGION" \
             --platform "${{ matrix.name }}" \
             --stripe "${{ matrix.stripe }}" \
             --mirror-only --multi-version \
             --max-versions "$MAXV" --popular-max-versions "$POPV"
+          # Pass 2 — --download-only: zig-style recipes that curl their OWN per-platform
+          #   asset (ziglang, gh, ripgrep, …) aren't on pkgx, so --mirror-only skips
+          #   them. This pass runs just those recipes (still a download, no compile),
+          #   filling the self-download packages the mirror pass can't.
+          bun scripts/build-all-packages.ts \
+            -b "$S3_BUCKET" -r "$AWS_REGION" \
+            --platform "${{ matrix.name }}" \
+            --stripe "${{ matrix.stripe }}" \
+            --download-only --multi-version \
+            --max-versions "$MAXV" --popular-max-versions "$POPV" || true

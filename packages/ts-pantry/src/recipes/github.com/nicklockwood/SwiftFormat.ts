@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'github.com/nicklockwood/SwiftFormat',
+  platforms: ['darwin'],
   name: 'SwiftFormat',
   programs: [
     'swiftformat',

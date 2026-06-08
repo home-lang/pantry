@@ -2,6 +2,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'intel.com/libva',
+  platforms: ['linux'],
   name: 'libva',
   programs: [],
   dependencies: {

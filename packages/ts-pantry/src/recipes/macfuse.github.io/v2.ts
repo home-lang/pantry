@@ -2,6 +2,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: "macfuse.github.io/v2",
+  platforms: ['darwin'],
   name: "v2",
   programs: [],
   buildDependencies: {

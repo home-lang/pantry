@@ -2,6 +2,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'sourceware.org/dm',
+  platforms: ['linux'],
   name: 'dm',
   programs: [],
   dependencies: {

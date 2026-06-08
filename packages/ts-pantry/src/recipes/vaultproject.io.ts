@@ -2,6 +2,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'vaultproject.io',
+  platforms: ['linux'],
   name: 'vault',
   description: 'A tool for secrets management, encryption as a service, and privileged access management',
   homepage: 'https://www.vaultproject.io/',

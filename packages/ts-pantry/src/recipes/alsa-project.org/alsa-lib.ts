@@ -2,6 +2,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'alsa-project.org/alsa-lib',
+  platforms: ['linux'],
   name: 'alsa-lib',
   programs: [
     'aserver',

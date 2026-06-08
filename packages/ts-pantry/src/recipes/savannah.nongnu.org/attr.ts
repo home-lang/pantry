@@ -2,6 +2,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'savannah.nongnu.org/attr',
+  platforms: ['linux'],
   name: 'attr',
   programs: [
     'attr',

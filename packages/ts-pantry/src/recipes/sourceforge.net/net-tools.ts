@@ -2,6 +2,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'sourceforge.net/net-tools',
+  platforms: ['linux'],
   name: 'net-tools',
   programs: [
     'hostname',

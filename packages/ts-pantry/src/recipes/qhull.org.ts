@@ -2,6 +2,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'qhull.org',
+  platforms: ['darwin/arm64', 'linux'],
   name: 'qhull',
   description: 'Qhull development for www.qhull.org -- Qhull 2020.2 (8.1-alpha1) at https://github.com/qhull/qhull/wiki',
   homepage: 'https://www.qhull.org/',

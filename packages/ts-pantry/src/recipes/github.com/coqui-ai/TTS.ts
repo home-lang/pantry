@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: "github.com/coqui-ai/TTS",
+  platforms: ['darwin', 'linux/x86-64'],
   name: "TTS",
   programs: [
     "tts",

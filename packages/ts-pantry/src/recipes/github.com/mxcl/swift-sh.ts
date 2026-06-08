@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'github.com/mxcl/swift-sh',
+  platforms: ['darwin'],
   name: 'swift-sh',
   programs: [
     'swift-sh',

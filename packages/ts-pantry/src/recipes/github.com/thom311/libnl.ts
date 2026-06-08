@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'github.com/thom311/libnl',
+  platforms: ['linux'],
   name: 'libnl',
   programs: [],
   buildDependencies: {

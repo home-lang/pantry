@@ -2,6 +2,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: "tuist.io/xcbeautify",
+  platforms: ['darwin'],
   name: "xcbeautify",
   programs: [
     "xcbeautify",

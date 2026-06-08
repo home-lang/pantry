@@ -2,6 +2,7 @@ import type { Recipe } from '../../../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'github.com/unsignedapps/swift-create-xcframework',
+  platforms: ['darwin'],
   name: 'swift-create-xcframework',
   programs: [
     'swift-create-xcframework',
