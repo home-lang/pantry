@@ -511,6 +511,8 @@ async function getGitHubActionsStatus(): Promise<GitHubActionsStatus> {
     recent: [],
     generatedAt: new Date(now).toISOString(),
   }
+  let apiRecent: GitHubActionRun[] = []
+  let apiError: string | undefined
   try {
     const token = process.env.GITHUB_TOKEN || process.env.PAT_TOKEN || process.env.GH_TOKEN
     const headers: Record<string, string> = {
@@ -525,7 +527,7 @@ async function getGitHubActionsStatus(): Promise<GitHubActionsStatus> {
       throw new Error(`GitHub API ${res.status}`)
     const json = await res.json() as any
     const runs = Array.isArray(json.workflow_runs) ? json.workflow_runs : []
-    data.recent = runs.map((run: any) => ({
+    apiRecent = runs.map((run: any) => ({
       id: Number(run.id || 0),
       name: String(run.name || ''),
       displayTitle: String(run.display_title || run.name || ''),
@@ -535,17 +537,30 @@ async function getGitHubActionsStatus(): Promise<GitHubActionsStatus> {
       createdAt: String(run.created_at || ''),
       htmlUrl: String(run.html_url || ''),
     })).filter((run: GitHubActionRun) => run.id && run.status)
-    data.running = data.recent.filter(run => run.status === 'in_progress').length
-    data.queued = data.recent.filter(run => run.status === 'queued' || run.status === 'waiting' || run.status === 'requested').length
+    data.queued = apiRecent.filter(run => run.status === 'queued' || run.status === 'waiting' || run.status === 'requested').length
   }
   catch (err) {
-    data.error = (err as Error).message
-    const fallback = githubActionsFromBuildEvents(repository)
-    if (fallback) {
-      _githubActionsCache = { at: now, data: fallback }
-      return fallback
-    }
+    apiError = (err as Error).message
   }
+
+  // Always FOLD IN runs derived from live build events. The registry box has no
+  // GITHUB_TOKEN, so the unauthenticated API (60 req/hr) is frequently rate-limited
+  // and returns nothing — which used to show "GitHub Actions: 0" even while github
+  // runners were actively reporting builds. Merging the build-event signal keeps the
+  // running count accurate regardless of the API; an in_progress status from either
+  // source wins.
+  const merged = new Map<number, GitHubActionRun>()
+  for (const run of [...apiRecent, ...(githubActionsFromBuildEvents(repository)?.recent || [])]) {
+    const prev = merged.get(run.id)
+    if (!prev || (prev.status !== 'in_progress' && run.status === 'in_progress'))
+      merged.set(run.id, run)
+  }
+  data.recent = [...merged.values()]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 12)
+  data.running = data.recent.filter(run => run.status === 'in_progress').length
+  if (apiError && data.recent.length === 0)
+    data.error = apiError
   _githubActionsCache = { at: now, data }
   return data
 }

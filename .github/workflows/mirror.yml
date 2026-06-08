@@ -27,6 +27,10 @@ on:
         description: 'Versions per popular package (default 20)'
         required: false
         type: string
+      stripes:
+        description: 'Override stripes PER platform (uniform). Empty = default 4/2/2/2 ≈ 10 parallel jobs.'
+        required: false
+        type: string
 
 env:
   # Authenticated build-status reporting → pantry.dev/packages (401s without it).
@@ -44,8 +48,13 @@ permissions:
   contents: read
 
 jobs:
-  # Build the platform matrix dynamically so a single-platform dispatch runs just
-  # that one (a job-level `if` can't see `matrix`). Empty input = all four.
+  # Build the job matrix dynamically. Each platform is split into STRIPES parallel
+  # jobs (--stripe i/n partitions the package set) for ~10 concurrent runners by
+  # default; linux-x86-64 gets the most since it also runs the native custom builds.
+  # A single-platform dispatch narrows to that platform (a job-level `if` can't see
+  # `matrix`, hence the dynamic matrix). Every job runs on a CHEAP Linux runner —
+  # downloads fan out to any target platform; linux-arm64 uses an arm runner only so
+  # its own native custom builds (php/postgres) compile.
   setup:
     runs-on: ubuntu-latest
     outputs:
@@ -55,29 +64,31 @@ jobs:
         shell: bash
         env:
           PLATFORM: ${{ github.event.inputs.platform }}
+          STRIPES: ${{ github.event.inputs.stripes }}
         run: |
-          # Every job runs on a cheap Linux runner — downloads fan out to any target
-          # platform. linux-arm64 uses an arm runner only so its own native custom
-          # builds (php/postgres) compile; the downloads would work from x86 too.
-          ALL='[{"name":"linux-x86-64","os":"ubuntu-latest"},{"name":"linux-arm64","os":"ubuntu-24.04-arm"},{"name":"darwin-arm64","os":"ubuntu-latest"},{"name":"darwin-x86-64","os":"ubuntu-latest"}]'
+          BASE='[{"name":"linux-x86-64","os":"ubuntu-latest","stripes":4},{"name":"linux-arm64","os":"ubuntu-24.04-arm","stripes":2},{"name":"darwin-arm64","os":"ubuntu-latest","stripes":2},{"name":"darwin-x86-64","os":"ubuntu-latest","stripes":2}]'
           if [ -n "$PLATFORM" ]; then
-            SEL=$(echo "$ALL" | jq -c --arg p "$PLATFORM" '[.[] | select(.name == $p)]')
-          else
-            SEL="$ALL"
+            BASE=$(echo "$BASE" | jq -c --arg p "$PLATFORM" '[.[] | select(.name == $p)]')
           fi
-          echo "matrix={\"platform\":$SEL}" >> "$GITHUB_OUTPUT"
+          if [ -n "$STRIPES" ]; then
+            BASE=$(echo "$BASE" | jq -c --argjson s "$STRIPES" '[.[] | .stripes = $s]')
+          fi
+          # Expand each platform into N stripe jobs: {name, os, stripe:"i/n"}.
+          INC=$(echo "$BASE" | jq -c '[.[] | . as $p | range(0; $p.stripes) | {name: $p.name, os: $p.os, stripe: "\(.)/\($p.stripes)"}]')
+          echo "matrix={\"include\":$INC}" >> "$GITHUB_OUTPUT"
+          echo "Generated $(echo "$INC" | jq length) mirror jobs"
 
   mirror:
-    name: Mirror (${{ matrix.platform.name }})
+    name: Mirror ${{ matrix.name }} ${{ matrix.stripe }}
     needs: setup
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
-    runs-on: ${{ matrix.platform.os }}
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 120
     concurrency:
-      # One in-flight run per platform; a newer run supersedes a still-running one.
-      group: mirror-${{ matrix.platform.name }}
+      # One in-flight job per platform+stripe; a newer run supersedes the old one.
+      group: mirror-${{ matrix.name }}-${{ matrix.stripe }}
       cancel-in-progress: true
     permissions:
       contents: read
@@ -109,6 +120,7 @@ jobs:
           #   run only fills versions still missing from S3 → steady, cheap growth.
           bun scripts/build-all-packages.ts \
             -b "$S3_BUCKET" -r "$AWS_REGION" \
-            --platform "${{ matrix.platform.name }}" \
+            --platform "${{ matrix.name }}" \
+            --stripe "${{ matrix.stripe }}" \
             --mirror-only --multi-version \
             --max-versions "$MAXV" --popular-max-versions "$POPV"

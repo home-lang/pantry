@@ -254,8 +254,12 @@
         if (b && Object.keys(b.platforms).length > 0) return 'building'
         if (queued[p.domain]) return 'queued'
         if (isComplete(p)) return 'ok'
-        if (p.lastState === 'failed') return 'failed'
-        if (!p.published) return 'unbuilt'
+        // A package that already has binaries is at worst INCOMPLETE (missing some
+        // platforms) — never "failed". Reserve "failed" for packages with NO binary
+        // at all whose last build attempt failed; otherwise a stale failure event
+        // (e.g. from a now-deleted worker) would wrongly mark an installable package
+        // as failed and inflate the headline count.
+        if (!p.published) return p.lastState === 'failed' ? 'failed' : 'unbuilt'
         return 'incomplete'
       }
       function badge(st) {
@@ -341,8 +345,11 @@
         var card = document.getElementById('stat-actions-card')
         var num = document.getElementById('stat-actions')
         if (card) card.title = gh.error ? gh.error : (active + ' active · ' + recent.length + ' recent')
-        if (num) num.style.color = gh.error ? 'var(--red, #f87171)' : (recent.length ? 'var(--green)' : 'var(--fg-subtle)')
-        setStat('stat-actions', gh.error ? 'err' : recent.length)
+        // Show ACTIVE runs (running + queued) — the live-activity number that pairs
+        // with "Building now". recent.length (≤12) was neither active nor total and
+        // read as 0 whenever the GitHub API poll was rate-limited.
+        if (num) num.style.color = active ? 'var(--green)' : 'var(--fg-subtle)'
+        setStat('stat-actions', active)
       }
       function renderSummary() {
         var bm = buildingMap()
