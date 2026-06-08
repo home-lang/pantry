@@ -839,6 +839,11 @@ const DARWIN_ONLY_BROKEN = new Set<string>([
 ])
 
 function isVersionSkipped(domain: string, version: string): boolean {
+  // Download-only (--mirror-only): SKIP_VERSIONS lists source-build incompatibilities,
+  // which are irrelevant when we DOWNLOAD a pkgx prebuilt rather than compile. A
+  // version pkgx hosts is mirrorable no matter why it fails to build from source;
+  // a pkgx miss just skips. So never skip a version in mirror-only mode.
+  if (MIRROR_ONLY) return false
   // darwin-only-broken packages are buildable on non-darwin platforms
   if (DARWIN_ONLY_BROKEN.has(domain) && buildTargetPlatform && !buildTargetPlatform.startsWith('darwin'))
     return false
@@ -2191,6 +2196,14 @@ Options:
   const isTargetedBuild = !!values.package
 
   allPackages = allPackages.filter(p => {
+    // Download-only (--mirror-only): every source-build-viability filter below
+    // (platform / toolchain / knownBroken / props) is moot — we mirror a pkgx
+    // prebuilt, never compile, so "can't build on this platform / fails to compile /
+    // needs a special toolchain" doesn't stop a download. Keep the whole discovered
+    // set so the mirror fills every package pkgx actually hosts; a pkgx miss skips.
+    // (This is what unblocks the ~89 unpublished pkgs pkgx hosts but we'd excluded
+    // as source-build-broken — httpd, bittensor, bytebase, ceres-solver, …)
+    if (MIRROR_ONLY) return true
     // Platform filtering (always applies — can't cross-compile)
     if (targetOs === 'darwin' && linuxOnlyDomains.has(p.domain)) {
       platformSkipped++
