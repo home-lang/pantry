@@ -71,6 +71,7 @@ export const rsyncsambaorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.4.4',
     '3.4.3',
     '3.4.2',
     '3.4.1',

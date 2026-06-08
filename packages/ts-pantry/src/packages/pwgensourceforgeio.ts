@@ -61,7 +61,11 @@ export const pwgensourceforgeioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.08',
     '2.8.0',
+    '2.07',
+    '2.06',
+    '2.05',
   ] as const,
   aliases: [] as const,
 }
