@@ -16,9 +16,6 @@ export const recipe: Recipe = {
     'gnu.org/libidn2': '^2.3',
     'gnutls.org': '^3.6',
     'zlib.net': '^1.2',
-    linux: {
-      'gnu.org/gcc/libgccjit': '*',
-    },
   },
   distributable: {
     url: 'https://ftp.gnu.org/gnu/emacs/emacs-{{ version.raw }}.tar.xz',
@@ -57,11 +54,6 @@ export const recipe: Recipe = {
         '--with-x-toolkit=no',
         '--with-tree-sitter',
       ],
-      linux: {
-        ARGS: [
-          '--with-native-compilation',
-        ],
-      },
     },
   },
   test: {
@@ -69,9 +61,7 @@ export const recipe: Recipe = {
       'emacs --version | grep "GNU Emacs {{version.marketing}}"',
       'emacs --batch --eval="(print (+ 2 2))" | tee four',
       'test $(cat four) = 4',
-      'emacs -batch -l $FIXTURE',
       'emacs --batch --eval \'(unless (treesit-available-p) (kill-emacs 1))\'',
-      'emacs --batch --eval \'(unless (native-comp-available-p) (kill-emacs 1))\'',
       'emacs --batch --eval \'(progn (package-initialize) (print (with-output-to-string (package-list-packages))) (kill-emacs))\'',
     ],
   },

@@ -21,6 +21,7 @@ export const recipe: Recipe = {
     'cmake.org': '>=3.16',
     'gnu.org/gcc': '^14',
     'python.org': '>=3.9',
+    'freedesktop.org/pkg-config': '*',
   },
   distributable: {
     url: 'https://github.com/rpm-software-management/librepo/archive/refs/tags/{{version.tag}}.tar.gz',

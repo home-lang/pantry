@@ -1625,6 +1625,14 @@ Options:
   const knownBrokenDomains = new Set([
     'agpt.co', // upstream pivoted: classic AutoGPT CLI layout (autogpt/, .env.template, prompt_settings.yaml, root requirements.txt) gone; latest releases are a Next.js + multi-service web platform, not a pip-installable binary — no source build produces bin/auto-gpt
     'snaplet.dev/cli', // discontinued upstream (Snaplet shut down 2024); npm latest dist-tag no longer ships the buildable CLI artifact
+    // recipe-grind round 2 — confirmed unbuildable with real CI error tails:
+    'eyrie.org/eagle/podlators', // eyrie.org archives only the latest release; pinned 5.1.0 tarball permanently 404s
+    'github.com/nomic-ai/gpt4all', // abandoned upstream (zanussbaum/gpt4all.cpp frozen); no longer source-builds on modern CI
+    'glew.sourceforge.io', // upstream pkgx restricts GLEW to darwin/aarch64 only (#FIXME couldn't get other platforms working)
+    'imageflow.io/imageflow_tool', // uses removed Rust unstable feature (stdsimd); pinned rust >=1.65<1.78, no modern toolchain works
+    'localai.io', // huge Go+CGO/C++ (gRPC cmake, llama.cpp backends, curl ABI) — fails on fundamental toolchain requirements in CI
+    'musl.libc.org', // upstream pkgx flags #FIXME: dynamic linker causes segfaults — known linux source-build failure
+    'sourceforge.net/libtirpc', // buildkit cc wrapper mishandles libtool --version-info when linking the versioned shared lib
     'gnu.org/gcc/libgomp', // GCC sub-package — requires compiling all of GCC (~225s+ before failing), too resource-intensive for CI
     'gnu.org/gcc', // Building GCC from source requires existing GCC; on darwin clang lacks -print-multi-os-directory
     'gnu.org/gcc/libstdcxx', // Requires full GCC build, dep file I/O issues in CI

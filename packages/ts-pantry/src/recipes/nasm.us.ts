@@ -7,10 +7,31 @@ export const recipe: Recipe = {
   homepage: 'https://www.nasm.us/',
   github: 'https://github.com/netwide-assembler/nasm',
   programs: ['nasm', 'ndisasm'],
+  // The nasm GitHub repo carries development tags (e.g. 3.x) that have NO
+  // published source tarball on nasm.us — github-releases yields a bogus
+  // version like 3.1.0 whose distributable 404s. Mirror pkgx's versions.url:
+  // scrape the official nasm.us release directory listing instead.
   versionSource: {
-    type: 'github-releases',
-    repo: 'netwide-assembler/nasm',
-    tagPattern: /^v(.+)$/,
+    type: 'custom',
+    fetch: async () => {
+      const res = await fetch('https://www.nasm.us/pub/nasm/releasebuilds/')
+      const html = await res.text()
+      const versions = new Set<string>()
+      // match directory hrefs like 2.16.03/ , 2.16/ , 2.05.01/
+      for (const m of html.matchAll(/href="(\d+\.\d+(?:\.\d+)?)\/"/g))
+        versions.add(m[1])
+      // newest first (semver-ish numeric sort)
+      return [...versions].sort((a, b) => {
+        const pa = a.split('.').map(Number)
+        const pb = b.split('.').map(Number)
+        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+          const d = (pb[i] || 0) - (pa[i] || 0)
+          if (d !== 0)
+            return d
+        }
+        return 0
+      })
+    },
   },
   distributable: {
     url: 'https://www.nasm.us/pub/nasm/releasebuilds/{{version.raw}}/nasm-{{version.raw}}.tar.xz',

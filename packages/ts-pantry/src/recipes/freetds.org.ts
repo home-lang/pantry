@@ -52,8 +52,12 @@ export const recipe: Recipe = {
       'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_SYSCONFDIR={{prefix}}/etc', '-DWITH_OPENSSL=ON', '-DENABLE_MSDBLIB=ON', '-DENABLE_KRB5=ON', '-DENABLE_ODBC_WIDE=ON'],
       'ARGS': ['--prefix={{prefix}}', '--mandir={{prefix}}/man', '--sysconfdir={{prefix}}/etc', '--with-unixodbc={{deps.unixodbc.org.prefix}}', '--with-openssl={{deps.openssl.org.prefix}}', '--enable-sybase-compat', '--enable-krb5', '--enable-odbc-wide'],
       'darwin': {
-        'CMAKE_ARGS': ['-DCMAKE_INSTALL_PREFIX={{prefix}}', '-DCMAKE_INSTALL_SYSCONFDIR={{prefix}}/etc', '-DWITH_OPENSSL=ON', '-DENABLE_MSDBLIB=ON', '-DENABLE_KRB5=ON', '-DENABLE_ODBC_WIDE=ON', '-DCMAKE_EXE_LINKER_FLAGS=-liconv', '-DCMAKE_SHARED_LINKER_FLAGS=-liconv', '-DCMAKE_MODULE_LINKER_FLAGS=-liconv'],
-        'LDFLAGS': '$LDFLAGS -liconv',
+        // Arrays supplement the base CMAKE_ARGS (brewkit/pkgx merge semantics),
+        // so only list the darwin-only iconv linker flags here — mirroring
+        // pkgx's projects/freetds.org/package.yml. Repeating the base args
+        // would duplicate every -D flag on darwin.
+        'CMAKE_ARGS': ['-DCMAKE_EXE_LINKER_FLAGS=-liconv', '-DCMAKE_SHARED_LINKER_FLAGS=-liconv', '-DCMAKE_MODULE_LINKER_FLAGS=-liconv'],
+        'LDFLAGS': '-liconv',
         'CFLAGS': '$CFLAGS -Wno-implicit-function-declaration -Wno-int-conversion',
       },
     },

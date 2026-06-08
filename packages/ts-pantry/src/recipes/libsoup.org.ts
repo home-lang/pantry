@@ -47,7 +47,23 @@ export const recipe: Recipe = {
       },
     ],
     env: {
-      MESON_ARGS: ['--prefix={{prefix}}', '--libdir={{prefix}}/lib', '--buildtype=release', '--wrap-mode=nofallback'],
+      // glib-networking is only a *runtime* dep — `tls_check=false` lets libsoup
+      // compile without it present (its own meson_options.txt documents this for
+      // packagers). vapi/docs/tests/sysprof/autobahn are disabled because they pull
+      // in optional toolchains (vala/gtk-doc/sysprof) that aren't reliably available
+      // in CI; introspection stays on (gobject-introspection is a buildDependency).
+      MESON_ARGS: [
+        '--prefix={{prefix}}',
+        '--libdir={{prefix}}/lib',
+        '--buildtype=release',
+        '--wrap-mode=nofallback',
+        '-Dtls_check=false',
+        '-Dvapi=disabled',
+        '-Ddocs=disabled',
+        '-Dtests=false',
+        '-Dautobahn=disabled',
+        '-Dsysprof=disabled',
+      ],
     },
   },
 }

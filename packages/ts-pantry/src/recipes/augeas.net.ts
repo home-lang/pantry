@@ -39,7 +39,12 @@ export const recipe: Recipe = {
         run: 'curl -L https://github.com/hercules-team/augeas/commit/7b26cbb74ed634d886ed842e3d5495361d8fd9b1.patch?full_index=1 | patch -p1',
         if: '<1.14.1',
       },
-      'autoreconf --force --install',
+      // The release tarball ships a working autotools `configure` (plus
+      // aclocal.m4/Makefile.in). pkgx ran `autoreconf --force --install`, but
+      // forcing a full autotools regen against the box's libtool/gnulib macros
+      // is what caused the historical "libtool/autoconf" build failures — the
+      // vendored macros don't match the CI host's autotools. Use the shipped
+      // configure directly (only the source patch above is needed).
       './configure $ARGS',
       'make --jobs {{hw.concurrency}} install',
     ],

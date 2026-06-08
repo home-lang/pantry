@@ -22,54 +22,30 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'gnu.org/bash': '^5',
-    'python.org': '>=3.9<3.13',
-    // to build psycopg2
-    'postgresql.org': '*',
+    // rucio-clients declares `requires-python = ">=3.9"` (no upper bound for
+    // modern releases), so accept any >=3.9 interpreter. The pkgx `<3.13` cap
+    // is dropped: CI provides python.org 3.14.x and the published client wheels
+    // install cleanly there.
+    'python.org': '>=3.9',
   },
   distributable: {
     url: 'https://github.com/rucio/rucio/archive/refs/tags/{{version.tag}}.tar.gz',
     stripComponents: 1,
   },
   build: {
+    // The pkgx recipe drove a local source build via `tools/build_sdist*.sh`,
+    // which invokes the *system* `python3 -m build` (the `build` module is never
+    // installed) and `setuputil.py install` (a helper module with no setup()
+    // entry point — a no-op). It then `pip install`ed the *server* package
+    // `rucio[...]` with several extras (`sqlite`/`ldap`/`webui`/`webapi`/`vo`)
+    // that do not exist in modern releases. That whole dance is vestigial: the
+    // binaries this recipe ships (`rucio`, `rucio-admin`) come from the published
+    // `rucio-clients` wheel, whose runtime deps are all pure-Python. So we just
+    // stage a venv and install the pinned client release into it.
     script: [
-      // bkpyvenv stages the venv with bare `python3`, which on some CI runners
-      // (notably macOS, where /usr/bin/python3 is the 3.9.6 Xcode CLT python)
-      // can resolve to an interpreter outside rucio's supported >=3.9<3.13
-      // range. Pin python3 to an in-range interpreter via a cc-wrapper shim
-      // (early on PATH) before bkpyvenv runs, preferring the python.org build dep.
-      'mkdir -p "${TMPDIR:-/tmp}/_cc_wrapper"',
-      'for _py in {{deps.python.org.prefix}}/bin/python3 python3.12 python3.11 python3.10 python3.9 python3; do '
-        + '_pybin="$(command -v "$_py" 2>/dev/null || ([ -x "$_py" ] && echo "$_py") || true)"; '
-        + '[ -n "$_pybin" ] || continue; '
-        + '_pyver="$("$_pybin" -c \'import sys;print("%d%02d"%sys.version_info[:2])\' 2>/dev/null || echo 0)"; '
-        + 'if [ "$_pyver" -ge 309 ] 2>/dev/null && [ "$_pyver" -lt 313 ] 2>/dev/null; then '
-        + 'ln -sf "$_pybin" "${TMPDIR:-/tmp}/_cc_wrapper/python3"; '
-        + 'ln -sf "$_pybin" "${TMPDIR:-/tmp}/_cc_wrapper/python"; '
-        + 'echo "[rucio] using python3 in [3.9,3.13): $_pybin ($_pyver)"; break; fi; done',
-      'hash -r 2>/dev/null || true',
       'bkpyvenv stage {{prefix}} {{version}}',
-      '${{prefix}}/venv/bin/pip install setuptools wheel',
-      './tools/build_sdist*.sh clients',
-      {
-        run: '${{prefix}}/venv/bin/python setup.py install',
-        if: '<39',
-      },
-      {
-        run: '${{prefix}}/venv/bin/python setuputil.py install',
-        if: '>=39',
-      },
-      {
-        run: '${{prefix}}/venv/bin/pip install dogpile.cache',
-        if: '>=35',
-      },
-      {
-        run: '${{prefix}}/venv/bin/pip install click',
-        if: '>=37',
-      },
-      {
-        run: '${{prefix}}/venv/bin/pip install rucio[mysql,postgresql,sqlite,ldap,webui,webapi,vo]=={{version}}',
-        if: '>=35',
-      },
+      '${{prefix}}/venv/bin/pip install --upgrade pip setuptools wheel',
+      '${{prefix}}/venv/bin/pip install rucio-clients=={{version}}',
       'bkpyvenv seal {{prefix}} rucio rucio-admin',
     ],
   },

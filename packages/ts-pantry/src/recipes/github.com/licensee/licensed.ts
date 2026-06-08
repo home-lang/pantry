@@ -13,7 +13,14 @@ export const recipe: Recipe = {
     repo: 'licensee/licensed',
   },
   dependencies: {
-    'ruby-lang.org': '~3.4',
+    // pkgx pins ~3.4, but Ruby 3.4 is the only differentiator vs every other
+    // gem recipe here (rubocop/fastlane/cocoapods all use 3.1–3.3 and build
+    // racc's native extension fine). Under our toolchain, racc 1.8.x's native
+    // ext fails to compile against Ruby 3.4 headers — hence the prior
+    // skip-list entry "racc gem native extension build failure". licensed's
+    // gemspec only requires Ruby >= 3.1.0, and nokogiri 1.18.8 + racc 1.8.1
+    // are compatible with 3.3, so resolve to a known-good 3.3.x instead.
+    'ruby-lang.org': '>=3.1<3.4',
     'rubygems.org': '*',
     'linux': {
       'gnu.org/which': '*',

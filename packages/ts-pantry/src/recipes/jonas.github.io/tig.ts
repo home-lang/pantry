@@ -16,8 +16,17 @@ export const recipe: Recipe = {
     // implicitly, but native recipes must declare it explicitly.
     'freedesktop.org/pkg-config': '*',
   },
+  versionSource: {
+    // tig tags releases as `tig-X.Y.Z`; strip the `tig-` prefix to get the version.
+    type: 'github-releases',
+    repo: 'jonas/tig',
+    tagPattern: /^tig-(.+)$/,
+  },
   distributable: {
-    url: 'https://github.com/jonas/tig/releases/download/{{version.tag}}/{{version.tag}}.tar.gz',
+    // Release assets are uploaded under the full `tig-X.Y.Z` tag and named
+    // `tig-X.Y.Z.tar.gz` — NOT `v{{version}}`. The auto-converted `{{version.tag}}`
+    // heuristic guessed `v2.5.10`, which 404s. Pin the real `tig-`-prefixed name.
+    url: 'https://github.com/jonas/tig/releases/download/tig-{{version}}/tig-{{version}}.tar.gz',
     stripComponents: 1,
   },
   build: {

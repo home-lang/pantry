@@ -10,7 +10,10 @@ export const recipe: Recipe = {
   dependencies: {
     'ffmpeg.org': '*',
     'libusb.info': '*',
-    'libsdl.org': '*',
+    // scrcpy <4 builds against SDL2 (`dependency('sdl2', ...)`); the >=4 build
+    // pulls SDL3 on demand via `pkgx +libsdl.org^3` in the script below. Pin the
+    // base dep to SDL2 so `*` doesn't resolve to SDL3 and break the meson lookup.
+    'libsdl.org': '^2',
     'pkgx.sh': '>=1',
     linux: {
       'webmproject.org/libvpx': '<1.15.1',

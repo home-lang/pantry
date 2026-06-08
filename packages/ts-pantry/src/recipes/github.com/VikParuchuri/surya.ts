@@ -6,6 +6,11 @@ export const recipe: Recipe = {
   programs: [
     'surya_detect',
   ],
+  // Mirror pkgx: torch/torch-xla dropped darwin/x86-64 support, so exclude it.
+  platforms: [
+    'linux',
+    'darwin/aarch64',
+  ],
   dependencies: {
     'pkgx.sh': '>=1',
     linux: {

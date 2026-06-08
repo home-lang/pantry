@@ -23,6 +23,13 @@ export const recipe: Recipe = {
     'libpng.org': '*',
     'openssl.org': '^1.1',
     'unicode.org': '^71',
+    // Tectonic requires fontconfig on every platform except macOS (which uses
+    // CoreText). Its build.rs probes pkg-config for `fontconfig`; without it the
+    // cargo build fails on Linux. pkgx pulled this in transitively; we declare it
+    // explicitly. See tectonic docs/howto/build-tectonic/external-dep-install.
+    linux: {
+      'freedesktop.org/fontconfig': '*',
+    },
   },
   buildDependencies: {
     'freedesktop.org/pkg-config': '^0.29',

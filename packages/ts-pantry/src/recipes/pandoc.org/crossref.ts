@@ -27,7 +27,15 @@ export const recipe: Recipe = {
   build: {
     script: [
       {
-        run: "if ! grep -q 'rpath,{{pkgx.prefix}}' settings; then\n  sed -i \\\n    -e 's|\\(C compiler flags.*\\)\")|\\1 -Wl,-rpath,{{pkgx.prefix}}\")|' \\\n    -e 's|\\(C++ compiler flags.*\\)\")|\\1 -Wl,-rpath,{{pkgx.prefix}}\")|' \\\n    -e 's|\\(C compiler link flags.*\\)\")|\\1 -Wl,-rpath,{{pkgx.prefix}}\")|' \\\n    settings\nfi\n",
+        run: [
+          'if ! grep -q \'rpath,{{pkgx.prefix}}\' settings; then',
+          '  sed -i \\',
+          '    -e \'s|\\(C compiler flags.*\\)")|\\1 -Wl,-rpath,{{pkgx.prefix}}")|\' \\',
+          '    -e \'s|\\(C++ compiler flags.*\\)")|\\1 -Wl,-rpath,{{pkgx.prefix}}")|\' \\',
+          '    -e \'s|\\(C compiler link flags.*\\)")|\\1 -Wl,-rpath,{{pkgx.prefix}}")|\' \\',
+          '    settings',
+          'fi',
+        ],
         if: 'darwin',
         'working-directory': '${{deps.haskell.org.prefix}}/.ghcup/ghc/{{deps.haskell.org.version}}/lib/ghc-{{deps.haskell.org.version}}/lib',
       },

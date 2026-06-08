@@ -13,7 +13,11 @@ export const recipe: Recipe = {
     'opensuse.org/libsolv': '*',
     'gnupg.org/gpgme': '*',
     'gnupg.org/libgpg-error': '*',
-    'openssl.org': '~1.1',
+    // pkgx pinned ~1.1 (it shipped openssl 1.1); this pantry's openssl.org only
+    // provides the 3.x line (quictls/openssl), and tdnf's CMake uses an
+    // unversioned find_package(OpenSSL REQUIRED) that builds fine against 3.x —
+    // matching the openssl '*' already pulled in transitively by rpm.org/rpm.
+    'openssl.org': '*',
     'curl.se': '*',
   },
   buildDependencies: {

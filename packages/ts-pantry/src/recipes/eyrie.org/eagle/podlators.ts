@@ -37,7 +37,7 @@ export const recipe: Recipe = {
       'make --jobs {{ hw.concurrency }}',
       'make --jobs {{ hw.concurrency }} install',
       {
-        run: "sed -i.bak -E -e 's|/.*/bin/perl|/usr/bin/env perl|g' pod2man pod2text\nrm pod2man.bak pod2text.bak\n",
+        run: `sed -i.bak -E -e 's|/.*/bin/perl|/usr/bin/env perl|g' pod2man pod2text\nrm pod2man.bak pod2text.bak\n`,
         'working-directory': '${{prefix}}/bin',
       },
     ],
@@ -58,7 +58,7 @@ export const recipe: Recipe = {
   },
   test: {
     script: [
-      "pod2man test.pod | grep 'Pod::Man {{version.major}}'",
+      `pod2man test.pod | grep 'Pod::Man {{version.major}}'`,
     ],
   },
 }
