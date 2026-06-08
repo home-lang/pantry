@@ -78,6 +78,12 @@ export const ruciocernchrucioclientPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '40.2.0',
+    '40.1.2',
+    '40.1.1',
+    '40.1.0',
+    '40.0.0',
+    '39.4.2',
     '39.4.1',
     '39.4.0',
     '39.3.1',
@@ -85,6 +91,7 @@ export const ruciocernchrucioclientPackage = {
     '39.2.0',
     '39.1.0',
     '39.0.0',
+    '38.5.5',
     '38.5.4',
     '38.5.3',
     '38.5.2',
@@ -102,6 +109,7 @@ export const ruciocernchrucioclientPackage = {
     '37.4.0',
     '37.3.0',
     '37.2.0',
+    '37.1.0.post1',
     '37.1.0',
     '37.0.0',
     '36.5.0',
@@ -109,7 +117,9 @@ export const ruciocernchrucioclientPackage = {
     '36.3.0',
     '36.2.0',
     '36.1.0',
+    '35.8.5',
     '35.8.4',
+    '35.8.3',
     '35.8.2',
     '35.8.1',
     '35.8.0',
@@ -129,6 +139,7 @@ export const ruciocernchrucioclientPackage = {
     '34.6.0',
     '34.5.0',
     '34.4.3',
+    '32.8.6',
   ] as const,
   aliases: [] as const,
 }

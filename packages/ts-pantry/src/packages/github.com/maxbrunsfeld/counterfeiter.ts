@@ -74,6 +74,7 @@ export const counterfeiterPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '6.12.2',
     '6.12.1',
     '6.12.0',
     '6.11.2',
@@ -86,6 +87,19 @@ export const counterfeiterPackage = {
     '6.7.0',
     '6.6.2',
     '6.6.1',
+    '6.6.0',
+    '6.5.0',
+    '6.4.1',
+    '6.4.0',
+    '6.3.0',
+    '6.2.3',
+    '6.2.2',
+    '6.2.1',
+    '6.2.0',
+    '6.1.0',
+    '6.0.2',
+    '6.0.1',
+    '6.0.0',
   ] as const,
   aliases: [] as const,
 }

@@ -60,6 +60,7 @@ export const gpt4allPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2023.03.29',
     '2023.3.29',
   ] as const,
   aliases: [] as const,
