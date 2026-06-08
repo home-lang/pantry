@@ -77,6 +77,7 @@ export const cratesioqsvPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '21.0.0',
     '20.1.0',
     '20.0.0',
     '19.1.0',

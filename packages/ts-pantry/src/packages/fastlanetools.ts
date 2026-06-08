@@ -69,6 +69,7 @@ export const fastlanetoolsPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.236.0',
     '2.235.0',
     '2.234.0',
     '2.233.1',
