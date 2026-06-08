@@ -70,6 +70,7 @@ export const k6ioPackage = {
   versions: [
     '2.0.0',
     '2.0.0-rc1',
+    '1.8.0',
     '1.7.1',
     '1.7.0',
     '1.6.1',
