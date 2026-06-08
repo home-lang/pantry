@@ -68,6 +68,7 @@ export const skaffolddevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.22.0',
     '2.21.0',
     '2.20.0',
     '2.19.0',
