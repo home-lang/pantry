@@ -1188,6 +1188,78 @@ function isSourceUnavailableError(error: any): boolean {
     || errMsg.includes('The requested URL returned error: 404')
 }
 
+// ── pkgx-mirror ──────────────────────────────────────────────────────────────
+// pkgx already publishes official prebuilt binaries for every package in its
+// pantry (https://dist.pkgx.dev/<domain>/<os>/<arch>/v<ver>.tar.xz). Mirroring
+// those — download + repackage + upload — is vastly faster than compiling from
+// source and produces an identical artifact. So in --pkgx-mirror mode we DEFAULT
+// to downloading the pkgx prebuilt and only fall back to a source build when pkgx
+// lacks the package OR we deliberately maintain a CUSTOM build (php's extension
+// matrix, postgres options, etc.) that pkgx's vanilla binary would not reproduce.
+let PKGX_MIRROR_MODE = false
+
+// Domains we build from source even in mirror mode, because our recipe diverges
+// from pkgx's vanilla build (custom configure flags / extensions / patches).
+const CUSTOM_BUILD_DOMAINS = new Set<string>([
+  'php.net', // ~30 extension flags (fpm/gd/mbstring/pgsql/openssl/sodium/…) + php-config/phpize patching
+  'postgresql.org', // build-time options/extensions we control
+])
+
+// Map our platform string (darwin-arm64 / linux-x86-64) to pkgx's dist os/arch.
+function pkgxDistArch(platform: string): { os: string, arch: string } | null {
+  const dash = platform.indexOf('-')
+  const os = dash > 0 ? platform.slice(0, dash) : ''
+  const ourArch = dash > 0 ? platform.slice(dash + 1) : ''
+  const arch = ourArch === 'arm64' ? 'aarch64' : ourArch === 'x86-64' ? 'x86-64' : ''
+  if ((os !== 'darwin' && os !== 'linux') || !arch)
+    return null
+  return { os, arch }
+}
+
+// Download pkgx's official prebuilt for domain@version/platform and lay it out
+// FLAT in installDir (matching our source-build prefix layout: ./bin, ./lib, …),
+// so the existing package+upload path treats it identically. pkgx tarballs nest
+// under <domain>/v<ver>/, which we strip. Returns true on success, false if pkgx
+// has no such artifact (→ caller falls back to a source build).
+async function tryPkgxMirror(domain: string, version: string, platform: string, installDir: string, buildkitRoot: string): Promise<boolean> {
+  const m = pkgxDistArch(platform)
+  if (!m)
+    return false
+  const safe = domain.replace(/\//g, '-')
+  const url = `https://dist.pkgx.dev/${domain}/${m.os}/${m.arch}/v${version}.tar.xz`
+  const dl = `${buildkitRoot}/pkgx-${safe}.tar.xz`
+  const ex = `${buildkitRoot}/pkgx-ex-${safe}`
+  try {
+    // -f → non-zero on 404 (pkgx doesn't ship this domain/version/platform).
+    execSync(`curl -fsSL --retry 3 --retry-delay 1 -o "${dl}" "${url}"`, { stdio: 'pipe' })
+  }
+  catch {
+    return false
+  }
+  try {
+    execSync(`rm -rf "${ex}" && mkdir -p "${ex}" && tar -xJf "${dl}" -C "${ex}"`, { stdio: 'pipe' })
+    let prefixRoot = join(ex, domain, `v${version}`)
+    if (!existsSync(prefixRoot)) {
+      // version string mismatch (rare) — fall back to the single v* dir present.
+      const domDir = join(ex, domain)
+      const vs = existsSync(domDir) ? readdirSync(domDir).filter(d => d.startsWith('v')) : []
+      if (vs.length === 1)
+        prefixRoot = join(domDir, vs[0])
+    }
+    if (!existsSync(prefixRoot))
+      return false
+    execSync(`rm -rf "${installDir}" && mkdir -p "${installDir}" && cp -a "${prefixRoot}/." "${installDir}/"`, { stdio: 'pipe' })
+    return true
+  }
+  catch {
+    return false
+  }
+  finally {
+    try { execSync(`rm -rf "${dl}" "${ex}"`, { stdio: 'pipe' }) }
+    catch { /* best-effort cleanup */ }
+  }
+}
+
 async function buildAndUpload(
   pkg: BuildablePackage,
   bucket: string,
@@ -1272,7 +1344,31 @@ else {
   let attemptedAny = false
   let allUnavailable = true
 
+  // pkgx-mirror FIRST (download-first): for non-custom packages, grab the official
+  // prebuilt from pkgx instead of compiling. On success installDir is populated and
+  // we skip straight to packaging; on miss we fall through to the source build.
+  let mirrored = false
+  if (PKGX_MIRROR_MODE && !CUSTOM_BUILD_DOMAINS.has(domain)) {
+    for (const candidateVersion of versionCandidates) {
+      if (!force) {
+        // eslint-disable-next-line no-await-in-loop
+        const exists = await checkExistsInS3(domain, candidateVersion, platform, bucket, region)
+        if (exists) { console.log(`   ✓ Already in S3 for ${platform}, skipping`); return { status: 'skipped' } }
+      }
+      reportBuild(domain, candidateVersion, platform, 'building', { message: `mirroring ${candidateVersion} from pkgx on ${platform}` })
+      // eslint-disable-next-line no-await-in-loop
+      if (await tryPkgxMirror(domain, candidateVersion, platform, installDir, buildkitRoot)) {
+        usedVersion = candidateVersion
+        mirrored = true
+        console.log(`   ⬇️  Mirrored ${domain}@${candidateVersion} from pkgx (${platform}) — no source build`)
+        break
+      }
+    }
+  }
+
   for (const candidateVersion of versionCandidates) {
+    if (mirrored)
+      break // pkgx prebuilt already populated installDir
     try {
       if (candidateVersion !== version) {
         // Check if this fallback version already in S3
@@ -1428,6 +1524,7 @@ async function main() {
       'apps-only': { type: 'boolean', default: false },
       'download-only': { type: 'boolean', default: false },
       'source-only': { type: 'boolean', default: false },
+      'pkgx-mirror': { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h' },
     },
     strict: true,
@@ -1460,6 +1557,9 @@ Options:
   --apps-only           Only build apps (GUI applications)
   --download-only          Only build zig-style download recipes (cross-platform safe)
   --source-only            Only build source recipes (skip downloads — for paid native runners)
+  --pkgx-mirror            Download the official prebuilt from pkgx (dist.pkgx.dev) instead of
+                          compiling; falls back to source build if pkgx lacks it or it's a
+                          custom build (php/postgres). Vastly faster — dozens/min per worker.
   -h, --help               Show help
 `)
     process.exit(0)
@@ -1514,6 +1614,12 @@ Options:
     sourceOnlySkipped = before - allPackages.length
     logDiscovery(`source-only mode: including ${allPackages.length} source recipes, skipping ${sourceOnlySkipped} download recipes (left to the Linux XDL fleet)`)
   }
+
+  // pkgx-mirror: download official prebuilts from pkgx instead of compiling
+  // (falls back to source build per package when pkgx lacks it / it's custom).
+  PKGX_MIRROR_MODE = !!values['pkgx-mirror']
+  if (PKGX_MIRROR_MODE)
+    logDiscovery(`pkgx-mirror mode: downloading prebuilts from dist.pkgx.dev where available (custom builds preserved: ${[...CUSTOM_BUILD_DOMAINS].join(', ')})`)
 
   // Platform-aware filtering: skip packages that can't build on this platform
   const { platform: detectedPlatformEarly } = detectPlatform()
@@ -1625,14 +1731,14 @@ Options:
   const knownBrokenDomains = new Set([
     'agpt.co', // upstream pivoted: classic AutoGPT CLI layout (autogpt/, .env.template, prompt_settings.yaml, root requirements.txt) gone; latest releases are a Next.js + multi-service web platform, not a pip-installable binary — no source build produces bin/auto-gpt
     'snaplet.dev/cli', // discontinued upstream (Snaplet shut down 2024); npm latest dist-tag no longer ships the buildable CLI artifact
-    // recipe-grind round 2 — confirmed unbuildable with real CI error tails:
+    // recipe-grind round 2 — confirmed unbuildable from source (no official prebuilt either):
     'eyrie.org/eagle/podlators', // eyrie.org archives only the latest release; pinned 5.1.0 tarball permanently 404s
-    'github.com/nomic-ai/gpt4all', // abandoned upstream (zanussbaum/gpt4all.cpp frozen); no longer source-builds on modern CI
-    'glew.sourceforge.io', // upstream pkgx restricts GLEW to darwin/aarch64 only (#FIXME couldn't get other platforms working)
-    'imageflow.io/imageflow_tool', // uses removed Rust unstable feature (stdsimd); pinned rust >=1.65<1.78, no modern toolchain works
-    'localai.io', // huge Go+CGO/C++ (gRPC cmake, llama.cpp backends, curl ABI) — fails on fundamental toolchain requirements in CI
+    'glew.sourceforge.io', // ships only source .tgz + win32 binary; no linux/mac prebuilt; pkgx restricts to darwin/aarch64
     'musl.libc.org', // upstream pkgx flags #FIXME: dynamic linker causes segfaults — known linux source-build failure
     'sourceforge.net/libtirpc', // buildkit cc wrapper mishandles libtool --version-info when linking the versioned shared lib
+    // NOTE: imageflow.io/imageflow_tool, localai.io, github.com/nomic-ai/gpt4all were
+    // here but were WRONG — upstream ships official prebuilt binaries; converted to
+    // download recipes instead of source-building/skipping (download-first).
     'gnu.org/gcc/libgomp', // GCC sub-package — requires compiling all of GCC (~225s+ before failing), too resource-intensive for CI
     'gnu.org/gcc', // Building GCC from source requires existing GCC; on darwin clang lacks -print-multi-os-directory
     'gnu.org/gcc/libstdcxx', // Requires full GCC build, dep file I/O issues in CI
