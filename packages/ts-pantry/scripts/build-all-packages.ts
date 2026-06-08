@@ -1197,6 +1197,9 @@ function isSourceUnavailableError(error: any): boolean {
 // lacks the package OR we deliberately maintain a CUSTOM build (php's extension
 // matrix, postgres options, etc.) that pkgx's vanilla binary would not reproduce.
 let PKGX_MIRROR_MODE = false
+// mirror-only: never source-build on a pkgx miss (for foreign --platform fanout
+// from a Linux box, where a source build would cross-compile-fail).
+let MIRROR_ONLY = false
 
 // Domains we build from source even in mirror mode, because our recipe diverges
 // from pkgx's vanilla build (custom configure flags / extensions / patches).
@@ -1364,6 +1367,13 @@ else {
         break
       }
     }
+    // mirror-only (cross-platform fanout): pkgx has no prebuilt for this
+    // domain/version/platform and we must NOT source-build (a foreign --platform
+    // would cross-compile-fail). Skip — leave it to a native source channel.
+    if (!mirrored && MIRROR_ONLY) {
+      console.log(`   ⏭️  No pkgx prebuilt for ${domain} on ${platform}; mirror-only, skipping`)
+      return { status: 'skipped' }
+    }
   }
 
   for (const candidateVersion of versionCandidates) {
@@ -1525,6 +1535,7 @@ async function main() {
       'download-only': { type: 'boolean', default: false },
       'source-only': { type: 'boolean', default: false },
       'pkgx-mirror': { type: 'boolean', default: false },
+      'mirror-only': { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h' },
     },
     strict: true,
@@ -1618,8 +1629,11 @@ Options:
   // pkgx-mirror: download official prebuilts from pkgx instead of compiling
   // (falls back to source build per package when pkgx lacks it / it's custom).
   PKGX_MIRROR_MODE = !!values['pkgx-mirror']
+  MIRROR_ONLY = !!values['mirror-only']
+  if (MIRROR_ONLY)
+    PKGX_MIRROR_MODE = true // mirror-only implies mirror mode
   if (PKGX_MIRROR_MODE)
-    logDiscovery(`pkgx-mirror mode: downloading prebuilts from dist.pkgx.dev where available (custom builds preserved: ${[...CUSTOM_BUILD_DOMAINS].join(', ')})`)
+    logDiscovery(`pkgx-mirror mode${MIRROR_ONLY ? ' (mirror-only — no source fallback)' : ''}: downloading prebuilts from dist.pkgx.dev where available (custom builds preserved: ${[...CUSTOM_BUILD_DOMAINS].join(', ')})`)
 
   // Platform-aware filtering: skip packages that can't build on this platform
   const { platform: detectedPlatformEarly } = detectPlatform()

@@ -124,7 +124,7 @@ while true; do
     root="/root/pb-\$i"; rm -rf "\$root" 2>/dev/null; mkdir -p "\$root"
     BUILDKIT_ROOT="\$root" nohup bun scripts/build-all-packages.ts \\
       -b "\$S3_BUCKET" -r "\$S3_REGION" --platform "\$PLATFORM" \\
-      --stripe "\$stripe/\$STRIPES" ${VERSION_ARGS} \\
+      --pkgx-mirror --stripe "\$stripe/\$STRIPES" ${VERSION_ARGS} \\
       > "/root/sweep-\$PLATFORM-w\$i.log" 2>&1 &
   done
   # Bounded wait: never block forever on a wedged worker. We observed boxes sit
@@ -222,10 +222,11 @@ WantedBy=multi-user.target
 // foreign platform (partitioned by box index) to avoid redundant racing.
 const XDL_PLATFORMS = ['darwin-arm64', 'linux-arm64', 'darwin-x86-64']
 const XDL_DAEMON_SCRIPT = `#!/bin/bash
-# Cross-platform download fanout: fills prebuilt-download artifacts for one FOREIGN
-# target platform from this box. Only download recipes (--download-only); source skipped.
-# Runs XDL_WORKERS striped processes in parallel. Downloads are I/O-bound, but
-# dependency hydration still uses memory, so keep this below native parallelism.
+# Cross-platform pkgx-mirror fanout: fills prebuilt artifacts for one FOREIGN
+# target platform from this Linux box by downloading pkgx's official prebuilt for
+# that platform (--pkgx-mirror --mirror-only: every pkgx package, not just zig
+# download recipes; never source-builds, since a foreign --platform would
+# cross-compile-fail). Downloads are I/O-bound; keep below native parallelism.
 PLAT="\${1:-$(cat /root/xdl-platform 2>/dev/null)}"
 [ -z "$PLAT" ] && { echo "no platform (arg or /root/xdl-platform)"; exit 1; }
 XDL_WORKERS="\${XDL_WORKERS:-${XDL_WORKERS}}"
@@ -239,7 +240,7 @@ while true; do
   for i in $(seq 0 $((XDL_WORKERS-1))); do
     mkdir -p "/root/pb-xdl-$i"
     BUILDKIT_ROOT="/root/pb-xdl-$i" /root/.bun/bin/bun scripts/build-all-packages.ts \\
-      --platform "$PLAT" --download-only --stripe "$i/$XDL_WORKERS" ${VERSION_ARGS} \\
+      --platform "$PLAT" --pkgx-mirror --mirror-only --stripe "$i/$XDL_WORKERS" ${VERSION_ARGS} \\
       --bucket pantry-registry --region fsn1 \\
       >> "/root/xdl-$PLAT-$i.log" 2>&1 &
   done
