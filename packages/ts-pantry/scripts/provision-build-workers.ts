@@ -104,6 +104,12 @@ async function sshKeyId(c: HetznerClient): Promise<number> {
 // ── the fleet-partitioned build daemon written onto each box ─────────────────────
 // box b of N runs K local workers; build-all-packages is split into K*N batches
 // and this box takes batches [b*K, b*K+K). Loops, auto-pulls, self-cleans deps.
+// DOWNLOAD-ONLY: workers run --mirror-only, so a non-custom package is DOWNLOADED
+// from pkgx (the fast curl) or SKIPPED on a pkgx miss — never source-compiled here.
+// (Our version files track upstream-newest, which pkgx lags, so plain --pkgx-mirror
+// fell back to slow source builds on every miss and collapsed throughput.) The
+// CUSTOM_BUILD_DOMAINS carve-out in build-all-packages still source-builds php/
+// postgres etc.; native source compiles for what pkgx lacks stay on GitHub runners.
 function daemonScript(boxIndex: number, boxCount: number): string {
   return `#!/usr/bin/env bash
 set -uo pipefail
@@ -125,7 +131,7 @@ while true; do
     root="/root/pb-\$i"; rm -rf "\$root" 2>/dev/null; mkdir -p "\$root"
     BUILDKIT_ROOT="\$root" nohup bun scripts/build-all-packages.ts \\
       -b "\$S3_BUCKET" -r "\$S3_REGION" --platform "\$PLATFORM" \\
-      --pkgx-mirror --stripe "\$stripe/\$STRIPES" ${VERSION_ARGS} \\
+      --mirror-only --stripe "\$stripe/\$STRIPES" ${VERSION_ARGS} \\
       > "/root/sweep-\$PLATFORM-w\$i.log" 2>&1 &
   done
   # Bounded wait: never block forever on a wedged worker. We observed boxes sit
