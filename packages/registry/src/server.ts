@@ -10,6 +10,7 @@ import { handlePhpRoutes, createPhpStorage } from './php-routes'
 import type { PhpPackageStorage } from './php'
 import { getPackagistCount, searchPackagist, fetchFromPackagist } from './packagist-fallback'
 import { createS3Client, resolveStorageProvider } from './storage/provider'
+import { augmentMetadataWithPkgx, isPendingMaterialize, materializeFromPkgx } from './pkgx-fallback'
 import { ObjectAnalytics } from './storage/object-analytics'
 import { BuildStatusStore } from './storage/build-status'
 import { checkPaywallAccess, configurePaywall, createCheckoutSession, handleStripeWebhook, formatPrice } from './paywall'
@@ -3247,6 +3248,37 @@ else {
 let _defaultBinaryStorage: BinaryStorage | undefined
 /** Cached client used to presign tarball download URLs for private (non-AWS) buckets. */
 let _presignClient: ReturnType<typeof createS3Client> | undefined
+// Split a binaries/ key into its parts. The domain itself may contain slashes
+// (e.g. crates.io/ripgrep), so peel the fixed trailing segments off the end.
+function parseBinaryKey(key: string): { domain: string, version: string, platform: string } | null {
+  const parts = key.split('/')
+  if (parts.length < 5 || parts[0] !== 'binaries')
+    return null
+  parts.pop() // file
+  const platform = parts.pop()!
+  const version = parts.pop()!
+  parts.shift() // 'binaries'
+  const domain = parts.join('/')
+  if (!domain || !version || !platform)
+    return null
+  return { domain, version, platform }
+}
+
+// Ensure the requested binary object exists, materializing it from pkgx on a miss.
+// Returns true when the object is now available to serve, false when neither S3 nor
+// pkgx has it (caller returns its normal not-found error).
+async function ensureBinaryAvailable(s3Key: string, bucket: string, client: ReturnType<typeof createS3Client>): Promise<boolean> {
+  try {
+    await client.headObject(bucket, s3Key)
+    return true
+  }
+  catch { /* missing — try the on-the-fly pkgx fallback below */ }
+  const m = parseBinaryKey(s3Key)
+  if (!m)
+    return false
+  return !!(await materializeFromPkgx(m.domain, m.version, m.platform, bucket, client))
+}
+
 async function handleBinaryProxy(
   path: string,
   req: Request,
@@ -3331,6 +3363,16 @@ async function handleBinaryProxy(
       // (Hetzner/B2) use private buckets, so presign a time-limited GET URL.
       const s3Bucket = process.env.S3_BUCKET || 'pantry-registry'
       const resolved = resolveStorageProvider()
+      // Only a version we ADVERTISED from pkgx (via metadata augmentation) but haven't
+      // published gets the existence-check + on-the-fly materialize. Published versions
+      // keep the zero-round-trip optimistic redirect (no S3 HEAD on the hot path).
+      const pk = parseBinaryKey(s3Key)
+      if (pk && isPendingMaterialize(pk.domain, pk.version, pk.platform)) {
+        _presignClient ??= createS3Client(resolved)
+        if (!await ensureBinaryAvailable(s3Key, s3Bucket, _presignClient)) {
+          return Response.json({ error: 'Not found' }, { status: 404, headers: corsHeaders })
+        }
+      }
       let location: string
       if (resolved.provider === 'aws' && !resolved.endpoint) {
         location = `https://${s3Bucket}.s3.${resolved.region}.amazonaws.com/${s3Key}`
@@ -3350,8 +3392,46 @@ async function handleBinaryProxy(
       })
     }
 
-    // For metadata and checksums (small files), proxy from storage
-    const buffer = await binaryStore.getObject(s3Key)
+    // Metadata: serve the stored manifest, AUGMENTED with versions we track but
+    // haven't published that pkgx can still provide — so the CLI can resolve and
+    // install them (the bytes are materialized on first tarball fetch). The pkgx
+    // probe is HEAD-verified + cached, so we never advertise a binary that 404s.
+    // Production only (injected test storage keeps the raw manifest).
+    if (isMetadata && !storage) {
+      const domain = s3Key.startsWith('binaries/') && s3Key.endsWith('/metadata.json')
+        ? s3Key.slice('binaries/'.length, -'/metadata.json'.length)
+        : null
+      let stored: Awaited<ReturnType<typeof augmentMetadataWithPkgx>> = null
+      try { stored = JSON.parse((await binaryStore.getObject(s3Key)).toString('utf8')) }
+      catch { /* unpublished domain — may still be augmentable from pkgx */ }
+      const augmented = domain
+        ? await augmentMetadataWithPkgx(domain, stored, [...(_knownVersions.get(domain) || [])])
+        : stored
+      if (!augmented)
+        return Response.json({ error: 'Not found' }, { status: 404, headers: corsHeaders })
+      const body = JSON.stringify(augmented)
+      return new Response(body, {
+        headers: { ...corsHeaders, 'Content-Type': contentType, 'Cache-Control': cacheControl, 'Content-Length': String(Buffer.byteLength(body)) },
+      })
+    }
+
+    // Checksum (and metadata in tests): proxy the small file from storage. On a
+    // checksum miss, materialize from pkgx first (which writes the .sha256), then retry.
+    let buffer: Buffer
+    try {
+      buffer = await binaryStore.getObject(s3Key)
+    }
+    catch (missErr) {
+      const tarKey = s3Key.replace(/\.sha256$/, '')
+      const ck = parseBinaryKey(tarKey)
+      if (!isChecksum || storage || !ck || !isPendingMaterialize(ck.domain, ck.version, ck.platform))
+        throw missErr
+      const s3Bucket = process.env.S3_BUCKET || 'pantry-registry'
+      _presignClient ??= createS3Client(resolveStorageProvider())
+      if (!await ensureBinaryAvailable(tarKey, s3Bucket, _presignClient))
+        throw missErr
+      buffer = await binaryStore.getObject(s3Key)
+    }
 
     return new Response(new Uint8Array(buffer), {
       headers: {
