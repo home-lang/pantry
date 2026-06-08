@@ -44,21 +44,35 @@ permissions:
   contents: read
 
 jobs:
+  # Build the platform matrix dynamically so a single-platform dispatch runs just
+  # that one (a job-level `if` can't see `matrix`). Empty input = all four.
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+    steps:
+      - id: gen
+        shell: bash
+        env:
+          PLATFORM: ${{ github.event.inputs.platform }}
+        run: |
+          # Every job runs on a cheap Linux runner — downloads fan out to any target
+          # platform. linux-arm64 uses an arm runner only so its own native custom
+          # builds (php/postgres) compile; the downloads would work from x86 too.
+          ALL='[{"name":"linux-x86-64","os":"ubuntu-latest"},{"name":"linux-arm64","os":"ubuntu-24.04-arm"},{"name":"darwin-arm64","os":"ubuntu-latest"},{"name":"darwin-x86-64","os":"ubuntu-latest"}]'
+          if [ -n "$PLATFORM" ]; then
+            SEL=$(echo "$ALL" | jq -c --arg p "$PLATFORM" '[.[] | select(.name == $p)]')
+          else
+            SEL="$ALL"
+          fi
+          echo "matrix={\"platform\":$SEL}" >> "$GITHUB_OUTPUT"
+
   mirror:
     name: Mirror (${{ matrix.platform.name }})
-    # Skip platforms not selected on a manual single-platform dispatch.
-    if: ${{ github.event.inputs.platform == '' || github.event.inputs.platform == matrix.platform.name }}
+    needs: setup
     strategy:
       fail-fast: false
-      matrix:
-        # Every job runs on a cheap Linux runner — downloads fan out to any target
-        # platform. linux-arm64 uses an arm runner only so its own native custom
-        # builds (php/postgres) compile; the downloads would work from x86 too.
-        platform:
-          - { name: linux-x86-64, os: ubuntu-latest }
-          - { name: linux-arm64, os: ubuntu-24.04-arm }
-          - { name: darwin-arm64, os: ubuntu-latest }
-          - { name: darwin-x86-64, os: ubuntu-latest }
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
     runs-on: ${{ matrix.platform.os }}
     timeout-minutes: 120
     concurrency:
