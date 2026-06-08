@@ -42,12 +42,13 @@ const XDL_WORKERS = Number(process.env.XDL_WORKERS || 3) // cross-platform downl
 // work is nearly exhausted on linux-x86-64, leaving the fleet idle-skipping; this
 // gives every box a large real backlog and raises coverage. 0/1 = latest only.
 const MAX_VERSIONS = Number(process.env.MAX_VERSIONS || 5)
-// Breadth-first mode: build only each package's LATEST version so the fleet drains
-// the UNBUILT backlog (every package built on every platform) as fast as possible,
-// rather than spending capacity on older versions. Set MULTI_VERSION=1 to restore
-// the multi-version sweep. Default is latest-only (the teardown goal: latest built
-// everywhere, then delete the builders).
-const VERSION_ARGS = process.env.MULTI_VERSION === '1' ? `--multi-version --max-versions ${MAX_VERSIONS}` : ''
+// Multi-version mirroring is the DEFAULT: pkgx-mirror is a cheap curl (no compile),
+// so we fan the fleet out across each package's MAX_VERSIONS most popular (= most
+// recent, as tracked in our auto-updated package files) versions, not just latest.
+// This raises real coverage at near-zero extra cost vs latest-only. Set
+// MULTI_VERSION=0 to fall back to breadth-first latest-only (drain the unbuilt
+// backlog fastest, e.g. during a teardown push).
+const VERSION_ARGS = process.env.MULTI_VERSION === '0' ? '' : `--multi-version --max-versions ${MAX_VERSIONS}`
 const PLATFORM = process.env.WORKER_PLATFORM || 'linux-x86-64'
 // Watchdog caps (minutes). A worker's own BATCH_TIME_BUDGET_MS is 100 min and its
 // per-package timeout is 60 min, so a healthy worker exits well under these. These

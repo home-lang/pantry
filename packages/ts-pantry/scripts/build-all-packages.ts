@@ -950,8 +950,30 @@ function selectImportantVersions(pkg: BuildablePackage, maxVersions: number): st
   return validVersions.filter(v => selected.has(v))
 }
 
+/**
+ * Select the most popular versions to mirror for a package.
+ * "Popular" here = the most recent versions we actively track in this repo's
+ * package files (auto-updated by buddy-bot / update-packages). pkg.versions is
+ * maintained newest-first, so the top N entries ARE the current/most-used
+ * releases. Unlike selectImportantVersions (which spreads across old majors for
+ * source-build compat coverage), this keeps the mirror focused on what people
+ * actually install. Skips sentinels (999.999.999, 0.0.0) and unbuildable
+ * versions (SKIP_VERSIONS).
+ */
+function selectRecentVersions(pkg: BuildablePackage, maxVersions: number): string[] {
+  return pkg.versions
+    .filter(v => v !== '999.999.999' && v !== '0.0.0' && !isVersionSkipped(pkg.domain, v))
+    .slice(0, maxVersions)
+}
+
 async function selectVersionsForBuild(pkg: BuildablePackage, maxVersions: number): Promise<string[]> {
-  let versions = selectImportantVersions(pkg, maxVersions)
+  // pkgx-mirror is a cheap download (no compile), so we mirror the most POPULAR
+  // versions — the N most recent we track — rather than a semver spread across
+  // ancient majors that nobody installs. Source builds keep the important-version
+  // spread (compat coverage justifies the heavier compile of an old major).
+  let versions = PKGX_MIRROR_MODE
+    ? selectRecentVersions(pkg, maxVersions)
+    : selectImportantVersions(pkg, maxVersions)
 
   // For ziglang.org, build ALL versions >= 0.14.1 + latest dev from ziglang.org index.
   if (pkg.domain === 'ziglang.org') {
@@ -1263,6 +1285,24 @@ async function tryPkgxMirror(domain: string, version: string, platform: string, 
   }
 }
 
+// Does installDir contain at least one real file or symlink? Walks manually and
+// NEVER descends into symlinked directories — only into real ones (entry.isDirectory()
+// is false for a symlink-to-dir under lstat semantics). Node's
+// readdirSync({recursive:true}) follows directory symlinks and throws
+// `ELOOP: too many symbolic links` on a cyclic link (common in pkgx prebuilts and
+// libs like gtk: e.g. `lib/foo -> .`), which would crash this integrity guard before
+// the symlink-safe `tar` step ever runs. This walk is loop-proof. A symlink itself
+// counts as content (the package legitimately ships it).
+function installDirHasFiles(dir: string): boolean {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isFile() || entry.isSymbolicLink())
+      return true
+    if (entry.isDirectory() && installDirHasFiles(join(dir, entry.name)))
+      return true
+  }
+  return false
+}
+
 async function buildAndUpload(
   pkg: BuildablePackage,
   bucket: string,
@@ -1453,8 +1493,7 @@ catch (error: any) {
     // recursively, not just top-level entries: a build that only `mkdir`s empty
     // bin/lib dirs would otherwise slip through and publish a ~109-byte empty
     // tarball (this happened to 27 packages: ast-grep, gitleaks, traefik, …).
-    const hasFiles = existsSync(installDir)
-      && readdirSync(installDir, { recursive: true, withFileTypes: true }).some(e => e.isFile() || e.isSymbolicLink())
+    const hasFiles = existsSync(installDir) && installDirHasFiles(installDir)
     if (!hasFiles) {
       throw new Error(`Build produced no files in ${installDir}; refusing to package/upload`)
     }
