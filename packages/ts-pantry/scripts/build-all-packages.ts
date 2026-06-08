@@ -1347,8 +1347,12 @@ async function tryPkgxMirror(domain: string, version: string, platform: string, 
     execSync(`curl -fsSL --retry 3 --retry-delay 1 -o "${dl}" "${url}"`, { stdio: 'pipe' })
   }
   catch {
+    // pkgx has no such artifact — DON'T report "mirroring from pkgx" for this package
+    // (it's one of ours / an app / a source build, not actually mirrored).
     return false
   }
+  // Only NOW, with the download confirmed, is "mirroring from pkgx" truthful.
+  reportBuild(domain, version, platform, 'building', { message: `mirroring ${version} from pkgx on ${platform}` })
   try {
     execSync(`rm -rf "${ex}" && mkdir -p "${ex}" && tar -xJf "${dl}" -C "${ex}"`, { stdio: 'pipe' })
     let prefixRoot = join(ex, domain, `v${version}`)
@@ -1494,7 +1498,9 @@ else {
         const exists = await checkExistsInS3(domain, candidateVersion, platform, bucket, region)
         if (exists) { console.log(`   ✓ Already in S3 for ${platform}, skipping`); return { status: 'skipped' } }
       }
-      reportBuild(domain, candidateVersion, platform, 'building', { message: `mirroring ${candidateVersion} from pkgx on ${platform}` })
+      // tryPkgxMirror reports the "mirroring from pkgx" event ITSELF, but only once
+      // the download confirms pkgx actually ships this artifact — so packages pkgx
+      // doesn't host (our apps/deps, source builds) are never mislabeled as mirrored.
       // eslint-disable-next-line no-await-in-loop
       if (await tryPkgxMirror(domain, candidateVersion, platform, installDir, buildkitRoot)) {
         usedVersion = candidateVersion
