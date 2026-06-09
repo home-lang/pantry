@@ -119,7 +119,7 @@ export function isPendingMaterialize(domain: string, version: string, platform: 
 const _augCache = new Map<string, { at: number, data: PackageMetadata }>()
 const AUG_TTL_MS = 30 * 60 * 1000
 // How many of the most-recent tracked-but-unpublished versions to probe on pkgx.
-const MAX_AUGMENT_VERSIONS = 12
+const MAX_AUGMENT_VERSIONS = 20
 
 /**
  * Merge pkgx-available versions into a package's metadata so the CLI can resolve a
