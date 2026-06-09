@@ -11,7 +11,6 @@ import type { PhpPackageStorage } from './php'
 import { getPackagistCount, searchPackagist, fetchFromPackagist } from './packagist-fallback'
 import { createS3Client, resolveStorageProvider } from './storage/provider'
 import { augmentMetadataWithPkgx, isPendingMaterialize, materializeFromPkgx } from './pkgx-fallback'
-import { aliases as packageAliases } from '../../ts-pantry/src/packages/aliases'
 import { ObjectAnalytics } from './storage/object-analytics'
 import { BuildStatusStore } from './storage/build-status'
 import { checkPaywallAccess, configurePaywall, createCheckoutSession, handleStripeWebhook, formatPrice } from './paywall'
@@ -29,6 +28,28 @@ import { AuthService, AuthError, createAuthStorage, isUserApiToken } from './aut
 // validation. Exposed via reloadKnownVersions() so an operator can refresh
 // the map after a hot-deploy of only the package index without restarting
 // the service.
+// Package-name → canonical-domain aliases (bun / bun.com → bun.sh), read at runtime
+// from the ts-pantry aliases file (a cross-package import would violate the registry's
+// tsconfig rootDir, so we parse the literal map like the recipe/version loaders do).
+const _aliases = new Map<string, string>()
+function loadAliases(): void {
+  try {
+    const file = resolve(
+      typeof import.meta.dirname === 'string' ? import.meta.dirname : dirname(fileURLToPath(import.meta.url)),
+      '../../ts-pantry/src/packages/aliases.ts',
+    )
+    const src = readFileSync(file, 'utf8')
+    _aliases.clear()
+    for (const m of src.matchAll(/['"]([^'"\n]+)['"]\s*:\s*['"]([^'"\n]+)['"]/g))
+      _aliases.set(m[1], m[2])
+    console.log(`Loaded ${_aliases.size} package aliases`)
+  }
+  catch (err) {
+    console.warn('Could not load package aliases:', err)
+  }
+}
+loadAliases()
+
 const _knownVersions = new Map<string, Set<string>>()
 async function loadKnownVersions(): Promise<void> {
   try {
@@ -3989,7 +4010,7 @@ async function handleSitePackage(
 ): Promise<Response> {
   // Resolve a package-name alias to its canonical domain (e.g. bun / bun.com → bun.sh)
   // so the page works for every name the CLI accepts, not just the canonical domain.
-  const aliased = packageAliases[name]
+  const aliased = _aliases.get(name)
   if (aliased && aliased !== name)
     name = aliased
   const safeName = escapeHtml(name)
