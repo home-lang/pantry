@@ -1050,11 +1050,13 @@ async function selectVersionsForBuild(pkg: BuildablePackage, maxVersions: number
   // Tier the version count: popular packages get POPULAR_MAX_VERSIONS (deeper history),
   // everyone else the standard maxVersions.
   const effectiveMax = POPULAR_PACKAGES.has(pkg.domain) ? Math.max(maxVersions, POPULAR_MAX_VERSIONS) : maxVersions
-  // pkgx-mirror is a cheap download (no compile), so we mirror the most POPULAR
-  // versions — the N most recent we track — rather than a semver spread across
-  // ancient majors that nobody installs. Source builds keep the important-version
-  // spread (compat coverage justifies the heavier compile of an old major).
-  let versions = PKGX_MIRROR_MODE
+  // pkgx-mirror AND --download-only are cheap downloads (no compile), so we grab the
+  // most POPULAR versions — the N most recent we track — rather than a semver spread
+  // across ancient majors that nobody installs (which caps at ~1-per-major, so a
+  // download recipe like bun would only ever get ~5 even with --popular-max-versions
+  // 20). Source builds keep the important-version spread (an old major's compile cost
+  // is only worth it for compat coverage).
+  let versions = (PKGX_MIRROR_MODE || DOWNLOAD_ONLY_MODE)
     ? selectRecentVersions(pkg, effectiveMax)
     : selectImportantVersions(pkg, effectiveMax)
 
@@ -1305,6 +1307,10 @@ let PKGX_MIRROR_MODE = false
 // mirror-only: never source-build on a pkgx miss (for foreign --platform fanout
 // from a Linux box, where a source build would cross-compile-fail).
 let MIRROR_ONLY = false
+// download-only: zig-style recipes that curl their own per-platform asset. Like
+// mirror mode it's a cheap download, so version selection should be recency-based
+// (the N most-recent), NOT the major-spread used for expensive source builds.
+let DOWNLOAD_ONLY_MODE = false
 // True when the target --platform differs from the host (cross-platform fanout).
 // A CUSTOM build (php/postgres) compiles from source, which CANNOT cross-compile,
 // so we skip custom domains on a foreign target in mirror mode (they're built on
@@ -1773,6 +1779,7 @@ Options:
   // (falls back to source build per package when pkgx lacks it / it's custom).
   PKGX_MIRROR_MODE = !!values['pkgx-mirror']
   MIRROR_ONLY = !!values['mirror-only']
+  DOWNLOAD_ONLY_MODE = !!values['download-only']
   if (MIRROR_ONLY)
     PKGX_MIRROR_MODE = true // mirror-only implies mirror mode
   if (PKGX_MIRROR_MODE)
