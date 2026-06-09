@@ -29,7 +29,7 @@ env:
   S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
   # The non-pkgx residual that DOES have a recipe. Apps download a .dmg/release;
   # the rest compile from source. Recipe `platforms:` keeps each on valid runners.
-  RESIDUAL_PACKAGES: 'karabiner-elements.pqrs.org,linear.app,strace.io,systemd.io,gource.io,vapoursynth.com,langchain.com,agpt.co,tea.xyz'
+  RESIDUAL_PACKAGES: 'karabiner-elements.pqrs.org,linear.app,strace.io,systemd.io,gource.io,vapoursynth.com,langchain.com,agpt.co,tea.xyz,gnu.org/xorriso,gnu.org/grub'
 
 permissions:
   contents: read
