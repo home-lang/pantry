@@ -4199,7 +4199,14 @@ async function handleSitePackage(
     const hasDeps = depList.length > 0
     const depCount = depList.length
 
-    const sortedVersions = [...versions].reverse()
+    // Sort newest-first by semver — the (augmented) manifest's key order is NOT
+    // sorted, so a plain reverse() interleaves 1.2.x and 1.3.x.
+    const sortedVersions = [...versions].sort((a, b) => {
+      const pa = parseSemver(a)
+      const pb = parseSemver(b)
+      if (pa && pb) return -compareSemver(pa, pb)
+      return b.localeCompare(a)
+    })
     const recentVersions = sortedVersions.slice(0, 10)
     const hasMoreVersions = sortedVersions.length > 10
     const remainingCount = sortedVersions.length - 10
