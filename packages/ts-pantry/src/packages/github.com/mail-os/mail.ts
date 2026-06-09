@@ -59,7 +59,12 @@ export const mailPackage = {
     'ziglang.org@0.16.0-dev',
     'sqlite.org',
   ] as const,
-  versions: ['0.1.1', '0.1.0'] as const,
+  versions: [
+    '0.1.1',
+    '0.1.0',
+    '0.0.2',
+    '0.0.1',
+  ] as const,
   aliases: [] as const,
 }
 
