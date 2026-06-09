@@ -4015,7 +4015,7 @@ async function handleSitePackage(
     name = aliased
   const safeName = escapeHtml(name)
   const encodedName = encodeURIComponent(name)
-  const [meta, stats, timeline, pkgInfo, zigPkg, phpPkg] = await Promise.all([
+  const [rawMeta, stats, timeline, pkgInfo, zigPkg, phpPkg] = await Promise.all([
     fetchPackageMetadata(name, binaryStorage),
     analytics.getPackageStats(name),
     analytics.getDownloadTimeline(name, 30),
@@ -4023,6 +4023,15 @@ async function handleSitePackage(
     zigStorage?.getPackage(name) ?? null,
     phpStorage?.getPackage(name) ?? null,
   ])
+  // Show every version a user can actually INSTALL, not just the eagerly-published
+  // ones: augment the manifest with the pkgx-available versions the install path
+  // materializes on demand (HEAD-verified + cached). Without this a popular package
+  // like bun.sh reads "1 version" until the multi-version mirror catches up, even
+  // though older releases install fine.
+  let meta = rawMeta
+  if (rawMeta) {
+    meta = await augmentMetadataWithPkgx(name, rawMeta, [...(_knownVersions.get(name) || [])]).catch(() => rawMeta) ?? rawMeta
+  }
   const isZigPackage = zigPkg !== null
   const isPhpPackage = phpPkg !== null
 
