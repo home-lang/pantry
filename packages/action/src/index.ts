@@ -1153,11 +1153,17 @@ async function packageBuildArtifacts(cwd: string): Promise<string[]> {
   const distDir = path.join(cwd, 'dist')
   fs.mkdirSync(distDir, { recursive: true })
 
-  const zigOut = path.join(cwd, 'packages', 'zig', 'zig-out')
-  if (!fs.existsSync(zigOut)) return []
+  // zig-out lives next to build.zig.zon. Support both a monorepo layout
+  // (packages/zig/) and a root zig project.
+  const zigDir = [path.join(cwd, 'packages', 'zig'), cwd].find(d => fs.existsSync(path.join(d, 'zig-out')))
+  if (!zigDir) return []
+  const zigOut = path.join(zigDir, 'zig-out')
 
   const packaged: string[] = []
-  const { name } = detectPackageInfo(cwd)
+  // Detect the name from the zig project dir (where build.zig.zon is), NOT the repo
+  // root — a monorepo zig project (zon under packages/zig/) reads "unknown" at the
+  // root, mis-naming assets unknown-*.zip.
+  const { name } = detectPackageInfo(zigDir)
   const baseName = name.replace(/\.org$|\.com$|\.dev$|\.io$/, '').replace(/[^a-z0-9]/g, '')
 
   // Package native binary
