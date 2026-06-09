@@ -115,22 +115,61 @@ jobs:
           cd packages/ts-pantry
           MAXV="${{ github.event.inputs.max-versions || '5' }}"
           POPV="${{ github.event.inputs.popular-max-versions || '20' }}"
-          # Pass 1 — --mirror-only: download pkgx prebuilts, skip on a miss, never
-          #   compile (except custom builds on their native platform). No --force, so
-          #   each run only fills versions still missing from S3 → steady, cheap growth.
+          # --mirror-only: download pkgx prebuilts, skip on a miss, never compile
+          #   (except custom builds on their native platform). No --force, so each
+          #   run only fills versions still missing from S3 → steady, cheap growth.
           bun scripts/build-all-packages.ts \
             -b "$S3_BUCKET" -r "$AWS_REGION" \
             --platform "${{ matrix.name }}" \
             --stripe "${{ matrix.stripe }}" \
             --mirror-only --multi-version \
             --max-versions "$MAXV" --popular-max-versions "$POPV"
-          # Pass 2 — --download-only: zig-style recipes that curl their OWN per-platform
-          #   asset (ziglang, gh, ripgrep, …) aren't on pkgx, so --mirror-only skips
-          #   them. This pass runs just those recipes (still a download, no compile),
-          #   filling the self-download packages the mirror pass can't.
+
+  # SEPARATE parallel job for zig-style self-download recipes (ziglang, bun, gh,
+  # ripgrep, …) — they curl their OWN per-platform asset, so --mirror-only skips them.
+  # This MUST be its own job: when it was a 2nd pass inside the mirror job, the long
+  # --mirror-only pass ate the whole runner budget and download recipes (e.g. bun)
+  # never ran → stuck at 1 version. The download set is small, so no striping needed.
+  download:
+    name: Download ${{ matrix.platform.name }}
+    if: ${{ github.event.inputs.platform == '' || github.event.inputs.platform == matrix.platform.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { name: linux-x86-64, os: ubuntu-latest }
+          - { name: linux-arm64, os: ubuntu-24.04-arm }
+          - { name: darwin-arm64, os: ubuntu-latest }
+          - { name: darwin-x86-64, os: ubuntu-latest }
+    runs-on: ${{ matrix.platform.os }}
+    timeout-minutes: 120
+    concurrency:
+      group: download-${{ matrix.platform.name }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Setup Pantry
+        uses: ./packages/action
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Install dependencies
+        run: bun install
+      - name: Build download recipes
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd packages/ts-pantry
+          MAXV="${{ github.event.inputs.max-versions || '5' }}"
+          POPV="${{ github.event.inputs.popular-max-versions || '20' }}"
           bun scripts/build-all-packages.ts \
             -b "$S3_BUCKET" -r "$AWS_REGION" \
-            --platform "${{ matrix.name }}" \
-            --stripe "${{ matrix.stripe }}" \
+            --platform "${{ matrix.platform.name }}" \
             --download-only --multi-version \
-            --max-versions "$MAXV" --popular-max-versions "$POPV" || true
+            --max-versions "$MAXV" --popular-max-versions "$POPV"
