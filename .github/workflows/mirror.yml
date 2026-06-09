@@ -132,7 +132,6 @@ jobs:
   # never ran → stuck at 1 version. The download set is small, so no striping needed.
   download:
     name: Download ${{ matrix.platform.name }}
-    if: ${{ github.event.inputs.platform == '' || github.event.inputs.platform == matrix.platform.name }}
     strategy:
       fail-fast: false
       matrix:
