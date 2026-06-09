@@ -60,6 +60,7 @@ export const digitaloceancomdoctlPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.161.0',
     '1.160.1',
     '1.159.0',
     '1.158.0',
