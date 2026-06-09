@@ -11,6 +11,7 @@ import type { PhpPackageStorage } from './php'
 import { getPackagistCount, searchPackagist, fetchFromPackagist } from './packagist-fallback'
 import { createS3Client, resolveStorageProvider } from './storage/provider'
 import { augmentMetadataWithPkgx, isPendingMaterialize, materializeFromPkgx } from './pkgx-fallback'
+import { aliases as packageAliases } from '../../ts-pantry/src/packages/aliases'
 import { ObjectAnalytics } from './storage/object-analytics'
 import { BuildStatusStore } from './storage/build-status'
 import { checkPaywallAccess, configurePaywall, createCheckoutSession, handleStripeWebhook, formatPrice } from './paywall'
@@ -3986,6 +3987,11 @@ async function handleSitePackage(
   zigStorage?: ZigPackageStorage,
   phpStorage?: PhpPackageStorage,
 ): Promise<Response> {
+  // Resolve a package-name alias to its canonical domain (e.g. bun / bun.com → bun.sh)
+  // so the page works for every name the CLI accepts, not just the canonical domain.
+  const aliased = packageAliases[name]
+  if (aliased && aliased !== name)
+    name = aliased
   const safeName = escapeHtml(name)
   const encodedName = encodeURIComponent(name)
   const [meta, stats, timeline, pkgInfo, zigPkg, phpPkg] = await Promise.all([
