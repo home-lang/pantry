@@ -74,6 +74,8 @@ export const llamacppPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '9592',
+    '9591',
     '9590',
     '9589',
     '9587',
