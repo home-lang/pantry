@@ -61,12 +61,14 @@ export const argoprojgithubioworkflowsPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.0.6',
     '4.0.5',
     '4.0.4',
     '4.0.3',
     '4.0.2',
     '4.0.1',
     '4.0.0',
+    '3.7.15',
     '3.7.14',
     '3.7.13',
     '3.7.12',
