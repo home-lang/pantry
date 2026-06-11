@@ -1,3 +1,651 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.9.37...v0.9.38)
+
+### 🚀 Features
+
+- **shell**: hook parity across shells + fork-free template hot path ([761ae95](https://github.com/pantry-pm/pantry/commit/761ae95)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **services**: production-ready typesense service ([df2c8a1](https://github.com/pantry-pm/pantry/commit/df2c8a1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **install**: augment up to 20 installable versions (was 12), matching the popular tier ([19c5cc1](https://github.com/pantry-pm/pantry/commit/19c5cc1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **page**: package page shows installable versions (augmented), not just published ([c13e600](https://github.com/pantry-pm/pantry/commit/c13e600)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipe**: author gnu.org/xorriso + gnu.org/grub source recipes ([6eb90ed](https://github.com/pantry-pm/pantry/commit/6eb90ed)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipe**: github.com/mail-os/mail — download recipe + catalog versions ([18a8d6a](https://github.com/pantry-pm/pantry/commit/18a8d6a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: build-residual.yml — build non-pkgx recipes on native runners ([695491b](https://github.com/pantry-pm/pantry/commit/695491b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **install**: on-the-fly pkgx fallback for unpublished versions ([1322d17](https://github.com/pantry-pm/pantry/commit/1322d17)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **mirror**: GitHub Actions download-only channel + tiered popular versions ([bf81f71](https://github.com/pantry-pm/pantry/commit/bf81f71)) _(by Chris <chrisbreuer93@gmail.com>)_
+- CI build.yml mirrors from pkgx first (--pkgx-mirror) ([0ea0e53](https://github.com/pantry-pm/pantry/commit/0ea0e53)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wire pkgx-mirror into fleet + add --mirror-only for foreign fanout ([528e835](https://github.com/pantry-pm/pantry/commit/528e835)) _(by Chris <chrisbreuer93@gmail.com>)_
+- pkgx-mirror — download official prebuilts from pkgx instead of compiling ([f176dcd](https://github.com/pantry-pm/pantry/commit/f176dcd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add --source-only flag to build-all-packages (inverse of --download-only) ([00776dc](https://github.com/pantry-pm/pantry/commit/00776dc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- build orchestrator to auto-drive CI waves at the coverage gap ([fcf40f0](https://github.com/pantry-pm/pantry/commit/fcf40f0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **fleet**: latest-only breadth-first mode (drain unbuilt backlog before teardown) ([961856b](https://github.com/pantry-pm/pantry/commit/961856b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **fleet**: bake cross-platform download fanout into provisioner ([9d0295b](https://github.com/pantry-pm/pantry/commit/9d0295b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: cross-platform download fanout — produce all-platform prebuilt artifacts from any host ([09c4d71](https://github.com/pantry-pm/pantry/commit/09c4d71)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert ctop.sh to prebuilt-download recipe ([befa8bc](https://github.com/pantry-pm/pantry/commit/befa8bc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert leo-lang.org + openai.com/codex to prebuilt downloads ([43e7408](https://github.com/pantry-pm/pantry/commit/43e7408)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert crates.io/lighthouse to prebuilt download ([7d88314](https://github.com/pantry-pm/pantry/commit/7d88314)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: surface requested-but-unavailable versions on /packages ([7c7953d](https://github.com/pantry-pm/pantry/commit/7c7953d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: report requested-but-unavailable versions to the dashboard ([acae848](https://github.com/pantry-pm/pantry/commit/acae848)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **cli**: add 'release' command (bump+changelog+commit+tag+push+publish) ([82299c4](https://github.com/pantry-pm/pantry/commit/82299c4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: silicon prebuilt download with source fallback ([2c82206](https://github.com/pantry-pm/pantry/commit/2c82206)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: gitu prebuilt download with source fallback ([8d09c10](https://github.com/pantry-pm/pantry/commit/8d09c10)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: loki prebuilt download ([18ccf87](https://github.com/pantry-pm/pantry/commit/18ccf87)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: uv prebuilt download ([c92d262](https://github.com/pantry-pm/pantry/commit/c92d262)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: upx prebuilt download on linux ([3943bd0](https://github.com/pantry-pm/pantry/commit/3943bd0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: werf prebuilt download ([32ce62e](https://github.com/pantry-pm/pantry/commit/32ce62e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: fsdiff prebuilt download ([bbcb2da](https://github.com/pantry-pm/pantry/commit/bbcb2da)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: usque prebuilt download ([558a3ce](https://github.com/pantry-pm/pantry/commit/558a3ce)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: nuclei prebuilt download ([0bd6eab](https://github.com/pantry-pm/pantry/commit/0bd6eab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **dashboard**: add Partial stat so all packages are accounted for ([6380dcd](https://github.com/pantry-pm/pantry/commit/6380dcd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: d2lang.com prebuilt download ([c0b4583](https://github.com/pantry-pm/pantry/commit/c0b4583)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: ast-grep.github.io prebuilt download ([70da811](https://github.com/pantry-pm/pantry/commit/70da811)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: dotenv-linter.github.io prebuilt download ([293537a](https://github.com/pantry-pm/pantry/commit/293537a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: just.systems prebuilt download ([e7700ff](https://github.com/pantry-pm/pantry/commit/e7700ff)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: watchexec.github.io prebuilt download ([8b0b7d6](https://github.com/pantry-pm/pantry/commit/8b0b7d6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: git-cliff.org prebuilt download ([1195b6d](https://github.com/pantry-pm/pantry/commit/1195b6d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: dprint.dev prebuilt download ([9b2a311](https://github.com/pantry-pm/pantry/commit/9b2a311)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: squawkhq.com prebuilt download ([3c995fe](https://github.com/pantry-pm/pantry/commit/3c995fe)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: terraform-docs.io prebuilt download ([8b3202b](https://github.com/pantry-pm/pantry/commit/8b3202b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: templ.guide prebuilt download ([71821d1](https://github.com/pantry-pm/pantry/commit/71821d1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: infracost.io prebuilt download ([b7375fd](https://github.com/pantry-pm/pantry/commit/b7375fd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: kubectx.dev prebuilt download ([f0e826b](https://github.com/pantry-pm/pantry/commit/f0e826b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: gomplate.ca prebuilt download ([77e196b](https://github.com/pantry-pm/pantry/commit/77e196b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: curlie.io prebuilt download ([b5050c3](https://github.com/pantry-pm/pantry/commit/b5050c3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: changie.dev prebuilt download ([eabd8ba](https://github.com/pantry-pm/pantry/commit/eabd8ba)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: conftest.dev prebuilt download ([277a879](https://github.com/pantry-pm/pantry/commit/277a879)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: taskfile.dev prebuilt download ([a5549f9](https://github.com/pantry-pm/pantry/commit/a5549f9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: git-town.com prebuilt download ([78c9ee9](https://github.com/pantry-pm/pantry/commit/78c9ee9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **shell**: opt-in auto-cd via `autoActivate: true` in the deps file ([5bdb255](https://github.com/pantry-pm/pantry/commit/5bdb255)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **build**: bump multi-version 3 -> 5 (fleet consumed the 3-version backlog) ([418b4a8](https://github.com/pantry-pm/pantry/commit/418b4a8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert 13 single-binary CLIs to prebuilt download ([95c28fa](https://github.com/pantry-pm/pantry/commit/95c28fa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: multi-version builds (3 per package) on fleet + CI ([52c77ae](https://github.com/pantry-pm/pantry/commit/52c77ae)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: internal parallelism per runner (PAR sub-stripe workers) ([67d231d](https://github.com/pantry-pm/pantry/commit/67d231d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: add --stripe input to fan out parallel runners per platform ([227f71f](https://github.com/pantry-pm/pantry/commit/227f71f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **env**: list the project's deps in the activation banner ([b576290](https://github.com/pantry-pm/pantry/commit/b576290)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **env**: print an activation banner when `dev`/`pantry env` activates ([ea93504](https://github.com/pantry-pm/pantry/commit/ea93504)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **registry**: require auth for rebuild + builder ingestion endpoints ([4140f18](https://github.com/pantry-pm/pantry/commit/4140f18)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: evict-empty-publishes — remove broken empty tarballs + repair metadata ([19477a2](https://github.com/pantry-pm/pantry/commit/19477a2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **dashboard**: Projects-complete metric (per supported platforms) + updates-available; drop Queued ([b5ca3bc](https://github.com/pantry-pm/pantry/commit/b5ca3bc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: ts-cloud-wrapped fleet provisioner for Hetzner build workers ([eca50c9](https://github.com/pantry-pm/pantry/commit/eca50c9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: live-reactive dashboard — versions card, host links, smooth logs, icons ([559265f](https://github.com/pantry-pm/pantry/commit/559265f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: recover 184 more ported recipes (robust string escaping) ([5a8d9d8](https://github.com/pantry-pm/pantry/commit/5a8d9d8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: port 863 pkgx build recipes (metadata-only → buildable) ([f872c11](https://github.com/pantry-pm/pantry/commit/f872c11)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: stream live build output to the dashboard log panel ([2b85f96](https://github.com/pantry-pm/pantry/commit/2b85f96)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: add gnu.org/nettle recipe; advance gnutls ([08fca2a](https://github.com/pantry-pm/pantry/commit/08fca2a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: the core builder reports live status to the dashboard ([4abb826](https://github.com/pantry-pm/pantry/commit/4abb826)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: show every package, group by build state, stream build logs ([5a50f66](https://github.com/pantry-pm/pantry/commit/5a50f66)) _(by Chris <chrisbreuer93@gmail.com>)_
+- publish zookeeper/cassandra/solr/neo4j as native pantry packages ([5789b14](https://github.com/pantry-pm/pantry/commit/5789b14)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: live SSE stream for the /packages build dashboard ([ec21d68](https://github.com/pantry-pm/pantry/commit/ec21d68)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **typesense**: native typesense.org pantry package (all platforms) ([2c69043](https://github.com/pantry-pm/pantry/commit/2c69043)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: regenerate generated.zig on every version update ([a17bf9d](https://github.com/pantry-pm/pantry/commit/a17bf9d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: author php's missing dependency recipes from pkgx ([61bfc06](https://github.com/pantry-pm/pantry/commit/61bfc06)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **site**: /packages build dashboard — coverage table + live build status + rebuild ([c9d095a](https://github.com/pantry-pm/pantry/commit/c9d095a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: local darwin-arm64 build script (build gaps on a Mac → Hetzner) ([97cce24](https://github.com/pantry-pm/pantry/commit/97cce24)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: pluggable build-executor driver (github  ([9438dbe](https://github.com/pantry-pm/pantry/commit/9438dbe)) _(by  hetzner  < local)>)_
+- **install**: provision GUI apps and fonts from deps.yaml on macOS ([84d9b28](https://github.com/pantry-pm/pantry/commit/84d9b28)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: build/publish for darwin-x86-64 + linux-arm64 too ([533c10d](https://github.com/pantry-pm/pantry/commit/533c10d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build the GnuPG dep-chain from source to unblock gnupg.org ([380c6a9](https://github.com/pantry-pm/pantry/commit/380c6a9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- **io**: appendToFile creates the file when missing ([374cdde](https://github.com/pantry-pm/pantry/commit/374cdde)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **shell**: lookup stale-entry loop + binary-side autoActivate gate ([22816cf](https://github.com/pantry-pm/pantry/commit/22816cf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **shell**: keep eval'd stdout clean of diagnostics ([187263e](https://github.com/pantry-pm/pantry/commit/187263e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **services**: make generated systemd user units enableable ([4d7f334](https://github.com/pantry-pm/pantry/commit/4d7f334)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **page**: sort package versions newest-first by semver (was reversing insertion order) ([4494a55](https://github.com/pantry-pm/pantry/commit/4494a55)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **mirror**: drop job-level matrix if on download job (not allowed; runs all 4 platforms) ([0834f78](https://github.com/pantry-pm/pantry/commit/0834f78)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **mirror**: run download-only as a SEPARATE parallel job (self-download recipes were starved) ([6fabe01](https://github.com/pantry-pm/pantry/commit/6fabe01)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **action**: detect zig package name from the zig project dir, not repo root ([b5bb3b1](https://github.com/pantry-pm/pantry/commit/b5bb3b1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: resolve package-name aliases on the package page (bun.com → bun.sh) ([ad46413](https://github.com/pantry-pm/pantry/commit/ad46413)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **versions**: download-only uses recency selection (popular packages were stuck at ~5) ([b3a360f](https://github.com/pantry-pm/pantry/commit/b3a360f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **coverage**: correct supportedPlatforms for genuine pkgx gaps + add download-only mirror pass ([9405319](https://github.com/pantry-pm/pantry/commit/9405319)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **report**: only label a package 'mirroring from pkgx' once pkgx confirms it ([28b7f40](https://github.com/pantry-pm/pantry/commit/28b7f40)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **dashboard**: accurate GitHub Actions + Failed stats; 10 parallel mirror jobs ([46c670a](https://github.com/pantry-pm/pantry/commit/46c670a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **mirror**: dynamic matrix so single-platform dispatch works (job if can't see matrix) ([d2dd46d](https://github.com/pantry-pm/pantry/commit/d2dd46d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **mirror**: bypass source-build exclusions in --mirror-only mode ([d047e9d](https://github.com/pantry-pm/pantry/commit/d047e9d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **fleet**: download-only sweep (--mirror-only) to stop slow source-build fallback ([be2cda8](https://github.com/pantry-pm/pantry/commit/be2cda8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: loop-proof empty-install guard + mirror 5 popular versions ([a4f8cfc](https://github.com/pantry-pm/pantry/commit/a4f8cfc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: recipe-grind round 2 — 28 fixes from real CI error tails + 7 skips ([e5f2a2a](https://github.com/pantry-pm/pantry/commit/e5f2a2a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: recipe-grind round 1 — re-align 102 unbuilt source recipes with upstream pkgx ([321e214](https://github.com/pantry-pm/pantry/commit/321e214)) _(by Chris <chrisbreuer93@gmail.com>)_
+- pantry action installs bun even with install:false ([970a810](https://github.com/pantry-pm/pantry/commit/970a810)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use setup-bun in build orchestrator (pantry action install:false omits bun) ([f2cd9ef](https://github.com/pantry-pm/pantry/commit/f2cd9ef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official apktool jar ([e57b856](https://github.com/pantry-pm/pantry/commit/e57b856)) _(by Chris <chrisbreuer93@gmail.com>)_
+- mark zookeeper as download recipe ([8bc436f](https://github.com/pantry-pm/pantry/commit/8bc436f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official zookeeper binaries ([1838dea](https://github.com/pantry-pm/pantry/commit/1838dea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official cabal binaries ([e2c1b2b](https://github.com/pantry-pm/pantry/commit/e2c1b2b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official mas binaries ([0f3e992](https://github.com/pantry-pm/pantry/commit/0f3e992)) _(by Chris <chrisbreuer93@gmail.com>)_
+- allow mole script launchers ([c5d83c9](https://github.com/pantry-pm/pantry/commit/c5d83c9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official mole binaries ([3808619](https://github.com/pantry-pm/pantry/commit/3808619)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official shaka-packager binaries ([a03396a](https://github.com/pantry-pm/pantry/commit/a03396a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official starpls binaries ([78c523e](https://github.com/pantry-pm/pantry/commit/78c523e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official R.swift binaries ([8003565](https://github.com/pantry-pm/pantry/commit/8003565)) _(by Chris <chrisbreuer93@gmail.com>)_
+- name all updated packages in commits ([7b1ebe5](https://github.com/pantry-pm/pantry/commit/7b1ebe5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official Sourcery binaries ([e179808](https://github.com/pantry-pm/pantry/commit/e179808)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official XcodeGen binaries ([0b40392](https://github.com/pantry-pm/pantry/commit/0b40392)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official SwiftGen binaries ([6e265cb](https://github.com/pantry-pm/pantry/commit/6e265cb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- skip mislabeled factotum binaries ([1b8d7db](https://github.com/pantry-pm/pantry/commit/1b8d7db)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official factotum binaries ([83c5eaf](https://github.com/pantry-pm/pantry/commit/83c5eaf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- allow micromamba binary builds ([dfd18a1](https://github.com/pantry-pm/pantry/commit/dfd18a1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- install official micromamba binaries ([fcba571](https://github.com/pantry-pm/pantry/commit/fcba571)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official llama binaries ([d67d0ef](https://github.com/pantry-pm/pantry/commit/d67d0ef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official opencode binaries ([0c7f4d4](https://github.com/pantry-pm/pantry/commit/0c7f4d4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official radicle binaries ([031b584](https://github.com/pantry-pm/pantry/commit/031b584)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official replibyte binaries ([2dc80c4](https://github.com/pantry-pm/pantry/commit/2dc80c4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official render binaries ([f2c4ac3](https://github.com/pantry-pm/pantry/commit/f2c4ac3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- allow amp binary builds ([629ab38](https://github.com/pantry-pm/pantry/commit/629ab38)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official amp binaries ([ca90d23](https://github.com/pantry-pm/pantry/commit/ca90d23)) _(by Chris <chrisbreuer93@gmail.com>)_
+- surface github actions on packages ([f8fbad2](https://github.com/pantry-pm/pantry/commit/f8fbad2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official synth binaries ([20c776d](https://github.com/pantry-pm/pantry/commit/20c776d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official apko binaries ([408566e](https://github.com/pantry-pm/pantry/commit/408566e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official git-branchless binaries ([b4a2028](https://github.com/pantry-pm/pantry/commit/b4a2028)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fallback github actions status to build events ([c95b84a](https://github.com/pantry-pm/pantry/commit/c95b84a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- install official nullclaw and scie-pants binaries ([e0da8ed](https://github.com/pantry-pm/pantry/commit/e0da8ed)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official termusic and scie-pants downloads ([bba5630](https://github.com/pantry-pm/pantry/commit/bba5630)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use official dotnet sdk downloads ([3845932](https://github.com/pantry-pm/pantry/commit/3845932)) _(by Chris <chrisbreuer93@gmail.com>)_
+- allow gcloud launcher downloads ([0ead15c](https://github.com/pantry-pm/pantry/commit/0ead15c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove github actions dashboard widget ([19f8af6](https://github.com/pantry-pm/pantry/commit/19f8af6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- download official code-server binaries ([8857b90](https://github.com/pantry-pm/pantry/commit/8857b90)) _(by Chris <chrisbreuer93@gmail.com>)_
+- allow script launchers in foreign downloads ([deb1db5](https://github.com/pantry-pm/pantry/commit/deb1db5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unblock latest android cmdline tools ([607c42d](https://github.com/pantry-pm/pantry/commit/607c42d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- download official amber and android tools ([3482ca5](https://github.com/pantry-pm/pantry/commit/3482ca5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- reduce build fleet concurrency ([63542b8](https://github.com/pantry-pm/pantry/commit/63542b8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- download official flux and argo binaries ([4adbeb8](https://github.com/pantry-pm/pantry/commit/4adbeb8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- show github actions on build dashboard ([7f6ba7b](https://github.com/pantry-pm/pantry/commit/7f6ba7b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- restore dotnet source classification ([61078d0](https://github.com/pantry-pm/pantry/commit/61078d0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- classify dotnet as official binary download ([048c9f0](https://github.com/pantry-pm/pantry/commit/048c9f0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- download official mise binaries ([3a17947](https://github.com/pantry-pm/pantry/commit/3a17947)) _(by Chris <chrisbreuer93@gmail.com>)_
+- download official spotify player binaries ([beb3fb6](https://github.com/pantry-pm/pantry/commit/beb3fb6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- download official wasm-pack binaries ([1ec7e4b](https://github.com/pantry-pm/pantry/commit/1ec7e4b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- download official sccache binaries ([469db06](https://github.com/pantry-pm/pantry/commit/469db06)) _(by Chris <chrisbreuer93@gmail.com>)_
+- download official arduino cli binaries ([84a09cf](https://github.com/pantry-pm/pantry/commit/84a09cf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- avoid rav1e elf fixup ([783833c](https://github.com/pantry-pm/pantry/commit/783833c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- harden rav1e health check ([232acd5](https://github.com/pantry-pm/pantry/commit/232acd5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- download official rav1e binaries ([105b1ef](https://github.com/pantry-pm/pantry/commit/105b1ef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- refresh doctl release metadata ([c9dfef0](https://github.com/pantry-pm/pantry/commit/c9dfef0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- download official hadolint binaries ([e496ec8](https://github.com/pantry-pm/pantry/commit/e496ec8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- download official bitcoin binaries ([8d8abd7](https://github.com/pantry-pm/pantry/commit/8d8abd7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unskip official spin downloads ([f8acd74](https://github.com/pantry-pm/pantry/commit/f8acd74)) _(by Chris <chrisbreuer93@gmail.com>)_
+- download official spin binaries ([0de22d3](https://github.com/pantry-pm/pantry/commit/0de22d3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- avoid zig reflection field layout ([3c8e3e5](https://github.com/pantry-pm/pantry/commit/3c8e3e5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- make cross pantry module private ([e894dda](https://github.com/pantry-pm/pantry/commit/e894dda)) _(by Chris <chrisbreuer93@gmail.com>)_
+- guard zig run args api ([eecb793](https://github.com/pantry-pm/pantry/commit/eecb793)) _(by Chris <chrisbreuer93@gmail.com>)_
+- support zig build root api change ([683d40e](https://github.com/pantry-pm/pantry/commit/683d40e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- keep worker provisioning shell alive ([2059e73](https://github.com/pantry-pm/pantry/commit/2059e73)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: remove stale SKIP_VERSIONS for converted download recipes ([6337f87](https://github.com/pantry-pm/pantry/commit/6337f87)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert doctl/dhall/joshuto/git-branchless/termusic/exa to prebuilt download ([0405122](https://github.com/pantry-pm/pantry/commit/0405122)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: foreign-target download builds use host tools, not target-arch dep bins ([4d9bb9c](https://github.com/pantry-pm/pantry/commit/4d9bb9c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert shellcheck/postgrest to prebuilt download, harden squawk/jq ([c0a0d10](https://github.com/pantry-pm/pantry/commit/c0a0d10)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: correct pandoc prebuilt download URL + add health checks ([9427b53](https://github.com/pantry-pm/pantry/commit/9427b53)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert qsv, pulumi, mongosh to prebuilt downloads ([7c8c730](https://github.com/pantry-pm/pantry/commit/7c8c730)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert digger + git-credential-manager to prebuilt downloads ([59f69b5](https://github.com/pantry-pm/pantry/commit/59f69b5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert pueue/PowerShell/code-cli/swagger-codegen to prebuilt downloads ([a5b2a4d](https://github.com/pantry-pm/pantry/commit/a5b2a4d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert gitui + openbao to prebuilt download recipes ([dfbb923](https://github.com/pantry-pm/pantry/commit/dfbb923)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert ruff/caddy/helix/lefthook/gopass to prebuilt downloads ([350e568](https://github.com/pantry-pm/pantry/commit/350e568)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert surrealdb/vlang/trivy/argocd to prebuilt downloads ([0b47c75](https://github.com/pantry-pm/pantry/commit/0b47c75)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: drop hyperfine 0.17.0 (no prebuilt asset) ([36688e5](https://github.com/pantry-pm/pantry/commit/36688e5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: drop unobtainable vamp 2.9.0 version ([22814d3](https://github.com/pantry-pm/pantry/commit/22814d3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert rome to prebuilt download ([fac0d90](https://github.com/pantry-pm/pantry/commit/fac0d90)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert kube-linter to prebuilt download (v0.6.1+) ([f119e1d](https://github.com/pantry-pm/pantry/commit/f119e1d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: yaml-cpp handle 0.8.0 bare tag scheme ([b700803](https://github.com/pantry-pm/pantry/commit/b700803)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: jmeter download from archive.apache.org ([d405061](https://github.com/pantry-pm/pantry/commit/d405061)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert hyperfine and biome to prebuilt downloads ([ff9b513](https://github.com/pantry-pm/pantry/commit/ff9b513)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: convert moon, llrt, mergestat-lite to prebuilt downloads ([ef207bb](https://github.com/pantry-pm/pantry/commit/ef207bb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **dashboard**: Building now reflects real builds-in-flight (building-first) ([2822967](https://github.com/pantry-pm/pantry/commit/2822967)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **zig**: publish under canonical hyphenated name (server + action) ([9f71dff](https://github.com/pantry-pm/pantry/commit/9f71dff)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **zig**: spawned child processes inherit the OS environment ([82d58d9](https://github.com/pantry-pm/pantry/commit/82d58d9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **zig**: release clean-tree guard ignores untracked files ([d650079](https://github.com/pantry-pm/pantry/commit/d650079)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **zig**: release command does commit+tag+push (no direct publish) ([0ef2bc5](https://github.com/pantry-pm/pantry/commit/0ef2bc5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: PyGObject add glib dep for girepository-2.0 ([5dff942](https://github.com/pantry-pm/pantry/commit/5dff942)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: gobject-introspection skip -Dtests for <1.84.0 ([761fc53](https://github.com/pantry-pm/pantry/commit/761fc53)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: raccoin restrict to v0.2.0+ (drop uncompilable v0.1.0) ([c346af6](https://github.com/pantry-pm/pantry/commit/c346af6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **action**: normalize zig package name underscores to hyphens on publish (#206) ([ae5d8f5](https://github.com/pantry-pm/pantry/commit/ae5d8f5)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#206](https://github.com/pantry-pm/pantry/issues/206), [#206](https://github.com/pantry-pm/pantry/issues/206))
+- **recipes**: man-db remove self-referential lib/man-db symlink (ELOOP) ([43ba220](https://github.com/pantry-pm/pantry/commit/43ba220)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: ncurses use marketing version for upstream tarball URL ([78fbf1b](https://github.com/pantry-pm/pantry/commit/78fbf1b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: trivy enable GOEXPERIMENT=jsonv2 for 0.66.0+ ([4ea43ee](https://github.com/pantry-pm/pantry/commit/4ea43ee)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: suitesparse remove unterminated quote in CMAKE_ARGS ([823ed80](https://github.com/pantry-pm/pantry/commit/823ed80)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: lapack remove broken orphaned sed patch step ([4d60c1f](https://github.com/pantry-pm/pantry/commit/4d60c1f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: at-spi2-atk add gobject-introspection + glib build deps ([422210b](https://github.com/pantry-pm/pantry/commit/422210b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: fish create out-of-source build dir before cmake ([aef0a12](https://github.com/pantry-pm/pantry/commit/aef0a12)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: download org-stats official prebuilt binaries (1.7.0+) ([d17064b](https://github.com/pantry-pm/pantry/commit/d17064b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: download sd + asciinema official prebuilt binaries ([e50aef1](https://github.com/pantry-pm/pantry/commit/e50aef1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: download mkcert + volta official prebuilt binaries ([4f5ce01](https://github.com/pantry-pm/pantry/commit/4f5ce01)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **zig**: zig fmt desktop_apps.zig to satisfy format check ([02578ab](https://github.com/pantry-pm/pantry/commit/02578ab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **lint**: trim duplicate trailing newline in two props READMEs ([e858c6e](https://github.com/pantry-pm/pantry/commit/e858c6e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: type req.json() body to allow property access ([dcd3066](https://github.com/pantry-pm/pantry/commit/dcd3066)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: quote numeric dependency versions for typecheck ([b92680c](https://github.com/pantry-pm/pantry/commit/b92680c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: skip non-existent versions instead of failing on them ([cfdbaea](https://github.com/pantry-pm/pantry/commit/cfdbaea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: postgrest handle pre-v12 asset naming ([9e0b4b3](https://github.com/pantry-pm/pantry/commit/9e0b4b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: solana fall back to solana-labs for older versions ([4f46980](https://github.com/pantry-pm/pantry/commit/4f46980)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **dashboard**: one source of truth for Building count + remove Partial card ([68878c2](https://github.com/pantry-pm/pantry/commit/68878c2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **dashboard**: correct + stabilize coverage counts ([d310897](https://github.com/pantry-pm/pantry/commit/d310897)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: rhash.sourceforge.net pin --cc so configure finds the compiler ([181bbc4](https://github.com/pantry-pm/pantry/commit/181bbc4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: hadrons.org/libmd carry macOS symbol-alias patch via propsDir ([bc4dcaa](https://github.com/pantry-pm/pantry/commit/bc4dcaa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: gflags.github.io align working dir keys to build ([2b17c3d](https://github.com/pantry-pm/pantry/commit/2b17c3d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: glaros.dtc.umn.edu/metis guard missing graphs/ before mv ([ac5f5db](https://github.com/pantry-pm/pantry/commit/ac5f5db)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: x.org/sm disable docs/specs so configure skips xorg-sgml-doctools ([30b7ff8](https://github.com/pantry-pm/pantry/commit/30b7ff8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: x.org/xfixes build via autotools not meson ([7f60e9a](https://github.com/pantry-pm/pantry/commit/7f60e9a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **fleet**: inject PANTRY_REGISTRY_TOKEN into box env on configure ([20df539](https://github.com/pantry-pm/pantry/commit/20df539)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **fleet**: make primary box optional (it gets torn down for cost saving) ([49b34a6](https://github.com/pantry-pm/pantry/commit/49b34a6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: open-mpi.org guard *.mod install glob against no matches ([08cfac8](https://github.com/pantry-pm/pantry/commit/08cfac8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: coder.com/code-server pin node ^22 (postinstall requires v22, resolved to 26) ([8d81271](https://github.com/pantry-pm/pantry/commit/8d81271)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: gnutls.org cap nettle <4 (nettle 4.0 broke nettle_md5_digest API) ([47bc31f](https://github.com/pantry-pm/pantry/commit/47bc31f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: solr.apache.org restrict version tags to standalone Solr 9+ (skip unreachable 1.x) ([8164366](https://github.com/pantry-pm/pantry/commit/8164366)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: github.com/libfuse/libfuse guard arm64 fuse_kernel.h sed against unset $PROP ([5fc7169](https://github.com/pantry-pm/pantry/commit/5fc7169)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: msgpack.org force msgpack.pc symlink (idempotent ln -sf) ([7cd6a23](https://github.com/pantry-pm/pantry/commit/7cd6a23)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: libgcrypt pin gpgrt-config to dep, not system arm64 copy ([d82db9a](https://github.com/pantry-pm/pantry/commit/d82db9a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: apr-util ignore stale apr cc-wrapper path in CPP ([198a5ed](https://github.com/pantry-pm/pantry/commit/198a5ed)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: raccoin.org quote injected VERSION &str literal ([4ba1dc2](https://github.com/pantry-pm/pantry/commit/4ba1dc2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: github.com/aws-cloudformation/cfn-lint keep quotes when patching version.py ([e439d9c](https://github.com/pantry-pm/pantry/commit/e439d9c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: github.com/mycreepy/pakku build with --snapshot (clone has no tags) ([721c0ba](https://github.com/pantry-pm/pantry/commit/721c0ba)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: asciidoctor.org strip deprecated has_rdoc/rubyforge_project from old gemspecs ([4d1a1b5](https://github.com/pantry-pm/pantry/commit/4d1a1b5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: wayland.freedesktop.org/protocols prefer our wayland-scanner over stale host one ([18ff2e3](https://github.com/pantry-pm/pantry/commit/18ff2e3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: x.org/libfontenc add font-util build dep (new x.org/font-util recipe) ([6cc5195](https://github.com/pantry-pm/pantry/commit/6cc5195)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: gomplate.ca bump Go build dep to >=1.25 for v5 go.mod ([92e3ab0](https://github.com/pantry-pm/pantry/commit/92e3ab0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: github.com/aristocratos/btop guard 1.3.x intel_gpu_top sed + use clang on darwin ([4de7426](https://github.com/pantry-pm/pantry/commit/4de7426)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: docker.com/cli fix malformed man-page install loop syntax ([8f26d03](https://github.com/pantry-pm/pantry/commit/8f26d03)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: libnl rewrite deprecated bison %error-verbose directive ([fca7ea7](https://github.com/pantry-pm/pantry/commit/fca7ea7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: ijg.org always overwrite stale 2011 config.guess (arm64) ([a9415b7](https://github.com/pantry-pm/pantry/commit/a9415b7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: x.org/protocol migrate to gitlab mirror + autogen bootstrap ([33bc993](https://github.com/pantry-pm/pantry/commit/33bc993)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: buildkit arm64 multiarch paths + apply relaxed CFLAGS on all linux arches ([9ca92ac](https://github.com/pantry-pm/pantry/commit/9ca92ac)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: ffmpeg.org add codec dep pkgconfig dirs to PKG_CONFIG_PATH (x265 not found) ([c95068e](https://github.com/pantry-pm/pantry/commit/c95068e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: gnome.org/pango forbid bundled glib subproject (--wrap-mode=nodownload) ([b0a700b](https://github.com/pantry-pm/pantry/commit/b0a700b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: abseil.io relocatable cmake config (relative LIBDIR, 3-level rewrite) ([30cfbe4](https://github.com/pantry-pm/pantry/commit/30cfbe4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: x.org util-macros/libcvt/apps migrate to gitlab mirror (archive 404) ([74cdcdf](https://github.com/pantry-pm/pantry/commit/74cdcdf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: x.org font/misc libs migrate to gitlab mirror (archive 404) ([82db035](https://github.com/pantry-pm/pantry/commit/82db035)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: x.org extension libs migrate to gitlab mirror (archive 404) ([4e58212](https://github.com/pantry-pm/pantry/commit/4e58212)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: x.org core libs migrate to gitlab mirror (archive 404) ([4a2cf58](https://github.com/pantry-pm/pantry/commit/4a2cf58)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **fleet**: actually bump MAX_VERSIONS to 5 (prior sed no-op'd on the  ([da74683](https://github.com/pantry-pm/pantry/commit/da74683)) _(by  < delimiter)>)_
+- **recipes**: argocd build CLI only (skip UI/yarn/fsevents native build) ([1241f64](https://github.com/pantry-pm/pantry/commit/1241f64)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: puzzles inline darwin launcher wrapper + BSD-compatible install ([8501607](https://github.com/pantry-pm/pantry/commit/8501607)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: pkl-lang.org install prebuilt native binaries instead of gradle build ([e2d006b](https://github.com/pantry-pm/pantry/commit/e2d006b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: azcopy use GO_LDFLAGS + move -buildmode=pie to build args + pin ref ([4c6da91](https://github.com/pantry-pm/pantry/commit/4c6da91)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: terragrunt use GO_LDFLAGS to avoid C rpath flags in go linker ([31adb36](https://github.com/pantry-pm/pantry/commit/31adb36)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: libfuse restrict to linux (no macOS support upstream) ([46836d3](https://github.com/pantry-pm/pantry/commit/46836d3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: PJK/libcbor use _build dir to avoid BUILD-file collision on macOS ([e882c03](https://github.com/pantry-pm/pantry/commit/e882c03)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: x.org/applewm fetch from freedesktop gitlab + autogen bootstrap ([014c0d8](https://github.com/pantry-pm/pantry/commit/014c0d8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: x.org/xfixes fetch from freedesktop gitlab + build via meson ([a795b01](https://github.com/pantry-pm/pantry/commit/a795b01)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: zookeeper restrict version tags to plain X.Y.Z releases ([5c72452](https://github.com/pantry-pm/pantry/commit/5c72452)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: mtoyoda/sl link ncursesw via pkg-config (ncurses 6 tinfo split) ([5615a1a](https://github.com/pantry-pm/pantry/commit/5615a1a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: netflix.com/vmaf build from libvmaf subdir + pin git ref ([c4ce9be](https://github.com/pantry-pm/pantry/commit/c4ce9be)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: man-db point groff at dep font/macro paths for man-page gen ([6468fd2](https://github.com/pantry-pm/pantry/commit/6468fd2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: jenkins-x.io build jx from ./cmd with version ldflag ([ed854a6](https://github.com/pantry-pm/pantry/commit/ed854a6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: stress-ng use capital-V zero-padded tag in distributable url ([aff0a8f](https://github.com/pantry-pm/pantry/commit/aff0a8f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: sr.ht/scdoc drop empty LDFLAGS arg that broke link line ([251286d](https://github.com/pantry-pm/pantry/commit/251286d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: stop injecting -Wl,-rpath into LDFLAGS for darwin Go builds ([73057e9](https://github.com/pantry-pm/pantry/commit/73057e9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **dashboard**: reject non-package events + show binaries-published count ([168be18](https://github.com/pantry-pm/pantry/commit/168be18)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **fleet**: interpolate watchdog caps into daemon (was bash unbound-var crash loop) ([e0cb38a](https://github.com/pantry-pm/pantry/commit/e0cb38a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: freedesktop.org/poppler-qt5 fix unterminated quote in CMAKE_ARGS ([2265842](https://github.com/pantry-pm/pantry/commit/2265842)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: github.com/google/shaderc skip copyright check target ([2410776](https://github.com/pantry-pm/pantry/commit/2410776)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: apache.org/jmeter inline plugins-manager fetch, skip cert check ([a1c06b3](https://github.com/pantry-pm/pantry/commit/a1c06b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: ny RUSTC_BOOTSTRAP for nightly feats; docker-machine GOPATH layout ([852e994](https://github.com/pantry-pm/pantry/commit/852e994)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: khanacademy.org/genqlient bump x/tools for modern Go ([1f698e1](https://github.com/pantry-pm/pantry/commit/1f698e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: go.uber.org/mock/mockgen check out tag for goreleaser ([51a6472](https://github.com/pantry-pm/pantry/commit/51a6472)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: libimobiledevice guard Homebrew libtool block to darwin ([3c521fe](https://github.com/pantry-pm/pantry/commit/3c521fe)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: export PANTRY_REGISTRY_TOKEN in build workflows so dashboard reporting stops 401ing ([5b54c1a](https://github.com/pantry-pm/pantry/commit/5b54c1a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: apple.com/remote_cmds restrict to darwin (xcodebuild, macOS-only) ([2a43935](https://github.com/pantry-pm/pantry/commit/2a43935)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: micro-editor.github.io real go build (was placeholder echo) ([cecad2f](https://github.com/pantry-pm/pantry/commit/cecad2f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: openslide use meson build; libtiff disable lerc/libdeflate ([f0aec88](https://github.com/pantry-pm/pantry/commit/f0aec88)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: SwiftLint unzip prebuilt binary into prefix/bin ([b36c544](https://github.com/pantry-pm/pantry/commit/b36c544)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: python-tabulate rm -rf props + pin git ref ([2da6067](https://github.com/pantry-pm/pantry/commit/2da6067)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: gnutls --without-p11-kit + hexedit version-patch prop ([567e453](https://github.com/pantry-pm/pantry/commit/567e453)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: SketchyBar restrict to darwin (macOS Cocoa/yabai) ([09ecbe7](https://github.com/pantry-pm/pantry/commit/09ecbe7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: create2crunch restrict to darwin (linux needs libOpenCL) ([b23ad98](https://github.com/pantry-pm/pantry/commit/b23ad98)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: lunarvim symlink neovim dep (install-neovim-from-release 404) ([603064d](https://github.com/pantry-pm/pantry/commit/603064d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: pls bump to beta.13 (beta.3 pins dead rust-users git dep) ([2b78767](https://github.com/pantry-pm/pantry/commit/2b78767)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: wireshark disable GnuTLS (unbuildable dep) to unblock build ([3e18b86](https://github.com/pantry-pm/pantry/commit/3e18b86)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: pake-cli use uppercase V{version} release tag ([eef30c4](https://github.com/pantry-pm/pantry/commit/eef30c4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: libaec fix prefix quote-leak + build shared libs ([7f2ac82](https://github.com/pantry-pm/pantry/commit/7f2ac82)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: kiro.dev/cli restore missing shim props files + propsDir ([3a09a5e](https://github.com/pantry-pm/pantry/commit/3a09a5e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: project-copacetic (copa) add real go build + tag ref ([35a7432](https://github.com/pantry-pm/pantry/commit/35a7432)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: google-maps-scraper inline lost version-injection sed (was $PROP) ([a70e6f5](https://github.com/pantry-pm/pantry/commit/a70e6f5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: air build with go build (skip make check golangci-lint) ([a4a3c2d](https://github.com/pantry-pm/pantry/commit/a4a3c2d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: codex use real rust-v{version} release tag ([3cb8db1](https://github.com/pantry-pm/pantry/commit/3cb8db1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: dssim drop --locked (yanked crossbeam-channel in lockfile) ([8f435e5](https://github.com/pantry-pm/pantry/commit/8f435e5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: sing-box install binary via GO_ARGS -o + build tags ([add79f8](https://github.com/pantry-pm/pantry/commit/add79f8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: pkgx.sh/dev restore launcher prop + fix app-version echo quoting ([93c40f9](https://github.com/pantry-pm/pantry/commit/93c40f9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: HDF5 drop --enable-fortran (no gfortran in gcc dep) ([3adcf0e](https://github.com/pantry-pm/pantry/commit/3adcf0e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: x265 restore 8bit base working-directory (source dir not found) ([22497a0](https://github.com/pantry-pm/pantry/commit/22497a0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: alpaca.cpp drop missing props wrappers, install chat as binary ([f8df01c](https://github.com/pantry-pm/pantry/commit/f8df01c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: aom build out-of-tree from a created out/ dir (CMakeLists not found) ([5d3e8c5](https://github.com/pantry-pm/pantry/commit/5d3e8c5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: cedarpolicy/cli restore cedar-policy-cli workdir + version-bump prop ([a5dfd89](https://github.com/pantry-pm/pantry/commit/a5dfd89)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: libnsl add libtirpc include/lib + pkgconfig to find rpc/rpc.h ([b66207f](https://github.com/pantry-pm/pantry/commit/b66207f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: sanitize baked _cc_wrapper/cc path in installed libtool (fixes libtermkey) ([df84115](https://github.com/pantry-pm/pantry/commit/df84115)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: wayland-protocols + docbook-xsl download/extract ([b40c27b](https://github.com/pantry-pm/pantry/commit/b40c27b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: pkgm/arduino-cli/libdnf5 extraction + prop fixes ([8340caa](https://github.com/pantry-pm/pantry/commit/8340caa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: minizip/sqruff/leo build-dir + git ref alignment ([97318ea](https://github.com/pantry-pm/pantry/commit/97318ea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **fleet**: bound the daemon wait + harden rebalance restart ([bbaac1e](https://github.com/pantry-pm/pantry/commit/bbaac1e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **fleet**: kill build process group on per-package timeout ([48f106f](https://github.com/pantry-pm/pantry/commit/48f106f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **env**: wait long enough for first-run service init before post-setup ([6ee0b13](https://github.com/pantry-pm/pantry/commit/6ee0b13)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **install**: double-free in download analytics flush ([e4b59b0](https://github.com/pantry-pm/pantry/commit/e4b59b0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **env**: reinstall when the project's pantry/ install was deleted ([dd46386](https://github.com/pantry-pm/pantry/commit/dd46386)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **recipes**: build shovel from ./cmd/shovel with valid pie flag ([363f399](https://github.com/pantry-pm/pantry/commit/363f399)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: update info-zip.org/zip debian patch source to 3.0-13 ([b67902a](https://github.com/pantry-pm/pantry/commit/b67902a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: add python3-dev/libcairo2-dev/libffi-dev to fleet libs ([e55743d](https://github.com/pantry-pm/pantry/commit/e55743d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: restore missing props files for automake + tar source builds ([8c73244](https://github.com/pantry-pm/pantry/commit/8c73244)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: gobject-introspection use python3 + disable gtk_doc/tests ([044b659](https://github.com/pantry-pm/pantry/commit/044b659)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: drop docbook manpage build from libsecret ([dd51606](https://github.com/pantry-pm/pantry/commit/dd51606)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: disable gobject-introspection in 4 gnome meson libs ([b12d2e8](https://github.com/pantry-pm/pantry/commit/b12d2e8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build libnl parsers serially to dodge -j race ([3d00c11](https://github.com/pantry-pm/pantry/commit/3d00c11)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: give libnl a reachable m4 for bison skeleton expansion ([6e69e23](https://github.com/pantry-pm/pantry/commit/6e69e23)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: pin dive tag for goreleaser git state ([6a938ca](https://github.com/pantry-pm/pantry/commit/6a938ca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: repair diff-so-fancy install (drop broken sed, sibling lib) ([1143090](https://github.com/pantry-pm/pantry/commit/1143090)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: correct psutils download URL + entry points ([ef6c459](https://github.com/pantry-pm/pantry/commit/ef6c459)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: disable introspection for libxmlb linux build ([c6bb80e](https://github.com/pantry-pm/pantry/commit/c6bb80e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: resolve pressly/sup deps from network (stale vendor dir) ([5d994c6](https://github.com/pantry-pm/pantry/commit/5d994c6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build pressly/sup from vendored deps (no go.mod in tarball) ([e0a88eb](https://github.com/pantry-pm/pantry/commit/e0a88eb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: patch out luv's find_package(Lua) for Lua 5.5 ([9cc79c9](https://github.com/pantry-pm/pantry/commit/9cc79c9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: point luv Lua build at lua.org dep explicitly ([1eecc2f](https://github.com/pantry-pm/pantry/commit/1eecc2f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: make luv build against Lua 5.5 lua.h ([d6f944b](https://github.com/pantry-pm/pantry/commit/d6f944b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: pin luv build to Lua 5.4 ([93e95e2](https://github.com/pantry-pm/pantry/commit/93e95e2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: restore missing sed prop in mbedtls build ([1b5cb25](https://github.com/pantry-pm/pantry/commit/1b5cb25)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: unquote luv CMAKE_INSTALL_PREFIX flag ([7efbb72](https://github.com/pantry-pm/pantry/commit/7efbb72)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build squashfs-tools from squashfs-tools subdir on linux ([afe31d4](https://github.com/pantry-pm/pantry/commit/afe31d4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: pin libfuse meson libdir to prefix/lib ([14de7b9](https://github.com/pantry-pm/pantry/commit/14de7b9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: pin snipkit to release tag for goreleaser build ([953c66a](https://github.com/pantry-pm/pantry/commit/953c66a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: install swiftenv scripts into prefix ([4d8d26d](https://github.com/pantry-pm/pantry/commit/4d8d26d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build gnome-extensions-cli via pip PEP517 install ([5812365](https://github.com/pantry-pm/pantry/commit/5812365)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: pin pike to release tag, drop missing set-version.sh ([e95c8a3](https://github.com/pantry-pm/pantry/commit/e95c8a3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: jasper opt out of in-source-build guard via ALLOW_IN_SOURCE_BUILD ([e09ae33](https://github.com/pantry-pm/pantry/commit/e09ae33)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: discover pycparser site-packages for health check ([5b157a5](https://github.com/pantry-pm/pantry/commit/5b157a5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: set PYTHONPATH for pycparser health check ([0d2ba16](https://github.com/pantry-pm/pantry/commit/0d2ba16)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: add missing props files for glauth build ([2dadf56](https://github.com/pantry-pm/pantry/commit/2dadf56)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: resolve pycparser release_v tags via GitHub API ([5b9c5d1](https://github.com/pantry-pm/pantry/commit/5b9c5d1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: pin container-structure-test checkout to release tag ([daa44e6](https://github.com/pantry-pm/pantry/commit/daa44e6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: glauth — quote the injected Go const Version (was invalid 'const Version = 2.4.0') ([f4f57bc](https://github.com/pantry-pm/pantry/commit/f4f57bc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: add g++-14/gcc-14 to fleet system toolchain ([c77c423](https://github.com/pantry-pm/pantry/commit/c77c423)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: pass CXX=g++-14 to btop make (buildkit clobbers build.env CXX) ([a38d7b5](https://github.com/pantry-pm/pantry/commit/a38d7b5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build btop with g++-14 for C++23 std::ranges::to ([c36c19f](https://github.com/pantry-pm/pantry/commit/c36c19f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: fontconfig — bypass freetype pkg-config private-dep probe ([8e8ecb2](https://github.com/pantry-pm/pantry/commit/8e8ecb2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: glib build with introspection disabled (g-ir-scanner is a circular dep) ([516a3f8](https://github.com/pantry-pm/pantry/commit/516a3f8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: install lefthook binary to absolute prefix/bin ([1a49eea](https://github.com/pantry-pm/pantry/commit/1a49eea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: add GL/EGL dev libs to fleet system-fallback set ([9e068ba](https://github.com/pantry-pm/pantry/commit/9e068ba)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build streebog with -fcommon instead of missing props/32.patch ([89fd0fe](https://github.com/pantry-pm/pantry/commit/89fd0fe)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: provision system-fallback dev libs on fleet boxes ([89dafe0](https://github.com/pantry-pm/pantry/commit/89dafe0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **buildkit**: strip LD_LIBRARY_PATH for sudo (PAM poisoning) ([67c4eba](https://github.com/pantry-pm/pantry/commit/67c4eba)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: resolve GitHub tag from distributable URL for native recipes (zero-pad/date tags) ([85f9c96](https://github.com/pantry-pm/pantry/commit/85f9c96)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: ensure setuptools/wheel/packaging for direct python (setup.py/pip) builds ([b90f701](https://github.com/pantry-pm/pantry/commit/b90f701)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: compile vendored minizip directly for freexl ([f8f33e1](https://github.com/pantry-pm/pantry/commit/f8f33e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: restore props from pkgx upstream (gpt-engineer, nex, google-maps-scraper) + propsDir ([4621ce2](https://github.com/pantry-pm/pantry/commit/4621ce2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build vendored minizip for freexl (unpublished dep) ([3812c8d](https://github.com/pantry-pm/pantry/commit/3812c8d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: restore missing props files from pkgx upstream (mop, sl) + propsDir ([7604f80](https://github.com/pantry-pm/pantry/commit/7604f80)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: gopass — install prebuilt binary to {{prefix}}/bin (was left in ./bin) ([db767bb](https://github.com/pantry-pm/pantry/commit/db767bb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: libfuse meson — setup from $SRCROOT (not ..), compile/install in build/ ([a9b0128](https://github.com/pantry-pm/pantry/commit/a9b0128)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: mark macOS-only tools darwin-only (xcparse, tmux-MacOSX-pasteboard, mactop) ([849a230](https://github.com/pantry-pm/pantry/commit/849a230)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: dep resolver ignores S3 versions not in the catalog (ghost-version guard) ([dbcf138](https://github.com/pantry-pm/pantry/commit/dbcf138)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: add glib buildDependency to shared-mime-info ([7dbf24e](https://github.com/pantry-pm/pantry/commit/7dbf24e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: repair tabiew/spider_cli/wordl crates.io source builds ([489eff6](https://github.com/pantry-pm/pantry/commit/489eff6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: unquote zstd cmake prefix/cxx-flags tokens ([48caada](https://github.com/pantry-pm/pantry/commit/48caada)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: correct zstd cmake source dir to build/cmake ([8b541f1](https://github.com/pantry-pm/pantry/commit/8b541f1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: dasel — go install ./cmd/dasel (CLI main moved out of root) ([c273dae](https://github.com/pantry-pm/pantry/commit/c273dae)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build rage from workspace subdir (--path rage) ([5452055](https://github.com/pantry-pm/pantry/commit/5452055)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: skim default to stable toolchain (buildkit strips rust-toolchain.toml) ([f96f166](https://github.com/pantry-pm/pantry/commit/f96f166)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build spicedb from ./cmd/spicedb with version ldflag ([256882d](https://github.com/pantry-pm/pantry/commit/256882d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: correct GitHub release tag format for mdcat/samply/skim ([1f735b1](https://github.com/pantry-pm/pantry/commit/1f735b1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: accurate 'building' count + drop rebuild column when logged out ([4c86292](https://github.com/pantry-pm/pantry/commit/4c86292)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: also sanitize cc-wrapper path in apr installed libtool ([4e4c33a](https://github.com/pantry-pm/pantry/commit/4e4c33a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: keep VAR= prefix when sanitizing apr cc-wrapper path ([f3e1669](https://github.com/pantry-pm/pantry/commit/f3e1669)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: disable ARROW_GANDIVA to drop LLVM requirement ([2a19ddc](https://github.com/pantry-pm/pantry/commit/2a19ddc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: sanitize buildkit cc-wrapper path in apr installed config ([4639af7](https://github.com/pantry-pm/pantry/commit/4639af7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build apache.org/arrow from cpp/ subdir ([b0eed64](https://github.com/pantry-pm/pantry/commit/b0eed64)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: scope darwin-only build-failure skips to darwin ([4c9df6c](https://github.com/pantry-pm/pantry/commit/4c9df6c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: provision working scons for serf source build ([4771b01](https://github.com/pantry-pm/pantry/commit/4771b01)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: restore git-crypt distributable block ([3bd6d51](https://github.com/pantry-pm/pantry/commit/3bd6d51)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build git-crypt without optional man page ([6e3ec25](https://github.com/pantry-pm/pantry/commit/6e3ec25)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: restore serf SConstruct prop sed script ([286470c](https://github.com/pantry-pm/pantry/commit/286470c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: daemontools strip to package dir so build steps resolve ([3cb7b69](https://github.com/pantry-pm/pantry/commit/3cb7b69)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: carry darwinsys.com/file relocatable.diff props ([186170d](https://github.com/pantry-pm/pantry/commit/186170d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: autoconf — remove broken bin/autoconf prefix rewrite (4th interpolation trap) ([4424382](https://github.com/pantry-pm/pantry/commit/4424382)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: autoconf step7 — autom4te.cfg $PREFIX also interpolated to empty (m4sugar fix) ([8900365](https://github.com/pantry-pm/pantry/commit/8900365)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: set autom4te_perllibdir/AC_MACRODIR/ACLOCAL_PATH from deps (autotools cluster) ([5b142cd](https://github.com/pantry-pm/pantry/commit/5b142cd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: autoconf relocation emitted broken autoreconf (the REAL autotools-cluster bug) ([42e6024](https://github.com/pantry-pm/pantry/commit/42e6024)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: reject empty-content tarballs (recursive file check) ([739e28e](https://github.com/pantry-pm/pantry/commit/739e28e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build/ subdir for 21 meson recipes ('meson ... ..' needs build subdir) ([518943c](https://github.com/pantry-pm/pantry/commit/518943c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: source-highlight — build with -std=gnu++14 (C++17 rejects throw()) ([cd84e72](https://github.com/pantry-pm/pantry/commit/cd84e72)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: liblmdb — write lmdb.pc inline (was cp $PROP with empty var) ([86cd843](https://github.com/pantry-pm/pantry/commit/86cd843)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: git-gone moved to Codeberg (GitHub 404s) ([0a4483d](https://github.com/pantry-pm/pantry/commit/0a4483d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: source URL tags — file (2-part 5.47), arduino-cli (v prefix), xcodeproj (no v prefix) ([9d31d22](https://github.com/pantry-pm/pantry/commit/9d31d22)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **catalog**: drop autoconf 2.73 alpha (breaks autoreconf for 9+ autotools packages) ([44d5c11](https://github.com/pantry-pm/pantry/commit/44d5c11)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build/ subdir for 8 cmake recipes using 'cmake $ARGS ..' (missed by cmake-.. detector) ([538a7e5](https://github.com/pantry-pm/pantry/commit/538a7e5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: fleet daemon via systemd, disable baked-in sweep service ([38482af](https://github.com/pantry-pm/pantry/commit/38482af)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: jasper use objdir not build/ (source ships its own build/, tripped in-source-build guard) ([116814d](https://github.com/pantry-pm/pantry/commit/116814d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: provisioner launch — newline-join + verify daemon started ([9af17c6](https://github.com/pantry-pm/pantry/commit/9af17c6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: recipe-loader dropped build-level working-directory (read kebab not camelCase) ([8ca9e38](https://github.com/pantry-pm/pantry/commit/8ca9e38)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: shovel source URL uses 2-part tag (v1.6 not v1.6.0) ([da8077d](https://github.com/pantry-pm/pantry/commit/da8077d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: clean depsDir after each build to stop disk exhaustion ([01a14ca](https://github.com/pantry-pm/pantry/commit/01a14ca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: gnu tar url uses 2-part version (tar-1.35 not tar-1.35.0) ([c5a7475](https://github.com/pantry-pm/pantry/commit/c5a7475)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: yajl — patch CMake LOCATION to TARGET_FILE genexpr ([437104e](https://github.com/pantry-pm/pantry/commit/437104e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: yajl CMake LOCATION policy + avro lang/c source dir ([a768b10](https://github.com/pantry-pm/pantry/commit/a768b10)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: liblmdb source URL needs LMDB_ tag prefix (LMDB_0.9.35 not v0.9.35) ([2990cb9](https://github.com/pantry-pm/pantry/commit/2990cb9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build/ subdir for protobuf, c-ares, lapack (cmake .. with ..-relative per-step dirs) ([edea01b](https://github.com/pantry-pm/pantry/commit/edea01b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **dashboard**: 'Building now' count matched reality ([acfe514](https://github.com/pantry-pm/pantry/commit/acfe514)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: resolve transitive deps for native TS recipes ([86cf67a](https://github.com/pantry-pm/pantry/commit/86cf67a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: cargo workspace bin-crate paths (typos -> crates/typos-cli, dexios -> dexios) ([03cd773](https://github.com/pantry-pm/pantry/commit/03cd773)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: build/ subdir for 5 more cmake recipes (utfcpp, eigen, rpm, libwebsockets, openblas) ([8c08a59](https://github.com/pantry-pm/pantry/commit/8c08a59)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: vfkit darwin-only (Apple Virtualization.framework); berkeley-db build/ subdir (../dist/configure) ([7f542e5](https://github.com/pantry-pm/pantry/commit/7f542e5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: restore working-directory:build for 34 cmake recipes (dropped in pkgx port) ([cb4d116](https://github.com/pantry-pm/pantry/commit/cb4d116)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: strip literal quotes from configure/cmake flag tokens (44 recipes) ([0b79e9f](https://github.com/pantry-pm/pantry/commit/0b79e9f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **site**: update stale home-lang/pantry github links to pantry-pm ([7bc7bb4](https://github.com/pantry-pm/pantry/commit/7bc7bb4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **site**: mobile nav stuck open; un-pin nav display from crosswind flex utility ([ebaff84](https://github.com/pantry-pm/pantry/commit/ebaff84)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: repair source URLs + workspace path (unxip tag, macos-term-size asset, lzip mirror, imessage-exporter crate) ([03c2f62](https://github.com/pantry-pm/pantry/commit/03c2f62)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: mark 9 macOS-only tools darwin-only (yabai, skhd, Carthage, SourceKitten, LicensePlist, screenresolution, terminal-notifier, duti, ios-deploy) ([e89c6e5](https://github.com/pantry-pm/pantry/commit/e89c6e5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: tcl configure lives in unix/ subdir; applesimutils is darwin-only ([5c8a1ce](https://github.com/pantry-pm/pantry/commit/5c8a1ce)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: port pkgx platforms: restriction to 14 OS-specific recipes ([55e7d53](https://github.com/pantry-pm/pantry/commit/55e7d53)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: mark macOS/Xcode-only tools darwin-only (stop linux failures) ([41b1872](https://github.com/pantry-pm/pantry/commit/41b1872)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: quote the interpolated version in manifest rewrites ([b4ddc3b](https://github.com/pantry-pm/pantry/commit/b4ddc3b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: resolve {{version.tag}} for 15 non-v-tag packages ([4d1260c](https://github.com/pantry-pm/pantry/commit/4d1260c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: move live build log to a stable bottom drawer (no flicker) ([e1d3918](https://github.com/pantry-pm/pantry/commit/e1d3918)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: strip escaped-quote-wrapped templates in 40 more recipes ([d339fef](https://github.com/pantry-pm/pantry/commit/d339fef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: restore 60 recipes the quote-strip regex broke ([797c1b7](https://github.com/pantry-pm/pantry/commit/797c1b7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: strip quotes wrapping {{templates}} in ARGS (540 recipes) ([26a0f13](https://github.com/pantry-pm/pantry/commit/26a0f13)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: don't let a stdout tee fault crash the build run ([eddcdc7](https://github.com/pantry-pm/pantry/commit/eddcdc7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **env**: de-duplicate PATH entries in generated activation code ([aba90c6](https://github.com/pantry-pm/pantry/commit/aba90c6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **env**: keep `pantry env` stdout clean so eval can't break ([2662a98](https://github.com/pantry-pm/pantry/commit/2662a98)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **recipes**: ollama.ai + openshift.com build on linux (verified) ([98f5820](https://github.com/pantry-pm/pantry/commit/98f5820)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: grind linux-x86-64 build failures (16 recipes) ([8512e7b](https://github.com/pantry-pm/pantry/commit/8512e7b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **registry**: clearer error when the publish token isn't configured ([80ba03d](https://github.com/pantry-pm/pantry/commit/80ba03d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: preserve spaces in build.yml packages input ([b825be8](https://github.com/pantry-pm/pantry/commit/b825be8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: target registry.pantry.dev directly (stale REGISTRY_HOST secret) ([033a994](https://github.com/pantry-pm/pantry/commit/033a994)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: deploy the registry to the Hetzner box, not the dead EC2 host ([42dd860](https://github.com/pantry-pm/pantry/commit/42dd860)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **services**: JVM launchers run from real package path + pre-create data dirs ([e9f124c](https://github.com/pantry-pm/pantry/commit/e9f124c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **scripts**: verify SHA256 in the bash installers before extracting ([1c5f4fc](https://github.com/pantry-pm/pantry/commit/1c5f4fc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **services**: correct data dirs/configs/init for 13 more services ([9932ae4](https://github.com/pantry-pm/pantry/commit/9932ae4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **install**: global installs now create usable symlinks ([b0b64ac](https://github.com/pantry-pm/pantry/commit/b0b64ac)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **scripts**: publish/install path, exit-code and empty-artifact bugs ([37c9a20](https://github.com/pantry-pm/pantry/commit/37c9a20)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **services**: mongodb/minio data dirs + version-aware binary resolution ([b71ee30](https://github.com/pantry-pm/pantry/commit/b71ee30)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **services**: typesense data-dir/api-key + resolve service binaries from package dirs ([e171f78](https://github.com/pantry-pm/pantry/commit/e171f78)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: don't let blank line break backslash continuations in build scripts ([233c0c4](https://github.com/pantry-pm/pantry/commit/233c0c4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: stop /usr/include leaking onto CPATH (fixes perl + others) ([6dc26b8](https://github.com/pantry-pm/pantry/commit/6dc26b8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: vlang.io 0.5.1 — fetch tccbin so libgc.a is present ([0c2de4d](https://github.com/pantry-pm/pantry/commit/0c2de4d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **php**: build pgsql + pdo_pgsql extensions (libpq from postgresql.org) ([4f1843b](https://github.com/pantry-pm/pantry/commit/4f1843b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **install**: alias bare `composer` to getcomposer.org ([4c002c0](https://github.com/pantry-pm/pantry/commit/4c002c0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **fixUp**: strip build-time rpaths so bundled deps win at load time ([7e6de55](https://github.com/pantry-pm/pantry/commit/7e6de55)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **buildkit**: dedupe rpaths + bundle @rpath dep dylibs from the build deps dir ([113d9ff](https://github.com/pantry-pm/pantry/commit/113d9ff)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **pantry**: resolver, version-fetcher, darwin builds + regenerate catalog ([a30f52b](https://github.com/pantry-pm/pantry/commit/a30f52b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: repair 6 more source-build recipes (recipe-grind r2) ([ebe1188](https://github.com/pantry-pm/pantry/commit/ebe1188)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: postgres version discovery + darwin dep dylib resolution ([56114a0](https://github.com/pantry-pm/pantry/commit/56114a0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: re-align 6 broken source-build recipes with upstream pkgx ([49c6f6f](https://github.com/pantry-pm/pantry/commit/49c6f6f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **install**: evict poisoned cache entries instead of failing forever ([771bf20](https://github.com/pantry-pm/pantry/commit/771bf20)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **install**: download registry tarballs via curl to avoid corruption ([b96915d](https://github.com/pantry-pm/pantry/commit/b96915d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **services**: give redis a data dir so persistence doesn't default to / ([e36c7a8](https://github.com/pantry-pm/pantry/commit/e36c7a8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **services**: launch daemons with absolute binary paths + self-init postgres ([e7337dc](https://github.com/pantry-pm/pantry/commit/e7337dc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **php**: guard post-install shebang fixes for skipped phar/pear tools ([9f1ff23](https://github.com/pantry-pm/pantry/commit/9f1ff23)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **php**: gate build only on php -v loading; print modules ([93624de](https://github.com/pantry-pm/pantry/commit/93624de)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **php**: skip phar-tool gen, dedup+verify installed binary (darwin) ([c0ec503](https://github.com/pantry-pm/pantry/commit/c0ec503)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **php**: dedup LC_RPATHs on darwin (build-tree + installed) ([36ee37d](https://github.com/pantry-pm/pantry/commit/36ee37d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **php**: drop redundant darwin -rpath to avoid duplicate LC_RPATH ([7d4b497](https://github.com/pantry-pm/pantry/commit/7d4b497)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **php**: enable ext-zip on all platforms (composer needs it) ([ff77f34](https://github.com/pantry-pm/pantry/commit/ff77f34)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **gettext**: use real 0.x, not the stray ancient v1.0 tag ([066664b](https://github.com/pantry-pm/pantry/commit/066664b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **php**: build --without-pear ([0cbdcb4](https://github.com/pantry-pm/pantry/commit/0cbdcb4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **php**: link -lresolv on darwin for res_9_* DNS symbols ([d3fced3](https://github.com/pantry-pm/pantry/commit/d3fced3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: correct ICU (unicode.org) download URL ([68fa254](https://github.com/pantry-pm/pantry/commit/68fa254)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: correct libxml2 skip range (<2.16.0 → <2.15.1) ([77340e8](https://github.com/pantry-pm/pantry/commit/77340e8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **php**: target stable releases only in version source ([088bada](https://github.com/pantry-pm/pantry/commit/088bada)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: give hetzner build box full CI toolchain (deps + go) ([2ce1c98](https://github.com/pantry-pm/pantry/commit/2ce1c98)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: re-align more source recipes with upstream + add haskell.org/cabal ([3be4f55](https://github.com/pantry-pm/pantry/commit/3be4f55)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: publish darwin-x86-64 (Intel macOS) — retire macos-13 + fix bun bootstrap (#205) ([9cdfcd0](https://github.com/pantry-pm/pantry/commit/9cdfcd0)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#205](https://github.com/pantry-pm/pantry/issues/205), [#205](https://github.com/pantry-pm/pantry/issues/205))
+- **recipes**: re-align 211 failing source recipes with upstream pkgx ([bb9aea2](https://github.com/pantry-pm/pantry/commit/bb9aea2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: stop source-building GUI apps + relocate builds to /mnt (disk) ([39c50ae](https://github.com/pantry-pm/pantry/commit/39c50ae)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: route build-versions/build-registry/registry-integrity to Hetzner ([cf76119](https://github.com/pantry-pm/pantry/commit/cf76119)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: tart download tag + unskip rubocop, skip defunct agpt ([c4629ef](https://github.com/pantry-pm/pantry/commit/c4629ef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: nmap getopt cache vars + tuxpaint libimagequant ([a0ebc91](https://github.com/pantry-pm/pantry/commit/a0ebc91)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: round 2 of source-build fixes (aspell/tuxpaint/vlang/nmap) ([75e3178](https://github.com/pantry-pm/pantry/commit/75e3178)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: resolve 8 source-build failures + unskip solidity ([77c2852](https://github.com/pantry-pm/pantry/commit/77c2852)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: systemic source-build improvements ([02efe85](https://github.com/pantry-pm/pantry/commit/02efe85)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ⚡ Performance Improvements
+
+- **shell**: fast-path the per-cd hot commands ([c39aebc](https://github.com/pantry-pm/pantry/commit/c39aebc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **fleet**: parallelize cross-download fanout (6 striped workers/box) ([9aa0256](https://github.com/pantry-pm/pantry/commit/9aa0256)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: interleaved --stripe fleet distribution + K=8 workers/box ([6bfc3df](https://github.com/pantry-pm/pantry/commit/6bfc3df)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **site**: gzip-negotiate dashboard HTML + /api/packages ([b95f1f7](https://github.com/pantry-pm/pantry/commit/b95f1f7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **site**: cache /packages HTML + stale-while-revalidate coverage ([5682a2a](https://github.com/pantry-pm/pantry/commit/5682a2a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ♻️ Code Refactoring
+
+- **registry**: load aliases at runtime (avoid cross-package tsc rootDir error) ([9b2a541](https://github.com/pantry-pm/pantry/commit/9b2a541)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📚 Documentation
+
+- document cross-platform download fanout (pantry-xdl.service) ([13987d7](https://github.com/pantry-pm/pantry/commit/13987d7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- prebuilt-download vs custom source builds — never convert custom builds ([3d574a2](https://github.com/pantry-pm/pantry/commit/3d574a2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧪 Tests
+
+- **services**: assert mysql/mariadb port via health_check, not start_command ([25630e0](https://github.com/pantry-pm/pantry/commit/25630e0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **registry**: use OS-assigned ports to kill server test flakiness ([cd97ec5](https://github.com/pantry-pm/pantry/commit/cd97ec5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🤖 Continuous Integration
+
+- improve package update commit messages ([0b02356](https://github.com/pantry-pm/pantry/commit/0b02356)) _(by Chris <chrisbreuer93@gmail.com>)_
+- require github actions status on deploy ([d325414](https://github.com/pantry-pm/pantry/commit/d325414)) _(by Chris <chrisbreuer93@gmail.com>)_
+- validate build stripes ([a007131](https://github.com/pantry-pm/pantry/commit/a007131)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: tighter macOS timeouts (70m job/60m step) — cap 10x-cost runaway mac jobs ([14ead95](https://github.com/pantry-pm/pantry/commit/14ead95)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: latest-only by default (drain unbuilt backlog); multi_version input restores depth ([7774fb1](https://github.com/pantry-pm/pantry/commit/7774fb1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.38 ([898000b](https://github.com/pantry-pm/pantry/commit/898000b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update fastlane.tools to 2.236.1 ([931e336](https://github.com/pantry-pm/pantry/commit/931e336)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cli.github.com, moonrepo.dev/moon, neovim.io, stripe.com, vcluster.com ([12f8cc1](https://github.com/pantry-pm/pantry/commit/12f8cc1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update github.com/ggerganov/llama.cpp, localai.io, mise.jdx.dev, terragrunt.gruntwork.io ([7795e65](https://github.com/pantry-pm/pantry/commit/7795e65)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cnquery.io, opencode.ai, runatlantis.io, zed.dev ([f5fbd73](https://github.com/pantry-pm/pantry/commit/f5fbd73)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update argoproj.github.io/workflows, cgal.org, dagger.io, daytona.io, github.com/ggerganov/llama.cpp, opencode.ai, temporal.io, traefik.io ([1f764ff](https://github.com/pantry-pm/pantry/commit/1f764ff)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ohmyposh.dev, opencode.ai, pnpm.io, rucio.cern.ch/rucio-client, terraform.io ([068c793](https://github.com/pantry-pm/pantry/commit/068c793)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- **deps**: refresh bun.lock to pick up pickier 0.1.35 ([ce05caa](https://github.com/pantry-pm/pantry/commit/ce05caa)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update aux4.io, github.com/ggerganov/llama.cpp, scaleway.com, werf.io ([8b2dc4c](https://github.com/pantry-pm/pantry/commit/8b2dc4c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai to 1.17.0 ([179a178](https://github.com/pantry-pm/pantry/commit/179a178)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opensearch.org, rubygems.org, stripe.com ([3125723](https://github.com/pantry-pm/pantry/commit/3125723)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update planetscale.com, railway.app, rioterm.com, stripe.com ([a38b403](https://github.com/pantry-pm/pantry/commit/a38b403)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update lxml.de, ohmyposh.dev, openai.com/codex, zed.dev ([2a5a3ef](https://github.com/pantry-pm/pantry/commit/2a5a3ef)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly.io, github.com/ggerganov/llama.cpp, nomadproject.io ([250d77d](https://github.com/pantry-pm/pantry/commit/250d77d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dotnet.microsoft.com, github.com/ggerganov/llama.cpp, odigos.io, planetscale.com, railway.app, stripe.com, talos.dev ([0ee65bc](https://github.com/pantry-pm/pantry/commit/0ee65bc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor.org, github.com/ggerganov/llama.cpp, stripe.com ([15ccfa3](https://github.com/pantry-pm/pantry/commit/15ccfa3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- **deps**: refresh bun.lock to pick up pickier 0.1.33 ([115c4ab](https://github.com/pantry-pm/pantry/commit/115c4ab)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update digitalocean.com/doctl, github.com/ggerganov/llama.cpp, libvips.org ([928455f](https://github.com/pantry-pm/pantry/commit/928455f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cnquery.io, coredns.io, daytona.io, github.com/ggerganov/llama.cpp, meilisearch.com, msgpack.org ([587105f](https://github.com/pantry-pm/pantry/commit/587105f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update github.com/ggerganov/llama.cpp to 9570 ([59e6d26](https://github.com/pantry-pm/pantry/commit/59e6d26)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update github.com/mamba-org/micro, railway.app, stripe.com ([329dd95](https://github.com/pantry-pm/pantry/commit/329dd95)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update just.systems, openai.com/codex ([06667dc](https://github.com/pantry-pm/pantry/commit/06667dc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update github.com/ggerganov/llama.cpp to 9568 ([55f9971](https://github.com/pantry-pm/pantry/commit/55f9971)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update coder.com, github.com/ggerganov/llama.cpp, ollama.ai, skaffold.dev ([00d5a37](https://github.com/pantry-pm/pantry/commit/00d5a37)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crates.io/qsv, fastlane.tools, github.com/ggerganov/llama.cpp, grpc.io, plantuml.com, pocketbase.io, railway.app ([cef9f5e](https://github.com/pantry-pm/pantry/commit/cef9f5e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update github.com/ggerganov/llama.cpp, gohugo.io, openpolicyagent.org, prefix.dev, upx.github.io ([01e519d](https://github.com/pantry-pm/pantry/commit/01e519d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update github.com/ggerganov/llama.cpp, ipfs.tech, meilisearch.com, seaweedfs.com ([d754a2b](https://github.com/pantry-pm/pantry/commit/d754a2b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update nasm.us, openslide.org, pwgen.sourceforge.io, rsync.samba.org, vcluster.com ([10f8a30](https://github.com/pantry-pm/pantry/commit/10f8a30)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update bitwarden.com, crates.io/git-trim, github.com/canonical/charmcraft, github.com/chainguard-dev/apko, github.com/licensee/licensed, github.com/maxbrunsfeld/counterfeiter, github.com/nomic-ai/gpt4all, github.com/tw93/mole, langchain.com, psycopg.org/psycopg3, rucio.cern.ch/rucio-client ([f1cd3ee](https://github.com/pantry-pm/pantry/commit/f1cd3ee)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update package metadata ([38c0b4b](https://github.com/pantry-pm/pantry/commit/38c0b4b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update github.com/ggerganov/llama.cpp to 9553 ([a8d069c](https://github.com/pantry-pm/pantry/commit/a8d069c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update railway.app to 5.5.0 ([e15cdb9](https://github.com/pantry-pm/pantry/commit/e15cdb9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update github.com/ggerganov/llama.cpp, stats.app ([20eabf9](https://github.com/pantry-pm/pantry/commit/20eabf9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update package metadata ([f671b8a](https://github.com/pantry-pm/pantry/commit/f671b8a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update github.com/ggerganov/llama.cpp, odigos.io ([a9c137b](https://github.com/pantry-pm/pantry/commit/a9c137b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update github.com/ggerganov/llama.cpp, projen.io ([374085e](https://github.com/pantry-pm/pantry/commit/374085e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update github.com/ggerganov/llama.cpp to 9548 ([cdefd76](https://github.com/pantry-pm/pantry/commit/cdefd76)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update package metadata ([39bcc1d](https://github.com/pantry-pm/pantry/commit/39bcc1d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update github.com/ggerganov/llama.cpp, pocketbase.io, stats.app ([7217a5b](https://github.com/pantry-pm/pantry/commit/7217a5b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update package metadata ([bd619b6](https://github.com/pantry-pm/pantry/commit/bd619b6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update mise.jdx.dev to 2026.6.1 ([3ce3eaa](https://github.com/pantry-pm/pantry/commit/3ce3eaa)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update argoproj.github.io/cd, argoproj.github.io/workflows, coder.com/code-server and 17 others ([e7c7bcf](https://github.com/pantry-pm/pantry/commit/e7c7bcf)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crates.io/git-branchless, github.com/chainguard-dev/apko ([276bbaa](https://github.com/pantry-pm/pantry/commit/276bbaa)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update 1 packages ([118b73a](https://github.com/pantry-pm/pantry/commit/118b73a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update 1 packages ([a81fda0](https://github.com/pantry-pm/pantry/commit/a81fda0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update 1 packages ([bef1b1b](https://github.com/pantry-pm/pantry/commit/bef1b1b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update 1 packages ([f491dcd](https://github.com/pantry-pm/pantry/commit/f491dcd)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- format release command ([91ad7fa](https://github.com/pantry-pm/pantry/commit/91ad7fa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update k9s ([e637fca](https://github.com/pantry-pm/pantry/commit/e637fca)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update 1 packages ([1fb60be](https://github.com/pantry-pm/pantry/commit/1fb60be)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update 1 packages ([64b22fa](https://github.com/pantry-pm/pantry/commit/64b22fa)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update 1 packages ([8939d41](https://github.com/pantry-pm/pantry/commit/8939d41)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update 1 packages ([cab2ecb](https://github.com/pantry-pm/pantry/commit/cab2ecb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update Zed ([287b2a1](https://github.com/pantry-pm/pantry/commit/287b2a1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update 1 packages ([1fd4d78](https://github.com/pantry-pm/pantry/commit/1fd4d78)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update railway ([af755a4](https://github.com/pantry-pm/pantry/commit/af755a4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ollama ([0dd06ea](https://github.com/pantry-pm/pantry/commit/0dd06ea)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update railway, rio ([26ff9ab](https://github.com/pantry-pm/pantry/commit/26ff9ab)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update railway ([8665bfc](https://github.com/pantry-pm/pantry/commit/8665bfc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update just, railway, rclone and 4 others ([3c4f171](https://github.com/pantry-pm/pantry/commit/3c4f171)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update bytebase, casdoor, opencode.ai and 3 others ([da2b42f](https://github.com/pantry-pm/pantry/commit/da2b42f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, gdal, railway and 2 others ([aa1b004](https://github.com/pantry-pm/pantry/commit/aa1b004)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update huggingface/cli, oc, pnp ([b1fa20b](https://github.com/pantry-pm/pantry/commit/b1fa20b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cnquery, keep, opencode.ai and 3 others ([655dc80](https://github.com/pantry-pm/pantry/commit/655dc80)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update 1 packages ([3d7f70a](https://github.com/pantry-pm/pantry/commit/3d7f70a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update hasura, imagemagick ([cb57805](https://github.com/pantry-pm/pantry/commit/cb57805)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update istioctl ([4ff0604](https://github.com/pantry-pm/pantry/commit/4ff0604)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update AltTab, fly, ollama and 3 others ([4d1aabe](https://github.com/pantry-pm/pantry/commit/4d1aabe)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update digger, redis, swift ([4226d50](https://github.com/pantry-pm/pantry/commit/4226d50)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update apptainer, casdoor, dozzle and 6 others ([9c70510](https://github.com/pantry-pm/pantry/commit/9c70510)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update AltTab, railway, traefik ([be52382](https://github.com/pantry-pm/pantry/commit/be52382)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update composer, odigos, pulumi and 2 others ([78faf4d](https://github.com/pantry-pm/pantry/commit/78faf4d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, ollama, railway ([13974b6](https://github.com/pantry-pm/pantry/commit/13974b6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update 1 packages ([7ecd7b8](https://github.com/pantry-pm/pantry/commit/7ecd7b8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update chezmoi ([0a4ed1d](https://github.com/pantry-pm/pantry/commit/0a4ed1d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update mise, spacetime, sqlite3 and 2 others ([3d819d8](https://github.com/pantry-pm/pantry/commit/3d819d8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update abseil, casdoor, circleci and 11 others ([46629e3](https://github.com/pantry-pm/pantry/commit/46629e3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update kotlinlang, Stats, traefik ([fc3fe1d](https://github.com/pantry-pm/pantry/commit/fc3fe1d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update caddy, cassandra, depot and 12 others ([febd82a](https://github.com/pantry-pm/pantry/commit/febd82a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- **scripts**: add remote Linux build helpers ([8589f39](https://github.com/pantry-pm/pantry/commit/8589f39)) _(by Chris <chrisbreuer93@gmail.com>)_
+- regenerate generated.zig catalog from current recipe versions ([28d9264](https://github.com/pantry-pm/pantry/commit/28d9264)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **packages**: refresh package versions + regenerate index/aliases ([403e01d](https://github.com/pantry-pm/pantry/commit/403e01d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **deps**: refresh bun.lock to pick up @stacksjs/logsmith 0.2.3 ([bc565df](https://github.com/pantry-pm/pantry/commit/bc565df)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update bytebase, mercure, node, pixi ([38b3011](https://github.com/pantry-pm/pantry/commit/38b3011)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update mise ([e73e195](https://github.com/pantry-pm/pantry/commit/e73e195)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update gr2fonttest, mise ([6b02e4d](https://github.com/pantry-pm/pantry/commit/6b02e4d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pip, Rectangle ([bc6710d](https://github.com/pantry-pm/pantry/commit/bc6710d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([2223723](https://github.com/pantry-pm/pantry/commit/2223723)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dozzle, opencode.ai ([3a005a2](https://github.com/pantry-pm/pantry/commit/3a005a2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LocalAI ([ed2976c](https://github.com/pantry-pm/pantry/commit/ed2976c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update coder, sftpgo ([0e11b6d](https://github.com/pantry-pm/pantry/commit/0e11b6d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update coder ([49379c9](https://github.com/pantry-pm/pantry/commit/49379c9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update SeaweedFS ([d74eaa9](https://github.com/pantry-pm/pantry/commit/d74eaa9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- gitignore root .stx cache dir ([58374cb](https://github.com/pantry-pm/pantry/commit/58374cb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **workflows**: add recipe-grind round-2 orchestration script ([34a8941](https://github.com/pantry-pm/pantry/commit/34a8941)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update msgpack ([484aac3](https://github.com/pantry-pm/pantry/commit/484aac3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update railway ([a7be0b3](https://github.com/pantry-pm/pantry/commit/a7be0b3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update rubocop, xkbcli ([03ffaf0](https://github.com/pantry-pm/pantry/commit/03ffaf0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([b2e8a97](https://github.com/pantry-pm/pantry/commit/b2e8a97)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dagger, nu ([76c0e5d](https://github.com/pantry-pm/pantry/commit/76c0e5d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LocalAI ([43b37d0](https://github.com/pantry-pm/pantry/commit/43b37d0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dagger ([afcead5](https://github.com/pantry-pm/pantry/commit/afcead5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ansible, cask, dotnet and 13 others ([ee01b5b](https://github.com/pantry-pm/pantry/commit/ee01b5b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update carapace, casdoor, grpc, pnp ([280735a](https://github.com/pantry-pm/pantry/commit/280735a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update lxml.de ([2770c42](https://github.com/pantry-pm/pantry/commit/2770c42)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, daytona, odigos, werf ([8171ff0](https://github.com/pantry-pm/pantry/commit/8171ff0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aux4, casdoor ([df63da0](https://github.com/pantry-pm/pantry/commit/df63da0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update vcluster ([0e4427d](https://github.com/pantry-pm/pantry/commit/0e4427d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### 📄 Miscellaneous
+
+-  ([$ENV{au](https://github.com/pantry-pm/pantry/commit/$ENV{au)) _(by <fallback> and $ENV{AC_MACRODIR} <>)_
+-  ([time (u](https://github.com/pantry-pm/pantry/commit/time (u)) _(by  $prefix./...' into ' <>)_
+- Revert "perf(site): gzip-negotiate dashboard HTML + /api/packages" ([af7c22d](https://github.com/pantry-pm/pantry/commit/af7c22d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _ $prefix./...' into ' <>_
+- _ < delimiter)>_
+- _ hetzner  < local)>_
+- _<fallback> and $ENV{AC_MACRODIR} <>_
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.36...v0.9.37)
 
 ### 🚀 Features
