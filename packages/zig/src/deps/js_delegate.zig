@@ -54,8 +54,18 @@ pub fn installJsDeps(allocator: std.mem.Allocator, project_dir: []const u8, verb
 
     style.print("{s}  Installing JS deps via {s}{s}\n", .{ style.dim, pm, style.reset });
 
+    // When our stdout carries machine-consumed output (`pantry shell:activate`
+    // is eval'd, `pantry env` likewise), the PM child must not inherit it —
+    // bun/npm progress lines would corrupt the emitted shell code. Route the
+    // child's stdout to stderr alongside our own diagnostics.
+    const exec_cmd = if (style.isDiagnosticsToStderr())
+        try std.fmt.allocPrint(allocator, "{{ {s} ; }} 1>&2", .{wrapped_cmd})
+    else
+        try allocator.dupe(u8, wrapped_cmd);
+    defer allocator.free(exec_cmd);
+
     const term = io_helper.spawnAndWait(.{
-        .argv = &[_][]const u8{ "sh", "-c", wrapped_cmd },
+        .argv = &[_][]const u8{ "sh", "-c", exec_cmd },
         .cwd = io_helper.toCwd(project_dir),
     }) catch |err| {
         if (verbose) style.printWarn("{s} install failed to spawn: {}\n", .{ pm, err });

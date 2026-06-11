@@ -134,6 +134,12 @@ pub fn shellUnknownSubcommand(allocator: std.mem.Allocator, subcommand: []const 
 }
 
 pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !CommandResult {
+    // stdout of this command is eval'd shell code — every diagnostic
+    // (including spawned package-manager children, see js_delegate) must go
+    // to stderr or it corrupts the activation.
+    style.setDiagnosticsToStderr(true);
+    defer style.setDiagnosticsToStderr(false);
+
     // Use the full ShellCommands implementation for activate
     const shell_cmds = @import("../../shell/commands.zig");
 

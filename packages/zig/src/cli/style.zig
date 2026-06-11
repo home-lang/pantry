@@ -81,6 +81,13 @@ pub fn setDiagnosticsToStderr(value: bool) void {
     diagnostics_to_stderr = value;
 }
 
+/// Whether diagnostics are currently routed to stderr. Lets spawn sites
+/// (e.g. the JS package-manager delegate) redirect CHILD stdout too — the
+/// flag alone only covers our own `print` calls, not an inherited fd.
+pub fn isDiagnosticsToStderr() bool {
+    return diagnostics_to_stderr;
+}
+
 // ── Color Detection ──────────────────────────────────────────────────────
 
 /// Whether ANSI escape sequences (color, cursor moves) should be emitted.
