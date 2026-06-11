@@ -146,6 +146,7 @@ pub fn resolvePackageAlias(name: []const u8) []const u8 {
         .{ "zookeeper", "apache.org/zookeeper" },
         // Misc
         .{ "meilisearch", "meilisearch.com" },
+        .{ "typesense", "typesense.org" },
         .{ "goreleaser", "goreleaser.com" },
         .{ "act", "github.com/nektos/act" },
         .{ "dive", "github.com/wagoodman/dive" },

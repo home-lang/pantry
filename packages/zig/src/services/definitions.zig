@@ -1547,14 +1547,18 @@ pub const Services = struct {
 
     pub fn typesenseWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
         const io_helper = @import("../io_helper.zig");
-        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        var env_vars = std.StringHashMap([]const u8).init(allocator);
 
         const home = io_helper.getEnvVarOwned(allocator, "HOME") catch null;
         defer if (home) |h| allocator.free(h);
 
         // Typesense data directory (must exist and be writable; the upstream
         // default /usr/local/var/typesense is neither on a fresh machine).
-        const data_dir = if (home) |h|
+        // TYPESENSE_DATA_DIR overrides for production deployments with an
+        // existing index.
+        const data_dir = if (io_helper.getEnvVarOwned(allocator, "TYPESENSE_DATA_DIR") catch null) |d|
+            d
+        else if (home) |h|
             try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/typesense", .{h})
         else
             try allocator.dupe(u8, "/tmp/typesense-data");
@@ -1563,21 +1567,36 @@ pub const Services = struct {
         // Ensure data directory exists
         io_helper.makePath(data_dir) catch {};
 
-        // typesense-server refuses to start without an --api-key. Use a local
-        // dev default so config-driven setups work out of the box.
+        // typesense-server refuses to start without an api key. Honor
+        // TYPESENSE_API_KEY from the environment (carried into the generated
+        // unit as an Environment= line, which typesense-server reads
+        // natively — keeps the key off the command line) and fall back to a
+        // local dev default so config-driven setups work out of the box.
+        const api_key = io_helper.getEnvVarOwned(allocator, "TYPESENSE_API_KEY") catch null;
+        const have_real_key = api_key != null and api_key.?.len > 0;
+        if (have_real_key) {
+            try env_vars.put("TYPESENSE_API_KEY", api_key.?);
+        } else if (api_key) |k| {
+            allocator.free(k);
+        }
+
         const ts_bin = try resolveServiceBinary(allocator, "typesense-server", project_root, home);
-        const start_cmd = try std.fmt.allocPrint(
-            allocator,
-            "{s} --data-dir {s} --api-key=pantry-dev --api-address 127.0.0.1 --api-port {d}",
-            .{ ts_bin, data_dir, port },
-        );
+        const start_cmd = if (have_real_key)
+            try std.fmt.allocPrint(
+                allocator,
+                "{s} --data-dir {s} --api-address 127.0.0.1 --api-port {d}",
+                .{ ts_bin, data_dir, port },
+            )
+        else
+            try std.fmt.allocPrint(
+                allocator,
+                "{s} --data-dir {s} --api-key=pantry-dev --api-address 127.0.0.1 --api-port {d}",
+                .{ ts_bin, data_dir, port },
+            );
         allocator.free(ts_bin);
 
         // Set working directory to data dir so launchd doesn't use / (read-only on macOS)
-        const working_dir = if (home) |h|
-            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/typesense", .{h})
-        else
-            try allocator.dupe(u8, "/tmp/typesense-data");
+        const working_dir = try allocator.dupe(u8, data_dir);
 
         return ServiceConfig{
             .name = try allocator.dupe(u8, "typesense"),
