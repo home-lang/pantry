@@ -475,7 +475,12 @@ pub fn writeAllToFile(file: File, bytes: []const u8) !void {
 
 /// Append content to a file
 pub fn appendToFile(path: []const u8, bytes: []const u8) !void {
-    const file = try cwd().openFile(io, path, .{ .mode = .write_only });
+    // `>>` semantics: create the file when it doesn't exist yet (e.g.
+    // `pantry shell:integrate` on a machine with no ~/.zshrc).
+    const file = cwd().openFile(io, path, .{ .mode = .write_only }) catch |err| switch (err) {
+        error.FileNotFound => try cwd().createFile(io, path, .{}),
+        else => return err,
+    };
     defer file.close(io);
     // Seek to end
     if (comptime is_windows) {
