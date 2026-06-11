@@ -22,11 +22,28 @@ __PANTRY_DEP_FILES=(
     "go.mod" "Gemfile" "deno.json" "composer.json"
 )
 
-# Get file modification time (cross-platform, detect once)
-if stat -f %m / >/dev/null 2>&1; then
-    __pantry_mtime() { stat -f %m "$1" 2>/dev/null || echo 0; }
+# Get file modification time into REPLY (cross-platform, detect once).
+# Callers read $REPLY instead of $(...) so the common case never forks a
+# subshell. On zsh the zstat builtin makes this fully fork-free — `-F ... b:zstat`
+# loads ONLY zstat, never the module's `stat` builtin which would shadow
+# /usr/bin/stat in the user's shell.
+# zsh: EPOCHSECONDS (zsh/datetime) lets the update-check throttle below run
+# without forking `date`. Loaded feature-scoped; harmless if it fails.
+[[ -n "${ZSH_VERSION:-}" ]] && zmodload -F zsh/datetime p:EPOCHSECONDS 2>/dev/null
+
+if [[ -n "${ZSH_VERSION:-}" ]] && zmodload -F zsh/stat b:zstat 2>/dev/null; then
+    __pantry_mtime() {
+        local -a __st
+        if zstat -A __st +mtime -- "$1" 2>/dev/null; then
+            REPLY="${__st[1]}"
+        else
+            REPLY=0
+        fi
+    }
+elif stat -f %m / >/dev/null 2>&1; then
+    __pantry_mtime() { REPLY=$(stat -f %m "$1" 2>/dev/null) || REPLY=0; }
 else
-    __pantry_mtime() { stat -c %Y "$1" 2>/dev/null || echo 0; }
+    __pantry_mtime() { REPLY=$(stat -c %Y "$1" 2>/dev/null) || REPLY=0; }
 fi
 
 # Remove a path component from PATH (pure bash, no sed/subprocess)
@@ -54,15 +71,17 @@ __pantry_path_prepend() {
     fi
 }
 
-# Find dependency file in current directory only (fast single-dir check)
+# Find dependency file in current directory only (fast single-dir check).
+# Result in REPLY — no echo, so callers don't pay a $(...) subshell fork.
 __pantry_find_dep_here() {
-    local dir="$1"
+    local dir="$1" fname
     for fname in "${__PANTRY_DEP_FILES[@]}"; do
         if [[ -f "$dir/$fname" ]]; then
-            echo "$dir/$fname"
+            REPLY="$dir/$fname"
             return 0
         fi
     done
+    REPLY=""
     return 1
 }
 
@@ -87,20 +106,37 @@ __pantry_find_dep_up() {
 # (walking up from $1) sets `autoActivate: true` — matched across YAML
 # (`autoActivate: true`), JSON/JSONC (`"autoActivate": true`) and TS configs.
 # Projects that don't opt in are ignored by the cd hook entirely.
+#
+# The grep verdict is memoized per (dep file, mtime): cd-ing around inside the
+# same project re-uses it instead of forking grep every time, while an edit to
+# the deps file (e.g. flipping autoActivate on) invalidates it immediately.
 __pantry_autocd_enabled() {
-    local dir="$1" depth=0 fname
+    local dir="$1" depth=0 fname found=""
     while (( depth < 16 )); do
         for fname in "${__PANTRY_DEP_FILES[@]}"; do
             if [[ -f "$dir/$fname" ]]; then
-                grep -qiE '^[[:space:]]*"?autoActivate"?[[:space:]]*:[[:space:]]*"?true"?' "$dir/$fname" 2>/dev/null
-                return $?
+                found="$dir/$fname"
+                break 2
             fi
         done
         [[ "$dir" == "/" || -z "$dir" ]] && break
         dir="${dir%/*}"; [[ -z "$dir" ]] && dir="/"
         (( depth++ ))
     done
-    return 1
+    [[ -n "$found" ]] || return 1
+
+    local m
+    __pantry_mtime "$found"; m="$REPLY"
+    if [[ "$found" == "${__PANTRY_AUTOCD_FILE:-}" && "$m" == "${__PANTRY_AUTOCD_MTIME:-}" ]]; then
+        return "${__PANTRY_AUTOCD_RESULT:-1}"
+    fi
+
+    grep -qiE '^[[:space:]]*"?autoActivate"?[[:space:]]*:[[:space:]]*"?true"?' "$found" 2>/dev/null
+    local rc=$?
+    __PANTRY_AUTOCD_FILE="$found"
+    __PANTRY_AUTOCD_MTIME="$m"
+    __PANTRY_AUTOCD_RESULT=$rc
+    return $rc
 }
 
 # Shell-side cache lookup (pure shell, zero subprocesses)
@@ -112,7 +148,8 @@ __pantry_cache_lookup() {
         [[ "$cached_dir" == "$1" ]] || continue
         [[ -d "$env_dir/bin" ]] || return 1
         if [[ -n "$dep_file" && -f "$dep_file" ]]; then
-            [[ "$(__pantry_mtime "$dep_file")" == "$cached_mtime" ]] || return 1
+            __pantry_mtime "$dep_file"
+            [[ "$REPLY" == "$cached_mtime" ]] || return 1
         fi
         REPLY="$env_dir"
         return 0
@@ -143,7 +180,8 @@ __pantry_activate() {
     export PANTRY_ENV_BIN_PATH="$env_dir/bin"
     export PANTRY_ENV_DIR="$env_dir"
     export PANTRY_DEP_FILE="$dep_file"
-    export PANTRY_DEP_MTIME="$(__pantry_mtime "$dep_file")"
+    __pantry_mtime "$dep_file"
+    export PANTRY_DEP_MTIME="$REPLY"
 
     # Add env bin to PATH, moving any existing copy to the front.
     [[ -d "$env_dir/bin" ]] && __pantry_path_prepend "$env_dir/bin"
@@ -249,8 +287,8 @@ __pantry_switch_environment() {
         if [[ "$PWD" == "${PANTRY_CURRENT_PROJECT:-}" || "$PWD" == "${PANTRY_CURRENT_PROJECT:-}/"* ]]; then
             # Still in project - check if dep file changed
             if [[ -n "${PANTRY_DEP_FILE:-}" && -f "${PANTRY_DEP_FILE:-}" ]]; then
-                local m="$(__pantry_mtime "${PANTRY_DEP_FILE:-}")"
-                [[ "$m" == "${PANTRY_DEP_MTIME:-}" ]] && return 0
+                __pantry_mtime "${PANTRY_DEP_FILE:-}"
+                [[ "$REPLY" == "${PANTRY_DEP_MTIME:-}" ]] && return 0
                 # Dep file changed - deactivate and re-detect below
                 __pantry_deactivate
             else
@@ -274,16 +312,18 @@ __pantry_switch_environment() {
 
     # SHELL-SIDE CACHE: Check for this dir first (covers subdirs cached from parent lookups)
     if __pantry_cache_lookup "$PWD"; then
-        local dep_file
-        dep_file=$(__pantry_find_dep_here "$PWD") || dep_file=""
-        __pantry_activate "$REPLY" "$PWD" "${dep_file:-}"
+        # Save REPLY before __pantry_find_dep_here clobbers it.
+        local env_dir="$REPLY" dep_file=""
+        __pantry_find_dep_here "$PWD" && dep_file="$REPLY"
+        __pantry_activate "$env_dir" "$PWD" "${dep_file:-}"
         return 0
     fi
 
     # Quick single-dir check: any dep file here?
     local dep_file
-    dep_file=$(__pantry_find_dep_here "$PWD")
-    if [[ $? -ne 0 ]]; then
+    __pantry_find_dep_here "$PWD"
+    dep_file="$REPLY"
+    if [[ -z "$dep_file" ]]; then
         # No dep file in current dir.
         # Skip the immediately-repeated lookup memo first (cheapest).
         [[ "${__PANTRY_LAST_NO_ENV:-}" == "$PWD" ]] && return 0
@@ -308,7 +348,10 @@ __pantry_switch_environment() {
         if [[ -d "$env_dir/bin" ]]; then
             # Cache this dir AND the project root for fast lookups
             local mtime="0"
-            [[ -n "$dep_file" ]] && mtime="$(__pantry_mtime "$dep_file")"
+            if [[ -n "$dep_file" ]]; then
+                __pantry_mtime "$dep_file"
+                mtime="$REPLY"
+            fi
             __pantry_cache_write "$PWD" "$env_dir" "${dep_file:-}" "$mtime"
             [[ "$PWD" != "$project_dir" ]] && __pantry_cache_write "$project_dir" "$env_dir" "${dep_file:-}" "$mtime"
             __pantry_activate "$env_dir" "${project_dir:-$PWD}" "${dep_file:-}"
@@ -325,6 +368,17 @@ __pantry_switch_environment() {
 
     # No env found but dep file exists - auto-install unless PANTRY_NO_AUTO_INSTALL is set
     if [[ -n "$dep_file" && -z "${PANTRY_NO_AUTO_INSTALL:-}" ]]; then
+        # Don't re-run the installer for a deps file that already produced no
+        # env (failed install, or nothing to activate). __PANTRY_LAST_NO_ENV
+        # alone can't protect here — it holds one dir, so alternating between
+        # two project dirs would re-trigger `pantry install` on every cd.
+        # Keyed on (dep file, mtime): editing the deps file retries at once.
+        __pantry_mtime "$dep_file"
+        local dep_m="$REPLY"
+        if [[ "$dep_file" == "${__PANTRY_NOINSTALL_FILE:-}" && "$dep_m" == "${__PANTRY_NOINSTALL_MTIME:-}" ]]; then
+            __PANTRY_LAST_NO_ENV="$PWD"
+            return 0
+        fi
         if __pantry_auto_install "$dep_file"; then
             # Retry lookup after install
             lookup_result=$(pantry shell:lookup "$PWD" 2>/dev/null)
@@ -332,7 +386,8 @@ __pantry_switch_environment() {
                 local env_dir="${lookup_result%%|*}"
                 local project_dir="${lookup_result#*|}"
                 if [[ -d "$env_dir/bin" ]]; then
-                    local mtime="$(__pantry_mtime "$dep_file")"
+                    __pantry_mtime "$dep_file"
+                    local mtime="$REPLY"
                     __pantry_cache_write "$PWD" "$env_dir" "$dep_file" "$mtime"
                     [[ "$PWD" != "$project_dir" ]] && __pantry_cache_write "$project_dir" "$env_dir" "$dep_file" "$mtime"
                     __pantry_activate "$env_dir" "${project_dir:-$PWD}" "$dep_file"
@@ -343,6 +398,10 @@ __pantry_switch_environment() {
                 return 0
             fi
         fi
+        # Reached only when the install failed or produced nothing to
+        # activate — remember so we don't re-install until the file changes.
+        __PANTRY_NOINSTALL_FILE="$dep_file"
+        __PANTRY_NOINSTALL_MTIME="$dep_m"
     fi
 
     # Remember this dir to skip repeated lookups
@@ -418,6 +477,27 @@ __pantry_update_check() {
     if [[ -s "$marker" ]]; then
         local v; v=$(<"$marker")
         [[ -n "$v" ]] && printf 'pantry: v%s available — run `pantry upgrade`\n' "$v" >&2
+    fi
+
+    # Shell-side throttle: the binary touches ~/.pantry/.update-last-check
+    # after every check and self-throttles to 24h. If that stamp is < 20h old
+    # the spawn would be a guaranteed no-op — skip it entirely so most shell
+    # starts launch no background process at all. (20h < 24h so this gate can
+    # never delay the binary's own cadence.)
+    local stamp="${HOME}/.pantry/.update-last-check"
+    if [[ -f "$stamp" ]]; then
+        local now=0
+        if [[ -n "${EPOCHSECONDS:-}" ]]; then
+            now=$EPOCHSECONDS                      # zsh (zsh/datetime) and bash 5+
+        elif printf -v now '%(%s)T' -1 2>/dev/null; then
+            :                                      # bash 4.2+
+        else
+            now=$(date +%s 2>/dev/null) || now=0   # bash 3.2 fallback (one fork)
+        fi
+        if (( now > 0 )); then
+            __pantry_mtime "$stamp"
+            (( now - REPLY < 72000 )) && return 0
+        fi
     fi
 
     # Kick off today's check fully detached: the `( … & )` subshell orphans the

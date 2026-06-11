@@ -80,6 +80,11 @@ pub fn generateHook(shell: Shell, allocator: std.mem.Allocator) ![]const u8 {
 /// `pantry shell:lookup` which emits `env_dir|project_dir` — the same format
 /// the bash/zsh shellcode consumes. Set PATH via `$env.PATH = ...` pre-pending
 /// the env bin dir.
+/// Activation + deactivation on PWD change. The autoActivate opt-in gate is
+/// enforced binary-side in `shell:lookup`, so this hook inherits it for
+/// free. Auto-install is deliberately NOT ported to nushell (its scripting
+/// surface shifts between releases; run `pantry install` once per project
+/// and the hook activates from then on).
 fn generateNushellHook(allocator: std.mem.Allocator) ![]const u8 {
     const hook =
         \\# pantry shell integration for nushell
@@ -87,19 +92,27 @@ fn generateNushellHook(allocator: std.mem.Allocator) ![]const u8 {
         \\$env.config = ($env.config | upsert hooks.env_change.PWD {|config|
         \\  let hooks = ($config.hooks.env_change.PWD? | default [])
         \\  $hooks | append {|before, after|
-        \\    let lookup = (do --ignore-errors { pantry shell:lookup $after } | str trim)
-        \\    if ($lookup | is-empty) { return }
-        \\    let parts = ($lookup | split column '|' env project)
-        \\    let env_dir = ($parts | get 0.env)
-        \\    let project_dir = ($parts | get 0.project)
-        \\    let bin = $'($env_dir)/bin'
-        \\    if not ($bin | path exists) { return }
-        \\    # De-dupe PATH
-        \\    let clean = ($env.PATH | where {|p| $p != $bin })
-        \\    $env.PATH = ([$bin] ++ $clean)
-        \\    $env.PANTRY_CURRENT_PROJECT = $project_dir
-        \\    $env.PANTRY_ENV_DIR = $env_dir
-        \\    $env.PANTRY_ENV_BIN_PATH = $bin
+        \\    let lookup = (do --ignore-errors { pantry shell:lookup $after } | default '' | str trim)
+        \\    if ($lookup | is-empty) {
+        \\      # Left a project (or none here): drop the previously added bin dir.
+        \\      if 'PANTRY_ENV_BIN_PATH' in $env {
+        \\        $env.PATH = ($env.PATH | where {|p| $p != $env.PANTRY_ENV_BIN_PATH })
+        \\        hide-env --ignore-errors PANTRY_CURRENT_PROJECT PANTRY_ENV_DIR PANTRY_ENV_BIN_PATH
+        \\      }
+        \\    } else {
+        \\      let parts = ($lookup | split row -n 2 '|')
+        \\      let env_dir = ($parts | get 0)
+        \\      let project_dir = (if (($parts | length) > 1) { $parts | get 1 } else { $after })
+        \\      let bin = ($env_dir | path join 'bin')
+        \\      if ($bin | path exists) {
+        \\        # De-dupe PATH
+        \\        let clean = ($env.PATH | where {|p| $p != $bin })
+        \\        $env.PATH = ([$bin] ++ $clean)
+        \\        $env.PANTRY_CURRENT_PROJECT = $project_dir
+        \\        $env.PANTRY_ENV_DIR = $env_dir
+        \\        $env.PANTRY_ENV_BIN_PATH = $bin
+        \\      }
+        \\    }
         \\  }
         \\})
     ;
@@ -107,34 +120,79 @@ fn generateNushellHook(allocator: std.mem.Allocator) ![]const u8 {
 }
 
 /// PowerShell hook. Uses a ScriptBlock wired into the prompt so it fires after
-/// every `cd`. Safe to stick in $PROFILE.
+/// every `cd`. Safe to stick in $PROFILE. Parity with the bash/zsh template:
+/// deactivation on leave, autoActivate opt-in gate (binary-side for
+/// activation; Select-String-gated before any uninvited install), and
+/// one-shot auto-install memoized per (deps file, LastWriteTime).
 fn generatePowershellHook(allocator: std.mem.Allocator) ![]const u8 {
     const hook =
         \\# pantry shell integration for PowerShell
         \\$global:__PantryLastPwd = $null
-        \\function Invoke-PantryChpwd {
-        \\    if ($global:__PantryLastPwd -eq (Get-Location).Path) { return }
-        \\    $global:__PantryLastPwd = (Get-Location).Path
+        \\$global:__PantryNoInstall = $null
+        \\$global:__PantryDepFiles = @(
+        \\    'pantry.json','pantry.jsonc','pantry.yaml','pantry.yml',
+        \\    'deps.yaml','deps.yml','dependencies.yaml','dependencies.yml',
+        \\    'pkgx.yaml','pkgx.yml','config/deps.ts','.config/deps.ts',
+        \\    'pantry.config.ts','.config/pantry.ts','pantry.config.js',
+        \\    'package.json','package.jsonc','zig.json','pyproject.toml',
+        \\    'requirements.txt','Cargo.toml','go.mod','Gemfile','deno.json','composer.json'
+        \\)
         \\
-        \\    try {
-        \\        $lookup = & pantry shell:lookup (Get-Location).Path 2>$null
-        \\    } catch { return }
-        \\    if (-not $lookup) { return }
+        \\function global:Invoke-PantryDeactivate {
+        \\    if ($env:PANTRY_ENV_BIN_PATH) {
+        \\        $sep = [IO.Path]::PathSeparator
+        \\        $env:PATH = (($env:PATH -split [regex]::Escape($sep)) | Where-Object { $_ -ne $env:PANTRY_ENV_BIN_PATH }) -join $sep
+        \\        Remove-Item Env:PANTRY_CURRENT_PROJECT,Env:PANTRY_ENV_DIR,Env:PANTRY_ENV_BIN_PATH -ErrorAction SilentlyContinue
+        \\    }
+        \\}
         \\
+        \\function global:Invoke-PantryActivate([string]$lookup, [string]$pwdPath) {
         \\    $parts = $lookup -split '\|', 2
-        \\    if ($parts.Count -lt 1) { return }
         \\    $envDir = $parts[0]
-        \\    $projectDir = if ($parts.Count -ge 2) { $parts[1] } else { (Get-Location).Path }
+        \\    $projectDir = if ($parts.Count -ge 2) { $parts[1] } else { $pwdPath }
         \\    $bin = Join-Path $envDir 'bin'
-        \\    if (-not (Test-Path $bin)) { return }
-        \\
+        \\    if (-not (Test-Path $bin)) { return $false }
         \\    # De-dupe PATH
         \\    $sep = [IO.Path]::PathSeparator
-        \\    $existing = $env:PATH -split [regex]::Escape($sep) | Where-Object { $_ -ne $bin }
-        \\    $env:PATH = $bin + $sep + ($existing -join $sep)
+        \\    $existing = ($env:PATH -split [regex]::Escape($sep)) | Where-Object { $_ -ne $bin }
+        \\    $env:PATH = (@($bin) + $existing) -join $sep
         \\    $env:PANTRY_CURRENT_PROJECT = $projectDir
         \\    $env:PANTRY_ENV_DIR        = $envDir
         \\    $env:PANTRY_ENV_BIN_PATH   = $bin
+        \\    return $true
+        \\}
+        \\
+        \\function global:Invoke-PantryChpwd {
+        \\    $pwdPath = (Get-Location).Path
+        \\    if ($global:__PantryLastPwd -eq $pwdPath) { return }
+        \\    $global:__PantryLastPwd = $pwdPath
+        \\    if (-not (Get-Command pantry -ErrorAction SilentlyContinue)) { return }
+        \\
+        \\    try { $lookup = & pantry shell:lookup $pwdPath 2>$null } catch { $lookup = $null }
+        \\    if ($lookup) { [void](Invoke-PantryActivate $lookup $pwdPath); return }
+        \\
+        \\    Invoke-PantryDeactivate
+        \\    if ($env:PANTRY_NO_AUTO_INSTALL) { return }
+        \\
+        \\    # Auto-install: only for projects that opt in with autoActivate: true,
+        \\    # and only once per (deps file, mtime) — never on every cd.
+        \\    $dep = $null
+        \\    foreach ($f in $global:__PantryDepFiles) {
+        \\        $p = Join-Path $pwdPath $f
+        \\        if (Test-Path $p -PathType Leaf) { $dep = $p; break }
+        \\    }
+        \\    if (-not $dep) { return }
+        \\    if (-not (Select-String -Path $dep -Quiet -Pattern '^\s*"?autoActivate"?\s*:\s*"?true"?')) { return }
+        \\    $stamp = "$dep|$((Get-Item $dep).LastWriteTimeUtc.Ticks)"
+        \\    if ($global:__PantryNoInstall -eq $stamp) { return }
+        \\    Write-Host "pantry: setting up $(Split-Path $pwdPath -Leaf)..."
+        \\    & pantry install *> $null
+        \\    try { $lookup = & pantry shell:lookup $pwdPath 2>$null } catch { $lookup = $null }
+        \\    if ($lookup -and (Invoke-PantryActivate $lookup $pwdPath)) {
+        \\        Write-Host "pantry: $(Split-Path $pwdPath -Leaf) ready"
+        \\    } else {
+        \\        $global:__PantryNoInstall = $stamp
+        \\    }
         \\}
         \\
         \\# Hook into the prompt so Invoke-PantryChpwd fires after every `cd`.
@@ -150,66 +208,95 @@ fn generatePowershellHook(allocator: std.mem.Allocator) ![]const u8 {
     return try allocator.dupe(u8, hook);
 }
 
-/// Generate zsh hook (chpwd function)
+/// Generate zsh hook. Delegates to the full `dev:shellcode` template — the
+/// template registers its own chpwd hook, caching, opt-in gating and PATH
+/// repair. (A previous version eval'd `pantry shell:lookup` output directly,
+/// but lookup emits `env_dir|project_dir`, NOT shell code — eval parsed the
+/// `|` as a pipeline and tried to execute both paths as commands.)
 fn generateZshHook(allocator: std.mem.Allocator) ![]const u8 {
     const hook =
         \\# pantry shell integration for zsh
-        \\pantry_chpwd() {
-        \\  if command -v pantry >/dev/null 2>&1; then
-        \\    local env_info
-        \\    env_info=$(pantry shell:lookup "$PWD" 2>/dev/null)
-        \\    if [ -n "$env_info" ]; then
-        \\      eval "$env_info"
-        \\    fi
-        \\  fi
-        \\}
-        \\
-        \\# Add to chpwd hooks
-        \\if [[ -z "${chpwd_functions[(r)pantry_chpwd]}" ]]; then
-        \\  chpwd_functions+=(pantry_chpwd)
-        \\fi
-        \\
-        \\# Run on shell start
-        \\pantry_chpwd
+        \\command -v pantry >/dev/null 2>&1 && eval "$(pantry dev:shellcode)"
     ;
     return try allocator.dupe(u8, hook);
 }
 
-/// Generate bash hook (PROMPT_COMMAND)
+/// Generate bash hook. Same delegation as zsh — the template handles
+/// PROMPT_COMMAND registration itself.
 fn generateBashHook(allocator: std.mem.Allocator) ![]const u8 {
     const hook =
         \\# pantry shell integration for bash
-        \\pantry_prompt_command() {
-        \\  if command -v pantry >/dev/null 2>&1; then
-        \\    local env_info
-        \\    env_info=$(pantry shell:lookup "$PWD" 2>/dev/null)
-        \\    if [ -n "$env_info" ]; then
-        \\      eval "$env_info"
-        \\    fi
-        \\  fi
-        \\}
-        \\
-        \\# Add to PROMPT_COMMAND
-        \\if [[ ":$PROMPT_COMMAND:" != *":pantry_prompt_command:"* ]]; then
-        \\  PROMPT_COMMAND="pantry_prompt_command${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
-        \\fi
-        \\
-        \\# Run on shell start
-        \\pantry_prompt_command
+        \\command -v pantry >/dev/null 2>&1 && eval "$(pantry dev:shellcode)"
     ;
     return try allocator.dupe(u8, hook);
 }
 
-/// Generate fish hook
+/// Generate fish hook. The bash/zsh template doesn't run under fish, so this
+/// parses the `env_dir|project_dir` lookup output explicitly (same contract
+/// the nushell/powershell hooks use). Feature parity with the template:
+/// deactivation on leave, autoActivate opt-in gate (binary-side for
+/// activation; grep-gated here before any uninvited install), and one-shot
+/// auto-install memoized per (deps file, mtime).
 fn generateFishHook(allocator: std.mem.Allocator) ![]const u8 {
     const hook =
         \\# pantry shell integration for fish
-        \\function pantry_pwd --on-variable PWD
-        \\  if command -v pantry >/dev/null 2>&1
-        \\    set -l env_info (pantry shell:lookup "$PWD" 2>/dev/null)
-        \\    if test -n "$env_info"
-        \\      eval $env_info
+        \\set -g __pantry_dep_files pantry.json pantry.jsonc pantry.yaml pantry.yml deps.yaml deps.yml dependencies.yaml dependencies.yml pkgx.yaml pkgx.yml config/deps.ts .config/deps.ts pantry.config.ts .config/pantry.ts pantry.config.js package.json package.jsonc zig.json pyproject.toml requirements.txt Cargo.toml go.mod Gemfile deno.json composer.json
+        \\
+        \\function __pantry_dep_here
+        \\  for f in $__pantry_dep_files
+        \\    if test -f "$argv[1]/$f"
+        \\      echo "$argv[1]/$f"
+        \\      return 0
         \\    end
+        \\  end
+        \\  return 1
+        \\end
+        \\
+        \\function __pantry_deactivate
+        \\  if set -q PANTRY_ENV_BIN_PATH
+        \\    if set -l idx (contains -i -- "$PANTRY_ENV_BIN_PATH" $PATH)
+        \\      set -e PATH[$idx]
+        \\    end
+        \\    set -e PANTRY_CURRENT_PROJECT PANTRY_ENV_DIR PANTRY_ENV_BIN_PATH
+        \\  end
+        \\end
+        \\
+        \\function __pantry_activate_from
+        \\  set -l parts (string split -m1 '|' -- $argv[1])
+        \\  set -l env_dir $parts[1]
+        \\  set -l project_dir $parts[2]
+        \\  set -l bin "$env_dir/bin"
+        \\  test -d "$bin"; or return 1
+        \\  if not contains -- "$bin" $PATH
+        \\    set -gx PATH "$bin" $PATH
+        \\  end
+        \\  set -gx PANTRY_CURRENT_PROJECT $project_dir
+        \\  set -gx PANTRY_ENV_DIR $env_dir
+        \\  set -gx PANTRY_ENV_BIN_PATH $bin
+        \\end
+        \\
+        \\function pantry_pwd --on-variable PWD
+        \\  command -q pantry; or return
+        \\  set -l lookup (pantry shell:lookup "$PWD" 2>/dev/null)
+        \\  if test -n "$lookup"
+        \\    __pantry_activate_from $lookup
+        \\    return
+        \\  end
+        \\  __pantry_deactivate
+        \\  # Auto-install: only for projects that opt in with autoActivate: true,
+        \\  # and only once per (deps file, mtime) — never on every cd.
+        \\  set -q PANTRY_NO_AUTO_INSTALL; and return
+        \\  set -l dep (__pantry_dep_here "$PWD"); or return
+        \\  grep -qiE '^[[:space:]]*"?autoActivate"?[[:space:]]*:[[:space:]]*"?true"?' "$dep" 2>/dev/null; or return
+        \\  set -l m (command stat -f %m "$dep" 2>/dev/null; or command stat -c %Y "$dep" 2>/dev/null)
+        \\  test "$__pantry_noinstall" = "$dep|$m"; and return
+        \\  echo "pantry: setting up "(basename "$PWD")"…" >&2
+        \\  pantry install >/dev/null 2>&1
+        \\  set -l lookup (pantry shell:lookup "$PWD" 2>/dev/null)
+        \\  if test -n "$lookup"; and __pantry_activate_from $lookup
+        \\    echo "pantry: "(basename "$PWD")" ready" >&2
+        \\  else
+        \\    set -g __pantry_noinstall "$dep|$m"
         \\  end
         \\end
         \\
@@ -296,8 +383,11 @@ pub fn install(allocator: std.mem.Allocator) !void {
     };
     defer if (existing.len > 0) allocator.free(existing);
 
-    // Check if already installed
-    if (std.mem.indexOf(u8, existing, "pantry shell integration") != null) {
+    // Check if already installed — either our own marker or a hand-added
+    // `eval "$(pantry dev:shellcode)"` line. Never append a duplicate hook.
+    if (std.mem.indexOf(u8, existing, "pantry shell integration") != null or
+        std.mem.indexOf(u8, existing, "pantry dev:shellcode") != null)
+    {
         // Already installed
         return;
     }
@@ -316,25 +406,29 @@ test "Shell detection" {
 test "Hook generation" {
     const allocator = std.testing.allocator;
 
-    // Test zsh hook
+    // Test zsh hook — must delegate to the full template, never eval raw
+    // shell:lookup output (its `env|proj` format is not shell code).
     {
         const hook = try generateHook(.zsh, allocator);
         defer allocator.free(hook);
-        try std.testing.expect(std.mem.indexOf(u8, hook, "pantry_chpwd") != null);
+        try std.testing.expect(std.mem.indexOf(u8, hook, "pantry dev:shellcode") != null);
+        try std.testing.expect(std.mem.indexOf(u8, hook, "eval \"$env_info\"") == null);
     }
 
     // Test bash hook
     {
         const hook = try generateHook(.bash, allocator);
         defer allocator.free(hook);
-        try std.testing.expect(std.mem.indexOf(u8, hook, "PROMPT_COMMAND") != null);
+        try std.testing.expect(std.mem.indexOf(u8, hook, "pantry dev:shellcode") != null);
     }
 
-    // Fish hook
+    // Fish hook — parses the lookup output instead of eval'ing it.
     {
         const hook = try generateHook(.fish, allocator);
         defer allocator.free(hook);
         try std.testing.expect(std.mem.indexOf(u8, hook, "--on-variable PWD") != null);
+        try std.testing.expect(std.mem.indexOf(u8, hook, "string split") != null);
+        try std.testing.expect(std.mem.indexOf(u8, hook, "eval $env_info") == null);
     }
 
     // Nushell hook
