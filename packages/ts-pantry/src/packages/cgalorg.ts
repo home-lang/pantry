@@ -84,6 +84,7 @@ export const cgalorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '6.2',
     '6.1.2',
     '6.1.1',
     '6.1',
