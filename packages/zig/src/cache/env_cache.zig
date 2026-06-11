@@ -95,6 +95,10 @@ pub const EnvCache = struct {
     lock: io_helper.Mutex,
     /// Cache file path
     cache_file_path: ?[]const u8 = null,
+    /// True when in-memory state diverges from what's on disk. Read-only
+    /// users (the hot `shell:lookup` fired on every cd) must not pay a full
+    /// cache-file rewrite at deinit just for having looked.
+    dirty: bool = false,
 
     pub fn init(allocator: std.mem.Allocator) EnvCache {
         return .{
@@ -126,15 +130,22 @@ pub const EnvCache = struct {
         env_cache.load() catch {
             // Ignore load errors (file might not exist yet)
         };
+        // Loading replays entries through put(), which marks the cache dirty.
+        // Freshly loaded state matches disk, so reset — otherwise every
+        // read-only lookup rewrites the file at deinit.
+        env_cache.dirty = false;
 
         return env_cache;
     }
 
     pub fn deinit(self: *EnvCache) void {
-        // Save to disk before deinit
-        self.save() catch |err| {
-            style.print("Warning: Failed to persist environment cache: {}\n", .{err});
-        };
+        // Persist only if something changed — read-only lookups skip the
+        // full-file rewrite entirely.
+        if (self.dirty) {
+            self.save() catch |err| {
+                style.print("Warning: Failed to persist environment cache: {}\n", .{err});
+            };
+        }
 
         self.lock.lock();
         defer self.lock.unlock();
@@ -209,6 +220,7 @@ pub const EnvCache = struct {
 
         try self.cache.put(entry.hash, entry);
         self.addToFastCache(entry);
+        self.dirty = true;
     }
 
     /// Remove cache entry by hash
@@ -219,6 +231,7 @@ pub const EnvCache = struct {
         if (self.cache.fetchRemove(hash)) |kv| {
             kv.value.deinit(self.allocator);
             self.allocator.destroy(kv.value);
+            self.dirty = true;
         }
 
         // Clear from fast cache
@@ -250,6 +263,7 @@ pub const EnvCache = struct {
             if (self.cache.fetchRemove(hash)) |kv| {
                 kv.value.deinit(self.allocator);
                 self.allocator.destroy(kv.value);
+                self.dirty = true;
             }
         }
 
@@ -403,8 +417,13 @@ pub const EnvCache = struct {
                 .ttl = ttl,
             };
 
-            // Validate entry before adding to cache
-            if (try entry.isValid(self.allocator)) {
+            // Only the cheap TTL check at load time — no per-entry dep-file
+            // stat. Full validation (isValid) runs in get() on the one entry
+            // actually requested; stat-ing every cached project here made
+            // every cache-opening invocation (incl. the hot shell:lookup) pay
+            // one stat per entry.
+            const load_now = @as(i64, @intCast(io_helper.clockGettime().sec));
+            if (load_now - entry.created_at <= entry.ttl) {
                 try self.put(entry);
             } else {
                 // Entry expired, clean it up

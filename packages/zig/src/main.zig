@@ -2517,6 +2517,38 @@ fn warnIfInvokedAsLaunchpad() void {
     );
 }
 
+/// Hot-path dispatch for the shell-integration commands, run BEFORE the full
+/// command tree is built. `shell:lookup` fires on every `cd` cache-miss and
+/// `dev:shellcode` on every shell start; constructing ~50 commands (hundreds
+/// of small allocations) first costs far more than the commands themselves.
+/// Only the exact argv shapes emitted by the shell hook are handled — any
+/// other form (flags, --help, missing args) falls through to the full CLI so
+/// behavior there is unchanged. Exits the process when it handles the call.
+fn maybeFastPathShellDispatch(allocator: std.mem.Allocator) void {
+    const args = io_helper.argsAlloc(allocator) catch return;
+    // No argsFree on the exit paths: the process terminates immediately.
+
+    if (args.len == 3 and std.mem.eql(u8, args[1], "shell:lookup") and
+        args[2].len > 0 and args[2][0] != '-')
+    {
+        const result = lib.commands.shellLookupCommand(allocator, args[2]) catch return;
+        if (result.message) |msg| {
+            style.print("{s}\n", .{msg});
+        }
+        std.process.exit(result.exit_code);
+    }
+
+    if (args.len == 2 and std.mem.eql(u8, args[1], "dev:shellcode")) {
+        const result = lib.commands.shellCodeCommand(allocator) catch return;
+        if (result.message) |msg| {
+            // Write to stdout for eval to capture (same as devShellcodeAction).
+            const stdout = std.Io.File.stdout();
+            io_helper.writeAllToFile(stdout, msg) catch std.process.exit(1);
+        }
+        std.process.exit(result.exit_code);
+    }
+}
+
 pub fn main() !void {
     // Release builds use the fast SMP allocator — building the full command
     // tree (~50 commands, hundreds of small allocations) runs on every single
@@ -2532,6 +2564,10 @@ pub fn main() !void {
         .Debug, .ReleaseSafe => _ = debug_allocator.deinit(),
         .ReleaseFast, .ReleaseSmall => {},
     };
+
+    // Hot path first: shell:lookup / dev:shellcode exit here when matched,
+    // skipping the launchpad warning + migration probe and the command tree.
+    maybeFastPathShellDispatch(allocator);
 
     warnIfInvokedAsLaunchpad();
     lib.migrate.launchpad.maybeMigrate(allocator);
