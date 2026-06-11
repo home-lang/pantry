@@ -74,6 +74,7 @@ export const npmPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '11.17.0',
     '11.16.0',
     '11.15.0',
     '11.14.1',
