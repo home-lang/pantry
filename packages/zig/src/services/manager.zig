@@ -440,10 +440,13 @@ pub const ServiceManager = struct {
                 try io_helper.writeAllToFile(file, env_line);
             }
 
+            // These are USER units (systemctl --user): the user manager has
+            // no multi-user.target, and an empty [Install] makes
+            // `systemctl --user enable` fail outright. Always anchor to
+            // default.target — whether pantry CALLS enable is governed by
+            // auto_start / `pantry services enable`, not by the unit shape.
             try io_helper.writeAllToFile(file, "\n[Install]\n");
-            if (service.auto_start) {
-                try io_helper.writeAllToFile(file, "WantedBy=multi-user.target\n");
-            }
+            try io_helper.writeAllToFile(file, "WantedBy=default.target\n");
         };
     }
 
