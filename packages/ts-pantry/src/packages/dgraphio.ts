@@ -68,6 +68,7 @@ export const dgraphioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '25.3.5',
     '25.3.4',
     '25.3.3',
     '25.3.2',
