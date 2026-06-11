@@ -23,6 +23,35 @@ pub const ShellCommands = struct {
         self.allocator.destroy(self.env_cache);
     }
 
+    /// Opt-in gate shared by every shell hook: true when the deps file sets
+    /// `autoActivate: true` — matched case-insensitively across YAML
+    /// (`autoActivate: true`), JSON/JSONC (`"autoActivate": true`) and TS
+    /// configs. Mirrors the bash/zsh template's __pantry_autocd_enabled grep
+    /// (`^\s*"?autoActivate"?\s*:\s*"?true"?`). The bash/zsh template gates
+    /// before ever invoking the binary, so for those shells this is a no-op;
+    /// it makes fish/nushell/powershell (whose hooks call `shell:lookup`
+    /// directly) honor the same opt-in.
+    fn depFileAutoActivates(self: *ShellCommands, dep_file: []const u8) bool {
+        if (dep_file.len == 0) return false;
+        const content = io_helper.readFileAlloc(self.allocator, dep_file, 1024 * 1024) catch return false;
+        defer self.allocator.free(content);
+
+        var lines = std.mem.splitScalar(u8, content, '\n');
+        while (lines.next()) |raw| {
+            var s = std.mem.trimStart(u8, raw, " \t");
+            if (s.len > 0 and s[0] == '"') s = s[1..];
+            if (!std.ascii.startsWithIgnoreCase(s, "autoactivate")) continue;
+            s = s["autoactivate".len..];
+            if (s.len > 0 and s[0] == '"') s = s[1..];
+            s = std.mem.trimStart(u8, s, " \t");
+            if (s.len == 0 or s[0] != ':') continue;
+            s = std.mem.trimStart(u8, s[1..], " \t");
+            if (s.len > 0 and s[0] == '"') s = s[1..];
+            if (std.ascii.startsWithIgnoreCase(s, "true")) return true;
+        }
+        return false;
+    }
+
     /// shell:lookup - Fast cache lookup (called by shell on every cd)
     /// Returns: env_dir|project_dir or empty on cache miss
     /// Performance target: < 1ms
@@ -36,41 +65,28 @@ pub const ShellCommands = struct {
             // mixes in the (dev, inode) pair so renamed parents yield a
             // different hash — prevents stale cache hits after `mv old new`.
             const hash = lib.string.hashProjectPath(current_dir);
-            const hash_hex = try lib.string.hashToHex(hash, self.allocator);
-            defer self.allocator.free(hash_hex);
 
-            // Check cache for this directory
+            // Check cache for this directory. `get` already validates TTL and
+            // the dep file (mtime + size tiebreaker via Entry.isValid), so a
+            // returned entry only needs the env-path existence check.
             if (try self.env_cache.get(hash)) |entry| {
-                // Validate entry is still valid
-                // 1. Check env directory exists
+                // `EnvCache.get` does NOT validate entry.path itself, so a
+                // stale entry must be removed here — a bare `continue` would
+                // re-fetch the same entry and spin forever.
                 io_helper.cwd().access(io_helper.io, entry.path, .{}) catch {
-                    // Environment deleted, invalidate cache
+                    // Environment deleted: drop the entry, re-run this level
+                    // (now a miss) and keep walking up.
+                    self.env_cache.remove(hash);
                     continue;
                 };
 
-                // 2. Check dependency file mtime (if tracked)
-                if (entry.dep_file.len > 0) {
-                    const file = io_helper.cwd().openFile(io_helper.io, entry.dep_file, .{}) catch {
-                        // Dependency file deleted
-                        continue;
-                    };
-                    defer file.close(io_helper.io);
-
-                    const stat = try file.stat(io_helper.io);
-                    const mtime = @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s);
-
-                    if (mtime != entry.dep_mtime) {
-                        // Dependency file changed, invalidate cache
-                        return null; // Force re-detection
-                    }
-
-                    // 3. Belt-and-braces: if the size field is populated on
-                    // the cache entry, compare it too. mtime has 1s resolution
-                    // on many filesystems so a same-second edit can fool the
-                    // mtime check alone. Size divergence is a cheap tiebreaker.
-                    if (entry.dep_size != 0 and stat.size != entry.dep_size) {
-                        return null;
-                    }
+                // Opt-in gate (nearest-deps-file-wins, like the template): a
+                // tracked deps file that doesn't set autoActivate means this
+                // project must not auto-activate — stop, don't fall through
+                // to a parent. Entries without a dep file predate tracking;
+                // leave them activatable for backward compat.
+                if (entry.dep_file.len > 0 and !self.depFileAutoActivates(entry.dep_file)) {
+                    return null;
                 }
 
                 // Cache valid! Return env_dir|project_dir
@@ -2592,6 +2608,44 @@ test "ShellCommands lookup cache miss" {
     try std.testing.expect(result == null);
 }
 
+test "ShellCommands lookup stale entry (env dir deleted) terminates and misses" {
+    // Regression: a cached entry whose env path no longer exists used to make
+    // lookup() spin forever (`continue` re-fetched the same entry — EnvCache
+    // validation never checks entry.path). It must drop the entry and miss.
+    const allocator = std.testing.allocator;
+
+    // In-memory cache (no persistence): keeps the test hermetic — it must not
+    // read or rewrite the user's real ~/.pantry/cache/envs.cache.
+    const env_cache = try allocator.create(lib.cache.EnvCache);
+    env_cache.* = lib.cache.EnvCache.init(allocator);
+    var commands = ShellCommands{ .allocator = allocator, .env_cache = env_cache };
+    defer commands.deinit();
+
+    const project_dir = try io_helper.realpathAlloc(allocator, ".");
+    defer allocator.free(project_dir);
+
+    const now = @as(i64, @intCast(io_helper.clockGettime().sec));
+    const hash = lib.string.hashProjectPath(project_dir);
+    const entry = try allocator.create(lib.cache.EnvEntry);
+    entry.* = .{
+        .hash = hash,
+        .dep_file = try allocator.dupe(u8, ""),
+        .dep_mtime = 0,
+        .path = try allocator.dupe(u8, "/nonexistent/pantry-env-dir"),
+        .env_vars = std.StringHashMap([]const u8).init(allocator),
+        .created_at = now,
+        .cached_at = now,
+        .last_validated = now,
+    };
+    try commands.env_cache.put(entry);
+
+    const result = try commands.lookup(project_dir);
+    try std.testing.expect(result == null);
+
+    // The stale entry must have been evicted.
+    try std.testing.expect((try commands.env_cache.get(hash)) == null);
+}
+
 test "ShellCommands detectProjectRoot" {
     const allocator = std.testing.allocator;
 
@@ -2655,11 +2709,30 @@ test "ShellCommands detectProjectRoot with config deps ts" {
 test "ShellCommands activate generates shell code" {
     const allocator = std.testing.allocator;
 
+    // Under `zig build test` the runner talks a binary protocol over stdout
+    // (--listen=-). activate() emits progress via style.print (stdout by
+    // default), which corrupts that protocol. Route diagnostics to stderr for
+    // the duration, exactly like the eval'd CLI commands do.
+    //
+    // KNOWN COSMETIC QUIRK: even with diagnostics redirected, the full
+    // install pipeline this test exercises still kills the listen-mode
+    // process on its FIRST attempt — `zig build test` prints one
+    // "failed command: ... --listen=-" line, then its automatic non-listen
+    // retry passes and the build succeeds (exit 0, all steps green).
+    // Skipping this test removes the line entirely; it has never produced a
+    // real failure. If you're grepping CI logs, match on the exit code or
+    // "Build Summary", not on "failed command".
+    style.setDiagnosticsToStderr(true);
+    defer style.setDiagnosticsToStderr(false);
+
     var commands = try ShellCommands.init(allocator);
     defer commands.deinit();
 
-    // Create test project
-    const test_dir = "test_project_activate";
+    // Create test project under an ABSOLUTE path outside the repo. A relative
+    // dir made detectProjectRoot walk up into the real repo and activate IT —
+    // a heavyweight, environment-dependent side effect (real deps parse,
+    // banner, real env cache writes for the repo).
+    const test_dir = "/tmp/pantry_test_activate_zigtest";
     io_helper.makePath(test_dir) catch {};
     defer io_helper.deleteTree(test_dir) catch {};
 
