@@ -73,6 +73,7 @@ export const helmPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.2.1',
     '4.2.0',
     '4.1.4',
     '4.1.3',
@@ -84,6 +85,7 @@ export const helmPackage = {
     '4.0.2',
     '4.0.1',
     '4.0.0',
+    '3.21.1',
     '3.21.0',
     '3.20.2',
     '3.20.1',
