@@ -87,6 +87,7 @@ export const openexrcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.4.13-rc',
     '3.4.12',
     '3.4.12-rc2',
     '3.4.11',
