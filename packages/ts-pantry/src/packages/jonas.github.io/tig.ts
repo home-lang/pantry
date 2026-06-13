@@ -69,6 +69,7 @@ export const jonasgithubiotigPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.6.1',
     '2.6.0',
     '2.5.12',
     '2.5.11',
