@@ -68,6 +68,7 @@ export const changiedevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.24.1',
     '1.24.0',
     '1.23.0',
     '1.22.1',
