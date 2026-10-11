@@ -3,7 +3,7 @@
  *
  * @domain `mercure.rocks`
  * @programs `mercure`
- * @version `1.1.1` (66 versions available)
+ * @version `1.1.2` (67 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install mercure.rocks`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "mercure"
  * console.log(pkg.description) // "🪽 An open, easy, fast, reliable and battery-ef..."
  * console.log(pkg.programs)    // ["mercure"]
- * console.log(pkg.versions[0]) // "1.1.1" (latest)
+ * console.log(pkg.versions[0]) // "1.1.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/mercure-rocks.md
@@ -68,6 +68,7 @@ export const mercurerocksPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.1.2',
     '1.1.1',
     '1.1.0',
     '1.0.4',
