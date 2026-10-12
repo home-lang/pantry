@@ -3,7 +3,7 @@
  *
  * @domain `xpra.org`
  * @programs `xpra`
- * @version `6.5.4` (54 versions available)
+ * @version `6.5.5` (55 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install xpra.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "xpra"
  * console.log(pkg.description) // "Persistent remote applications for X11; screen ..."
  * console.log(pkg.programs)    // ["xpra"]
- * console.log(pkg.versions[0]) // "6.5.4" (latest)
+ * console.log(pkg.versions[0]) // "6.5.5" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/xpra-org.md
@@ -75,6 +75,7 @@ export const xpraorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '6.5.5',
     '6.5.4',
     '6.5.3',
     '6.5.2',
