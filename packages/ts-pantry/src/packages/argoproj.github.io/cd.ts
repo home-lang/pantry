@@ -3,7 +3,7 @@
  *
  * @domain `argoproj.github.io/cd`
  * @programs `argocd`
- * @version `3.5.4` (208 versions available)
+ * @version `3.5.5` (211 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install argoproj.github.io/cd`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "argo-cd"
  * console.log(pkg.description) // "GitOps Continuous Delivery for Kubernetes"
  * console.log(pkg.programs)    // ["argocd"]
- * console.log(pkg.versions[0]) // "3.5.4" (latest)
+ * console.log(pkg.versions[0]) // "3.5.5" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/argoproj-github-io/cd.md
@@ -69,11 +69,13 @@ export const argoprojgithubiocdPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.5.5',
     '3.5.4',
     '3.5.3',
     '3.5.2',
     '3.5.1',
     '3.5.0',
+    '3.4.11',
     '3.4.10',
     '3.4.9',
     '3.4.8',
@@ -84,6 +86,7 @@ export const argoprojgithubiocdPackage = {
     '3.4.3',
     '3.4.2',
     '3.4.1',
+    '3.3.16',
     '3.3.15',
     '3.3.14',
     '3.3.13',

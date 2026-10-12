@@ -3,7 +3,7 @@
  *
  * @domain `whatsapp.com`
  * @programs `whatsapp`
- * @version `2.26.40.20` (59 versions available)
+ * @version `2.26.41.14` (60 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install whatsapp.com`
@@ -22,6 +22,7 @@ export const whatsappcomPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   versions: [
+    '2.26.41.14',
     '2.26.40.20',
     '2.26.40.16',
     '2.26.39.21',

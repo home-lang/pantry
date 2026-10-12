@@ -3,7 +3,7 @@
  *
  * @domain `gleam.run`
  * @programs `gleam`
- * @version `1.19.1` (58 versions available)
+ * @version `1.19.2` (59 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install gleam.run`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "gleam"
  * console.log(pkg.description) // "⭐️ A friendly language for building type-safe, ..."
  * console.log(pkg.programs)    // ["gleam"]
- * console.log(pkg.versions[0]) // "1.19.1" (latest)
+ * console.log(pkg.versions[0]) // "1.19.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/gleam-run.md
@@ -60,6 +60,7 @@ export const gleamrunPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.19.2',
     '1.19.1',
     '1.19.0',
     '1.18.1',

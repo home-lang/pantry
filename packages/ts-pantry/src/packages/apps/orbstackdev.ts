@@ -3,7 +3,7 @@
  *
  * @domain `orbstack.dev`
  * @programs `orbstack`
- * @version `1.9.2` (3 versions available)
+ * @version `2.2.4` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install orbstack.dev`
@@ -22,6 +22,7 @@ export const orbstackdevPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   versions: [
+    '2.2.4',
     '2.2.3',
     '2.2.2',
     '2.2.1',
