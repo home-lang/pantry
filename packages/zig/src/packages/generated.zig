@@ -13244,8 +13244,8 @@ pub const packages = [_]PackageInfo{ .{
     .description = "Development kit for the Java programming language",
     .homepage_url = "https://openjdk.java.net/",
     .programs = &[_][]const u8{ "jar", "jarsigner", "java", "javac", "javadoc", "javap", "jcmd", "jconsole", "jdb", "jdeprscan", "jdeps", "jfr", "jhsdb", "jimage", "jinfo", "jlink", "jmap", "jmod", "jps", "jrunscript", "jshell", "jstack", "jstat", "jstatd", "keytool", "rmiregistry", "serialver" },
-    .dependencies = &[_][]const u8{ "giflib.sourceforge.io", "harfbuzz.org^8", "libjpeg-turbo.org", "libpng.org", "littlecms.com", "openprinting.github.io/cups", "info-zip.org/unzip", "zlib.net", "libzip.org", "linux:alsa-project.org/alsa-lib", "linux:freedesktop.org/fontconfig", "linux:freetype.org", "linux:x.org/x11", "linux:x.org/exts", "linux:x.org/xrandr", "linux:x.org/xrender", "linux:x.org/xt", "linux:x.org/xtst", "linux:info-zip.org/zip", "linux:darwinsys.com/file" },
-    .build_dependencies = &[_][]const u8{ "linux:llvm.org@^16", "linux:gnu.org/make", "gnu.org/autoconf", "gnu.org/wget" },
+    .dependencies = &[_][]const u8{ "linux:giflib.sourceforge.io", "linux:harfbuzz.org^8", "linux:libjpeg-turbo.org", "linux:libpng.org", "linux:littlecms.com", "linux:openprinting.github.io/cups", "linux:info-zip.org/unzip", "linux:zlib.net", "linux:libzip.org", "linux:alsa-project.org/alsa-lib", "linux:freedesktop.org/fontconfig", "linux:freetype.org", "linux:x.org/x11", "linux:x.org/exts", "linux:x.org/xrandr", "linux:x.org/xrender", "linux:x.org/xt", "linux:x.org/xtst", "linux:info-zip.org/zip", "linux:darwinsys.com/file" },
+    .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{ "java", "jdk" },
     .versions = &[_][]const u8{ "21.0.8.7", "21.0.7.4", "21.0.6.6", "21.0.3.6", "17.0.16.7", "17.0.11.4", "17.0.10.6", "11.0.28.5", "11.0.23.6" },
 }, .{

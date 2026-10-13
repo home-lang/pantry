@@ -168,9 +168,15 @@ pub fn fixMacOSLibraryPathsInTree(
         // refused, the error was ignored, and ffmpeg's libavfilter kept looking
         // for `harfbuzz.org/v8`, which the registry no longer has.
         var rpath_buf: [std.fs.max_path_bytes]u8 = undefined;
-        const rpath_ref: ?[]const u8 = if (std.mem.startsWith(u8, dep.original_ref, "@rpath/")) packagesRpathRef(target, &rpath_buf) else null;
         var ref_buf: [std.fs.max_path_bytes]u8 = undefined;
-        const new_ref = rpath_ref orelse (loaderRelativeRef(allocator, tree_root, target, binary_path, &ref_buf) orelse target);
+        // A package's own libraries move with its binaries. A registry rpath
+        // assumes a shared root that a mirrored artifact may not name: Java's
+        // rpath reaches global/, while Pantry installs into global/packages/.
+        // Keep those references local before considering cross-package rpaths.
+        const own_root = std.fs.path.dirname(lib_dir) orelse lib_dir;
+        const own_ref = loaderRelativeRef(allocator, own_root, target, binary_path, &ref_buf);
+        const rpath_ref: ?[]const u8 = if (own_ref == null and std.mem.startsWith(u8, dep.original_ref, "@rpath/")) packagesRpathRef(target, &rpath_buf) else null;
+        const new_ref = own_ref orelse rpath_ref orelse (loaderRelativeRef(allocator, tree_root, target, binary_path, &ref_buf) orelse target);
         if (std.mem.eql(u8, new_ref, dep.original_ref)) continue;
 
         // Fix the library path using install_name_tool
@@ -722,4 +728,45 @@ test "a library found in another package is referenced through @rpath and its ma
     try testing.expectEqualStrings("@rpath/harfbuzz.org/v14/lib/libharfbuzz.dylib", packagesRpathRef(dylib, &out).?);
     // No shorter than what it replaces would need, and nothing outside a packages root.
     try testing.expect(packagesRpathRef("/opt/homebrew/lib/libharfbuzz.dylib", &out) == null);
+}
+
+test "a global package loads its own dylib even when its registry rpath reaches the wrong root" {
+    if (@import("builtin").os.tag != .macos) return error.SkipZigTest;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    var root_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const root = root_buf[0..try tmp.dir.realPath(io_helper.io, &root_buf)];
+    const pkg = try std.fmt.allocPrint(a, "{s}/global/packages/example.org/v1.2.3", .{root});
+    const lib_dir = try std.fmt.allocPrint(a, "{s}/lib", .{pkg});
+    const bin_dir = try std.fmt.allocPrint(a, "{s}/bin", .{pkg});
+    try io_helper.makePath(lib_dir);
+    try io_helper.makePath(bin_dir);
+    const source = try std.fmt.allocPrint(a, "{s}/probe.c", .{root});
+    const main_source = try std.fmt.allocPrint(a, "{s}/main.c", .{root});
+    const Writer = struct {
+        fn write(path: []const u8, text: []const u8) !void {
+            const file = try io_helper.createFileAbsolute(path, .{ .truncate = true });
+            defer io_helper.closeFile(file);
+            try io_helper.writeAllToFile(file, text);
+        }
+    };
+    try Writer.write(source, "int answer(void) { return 42; }\n");
+    try Writer.write(main_source, "#include <stdio.h>\nextern int answer(void);\nint main(void) { printf(\"%d\\n\", answer()); return 0; }\n");
+    const dylib = try std.fmt.allocPrint(a, "{s}/libprobe.dylib", .{lib_dir});
+    const binary = try std.fmt.allocPrint(a, "{s}/probe", .{bin_dir});
+    const cc_lib = try io_helper.childRun(a, &.{ "/usr/bin/clang", "-dynamiclib", source, "-Wl,-install_name,@rpath/example.org/v1.2.3/lib/libprobe.dylib", "-o", dylib });
+    try std.testing.expect(cc_lib.term == .exited and cc_lib.term.exited == 0);
+    const cc_bin = try io_helper.childRun(a, &.{ "/usr/bin/clang", main_source, dylib, "-Wl,-rpath,@loader_path/../../../..", "-o", binary });
+    try std.testing.expect(cc_bin.term == .exited and cc_bin.term.exited == 0);
+    try fixDirectoryLibraryPaths(a, pkg);
+    // Move it too: an absolute rewrite would start here but break after this.
+    const moved = try std.fmt.allocPrint(a, "{s}/moved", .{root});
+    try io_helper.rename(pkg, moved);
+    const moved_binary = try std.fmt.allocPrint(a, "{s}/bin/probe", .{moved});
+    const run = try io_helper.childRun(a, &.{moved_binary});
+    try std.testing.expect(run.term == .exited and run.term.exited == 0);
+    try std.testing.expectEqualStrings("42\n", run.stdout);
 }

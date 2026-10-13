@@ -9,8 +9,8 @@
  * @install `pantry install openjdk.org`
  * @aliases `java`, `jdk`
  * @homepage https://openjdk.java.net/
- * @dependencies `giflib.sourceforge.io`, `harfbuzz.org^8`, `libjpeg-turbo.org`, ... (+17 more) (includes OS-specific dependencies with `os:package` format)
- * @buildDependencies `linux:llvm.org@^16`, `linux:gnu.org/make`, `gnu.org/autoconf`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
+ * @dependencies Linux runtime libraries; macOS JDK artifacts bundle their native libraries.
+ * @buildDependencies None: the recipe repackages upstream JDK binaries.
  *
  * @example
  * ```typescript
@@ -91,16 +91,18 @@ export const javaPackage = {
   * These are required when running the package.
   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
   */
+  // The macOS JDK includes its own native libraries. Keep Linux runtime
+  // dependencies platform-scoped so they do not block a macOS install.
   dependencies: [
-    'giflib.sourceforge.io',
-    'harfbuzz.org^8',
-    'libjpeg-turbo.org',
-    'libpng.org',
-    'littlecms.com',
-    'openprinting.github.io/cups',
-    'info-zip.org/unzip',
-    'zlib.net',
-    'libzip.org',
+    'linux:giflib.sourceforge.io',
+    'linux:harfbuzz.org^8',
+    'linux:libjpeg-turbo.org',
+    'linux:libpng.org',
+    'linux:littlecms.com',
+    'linux:openprinting.github.io/cups',
+    'linux:info-zip.org/unzip',
+    'linux:zlib.net',
+    'linux:libzip.org',
     'linux:alsa-project.org/alsa-lib',
     'linux:freedesktop.org/fontconfig',
     'linux:freetype.org',
@@ -118,12 +120,7 @@ export const javaPackage = {
   * These are only required when building the package from source.
   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
   */
-  buildDependencies: [
-    'linux:llvm.org@^16',
-    'linux:gnu.org/make',
-    'gnu.org/autoconf',
-    'gnu.org/wget',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions

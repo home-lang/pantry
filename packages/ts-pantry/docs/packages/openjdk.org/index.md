@@ -77,17 +77,18 @@ pantry install openjdk.org@21.0.8.7
 
 ## Dependencies
 
-This package depends on:
+The macOS JDK bundles its native libraries and uses Apple system frameworks.
+The following runtime dependencies apply to Linux only:
 
-- `giflib.sourceforge.io`
-- `harfbuzz.org^8`
-- `libjpeg-turbo.org`
-- `libpng.org`
-- `littlecms.com`
-- `openprinting.github.io/cups`
-- `info-zip.org/unzip`
-- `zlib.net`
-- `libzip.org`
+- `linux:giflib.sourceforge.io`
+- `linux:harfbuzz.org^8`
+- `linux:libjpeg-turbo.org`
+- `linux:libpng.org`
+- `linux:littlecms.com`
+- `linux:openprinting.github.io/cups`
+- `linux:info-zip.org/unzip`
+- `linux:zlib.net`
+- `linux:libzip.org`
 - `linux:alsa-project.org/alsa-lib`
 - `linux:freedesktop.org/fontconfig`
 - `linux:freetype.org`
