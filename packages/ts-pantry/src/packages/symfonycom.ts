@@ -3,7 +3,7 @@
  *
  * @domain `symfony.com`
  * @programs `symfony`
- * @version `5.22.0` (54 versions available)
+ * @version `5.22.1` (55 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install symfony.com`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "symfony"
  * console.log(pkg.description) // "The Symfony CLI tool"
  * console.log(pkg.programs)    // ["symfony"]
- * console.log(pkg.versions[0]) // "5.22.0" (latest)
+ * console.log(pkg.versions[0]) // "5.22.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/symfony-com.md
@@ -74,6 +74,7 @@ export const symfonycomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.22.1',
     '5.22.0',
     '5.21.0',
     '5.20.0',
