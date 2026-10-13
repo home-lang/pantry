@@ -3,7 +3,7 @@
  *
  * @domain `dotnet.microsoft.com`
  * @programs `dotnet`
- * @version `10.0.401` (97 versions available)
+ * @version `10.0.402` (99 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install dotnet.microsoft.com`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "dotnet"
  * console.log(pkg.description) // "Home of the .NET platform"
  * console.log(pkg.programs)    // ["dotnet"]
- * console.log(pkg.versions[0]) // "10.0.401" (latest)
+ * console.log(pkg.versions[0]) // "10.0.402" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/dotnet-microsoft-com.md
@@ -76,6 +76,7 @@ export const dotnetmicrosoftcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '10.0.402',
     '10.0.401',
     '10.0.400',
     '10.0.303',
@@ -86,6 +87,7 @@ export const dotnetmicrosoftcomPackage = {
     '10.0.203',
     '10.0.201',
     '10.0.200',
+    '10.0.113',
     '10.0.112',
     '10.0.111',
     '10.0.110',
