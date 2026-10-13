@@ -1,3 +1,70 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.79...v0.11.80)
+
+## 🐛 Bug Fixes
+
+- **install**: repair macOS JDK dependencies and bundled library references ([90629cc](https://github.com/pantry-pm/pantry/commit/90629cc)) _(by Chris Breuer <chris@stacksjs.com>)_
+- resolve Git shell libraries from their runtime dependency ([a51e354](https://github.com/pantry-pm/pantry/commit/a51e354)) _(by Chris <chris@stacksjs.com>)_
+- install the native Git launcher with executable permissions ([efa887a](https://github.com/pantry-pm/pantry/commit/efa887a)) _(by Chris <chris@stacksjs.com>)_
+- resolve native Git library dependencies after relocation ([94cd788](https://github.com/pantry-pm/pantry/commit/94cd788)) _(by Chris <chris@stacksjs.com>)_
+- link Git keychain credentials with declared gettext dependency ([73e6dc4](https://github.com/pantry-pm/pantry/commit/73e6dc4)) _(by Chris <chris@stacksjs.com>)_
+- replace stale native artifacts after recipe changes ([d4d3deb](https://github.com/pantry-pm/pantry/commit/d4d3deb)) _(by Chris <chris@stacksjs.com>)_
+- prevent recursive Git shims and rebuild changed recipe assets ([c0b9778](https://github.com/pantry-pm/pantry/commit/c0b9778)) _(by Chris <chris@stacksjs.com>)_
+- **cli**: say what publishing and its help actually do ([7073e12](https://github.com/pantry-pm/pantry/commit/7073e12)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📝 Documentation
+
+- publishing to npm, pantry login and trusted publishing as they are ([bd31d92](https://github.com/pantry-pm/pantry/commit/bd31d92)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- verify Git loading in a relocated installation layout ([4c12530](https://github.com/pantry-pm/pantry/commit/4c12530)) _(by Chris <chris@stacksjs.com>)_
+
+## 💚 Continuous Integration
+
+- align native publishing with dependency runtime requirements ([969c746](https://github.com/pantry-pm/pantry/commit/969c746)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.80 ([db26281](https://github.com/pantry-pm/pantry/commit/db26281)) _(by Chris Breuer <chris@stacksjs.com>)_
+- update cnquery.io, codex.openai.com, digitalocean.com/doctl, github.com/ggerganov/llama.cpp, pnpm.io, werf.io ([7cf34d2](https://github.com/pantry-pm/pantry/commit/7cf34d2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.158 ([28f3b56](https://github.com/pantry-pm/pantry/commit/28f3b56)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org, github.com/ggerganov/llama.cpp ([f767b55](https://github.com/pantry-pm/pantry/commit/f767b55)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.154 ([a20ba00](https://github.com/pantry-pm/pantry/commit/a20ba00)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.152 ([428c822](https://github.com/pantry-pm/pantry/commit/428c822)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.150 ([8903ef2](https://github.com/pantry-pm/pantry/commit/8903ef2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly.io, github.com/ggerganov/llama.cpp, github.com/router-for-me/CLIProxyAPI, planetscale.com, podman.io, railway.app, rebar3.org, vim.org, xpra.org, zed.dev ([da2123c](https://github.com/pantry-pm/pantry/commit/da2123c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.145 ([89c7ead](https://github.com/pantry-pm/pantry/commit/89c7ead)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.142 ([859b21b](https://github.com/pantry-pm/pantry/commit/859b21b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update argoproj.github.io/cd, digitalocean.com/doctl, github.com/ggerganov/llama.cpp, github.com/router-for-me/CLIProxyAPI, gleam.run, meilisearch.com, ohmyposh.dev, openpolicyagent.org, orbstack.dev, projen.io, rebar3.org, tox.wiki, whatsapp.com ([913ee78](https://github.com/pantry-pm/pantry/commit/913ee78)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.140 ([bc274fb](https://github.com/pantry-pm/pantry/commit/bc274fb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org, dprint.dev, github.com/chainguard-dev/apko, github.com/ggerganov/llama.cpp, virtualenv.pypa.io ([cafee2c](https://github.com/pantry-pm/pantry/commit/cafee2c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.135 ([300bc52](https://github.com/pantry-pm/pantry/commit/300bc52)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.134 ([d7af900](https://github.com/pantry-pm/pantry/commit/d7af900)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org, github.com/mail-os/mail, github.com/router-for-me/CLIProxyAPI ([c14e09a](https://github.com/pantry-pm/pantry/commit/c14e09a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.132 ([f49b228](https://github.com/pantry-pm/pantry/commit/f49b228)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update babashka.org, chezmoi.io, github.com/ggerganov/llama.cpp, mercure.rocks, vim.org ([14e59ce](https://github.com/pantry-pm/pantry/commit/14e59ce)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update alttab.app, digitalocean.com/doctl, github.com/ggerganov/llama.cpp, mise.jdx.dev, pnpm.io, projen.io, stats.app, tox.wiki ([500a6da](https://github.com/pantry-pm/pantry/commit/500a6da)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor.org, github.com/mail-os/mail, ollama.ai, opencode.ai ([5490993](https://github.com/pantry-pm/pantry/commit/5490993)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dprint.dev, github.com/mail-os/mail, mailpit.axllent.org ([74bc5cd](https://github.com/pantry-pm/pantry/commit/74bc5cd)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dozzle.dev, github.com/ggerganov/llama.cpp, github.com/mail-os/mail, numpy.org, pnpm.io, tox.wiki ([222de5b](https://github.com/pantry-pm/pantry/commit/222de5b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor.org, codex.openai.com, cursor.com, depot.dev, fastlane.tools, openshift.com, wxwidgets.org ([ac55fc0](https://github.com/pantry-pm/pantry/commit/ac55fc0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update direnv.net, github.com/ggerganov/llama.cpp, github.com/tw93/mole, mercure.rocks, ohmyposh.dev, prettier.io, rubocop.org, tox.wiki, ziglang.org ([f0518e1](https://github.com/pantry-pm/pantry/commit/f0518e1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update bun.com, fury.co, github.com/ggerganov/llama.cpp, github.com/tw93/mole ([e4cad35](https://github.com/pantry-pm/pantry/commit/e4cad35)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.128 ([04b3099](https://github.com/pantry-pm/pantry/commit/04b3099)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update anthropic.com/claude-code, cnquery.io, dblab.danvergara.com, github.com/ggerganov/llama.cpp, mise.jdx.dev, openai.com/codex, tinygo.org, tox.wiki ([5c93681](https://github.com/pantry-pm/pantry/commit/5c93681)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.127 ([0b976e3](https://github.com/pantry-pm/pantry/commit/0b976e3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update argoproj.github.io/workflows, digitalocean.com/doctl, github.com/chainguard-dev/apko, github.com/ggerganov/llama.cpp, github.com/router-for-me/CLIProxyAPI, neovim.io, planetscale.com, pnpm.io, python.org, railway.app, sqlite.org ([bd1050f](https://github.com/pantry-pm/pantry/commit/bd1050f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.125 ([f81871b](https://github.com/pantry-pm/pantry/commit/f81871b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update circleci.com, digitalocean.com/doctl, github.com/ggerganov/llama.cpp, insomnia.rest, mise.jdx.dev, pnpm.io, projen.io, rclone.org, werf.io, ziglang.org ([d47b55d](https://github.com/pantry-pm/pantry/commit/d47b55d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cursor.com, flutter.dev, github.com/ggerganov/llama.cpp, goreleaser.com, ollama.ai ([e1ff6ee](https://github.com/pantry-pm/pantry/commit/e1ff6ee)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.124 ([80e143c](https://github.com/pantry-pm/pantry/commit/80e143c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update anthropic.com/claude-code, codex.openai.com, depot.dev, fly.io, github.com/ggerganov/llama.cpp, github.com/router-for-me/CLIProxyAPI, lmstudio.ai, mise.jdx.dev, ohmyposh.dev, openai.com/codex, railway.app, tox.wiki, whatsapp.com, zrok.io ([fcc2db4](https://github.com/pantry-pm/pantry/commit/fcc2db4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.78...v0.11.79)
 
 ## ✨ Features
