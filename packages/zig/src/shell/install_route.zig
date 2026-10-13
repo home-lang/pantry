@@ -370,15 +370,19 @@ test "den: cd runs pantry install only in pantry projects" {
     try f.write("pantry-proj/pantry.lock", "{}");
     try f.write("home/.keep", "");
 
-    // den scripts do not inherit a parent's shell variables, so the paths are
-    // written into the script itself.
+    // Isolate HOME as well as PATH: the hook prepends HOME's global pantry
+    // bin directory, which would otherwise shadow this fixture's stub.
+    // Clear the inherited opt-out so the test exercises auto-install.
     const script = try std.fmt.allocPrint(allocator,
+        \\HOME="{0s}/home"
+        \\export HOME
         \\PATH="{0s}/bin:$PATH"
         \\export PATH
         \\PANTRY_STUB_LOG="{0s}/log"
         \\export PANTRY_STUB_LOG
         \\PANTRY_QUIET=1
         \\export PANTRY_QUIET
+        \\unset PANTRY_NO_AUTO_INSTALL
         \\source "{0s}/hook.sh"
         \\cd "{0s}/js-only"
         \\__pantry_switch
@@ -392,13 +396,20 @@ test "den: cd runs pantry install only in pantry projects" {
     const run_path = try f.path("run.sh");
     defer allocator.free(run_path);
     const res = try io_helper.childRun(allocator, &.{ "den", "--norc", run_path });
-    allocator.free(res.stdout);
-    allocator.free(res.stderr);
+    defer allocator.free(res.stdout);
+    defer allocator.free(res.stderr);
+    if (res.term != .exited or res.term.exited != 0) {
+        std.debug.print("den rejected routing fixture:\n{s}\n{s}\n", .{ res.stdout, res.stderr });
+        return error.ShellRoutingError;
+    }
 
     const log_path = try f.path("log");
     defer allocator.free(log_path);
     const log = try io_helper.readFileAlloc(allocator, log_path, 1024 * 1024);
     defer allocator.free(log);
+    if (countLines(log, "install") != 1) {
+        std.debug.print("den routing log:\n{s}\nstdout:\n{s}\nstderr:\n{s}\n", .{ log, res.stdout, res.stderr });
+    }
     try testing.expectEqual(@as(usize, 1), countLines(log, "install"));
     // The JS-only project was routed away before any install ran.
     try testing.expect(std.mem.indexOf(u8, log, "/js-only\ninstall") == null);

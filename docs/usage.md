@@ -242,6 +242,23 @@ echo 'eval "$(pantry dev:shellcode)"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
+For Den, generate a hook file and source it from `~/.denrc`:
+
+```sh
+mkdir -p "$HOME/.cache"
+PANTRY_SHELL=den pantry dev:shellcode > "$HOME/.cache/pantry-den-hook.sh"
+# Add this line to ~/.denrc:
+source "$HOME/.cache/pantry-den-hook.sh"
+```
+
+Regenerate the file after upgrading Pantry. Den's hook should be sourced from a
+file because its `eval` command does not load the hook's function definitions.
+The hook prepends `$HOME/.local/share/pantry/global/bin` when it exists, then
+activates project environments. Automatic installation runs only for projects
+with `pantry.lock` or a Pantry dependency file; a standalone `package.json` stays
+with its own package manager. Set `PANTRY_NO_AUTO_INSTALL=1` to disable automatic
+installation.
+
 Once set up, environments automatically activate when you enter a directory with dependency files:
 
 ```bash
