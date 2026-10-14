@@ -3,7 +3,7 @@
  *
  * @domain `imagemagick.org`
  * @programs `animate`, `compare`, `composite`, `conjure`, `convert`, ... (+11 more)
- * @version `7.1.2.13` (69 versions available)
+ * @version `7.1.2.13` (70 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install imagemagick.org`
@@ -104,6 +104,7 @@ export const imagemagickorgPackage = {
   */
   versions: [
     '7.1.2.13',
+    '7.1.2-34',
     '7.1.2-33',
     '7.1.2-32',
     '7.1.2-31',
