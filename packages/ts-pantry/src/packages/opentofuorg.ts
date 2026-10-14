@@ -3,7 +3,7 @@
  *
  * @domain `opentofu.org`
  * @programs `tofu`
- * @version `1.13.1` (54 versions available)
+ * @version `1.13.1` (55 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install opentofu.org`
@@ -77,6 +77,7 @@ export const opentofuorgPackage = {
   versions: [
     '1.13.1',
     '1.13.0',
+    '1.12.8',
     '1.12.7',
     '1.12.6',
     '1.12.5',

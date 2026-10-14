@@ -3,7 +3,7 @@
  *
  * @domain `npmjs.com`
  * @programs `npm`, `npx`
- * @version `12.2.0` (99 versions available)
+ * @version `12.2.0` (100 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install npmjs.com`
@@ -78,6 +78,7 @@ export const npmPackage = {
     '12.0.2',
     '12.0.1',
     '12.0.0',
+    '11.21.0',
     '11.20.0',
     '11.19.1',
     '11.19.0',
