@@ -3,7 +3,7 @@
  *
  * @domain `libzip.org`
  * @programs `zipcmp`, `zipmerge`, `ziptool`
- * @version `1.12` (15 versions available)
+ * @version `1.12.1` (16 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install libzip.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "zip"
  * console.log(pkg.description) // "A C library for reading, creating, and modifyin..."
  * console.log(pkg.programs)    // ["zipcmp", "zipmerge", ...]
- * console.log(pkg.versions[0]) // "1.12" (latest)
+ * console.log(pkg.versions[0]) // "1.12.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/libzip-org.md
@@ -81,6 +81,7 @@ export const libziporgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.12.1',
     '1.12',
     '1.11.4',
     '1.11.3',

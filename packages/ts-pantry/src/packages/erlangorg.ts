@@ -3,7 +3,7 @@
  *
  * @domain `erlang.org`
  * @programs `ct_run`, `dialyzer`, `epmd`, `erl`, `erlc`, ... (+4 more)
- * @version `29.1.1` (135 versions available)
+ * @version `29.1.2` (137 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install erlang.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "erlang"
  * console.log(pkg.description) // "Programming language for highly scalable real-t..."
  * console.log(pkg.programs)    // ["ct_run", "dialyzer", ...]
- * console.log(pkg.versions[0]) // "29.1.1" (latest)
+ * console.log(pkg.versions[0]) // "29.1.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/erlang-org.md
@@ -83,6 +83,7 @@ export const erlangorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '29.1.2',
     '29.1.1',
     '29.1',
     '29.0.6',
@@ -93,6 +94,7 @@ export const erlangorgPackage = {
     '29.0.1',
     '29.0',
     '29.0-rc1',
+    '28.5.0.8',
     '28.5.0.7',
     '28.5.0.6',
     '28.5.0.5',
