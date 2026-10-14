@@ -3,7 +3,7 @@
  *
  * @domain `terraform.io`
  * @programs `terraform`
- * @version `1.16.5` (38 versions available)
+ * @version `1.16.6` (39 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install terraform.io`
@@ -23,7 +23,7 @@
  * console.log(pkg.name)        // "terraform"
  * console.log(pkg.description) // "Terraform enables you to safely and predictably..."
  * console.log(pkg.programs)    // ["terraform"]
- * console.log(pkg.versions[0]) // "1.16.5" (latest)
+ * console.log(pkg.versions[0]) // "1.16.6" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/terraform-io.md
@@ -72,6 +72,7 @@ export const terraformPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.16.6',
     '1.16.5',
     '1.16.4',
     '1.16.3',

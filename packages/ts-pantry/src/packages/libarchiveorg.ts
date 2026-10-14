@@ -3,7 +3,7 @@
  *
  * @domain `libarchive.org`
  * @programs `bsdcat`, `bsdcpio`, `bsdtar`
- * @version `3.8.9` (34 versions available)
+ * @version `3.8.10` (35 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install libarchive.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "libarchive"
  * console.log(pkg.description) // "Multi-format archive and compression library"
  * console.log(pkg.programs)    // ["bsdcat", "bsdcpio", ...]
- * console.log(pkg.versions[0]) // "3.8.9" (latest)
+ * console.log(pkg.versions[0]) // "3.8.10" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/libarchive-org.md
@@ -75,6 +75,7 @@ export const libarchiveorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.8.10',
     '3.8.9',
     '3.8.8',
     '3.8.7',
