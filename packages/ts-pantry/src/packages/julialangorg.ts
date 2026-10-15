@@ -3,7 +3,7 @@
  *
  * @domain `julialang.org`
  * @programs `julia`
- * @version `1.13.1` (35 versions available)
+ * @version `1.13.2` (36 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install julialang.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "julia"
  * console.log(pkg.description) // "The Julia Programming Language"
  * console.log(pkg.programs)    // ["julia"]
- * console.log(pkg.versions[0]) // "1.13.1" (latest)
+ * console.log(pkg.versions[0]) // "1.13.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/julialang-org.md
@@ -68,6 +68,7 @@ export const julialangorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.13.2',
     '1.13.1',
     '1.13.0',
     '1.12.7',
