@@ -3,7 +3,7 @@
  *
  * @domain `bitwarden.com`
  * @programs `bw`
- * @version `2026.9.1` (114 versions available)
+ * @version `2026.10.0` (115 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install bitwarden.com`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "bw"
  * console.log(pkg.description) // "Secure and free password manager for all of you..."
  * console.log(pkg.programs)    // ["bw"]
- * console.log(pkg.versions[0]) // "2026.9.1" (latest)
+ * console.log(pkg.versions[0]) // "2026.10.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/bitwarden-com.md
@@ -76,6 +76,7 @@ export const bitwardencomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2026.10.0',
     '2026.9.1',
     '2026.9.0',
     '2026.8.0',

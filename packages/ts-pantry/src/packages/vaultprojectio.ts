@@ -3,7 +3,7 @@
  *
  * @domain `vaultproject.io`
  * @programs `vault`
- * @version `2.1.2` (49 versions available)
+ * @version `2.2.0` (50 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install vaultproject.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "vault"
  * console.log(pkg.description) // "A tool for secrets management, encryption as a ..."
  * console.log(pkg.programs)    // ["vault"]
- * console.log(pkg.versions[0]) // "2.1.2" (latest)
+ * console.log(pkg.versions[0]) // "2.2.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/vaultproject-io.md
@@ -72,6 +72,7 @@ export const vaultprojectioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.2.0',
     '2.1.2',
     '2.1.1',
     '2.1.0',

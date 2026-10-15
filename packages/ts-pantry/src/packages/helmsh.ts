@@ -3,7 +3,7 @@
  *
  * @domain `helm.sh`
  * @programs `helm`
- * @version `4.3.1` (70 versions available)
+ * @version `4.3.1` (71 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install helm.sh`
@@ -89,6 +89,7 @@ export const helmPackage = {
     '4.0.2',
     '4.0.1',
     '4.0.0',
+    '3.22.1',
     '3.22.0',
     '3.21.4',
     '3.21.3',
