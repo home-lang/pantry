@@ -3,7 +3,7 @@
  *
  * @domain `helm.sh`
  * @programs `helm`
- * @version `4.3.0` (69 versions available)
+ * @version `4.3.1` (70 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install helm.sh`
@@ -23,7 +23,7 @@
  * console.log(pkg.name)        // "helm"
  * console.log(pkg.description) // "The Kubernetes Package Manager"
  * console.log(pkg.programs)    // ["helm"]
- * console.log(pkg.versions[0]) // "4.3.0" (latest)
+ * console.log(pkg.versions[0]) // "4.3.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/helm-sh.md
@@ -72,6 +72,7 @@ export const helmPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.3.1',
     '4.3.0',
     '4.2.4',
     '4.2.3',
