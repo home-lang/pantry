@@ -13,6 +13,7 @@ import { isRollingVersionSpec, normalizeLockedVersion, reassertVersionSpec, shou
 import { setupBunRuntime } from './bun-runtime'
 import { ensurePackageExecutorAliases } from './executor-aliases'
 import { installRequiredSystemPackages, jsPackageManager, needsJsInstall, pantryConfigMaySetLinker, selectSystemPackages, shouldInstallWorkspace } from './install-mode'
+import { installResolvedSystemPackage } from './system-packages'
 import type { ServiceSpec } from './services'
 import { mergeServicePackages, nativeServiceEnvironment, parseRedisVersion, parseServiceSpecs, readServiceLog, redisLaunchArgs, waitForRedisPid } from './services'
 import type { NativeServiceState } from './native-services'
@@ -72,12 +73,13 @@ async function installRequestedServicePackages(services: ServiceSpec[], pantryEx
 }
 
 async function startRequestedServices(services: ServiceSpec[], pantryBinDir: string, platform: Platform): Promise<void> {
-  if (!services.length) return
-  if (platform.os === 'windows') throw new Error('Pantry Action services are not yet supported on Windows runners')
   const serviceEnvironment = nativeServiceEnvironment(pantryBinDir, platform.os)
   const libraryVariable = platform.os === 'darwin' ? 'DYLD_LIBRARY_PATH' : 'LD_LIBRARY_PATH'
   if (serviceEnvironment[libraryVariable])
     core.exportVariable(libraryVariable, serviceEnvironment[libraryVariable])
+
+  if (!services.length) return
+  if (platform.os === 'windows') throw new Error('Pantry Action services are not yet supported on Windows runners')
 
   const nativeStates: NativeServiceState[] = []
   for (const service of services) {
@@ -309,9 +311,9 @@ function getBinName(dep: string): string {
 }
 
 /**
- * Install a system package using the pantry TS installer SDK.
- * Works cross-platform (macOS, Linux, Windows) using Node.js APIs.
- * Supports: ziglang.org, bun.sh, nodejs.org (and all 1700+ aliases from ts-pantry)
+ * Bootstrap standalone runtimes with the SDK and install registry packages
+ * through the native Pantry resolver, including their runtime dependencies.
+ * Package aliases and version selection are shared with the SDK.
  *
  * Version resolution precedence: explicit `@x.y.z` in spec > pantry.lock pin
  * *if it satisfies the spec* > deps file spec > latest. Semver ranges (`^`,
@@ -356,27 +358,15 @@ async function installSystemPackage(
   spec: string,
   pantryDir: string,
   lockedVersions: Map<string, string>,
+  pantryExecutable: string,
   resolvedVersions?: Map<string, string>,
   reuseResolved = false,
 ): Promise<void> {
   // Import from the pantry TS installer SDK
   const installer = await import('../../ts-pantry/src/installer')
 
-  const { installPackage, isInstallable } = installer
-
   const [rawName, rawVersion = ''] = spec.includes('@') ? spec.split('@', 2) : [spec, '']
   const domain = resolvePackageDomain(rawName)
-  // Asks the registry, not just the built-in resolver table. Gating on the
-  // synchronous `isSupported` skipped every package pantry builds and
-  // publishes but has no bespoke origin layout for — which on a Linux runner
-  // meant warning "not supported" about a tarball sitting in the registry.
-  if (!await isInstallable(domain, installer.detectPlatform())) {
-    core.warning(
-      `${rawName} (resolved to ${domain}): no installable ${installer.registryPlatformKey(installer.detectPlatform())} `
-      + `build — not a built-in package, and the registry publishes nothing for this platform. Skipping.`,
-    )
-    return
-  }
 
   const pinned = lockedVersions.get(domain)
   const declaredVersion = reuseResolved
@@ -409,15 +399,18 @@ async function installSystemPackage(
     source = rawVersion ? ' (from deps spec)' : ' (defaulted to latest)'
   }
 
-  core.info(`Installing ${domain}@${version} via pantry SDK${source}`)
+  core.info(`Installing ${domain}@${version} via ${installer.isSupported(domain) ? 'Pantry SDK' : 'Pantry native dependency resolver'}${source}`)
   // `installPackage` handles "latest", "*", empty, semver ranges, and concrete
   // versions — don't pre-resolve here or semver ranges get flattened to latest.
-  const installed = await installPackage(domain, version, {
+  const installed = await installResolvedSystemPackage(domain, version, {
     installDir: pantryDir,
-    quiet: true,
     onRetry: message => core.warning(message),
+    nativeInstall: packageSpec => exec.exec(pantryExecutable, ['install', packageSpec, '--no-save'], {
+      cwd: path.dirname(pantryDir),
+      env: { ...process.env, CI: 'true', NO_COLOR: '1' } as { [key: string]: string },
+    }),
   })
-  resolvedVersions?.set(domain, installed.version)
+  resolvedVersions?.set(domain, installed)
 }
 
 /** Parse pantry.lock and return a map of `domain` → concrete `version`. */
@@ -859,7 +852,7 @@ export async function run(): Promise<void> {
       // A failed install fails the setup here, with the download error,
       // instead of a warning and a downstream `bun: command not found`.
       await setupBunRuntime({
-        install: () => installSystemPackage('bun.sh', pantryDir, readLockedVersions()),
+        install: () => installSystemPackage('bun.sh', pantryDir, readLockedVersions(), path.join(installDir, platform.binaryName)),
         binDir: pantryBinDir,
         onLinked: () => core.exportVariable('BUN_INSTALL', pantryDir),
       })
@@ -925,7 +918,7 @@ export async function run(): Promise<void> {
     // Bun is part of the action's baseline runtime contract even when callers
     // provide an explicit package/service list. Keep downstream `bun` steps
     // working without requiring every workflow to repeat `bun.sh`.
-    await installSystemPackage('bun.sh', pantryDir, lockedVersions, resolvedSystemVersions)
+    await installSystemPackage('bun.sh', pantryDir, lockedVersions, path.join(installDir, platform.binaryName), resolvedSystemVersions)
 
     // Put `pantry/.bin` (and `~/.pantry/bin`) on PATH *before* any install
     // branch runs. `core.addPath` mutates `process.env.PATH` in-process in
@@ -970,7 +963,7 @@ export async function run(): Promise<void> {
         core.info(`Cache hit — reconciling system deps against lock/spec: ${systemDeps.join(', ')}`)
         await installRequiredSystemPackages(
           systemDeps,
-          dep => installSystemPackage(dep, pantryDir, lockedVersions, resolvedSystemVersions),
+          dep => installSystemPackage(dep, pantryDir, lockedVersions, path.join(installDir, platform.binaryName), resolvedSystemVersions),
         )
       }
 
@@ -1032,12 +1025,12 @@ export async function run(): Promise<void> {
       if (systemDeps.length > 0) {
         core.startGroup(`Installing system packages: ${systemDeps.join(', ')}`)
         try {
-          // Use the pantry TS installer SDK — works cross-platform via Node.js APIs.
+          // Standalone runtimes use the SDK; package graphs use the native resolver.
           // Every selected package is part of the action contract; a partial
           // install must fail this step rather than surprising a later command.
           await installRequiredSystemPackages(
             systemDeps,
-            dep => installSystemPackage(dep, pantryDir, lockedVersions, resolvedSystemVersions),
+            dep => installSystemPackage(dep, pantryDir, lockedVersions, path.join(installDir, platform.binaryName), resolvedSystemVersions),
           )
         }
         finally {
@@ -1073,7 +1066,7 @@ export async function run(): Promise<void> {
     // it drops a placeholder stub and repoints `.bin/<name>` at it — clobbering
     // the genuine upstream binary that `installSystemPackage` (ts installer,
     // fetched from the official source) put in place earlier. Re-run the ts
-    // installer for each system dep *after* `pantry install`: it's idempotent
+    // or native installer for each system dep *after* `pantry install`: it's idempotent
     // (no-op download when present) and re-links `.bin/<name>` to the real
     // binary, so the stub never wins. Fixes the Intel-macOS bootstrap without
     // any per-workflow workaround.
@@ -1083,7 +1076,7 @@ export async function run(): Promise<void> {
       const reassertDeps = selectSystemPackages(inputs.packages, inputs.setupOnly, extractSystemDeps)
       await installRequiredSystemPackages(
         reassertDeps,
-        dep => installSystemPackage(dep, pantryDir, lockedVersions, resolvedSystemVersions, true),
+        dep => installSystemPackage(dep, pantryDir, lockedVersions, path.join(installDir, platform.binaryName), resolvedSystemVersions, true),
       )
     }
 

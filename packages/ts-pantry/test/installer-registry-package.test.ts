@@ -14,7 +14,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, mkdirSync, writeFileSync, chmodSync, lstatSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, mkdirSync, writeFileSync, chmodSync } from 'node:fs'
 import { createServer, type Server } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -226,8 +226,8 @@ describe('installing a registry-published package', () => {
 
     for (const program of ['demo', 'demo-helper']) {
       const link = join(installDir, '.bin', program)
-      expect(lstatSync(link).isSymbolicLink()).toBe(true)
-      expect(statSync(realpathSync(link)).mode & 0o111).toBeGreaterThan(0)
+      expect(execFileSync(link, { encoding: 'utf8' }).trim()).toBe(program)
+      expect(statSync(link).mode & 0o111).toBeGreaterThan(0)
     }
   })
 

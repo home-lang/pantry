@@ -1,9 +1,9 @@
 /**
  * Cross-platform system package installer for pantry.
  *
- * Uses Node.js APIs exclusively — works on macOS, Linux, and Windows
- * without requiring the Zig CLI binary. This is the canonical way to
- * install system packages (zig, bun, node, etc.) from pantry recipes.
+ * Uses Node.js APIs to bootstrap standalone runtimes on macOS, Linux and
+ * Windows without requiring the CLI. It can also install registry artifacts;
+ * use the native Pantry resolver when their runtime dependency graph is needed.
  *
  * Usage:
  *   import { installPackage, detectPlatform } from 'ts-pantry/installer'
@@ -283,6 +283,30 @@ const resolvers: Record<string, PackageResolver> = {
  * placeholder stub for a platform it lacks) could leave `.bin/<name>` pointing at
  * a broken stub even though the genuine binary is present on disk.
  */
+function linkBinary(source: string, destination: string, platform: Platform): void {
+  try { fs.unlinkSync(destination) } catch { /* Entry does not exist yet. */ }
+  if (platform.os === 'windows') {
+    fs.copyFileSync(source, destination)
+    return
+  }
+
+  // Resolve directory aliases before computing a relocatable entrypoint, but
+  // preserve the installed program's name for multicall wrappers.
+  const target = path.relative(fs.realpathSync(path.dirname(destination)), path.join(fs.realpathSync(path.dirname(source)), path.basename(source)))
+  const descriptor = fs.openSync(source, 'r')
+  const magic = Buffer.alloc(2)
+  try { fs.readSync(descriptor, magic, 0, 2, 0) }
+  finally { fs.closeSync(descriptor) }
+  if (magic.toString() === '#!') {
+    // A symlink leaves $0 pointing at .bin. Prefix-relative scripts such as
+    // Git then look for libexec beside the environment rather than their
+    // package. Execute the installed script so its own prefix stays intact.
+    const quoted = `'${target.replaceAll("'", "'\\''")}'`
+    fs.writeFileSync(destination, `#!/bin/sh\ns=$0\nwhile [ -h "$s" ]; do\n  link=$(readlink "$s") || exit\n  case $link in /*) s=$link ;; *) s=$(dirname -- "$s")/$link ;; esac\ndone\nbasedir=$(CDPATH= cd -- "$(dirname -- "$s")" && pwd) || exit\nexec "$basedir"/${quoted} "$@"\n`, { mode: 0o755 })
+  }
+  else fs.symlinkSync(target, destination)
+}
+
 function linkBinaries(pkgDir: string, binaries: string[], binDir: string, platform: Platform): void {
   fs.mkdirSync(binDir, { recursive: true })
   let primaryBin: string | null = null
@@ -299,13 +323,7 @@ function linkBinaries(pkgDir: string, binaries: string[], binDir: string, platfo
       // (e.g. bunx -> bun, npx -> node)
       if (primaryBin) {
         const dstBin = path.join(binDir, bin)
-        try { fs.unlinkSync(dstBin) } catch { /* */ }
-        if (platform.os === 'windows') {
-          fs.copyFileSync(primaryBin, dstBin)
-        }
-        else {
-          fs.symlinkSync(primaryBin, dstBin)
-        }
+        linkBinary(primaryBin, dstBin, platform)
       }
       continue
     }
@@ -313,31 +331,19 @@ function linkBinaries(pkgDir: string, binaries: string[], binDir: string, platfo
     if (!primaryBin) primaryBin = srcBin
 
     const dstBin = path.join(binDir, bin)
-    try { fs.unlinkSync(dstBin) } catch { /* doesn't exist */ }
-
-    if (platform.os === 'windows') {
-      fs.copyFileSync(srcBin, dstBin)
-    }
-    else {
-      fs.symlinkSync(srcBin, dstBin)
-    }
+    linkBinary(srcBin, dstBin, platform)
   }
 }
 
 /**
- * Install a system package by downloading from its official source.
- * Works cross-platform using only Node.js APIs.
+ * Resolve a requested platform/version without installing its artifact.
  */
-export async function installPackage(
+export async function resolvePackageVersion(
   domain: string,
   version: string,
-  options: InstallOptions = {},
-): Promise<InstallResult> {
-  const platform = options.platform || detectPlatform()
-  // No built-in resolver is not "unknown" — it just means the package has no
-  // bespoke origin layout, and installs from the registry like most of them do.
-  const resolver: PackageResolver | undefined = resolvers[domain]
-
+  platform: Platform = detectPlatform(),
+  options: Pick<InstallOptions, 'onRetry'> = {},
+): Promise<string> {
   // Resolve semver constraints (^, ~, >=, etc.) to concrete versions
   if (/^[\^~>=<]/.test(version)) {
     version = await resolveVersionConstraint(domain, version, platform)
@@ -362,6 +368,18 @@ export async function installPackage(
   if (!version) {
     throw new Error(`Could not resolve a concrete version for ${domain} (got empty string from resolver)`)
   }
+  return version
+}
+
+/** Install a package artifact; dependency graphs belong to the native CLI. */
+export async function installPackage(
+  domain: string,
+  version: string,
+  options: InstallOptions = {},
+): Promise<InstallResult> {
+  const platform = options.platform || detectPlatform()
+  const resolver: PackageResolver | undefined = resolvers[domain]
+  version = await resolvePackageVersion(domain, version, platform, options)
 
   const installDir = options.installDir || path.join(process.cwd(), 'pantry')
   const binDir = path.join(installDir, '.bin')
@@ -550,15 +568,7 @@ function maybeLinkToGlobalBin(
     if (!fs.existsSync(srcBin)) continue
 
     const dstBin = path.join(targetDir, bin)
-    try { fs.unlinkSync(dstBin) }
-    catch { /* missing is fine */ }
-
-    if (platform.os === 'windows') {
-      fs.copyFileSync(srcBin, dstBin)
-    }
-    else {
-      fs.symlinkSync(srcBin, dstBin)
-    }
+    linkBinary(srcBin, dstBin, platform)
     created.push(dstBin)
   }
 
