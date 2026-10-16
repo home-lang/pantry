@@ -3,7 +3,7 @@
  *
  * @domain `systemd.io`
  * @programs `busctl`, `coredumpctl`, `hostnamectl`, `journalctl`, `kernel-install`, ... (+50 more)
- * @version `262` (57 versions available)
+ * @version `262.1` (58 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install systemd.io`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "systemd"
  * console.log(pkg.description) // "The systemd System and Service Manager "
  * console.log(pkg.programs)    // ["busctl", "coredumpctl", ...]
- * console.log(pkg.versions[0]) // "262" (latest)
+ * console.log(pkg.versions[0]) // "262.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/systemd-io.md
@@ -150,6 +150,7 @@ export const systemdioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '262.1',
     '262',
     '261.3',
     '261.2',
