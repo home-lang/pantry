@@ -31,7 +31,7 @@ function sourceAt(ref: string, path: string, cwd: string): string | null {
   return git(['show', `${ref}:${path}`], cwd)
 }
 
-export function changedPackageDomains(beforeRef: string, afterRef: string, cwd = REPO_ROOT): string[] {
+export function changedPackageDomains(beforeRef: string, afterRef: string, cwd: string = REPO_ROOT): string[] {
   const changed = git([
     'diff', '--name-only', beforeRef, afterRef, '--',
     `${RECIPE_ROOT}**`, `${PACKAGE_ROOT}**`,
