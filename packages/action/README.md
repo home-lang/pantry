@@ -31,7 +31,7 @@ This action allows you to easily install dependencies with pantry in your GitHub
 | Name       | Description                           | Required | Default              |
 |------------|---------------------------------------|----------|----------------------|
 | packages   | Space-separated list of packages to install (overrides auto-detection) | No  | (empty) - auto-detects from project files |
-| services   | Space-separated CI services to install, start, health-check, and stop; Redis accepts an exact `redis@X.Y.Z` pin | No | (empty) |
+| services   | Native CI services to install, start, health-check, and stop: `redis@X.Y.Z`, `postgres@17.10`, `typesense@30.2` | No | (empty) |
 | config-path | Path to pantry config file        | No       | `pantry.config.ts` |
 | package-dir | Directory to publish from for monorepo packages | No | (empty) - repository root |
 
@@ -72,6 +72,31 @@ service pin or Redis does not become ready. `redis-url` and `redis-version` are
 also available as action outputs. Pin both the action revision and the Pantry
 binary `version` in release-sensitive workflows so source and CLI behavior are
 independently reproducible.
+
+### PostgreSQL and Typesense
+
+Pantry installs the complete native dependency graph, creates private service
+data for each action invocation, allocates loopback ports and checks the running
+versions. PostgreSQL readiness includes an authenticated SQL query; Typesense
+readiness includes an authenticated API request. The post action stops the
+owned services and removes their private data, including after a failed job.
+
+```yaml
+- name: Set up the native test stack
+  uses: pantry-pm/pantry/packages/action@main
+  with:
+    install: 'false'
+    packages: bun.sh@1.4.2
+    services: postgres@17.10 typesense@30.2
+```
+
+PostgreSQL exports `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`,
+`POSTGRES_URL` and `POSTGRES_SERVICE_VERSION`. Typesense exports
+`TYPESENSE_HOST`, `TYPESENSE_PORT`, `TYPESENSE_PROTOCOL`, `TYPESENSE_API_KEY`,
+`TYPESENSE_URL` and `TYPESENSE_SERVICE_VERSION`. Credentials are random per job
+and masked in action logs. `postgres-url`, `postgres-version`, `typesense-url`
+and `typesense-version` are also action outputs. Keep these services on the
+provided addresses; no fixed host ports or pre-existing databases are needed.
 
 ### Apple code signing
 

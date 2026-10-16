@@ -2,7 +2,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 
 export interface ServiceSpec {
-  name: 'redis'
+  name: 'redis' | 'postgres' | 'typesense'
   packageSpec: string
   expectedVersion?: string
 }
@@ -11,13 +11,16 @@ export function parseServiceSpecs(input: string): ServiceSpec[] {
   const services: ServiceSpec[] = []
   const seen = new Set<string>()
   for (const raw of input.split(/[\s,]+/).filter(Boolean)) {
-    const [name, version] = raw.split('@')
-    if (name !== 'redis') throw new Error(`Unsupported Pantry Action service: ${name}`)
+    if (raw.split('@').length > 2) throw new Error(`Invalid Pantry Action service: ${raw}`)
+    const [requested, version] = raw.split('@')
+    const name = requested === 'postgresql' || requested === 'postgresql.org' ? 'postgres' : requested === 'typesense.org' ? 'typesense' : requested
+    if (name !== 'redis' && name !== 'postgres' && name !== 'typesense') throw new Error(`Unsupported Pantry Action service: ${name}`)
     if (seen.has(name)) throw new Error(`Duplicate Pantry Action service: ${name}`)
-    if (version !== undefined && !/^\d+\.\d+\.\d+$/.test(version))
-      throw new Error(`Redis service versions must be exact semantic versions: ${raw}`)
+    if (version !== undefined && !(name === 'redis' ? /^\d+\.\d+\.\d+$/ : /^\d+\.\d+(?:\.\d+)?$/).test(version))
+      throw new Error(`Service versions must be exact semantic versions: ${raw}`)
     seen.add(name)
-    services.push({ name, packageSpec: version ? `redis@${version}` : 'redis', expectedVersion: version })
+    const domain = name === 'postgres' ? 'postgresql.org' : name === 'typesense' ? 'typesense.org' : 'redis'
+    services.push({ name, packageSpec: version ? `${domain}@${version}` : domain, expectedVersion: version })
   }
   return services
 }
@@ -25,8 +28,8 @@ export function parseServiceSpecs(input: string): ServiceSpec[] {
 export function mergeServicePackages(packages: string, services: ServiceSpec[]): string {
   const requested = packages.split(/\s+/).filter(Boolean)
   for (const service of services) {
-    const existing = requested.find(spec => spec.split('@')[0] === service.name)
-    if (existing && existing !== service.packageSpec)
+    const existing = requested.find(spec => [service.name, service.packageSpec.split('@')[0]].includes(spec.split('@')[0]))
+    if (existing && existing.split('@')[1] !== service.expectedVersion)
       throw new Error(`Conflicting package and service versions for ${service.name}: ${existing} vs ${service.packageSpec}`)
     if (!existing) requested.push(service.packageSpec)
   }

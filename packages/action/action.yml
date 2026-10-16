@@ -16,7 +16,7 @@ inputs:
     required: false
     default: ''
   services:
-    description: Space-separated health-checked CI services to install and start (currently supports redis or redis@X.Y.Z)
+    description: Space-separated native CI services (redis@X.Y.Z, postgres@17.10, typesense@30.2); each is health-checked and stopped after the job
     required: false
     default: ''
   config-path:
@@ -235,6 +235,14 @@ outputs:
     description: Loopback Redis URL when the redis service is requested
   redis-version:
     description: Running Redis version when the redis service is requested
+  postgres-url:
+    description: Authenticated loopback PostgreSQL URL for this job's private database
+  postgres-version:
+    description: Running PostgreSQL version
+  typesense-url:
+    description: Loopback Typesense URL for this job's private search node
+  typesense-version:
+    description: Running Typesense version
 
 runs:
   using: node24

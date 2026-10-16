@@ -9,7 +9,19 @@ describe('GitHub Actions services', () => {
     expect(parseServiceSpecs('redis@8.8.0')).toEqual([{ name: 'redis', packageSpec: 'redis@8.8.0', expectedVersion: '8.8.0' }])
     expect(() => parseServiceSpecs('redis@7.4')).toThrow('exact semantic versions')
     expect(() => parseServiceSpecs('redis redis')).toThrow('Duplicate')
-    expect(() => parseServiceSpecs('postgres@17.5.0')).toThrow('Unsupported')
+    expect(() => parseServiceSpecs('unknown@17.5.0')).toThrow('Unsupported')
+  })
+
+  test('supports exact PostgreSQL and Typesense versions and canonical aliases', () => {
+    expect(parseServiceSpecs('postgres@17.10 typesense@30.2')).toEqual([
+      { name: 'postgres', packageSpec: 'postgresql.org@17.10', expectedVersion: '17.10' },
+      { name: 'typesense', packageSpec: 'typesense.org@30.2', expectedVersion: '30.2' },
+    ])
+    expect(() => parseServiceSpecs('postgres@17.10 postgresql.org@17.10')).toThrow('Duplicate')
+    expect(() => parseServiceSpecs('typesense@^30.2')).toThrow('exact semantic versions')
+    expect(() => parseServiceSpecs('typesense@30.2@other')).toThrow('Invalid')
+    expect(mergeServicePackages('postgres@17.10', parseServiceSpecs('postgres@17.10'))).toBe('postgres@17.10')
+    expect(() => mergeServicePackages('postgresql.org@18.0', parseServiceSpecs('postgres@17.10'))).toThrow('Conflicting')
   })
 
   test('installs declared services without overriding an explicit package version', () => {

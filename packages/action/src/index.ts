@@ -15,6 +15,8 @@ import { ensurePackageExecutorAliases } from './executor-aliases'
 import { installRequiredSystemPackages, jsPackageManager, needsJsInstall, pantryConfigMaySetLinker, selectSystemPackages, shouldInstallWorkspace } from './install-mode'
 import type { ServiceSpec } from './services'
 import { mergeServicePackages, nativeServiceEnvironment, parseRedisVersion, parseServiceSpecs, readServiceLog, redisLaunchArgs, waitForRedisPid } from './services'
+import type { NativeServiceState } from './native-services'
+import { startNativeService } from './native-services'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
@@ -77,8 +79,25 @@ async function startRequestedServices(services: ServiceSpec[], pantryBinDir: str
   if (serviceEnvironment[libraryVariable])
     core.exportVariable(libraryVariable, serviceEnvironment[libraryVariable])
 
+  const nativeStates: NativeServiceState[] = []
   for (const service of services) {
-    if (service.name !== 'redis') continue
+    if (service.name !== 'redis') {
+      core.startGroup(`Starting Pantry ${service.name} service`)
+      try {
+        const started = await startNativeService(service, pantryBinDir, process.env.RUNNER_TEMP || os.tmpdir())
+        nativeStates.push(started.state)
+        core.saveState('native-services', JSON.stringify(nativeStates))
+        for (const [key, value] of Object.entries(started.environment)) {
+          if (/PASSWORD|API_KEY/.test(key)) core.setSecret(value)
+          core.exportVariable(key, value)
+        }
+        core.setOutput(`${service.name}-url`, started.environment[service.name === 'postgres' ? 'POSTGRES_URL' : 'TYPESENSE_URL'])
+        core.setOutput(`${service.name}-version`, started.version)
+        core.info(`${service.name} ${started.version} is healthy with private job data`)
+      }
+      finally { core.endGroup() }
+      continue
+    }
     const serviceDir = path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'pantry-services', 'redis')
     fs.mkdirSync(serviceDir, { recursive: true })
     const server = path.join(pantryBinDir, 'redis-server')
