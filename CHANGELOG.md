@@ -1,3 +1,18 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.83...v0.11.84)
+
+## 🐛 Bug Fixes
+
+- **action**: configure native libraries before cache compression ([69d8d67](https://github.com/pantry-pm/pantry/commit/69d8d67)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.84 ([16a94d0](https://github.com/pantry-pm/pantry/commit/16a94d0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.82...v0.11.83)
 
 ## 🐛 Bug Fixes
