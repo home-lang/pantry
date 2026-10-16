@@ -3,7 +3,7 @@
  *
  * @domain `github.com/router-for-me/CLIProxyAPI`
  * @programs `cli-proxy-api`
- * @version `8.0.31` (180 versions available)
+ * @version `8.0.32` (181 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/router-for-me/CLIProxyAPI`
@@ -15,7 +15,7 @@
  * const pkg = pantry.cliproxyapi
  * console.log(pkg.name)        // "CLIProxyAPI"
  * console.log(pkg.programs)    // ["cli-proxy-api"]
- * console.log(pkg.versions[0]) // "8.0.31" (latest)
+ * console.log(pkg.versions[0]) // "8.0.32" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/router-for-me/CLIProxyAPI.md
@@ -62,6 +62,7 @@ export const cliproxyapiPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '8.0.32',
     '8.0.31',
     '8.0.30',
     '8.0.29',
