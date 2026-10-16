@@ -15,10 +15,10 @@ export const recipe: Recipe = {
     url: 'https://download.redis.io/releases/redis-{{version}}.tar.gz',
     stripComponents: 1,
   },
-  dependencies: {
-    // Redis 8 links libssl/libcrypto for BUILD_TLS=yes. Pin OpenSSL 3 so the
-    // binary needs libssl.so.3 — present on modern distros (Ubuntu 22.04+/24.04)
-    // — instead of the long-gone libssl.so.1.1 that broke `redis-server` at load.
+  // New source builds bundle OpenSSL 3 through the recipe/fix-up step. Keep
+  // the catalog's OpenSSL 1.1 runtime dependency for older published artifacts.
+  // A build dependency must not replace that ABI in the generated registry.
+  buildDependencies: {
     'openssl.org': '^3',
   },
 
