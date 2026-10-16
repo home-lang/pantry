@@ -1,3 +1,22 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.81...v0.11.82)
+
+## 🐛 Bug Fixes
+
+- **packages**: preserve Redis runtime OpenSSL ABI ([4705a53](https://github.com/pantry-pm/pantry/commit/4705a53)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.82 ([6805982](https://github.com/pantry-pm/pantry/commit/6805982)) _(by Chris Breuer <chris@stacksjs.com>)_
+- update craft-native.org to 0.0.209 ([8acbff1](https://github.com/pantry-pm/pantry/commit/8acbff1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' into codex/craft-zig-publication ([c5eeb9c](https://github.com/pantry-pm/pantry/commit/c5eeb9c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.80...v0.11.81)
 
 ## ✨ Features
