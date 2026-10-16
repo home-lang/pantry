@@ -1,3 +1,20 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.82...v0.11.83)
+
+## 🐛 Bug Fixes
+
+- **action**: install complete native system package graphs ([ed634be](https://github.com/pantry-pm/pantry/commit/ed634be)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.83 ([2c48b21](https://github.com/pantry-pm/pantry/commit/2c48b21)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update craft-native.org to 0.0.214 ([c87c574](https://github.com/pantry-pm/pantry/commit/c87c574)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update circleci.com, element.io, github.com/tw93/mole, quickwit.io, sqlite.org, symfony.com, talos.dev ([f2ab490](https://github.com/pantry-pm/pantry/commit/f2ab490)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.81...v0.11.82)
 
 ## 🐛 Bug Fixes
