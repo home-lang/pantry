@@ -195,20 +195,56 @@ export class S3Client {
     const path = this.objectPath(bucket, key)
     const payload = typeof body === 'string' ? Buffer.from(body) : body
 
-    const headers = this.sign('PUT', path, host, {
+    await this.writeObject('PUT', host, path, {
       'content-type': contentType,
       'content-length': String(payload.length),
     }, payload)
+  }
 
-    const response = await fetch(`https://${host}${path}`, {
-      method: 'PUT',
-      headers,
-      body: new Uint8Array(payload),
-    })
-
-    if (!response.ok) {
-      const text = await response.text()
-      throw new Error(`S3 PUT failed: ${response.status} ${text}`)
+  /** PUT and CopyObject are idempotent: retry the same bytes at the same key. */
+  private async writeObject(
+    operation: 'PUT' | 'COPY',
+    host: string,
+    path: string,
+    headers: Record<string, string>,
+    payload: Buffer | null,
+  ): Promise<void> {
+    const attempts = 4
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      let response: Response
+      try {
+        // Re-sign each attempt rather than reusing a potentially expired date.
+        response = await fetch(`https://${host}${path}`, {
+          method: 'PUT',
+          headers: this.sign('PUT', path, host, headers, payload ?? ''),
+          body: payload === null ? undefined : new Uint8Array(payload),
+          signal: AbortSignal.timeout(15_000),
+        })
+      }
+      catch (error) {
+        const transportError = error instanceof TypeError
+          || (error instanceof DOMException && error.name === 'TimeoutError')
+        if (!transportError || attempt === attempts - 1) throw error
+        await Bun.sleep(Math.random() * 250 * 2 ** attempt)
+        continue
+      }
+      if (response.ok) return
+      const retryable = [408, 429, 500, 502, 503, 504].includes(response.status)
+      if (!retryable || attempt === attempts - 1) {
+        const text = await response.text().catch(() => '')
+        throw new Error(`S3 ${operation} failed: ${response.status} ${text}`)
+      }
+      // Release the failed response before resending a potentially large body.
+      await response.body?.cancel()
+      const retryAfter = response.headers.get('retry-after')
+      const seconds = retryAfter === null ? NaN : Number(retryAfter)
+      const requestedDelay = Number.isFinite(seconds)
+        ? seconds * 1000
+        : Date.parse(retryAfter ?? '') - Date.now()
+      const delay = Number.isFinite(requestedDelay)
+        ? Math.min(5000, Math.max(0, requestedDelay))
+        : Math.random() * 250 * 2 ** attempt
+      await Bun.sleep(delay)
     }
   }
 
@@ -300,20 +336,10 @@ export class S3Client {
     const host = this.getHost(bucket)
     const path = this.objectPath(bucket, destinationKey)
     const encodedSource = `/${bucket}/${encodeURIComponent(sourceKey).replace(/%2F/g, '/')}`
-    const headers = this.sign('PUT', path, host, {
+    await this.writeObject('COPY', host, path, {
       'content-length': '0',
       'x-amz-copy-source': encodedSource,
-    }, '')
-
-    const response = await fetch(`https://${host}${path}`, {
-      method: 'PUT',
-      headers,
-    })
-
-    if (!response.ok) {
-      const text = await response.text().catch(() => '')
-      throw new Error(`S3 COPY failed: ${response.status} ${text}`)
-    }
+    }, null)
   }
 
   async list(options: S3ListOptions): Promise<S3Object[]> {
