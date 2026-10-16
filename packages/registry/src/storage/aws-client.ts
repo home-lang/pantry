@@ -218,7 +218,6 @@ export class S3Client {
           method: 'PUT',
           headers: this.sign('PUT', path, host, headers, payload ?? ''),
           body: payload === null ? undefined : new Uint8Array(payload),
-          signal: AbortSignal.timeout(15_000),
         })
       }
       catch (error) {

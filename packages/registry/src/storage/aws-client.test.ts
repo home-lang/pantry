@@ -39,7 +39,6 @@ describe('idempotent S3 writes', () => {
       const headers = request.init.headers as Record<string, string>
       expect(headers['content-type']).toBe('application/gzip')
       expect(headers.Authorization).toContain('AWS4-HMAC-SHA256')
-      expect(request.init.signal).toBeInstanceOf(AbortSignal)
     }
   })
 
