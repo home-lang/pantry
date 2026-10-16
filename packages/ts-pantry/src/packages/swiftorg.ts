@@ -3,7 +3,7 @@
  *
  * @domain `swift.org`
  * @programs `docc`, `dsymutil`, `sourcekit-lsp`, `swift-api-checker.py`, `swift-build-sdk-interfaces`, ... (+21 more)
- * @version `6.4.0` (58 versions available)
+ * @version `6.4.1` (59 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install swift.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "swift"
  * console.log(pkg.description) // "The Swift Programming Language"
  * console.log(pkg.programs)    // ["docc", "dsymutil", ...]
- * console.log(pkg.versions[0]) // "6.4.0" (latest)
+ * console.log(pkg.versions[0]) // "6.4.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/swift-org.md
@@ -106,6 +106,7 @@ export const swiftorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '6.4.1',
     '6.4.0',
     '6.3.3',
     '6.3.2',
