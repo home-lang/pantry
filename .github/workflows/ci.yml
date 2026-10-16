@@ -157,8 +157,28 @@ jobs:
           PANTRY_NATIVE_SERVICE_TEST_BIN: ${{ github.workspace }}/pantry/.bin
         run: bun test packages/action/src/native-services.integration.test.ts packages/action/src/services.test.ts
 
+  action-native-tools:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install native tool dependency graphs through Pantry
+        uses: ./packages/action
+        with:
+          install: 'false'
+          packages: bun.sh@1.4.2 git-scm.org@2.53.0
+      - name: Exercise executable wrappers and native compression libraries
+        run: |
+          test "$(git --version)" = 'git version 2.53.0'
+          git init "$RUNNER_TEMP/pantry-git-contract"
+          test -z "$(git -C "$RUNNER_TEMP/pantry-git-contract" status --porcelain)"
+          printf 'Pantry native compression contract\n' > "$RUNNER_TEMP/pantry-compression-input"
+          zstdmt -q -f "$RUNNER_TEMP/pantry-compression-input" -o "$RUNNER_TEMP/pantry-compression-input.zst"
+          zstd -q -d -f "$RUNNER_TEMP/pantry-compression-input.zst" -o "$RUNNER_TEMP/pantry-compression-output"
+          cmp "$RUNNER_TEMP/pantry-compression-input" "$RUNNER_TEMP/pantry-compression-output"
+
   continuous-release:
-    needs: [lint, typecheck, test, action-redis-service, action-native-services]
+    needs: [lint, typecheck, test, action-redis-service, action-native-services, action-native-tools]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # Best-effort commit-preview publishing. Don't fail the whole workflow
