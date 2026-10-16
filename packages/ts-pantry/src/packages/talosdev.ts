@@ -3,7 +3,7 @@
  *
  * @domain `talos.dev`
  * @programs `talosctl`
- * @version `1.14.3` (49 versions available)
+ * @version `1.14.4` (50 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install talos.dev`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "talosctl"
  * console.log(pkg.description) // "CLI for out-of-band management of Kubernetes no..."
  * console.log(pkg.programs)    // ["talosctl"]
- * console.log(pkg.versions[0]) // "1.14.3" (latest)
+ * console.log(pkg.versions[0]) // "1.14.4" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/talos-dev.md
@@ -70,6 +70,7 @@ export const talosdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.14.4',
     '1.14.3',
     '1.14.2',
     '1.14.1',

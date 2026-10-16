@@ -3,7 +3,7 @@
  *
  * @domain `sqlite.org`
  * @programs `sqlite3`
- * @version `3.54.0` (100 versions available)
+ * @version `3.54.1` (101 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install sqlite.org`
@@ -23,7 +23,7 @@
  * console.log(pkg.name)        // "sqlite3"
  * console.log(pkg.description) // "Official Git mirror of the SQLite source tree"
  * console.log(pkg.programs)    // ["sqlite3"]
- * console.log(pkg.versions[0]) // "3.54.0" (latest)
+ * console.log(pkg.versions[0]) // "3.54.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/sqlite-org.md
@@ -73,6 +73,7 @@ export const sqlitePackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.54.1',
     '3.54.0',
     '3.53.4',
     '3.53.3',

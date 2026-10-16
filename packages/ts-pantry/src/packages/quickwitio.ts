@@ -3,7 +3,7 @@
  *
  * @domain `quickwit.io`
  * @programs `quickwit`
- * @version `0.9.1` (22 versions available)
+ * @version `0.9.2` (23 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install quickwit.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "quickwit"
  * console.log(pkg.description) // "Cloud-native search engine for observability. A..."
  * console.log(pkg.programs)    // ["quickwit"]
- * console.log(pkg.versions[0]) // "0.9.1" (latest)
+ * console.log(pkg.versions[0]) // "0.9.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/quickwit-io.md
@@ -67,6 +67,7 @@ export const quickwitioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.9.2',
     '0.9.1',
     '0.9.0',
     '0.8.2',
