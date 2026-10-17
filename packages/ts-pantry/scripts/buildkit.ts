@@ -585,7 +585,7 @@ export function generateBuildScript(
     : Array.isArray(recipe.build)
       ? recipe.build.join('\n')
       : (build?.script ? (Array.isArray(build.script) ? build.script.join('\n') : String(build.script)) : '')
-  const hasGoDep = !!(recipe.buildDependencies?.['go.dev'] || recipe.dependencies?.['go.dev'])
+  const hasGoDep = !!(recipe.buildDependencies?.['go.dev'] || build?.dependencies?.['go.dev'] || recipe.dependencies?.['go.dev'])
   const usesGo = hasGoDep || /\bgo\s+(?:build|install)\b/.test(rawScript)
 
   const sections: string[] = []
@@ -692,19 +692,16 @@ else if (osName === 'linux') {
     sections.push('')
   }
 
-  // Preserve system toolchain paths before overriding HOME
-  sections.push('# Preserve system toolchains before HOME override')
-  sections.push('REAL_HOME="${HOME}"')
+  // Keep build state separate from the invoking user's toolchains and caches.
+  sections.push('# Isolated build home')
   sections.push(`export HOME="${buildDir}/.home"`)
   sections.push('mkdir -p "$HOME"')
-  // Go toolchain — set default GOPATH only if recipe didn't already set it
-  const recipeEnv = build?.env ? platformReduce(build.env, platform) : {}
-  sections.push('# Go toolchain (GOPATH default; GOROOT set after deps)')
-  if (!recipeEnv.GOPATH) {
-    sections.push('export GOPATH="$REAL_HOME/go"')
+  if (usesGo && !isForeignTarget) {
+    const recipeEnv = build?.env ? platformReduce(build.env, platform) : {}
+    if (!recipeEnv.GOPATH) sections.push('export GOPATH="$HOME/go"')
+    sections.push('mkdir -p "$GOPATH"')
+    sections.push('')
   }
-  sections.push('mkdir -p "$GOPATH"')
-  sections.push('')
 
   // Node.js / npm / pnpm
   sections.push('# Node.js')
@@ -1295,28 +1292,19 @@ else if (osName === 'linux') {
     sections.push('')
   }
 
-  // Now set GOROOT from whichever `go` binary is first on PATH (deps or system)
-  // This must come AFTER dep paths are added to avoid GOROOT/go version mismatch
-  sections.push('# Set GOROOT from the go binary now on PATH (after deps)')
-  // Check if go.dev is a dep — use its directory directly as GOROOT
-  const goDevPrefix = depPaths['deps.go.dev.prefix']
-  if (goDevPrefix) {
-    sections.push(`if [ -x "${goDevPrefix}/bin/go" ]; then`)
-    sections.push(`  export GOROOT="${goDevPrefix}"`)
-    sections.push('elif command -v go &>/dev/null; then')
-    sections.push('  export GOROOT="$(go env GOROOT 2>/dev/null || true)"')
-    sections.push('fi')
+  // Go source builds use the recipe's resolved compiler. A missing version
+  // belongs in the declared dependency graph, never in a host-tool fallback or
+  // Go's automatic compiler download path.
+  if (usesGo && !isForeignTarget) {
+    const goPrefix = depPaths['deps.go.dev.prefix']
+    if (!goPrefix) throw new Error('Go source builds require a resolved declared go.dev dependency')
+    sections.push('# Managed Go toolchain')
+    sections.push(`test -x "${goPrefix}/bin/go" || { echo 'The declared Go compiler is unavailable' >&2; exit 1; }`)
+    sections.push(`export GOROOT="${goPrefix}"`)
+    sections.push('export GOTOOLCHAIN=local')
+    sections.push('export PATH="$GOROOT/bin:$GOPATH/bin:$PATH"')
+    sections.push('')
   }
-else {
-    sections.push('if command -v go &>/dev/null; then')
-    sections.push('  export GOROOT="$(go env GOROOT 2>/dev/null || true)"')
-    sections.push('fi')
-  }
-  sections.push('export PATH="$GOPATH/bin:${GOROOT:+$GOROOT/bin:}$PATH"')
-  // Allow Go to auto-download the correct toolchain version per go.mod
-  // This fixes packages that use //go:linkname with internal APIs broken in newer Go
-  sections.push('export GOTOOLCHAIN=auto')
-  sections.push('')
 
   // Set JAVA_HOME from openjdk.org dep if available (must come AFTER dep paths)
   const openjdkPrefix = depPaths['deps.openjdk.org.prefix']

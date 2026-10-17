@@ -105,9 +105,17 @@ jobs:
           zig build -Doptimize=Debug -j2
           PANTRY_SOURCE_CLI="$PWD/zig-out/bin/pantry" bun test test/workspace-companion-e2e.test.ts
 
+      - name: Install native runtime fixture tools through Pantry
+        uses: ./packages/action
+        with:
+          install: 'false'
+          packages: nixos.org/patchelf@0.18.0
+
       # Report Bun and Zig independently even when either suite fails.
       - name: Unit Test
         if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.build_action.outcome == 'success' }}
+        env:
+          PANTRY_TEST_CC: '["zig", "cc"]'
         run: bun test
 
       # Gated on `install` rather than on the TypeScript build on purpose: the
