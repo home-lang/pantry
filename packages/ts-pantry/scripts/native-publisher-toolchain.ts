@@ -46,13 +46,20 @@ function version(program: string): string {
   return output.split('\n')[0]!
 }
 
+export function reportedVersionMatches(program: string, identity: string, expected: string): boolean {
+  // GNU tools can print their absolute argv[0], including the installation's
+  // version directory. That path is provenance, not the reported tool version.
+  const report = identity.startsWith(program) ? identity.slice(program.length).trim() : identity
+  const reported = report.match(/\b\d+(?:\.\d+){0,3}(?:[-+][A-Za-z0-9.-]+)?/)?.[0]
+  const normalized = (value: string): string => value.replace(/(?:\.0)+$/, '')
+  return !!reported && normalized(reported) === normalized(expected)
+}
+
 export function inspectManagedProgram(root: string, name: string, selected?: string | null, expectedVersion?: string): { name: string, path: string, version: string } {
   const path = managedProgram(root, name, selected)
   const identity = version(path)
   if (expectedVersion) {
-    const reported = identity.match(/\b\d+(?:\.\d+){0,3}(?:[-+][A-Za-z0-9.-]+)?/)?.[0]
-    const normalized = (value: string) => value.replace(/(?:\.0)+$/, '')
-    if (!reported || normalized(reported) !== normalized(expectedVersion))
+    if (!reportedVersionMatches(path, identity, expectedVersion))
       throw new Error(`${name}: expected ${expectedVersion}, reported ${identity}`)
   }
   return { name, path, version: identity }
