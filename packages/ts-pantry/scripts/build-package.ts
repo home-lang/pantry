@@ -11,6 +11,7 @@ import { parseArgs } from 'node:util'
 import { generateBuildScript, getSkips, type PackageRecipe, type NormalizedRecipe, type RecipeScriptStep, type RecipeTest } from './buildkit.ts'
 import { fixUp } from './fix-up.ts'
 import { reportBuild } from './report-build.ts'
+import { compareInstallerVersionsDesc, parseInstallerConstraint, satisfiesInstallerConstraint } from '../src/installer'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
 type ScriptStep = string | { run: string, 'working-directory'?: string, if?: string }
 const packageOverrides: Record<string, any> = {} // stub — overrides migrated to recipes
@@ -899,126 +900,58 @@ export function parseDepConstraint(dep: string): string | null {
 }
 
 // Parse a semver string into components
-function parseSemver(v: string): {
-  major: number
-  minor: number
-  patch: number
-} {
-  const parts = v.split('.').map(Number)
-  return { major: parts[0] || 0, minor: parts[1] || 0, patch: parts[2] || 0 }
-}
-
-// Check if a version satisfies a constraint (supports ~, ^, >=, <, ranges)
+/** Use the SDK's runtime constraint policy for the libraries we compile against. */
 export function versionSatisfies(version: string, constraint: string): boolean {
-  const v = parseSemver(version)
+  const requested = constraint.trim()
+  if (version === requested) return true
+  if (requested === '*' || requested === 'latest') return !version.includes('-')
 
-  // Handle compound constraints like ">=3<3.12" or ">=1.70<2"
-  // Split on boundaries between operators and version numbers
-  const parts: string[] = []
-  let remaining = constraint
-  while (remaining) {
-    const m = remaining.match(/^([~^]?\d[\d.]*)(.*)$/) || remaining.match(/^([<>=]+\d[\d.]*)(.*)$/)
-    if (m) {
-      parts.push(m[1])
-      remaining = m[2]
+  return requested.split('||').some((alternative) => {
+    let remaining = alternative.trim()
+    if (!remaining) return false
+    while (remaining) {
+      const token = remaining.match(/^([~^]|>=|<=|>|<|=|@)?\s*(\d+(?:\.\d+){0,10}(?:-[0-9A-Za-z.-]+)?(?:[+_][0-9A-Za-z.-]+)?)/)
+      if (!token) return false
+      const [, operator, target] = token
+      if (!operator && !target.includes('-') && !target.includes('+') && !target.includes('_') && target.split('.').length < 3) {
+        if (version.includes('-')) return false
+        const offered = version.split(/[+_]/, 1)[0].split('.')
+        if (!target.split('.').every((part, index) => Number.parseInt(offered[index], 10) === Number(part))) return false
+      }
+      else {
+        const parsed = parseInstallerConstraint(`${operator === '@' ? '=' : operator || '='}${target}`)
+        if (!parsed || !satisfiesInstallerConstraint(version, parsed)) return false
+      }
+      remaining = remaining.slice(token[0].length).trim()
     }
-else {
-      break
-    }
-  }
-  if (parts.length === 0) {
-    // Try as a single constraint
-    parts.push(constraint)
-  }
-
-  for (const part of parts) {
-    if (!checkSingleConstraint(v, part)) return false
-  }
-  return true
-}
-
-function checkSingleConstraint(
-  v: {
-    major: number
-    minor: number
-    patch: number
-  },
-  constraint: string,
-): boolean {
-  // ~3.11 means >=3.11.0 <3.12.0 (tilde: patch-level changes)
-  if (constraint.startsWith('~')) {
-    const c = parseSemver(constraint.slice(1))
-    if (v.major !== c.major) return false
-    if (v.minor < c.minor) return false
-    if (constraint.slice(1).split('.').length <= 2) {
-      // ~3.11 → >=3.11, <4.0 (only major.minor specified)
-      return v.major === c.major && v.minor >= c.minor
-    }
-    // ~3.11.2 → >=3.11.2, <3.12.0
-    return v.minor === c.minor ? v.patch >= c.patch : v.minor > c.minor
-  }
-
-  // ^3.11 means >=3.11.0 <4.0.0 (caret: minor-level changes)
-  if (constraint.startsWith('^')) {
-    const c = parseSemver(constraint.slice(1))
-    if (v.major !== c.major) return false
-    if (v.minor < c.minor) return false
-    if (v.minor === c.minor && v.patch < c.patch) return false
     return true
-  }
-
-  // >=3.12
-  if (constraint.startsWith('>=')) {
-    const c = parseSemver(constraint.slice(2))
-    if (v.major > c.major) return true
-    if (v.major < c.major) return false
-    if (v.minor > c.minor) return true
-    if (v.minor < c.minor) return false
-    return v.patch >= c.patch
-  }
-
-  // <3.12
-  if (constraint.startsWith('<')) {
-    const c = parseSemver(constraint.slice(1))
-    if (v.major < c.major) return true
-    if (v.major > c.major) return false
-    if (v.minor < c.minor) return true
-    return false
-  }
-
-  // Plain version: exact major.minor match (e.g., "3.11" means 3.11.x)
-  const c = parseSemver(constraint)
-  const numParts = constraint.split('.').length
-  if (numParts === 1) return v.major === c.major
-  if (numParts === 2) return v.major === c.major && v.minor === c.minor
-  return v.major === c.major && v.minor === c.minor && v.patch === c.patch
+  })
 }
 
-// Find the best available version that satisfies a constraint
-function findBestVersion(
-  availableVersions: string[],
-  constraint: string | null,
-  latestVersion: string,
-): string {
-  // No constraint or "*" → use latest
-  if (!constraint) return latestVersion
-
-  // Sort versions descending (newest first)
-  const sorted = [...availableVersions].sort((a, b) => {
-    const va = parseSemver(a)
-    const vb = parseSemver(b)
-    if (va.major !== vb.major) return vb.major - va.major
-    if (va.minor !== vb.minor) return vb.minor - va.minor
-    return vb.patch - va.patch
-  })
-
-  // Find the newest version that satisfies the constraint
-  for (const v of sorted) {
-    if (versionSatisfies(v, constraint)) return v
+export class BuildDependencyResolutionError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'BuildDependencyResolutionError'
   }
+}
 
-  // No matching version found — fall back to latest
-  return latestVersion
+interface BuildDependencyMetadata {
+  versions?: Record<string, { platforms?: Record<string, unknown> }>
+}
+
+/** Never substitute another platform or incompatible ABI for a declared range. */
+export function buildDependencyCandidates(
+  metadata: BuildDependencyMetadata,
+  platform: string,
+  constraint: string | null,
+  availableVersions: string[] = Object.keys(metadata.versions || {}),
+): string[] {
+  const candidates = availableVersions
+    .filter(version => metadata.versions?.[version]?.platforms?.[platform] && (!constraint || versionSatisfies(version, constraint)))
+    .sort(compareInstallerVersionsDesc)
+  if (constraint && candidates.length === 0)
+    throw new BuildDependencyResolutionError(`No ${platform} dependency binary satisfies "${constraint}"`)
+  return candidates
 }
 
 // Download dependencies from S3
@@ -1046,6 +979,7 @@ async function downloadDependencies(
     }
 
     const domain = parseDep(dep)
+    const constraint = parseDepConstraint(dep)
     if (!domain || domain.match(/^(darwin|linux)\//)) continue
 
     try {
@@ -1058,6 +992,7 @@ async function downloadDependencies(
         metadata = JSON.parse(metadataContent)
       }
 catch {
+        if (constraint) throw new BuildDependencyResolutionError(`${domain}: constrained dependency metadata is unavailable`)
         const fallbackPrefix = findSystemPrefix(domain)
         console.log(`   - ${domain}: not in S3, falling back to system path → ${fallbackPrefix}`)
         // Still register the dep with a system fallback so {{deps.*.prefix}} templates resolve
@@ -1066,8 +1001,7 @@ catch {
         continue
       }
 
-      // Resolve version using YAML constraint (e.g., "python.org: ~3.11" → pick 3.11.x)
-      const constraint = parseDepConstraint(dep)
+      // Resolve the same range used by the installed runtime dependency graph.
       let availableVersions = Object.keys(metadata.versions || {})
 
       // Ghost-version guard: a builder on stale code can re-publish a version we've
@@ -1129,42 +1063,15 @@ catch { /* ignore */ }
         return true
       }
 
-      // Find best version matching constraint, with binary for this platform
-      const sortedVersions = availableVersions.sort((a, b) => {
-        const va = parseSemver(a), vb = parseSemver(b)
-        return vb.major - va.major || vb.minor - va.minor || vb.patch - va.patch
-      })
-
+      const candidates = buildDependencyCandidates(metadata, platform, constraint, availableVersions)
       let resolved = false
-      // Try constrained versions first (newest matching)
-      if (constraint) {
-        for (const v of sortedVersions) {
-          if (!versionSatisfies(v, constraint)) continue
-          const info = metadata.versions?.[v]?.platforms?.[platform]
-          if (!info) continue
-          if (v !== metadata.latestVersion) {
-            console.log(`   - ${domain}: constraint "${constraint}" → ${v} (latest: ${metadata.latestVersion})`)
-          }
-else {
-            console.log(`   - ${domain}@${v}`)
-          }
-          resolved = await downloadAndRegisterDep(v, info)
-          break
-        }
+      const version = candidates[0]
+      if (version) {
+        console.log(`   - ${domain}@${version}${constraint ? ` (${constraint})` : ''}`)
+        resolved = await downloadAndRegisterDep(version, metadata.versions[version].platforms[platform])
       }
-
-      // No constraint or no match — use latest
-      if (!resolved) {
-        if (constraint) {
-          console.log(`   ⚠ ${domain}: no version in S3 satisfies constraint "${constraint}" — falling back to latest`)
-        }
-        const version = metadata.latestVersion
-        const platformInfo = metadata.versions?.[version]?.platforms?.[platform]
-        if (platformInfo) {
-          console.log(`   - ${domain}@${version}`)
-          resolved = await downloadAndRegisterDep(version, platformInfo)
-        }
-      }
+      if (constraint && !resolved)
+        throw new BuildDependencyResolutionError(`${domain}: could not install the ${platform} dependency satisfying "${constraint}"`)
 
       if (!resolved) {
         const fallbackPrefix = findSystemPrefix(domain)
@@ -1244,6 +1151,8 @@ catch (e: unknown) {
 
     }
 catch (error: unknown) {
+      if (error instanceof BuildDependencyResolutionError) throw error
+      if (constraint) throw new BuildDependencyResolutionError(`${domain}: constrained dependency resolution failed`)
       console.log(`   - ${domain}: failed (${(error as Error).message})`)
     }
   }
