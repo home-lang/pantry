@@ -176,7 +176,7 @@ function recipeDefToNormalized(def: Recipe, platform = '', version?: string): Re
   }
   return {
     distributable: def.distributable
-      ? { url: typeof def.distributable.url === 'function' ? (version ? def.distributable.url(version) : '') : def.distributable.url, 'strip-components': def.distributable.stripComponents }
+      ? { url: typeof def.distributable.url === 'function' ? (version ? def.distributable.url(version, platform) : '') : def.distributable.url, 'strip-components': def.distributable.stripComponents }
       : undefined,
     dependencies,
     build: {

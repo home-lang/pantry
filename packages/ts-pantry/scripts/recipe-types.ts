@@ -65,7 +65,7 @@ export interface BuildContext {
 /** Source distributable (tarball/archive to download) */
 export interface RecipeDistributable {
   /** URL template with {{version}} etc. */
-  url: string | ((version: string) => string)
+  url: string | ((version: string, platform?: string) => string)
   stripComponents?: number
   /** Git ref/tag to check out for `git+https://` source URLs (e.g. 'v{{version.raw}}').
    * Consumed by build-package.ts downloadSource (git clone --branch <ref>). */
