@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { versionSatisfies } from '../scripts/build-package'
 
 describe('native builder constraints match installed runtime dependencies', () => {
-  test('PostgreSQL libxml2~2.13 cannot link against the incompatible 2.15 ABI', () => {
+  test('legacy libxml2~2.13 bounds cannot select the incompatible 2.15 ABI', () => {
     expect(versionSatisfies('2.13.9', '~2.13')).toBe(true)
     expect(versionSatisfies('2.14.0', '~2.13')).toBe(false)
     expect(versionSatisfies('2.15.1', '~2.13')).toBe(false)
@@ -31,12 +31,13 @@ describe('native builder platform artifact selection', () => {
   test('uses the recipe range even when registry latest has a different ABI', async () => {
     const { buildDependencyCandidates } = await import('../scripts/build-package')
     const { recipe } = await import('../src/recipes/postgresql.org')
-    const metadata = { latestVersion: '2.15.1', versions: {
-      '2.15.1': { platforms: { 'linux-x86-64': { tarball: 'wrong-abi' } } },
-      '2.13.8': { platforms: { 'linux-x86-64': { tarball: 'older-compatible' } } },
-      '2.13.9': { platforms: { 'linux-x86-64': { tarball: 'compatible' } } },
+    const metadata = { latestVersion: '2.16.1', versions: {
+      '2.16.1': { platforms: { 'linux-x86-64': { tarball: 'wrong-abi' } } },
+      '2.15.1': { platforms: { 'linux-x86-64': { tarball: 'older-compatible' } } },
+      '2.15.4': { platforms: { 'linux-x86-64': { tarball: 'compatible' } } },
+      '2.13.9': { platforms: { 'linux-x86-64': { tarball: 'previous-abi' } } },
     } }
-    expect(buildDependencyCandidates(metadata, 'linux-x86-64', recipe.dependencies!['gnome.org/libxml2'] as string)).toEqual(['2.13.9', '2.13.8'])
+    expect(buildDependencyCandidates(metadata, 'linux-x86-64', recipe.dependencies!['gnome.org/libxml2'] as string)).toEqual(['2.15.4', '2.15.1'])
   })
   test('never substitutes a different platform or registry latest for a missing compatible binary', async () => {
     const { buildDependencyCandidates, BuildDependencyResolutionError } = await import('../scripts/build-package')
