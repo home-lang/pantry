@@ -15884,8 +15884,8 @@ pub const packages = [_]PackageInfo{ .{
     .description = "Tool Command Language",
     .homepage_url = "https://www.tcl-lang.org",
     .programs = &[_][]const u8{ "tclsh", "wish", "critcl" },
-    .dependencies = &[_][]const u8{ "openssl.org^1.1", "zlib.net^1.3", "freetype.org^2", "freedesktop.org/pkg-config^0.29", "x.org/x11=1.8.11", "x.org/exts^1" },
-    .build_dependencies = &[_][]const u8{ "gnu.org/patch", "linux:curl.se", "linux:tukaani.org/xz" },
+    .dependencies = &[_][]const u8{ "zlib.net^1", "linux:x.org/x11^1", "linux:x.org/exts^1", "linux:x.org/xft^2" },
+    .build_dependencies = &[_][]const u8{ "curl.se", "freedesktop.org/pkg-config~0.29" },
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "9.0.3", "9.0.2", "9.0.1", "9.0.0", "8.6.17", "8.6.16", "8.6.15", "8.6.14", "8.6.13" },
 }, .{

@@ -1633,6 +1633,7 @@ const CUSTOM_BUILD_DOMAINS = new Set<string>([
   'curl.se', // Pantry links against OpenSSL 3; pkgx's build still requires OpenSSL 1.1
   'harfbuzz.org', // use the declared current ICU ABI on every native platform
   'mesonbuild.com', // use Pantry Python without pkgx changing the build environment
+  'tcl-lang.org', // publish matching Tcl and Tk libraries from their sources
 ])
 
 /**

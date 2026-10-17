@@ -21,6 +21,7 @@ export async function syncRecipeDependencies(domains: string[]): Promise<void> {
     const { recipe } = await loadRecipe(domain)
     savePackageAsTypeScript(output, domain, {
       ...current,
+      programs: recipe.programs ?? current.programs,
       dependencies: recipeDepsToSpecs(recipe.dependencies),
       buildDependencies: recipeDepsToSpecs(recipe.build?.dependencies),
     })

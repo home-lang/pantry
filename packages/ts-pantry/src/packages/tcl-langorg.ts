@@ -8,8 +8,8 @@
  *
  * @install `pantry install tcl-lang.org`
  * @homepage https://www.tcl-lang.org
- * @dependencies `openssl.org^1.1`, `zlib.net^1.3`, `freetype.org^2`, ... (+3 more)
- * @buildDependencies `gnu.org/patch`, `linux:curl.se`, `linux:tukaani.org/xz` (includes OS-specific dependencies with `os:package` format) - required only when building from source
+ * @dependencies `zlib.net^1`, `linux:x.org/x11^1`, `linux:x.org/exts^1`, ... (+1 more) (includes platform-specific dependencies)
+ * @buildDependencies `curl.se`, `freedesktop.org/pkg-config~0.29` - required only when building from source
  *
  * @example
  * ```typescript
@@ -60,24 +60,21 @@ export const tcllangorgPackage = {
   /**
   * Runtime dependencies for this package.
   * These are required when running the package.
+  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:freetype.org`).
   */
   dependencies: [
-    'openssl.org^1.1',
-    'zlib.net^1.3',
-    'freetype.org^2',
-    'freedesktop.org/pkg-config^0.29',
-    'x.org/x11=1.8.11',
-    'x.org/exts^1',
+    'zlib.net^1',
+    'linux:x.org/x11^1',
+    'linux:x.org/exts^1',
+    'linux:x.org/xft^2',
   ] as const,
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
-  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
   */
   buildDependencies: [
-    'gnu.org/patch',
-    'linux:curl.se',
-    'linux:tukaani.org/xz',
+    'curl.se',
+    'freedesktop.org/pkg-config~0.29',
   ] as const,
   /**
   * Available versions from newest to oldest.
