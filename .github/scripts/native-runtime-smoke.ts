@@ -40,6 +40,7 @@ try {
   const pantry = Bun.which('pantry')
   assert(pantry, 'The published Pantry CLI must be installed by the action')
   checks.pantry = (await run('pantry-version', [pantry, '--version'])).trim()
+  assert.match(checks.pantry as string, /^pantry 0\.11\.90(?:\s|$)/)
   await run('install', [pantry, 'install', '--no-save'], 15 * 60_000)
   env.PATH = `${work}/pantry/.bin:${env.PATH}`
   const paths = Object.fromEntries(await Promise.all(['bun', 'google-chrome-stable', 'ffmpeg', 'ffprobe', 'yt-dlp', 'python3'].map(async name => [name, await tool(name)])))

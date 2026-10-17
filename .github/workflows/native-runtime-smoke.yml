@@ -25,9 +25,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Install the published Pantry CLI and bootstrap Bun
-        uses: pantry-pm/pantry/packages/action@41c32f5ecb58b5494e63f8606be787d93b01a18a # v0.11.89
+        uses: pantry-pm/pantry/packages/action@0a0dbebf002f7641fcc51e630a648ecd80f3bf11 # v0.11.90
         with:
-          version: 0.11.89
+          version: 0.11.90
           install: 'false'
           packages: bun.com@1.4.3
       - name: Verify a fresh production-user installation
