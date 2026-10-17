@@ -18,7 +18,7 @@ This action allows you to easily install dependencies with pantry in your GitHub
 
 - name: Install Dependencies with pantry
 
-  uses: pantry-pm/pantry-installer@v1
+  uses: pantry-pm/pantry/packages/action@main
 # Automatically detects and installs project dependencies
 # Optional parameters
 # with
@@ -44,6 +44,19 @@ This action allows you to easily install dependencies with pantry in your GitHub
 - 🔧 **Bun-powered**: Uses Bun for faster installation
 - 📦 **Global flag support**: Handles global installation flags in dependency files
 - 💬 **Comment-aware**: Properly parses YAML files with inline comments
+
+### Native dependency caches
+
+The cache identity includes the Pantry version, platform, project manifests,
+lockfile, and registry artifact digests for native packages and their runtime
+dependencies. Rebuilding a package at the same version therefore invalidates
+its previous cached installation. Restore keys retain the artifact identity;
+they cannot restore an older binary after a registry rebuild.
+
+When the registry cannot establish a verified dependency graph, the action
+reports the reason and installs normally without restoring or saving a native
+dependency cache. It does not treat an uncertain cache as a valid installation.
+Pin the action to a release commit in production workflows.
 
 ### Health-checked Redis
 
