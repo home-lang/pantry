@@ -10,6 +10,12 @@ test('an explicitly requested excluded version fails instead of reporting an emp
   expect(child.stderr.toString()).toContain('Requested unicode.org@71.1.0 is excluded from publication on linux-arm64')
 })
 
+test('the actual selected X11 publication cohort builds XCB first', () => {
+  const child = Bun.spawnSync(['bun', 'scripts/build-all-packages.ts', '--platform', 'darwin-arm64', '-p', 'x.org/x11@1.8.13,x.org/xcb@1.17.0', '--source-only', '--print-selected'], { cwd: import.meta.dir + '/..', stdout: 'pipe', stderr: 'pipe' })
+  expect(child.exitCode, child.stderr.toString()).toBe(0)
+  expect(child.stdout.toString().trim()).toBe('x.org/xcb@1.17.0 x.org/x11@1.8.13')
+})
+
 describe('mirrored artifact publication normalization', () => {
   test('Linux artifacts require ELF normalization even on a foreign build host', () => {
     const dir = mkdtempSync(join(tmpdir(), 'mirror-elf-'))

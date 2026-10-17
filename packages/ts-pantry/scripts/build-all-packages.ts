@@ -3060,6 +3060,10 @@ Options:
     logDiscovery(`Stripe ${i}/${n}: ${packagesToBuild.length} of ${allPackages.length} packages (cost-balanced)`)
   }
 
+  // Recompute after selection: unselected bootstrap packages can form a wider
+  // cycle, but cannot erase a real dependency edge inside this publish cohort.
+  packagesToBuild = publicationOrder(packagesToBuild)
+
   // --print-selected: emit the resolved domain set (post -p / --source-only /
   // --download-only / platform filtering) and exit. One space-separated line on
   // stdout; empty when nothing matches. Lets a caller cheaply decide whether a
