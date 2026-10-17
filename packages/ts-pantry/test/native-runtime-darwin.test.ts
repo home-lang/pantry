@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fixUp } from '../scripts/fix-up'
@@ -20,6 +20,7 @@ test.skipIf(process.platform !== 'darwin')('Mach-O publication uses only declare
     for (const path of [join(first, 'lib'), join(second, 'lib64'), join(stage, 'lib'), join(stage, 'bin')]) mkdirSync(path, { recursive: true })
     writeFileSync(join(first, 'LICENSE'), 'First fixture license\n')
     writeFileSync(join(second, 'COPYING'), 'Second fixture license\n')
+    symlinkSync('.', join(first, 'lib', 'directory-loop'))
     writeFileSync(join(root, 'second.c'), 'int second(void) { return 41; }')
     writeFileSync(join(root, 'first.c'), 'extern int second(void); int first(void) { return second() + 1; }')
     writeFileSync(join(root, 'main.c'), '#include <stdio.h>\nextern int first(void); int main(void) { printf("%d\\n", first()); return 0; }')

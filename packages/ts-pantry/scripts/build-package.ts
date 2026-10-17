@@ -1112,7 +1112,7 @@ else if (existingConstraint && newConstraint && existingConstraint !== newConstr
 export async function resolveBuildDependencyGraph(
   initial: Map<string, string>,
   platform: string,
-  load: (domain: string) => Promise<{ dependencies?: PackageRecipe['dependencies'] }>,
+  load: (domain: string, constraint: string | null) => Promise<{ dependencies?: PackageRecipe['dependencies'] }>,
 ): Promise<Map<string, string>> {
   const graph = new Map(initial)
   const pending = [...graph.keys()]
@@ -1123,7 +1123,7 @@ export async function resolveBuildDependencyGraph(
     visited.add(domain)
     // These are already-built dependencies: their runtime closure is needed,
     // while their own compiler/build dependencies are not part of this build.
-    const recipe = await load(domain)
+    const recipe = await load(domain, parseDepConstraint(graph.get(domain)!))
     for (const dependency of extractYamlDeps(recipe.dependencies, platform)) {
       const child = parseDep(dependency)
       if (!child) throw new Error(`Invalid runtime dependency of ${domain}: ${dependency}`)
@@ -1142,13 +1142,52 @@ export async function resolveBuildDependencyGraph(
   return graph
 }
 
+/** Recompute version-dependent edges until every declared bound is stable. */
+export async function resolveVersionedBuildDependencyGraph(
+  initial: Map<string, string>,
+  platform: string,
+  metadata: (domain: string) => Promise<BuildDependencyMetadata>,
+  load: (domain: string, version: string) => Promise<{ dependencies?: PackageRecipe['dependencies'] }>,
+): Promise<Map<string, string>> {
+  let previous = new Map(initial)
+  const seen = new Set<string>()
+  const snapshot = (graph: Map<string, string>) => JSON.stringify([...graph].sort(([a], [b]) => a.localeCompare(b)))
+  for (;;) {
+    const graph = await resolveBuildDependencyGraph(initial, platform, async (domain, constraint) => {
+      const info = await metadata(domain)
+      const catalog = lookupPantryPackage(domain)?.versions as string[] | undefined
+      const published = Object.keys(info.versions || {})
+      const allowed = catalog?.length ? published.filter(version => catalog.includes(version)) : published
+      const version = buildDependencyCandidates(info, platform, parseDepConstraint(previous.get(domain) || '') || constraint, allowed.length ? allowed : published)[0]
+      return load(domain, version)
+    })
+    const state = snapshot(graph)
+    if (state === snapshot(previous)) return graph
+    if (seen.has(state)) throw new BuildDependencyResolutionError('Version-dependent runtime constraints do not converge')
+    seen.add(state)
+    previous = graph
+  }
+}
+
+async function publishedDependencyGraph(initial: Map<string, string>, platform: string, bucket: string, region: string): Promise<Map<string, string>> {
+  const { createObjectStorageClient } = await import('@stacksjs/ts-cloud')
+  const { loadRecipe } = await import('./recipe-loader')
+  const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
+  const storage = createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })
+  const cache = new Map<string, Promise<BuildDependencyMetadata>>()
+  return resolveVersionedBuildDependencyGraph(initial, platform, (domain) => {
+    if (!cache.has(domain)) cache.set(domain, storage.getObject(bucket, `binaries/${domain}/metadata.json`).then(value => JSON.parse(value)))
+    return cache.get(domain)!
+  }, async (domain, version) => (await loadRecipe(domain, platform, version)).recipe)
+}
+
 /** Mirrored binaries must satisfy the same declared runtime closure as source builds. */
 export async function downloadRuntimePackages(domain: string, version: string, platform: string, depsDir: string, bucket: string, region: string): Promise<RuntimePackage[]> {
   const { loadRecipe } = await import('./recipe-loader')
   const loaded = await loadRecipe(domain, platform, version)
   const runtime = extractYamlDeps(loaded.recipe.dependencies, platform)
   const declared = new Map(runtime.map(dependency => [parseDep(dependency), dependency]))
-  const graph = await resolveBuildDependencyGraph(declared, platform, async child => (await loadRecipe(child, platform)).recipe)
+  const graph = await publishedDependencyGraph(declared, platform, bucket, region)
   const paths = await downloadDependencies([...graph.values()], depsDir, platform, bucket, region)
   return [...graph.keys()].map((child) => {
     const prefix = paths[`deps.${child}.prefix`]
@@ -1244,10 +1283,10 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     // When both build and runtime deps specify constraints for the same domain,
     // merge them into a compound constraint (e.g., ">=2.3" + "<4" → ">=2.3<4")
     const declared = collectBuildDependencies(pkg, yamlBuildDeps, yamlRuntimeDeps, removedDeps)
-    const graph = await resolveBuildDependencyGraph(declared, platform, async (domain) => (await loadRecipe(domain, platform)).recipe)
+    const graph = await publishedDependencyGraph(declared, platform, bucket, region)
     depPaths = await downloadDependencies([...graph.values()], depsDir, platform, bucket, region)
     const runtimeDeclared = collectBuildDependencies({ dependencies: pkg.dependencies }, [], yamlRuntimeDeps, removedDeps)
-    const runtimeGraph = await resolveBuildDependencyGraph(runtimeDeclared, platform, async (domain) => (await loadRecipe(domain, platform)).recipe)
+    const runtimeGraph = await publishedDependencyGraph(runtimeDeclared, platform, bucket, region)
     runtimePackages = [...runtimeGraph.keys()].map((domain) => {
       const resolvedPrefix = depPaths[`deps.${domain}.prefix`]
       const resolvedVersion = depPaths[`deps.${domain}.version`]

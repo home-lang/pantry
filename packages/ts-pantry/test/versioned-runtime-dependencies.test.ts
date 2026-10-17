@@ -15,3 +15,26 @@ test('historical libxslt packages retain their own XML ABI without mutating the 
     expect(versionSatisfies('2.13.9', historical.recipe.dependencies['gnome.org/libxml2'])).toBe(true)
   }
 })
+
+test('published dependency versions recompute ABI edges after a later transitive bound', async () => {
+  const { resolveVersionedBuildDependencyGraph } = await import('../scripts/build-package')
+  const platform = 'linux-x86-64'
+  const selected: string[] = []
+  const recipes: Record<string, Record<string, string>> = {
+    'root.example@1.0.0': { 'shared.example': '*', 'later.example': '*' },
+    'shared.example@2.0.0': { 'new-abi.example': '*' },
+    'shared.example@1.0.0': { 'old-abi.example': '*' },
+    'later.example@1.0.0': { 'shared.example': '<2' },
+  }
+  const graph = await resolveVersionedBuildDependencyGraph(new Map([['root.example', 'root.example ^1']]), platform,
+    async domain => ({ versions: Object.fromEntries((domain === 'shared.example' ? ['2.0.0', '1.0.0'] : ['1.0.0']).map(version => [version, { platforms: { [platform]: {} } }])) }),
+    async (domain, version) => {
+      selected.push(`${domain}@${version}`)
+      return { dependencies: recipes[`${domain}@${version}`] || {} }
+    })
+  expect(selected).toContain('shared.example@2.0.0')
+  expect(selected).toContain('shared.example@1.0.0')
+  expect(graph.has('old-abi.example')).toBe(true)
+  expect(graph.has('new-abi.example')).toBe(false)
+  expect(graph.get('shared.example')).toBe('shared.example <2')
+})

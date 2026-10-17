@@ -1,4 +1,4 @@
-import { chmodSync, copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs'
+import { chmodSync, copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { basename, dirname, join, relative, sep } from 'node:path'
@@ -16,7 +16,7 @@ function walk(directory: string, visit: (file: string) => void): void {
     if (entry.name.endsWith('.app')) continue
     const path = join(directory, entry.name)
     if (entry.isDirectory()) walk(path, visit)
-    else if (entry.isFile() || entry.isSymbolicLink()) visit(path)
+    else if (entry.isFile() || (entry.isSymbolicLink() && statSync(path).isFile())) visit(path)
   }
 }
 

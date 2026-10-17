@@ -21,6 +21,7 @@ test.skipIf(process.platform !== 'linux')('native runtime closure survives fresh
     for (const path of [join(first, 'lib'), join(second, 'lib64'), join(stage, 'lib'), join(stage, 'bin')]) mkdirSync(path, { recursive: true })
     writeFileSync(join(first, 'LICENSE'), 'First fixture license\n')
     writeFileSync(join(second, 'COPYING'), 'Second fixture license\n')
+    symlinkSync('.', join(first, 'lib', 'directory-loop'))
     writeFileSync(join(root, 'second.c'), 'int second(void) { return 41; }')
     writeFileSync(join(root, 'first.c'), 'extern int second(void); int first(void) { return second() + 1; }')
     writeFileSync(join(root, 'api.c'), 'extern int first(void); int value(void) { return first(); }')
