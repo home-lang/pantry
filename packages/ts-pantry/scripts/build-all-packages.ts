@@ -36,7 +36,7 @@ import { fixElfRpaths, fixUp } from './fix-up'
 import { selectPublishedFiles, writeProgramInterfaces } from './published-files'
 import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
 import { BINARY_SYNC_DOMAIN_SET } from './binary-sync-packages.ts'
-import { parseDep } from './build-package'
+import { parseDep, versionSatisfies } from './build-package'
 import { publicationOrder } from './publication-order'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
 const packageOverrides: Record<string, any> = {}
@@ -933,26 +933,9 @@ function isVersionSkipped(domain: string, version: string): boolean {
   const specs = SKIP_VERSIONS[domain]
   if (!specs) return false
   if (specs.includes(version) || specs.includes('*')) return true
-  // Support version range specs
-  for (const spec of specs) {
-    if (spec.startsWith('>=')) {
-      const threshold = spec.slice(2)
-      if (compareVersions(version, threshold) >= 0) return true
-    }
-else if (spec.startsWith('>')) {
-      const threshold = spec.slice(1)
-      if (compareVersions(version, threshold) > 0) return true
-    }
-else if (spec.startsWith('<=')) {
-      const threshold = spec.slice(2)
-      if (compareVersions(version, threshold) <= 0) return true
-    }
-else if (spec.startsWith('<')) {
-      const threshold = spec.slice(1)
-      if (compareVersions(version, threshold) < 0) return true
-    }
-  }
-  return false
+  // Use the installer constraint parser so all bounds in a compound range
+  // apply together; treating ">8.5.0 <12.0.0" as one threshold blocked 14.x too.
+  return specs.some(spec => /^[<>]/.test(spec) && versionSatisfies(version, spec))
 }
 
 /** Compare semver-like version strings. Returns <0 if a<b, 0 if a==b, >0 if a>b */

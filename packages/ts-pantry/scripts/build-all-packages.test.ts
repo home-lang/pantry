@@ -10,6 +10,20 @@ test('an explicitly requested excluded version fails instead of reporting an emp
   expect(child.stderr.toString()).toContain('Requested unicode.org@70.1.0 is excluded from publication on linux-arm64')
 })
 
+for (const [version, allowed] of [['14.6.0', true], ['8.4.0', false], ['8.5.0', true], ['9.0.0', false], ['11.0.0', false], ['12.0.0', true]] as const) {
+  test(`compound exclusion range selects HarfBuzz ${version}: ${allowed}`, () => {
+    const child = Bun.spawnSync([process.execPath, 'scripts/build-all-packages.ts', '--platform', 'darwin-arm64', '-p', `harfbuzz.org@${version}`, '--source-only', '--print-selected'], { cwd: import.meta.dir + '/..', stdout: 'pipe', stderr: 'pipe' })
+    if (allowed) {
+      expect(child.exitCode, child.stderr.toString()).toBe(0)
+      expect(child.stdout.toString().trim()).toBe(`harfbuzz.org@${version}`)
+    }
+    else {
+      expect(child.exitCode).not.toBe(0)
+      expect(child.stderr.toString()).toContain(`Requested harfbuzz.org@${version} is excluded from publication`)
+    }
+  })
+}
+
 test('the actual selected X11 publication cohort builds XCB first', () => {
   const child = Bun.spawnSync(['bun', 'scripts/build-all-packages.ts', '--platform', 'darwin-arm64', '-p', 'x.org/x11@1.8.13,x.org/xcb@1.17.0', '--source-only', '--print-selected'], { cwd: import.meta.dir + '/..', stdout: 'pipe', stderr: 'pipe' })
   expect(child.exitCode, child.stderr.toString()).toBe(0)
