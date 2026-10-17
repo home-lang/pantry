@@ -2,6 +2,7 @@ import type { Recipe } from '../../scripts/recipe-types'
 
 export const recipe: Recipe = {
   domain: 'mesonbuild.com',
+  propsDir: 'props/mesonbuild.com',
   name: 'meson',
   description: 'Fast and user friendly build system',
   homepage: 'https://mesonbuild.com/',
@@ -16,22 +17,18 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   dependencies: {
-    'pkgx.sh': '>=1',
-  },
-  buildDependencies: {
     'python.org': '~3.12',
   },
 
   build: {
     script: [
-      'bkpyvenv stage {{prefix}} {{version}}',
-      '${{prefix}}/venv/bin/pip install .',
-      'bkpyvenv seal {{prefix}} meson',
-      {
-        run: 'cp -a {{deps.python.org.prefix}}/lib/libpython* .',
-        if: 'linux',
-        'working-directory': '${{prefix}}/lib',
-      },
+      'mkdir -p {{prefix}}/bin {{prefix}}/libexec/meson',
+      'cp -a meson.py mesonbuild {{prefix}}/libexec/meson/',
+      'install -m 0755 props/meson {{prefix}}/bin/meson',
     ],
+  },
+  test: {
+    script: ['{{deps.python.org.prefix}}/bin/python3 {{prefix}}/libexec/meson/meson.py --version'],
+    required: true,
   },
 }

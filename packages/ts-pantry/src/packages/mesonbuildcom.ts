@@ -8,8 +8,7 @@
  *
  * @install `pantry install mesonbuild.com`
  * @homepage https://mesonbuild.com/
- * @dependencies `pkgx.sh>=1`
- * @buildDependencies `python.org@~3.11` - required only when building from source
+ * @dependencies `python.org~3.12`
  *
  * @example
  * ```typescript
@@ -60,15 +59,9 @@ export const mesonbuildcomPackage = {
   * These are required when running the package.
   */
   dependencies: [
-    'pkgx.sh>=1',
+    'python.org~3.12',
   ] as const,
-  /**
-  * Build dependencies for this package.
-  * These are only required when building the package from source.
-  */
-  buildDependencies: [
-    'python.org@~3.11',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions

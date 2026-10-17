@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+
+script=$0
+while [ -h "$script" ]; do
+  target=$(readlink "$script")
+  case "$target" in /*) script=$target ;; *) script=${script%/*}/$target ;; esac
+done
+prefix=$(CDPATH= cd -- "${script%/*}/.." && pwd)
+for python in "$prefix"/../../python.org/v3.12/bin/python3 "$prefix"/../../python.org/v3.12.*/bin/python3 "$prefix"/../../python.org/3.12/bin/python3 "$prefix"/../../python.org/3.12.*/bin/python3; do
+  if [ -x "$python" ]; then
+    exec "$python" "$prefix/libexec/meson/meson.py" "$@"
+  fi
+done
+echo 'pantry: Meson requires its declared Python 3.12 runtime' >&2
+exit 127

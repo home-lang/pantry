@@ -1632,6 +1632,7 @@ const CUSTOM_BUILD_DOMAINS = new Set<string>([
   'postgresql.org/libpq', // client-only products; upstream prebuilts link server-only ICU/readline
   'curl.se', // Pantry links against OpenSSL 3; pkgx's build still requires OpenSSL 1.1
   'harfbuzz.org', // use the declared current ICU ABI on every native platform
+  'mesonbuild.com', // use Pantry Python without pkgx changing the build environment
 ])
 
 /**
