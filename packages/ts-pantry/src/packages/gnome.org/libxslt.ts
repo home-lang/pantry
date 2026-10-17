@@ -3,13 +3,13 @@
  *
  * @domain `gnome.org/libxslt`
  * @programs `xslt-config`, `xsltproc`
- * @version `1.1.45` (8 versions available)
+ * @version `1.1.45` (33 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install gnome.org/libxslt`
  * @homepage http://xmlsoft.org/XSLT/
- * @dependencies `gnome.org/libxml2`
- * @buildDependencies `gnu.org/patch`, `gnome.org/libxml2@~2.15.1` - required only when building from source
+ * @dependencies `gnome.org/libxml2~2.15.1`
+ * @buildDependencies `gnu.org/patch` - required only when building from source
  *
  * @example
  * ```typescript
@@ -61,7 +61,7 @@ export const gnomeorglibxsltPackage = {
   * These are required when running the package.
   */
   dependencies: [
-    'gnome.org/libxml2',
+    'gnome.org/libxml2~2.15.1',
   ] as const,
   /**
   * Build dependencies for this package.
@@ -69,7 +69,6 @@ export const gnomeorglibxsltPackage = {
   */
   buildDependencies: [
     'gnu.org/patch',
-    'gnome.org/libxml2@~2.15.1',
   ] as const,
   /**
   * Available versions from newest to oldest.

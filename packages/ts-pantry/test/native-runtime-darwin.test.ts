@@ -35,6 +35,12 @@ test.skipIf(process.platform !== 'darwin')('Mach-O publication uses only declare
     const incomplete = join(root, 'incomplete')
     cpSync(stage, incomplete, { recursive: true })
     await expect(fixUp(incomplete, 'darwin-arm64', [], [{ domain: 'first.example', version: '1.0', prefix: first }])).rejects.toThrow('libfixture-second.1.dylib')
+    await fixUp(first, 'darwin-arm64', [], [{ domain: 'second.example', version: '1.0', prefix: second }])
+    const bundledSecond = join(first, 'lib/libfixture-second.1.dylib')
+    const canonicalBytes = readFileSync(bundledSecond)
+    writeFileSync(bundledSecond, Buffer.concat([canonicalBytes, Buffer.from('tampered')]))
+    await expect(fixUp(stage, 'darwin-arm64', [], [{ domain: 'first.example', version: '1.0', prefix: first }, { domain: 'second.example', version: '1.0', prefix: second }])).rejects.toThrow('Invalid bundled runtime provenance')
+    writeFileSync(bundledSecond, canonicalBytes)
     await fixUp(stage, 'darwin-arm64', [], [{ domain: 'first.example', version: '1.0', prefix: first }, { domain: 'second.example', version: '1.0', prefix: second }])
     const fresh = join(root, 'fresh consumer/pantry/example.org/v1.0')
     mkdirSync(dirname(fresh), { recursive: true })
@@ -47,7 +53,7 @@ test.skipIf(process.platform !== 'darwin')('Mach-O publication uses only declare
     for (const library of provenance.libraries) {
       expect(library.sourceSha256).toMatch(/^[a-f0-9]{64}$/)
       expect(library.bundledSha256).toMatch(/^[a-f0-9]{64}$/)
-      expect(library.licenseFiles.length).toBe(1)
+      expect(library.licenseFiles.length).toBeGreaterThan(0)
     }
   }
   finally { rmSync(root, { recursive: true, force: true }) }

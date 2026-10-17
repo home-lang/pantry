@@ -7,11 +7,10 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install postgresql.org`
- * @name `postgresql`
  * @aliases `postgres`
  * @homepage https://www.postgresql.org/
- * @dependencies `openssl.org^1.0.1`, `gnu.org/readline`, `zlib.net`, ... (+4 more)
- * @buildDependencies `gnu.org/bison`, `github.com/westes/flex@^2.5.31`, `perl.org` - required only when building from source
+ * @dependencies `openssl.org^3`, `gnu.org/readline`, `zlib.net`, ... (+4 more)
+ * @buildDependencies `gnu.org/bison`, `github.com/westes/flex^2.5.31`, `perl.org` - required only when building from source
  *
  * @example
  * ```typescript
@@ -97,7 +96,7 @@ export const postgresPackage = {
     'gnu.org/readline',
     'zlib.net',
     'lz4.org',
-    'gnome.org/libxml2~2.13',
+    'gnome.org/libxml2~2.15.1',
     'gnome.org/libxslt',
     'unicode.org^73',
   ] as const,
@@ -107,7 +106,7 @@ export const postgresPackage = {
   */
   buildDependencies: [
     'gnu.org/bison',
-    'github.com/westes/flex@^2.5.31',
+    'github.com/westes/flex^2.5.31',
     'perl.org',
   ] as const,
   /**

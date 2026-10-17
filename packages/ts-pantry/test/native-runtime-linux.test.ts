@@ -43,6 +43,7 @@ test.skipIf(process.platform !== 'linux')('native runtime closure survives fresh
     await expect(fixUp(conflicted, 'linux-x86-64', [], [{ domain: 'first.example', version: '1.0', prefix: first }, { domain: 'conflict.example', version: '1.0', prefix: conflict }])).rejects.toThrow('Conflicting declared runtime providers')
     symlinkSync(join(second, 'lib64/libfixture-second.so.1'), join(conflict, 'lib/escape.so'))
     await expect(fixUp(conflicted, 'linux-x86-64', [], [{ domain: 'conflict.example', version: '1.0', prefix: conflict }])).rejects.toThrow('escapes declared runtime package')
+    await fixUp(first, 'linux-x86-64', [], [{ domain: 'second.example', version: '1.0', prefix: second }])
     await fixUp(stage, 'linux-x86-64', [], [{ domain: 'first.example', version: '1.0', prefix: first }, { domain: 'second.example', version: '1.0', prefix: second }])
     const fresh = join(root, 'fresh consumer/pantry/example.org/v1.0')
     mkdirSync(dirname(fresh), { recursive: true })
@@ -58,7 +59,7 @@ test.skipIf(process.platform !== 'linux')('native runtime closure survives fresh
     for (const library of provenance.libraries) {
       expect(library.sourceSha256).toMatch(/^[a-f0-9]{64}$/)
       expect(library.bundledSha256).toMatch(/^[a-f0-9]{64}$/)
-      expect(library.licenseFiles.length).toBe(1)
+      expect(library.licenseFiles.length).toBeGreaterThan(0)
       expect(existsSync(join(fresh, library.licenseFiles[0]))).toBe(true)
     }
   }

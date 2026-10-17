@@ -8,12 +8,13 @@ export const recipe: Recipe = {
     'kerberos.org': '*',
     'openssl.org': '^1.1',
     'zlib.net': '^1',
-    'unicode.org': '^71',
     linux: {
       'gnu.org/readline': '*',
     },
   },
   buildDependencies: {
+    // PostgreSQL's server build uses ICU; the installed libpq client does not.
+    'unicode.org': '^71',
     linux: {
       'gnu.org/bison': '*',
       'github.com/westes/flex': '*',

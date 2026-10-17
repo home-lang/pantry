@@ -53,10 +53,30 @@ export function bundleRuntimeLibraries(
   const licenses = new Map<string, string[]>()
   const register = (directory: string, dependency?: RuntimePackage): void => {
     const owner = realpathSync(directory)
+    const manifest = join(owner, 'share/pantry/runtime-libraries.json')
+    const bundled: Array<RuntimeLibraryReceipt & { bundledSha256: string }> = dependency && existsSync(manifest)
+      ? JSON.parse(readFileSync(manifest, 'utf8')).libraries
+      : []
     for (const part of ['lib', 'lib64']) walk(join(owner, part), (file) => {
       const actual = realpathSync(file)
       if (!inside(owner, actual)) throw new Error(`Library escapes declared runtime package: ${file}`)
       if (!isBinary(actual)) return
+      // A dependency can already carry a normalized copy of another declared
+      // package. Loader-path rewrites change its hash without creating a new
+      // provider. Verify the complete provenance chain, then index the original
+      // package instead of falsely treating that copy as a conflicting ABI.
+      const receipt = bundled.find(library => actual === join(owner, 'lib', library.name))
+      if (receipt) {
+        if (hash(actual) !== receipt.bundledSha256) throw new Error(`Invalid bundled runtime provenance for ${receipt.name}`)
+        const canonical = dependencies.find(pkg => pkg.domain === receipt.domain && pkg.version === receipt.version)
+        if (canonical) {
+          const sourceRoot = realpathSync(canonical.prefix)
+          const source = realpathSync(join(sourceRoot, receipt.source))
+          if (!inside(sourceRoot, source) || hash(source) !== receipt.sourceSha256)
+            throw new Error(`Invalid canonical runtime provenance for ${receipt.name}`)
+          return
+        }
+      }
       const entries = index.get(basename(file)) || []
       if (!entries.some(entry => entry.file === actual)) entries.push({ file: actual, dependency })
       index.set(basename(file), entries)

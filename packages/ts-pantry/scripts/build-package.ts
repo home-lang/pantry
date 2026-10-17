@@ -1181,6 +1181,45 @@ async function publishedDependencyGraph(initial: Map<string, string>, platform: 
   }, async (domain, version) => (await loadRecipe(domain, platform, version)).recipe)
 }
 
+/** Build executables keep their private runtime ABIs out of the target linker graph. */
+export async function installBuildDependencyGraphs(
+  runtimeDeclared: Map<string, string>,
+  declared: Map<string, string>,
+  depsDir: string,
+  resolve: (initial: Map<string, string>) => Promise<Map<string, string>>,
+  download: (graph: Map<string, string>, directory: string) => Promise<Record<string, string>>,
+): Promise<{ depPaths: Record<string, string>, runtimePackages: RuntimePackage[] }> {
+  const runtime = new Map(runtimeDeclared)
+  for (const domain of runtime.keys()) if (declared.has(domain)) runtime.set(domain, declared.get(domain)!)
+  let graph = await resolve(runtime)
+  for (const [domain, dependency] of declared) {
+    if (!runtime.has(domain) && graph.has(domain)) {
+      const constraint = parseDepConstraint(dependency)
+      runtime.set(domain, constraint ? `${graph.get(domain)} ${constraint}` : graph.get(domain)!)
+    }
+  }
+  if (runtime.size !== runtimeDeclared.size) graph = await resolve(runtime)
+  const depPaths = await download(graph, depsDir)
+  const runtimePackages = [...graph.keys()].map((domain) => {
+    const prefix = depPaths[`deps.${domain}.prefix`]
+    const version = depPaths[`deps.${domain}.version`]
+    if (!prefix || !version) throw new Error(`Unresolved declared runtime package: ${domain}`)
+    return { domain, version, prefix }
+  })
+  for (const [domain, dependency] of declared) {
+    if (graph.has(domain)) continue
+    const tools = await resolve(new Map([[domain, dependency]]))
+    const paths = await download(tools, join(depsDir, '.build-tools', encodeURIComponent(domain)))
+    for (const [key, value] of Object.entries(paths)) {
+      if (key === domain || key.startsWith(`deps.${domain}.`)) depPaths[key] = value
+    }
+    for (const child of tools.keys()) {
+      if (child !== domain) depPaths[`build-tools.${domain}:${child}.prefix`] = paths[`deps.${child}.prefix`]
+    }
+  }
+  return { depPaths, runtimePackages }
+}
+
 /** Mirrored binaries must satisfy the same declared runtime closure as source builds. */
 export async function downloadRuntimePackages(domain: string, version: string, platform: string, depsDir: string, bucket: string, region: string): Promise<RuntimePackage[]> {
   const { loadRecipe } = await import('./recipe-loader')
@@ -1283,16 +1322,12 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     // When both build and runtime deps specify constraints for the same domain,
     // merge them into a compound constraint (e.g., ">=2.3" + "<4" → ">=2.3<4")
     const declared = collectBuildDependencies(pkg, yamlBuildDeps, yamlRuntimeDeps, removedDeps)
-    const graph = await publishedDependencyGraph(declared, platform, bucket, region)
-    depPaths = await downloadDependencies([...graph.values()], depsDir, platform, bucket, region)
     const runtimeDeclared = collectBuildDependencies({ dependencies: pkg.dependencies }, [], yamlRuntimeDeps, removedDeps)
-    const runtimeGraph = await publishedDependencyGraph(runtimeDeclared, platform, bucket, region)
-    runtimePackages = [...runtimeGraph.keys()].map((domain) => {
-      const resolvedPrefix = depPaths[`deps.${domain}.prefix`]
-      const resolvedVersion = depPaths[`deps.${domain}.version`]
-      if (!resolvedPrefix || !resolvedVersion) throw new Error(`Unresolved declared runtime package: ${domain}`)
-      return { domain, version: resolvedVersion, prefix: resolvedPrefix }
-    })
+    const installed = await installBuildDependencyGraphs(runtimeDeclared, declared, depsDir,
+      initial => publishedDependencyGraph(initial, platform, bucket, region),
+      (graph, directory) => downloadDependencies([...graph.values()], directory, platform, bucket, region))
+    depPaths = installed.depPaths
+    runtimePackages = installed.runtimePackages
 
     console.log(`\nDownloaded ${Object.keys(depPaths).filter(k => k.endsWith('.prefix')).length} dependencies (including transitive)`)
   }

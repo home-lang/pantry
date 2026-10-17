@@ -64,3 +64,25 @@ test('recipe build and runtime bounds intersect even when metadata repeats the f
   const graph = collectBuildDependencies({ dependencies: ['shared.org >=1'] }, ['shared.org >=1'], ['shared.org <2'])
   expect(graph.get('shared.org')).toBe('shared.org >=1<2')
 })
+
+test('a build tool can use XML 2.13 while the target links XML 2.15', async () => {
+  const { installBuildDependencyGraphs } = await import('../scripts/build-package')
+  const installed = await installBuildDependencyGraphs(new Map([['xml.example', 'xml.example ~2.15']]), new Map([['xml.example', 'xml.example ~2.15'], ['gettext.example', 'gettext.example ^1']]), '/managed',
+    async (initial) => {
+      const graph = new Map(initial)
+      if (graph.has('gettext.example')) graph.set('xml.example', 'xml.example ~2.13')
+      return graph
+    },
+    async (graph, directory) => Object.fromEntries([...graph].flatMap(([domain, spec]) => [[`deps.${domain}.prefix`, `${directory}/${domain}`], [`deps.${domain}.version`, spec.includes('2.13') ? '2.13.9' : '2.15.4']])))
+  expect(installed.runtimePackages.map(pkg => `${pkg.domain}@${pkg.version}`)).toEqual(['xml.example@2.15.4'])
+  const script = generateBuildScript({ build: { script: ['true'] } }, 'fixture', '1.0.0', 'linux-x86-64', '/artifact', '/build', installed.depPaths)
+  const exports = script.split('\n').filter(line => /^export (PATH|PKG_CONFIG_PATH|LIBRARY_PATH|CPATH)=/.test(line)).join('\n')
+  const child = Bun.spawnSync(['bash', '-ec', `${exports}\nprintf '%s\\n' "$PATH" "$PKG_CONFIG_PATH" "$LIBRARY_PATH" "$CPATH"`], { env: { PATH: '/usr/bin:/bin' }, stdout: 'pipe', stderr: 'pipe' })
+  expect(child.exitCode, child.stderr.toString()).toBe(0)
+  const [bins, pc, libs, headers] = child.stdout.toString().trim().split('\n')
+  expect(bins).toContain('/.build-tools/gettext.example/xml.example/bin')
+  for (const value of [pc, libs, headers]) {
+    expect(value).toContain('/managed/xml.example')
+    expect(value).not.toContain('/.build-tools/gettext.example/xml.example')
+  }
+})

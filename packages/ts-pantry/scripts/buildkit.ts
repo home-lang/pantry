@@ -927,6 +927,7 @@ else if (osName === 'linux') {
     // Only use .prefix keys for PATH construction (skip .version, .version.major, etc.)
     if (!key.endsWith('.prefix')) continue
     depBinPaths.push(`${depPath}/bin`)
+    if (key.startsWith('build-tools.')) continue
     depLibPaths.push(`${depPath}/lib`, `${depPath}/lib64`)
     depAclocalPaths.push(`${depPath}/share/aclocal`)
     if (key.includes('gnu.org/autoconf'))
