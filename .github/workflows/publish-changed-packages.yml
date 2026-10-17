@@ -14,6 +14,12 @@ on:
       - 'packages/ts-pantry/src/packages/**'
   workflow_dispatch:
     inputs:
+      platform:
+        description: 'Native platforms to publish. Select Linux to repair Linux-only dependencies without starting a macOS source build.'
+        required: false
+        default: all
+        type: choice
+        options: [all, linux, darwin-arm64]
       packages:
         description: 'Domains to build (space/comma separated). domain@version builds exactly that version, e.g. abseil.io@20250127.2. Empty = autodetect from the push diff.'
         required: false
@@ -191,10 +197,13 @@ jobs:
         #    then --download-only for zig-style recipes) — see the build step.
         #    No source-build, no cross-compile, no Mac. Genuine darwin SOURCE
         #    recipes go to the gated publish-darwin-native job below.
-        platform:
-          - { name: linux-x86-64, os: ubuntu-latest, needs_toolchain: true }
-          - { name: linux-arm64, os: ubuntu-24.04-arm, needs_toolchain: true }
-          - { name: darwin-arm64, os: ubuntu-latest, needs_toolchain: false }
+        platform: ${{ fromJSON(
+          inputs.platform == 'linux'
+            && '[{"name":"linux-x86-64","os":"ubuntu-latest","needs_toolchain":true},{"name":"linux-arm64","os":"ubuntu-24.04-arm","needs_toolchain":true}]'
+          || inputs.platform == 'darwin-arm64'
+            && '[{"name":"darwin-arm64","os":"ubuntu-latest","needs_toolchain":false}]'
+          || '[{"name":"linux-x86-64","os":"ubuntu-latest","needs_toolchain":true},{"name":"linux-arm64","os":"ubuntu-24.04-arm","needs_toolchain":true},{"name":"darwin-arm64","os":"ubuntu-latest","needs_toolchain":false}]'
+          ) }}
     steps:
       - uses: actions/checkout@v6
 
@@ -285,7 +294,7 @@ jobs:
   publish-darwin-native:
     name: Publish darwin-arm64 source (native macOS)
     needs: detect
-    if: needs.detect.outputs.darwin_native != ''
+    if: needs.detect.outputs.darwin_native != '' && inputs.platform != 'linux'
     # Current dependency binaries use APIs supplied by macOS 15 (for example
     # gettext's strchrnul). The native host must satisfy their runtime floor.
     runs-on: macos-15
