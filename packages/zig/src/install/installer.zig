@@ -5016,9 +5016,9 @@ test "project links stay inside pantry/ when it is installed through a worktree'
 test "verified materialization preserves executables beneath lib without making data executable" {
     if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
     const allocator = std.testing.allocator;
-    var cache = try PackageCache.init(allocator);
-    defer cache.deinit();
-    var installer = try Installer.init(allocator, &cache);
+    var pkg_cache = try PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+    var installer = try Installer.init(allocator, &pkg_cache);
     defer installer.deinit();
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
