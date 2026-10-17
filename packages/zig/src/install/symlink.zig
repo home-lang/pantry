@@ -194,6 +194,10 @@ pub fn createBinarySymlinkFromPath(
         return error.BinDirCreationFailed;
     };
 
+    // Reject invalid package interfaces even when an existing owner keeps the
+    // link. Validation must precede every successful return and link mutation.
+    const use_shim = try requiresForwardingShim(allocator, bin_path);
+
     // Check if symlink already exists from a different package — don't overwrite.
     // Always log a structured message (even in CI) so `pantry doctor` and CI logs
     // can surface symlink collisions.
@@ -213,8 +217,6 @@ pub fn createBinarySymlinkFromPath(
         }
         return;
     }
-
-    const use_shim = try requiresForwardingShim(allocator, bin_path);
 
     // Remove existing symlink if present (same package or stale)
     io_helper.deleteFile(symlink_path) catch {};
@@ -276,7 +278,11 @@ pub fn requiresForwardingShim(allocator: std.mem.Allocator, path: []const u8) !b
     if (parsed.value.version != 1) return error.InvalidPackageInterface;
     var sourceable = false;
     for (parsed.value.sourceablePrograms) |name| {
-        if (name.len == 0 or std.mem.indexOfScalar(u8, name, '/') != null) return error.InvalidPackageInterface;
+        if (name.len == 0) return error.InvalidPackageInterface;
+        for (name) |character| {
+            if (!std.ascii.isAlphanumeric(character) and std.mem.indexOfScalar(u8, "_.+-", character) == null)
+                return error.InvalidPackageInterface;
+        }
         if (std.mem.eql(u8, name, std.fs.path.basename(path))) sourceable = true;
     }
     return !sourceable;
