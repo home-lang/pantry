@@ -16,85 +16,6 @@ import { compareInstallerVersionsDesc, parseInstallerConstraint, satisfiesInstal
 type ScriptStep = string | { run: string, 'working-directory'?: string, if?: string }
 const packageOverrides: Record<string, any> = {} // stub — overrides migrated to recipes
 
-/**
- * Find the system prefix for a dependency by detecting where its binary lives.
- * For example, if `cargo` is at `/home/runner/.cargo/bin/cargo`, returns `/home/runner/.cargo`.
- * Falls back to /usr/local or /usr if binary not found.
- */
-function findSystemPrefix(domain: string): string {
-  // Full domain -> binary name mappings
-  const domainMap: Record<string, string> = {
-    'go.dev': 'go', 'python.org': 'python3', 'cmake.org': 'cmake',
-    'nodejs.org': 'node', 'mesonbuild.com': 'meson', 'ninja-build.org': 'ninja',
-    'rust-lang.org/cargo': 'cargo', 'rust-lang.org/rustup': 'rustup',
-    'openssl.org': 'openssl', 'curl.se': 'curl', 'gnu.org/make': 'make',
-    'gnu.org/autoconf': 'autoconf', 'gnu.org/automake': 'automake',
-    'gnu.org/libtool': 'libtool', 'perl.org': 'perl', 'ruby-lang.org': 'ruby',
-    'openjdk.org': 'java', 'adoptium.net': 'java',
-  }
-
-  // Domain -> pkg-config package name (for library-only packages without binaries)
-  const pkgConfigMap: Record<string, string> = {
-    'boost.org': 'boost_system', 'zlib.net': 'zlib', 'openssl.org': 'openssl',
-    'sourceware.org/libffi': 'libffi', 'sourceware.org/bzip2': 'bzip2',
-    'gnome.org/glib': 'glib-2.0', 'gnome.org/gobject-introspection': 'gobject-introspection-1.0',
-    'gnome.org/pango': 'pango', 'gnome.org/atk': 'atk', 'gnome.org/libxml2': 'libxml-2.0',
-    'cairographics.org': 'cairo', 'harfbuzz.org': 'harfbuzz', 'freetype.org': 'freetype2',
-    'libpng.org': 'libpng', 'pcre.org': 'libpcre', 'pcre.org/v2': 'libpcre2-8',
-    'libevent.org': 'libevent', 'pixman.org': 'pixman-1', 'freedesktop.org/fontconfig': 'fontconfig',
-    'x.org/x11': 'x11', 'x.org/xcb': 'xcb', 'x.org/protocol': 'xproto',
-    'gnutls.org': 'gnutls', 'libusb.info': 'libusb-1.0', 'libarchive.org': 'libarchive',
-    'unicode.org': 'icu-uc', 'gnupg.org/libgcrypt': 'libgcrypt',
-    'gnupg.org/libgpg-error': 'gpg-error', 'gnupg.org/libassuan': 'libassuan',
-  }
-
-  // 1. Try to find via binary in PATH
-  const lastPart = domain.split('/').pop() || ''
-  const binaryName = domainMap[domain] || domainMap[lastPart] || lastPart
-  try {
-    const whichPath = execSync(`command -v ${binaryName} 2>/dev/null`, { encoding: 'utf-8' }).trim()
-    if (whichPath && existsSync(whichPath)) {
-      const binDir = dirname(whichPath)
-      const prefix = dirname(binDir)
-      if (binDir.endsWith('/bin') || binDir.endsWith('/sbin')) {
-        return prefix
-      }
-    }
-  }
-catch { /* binary not found */ }
-
-  // 1b. For rust/cargo: check well-known locations (command -v may miss it)
-  if (binaryName === 'cargo' || domain.includes('rust-lang.org/cargo')) {
-    const home = process.env.HOME || process.env.REAL_HOME || ''
-    const cargoLocations = [
-      join(home, '.cargo', 'bin', 'cargo'),
-      '/usr/share/rust/.cargo/bin/cargo',
-      '/opt/homebrew/bin/cargo',
-      '/usr/local/bin/cargo',
-    ]
-    for (const loc of cargoLocations) {
-      if (existsSync(loc)) {
-        return dirname(dirname(loc)) // .cargo/bin/cargo → .cargo
-      }
-    }
-  }
-
-  // 2. Try pkg-config to find library prefix
-  const pkgName = pkgConfigMap[domain]
-  if (pkgName) {
-    try {
-      const prefix = execSync(`pkg-config --variable=prefix ${pkgName} 2>/dev/null`, { encoding: 'utf-8' }).trim()
-      if (prefix && existsSync(prefix)) return prefix
-    }
-catch { /* pkg-config failed */ }
-  }
-
-  // 3. Default: /usr on Linux (where apt installs), /usr/local on macOS
-  if (process.platform === 'darwin') {
-    return existsSync('/usr/local/include') ? '/usr/local' : '/usr'
-  }
-  return '/usr'
-}
 // Import package metadata
 import { fileURLToPath } from 'node:url'
 const packagesPath = fileURLToPath(new URL('../src/packages/index.ts', import.meta.url))
@@ -949,22 +870,30 @@ export function buildDependencyCandidates(
   const candidates = availableVersions
     .filter(version => metadata.versions?.[version]?.platforms?.[platform] && (!constraint || versionSatisfies(version, constraint)))
     .sort(compareInstallerVersionsDesc)
-  if (constraint && candidates.length === 0)
-    throw new BuildDependencyResolutionError(`No ${platform} dependency binary satisfies "${constraint}"`)
+  if (candidates.length === 0)
+    throw new BuildDependencyResolutionError(constraint ? `No ${platform} dependency binary satisfies "${constraint}"` : `No published dependency binary is available for ${platform}`)
   return candidates
 }
 
-// Download dependencies from S3
-async function downloadDependencies(
+interface BuildDependencyStorage {
+  getObject: (bucket: string, key: string) => Promise<string>
+  getSignedUrl: (options: { bucket: string, key: string, expiresIn: number }) => Promise<string>
+}
+
+// Download declared dependencies; never compile against an undeclared host ABI.
+export async function downloadDependencies(
   dependencies: string[],
   depsDir: string,
   platform: string,
   bucket: string,
-  region: string
+  region: string,
+  storage?: BuildDependencyStorage,
 ): Promise<Record<string, string>> {
-  const { createObjectStorageClient } = await import('@stacksjs/ts-cloud')
-  const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
-  const s3 = createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })
+  const s3 = storage ?? await (async () => {
+    const { createObjectStorageClient } = await import('@stacksjs/ts-cloud')
+    const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
+    return createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })
+  })()
   const depPaths: Record<string, string> = {}
   const platformOs = platform.split('-')[0]
 
@@ -992,13 +921,7 @@ async function downloadDependencies(
         metadata = JSON.parse(metadataContent)
       }
 catch {
-        if (constraint) throw new BuildDependencyResolutionError(`${domain}: constrained dependency metadata is unavailable`)
-        const fallbackPrefix = findSystemPrefix(domain)
-        console.log(`   - ${domain}: not in S3, falling back to system path → ${fallbackPrefix}`)
-        // Still register the dep with a system fallback so {{deps.*.prefix}} templates resolve
-        depPaths[domain] = fallbackPrefix
-        depPaths[`deps.${domain}.prefix`] = fallbackPrefix
-        continue
+        throw new BuildDependencyResolutionError(`${domain}: declared dependency metadata is unavailable`)
       }
 
       // Resolve the same range used by the installed runtime dependency graph.
@@ -1070,90 +993,13 @@ catch { /* ignore */ }
         console.log(`   - ${domain}@${version}${constraint ? ` (${constraint})` : ''}`)
         resolved = await downloadAndRegisterDep(version, metadata.versions[version].platforms[platform])
       }
-      if (constraint && !resolved)
-        throw new BuildDependencyResolutionError(`${domain}: could not install the ${platform} dependency satisfying "${constraint}"`)
-
-      if (!resolved) {
-        const fallbackPrefix = findSystemPrefix(domain)
-        console.log(`   - ${domain}: no binary for ${platform}, system path → ${fallbackPrefix}`)
-        depPaths[domain] = fallbackPrefix
-        depPaths[`deps.${domain}.prefix`] = fallbackPrefix
-        continue
-      }
-
-      // Fix meson: the S3 meson binary is often a shell script with a broken venv
-      // shebang that gets interpreted by Python instead of shell, causing:
-      //   SyntaxError: invalid syntax (on SCRIPT_DIR="$(cd...")
-      // Always replace with a system meson wrapper when system meson is available,
-      // regardless of whether the S3 version "appears" to work (it may pass --version
-      // but fail during actual builds when PATH resolves differently).
-      if (domain === 'mesonbuild.com') {
-        try {
-          const mesonBin = join(depPaths[domain], 'bin', 'meson')
-          if (existsSync(mesonBin)) {
-            // Check if system meson exists (installed via apt/pip in CI)
-            let systemMeson = ''
-            try {
-              systemMeson = execSync('which meson', { encoding: 'utf-8', stdio: 'pipe', env: { ...process.env, PATH: `/usr/local/bin:/usr/bin:${process.env.PATH}` } }).trim()
-              // Don't use our own S3 meson as "system" meson
-              if (systemMeson.includes('buildkit-deps')) systemMeson = ''
-            }
-catch { /* not found */ }
-
-            if (!systemMeson) {
-              // No system meson found — install via pip3 and try again
-              try {
-                console.log(`   - No system meson found, installing via pip3...`)
-                execSync('pip3 install --break-system-packages meson 2>/dev/null || pip3 install meson', { stdio: 'pipe' })
-                systemMeson = execSync('which meson', { encoding: 'utf-8', stdio: 'pipe' }).trim()
-                if (systemMeson.includes('buildkit-deps')) systemMeson = ''
-              }
-catch { /* pip install failed */ }
-            }
-
-            if (systemMeson) {
-              // Always replace with wrapper that calls system meson
-              writeFileSync(mesonBin, `#!/bin/sh\nexec "${systemMeson}" "$@"\n`, { mode: 0o755 })
-              console.log(`   - Replaced S3 meson with system meson wrapper (${systemMeson})`)
-            }
-else {
-              // No system meson even after pip — fix the S3 binary to use system python3
-              const mesonContent = readFileSync(mesonBin, 'utf-8')
-              if (mesonContent.includes('SCRIPT_DIR=') || mesonContent.includes('exec ')) {
-                // Shell wrapper from bkpyvenv seal — the venv Python path is stale.
-                // Create a new wrapper that uses system python3 with the venv's site-packages.
-                const venvDir = join(depPaths[domain], 'venv')
-                const _siteGlob = join(venvDir, 'lib', 'python*', 'site-packages')
-                writeFileSync(mesonBin, [
-                  '#!/bin/sh',
-                  `VENV_DIR="$(cd "$(dirname "$0")/../venv" && pwd)"`,
-                  `for _sp in "$VENV_DIR"/lib/python*/site-packages; do`,
-                  `  [ -d "$_sp" ] && export PYTHONPATH="$_sp\${PYTHONPATH:+:$PYTHONPATH}" && break`,
-                  `done`,
-                  `exec python3 -c "from mesonbuild.mesonmain import main; main()" "$@"`,
-                  '',
-                ].join('\n'), { mode: 0o755 })
-                console.log(`   - Rewrote meson shell wrapper to use system python3 + venv site-packages`)
-              }
-else if (mesonContent.startsWith('#!') && !mesonContent.startsWith('#!/usr/bin/env python3')) {
-                // Python script with wrong shebang — just fix the shebang
-                const fixedContent = mesonContent.replace(/^#!.*/, '#!/usr/bin/env python3')
-                writeFileSync(mesonBin, fixedContent, { mode: 0o755 })
-                console.log(`   - Fixed meson shebang to use system python3`)
-              }
-            }
-          }
-        }
-catch (e: unknown) {
-          console.log(`   - Warning: Could not fix meson: ${(e as Error).message}`)
-        }
-      }
+      if (!resolved)
+        throw new BuildDependencyResolutionError(`${domain}: could not install the ${platform} dependency${constraint ? ` satisfying "${constraint}"` : ''}`)
 
     }
 catch (error: unknown) {
       if (error instanceof BuildDependencyResolutionError) throw error
-      if (constraint) throw new BuildDependencyResolutionError(`${domain}: constrained dependency resolution failed`)
-      console.log(`   - ${domain}: failed (${(error as Error).message})`)
+      throw new BuildDependencyResolutionError(`${domain}: declared dependency resolution failed`)
     }
   }
 

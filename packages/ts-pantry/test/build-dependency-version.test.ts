@@ -52,3 +52,72 @@ describe('native builder platform artifact selection', () => {
     expect(buildDependencyCandidates({ versions: { '1.0': { platforms: { 'linux-x86-64': {} } }, '2.0': { platforms: { 'darwin-arm64': {} } } } }, 'linux-x86-64', null)).toEqual(['1.0'])
   })
 })
+
+describe('declared bare dependencies never borrow the host toolchain', () => {
+  async function fixture(run: (root: string) => Promise<void>): Promise<void> {
+    const { mkdtemp, rm } = await import('node:fs/promises')
+    const { tmpdir } = await import('node:os')
+    const { join } = await import('node:path')
+    const root = await mkdtemp(join(tmpdir(), 'pantry-build-dependencies-'))
+    try { await run(root) }
+    finally { await rm(root, { recursive: true, force: true }) }
+  }
+  test('missing metadata rejects a bare dependency', async () => {
+    const { downloadDependencies, BuildDependencyResolutionError } = await import('../scripts/build-package')
+    await fixture(async (root) => {
+      await expect(downloadDependencies(['unit.example/library'], root, 'linux-x86-64', 'test', 'test', {
+        getObject: async () => { throw new Error('missing metadata') },
+        getSignedUrl: async () => { throw new Error('must not download') },
+      })).rejects.toThrow(BuildDependencyResolutionError)
+    })
+  })
+  test('a binary available only on another platform rejects a bare dependency', async () => {
+    const { downloadDependencies } = await import('../scripts/build-package')
+    await fixture(async (root) => {
+      await expect(downloadDependencies(['unit.example/library'], root, 'linux-x86-64', 'test', 'test', {
+        getObject: async () => JSON.stringify({ versions: { '1.0.0': { platforms: { 'darwin-arm64': { tarball: 'other' } } } } }),
+        getSignedUrl: async () => { throw new Error('must not download') },
+      })).rejects.toThrow('No published dependency binary is available for linux-x86-64')
+    })
+  })
+  test('a failed artifact download rejects a bare dependency', async () => {
+    const { downloadDependencies } = await import('../scripts/build-package')
+    await fixture(async (root) => {
+      await expect(downloadDependencies(['unit.example/library'], root, 'linux-x86-64', 'test', 'test', {
+        getObject: async () => JSON.stringify({ versions: { '1.0.0': { platforms: { 'linux-x86-64': { tarball: 'missing' } } } } }),
+        getSignedUrl: async () => `file://${root}/does-not-exist.tar.gz`,
+      })).rejects.toThrow('could not install the linux-x86-64 dependency')
+    })
+  })
+  test('a published fixture is downloaded, extracted and registered from its own prefix', async () => {
+    const { downloadDependencies } = await import('../scripts/build-package')
+    const { mkdir, readFile, writeFile } = await import('node:fs/promises')
+    const { execFileSync } = await import('node:child_process')
+    const { join } = await import('node:path')
+    await fixture(async (root) => {
+      const source = join(root, 'source')
+      await mkdir(source)
+      await writeFile(join(source, 'proof.txt'), 'managed artifact bytes')
+      const archive = join(root, 'fixture.tar.gz')
+      execFileSync('tar', ['-czf', archive, '-C', source, '.'])
+      const paths = await downloadDependencies(['unit.example/library'], join(root, 'installed'), 'linux-x86-64', 'test', 'test', {
+        getObject: async () => JSON.stringify({ versions: { '1.0.0': { platforms: { 'linux-x86-64': { tarball: 'fixture' } } } } }),
+        getSignedUrl: async () => `file://${archive}`,
+      })
+      expect(paths['unit.example/library']).toBe(join(root, 'installed', 'unit.example/library', '1.0.0'))
+      expect(await readFile(join(paths['unit.example/library'], 'proof.txt'), 'utf8')).toBe('managed artifact bytes')
+    })
+  })
+  test('an explicit different-platform dependency remains skipped', async () => {
+    const { downloadDependencies } = await import('../scripts/build-package')
+    let lookups = 0
+    await fixture(async (root) => {
+      const paths = await downloadDependencies(['darwin:unit.example/library'], root, 'linux-x86-64', 'test', 'test', {
+        getObject: async () => { lookups++; throw new Error('must not resolve another platform') },
+        getSignedUrl: async () => { throw new Error('must not download') },
+      })
+      expect(paths).toEqual({})
+      expect(lookups).toBe(0)
+    })
+  })
+})
