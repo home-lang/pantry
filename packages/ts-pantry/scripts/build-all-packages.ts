@@ -1606,6 +1606,7 @@ let BUILD_IS_FOREIGN = false
 // from pkgx's vanilla build (custom configure flags / extensions / patches).
 export const CUSTOM_BUILD_DOMAINS: ReadonlySet<string> = new Set<string>([
   'invisible-island.net/ncurses', // publish real narrow and wide ABI libraries
+  'gnu.org/autoconf', // preserve source relocation and real autoreconf health checks
   'mysql.com', // preserve official native distributions and the supported source ABI
   'openssh.com', // scp/sftp must resolve managed ssh after relocating the package
   'git-scm.org', // alias detection uses libexec/git to avoid recursive PATH wrapper calls

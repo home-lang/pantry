@@ -24,6 +24,8 @@ export const recipe: Recipe = {
   buildDependencies: {
     // requires a C compiler to configure
     'llvm.org': '*',
+    'gnu.org/make': '*',
+    'gnu.org/sed': '*',
   },
   build: {
     script: [
@@ -45,6 +47,7 @@ export const recipe: Recipe = {
 
           // fix specific m4 and perl paths
           'perl -pi -e \'s|{{deps.perl.org.prefix}}/bin/perl|perl|g\' bin/*',
+          'sed -i \'1s|^#!.*perl.*|#!/usr/bin/env perl|\' bin/*',
           'perl -pi -e \'s|{{deps.gnu.org/m4.prefix}}/bin/m4|m4|g\' bin/*',
 
           // fix hardcoded paths
@@ -87,6 +90,17 @@ export const recipe: Recipe = {
         run: 'perl -pi -e \'s|\'"$PREFIX"\'|\\$PREFIX|g\' share/autoconf/autom4te.cfg',
         'working-directory': '{{prefix}}',
       },
+    ],
+  },
+  test: {
+    required: true,
+    script: [
+      'autoconf --version | grep -F "{{version.marketing}}"',
+      'printf "AC_INIT([pantry-native-check], [1.0])\\nAC_CONFIG_SRCDIR([probe.c])\\nAC_PROG_CC\\nAC_OUTPUT\\n" > configure.ac',
+      'printf "int main(void) { return 0; }\\n" > probe.c',
+      'autoreconf --force',
+      './configure',
+      'test -f config.status',
     ],
   },
 }
