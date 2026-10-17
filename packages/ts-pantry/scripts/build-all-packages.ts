@@ -2364,11 +2364,13 @@ Options:
   let downloadOnlySkipped = 0
   if (values['download-only']) {
     const before = allPackages.length
-    allPackages = allPackages.filter(p => p.isDownloadRecipe)
+    allPackages = allPackages.filter(p => p.isDownloadRecipe && !CUSTOM_BUILD_DOMAINS.has(p.domain))
     downloadOnlySkipped = before - allPackages.length
     logDiscovery(`download-only mode: including ${allPackages.length} download recipes, skipping ${downloadOnlySkipped} source recipes`)
   }
 
+  // Custom recipes require their native health checks and loader tools even
+  // when installation starts with an official vendor archive.
   // --source-only: the inverse — exclude zig-style download recipes, keeping only
   // source builds. Used by the EXPENSIVE GitHub runners (macOS especially, 10x
   // billing): download recipes are just a curl+repackage that the free Linux XDL
@@ -2379,7 +2381,7 @@ Options:
   let sourceOnlySkipped = 0
   if (values['source-only']) {
     const before = allPackages.length
-    allPackages = allPackages.filter(p => !p.isDownloadRecipe)
+    allPackages = allPackages.filter(p => !p.isDownloadRecipe || CUSTOM_BUILD_DOMAINS.has(p.domain))
     sourceOnlySkipped = before - allPackages.length
     logDiscovery(`source-only mode: including ${allPackages.length} source recipes, skipping ${sourceOnlySkipped} download recipes (left to the Linux XDL fleet)`)
   }
