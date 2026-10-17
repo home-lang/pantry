@@ -6,7 +6,7 @@ import { recipe } from '../src/recipes/openssh.com'
 import { loadRecipe } from '../scripts/recipe-loader'
 
 test('OpenSSH compiles both clients with the upstream portable transport setting', async () => {
-  expect(recipe.dependencies['openssl.org']).toBe('^3')
+  expect(recipe.dependencies?.['openssl.org']).toBe('^3')
   expect(recipe.build.script).toContain('make --jobs {{hw.concurrency}} SSH_PROGRAM=ssh')
   expect(recipe.build.script).toContain('make --jobs 1 SSH_PROGRAM=ssh install')
   expect((await loadRecipe('openssh.com')).recipe.test?.required).toBe(true)
