@@ -43,6 +43,7 @@ export const recipe: Recipe = {
       linux: {
         'github.com/thkukuk/libnsl': '^2',
         'sourceforge.net/libtirpc': '^1',
+        'github.com/besser82/libxcrypt': '^4',
       },
     },
   }],
@@ -266,6 +267,8 @@ export const recipe: Recipe = {
       'assert sysconfig.get_config_var("INCLUDEPY"), "Missing development configuration"',
       'if sys.platform.startswith("linux") and sys.version_info < (3, 13):',
       '    import nis',
+      '    import crypt',
+      '    assert crypt.crypt("pantry", "$6$pantry$").startswith("$6$pantry$")',
       'print(sys.version, ssl.OPENSSL_VERSION, tkinter.TclVersion)',
       'PANTRY_PYTHON_HEALTH',
       'fi',

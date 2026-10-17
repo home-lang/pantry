@@ -22,6 +22,7 @@ describe('Python-backed package runtime wrappers', () => {
         if (platform.startsWith('linux') && version.startsWith('3.12.')) {
           expect(linux?.['github.com/thkukuk/libnsl']).toBe('^2')
           expect(linux?.['sourceforge.net/libtirpc']).toBe('^1')
+          expect(linux?.['github.com/besser82/libxcrypt']).toBe('^4')
         }
         else if (!version.startsWith('3.12.')) expect(linux?.['github.com/thkukuk/libnsl']).toBeUndefined()
         const script = generateBuildScript(recipe as PackageRecipe, 'python.org', version, platform, '/tmp/python', '/tmp/build', {})
