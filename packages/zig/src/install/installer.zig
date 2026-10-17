@@ -3999,7 +3999,8 @@ pub const Installer = struct {
                 std.mem.eql(u8, entry.name, "lib") or
                 std.mem.eql(u8, entry.name, "include") or
                 std.mem.eql(u8, entry.name, "share") or
-                std.mem.eql(u8, entry.name, "sbin"))
+                std.mem.eql(u8, entry.name, "sbin") or
+                std.mem.eql(u8, entry.name, "ssl"))
             {
                 return true;
             }
@@ -5052,4 +5053,29 @@ test "verified materialization preserves executables beneath lib without making 
     const data = try std.fs.path.join(allocator, &.{ dest, "lib/application/data" });
     defer allocator.free(data);
     try std.testing.expect(!io_helper.isExecutable(data));
+}
+
+test "verified materialization accepts the published data-only CA package without executable permissions" {
+    const allocator = std.testing.allocator;
+    var pkg_cache = try PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+    var installer = try Installer.init(allocator, &pkg_cache);
+    defer installer.deinit();
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    try tmp.dir.createDirPath(io_helper.io, "source/ssl");
+    try tmp.dir.writeFile(io_helper.io, .{ .sub_path = "source/ssl/cert.pem", .data = "-----BEGIN CERTIFICATE-----\nfixture\n-----END CERTIFICATE-----\n" });
+    var root_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const root_len = try tmp.dir.realPathFile(io_helper.io, ".", &root_buf);
+    const source = try std.fs.path.join(allocator, &.{ root_buf[0..root_len], "source" });
+    defer allocator.free(source);
+    const dest = try std.fs.path.join(allocator, &.{ root_buf[0..root_len], "installed" });
+    defer allocator.free(dest);
+    try installer.materializeVerifiedProjectPackage(source, dest, "curl.se/ca-certs");
+    const bundle = try std.fs.path.join(allocator, &.{ dest, "ssl/cert.pem" });
+    defer allocator.free(bundle);
+    const bytes = try io_helper.readFileAlloc(allocator, bundle, 1024);
+    defer allocator.free(bytes);
+    try std.testing.expect(std.mem.indexOf(u8, bytes, "BEGIN CERTIFICATE") != null);
+    if (@import("builtin").os.tag != .windows) try std.testing.expect(!io_helper.isExecutable(bundle));
 }
