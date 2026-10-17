@@ -22,6 +22,7 @@ export const recipe: Recipe = {
     'mozilla.org/nss': '^3',
     'gnome.org/atk': '^2',
     'freedesktop.org/at-spi2-atk': '^2',
+    'freedesktop.org/at-spi2-core/libatspi': '~2.38',
     'freedesktop.org/dbus': '^1',
     'openprinting.github.io/cups': '^2',
     'libexpat.github.io': '^2',

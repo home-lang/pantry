@@ -1,6 +1,6 @@
 //! Package definitions generated from ts-pantry
 //! DO NOT EDIT MANUALLY - This file is auto-generated
-//! Total packages: 1755
+//! Total packages: 1756
 
 const std = @import("std");
 
@@ -17,7 +17,7 @@ pub const PackageInfo = struct {
     versions: []const []const u8,
 };
 
-/// All known packages (1755 total)
+/// All known packages (1756 total)
 pub const packages = [_]PackageInfo{ .{
     .name = "1Password",
     .domain = "1password.com",
@@ -4106,6 +4106,16 @@ pub const packages = [_]PackageInfo{ .{
     .programs = &[_][]const u8{},
     .dependencies = &[_][]const u8{ "gnome.org/atk", "gnome.org/libxml2", "freedesktop.org/dbus", "x.org/xtst" },
     .build_dependencies = &[_][]const u8{ "mesonbuild.com", "python.org@~3.11", "linux:llvm.org" },
+    .aliases = &[_][]const u8{},
+    .versions = &[_][]const u8{"2.38.0"},
+}, .{
+    .name = "libatspi",
+    .domain = "freedesktop.org/at-spi2-core/libatspi",
+    .description = "AT-SPI accessibility client library",
+    .homepage_url = "https://gitlab.gnome.org/GNOME/at-spi2-core",
+    .programs = &[_][]const u8{},
+    .dependencies = &[_][]const u8{ "gnome.org/glib^2", "freedesktop.org/dbus^1" },
+    .build_dependencies = &[_][]const u8{ "mesonbuild.com", "ninja-build.org", "freedesktop.org/pkg-config^0.29", "python.org~3.12", "gnu.org/gettext", "gnu.org/coreutils", "bun.sh@1.4.3" },
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{"2.38.0"},
 }, .{
@@ -9684,7 +9694,7 @@ pub const packages = [_]PackageInfo{ .{
     .description = "Versioned Chrome for server browser automation",
     .homepage_url = "https://developer.chrome.com/docs/chromedriver/downloads",
     .programs = &[_][]const u8{"google-chrome-stable"},
-    .dependencies = &[_][]const u8{ "gnome.org/glib^2", "mozilla.org/nspr^4", "mozilla.org/nss^3", "gnome.org/atk^2", "freedesktop.org/at-spi2-atk^2", "freedesktop.org/dbus^1", "openprinting.github.io/cups^2", "libexpat.github.io^2", "x.org/xcb^1", "xkbcommon.org^1", "alsa-project.org/alsa-lib^1", "mesa3d.org^26", "dri.freedesktop.org^2", "x.org/x11^1", "x.org/exts^1", "cairographics.org^1", "gnome.org/pango^1", "systemd.io^257", "x.org/xcomposite^0", "x.org/xdamage^1", "x.org/xfixes^6", "x.org/xrandr^1" },
+    .dependencies = &[_][]const u8{ "gnome.org/glib^2", "mozilla.org/nspr^4", "mozilla.org/nss^3", "gnome.org/atk^2", "freedesktop.org/at-spi2-atk^2", "freedesktop.org/at-spi2-core/libatspi~2.38", "freedesktop.org/dbus^1", "openprinting.github.io/cups^2", "libexpat.github.io^2", "x.org/xcb^1", "xkbcommon.org^1", "alsa-project.org/alsa-lib^1", "mesa3d.org^26", "dri.freedesktop.org^2", "x.org/x11^1", "x.org/exts^1", "cairographics.org^1", "gnome.org/pango^1", "systemd.io^257", "x.org/xcomposite^0", "x.org/xdamage^1", "x.org/xfixes^6", "x.org/xrandr^1" },
     .build_dependencies = &[_][]const u8{"info-zip.org/unzip"},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{"155.0.8059.84"},

@@ -457,6 +457,7 @@ import { fossiesorglibelfPackage } from './fossies.org/libelf'
 import { freedesktoporgxkeyboardconfigPackage } from './freedesktop.org/XKeyboardConfig'
 import { freedesktoporgappstreamPackage } from './freedesktop.org/appstream'
 import { freedesktoporgatspi2atkPackage } from './freedesktop.org/at-spi2-atk'
+import { freedesktoporgatspi2corelibatspiPackage } from './freedesktop.org/at-spi2-core/libatspi'
 import { freedesktoporgcppunitPackage } from './freedesktop.org/cppunit'
 import { freedesktoporgdbusPackage } from './freedesktop.org/dbus'
 import { freedesktoporgdesktopfileutilsPackage } from './freedesktop.org/desktop-file-utils'
@@ -2481,6 +2482,8 @@ export interface Pantry {
   freedesktoporgappstream: typeof freedesktoporgappstreamPackage
   at_spi2_atk: typeof freedesktoporgatspi2atkPackage
   freedesktoporgatspi2atk: typeof freedesktoporgatspi2atkPackage
+
+  freedesktoporgatspi2core: typeof freedesktoporgatspi2corelibatspiPackage
 
   freedesktoporgcppunit: typeof freedesktoporgcppunitPackage
 
@@ -5435,6 +5438,7 @@ export interface Pantry {
   libass: typeof libassPackage
   'libassuan-config': typeof gnupgorglibassuanPackage
   libatomic_ops: typeof libatomic_opsPackage
+  libatspi: typeof freedesktoporgatspi2corelibatspiPackage
   libb2: typeof blake2netlibb2Package
   libbluray: typeof videolanorglibblurayPackage
   libbsd: typeof freedesktoporglibbsdPackage
@@ -7152,6 +7156,8 @@ export const pantry: Pantry = {
   freedesktoporgappstream: freedesktoporgappstreamPackage,
   at_spi2_atk: freedesktoporgatspi2atkPackage,
   freedesktoporgatspi2atk: freedesktoporgatspi2atkPackage,
+
+  freedesktoporgatspi2core: freedesktoporgatspi2corelibatspiPackage,
 
   freedesktoporgcppunit: freedesktoporgcppunitPackage,
 
@@ -10106,6 +10112,7 @@ export const pantry: Pantry = {
   libass: libassPackage,
   'libassuan-config': gnupgorglibassuanPackage,
   libatomic_ops: libatomic_opsPackage,
+  libatspi: freedesktoporgatspi2corelibatspiPackage,
   libb2: blake2netlibb2Package,
   libbluray: videolanorglibblurayPackage,
   libbsd: freedesktoporglibbsdPackage,

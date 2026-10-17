@@ -1637,6 +1637,7 @@ const CUSTOM_BUILD_DOMAINS = new Set<string>([
   'tcl-lang.org', // publish matching Tcl and Tk libraries from their sources
   'python.org', // compile extensions against the declared managed ABI, including Linux NIS
   'openjdk.org', // exact Temurin release, checksum and runtime identity; never latest-per-major
+  'freedesktop.org/at-spi2-core/libatspi', // client ABI only; no accessibility session services
 ])
 
 /**

@@ -8,7 +8,7 @@
  *
  * @install `pantry install google.com/chrome`
  * @homepage https://developer.chrome.com/docs/chromedriver/downloads
- * @dependencies `gnome.org/glib^2`, `mozilla.org/nspr^4`, `mozilla.org/nss^3`, ... (+19 more)
+ * @dependencies `gnome.org/glib^2`, `mozilla.org/nspr^4`, `mozilla.org/nss^3`, ... (+20 more)
  * @buildDependencies `info-zip.org/unzip` - required only when building from source
  *
  * @example
@@ -63,6 +63,7 @@ export const googlecomchromePackage = {
     'mozilla.org/nss^3',
     'gnome.org/atk^2',
     'freedesktop.org/at-spi2-atk^2',
+    'freedesktop.org/at-spi2-core/libatspi~2.38',
     'freedesktop.org/dbus^1',
     'openprinting.github.io/cups^2',
     'libexpat.github.io^2',
