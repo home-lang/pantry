@@ -12687,7 +12687,7 @@ pub const packages = [_]PackageInfo{ .{
     .dependencies = &[_][]const u8{ "openssl.org^3", "perl.org^5", "gnu.org/ncurses^6", "linux:sourceforge.net/libtirpc", "linux:pagure.io/libaio^0.3.113", "linux:github.com/numactl/numactl^2", "linux:gnu.org/gcc/libstdcxx@14" },
     .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{"mysql"},
-    .versions = &[_][]const u8{ "26.7.0", "8.0.45", "8.0.44", "8.0.43" },
+    .versions = &[_][]const u8{ "26.7.0", "8.4.11", "8.0.45", "8.0.44", "8.0.43" },
 }, .{
     .name = "nano",
     .domain = "nano-editor.org",

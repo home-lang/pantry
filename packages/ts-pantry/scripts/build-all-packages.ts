@@ -427,9 +427,9 @@ catch {
 //   - Exact version: '14.0.1' — skips that specific version
 //   - '*' — skips ALL versions (package can't be built with current S3 deps)
 const SKIP_VERSIONS: Record<string, string[]> = {
-  // 8.1 through 9.x do not use the supported bundled-Boost 8.0 source
-  // archive. Calendar releases have their own official native distribution.
-  'mysql.com': ['>=8.1.0 <26.0.0'],
+  // Unsupported innovation families do not use the bundled-Boost 8.0
+  // source archive. 8.4 LTS and calendar releases use native distributions.
+  'mysql.com': ['>=8.1.0 <8.4.0', '>=8.5.0 <26.0.0'],
   // clap_mangen 0.2.31 uses private get_display_order() from clap_builder 4.6.0
   'crates.io/topgrade': ['14.0.1'],
   // nix crate restructured API — Pid, SigSet, Signal, sigaction moved/feature-gated

@@ -3,7 +3,7 @@
  *
  * @domain `mysql.com`
  * @programs `my_print_defaults`, `myisam_ftdump`, `myisamchk`, `myisamlog`, `myisampack`, ... (+17 more)
- * @version `26.7.0` (4 versions available)
+ * @version `26.7.0` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install mysql.com`
@@ -96,6 +96,7 @@ export const mysqlPackage = {
   */
   versions: [
     '26.7.0',
+    '8.4.11',
     '8.0.45',
     '8.0.44',
     '8.0.43',

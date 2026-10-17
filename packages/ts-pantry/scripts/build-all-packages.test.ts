@@ -558,3 +558,10 @@ for (const platform of ['linux-x86-64', 'linux-arm64', 'darwin-arm64']) {
     expect(child.stdout.toString().trim()).toBe('mysql.com@26.7.0')
   })
 }
+
+
+test('selects the ReviewOS MySQL 8.4 LTS contract independently of calendar releases', () => {
+  const child = Bun.spawnSync([process.execPath, 'scripts/build-all-packages.ts', '--platform', 'linux-x86-64', '-p', 'mysql.com@8.4.11', '--source-only', '--print-selected'], { cwd: import.meta.dir + '/..', stdout: 'pipe', stderr: 'pipe' })
+  expect(child.exitCode, child.stderr.toString()).toBe(0)
+  expect(child.stdout.toString().trim()).toBe('mysql.com@8.4.11')
+})
