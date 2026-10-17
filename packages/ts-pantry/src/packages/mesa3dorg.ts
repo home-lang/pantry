@@ -6,7 +6,7 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install mesa3d.org`
- * @dependencies `linux:gnome.org/libxml2~2.13`, `linux:elfutils.org`, `linux:khronos.org/glslang`, ... (+21 more) (includes platform-specific dependencies)
+ * @dependencies `linux:gnome.org/libxml2~2.13`, `linux:elfutils.org`, `linux:khronos.org/glslang`, ... (+22 more) (includes platform-specific dependencies)
  * @buildDependencies `linux:curl.se`, `linux:cmake.org@3`, `gnu.org/bison`, ... (+8 more) (includes platform-specific dependencies) - required only when building from source
  *
  * @example
@@ -62,11 +62,12 @@ export const mesa3dorgPackage = {
     'linux:x.org/xshmfence',
     'linux:x.org/xv',
     'linux:x.org/xxf86vm',
-    'linux:llvm.org',
+    'linux:llvm.org^22',
     'linux:github.com/lm-sensors/lm-sensors',
     'linux:wayland.freedesktop.org',
     'linux:wayland.freedesktop.org/protocols',
     'darwin:gnu.org/gettext',
+    'facebook.com/zstd^1',
     'libexpat.github.io',
     'x.org/x11',
     'x.org/xcb',
@@ -92,7 +93,7 @@ export const mesa3dorgPackage = {
     'python.org~3.11',
     'x.org/protocol',
     'github.com/westes/flex',
-    'llvm.org',
+    'llvm.org^22',
   ] as const,
   /**
   * Available versions from newest to oldest.

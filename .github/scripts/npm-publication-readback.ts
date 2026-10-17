@@ -30,7 +30,7 @@ export function verifyPublishedTarball(bytes: Uint8Array, integrity: string, nam
 }
 
 interface ReadbackOptions {
-  fetcher?: typeof fetch
+  fetcher?: (url: string, init?: RequestInit) => Promise<Response>
   now?: () => number
   wait?: (ms: number) => Promise<void>
   timeoutMs?: number

@@ -173,6 +173,7 @@ export interface LoadedRecipe {
       skip?: string | string[]
     }
     programs?: string[]
+    platformPrograms?: import('../src/programs').PlatformPrograms
     platforms?: string[]
     publish?: { include: string[] }
     sourceablePrograms?: string[]

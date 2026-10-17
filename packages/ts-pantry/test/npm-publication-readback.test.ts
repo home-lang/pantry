@@ -36,7 +36,7 @@ test('an accepted asynchronous publication must expose both metadata and verifie
       if (requests === 1 || requests === 3) return new Response(null, { status: 404 })
       if (String(url).endsWith('.tgz')) return new Response(archive.bytes)
       return Response.json({ name: 'ts-pantry', version: '1.2.3', dist: { tarball: 'https://registry.npmjs.org/ts-pantry/-/ts-pantry-1.2.3.tgz', integrity: archive.integrity } })
-    }) as typeof fetch,
+    }),
   })
   expect(requests).toBe(5)
   expect(clock).toBe(10_000)
@@ -47,7 +47,7 @@ test('a staged version that never becomes readable fails within the readback dea
   let clock = 0
   await expect(waitForNpmPublication('ts-pantry', '1.2.3', {
     now: () => clock, wait: async ms => { clock += ms }, timeoutMs: 10_000,
-    fetcher: (async () => new Response(null, { status: 404 })) as typeof fetch,
+    fetcher: async () => new Response(null, { status: 404 }),
   })).rejects.toThrow('before its deadline')
   expect(clock).toBe(10_000)
 })

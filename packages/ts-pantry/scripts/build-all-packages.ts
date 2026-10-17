@@ -1604,7 +1604,7 @@ let BUILD_IS_FOREIGN = false
 
 // Domains we build from source even in mirror mode, because our recipe diverges
 // from pkgx's vanilla build (custom configure flags / extensions / patches).
-export const CUSTOM_BUILD_DOMAINS = new Set<string>([
+export const CUSTOM_BUILD_DOMAINS: ReadonlySet<string> = new Set<string>([
   'mysql.com', // preserve official native distributions and the supported source ABI
   'openssh.com', // scp/sftp must resolve managed ssh after relocating the package
   'git-scm.org', // alias detection uses libexec/git to avoid recursive PATH wrapper calls

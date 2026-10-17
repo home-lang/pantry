@@ -21,12 +21,13 @@ export const recipe: Recipe = {
       'x.org/xshmfence': '*',
       'x.org/xv': '*',
       'x.org/xxf86vm': '*',
-      'llvm.org': '*',
+      'llvm.org': '^22',
       'github.com/lm-sensors/lm-sensors': '*',
       'wayland.freedesktop.org': '*',
       'wayland.freedesktop.org/protocols': '*',
     },
     darwin: { 'gnu.org/gettext': '*' },
+    'facebook.com/zstd': '^1',
     'libexpat.github.io': '*',
     'x.org/x11': '*',
     'x.org/xcb': '*',
@@ -46,7 +47,7 @@ export const recipe: Recipe = {
     'python.org': '~3.11',
     'x.org/protocol': '*',
     'github.com/westes/flex': '*',
-    'llvm.org': '*',
+    'llvm.org': '^22',
   },
 
   build: {
