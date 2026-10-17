@@ -25,7 +25,7 @@ pub const PackageRegistry = struct {
     /// Resolve alias to domain
     pub fn resolveAlias(self: *PackageRegistry, alias: []const u8) ?[]const u8 {
         _ = self;
-        return aliases.resolvealias(alias);
+        return aliases.resolveAlias(alias);
     }
 
     /// Get all versions for a package (stub - versions not in current generated.zig)

@@ -182,7 +182,7 @@ fn classifyDep(name: []const u8, version: []const u8) DepKind {
     if (std.mem.startsWith(u8, name, "auto:")) {
         const inner = name[5..];
         if (std.mem.indexOf(u8, inner, ".") != null) return .system;
-        if (aliases.resolvealias(inner) != null) return .system;
+        if (aliases.resolveAlias(inner) != null) return .system;
         return .npm;
     }
     // Scoped npm packages
@@ -190,7 +190,7 @@ fn classifyDep(name: []const u8, version: []const u8) DepKind {
     // Domain-style names (contain a dot) → system/pantry package
     if (std.mem.indexOf(u8, name, ".") != null) return .system;
     // Short names that have an alias (e.g., "bun" → "bun.sh") → system
-    if (aliases.resolvealias(name) != null) return .system;
+    if (aliases.resolveAlias(name) != null) return .system;
     // Everything else is assumed to be npm
     return .npm;
 }
@@ -202,7 +202,7 @@ fn resolveSystemDomain(name: []const u8) []const u8 {
     // If already a domain (has .), use as-is
     if (std.mem.indexOf(u8, clean, ".") != null) return clean;
     // Try alias resolution
-    return aliases.resolvealias(clean) orelse clean;
+    return aliases.resolveAlias(clean) orelse clean;
 }
 
 /// Update packages to latest versions

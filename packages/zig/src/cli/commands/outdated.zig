@@ -86,12 +86,12 @@ fn classifyDep(name: []const u8, version: []const u8) DepKind {
         // auto: means "try pantry registry first, then npm" — classify by the underlying name
         const inner = name[5..];
         if (std.mem.indexOf(u8, inner, ".") != null) return .system;
-        if (aliases.resolvealias(inner) != null) return .system;
+        if (aliases.resolveAlias(inner) != null) return .system;
         return .npm;
     }
     if (std.mem.startsWith(u8, name, "@")) return .npm;
     if (std.mem.indexOf(u8, name, ".") != null) return .system;
-    if (aliases.resolvealias(name) != null) return .system;
+    if (aliases.resolveAlias(name) != null) return .system;
     return .npm;
 }
 
@@ -99,7 +99,7 @@ fn classifyDep(name: []const u8, version: []const u8) DepKind {
 fn resolveSystemDomain(name: []const u8) []const u8 {
     const clean = if (std.mem.startsWith(u8, name, "auto:")) name[5..] else name;
     if (std.mem.indexOf(u8, clean, ".") != null) return clean;
-    return aliases.resolvealias(clean) orelse clean;
+    return aliases.resolveAlias(clean) orelse clean;
 }
 
 /// Check if a name matches a glob-style filter pattern

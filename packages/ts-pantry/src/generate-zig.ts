@@ -527,7 +527,7 @@ ${aliasEntries}
 };
 
 /// Resolve an alias to a domain name
-pub fn resolve_alias(alias: []const u8) ?[]const u8 {
+pub fn resolveAlias(alias: []const u8) ?[]const u8 {
     for (aliases) |entry| {
         if (std.mem.eql(u8, entry.alias, alias)) {
             return entry.domain;
@@ -537,10 +537,9 @@ pub fn resolve_alias(alias: []const u8) ?[]const u8 {
 }
 
 test "Alias resolution works" {
-    const resolved = resolve_alias("node");
-    if (resolved) |domain| {
-        try std.testing.expectEqualStrings("nodejs.org", domain);
-    }
+    const domain = resolveAlias("node") orelse return error.MissingKnownAlias;
+    try std.testing.expectEqualStrings("nodejs.org", domain);
+    try std.testing.expect(resolveAlias("__pantry_unknown_alias__") == null);
 }
 `
 
