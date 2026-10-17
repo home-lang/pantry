@@ -106,7 +106,7 @@ export function bundleRuntimeLibraries(
       if (candidates.length === 0) throw new Error(`Undeclared or missing runtime library ${dependencyName} required by ${relative(root, file)}`)
       const selected = candidates.find(candidate => inside(root, candidate.file)) || candidates[0]
       if (!inside(root, selected.file) && candidates.some(candidate => hash(candidate.file) !== hash(selected.file)))
-        throw new Error(`Conflicting declared runtime providers for ${name}`)
+        throw new Error(`Conflicting declared runtime providers for ${name}: ${candidates.map(candidate => `${candidate.dependency?.domain}@${candidate.dependency?.version} (${candidate.file}, sha256 ${hash(candidate.file)})`).join('; ')}`)
       const destination = join(root, 'lib', name)
       mkdirSync(dirname(destination), { recursive: true })
       if (!existsSync(destination)) {

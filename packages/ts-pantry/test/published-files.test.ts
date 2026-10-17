@@ -5,6 +5,22 @@ import { join } from 'node:path'
 import { selectPublishedFiles } from '../scripts/published-files'
 import { recipe } from '../src/recipes/postgresql.org/libpq'
 import { recipe as freetype } from '../src/recipes/freetype.org'
+import { recipe as x11 } from '../src/recipes/x.org/x11'
+import { recipe as xcb } from '../src/recipes/x.org/xcb'
+
+test('X11 and XCB export their libraries while canonical packages supply their dependency snapshots', () => {
+  for (const [recipe, own, foreign] of [[x11, 'libX11.6.dylib', 'libxcb.1.dylib'], [xcb, 'libxcb.1.dylib', 'libXau.6.dylib']] as const) {
+    const root = mkdtempSync(join(tmpdir(), 'pantry-x11-products-'))
+    try {
+      mkdirSync(join(root, 'lib'))
+      for (const file of [own, foreign]) writeFileSync(join(root, 'lib', file), file)
+      selectPublishedFiles(root, recipe.publish?.include)
+      expect(existsSync(join(root, 'lib', own))).toBe(true)
+      expect(existsSync(join(root, 'lib', foreign))).toBe(false)
+    }
+    finally { rmSync(root, { recursive: true, force: true }) }
+  }
+})
 
 test('FreeType publishes its products before canonical declared runtimes are bundled', () => {
   const root = mkdtempSync(join(tmpdir(), 'pantry-freetype-products-'))

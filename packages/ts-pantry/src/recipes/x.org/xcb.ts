@@ -4,6 +4,7 @@ export const recipe: Recipe = {
   domain: 'x.org/xcb',
   name: 'xcb',
   programs: [],
+  publish: { include: ['include/xcb/**', 'lib/libxcb*', 'lib/pkgconfig/xcb*.pc', 'share/**', 'COPYING*', 'LICENSE*'] },
   dependencies: {
     'x.org/xau': '^1',
     'x.org/xdmcp': '^1',

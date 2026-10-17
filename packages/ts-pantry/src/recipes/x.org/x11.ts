@@ -4,6 +4,9 @@ export const recipe: Recipe = {
   domain: 'x.org/x11',
   name: 'x11',
   programs: [],
+  // Dependencies are bundled from their canonical declared packages, rather
+  // than retaining the private XCB/Xau/Xdmcp snapshots in upstream archives.
+  publish: { include: ['include/**', 'lib/libX11*', 'lib/X11/**', 'lib/pkgconfig/x11*.pc', 'share/**', 'COPYING*', 'LICENSE*'] },
   dependencies: {
     'x.org/xcb': '^1',
     'x.org/protocol': '*',
