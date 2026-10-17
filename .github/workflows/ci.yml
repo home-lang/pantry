@@ -72,7 +72,9 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # This job now builds/tests the source CLI as well as Bun and every native
+    # suite. Cold compilation exhausted the old aggregate ten-minute budget.
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v6
@@ -115,7 +117,7 @@ jobs:
         run: |
           command -v zig >/dev/null
           cd packages/zig
-          zig build test
+          zig build test -j2 --summary all
 
   action-redis-service:
     runs-on: ubuntu-latest
