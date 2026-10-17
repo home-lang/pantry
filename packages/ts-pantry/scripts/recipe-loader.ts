@@ -188,6 +188,7 @@ function recipeDefToNormalized(def: Recipe, platform = '', version?: string): Re
       'working-directory': (def.build as any)['working-directory'] ?? def.build.workingDirectory,
       skip: def.build.skip,
     },
+    programs: def.programs,
     platforms: def.platforms,
     publish: def.publish,
     sourceablePrograms: def.sourceablePrograms,
