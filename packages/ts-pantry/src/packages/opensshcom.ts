@@ -69,7 +69,7 @@ export const opensshcomPackage = {
   dependencies: [
     'nlnetlabs.nl/ldns',
     'developers.yubico.com/libfido2',
-    'openssl.org',
+    'openssl.org^3',
     'kerberos.org',
     'thrysoee.dk/editline',
     'github.com/besser82/libxcrypt',
