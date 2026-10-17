@@ -398,10 +398,10 @@ fn previewInstall(allocator: std.mem.Allocator, package_args: []const []const u8
 }
 
 /// Install packages with options
-pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []const u8, options: types.InstallOptions) !types.CommandResult {
+pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []const u8, initial_options: types.InstallOptions) !types.CommandResult {
     // Parse flags and filter out non-package arguments
     var is_global = false;
-    var opts = options;
+    var options = initial_options;
     var package_args = try std.ArrayList([]const u8).initCapacity(allocator, args.len);
     defer package_args.deinit(allocator);
 
@@ -409,19 +409,19 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         if (std.mem.eql(u8, arg, "-g") or std.mem.eql(u8, arg, "--global")) {
             is_global = true;
         } else if (std.mem.eql(u8, arg, "--force") or std.mem.eql(u8, arg, "-f")) {
-            opts.force = true;
+            options.force = true;
         } else if (std.mem.eql(u8, arg, "--frozen-lockfile")) {
-            opts.frozen_lockfile = true;
+            options.frozen_lockfile = true;
         } else if (std.mem.eql(u8, arg, "--no-cache")) {
-            opts.no_cache = true;
+            options.no_cache = true;
         } else if (std.mem.eql(u8, arg, "--no-save")) {
-            opts.no_save = true;
+            options.no_save = true;
         } else if (std.mem.eql(u8, arg, "--dry-run")) {
-            opts.dry_run = true;
+            options.dry_run = true;
         } else if (std.mem.eql(u8, arg, "--no-auto-link")) {
-            opts.auto_link = false;
+            options.auto_link = false;
         } else if (std.mem.eql(u8, arg, "--quiet") or std.mem.eql(u8, arg, "-q")) {
-            opts.quiet = true;
+            options.quiet = true;
         } else if (!std.mem.startsWith(u8, arg, "-")) {
             try package_args.append(allocator, arg);
         }
@@ -435,9 +435,9 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     // auto-install triggered on `cd`) without needing a flag each time.
     if (io_helper.getEnvVarOwned(allocator, "PANTRY_QUIET")) |val| {
         defer allocator.free(val);
-        if (std.mem.eql(u8, val, "1") or std.mem.eql(u8, val, "true")) opts.quiet = true;
+        if (std.mem.eql(u8, val, "1") or std.mem.eql(u8, val, "true")) options.quiet = true;
     } else |_| {}
-    style.setQuiet(opts.quiet);
+    style.setQuiet(options.quiet);
 
     // Header (bun-style): "pantry install v0.10.3 (hash)" once at the top of
     // every install — including the auto-install fired on `cd`. print() is
@@ -445,7 +445,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     const build_version = @import("version");
     style.printHeader("install", build_version.version, build_version.commit_hash);
 
-    if (opts.dry_run) {
+    if (options.dry_run) {
         return previewInstall(allocator, package_args.items);
     }
 
@@ -469,7 +469,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         defer allocator.free(cwd);
         // Whatever path the install takes, up-to-date included, leave the
         // tree's links relative and none of them dangling (see tree_repair).
-        defer repairProjectTree(allocator, cwd, opts.modules_dir);
+        defer repairProjectTree(allocator, cwd, options.modules_dir);
 
         // Start timing for install operation (millisecond precision)
         const start_ts = io_helper.clockGettime();
@@ -478,8 +478,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // ── FAST PATH: check if everything is already up-to-date ──
         // This avoids expensive workspace detection, config loading, hooks, etc.
         // Skipped when --force is set (user wants to re-download everything)
-        if (!opts.force) {
-            if (try tryFastUpToDate(allocator, cwd, start_time, opts.modules_dir, opts.linker)) |result| {
+        if (!options.force) {
+            if (try tryFastUpToDate(allocator, cwd, start_time, options.modules_dir, options.linker)) |result| {
                 return result;
             }
         }
@@ -607,7 +607,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // failure is non-fatal so it never breaks the CLI-dependency install.
         if (deps_file_path) |dpath| {
             const desktop_apps = @import("../../../install/desktop_apps.zig");
-            desktop_apps.installFromDepsFile(allocator, dpath, opts.quiet);
+            desktop_apps.installFromDepsFile(allocator, dpath, options.quiet);
         }
 
         // Filter dependencies based on options
@@ -662,7 +662,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             allocator,
             if (deps_file_path) |path| std.fs.path.dirname(path) orelse cwd else cwd,
             deps,
-            .{ .frozen_lockfile = opts.frozen_lockfile },
+            .{ .frozen_lockfile = options.frozen_lockfile },
         ) catch &.{};
         defer env_deps.freeDeps(allocator, env_inferred);
         try filtered_deps.appendSlice(allocator, env_inferred);
@@ -746,7 +746,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             // Sync build.zig.zon for Zig deps
             {
                 const zig_zon_sync = @import("../../../deps/zig_zon_sync.zig");
-                zig_zon_sync.syncBuildZigZon(allocator, proj_dir_early, opts.modules_dir, opts.verbose) catch {};
+                zig_zon_sync.syncBuildZigZon(allocator, proj_dir_early, options.modules_dir, options.verbose) catch {};
             }
 
             if (deps_file_path) |path| {
@@ -815,7 +815,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         }
 
         // Show force mode indicator
-        if (opts.force) {
+        if (options.force) {
             style.print("{s}Force mode:{s} ignoring cache and lockfile\n", .{ style.yellow, style.reset });
         }
 
@@ -867,7 +867,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // Apply .npmrc registry override to environment if present
         if (npmrc_config.registry) |custom_registry| {
-            if (opts.verbose) {
+            if (options.verbose) {
                 style.print("Using registry from .npmrc: {s}\n", .{custom_registry});
             }
         }
@@ -875,7 +875,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // Clean Bun-style output - just show what we're installing
         style.printInstallingEx(deps_to_install.len, resuming_count);
 
-        if (opts.verbose) {
+        if (options.verbose) {
             const setup_ts = io_helper.clockGettime();
             const setup_ms = @as(i64, @intCast(setup_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(setup_ts.nsec, 1_000_000)));
             std.debug.print("[verbose:timer] setup phase complete: {d}ms\n", .{setup_ms - start_time});
@@ -888,8 +888,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         var shared_installer = try install.Installer.init(allocator, &pkg_cache);
         allocator.free(shared_installer.data_dir);
         shared_installer.data_dir = try allocator.dupe(u8, env_dir);
-        shared_installer.modules_dir = opts.modules_dir;
-        shared_installer.verbose = opts.verbose;
+        shared_installer.modules_dir = options.modules_dir;
+        shared_installer.verbose = options.verbose;
 
         // Configure installer with .npmrc settings
         if (npmrc_config.registry) |custom_registry| {
@@ -948,7 +948,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             &shared_installer,
             pipeline_deps,
             proj_dir,
-            opts.verbose,
+            options.verbose,
         );
         defer pipeline_result.deinit(allocator);
 
@@ -968,7 +968,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             }
         }
 
-        if (opts.verbose) {
+        if (options.verbose) {
             const phase_ts = io_helper.clockGettime();
             const phase_ms = @as(i64, @intCast(phase_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(phase_ts.nsec, 1_000_000)));
             std.debug.print("[verbose:timer] parallel install phase complete: {d}ms\n", .{phase_ms - start_time});
@@ -976,7 +976,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // Handle local packages separately (they need special symlink handling)
         // Create pantry directory if it doesn't exist
-        const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ proj_dir, opts.modules_dir });
+        const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ proj_dir, options.modules_dir });
         defer allocator.free(pantry_dir);
         try io_helper.makePath(pantry_dir);
 
@@ -985,7 +985,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         var auto_link_results: ?link_cmds.AutoLinkResults = null;
         defer if (auto_link_results) |*r| r.deinit();
 
-        if (opts.auto_link) {
+        if (options.auto_link) {
             // Collect unresolved link: dep names
             var unresolved = std.ArrayList([]const u8).empty;
             defer unresolved.deinit(allocator);
@@ -1002,7 +1002,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             }
 
             if (unresolved.items.len > 0) {
-                auto_link_results = try link_cmds.autoDiscoverAndLinkBatch(allocator, unresolved.items, opts.link_search_paths);
+                auto_link_results = try link_cmds.autoDiscoverAndLinkBatch(allocator, unresolved.items, options.link_search_paths);
 
                 // Print auto-linked messages for discovered packages
                 for (unresolved.items) |link_name| {
@@ -1109,7 +1109,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             };
 
             // Create pantry/.bin directory and symlink binaries from zig-out/bin
-            const local_bin_dir = try std.fmt.allocPrint(allocator, "{s}/{s}/.bin", .{ proj_dir, opts.modules_dir });
+            const local_bin_dir = try std.fmt.allocPrint(allocator, "{s}/{s}/.bin", .{ proj_dir, options.modules_dir });
             defer allocator.free(local_bin_dir);
             try io_helper.makePath(local_bin_dir);
 
@@ -1163,7 +1163,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // Final pass: ensure pantry/.bin has symlinks for all installed package binaries.
         // Only run if there were actual installs (not all cache hits) to avoid expensive dir scan.
         if (success_count > 0) {
-            helpers.ensureBinSymlinks(allocator, proj_dir, opts.modules_dir);
+            helpers.ensureBinSymlinks(allocator, proj_dir, options.modules_dir);
         }
 
         // The resolution lock is the canonical file for this install path.
@@ -1180,10 +1180,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 const resolved_url = try std.fmt.allocPrint(allocator, "registry:{s}@{s}", .{ clean_name, result.version });
                 defer allocator.free(resolved_url);
 
-                if (opts.frozen_lockfile) {
+                if (options.frozen_lockfile) {
                     if (!resolutionLockMatches(&lock_file, clean_name, result.version, resolved_url))
                         frozen_lockfile_changed = true;
-                } else if (!opts.no_save) {
+                } else if (!options.no_save) {
                     if (lockfile_hooks.getLockedVersionForPackage(&lock_file, clean_name)) |previous| {
                         if (!std.mem.eql(u8, previous.version, result.version))
                             style.printLockPinMoved(clean_name, previous.version, result.version, false);
@@ -1201,7 +1201,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 };
 
                 // Record installed files/directories
-                const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ proj_dir, opts.modules_dir, clean_name });
+                const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ proj_dir, options.modules_dir, clean_name });
                 defer allocator.free(pkg_dir);
                 checkpoint.recordDir(pkg_dir) catch |err| {
                     if (options.verbose) {
@@ -1219,14 +1219,14 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             };
         }
 
-        if (!opts.frozen_lockfile and !opts.no_save)
+        if (!options.frozen_lockfile and !options.no_save)
             try lockfile_hooks.saveLockfile(&lock_file, cwd);
 
         // Apply patches from patchedDependencies in package.json
         {
             const patch_mod = @import("../../../install/patches.zig");
-            const patch_result = patch_mod.applyPatches(allocator, proj_dir, opts.verbose) catch |err| blk: {
-                if (opts.verbose) {
+            const patch_result = patch_mod.applyPatches(allocator, proj_dir, options.verbose) catch |err| blk: {
+                if (options.verbose) {
                     style.print("Warning: Failed to apply patches: {}\n", .{err});
                 }
                 break :blk patch_mod.PatchResult{ .applied = 0, .failed = 0, .skipped = 0 };
@@ -1243,8 +1243,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // Sync build.zig.zon with installed zig deps
         {
             const zig_zon_sync = @import("../../../deps/zig_zon_sync.zig");
-            zig_zon_sync.syncBuildZigZon(allocator, proj_dir, opts.modules_dir, opts.verbose) catch |err| {
-                if (opts.verbose) {
+            zig_zon_sync.syncBuildZigZon(allocator, proj_dir, options.modules_dir, options.verbose) catch |err| {
+                if (options.verbose) {
                     style.print("Warning: Failed to sync build.zig.zon: {}\n", .{err});
                 }
             };
@@ -1253,8 +1253,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // Delegate to Composer for PHP deps if composer.json is present
         {
             const composer_delegate = @import("../../../deps/composer_delegate.zig");
-            _ = composer_delegate.installPhpDeps(allocator, proj_dir, opts.verbose) catch |err| {
-                if (opts.verbose) {
+            _ = composer_delegate.installPhpDeps(allocator, proj_dir, options.verbose) catch |err| {
+                if (options.verbose) {
                     style.print("Warning: Composer delegation failed: {}\n", .{err});
                 }
             };
@@ -1263,7 +1263,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // Delegate to bun/pnpm/yarn/npm for JS deps if package.json is present
         {
             const js_delegate = @import("../../../deps/js_delegate.zig");
-            _ = js_delegate.installJsDeps(allocator, proj_dir, opts.verbose, opts.linker) catch |err| {
+            _ = js_delegate.installJsDeps(allocator, proj_dir, options.verbose, options.linker) catch |err| {
                 return .{
                     .exit_code = 1,
                     .message = try std.fmt.allocPrint(allocator, "JavaScript dependency installation failed: {s}", .{@errorName(err)}),
@@ -1403,7 +1403,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     defer pkg_cache.deinit();
 
     var installer = try install.Installer.init(allocator, &pkg_cache);
-    installer.modules_dir = opts.modules_dir;
+    installer.modules_dir = options.modules_dir;
     defer installer.deinit();
 
     // Start timing (millisecond precision)
@@ -1607,7 +1607,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             // A pulled-in transitive dep failing is non-fatal (it may lack a
             // build for this platform); only requested packages count as failures.
             if (is_transitive_dep) {
-                if (opts.verbose)
+                if (options.verbose)
                     style.print("{s}  ? optional dep {s}: {s}{s}\n", .{ style.dim, name, error_msg, style.reset });
             } else {
                 style.printFailed(name, spec.version, error_msg);
@@ -1649,7 +1649,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // And route by source: system packages are declared in deps.yaml, npm
         // packages in package.json. Writing a domain like `curl.se/ca-certs` into
         // package.json left pnpm unable to install the project at all.
-        if (!opts.no_save and !is_transitive_dep) {
+        if (!options.no_save and !is_transitive_dep) {
             if (spec.source == .pantry) {
                 helpers.addDependencyToDepsYaml(allocator, project_root, name, result.version) catch |err| {
                     style.printWarn("Failed to update deps.yaml: {}\n", .{err});
@@ -1663,7 +1663,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     }
 
     // Ensure pantry/.bin has symlinks for all installed package binaries
-    helpers.ensureBinSymlinks(allocator, project_root, opts.modules_dir);
+    helpers.ensureBinSymlinks(allocator, project_root, options.modules_dir);
 
     // Generate/update lockfile for installed packages
     if (installed_packages.items.len > 0) {

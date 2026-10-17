@@ -37,6 +37,11 @@ pub fn lockfilesEqual(a: *const types.Lockfile, b: *const types.Lockfile) bool {
         const b_ws = b.workspaces.get(key) orelse return false;
 
         if (!std.mem.eql(u8, a_ws.name, b_ws.name)) return false;
+        if (a_ws.version) |version| {
+            if (b_ws.version) |other| {
+                if (!std.mem.eql(u8, version, other)) return false;
+            } else return false;
+        } else if (b_ws.version != null) return false;
         if (a_ws.isolation != b_ws.isolation) return false;
         if (!stringMapsEqual(a_ws.dependencies, b_ws.dependencies)) return false;
         if (!stringMapsEqual(a_ws.dev_dependencies, b_ws.dev_dependencies)) return false;
@@ -665,6 +670,31 @@ test "lockfile comparison ignores generatedAt" {
 
     // Should be equal despite different generatedAt
     try std.testing.expect(lockfilesEqual(&lockfile1, &lockfile2));
+}
+
+test "lockfile comparison detects workspace version changes and removal" {
+    const allocator = std.testing.allocator;
+    var original = try types.Lockfile.init(allocator, "1.0.0");
+    defer original.deinit(allocator);
+    var candidate = try types.Lockfile.init(allocator, "1.0.0");
+    defer candidate.deinit(allocator);
+    try original.addWorkspace(allocator, "packages/local", .{
+        .name = try allocator.dupe(u8, "@fixture/local"),
+        .version = try allocator.dupe(u8, "1.0.0"),
+    });
+    try candidate.addWorkspace(allocator, "packages/local", .{
+        .name = try allocator.dupe(u8, "@fixture/local"),
+        .version = try allocator.dupe(u8, "1.0.0"),
+    });
+    try std.testing.expect(lockfilesEqual(&original, &candidate));
+    const member = candidate.workspaces.getPtr("packages/local").?;
+    allocator.free(member.version.?);
+    member.version = try allocator.dupe(u8, "1.0.1");
+    try std.testing.expect(!lockfilesEqual(&original, &candidate));
+    allocator.free(member.version.?);
+    member.version = null;
+    try std.testing.expect(!lockfilesEqual(&original, &candidate));
+    try std.testing.expect(!lockfilesEqual(&candidate, &original));
 }
 
 test "lockfile comparison detects package changes" {

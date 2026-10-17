@@ -814,7 +814,8 @@ pub fn installWorkspaceCommandWithOptions(
 
     if (all_deps_count == 0) {
         style.print("{s}{s}{s} No dependencies to install\n", .{ style.green, style.check, style.reset });
-        return .{ .exit_code = 0 };
+        // Internal-only workspaces still need their member links, ecosystem
+        // install and complete staged lock before companion system deps merge.
     }
 
     // Execute pre-install hook
@@ -881,12 +882,8 @@ pub fn installWorkspaceCommandWithOptions(
     const ws_lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{workspace_root});
     defer allocator.free(ws_lockfile_path);
 
-    // --force must take effect before any lock-driven restore or resolution.
-    // Loading the lock first meant a force install still restored and selected
-    // its old versions, then merely rewrote the same lock at the end.
-    if (options.force) {
-        io_helper.deleteFile(ws_lockfile_path) catch {};
-    }
+    // Force ignores lock-driven restore and resolution without deleting the
+    // committed lock before this install (and any companion phase) succeeds.
 
     // Wire up resolution lockfile for lockfile-first resolution (avoids npm registry queries for locked packages)
     const lockfile_hooks = @import("lockfile_hooks.zig");
@@ -910,13 +907,15 @@ pub fn installWorkspaceCommandWithOptions(
     // ── FAST PATH: batch install from lockfile ──
     // If lockfile has packages resolved but they're missing from disk (e.g. after
     // clean checkout), extract them all in parallel without any resolution/registry queries.
-    if (shared_installer.installAllFromLockfile(workspace_root)) |batch_count_opt| {
-        if (batch_count_opt) |batch_count| {
-            if (batch_count > 0) {
-                style.print("{s}{s}{s} Restored {d} packages from lockfile\n", .{ style.green, style.check, style.reset, batch_count });
+    if (!options.force) {
+        if (shared_installer.installAllFromLockfile(workspace_root)) |batch_count_opt| {
+            if (batch_count_opt) |batch_count| {
+                if (batch_count > 0) {
+                    style.print("{s}{s}{s} Restored {d} packages from lockfile\n", .{ style.green, style.check, style.reset, batch_count });
+                }
             }
-        }
-    } else |_| {}
+        } else |_| {}
+    }
 
     defer shared_installer.deinit();
 
@@ -963,7 +962,7 @@ pub fn installWorkspaceCommandWithOptions(
         }
     }
 
-    if (ws_skipped_count == all_deps_count) {
+    if (all_deps_count > 0 and ws_skipped_count == all_deps_count) {
         const ws_count = workspace_config.members.len;
         const ws_label = if (ws_count == 1) "workspace member" else "workspace members";
         style.print("{s}{s}{s} {s}{d}{s} packages + {s}{d}{s} {s} up to date\n", .{
@@ -973,35 +972,10 @@ pub fn installWorkspaceCommandWithOptions(
             ws_label,
         });
 
-        // Unless a staged lock is the reason this run exists.
-        //
-        // `--frozen-lockfile` on a workspace that also has a companion deps
-        // file asks for the lock this install *would* generate, and compares
-        // it against the committed one. Returning here writes nothing, so that
-        // comparison finds no generated lock and reports the committed one out
-        // of date - on a project where nothing has changed, and only on the
-        // runs where everything is already installed, which is every CI run
-        // after the first (pantry-pm/pantry#233).
-        //
-        // Falling through costs nothing: every dependency has just been found
-        // up to date, so the passes below skip them all and the work left is
-        // building the lock that was asked for.
-        //
-        // Every dependency *pantry* resolves being current says nothing about
-        // the JS or PHP tree, which bun and composer own. Returning before
-        // their delegates meant a `bun install` that failed once - a registry
-        // listing a version whose tarball still 404s, minutes into a release -
-        // was never retried: every later `pantry install` printed "up to date"
-        // over a node_modules missing the packages it failed on. The delegates
-        // carry their own staleness checks, so running them here is a no-op
-        // when that tree is current.
-        if (options.lockfile_output_path == null) {
-            // Nothing was installed, but a pantry/.bin name an earlier run
-            // left to install order still gets its deterministic owner.
-            install.bin_ownership.resolveBinCollisions(allocator, workspace_root, options.modules_dir);
-            if (try delegateEcosystemInstalls(allocator, workspace_root, options)) |failure| return failure;
-            return .{ .exit_code = 0 };
-        }
+        // Installed external packages do not prove workspace metadata is
+        // unchanged. Keep generating/validating the complete lock, repairing
+        // member links and retrying ecosystem delegates below even when every
+        // external dependency can be reused.
     }
 
     if (ws_skipped_count > 0) {

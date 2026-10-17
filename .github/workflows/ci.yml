@@ -99,6 +99,14 @@ jobs:
         if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.build_action.outcome == 'success' }}
         run: bun test
 
+      - name: Test the source CLI workspace lifecycle
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          command -v zig >/dev/null
+          cd packages/zig
+          zig build -Doptimize=Debug -j2
+          PANTRY_SOURCE_CLI="$PWD/zig-out/bin/pantry" bun test test/workspace-companion-e2e.test.ts
+
       # Gated on `install` rather than on the TypeScript build on purpose: the
       # Zig suite does not consume those artifacts.
       - name: Zig Tests
