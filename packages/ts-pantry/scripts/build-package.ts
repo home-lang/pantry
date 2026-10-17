@@ -11,6 +11,7 @@ import { parseArgs } from 'node:util'
 import { generateBuildScript, getSkips, type PackageRecipe, type NormalizedRecipe, type RecipeScriptStep, type RecipeTest } from './buildkit.ts'
 import { fixUp } from './fix-up.ts'
 import { selectPublishedFiles, writeProgramInterfaces } from './published-files'
+import { verifyDeclaredPrograms } from './declared-programs'
 import type { RuntimePackage } from './native-runtime'
 import { reportBuild } from './report-build.ts'
 import { persistBuildDiagnostics, sanitizeBuildDiagnostic } from './build-diagnostics.ts'
@@ -1893,6 +1894,7 @@ else {
   selectPublishedFiles(prefix, normalizedRecipe.publish?.include)
   writeProgramInterfaces(prefix, normalizedRecipe.sourceablePrograms)
   await fixUp(prefix, platform, skips, runtimePackages)
+  verifyDeclaredPrograms(prefix, pkgName, normalizedRecipe.programs)
 
   console.log(`\n✅ Build completed successfully!`)
   console.log(`📁 Installed to: ${prefix}`)
