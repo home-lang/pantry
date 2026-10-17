@@ -1,3 +1,38 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.89...v0.11.90)
+
+## 🐛 Bug Fixes
+
+- **action**: select portable modules on native Windows paths ([d883e76](https://github.com/pantry-pm/pantry/commit/d883e76)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **runtime**: preserve file modes and enforce compound version bounds ([985b726](https://github.com/pantry-pm/pantry/commit/985b726)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **installer**: preserve native Windows executable context ([b38e741](https://github.com/pantry-pm/pantry/commit/b38e741)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📝 Documentation
+
+- explain native publication and public release verification ([65b97ac](https://github.com/pantry-pm/pantry/commit/65b97ac)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **installer**: avoid shadowing the package cache module ([44b9ec5](https://github.com/pantry-pm/pantry/commit/44b9ec5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: validate native Windows tools and runtime copies ([e238b4f](https://github.com/pantry-pm/pantry/commit/e238b4f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **runtime**: exercise freshly published browser and media tools ([d289b20](https://github.com/pantry-pm/pantry/commit/d289b20)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 💚 Continuous Integration
+
+- manage native publisher toolchains through Pantry ([369ba3e](https://github.com/pantry-pm/pantry/commit/369ba3e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.90 ([c03da60](https://github.com/pantry-pm/pantry/commit/c03da60)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update craft-native.org to 0.0.237 ([cb63e9e](https://github.com/pantry-pm/pantry/commit/cb63e9e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' into codex/craft-zig-publication ([73c61a0](https://github.com/pantry-pm/pantry/commit/73c61a0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.88...v0.11.89)
 
 ## 🐛 Bug Fixes
