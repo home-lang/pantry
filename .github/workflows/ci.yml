@@ -92,13 +92,9 @@ jobs:
         id: build_action
         run: cd packages/action && bun run build
 
-      # Unit Test and Zig Tests cover disjoint code and must both report. Until
-      # now a failing `bun test` skipped the Zig suite outright — it had never
-      # run on main.
-      - name: Unit Test
-        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.build_action.outcome == 'success' }}
-        run: bun test
-
+      # The source CLI build prepares the pinned compiler before the Bun
+      # incremental-metadata test. That regression keeps its short rebuild
+      # budget; a cold compiler bootstrap is setup rather than a cache check.
       - name: Test the source CLI workspace lifecycle
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: |
@@ -106,6 +102,11 @@ jobs:
           cd packages/zig
           zig build -Doptimize=Debug -j2
           PANTRY_SOURCE_CLI="$PWD/zig-out/bin/pantry" bun test test/workspace-companion-e2e.test.ts
+
+      # Report Bun and Zig independently even when either suite fails.
+      - name: Unit Test
+        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.build_action.outcome == 'success' }}
+        run: bun test
 
       # Gated on `install` rather than on the TypeScript build on purpose: the
       # Zig suite does not consume those artifacts.
