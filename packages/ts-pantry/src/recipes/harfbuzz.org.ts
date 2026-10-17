@@ -6,7 +6,9 @@ export const recipe: Recipe = {
   description: 'HarfBuzz text shaping engine',
   homepage: 'https://harfbuzz.github.io/',
   github: 'https://github.com/harfbuzz/harfbuzz',
-  programs: ['hb-ot-shape-closure', 'hb-shape', 'hb-subset', 'hb-view'],
+  // hb-ot-shape-closure was removed upstream. These are the public tools
+  // provided across the supported release families.
+  programs: ['hb-shape', 'hb-subset', 'hb-view'],
   versionSource: {
     type: 'github-releases',
     repo: 'harfbuzz/harfbuzz',

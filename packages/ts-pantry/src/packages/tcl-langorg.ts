@@ -2,7 +2,7 @@
  * **tcl-lang** - Tool Command Language
  *
  * @domain `tcl-lang.org`
- * @programs `tclsh`, `wish`, `critcl`
+ * @programs `tclsh`, `wish`
  * @version `9.0.3` (9 versions available)
  * @versions From newest version to oldest.
  *
@@ -18,7 +18,7 @@
  * const pkg = pantry.tcllangorg
  * console.log(pkg.name)        // "tcl-lang"
  * console.log(pkg.description) // "Tool Command Language"
- * console.log(pkg.programs)    // ["tclsh", "wish", ...]
+ * console.log(pkg.programs)    // ["tclsh", "wish"]
  * console.log(pkg.versions[0]) // "9.0.3" (latest)
  * ```
  *
@@ -54,7 +54,6 @@ export const tcllangorgPackage = {
   programs: [
     'tclsh',
     'wish',
-    'critcl',
   ] as const,
   companions: [] as const,
   /**

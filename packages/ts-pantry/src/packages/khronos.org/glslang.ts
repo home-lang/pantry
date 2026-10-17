@@ -2,13 +2,13 @@
  * **glslang** - Khronos-reference front end for GLSL/ESSL, partial front end for HLSL, and a SPIR-V generator.
  *
  * @domain `khronos.org/glslang`
- * @programs `glslang`, `glslangValidator`, `spirv-remap`
+ * @programs `glslang`, `glslangValidator`
  * @version `16.2.0` (16 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install khronos.org/glslang`
  * @homepage https://www.khronos.org/opengles/sdk/tools/Reference-Compiler/
- * @buildDependencies `cmake.org`, `python.org@~3.11` - required only when building from source
+ * @buildDependencies `cmake.org`, `python.org~3.11` - required only when building from source
  *
  * @example
  * ```typescript
@@ -17,7 +17,7 @@
  * const pkg = pantry.khronosorgglslang
  * console.log(pkg.name)        // "glslang"
  * console.log(pkg.description) // "Khronos-reference front end for GLSL/ESSL, part..."
- * console.log(pkg.programs)    // ["glslang", "glslangValidator", ...]
+ * console.log(pkg.programs)    // ["glslang", "glslangValidator"]
  * console.log(pkg.versions[0]) // "16.2.0" (latest)
  * ```
  *
@@ -53,7 +53,6 @@ export const khronosorgglslangPackage = {
   programs: [
     'glslang',
     'glslangValidator',
-    'spirv-remap',
   ] as const,
   companions: [] as const,
   dependencies: [] as const,
@@ -63,7 +62,7 @@ export const khronosorgglslangPackage = {
   */
   buildDependencies: [
     'cmake.org',
-    'python.org@~3.11',
+    'python.org~3.11',
   ] as const,
   /**
   * Available versions from newest to oldest.

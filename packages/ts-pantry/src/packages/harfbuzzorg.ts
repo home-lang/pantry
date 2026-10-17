@@ -2,7 +2,7 @@
  * **harfbuzz** - HarfBuzz text shaping engine
  *
  * @domain `harfbuzz.org`
- * @programs `hb-ot-shape-closure`, `hb-shape`, `hb-subset`, `hb-view`
+ * @programs `hb-shape`, `hb-subset`, `hb-view`
  * @version `999.999.999` (64 versions available)
  * @versions From newest version to oldest.
  *
@@ -18,7 +18,7 @@
  * const pkg = pantry.harfbuzzorg
  * console.log(pkg.name)        // "harfbuzz"
  * console.log(pkg.description) // "HarfBuzz text shaping engine"
- * console.log(pkg.programs)    // ["hb-ot-shape-closure", "hb-shape", ...]
+ * console.log(pkg.programs)    // ["hb-shape", "hb-subset", ...]
  * console.log(pkg.versions[0]) // "999.999.999" (latest)
  * ```
  *
@@ -52,7 +52,6 @@ export const harfbuzzorgPackage = {
   * These can be run after installation.
   */
   programs: [
-    'hb-ot-shape-closure',
     'hb-shape',
     'hb-subset',
     'hb-view',
