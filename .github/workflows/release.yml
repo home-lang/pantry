@@ -135,6 +135,18 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Verify public npm availability and archive integrity
+        id: npm-readback
+        run: bun .github/scripts/npm-publication-readback.ts
+
+      - name: Retain public npm publication evidence
+        if: always() && steps.npm-readback.outcome != 'skipped'
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-publication-proof
+          path: artifacts/npm-publication/proof.json
+          if-no-files-found: error
+
   notify:
     name: discord-notification
     needs: [pantry, npm]
