@@ -666,14 +666,6 @@ else if (osName === 'linux') {
   }
   sections.push('')
 
-  // Ensure Homebrew tools are available on macOS (glibtool, gsed, etc.)
-  if (osName === 'darwin') {
-    sections.push('# Ensure Homebrew paths are available on macOS')
-    sections.push('case ":$PATH:" in *:/opt/homebrew/bin:*) ;; *) export PATH="/opt/homebrew/bin:$PATH" ;; esac')
-    sections.push('case ":$PATH:" in *:/opt/homebrew/sbin:*) ;; *) export PATH="/opt/homebrew/sbin:$PATH" ;; esac')
-    sections.push('')
-  }
-
   // Common setup — set BEFORE recipe env so recipes can override (e.g. certbot's SRCROOT)
   sections.push('# Common setup')
   sections.push('export FORCE_UNSAFE_CONFIGURE=1')
@@ -705,68 +697,6 @@ else if (osName === 'linux') {
   sections.push('REAL_HOME="${HOME}"')
   sections.push(`export HOME="${buildDir}/.home"`)
   sections.push('mkdir -p "$HOME"')
-  // Create an isolated .cargo/bin directory with individual symlinks.
-  // This prevents recipes (e.g. fermyon.com/spin) from corrupting the shared cargo
-  // installation when they write into $HOME/.cargo/bin/. By using a real directory
-  // instead of a directory symlink, recipe modifications only affect our copy.
-  sections.push('if [ -d "$REAL_HOME/.cargo" ]; then')
-  sections.push('  mkdir -p "$HOME/.cargo/bin"')
-  sections.push('  # Symlink individual binaries (not the directory) for isolation')
-  sections.push('  for _f in "$REAL_HOME/.cargo/bin"/*; do')
-  sections.push('    [ -e "$_f" ] && ln -sf "$_f" "$HOME/.cargo/bin/" 2>/dev/null || true')
-  sections.push('  done')
-  sections.push('  # Symlink other .cargo subdirs (registry, config, etc.) for cargo operations')
-  sections.push('  for _d in "$REAL_HOME/.cargo"/*; do')
-  sections.push('    case "$_d" in */bin) continue ;; esac')
-  sections.push('    ln -sf "$_d" "$HOME/.cargo/" 2>/dev/null || true')
-  sections.push('  done')
-  sections.push('  # Isolate .rustup: copy settings but symlink toolchains (large, read-only-ish)')
-  sections.push('  # This prevents `rustup default nightly` (e.g. dssim) from changing the')
-  sections.push('  # shared default toolchain and corrupting subsequent builds in the batch.')
-  sections.push('  if [ -d "$REAL_HOME/.rustup" ]; then')
-  sections.push('    mkdir -p "$HOME/.rustup"')
-  sections.push('    for _rd in "$REAL_HOME/.rustup"/*; do')
-  sections.push('      case "$_rd" in')
-  sections.push('        */settings.toml) cp "$_rd" "$HOME/.rustup/" 2>/dev/null || true ;;')
-  sections.push('        *) ln -sf "$_rd" "$HOME/.rustup/" 2>/dev/null || true ;;')
-  sections.push('      esac')
-  sections.push('    done')
-  sections.push('    export RUSTUP_HOME="$HOME/.rustup"')
-  sections.push('  fi')
-  sections.push('  export CARGO_HOME="$HOME/.cargo"')
-  sections.push('fi')
-  sections.push('')
-
-  // Rust toolchain — unconditionally add all known cargo directories to PATH.
-  // Previous approach (sourcing .cargo/env + [ -f ] tests) failed on GitHub Actions
-  // because the env script uses $HOME which we've overridden, and file tests can fail
-  // on rustup proxy binaries. Instead, just add every existing cargo bin dir to PATH.
-  sections.push('# Rust toolchain — add all known cargo bin directories to PATH')
-  sections.push('_cargo_found=false')
-  sections.push('for _cargo_dir in "$REAL_HOME/.cargo/bin" "/usr/share/rust/.cargo/bin" "/opt/homebrew/bin" "/usr/local/bin"; do')
-  sections.push('  if [ -d "$_cargo_dir" ] && ls "$_cargo_dir"/cargo* &>/dev/null; then')
-  sections.push('    export PATH="$_cargo_dir:$PATH"')
-  sections.push('    _cargo_found=true')
-  sections.push('  fi')
-  sections.push('done')
-  sections.push('if ! $_cargo_found && command -v cargo &>/dev/null; then')
-  sections.push('  CARGO_BIN_DIR="$(dirname "$(command -v cargo)")"')
-  sections.push('  export PATH="$CARGO_BIN_DIR:$PATH"')
-  sections.push('  _cargo_found=true')
-  sections.push('fi')
-  sections.push('echo "[buildkit] Rust: cargo=$(command -v cargo 2>/dev/null || echo NOT_FOUND), REAL_HOME=$REAL_HOME, _cargo_found=$_cargo_found"')
-  // Pre-install rust-src to prevent race condition: parallel rustc invocations
-  // during cargo builds trigger concurrent rustup channel syncs, each trying to
-  // install rust-src and conflicting. Installing it upfront avoids this.
-  sections.push('if command -v rustup &>/dev/null; then')
-  sections.push('  rustup component add rust-src 2>/dev/null || true')
-  sections.push('fi')
-  // Cap dependency lints to warning level globally — prevents build failures
-  // from dependency crates that trigger errors with newer Rust compilers
-  // (check-cfg, deprecated APIs, etc.). Appends to any recipe-level RUSTFLAGS.
-  sections.push('export RUSTFLAGS="${RUSTFLAGS:-} --cap-lints warn"')
-  sections.push('')
-
   // Go toolchain — set default GOPATH only if recipe didn't already set it
   const recipeEnv = build?.env ? platformReduce(build.env, platform) : {}
   sections.push('# Go toolchain (GOPATH default; GOROOT set after deps)')
@@ -776,29 +706,8 @@ else if (osName === 'linux') {
   sections.push('mkdir -p "$GOPATH"')
   sections.push('')
 
-  // Java/JDK — preserve JAVA_HOME from environment (GitHub runners have Java pre-installed)
-  sections.push('# Java toolchain')
-  sections.push('if [ -z "$JAVA_HOME" ] && [ -d "/usr/lib/jvm" ]; then')
-  sections.push('  # Auto-detect JDK on Linux')
-  sections.push('  for d in /usr/lib/jvm/java-*-openjdk-*; do')
-  sections.push('    if [ -d "$d" ]; then export JAVA_HOME="$d"; break; fi')
-  sections.push('  done')
-  sections.push('fi')
-  if (osName === 'darwin') {
-    sections.push('if [ -z "$JAVA_HOME" ] && /usr/libexec/java_home &>/dev/null; then')
-    sections.push('  export JAVA_HOME="$(/usr/libexec/java_home 2>/dev/null || true)"')
-    sections.push('fi')
-  }
-  sections.push('if [ -n "$JAVA_HOME" ]; then')
-  sections.push('  export PATH="$JAVA_HOME/bin:$PATH"')
-  sections.push('fi')
-  sections.push('')
-
   // Node.js / npm / pnpm
   sections.push('# Node.js')
-  sections.push('if [ -d "$REAL_HOME/.nvm" ]; then')
-  sections.push('  export NVM_DIR="$REAL_HOME/.nvm"')
-  sections.push('fi')
   // Prevent pnpm from auto-downloading a different version when project has
   // "packageManager": "pnpm@X.Y.Z" in package.json. This spawns dozens of
   // worker processes that can crash CI batches with SIGTERM cascades.
@@ -806,40 +715,11 @@ else if (osName === 'linux') {
   sections.push('export COREPACK_ENABLE_STRICT=0')
   sections.push('')
 
-  // Python: make system dist-packages visible to S3-downloaded Python
-  // (e.g., python3-libxml2, python3-lxml installed via apt are in /usr/lib/python3/dist-packages)
-  if (osName === 'linux') {
-    sections.push('# Include system Python dist-packages so S3 Python can find system modules')
-    sections.push('for _pydir in /usr/lib/python3/dist-packages /usr/lib/python3.*/dist-packages; do')
-    sections.push('  if [ -d "$_pydir" ]; then')
-    sections.push('    export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$_pydir"')
-    sections.push('  fi')
-    sections.push('done')
-    sections.push('')
-  }
-
-  // pip: avoid permission errors with system Python on Linux
-  sections.push('# pip: avoid permission errors when system Python is externally-managed')
-  sections.push('export PIP_BREAK_SYSTEM_PACKAGES=1')
-  sections.push('export PIP_IGNORE_INSTALLED=1')
-  sections.push('')
-
-  // Linux multiarch: ensure linker can find libs in the arch-specific multiarch dir
-  // (x86_64-linux-gnu on amd64, aarch64-linux-gnu on arm64).
-  if (osName === 'linux') {
-    const multiarchTriple = archName === 'aarch64' ? 'aarch64-linux-gnu' : 'x86_64-linux-gnu'
-    sections.push('# Multiarch library paths (Debian/Ubuntu)')
-    sections.push(`if [ -d "/usr/lib/${multiarchTriple}" ]; then`)
-    sections.push(`  export LIBRARY_PATH="/usr/lib/${multiarchTriple}:\${LIBRARY_PATH:-}"`)
-    sections.push('fi')
-    sections.push('')
-  }
-
   // Wrap sed to handle nullglob (empty glob → no file args) and use GNU sed on macOS.
   // YAML recipes use GNU sed syntax (sed -i 'pattern' file), but macOS BSD sed requires
   // sed -i '' 'pattern' file. Our wrapper auto-translates when gsed isn't available.
   sections.push('# sed wrapper: use GNU sed on macOS + handle empty nullglob gracefully')
-  sections.push('__real_sed="$(command -v gsed 2>/dev/null || { [ -x /opt/homebrew/opt/gnu-sed/libexec/gnubin/sed ] && echo /opt/homebrew/opt/gnu-sed/libexec/gnubin/sed; } || command -v sed)"')
+  sections.push('__real_sed="$(command -v gsed 2>/dev/null || command -v sed)"')
   sections.push('__sed_is_gnu=false')
   sections.push('if "$__real_sed" --version 2>&1 | grep -q GNU; then __sed_is_gnu=true; fi')
   sections.push('sed() {')
@@ -1050,7 +930,7 @@ else if (osName === 'linux') {
     // Only use .prefix keys for PATH construction (skip .version, .version.major, etc.)
     if (!key.endsWith('.prefix')) continue
     depBinPaths.push(`${depPath}/bin`)
-    depLibPaths.push(`${depPath}/lib`)
+    depLibPaths.push(`${depPath}/lib`, `${depPath}/lib64`)
     depAclocalPaths.push(`${depPath}/share/aclocal`)
     if (key.includes('gnu.org/autoconf'))
       autoconfDataDir = `${depPath}/share/autoconf`
@@ -1064,30 +944,8 @@ else if (osName === 'linux') {
     if (depPath !== '/usr' && depPath !== '/usr/local' && depPath !== '/') {
       depIncludePaths.push(`${depPath}/include`)
     }
-    depPkgConfigPaths.push(`${depPath}/lib/pkgconfig`)
+    depPkgConfigPaths.push(`${depPath}/lib/pkgconfig`, `${depPath}/lib64/pkgconfig`)
     depPkgConfigPaths.push(`${depPath}/share/pkgconfig`)
-  }
-
-  // Also include system pkg-config paths so configure can find system-installed dev packages
-  if (osName === 'linux') {
-    // Arch-specific multiarch dir: aarch64-linux-gnu on arm64, x86_64-linux-gnu on amd64.
-    const multiarchTriple = archName === 'aarch64' ? 'aarch64-linux-gnu' : 'x86_64-linux-gnu'
-    depPkgConfigPaths.push(`/usr/lib/${multiarchTriple}/pkgconfig`)
-    depPkgConfigPaths.push('/usr/lib/pkgconfig')
-    depPkgConfigPaths.push('/usr/share/pkgconfig')
-    depLibPaths.push(`/usr/lib/${multiarchTriple}`)
-    // NOTE: Do NOT add /usr/include to depIncludePaths. It's already in GCC's
-    // default search path, and adding it to CPATH causes CMake to emit
-    // -isystem /usr/include, which changes header search order and breaks
-    // GCC's #include_next <stdlib.h> in C++ standard library headers.
-  }
-else if (osName === 'darwin') {
-    depPkgConfigPaths.push('/opt/homebrew/lib/pkgconfig')
-    depPkgConfigPaths.push('/opt/homebrew/share/pkgconfig')
-    depPkgConfigPaths.push('/usr/local/lib/pkgconfig')
-    depPkgConfigPaths.push('/usr/local/share/pkgconfig')
-    depIncludePaths.push('/opt/homebrew/include')
-    depLibPaths.push('/opt/homebrew/lib')
   }
 
   if (depBinPaths.length > 0 || depLibPaths.length > 0 || depPkgConfigPaths.length > 0) {
@@ -1109,8 +967,8 @@ else if (osName === 'darwin') {
       }
     }
     if (depLibPaths.length > 0) {
-      sections.push(`export LIBRARY_PATH="${depLibPaths.join(':')}:\${LIBRARY_PATH:-}"`)
-      sections.push(`export LD_LIBRARY_PATH="${depLibPaths.join(':')}:\${LD_LIBRARY_PATH:-}"`)
+      sections.push(`export LIBRARY_PATH="${depLibPaths.join(':')}"`)
+      sections.push(`export LD_LIBRARY_PATH="${depLibPaths.join(':')}"`)
       if (osName === 'darwin' && !usesGo) {
         // Dep dylibs ship @rpath-style install names (e.g. @rpath/libxslt.1.dylib).
         // configure's compile-and-RUN probes (PostgreSQL's "checking test program")
@@ -1120,7 +978,7 @@ else if (osName === 'darwin') {
         // final) binaries then carry rpath entries that load the dep dylibs. These are
         // dep dirs only (never the install prefix), so they don't collide with the
         // CMAKE_INSTALL_RPATH whose duplicates install_name_tool rejects.
-        // Deduplicate: depLibPaths can repeat /usr/lib, /opt/homebrew/lib, etc. across
+        // Deduplicate: multiple dependency keys can share the same prefix across
         // deps, and modern dyld (macOS 15+) aborts on a duplicate LC_RPATH at runtime.
         //
         // SKIP for Go builds (usesGo): Go recipes feed LDFLAGS into
@@ -1133,16 +991,11 @@ else if (osName === 'darwin') {
       }
     }
     if (depIncludePaths.length > 0) {
-      sections.push(`export CPATH="${depIncludePaths.join(':')}:\${CPATH:-}"`)
+      sections.push(`export CPATH="${depIncludePaths.join(':')}"`)
     }
     if (depPkgConfigPaths.length > 0) {
-      sections.push(`export PKG_CONFIG_PATH="${depPkgConfigPaths.join(':')}:\${PKG_CONFIG_PATH:-}"`)
-      if (osName === 'darwin') {
-        // Homebrew keg-only formulae (e.g. icu4c, which Node's --with-intl=system-icu
-        // needs) live under /opt/homebrew/opt/<name>/lib/pkgconfig and aren't symlinked
-        // into /opt/homebrew/lib/pkgconfig, so the static paths above miss them.
-        sections.push('for _kp in /opt/homebrew/opt/*/lib/pkgconfig; do [ -d "$_kp" ] && PKG_CONFIG_PATH="$_kp:$PKG_CONFIG_PATH"; done; export PKG_CONFIG_PATH')
-      }
+      sections.push(`export PKG_CONFIG_PATH="${depPkgConfigPaths.join(':')}"`)
+      sections.push(`export PKG_CONFIG_LIBDIR="${depPkgConfigPaths.join(':')}"`)
     }
     if (depAclocalPaths.length > 0) {
       // Let aclocal find dep-provided .m4 macros (libtool, pkg-config, gettext, …).
@@ -1155,300 +1008,15 @@ else if (osName === 'darwin') {
       sections.push(`export autom4te_perllibdir="${autoconfDataDir}"`)
       sections.push(`export AC_MACRODIR="${autoconfDataDir}"`)
     }
-    // setup.py / pip recipes that DON'T call bkpyvenv (e.g. `python setup.py install`)
-    // run the staged dep python directly, which ships without setuptools. Python 3.12+
-    // also dropped distutils (setuptools provides the shim), so these die with
-    // "No module named 'setuptools'/'distutils'". Ensure setuptools/wheel/packaging in
-    // the dep python on PATH. Best-effort; only when a python dep is staged.
-    if (Object.keys(depPaths).some(k => k.includes('python.org') && k.endsWith('.prefix'))) {
-      sections.push('# Ensure setuptools/wheel/packaging for direct python (setup.py/pip) builds')
-      sections.push('if command -v python3 >/dev/null 2>&1; then')
-      sections.push('  python3 -m ensurepip --upgrade >/dev/null 2>&1 || true')
-      sections.push('  python3 -c "import setuptools" >/dev/null 2>&1 || python3 -m pip install --quiet "setuptools<81" wheel >/dev/null 2>&1 || true')
-      sections.push('  python3 -m pip install --quiet --upgrade packaging >/dev/null 2>&1 || true')
-      sections.push('fi')
-    }
-    if (osName === 'linux') {
-      // On Linux, LD_LIBRARY_PATH is searched BEFORE default locations. S3 deps may
-      // ship libcurl/libreadline that override system libraries, breaking system tools
-      // (cargo gets "failed to enable HTTP/2", gawk gets "undefined symbol: UP").
-      // Create a cargo wrapper that clears LD_LIBRARY_PATH so cargo uses system curl
-      // for HTTP operations (system curl has proper HTTP/2/nghttp2 support).
-      sections.push('export CARGO_HTTP_MULTIPLEXING=false')
-      // Find system cargo explicitly — `command -v cargo` would pick up the S3 cargo
-      // from /tmp/buildkit-deps/ since dep bin paths are prepended to PATH above.
-      // S3 cargo needs libgit2.so.1.9 via LD_LIBRARY_PATH; unsetting LD_LIBRARY_PATH
-      // while using S3 cargo would break it. We need the system cargo (rustup-installed).
-      sections.push('_CARGO_REAL=""')
-      sections.push('for _cp in "$REAL_HOME/.cargo/bin/cargo" "/usr/share/rust/.cargo/bin/cargo" "/usr/local/bin/cargo" "/usr/bin/cargo"; do')
-      sections.push('  [ -x "$_cp" ] && _CARGO_REAL="$_cp" && break')
-      sections.push('done')
-      sections.push('if [ -n "$_CARGO_REAL" ]; then')
-      sections.push('  mkdir -p "${TMPDIR:-/tmp}/_cc_wrapper"')
-      sections.push('  printf \'#!/bin/bash\\nunset LD_LIBRARY_PATH\\nexec "%s" "$@"\\n\' "$_CARGO_REAL" > "${TMPDIR:-/tmp}/_cc_wrapper/cargo"')
-      sections.push('  chmod +x "${TMPDIR:-/tmp}/_cc_wrapper/cargo"')
-      sections.push('fi')
-      sections.push('unset _CARGO_REAL')
-    }
-    if (osName === 'darwin') {
-      // Create stub pkg-config files for system libraries that lack them on macOS.
-      // S3-built .pc files (e.g. freetype2.pc) require bzip2, sqlite3, etc. but macOS
-      // system libraries don't ship .pc files. Create stubs so pkg-config resolves them.
-      sections.push('_bk_pc="/tmp/buildkit-pkgconfig"')
-      sections.push('mkdir -p "$_bk_pc"')
-      sections.push('_sdk="$(xcrun --show-sdk-path 2>/dev/null || echo /usr)"')
-      // bzip2.pc
-      sections.push('if ! pkg-config --exists bzip2 2>/dev/null; then')
-      sections.push('  cat > "$_bk_pc/bzip2.pc" << BZIP2PC')
-      sections.push('prefix=/usr')
-      sections.push('libdir=\\${prefix}/lib')
-      sections.push('includedir=${_sdk}/usr/include')
-      sections.push('')
-      sections.push('Name: bzip2')
-      sections.push('Description: bzip2 compression library')
-      sections.push('Version: 1.0.8')
-      sections.push('Libs: -lbz2')
-      sections.push('Cflags: -I\\${includedir}')
-      sections.push('BZIP2PC')
-      sections.push('fi')
-      // sqlite3.pc
-      sections.push('if ! pkg-config --exists sqlite3 2>/dev/null; then')
-      sections.push('  cat > "$_bk_pc/sqlite3.pc" << SQLITE3PC')
-      sections.push('prefix=/usr')
-      sections.push('libdir=\\${prefix}/lib')
-      sections.push('includedir=${_sdk}/usr/include')
-      sections.push('')
-      sections.push('Name: SQLite')
-      sections.push('Description: SQL database engine')
-      sections.push('Version: 3.43.0')
-      sections.push('Libs: -lsqlite3')
-      sections.push('Cflags: -I\\${includedir}')
-      sections.push('SQLITE3PC')
-      sections.push('fi')
-      sections.push('export PKG_CONFIG_PATH="$_bk_pc:${PKG_CONFIG_PATH:-}"')
-      sections.push('')
-
-      // Use DYLD_FALLBACK_LIBRARY_PATH instead of DYLD_LIBRARY_PATH on macOS.
-      // DYLD_LIBRARY_PATH is searched BEFORE default locations (including @rpath),
-      // which breaks programs like the JVM that load native libraries from their own
-      // directories (causes UnsatisfiedLinkError: Inflater.initIDs()).
-      // DYLD_FALLBACK_LIBRARY_PATH is searched AFTER default locations, so it helps
-      // builds find dependency libraries without interfering with system tools.
-      sections.push(`export DYLD_FALLBACK_LIBRARY_PATH="${depLibPaths.join(':')}:\${DYLD_FALLBACK_LIBRARY_PATH:-}"`)
-    }
-
     // CMAKE_PREFIX_PATH: help CMake find deps (ported from brewkit)
     const depPrefixes = Object.entries(depPaths)
       .filter(([k]) => k.endsWith('.prefix'))
       .map(([, v]) => v)
     if (depPrefixes.length > 0) {
-      sections.push(`export CMAKE_PREFIX_PATH="${depPrefixes.join(':')}:\${CMAKE_PREFIX_PATH:-}"`)
-    }
-
-    // Create compat symlinks for stale /tmp/buildkit-install-* paths in pre-built deps (darwin only).
-    // S3-built binaries may have hardcoded dylib references to their original build-time
-    // install prefix (e.g., /tmp/buildkit-install-curl.se/lib/libcurl.4.dylib). When such
-    // a binary is later used as a dependency, that install prefix doesn't exist. Create
-    // symlinks from the stale install-prefix to the actual dep location so dyld resolves them.
-    if (osName === 'darwin' && depPrefixes.length > 0) {
-      sections.push('# Create compat symlinks for stale /tmp/buildkit-install-* dylib paths')
-      sections.push(`for _dep_prefix in ${depPrefixes.map(p => `"${p}"`).join(' ')}; do`)
-      sections.push('  [ -d "$_dep_prefix" ] || continue')
-      sections.push('  case "$_dep_prefix" in /tmp/buildkit-deps/*) ;; *) continue ;; esac')
-      sections.push('  _domain_with_ver="${_dep_prefix#/tmp/buildkit-deps/}"')
-      sections.push('  _domain="${_domain_with_ver%/*}"')
-      sections.push('  _safe_domain="$(echo "$_domain" | tr \'/\' \'-\')"')
-      sections.push('  _compat="/tmp/buildkit-install-${_safe_domain}"')
-      sections.push('  if [ ! -e "$_compat" ]; then')
-      sections.push('    ln -sf "$_dep_prefix" "$_compat"')
-      sections.push('  fi')
-      sections.push('done')
-    }
-    // NOTE: system cmake scrubbing for /usr/include removed — the compiler wrapper
-    // (cc/c++/gcc/g++) now strips -isystem /usr/include directly from compiler args,
-    // which catches dynamically-computed paths (e.g. gflags computes /usr/include from its
-    // install prefix at cmake configure time, so string replacement in .cmake files can't catch it).
-
-    // Create missing unversioned dylib/so symlinks in dep dirs.
-    // S3-built deps may have versioned shared libs (e.g. libz.1.3.2.dylib) without the
-    // unversioned symlink (libz.dylib). Other deps' cmake configs reference the unversioned name.
-    if (depPrefixes.length > 0) {
-      sections.push('# Create missing unversioned shared library symlinks in dep dirs')
-      sections.push(`for _dep_prefix in ${depPrefixes.map(p => `"${p}"`).join(' ')}; do`)
-      sections.push(`  case "$_dep_prefix" in /tmp/buildkit-deps/*) ;; *) continue ;; esac`)
-      sections.push(`  for _libdir in "$_dep_prefix/lib" "$_dep_prefix/lib64"; do`)
-      sections.push(`    [ -d "$_libdir" ] || continue`)
-      if (osName === 'darwin') {
-        // macOS: versioned dylibs are libfoo.1.2.3.dylib — find them with ls and regex
-        sections.push(`    for _vlib in "$_libdir"/*.dylib; do`)
-        sections.push(`      [ -f "$_vlib" ] || continue`)
-        sections.push(`      _base="$(basename "$_vlib")"`)
-        // libz.1.3.2.dylib → libz.dylib (remove version numbers before .dylib)
-        sections.push(`      _unver="$(echo "$_base" | sed 's/\\.[0-9][0-9]*\\(\\.[0-9][0-9]*\\)*\\.dylib/.dylib/')"`)
-        sections.push(`      if [ "$_unver" != "$_base" ] && [ ! -e "$_libdir/$_unver" ]; then`)
-        sections.push(`        ln -sf "$_base" "$_libdir/$_unver"`)
-        sections.push(`      fi`)
-        sections.push(`    done`)
-      }
-else {
-        // Linux: versioned .so are libfoo.so.1.2.3
-        sections.push(`    for _vlib in "$_libdir"/*.so.*; do`)
-        sections.push(`      [ -f "$_vlib" ] || continue`)
-        sections.push(`      _base="$(basename "$_vlib")"`)
-        sections.push(`      _unver="$(echo "$_base" | sed 's/\\.so\\..*/\\.so/')"`)
-        sections.push(`      if [ "$_unver" != "$_base" ] && [ ! -e "$_libdir/$_unver" ]; then`)
-        sections.push(`        ln -sf "$_base" "$_libdir/$_unver"`)
-        sections.push(`      fi`)
-        sections.push(`    done`)
-      }
-      sections.push(`  done`)
-      sections.push(`done`)
+      sections.push(`export CMAKE_PREFIX_PATH="${depPrefixes.join(':')}"`)
     }
 
     sections.push('')
-
-    // Scrub stale/non-existent paths from dep cmake config files.
-    // S3-built deps may have hardcoded paths in INTERFACE_INCLUDE_DIRECTORIES
-    // that don't exist on the current runner, causing CMake errors or -isystem issues:
-    // - /usr/include → breaks GCC #include_next on Linux
-    // - /usr/local/include/x86_64-linux-gnu → doesn't exist on runners
-    // - Xcode SDK paths from different macOS versions
-    if (depPrefixes.length > 0) {
-      const sdkFixInit = osName === 'darwin'
-        ? `\nsdk = os.popen('xcrun --show-sdk-path 2>/dev/null').read().strip()`
-        : ''
-      const sdkFixLine = osName === 'darwin'
-        ? `\n            if sdk: t = re.sub(r'/Applications/Xcode[^;"]*?/SDKs/MacOSX[^;"]*?\\.sdk', sdk, t)`
-        : ''
-      sections.push('# Scrub non-existent paths from dep cmake configs (only /tmp buildkit deps)')
-      sections.push(`python3 << 'SCRUB_CMAKE_EOF'`)
-      sections.push(`import os, re, sys, glob
-# System include paths that break builds when used with -isystem (GCC #include_next)
-BAD_INCLUDES = {'/usr/include', '/usr/local/include'}
-dirs = [${depPrefixes.map(p => `'${p}'`).join(', ')}]
-print(f'[cmake-scrub] scanning {len(dirs)} dep dirs', file=sys.stderr)
-modified = 0
-_isdir_cache = {}
-def cached_isdir(p):
-    if p not in _isdir_cache:
-        _isdir_cache[p] = os.path.isdir(p)
-    return _isdir_cache[p]${sdkFixInit}
-for d in dirs:
-    if not d.startswith('/tmp'):
-        continue
-    # Only search lib/cmake/ and share/cmake/ — cmake config files live here, not in bin/include/etc.
-    files = []
-    for sub in ('lib/cmake', 'share/cmake', 'lib64/cmake'):
-        sub_dir = os.path.join(d, sub)
-        if os.path.isdir(sub_dir):
-            files.extend(glob.glob(os.path.join(sub_dir, '**', '*.cmake'), recursive=True))
-    if not files:
-        continue
-    for f in files:
-        try:
-            t = open(f).read()
-            orig = t
-            # 1. Fix semicolon-separated path lists (INTERFACE_INCLUDE_DIRECTORIES, etc.)
-            def fix_pathlist(m):
-                paths = m.group(1).split(';')
-                kept = [p for p in paths if not p.strip() or p.strip().startswith('$') or p.strip().startswith('@') or (p.strip() not in BAD_INCLUDES and cached_isdir(p.strip()))]
-                return m.group(0).replace(m.group(1), ';'.join(kept))
-            t = re.sub(r'INTERFACE_INCLUDE_DIRECTORIES\\s+"([^"]+)"', fix_pathlist, t)
-            t = re.sub(r'INTERFACE_LINK_DIRECTORIES\\s+"([^"]+)"', fix_pathlist, t)
-            # 2. Fix standalone path assignments (e.g. set(gflags_INCLUDE_DIR '/usr/include'))
-            # These cmake config variables feed into find_package() and end up as -isystem
-            for bad in BAD_INCLUDES:
-                # Replace standalone bad path in quotes: '/usr/include' -> ''
-                t = t.replace(f'"{bad}"', '""')
-                # Remove bad path from semicolon lists: '...;/usr/include;...' -> '...;...'
-                t = t.replace(f';{bad};', ';')
-                t = t.replace(f';{bad}"', '"')
-                t = t.replace(f'"{bad};', '"')${sdkFixLine}
-            # 3. Fix references to non-existent library files in dep dirs.
-            # S3-built deps may reference libz.dylib etc. that doesn't exist in the downloaded dep.
-            def fix_missing_libs(match):
-                path = match.group(0)
-                if path.startswith('/tmp/buildkit-deps/') and not os.path.exists(path):
-                    # Try to find the library in system locations
-                    libname = os.path.basename(path)
-                    for sysdir in ['/usr/lib', '/usr/local/lib'${osName === 'darwin' ? `, '/opt/homebrew/lib'` : ''}]:
-                        syspath = os.path.join(sysdir, libname)
-                        if os.path.exists(syspath):
-                            print(f'[cmake-scrub] replacing missing {path} -> {syspath}', file=sys.stderr)
-                            return syspath
-                    # Search other /tmp/buildkit-deps/ directories for the library
-                    for dep_dir in dirs:
-                        if not dep_dir.startswith('/tmp'):
-                            continue
-                        candidate = os.path.join(dep_dir, 'lib', libname)
-                        if os.path.exists(candidate):
-                            print(f'[cmake-scrub] replacing missing {path} -> {candidate}', file=sys.stderr)
-                            return candidate${osName === 'darwin' ? `
-                    # On macOS, also check SDK for .tbd stubs
-                    if sdk:
-                        tbd_name = libname.replace('.dylib', '.tbd')
-                        sdklib = os.path.join(sdk, 'usr', 'lib', tbd_name)
-                        if os.path.exists(sdklib):
-                            print(f'[cmake-scrub] replacing missing {path} -> {sdklib}', file=sys.stderr)
-                            return sdklib` : ''}
-                return path
-            t = re.sub(r'/tmp/buildkit-deps/[^;"\\s]+\\.(?:dylib|so|a|tbd)(?:\\.[0-9]+){0,5}', fix_missing_libs, t)
-            if t != orig:
-                open(f, 'w').write(t)
-                modified += 1
-                print(f'[cmake-scrub] modified: {os.path.relpath(f, d)}', file=sys.stderr)
-        except Exception as e:
-            print(f'[cmake-scrub] ERROR {f}: {e}', file=sys.stderr)
-print(f'[cmake-scrub] done: {modified} files modified', file=sys.stderr)`)
-      sections.push('SCRUB_CMAKE_EOF')
-      sections.push('')
-    }
-
-    if (osName === 'linux' && depPrefixes.length > 0) {
-      // On Linux, S3-built deps (e.g. folly) may have cmake configs with hardcoded system
-      // library paths. When buildkit-deps provide a newer version of specific libraries known
-      // to have ABI mismatches with Ubuntu system versions, overwrite the system .so files.
-      // Only target specific libraries to avoid breaking system tools.
-      sections.push('# Overwrite specific system libs with buildkit versions (ABI mismatch fix)')
-      // `env -u LD_LIBRARY_PATH -u LD_PRELOAD` so sudo's own PAM stack loads the
-      // SYSTEM libpam, not a dep's libpam that a transitive dep (e.g. anything
-      // pulling linux-pam) put on LD_LIBRARY_PATH — otherwise sudo aborts with
-      // "PAM account management error" and `set -eo pipefail` kills the whole
-      // build before cmake runs. `|| true` keeps this best-effort optimization
-      // from ever failing a build.
-      sections.push(`env -u LD_LIBRARY_PATH -u LD_PRELOAD sudo python3 << 'SYSLIB_OVERRIDE_EOF' || true
-import os, shutil, sys
-# Only override libraries known to have ABI mismatches between system and buildkit
-# glog: Ubuntu has 0.6.0, buildkit has 0.7.1 (google::logging::internal namespace changes)
-# gflags: Ubuntu has 2.2.2, buildkit has 2.3.0
-ALLOW_OVERRIDE = {'libglog', 'libgflags'}
-SYS_LIB = '/usr/lib/${archName === 'aarch64' ? 'aarch64-linux-gnu' : 'x86_64-linux-gnu'}'
-if not os.path.isdir(SYS_LIB):
-    sys.exit(0)
-deps = [${depPrefixes.map(p => `"${p}"`).join(', ')}]
-overwritten = 0
-for d in deps:
-    if not d.startswith('/tmp'): continue
-    lib_dir = os.path.join(d, 'lib')
-    if not os.path.isdir(lib_dir): continue
-    for f in os.listdir(lib_dir):
-        if not (f.endswith('.so') or '.so.' in f): continue
-        # Check if this library basename matches any in the allow list
-        base = f.split('.so')[0]
-        if base not in ALLOW_OVERRIDE: continue
-        dep_lib = os.path.join(lib_dir, f)
-        sys_lib = os.path.join(SYS_LIB, f)
-        if os.path.exists(sys_lib) and os.path.isfile(dep_lib):
-            try:
-                shutil.copy2(dep_lib, sys_lib)
-                overwritten += 1
-                print(f'[syslib-override] {f}: {dep_lib} -> {sys_lib}', file=sys.stderr)
-            except: pass
-if overwritten:
-    os.system('ldconfig 2>/dev/null')
-SYSLIB_OVERRIDE_EOF`)
-      sections.push('')
-    }
   }
 
   // Compiler wrapper: filter -Werror, resolve -shared/-pie conflicts, and work around
@@ -1711,12 +1279,8 @@ SYSLIB_OVERRIDE_EOF`)
     // GNU libtool on macOS). If only `libtool` is available (from S3 dep or
     // /opt/homebrew), create wrapper symlinks in the cc_wrapper dir.
     sections.push('# Ensure glibtool is available on macOS (GNU libtool alias)')
-    sections.push('# Homebrew installs GNU libtool as glibtool at /opt/homebrew/bin/glibtool')
-    sections.push('# Check there first, then fall back to symlinking from libtool if it is GNU.')
     sections.push('if ! command -v glibtool &>/dev/null; then')
-    sections.push('  if [ -x /opt/homebrew/bin/glibtool ]; then')
-    sections.push('    ln -sf /opt/homebrew/bin/glibtool "${TMPDIR:-/tmp}/_cc_wrapper/glibtool" 2>/dev/null || true')
-    sections.push('  elif command -v libtool &>/dev/null; then')
+    sections.push('  if command -v libtool &>/dev/null; then')
     sections.push('    _lt="$(command -v libtool)"')
     sections.push('    if "$_lt" --version 2>/dev/null | head -1 | grep -qi "GNU\\|libtool"; then')
     sections.push('      ln -sf "$_lt" "${TMPDIR:-/tmp}/_cc_wrapper/glibtool" 2>/dev/null || true')
@@ -1724,9 +1288,7 @@ SYSLIB_OVERRIDE_EOF`)
     sections.push('  fi')
     sections.push('fi')
     sections.push('if ! command -v glibtoolize &>/dev/null; then')
-    sections.push('  if [ -x /opt/homebrew/bin/glibtoolize ]; then')
-    sections.push('    ln -sf /opt/homebrew/bin/glibtoolize "${TMPDIR:-/tmp}/_cc_wrapper/glibtoolize" 2>/dev/null || true')
-    sections.push('  elif command -v libtoolize &>/dev/null; then')
+    sections.push('  if command -v libtoolize &>/dev/null; then')
     sections.push('    ln -sf "$(command -v libtoolize)" "${TMPDIR:-/tmp}/_cc_wrapper/glibtoolize" 2>/dev/null || true')
     sections.push('  fi')
     sections.push('fi')
@@ -1779,29 +1341,6 @@ else {
   }
   sections.push('')
 
-  // Remove rust-toolchain.toml to prevent rustup from switching compilers mid-build.
-  // Source repos pin specific (sometimes nightly) Rust versions via rust-toolchain.toml.
-  // When rustup detects this file, it downloads that version, causing some crates to be
-  // compiled with stable and others with the pinned version → E0514 ABI mismatch.
-  sections.push('# Remove rust-toolchain files to prevent rustup version switching')
-  sections.push('rm -f rust-toolchain.toml rust-toolchain 2>/dev/null || true')
-  sections.push('if command -v rustup &>/dev/null; then')
-  sections.push('  rustup default stable 2>/dev/null &')
-  sections.push('  _rustup_pid=$!')
-  sections.push('  for _rustup_wait in {1..120}; do')
-  sections.push('    kill -0 "$_rustup_pid" 2>/dev/null || break')
-  sections.push('    sleep 1')
-  sections.push('  done')
-  sections.push('  if kill -0 "$_rustup_pid" 2>/dev/null; then')
-  sections.push('    echo "[buildkit] rustup default stable timed out after 120s; continuing" >&2')
-  sections.push('    kill "$_rustup_pid" 2>/dev/null || true')
-  sections.push('    wait "$_rustup_pid" 2>/dev/null || true')
-  sections.push('  else')
-  sections.push('    wait "$_rustup_pid" 2>/dev/null || true')
-  sections.push('  fi')
-  sections.push('fi')
-  sections.push('')
-
   // Git init for Python packages that use setuptools-scm (ported from brewkit's bkpyvenv)
   // Many Python builds fail without git metadata for version detection
   sections.push('# Git init for setuptools-scm compatibility (brewkit)')
@@ -1812,67 +1351,6 @@ else {
   sections.push('  git add -A 2>/dev/null || true')
   sections.push('  git commit -qm "init" --allow-empty 2>/dev/null || true')
   sections.push(`  git tag -a "v${version}" -m "v${version}" --force 2>/dev/null || true`)
-  sections.push('fi')
-  sections.push('')
-
-  // Ensure cargo/go/etc are reachable — clear bash hash table and force PATH update
-  // Bash caches "command not found" results in its hash table. If any command lookup
-  // failed earlier (e.g. cargo checked before PATH was set up), bash remembers the
-  // failure even after PATH is updated. `hash -r` clears this cache.
-  sections.push('# Clear bash command hash table and ensure toolchains are in PATH')
-  sections.push('hash -r 2>/dev/null || true')
-  sections.push('# Re-add cargo dirs to PATH (hash table may have cached "not found")')
-  sections.push('for _cdir in "$REAL_HOME/.cargo/bin" "/usr/share/rust/.cargo/bin" "/opt/homebrew/bin" "/usr/local/bin"; do')
-  sections.push('  if [ -d "$_cdir" ] && ls "$_cdir"/cargo* &>/dev/null; then')
-  sections.push('    case ":$PATH:" in *:"$_cdir":*) ;; *) export PATH="$_cdir:$PATH" ;; esac')
-  sections.push('  fi')
-  sections.push('done')
-  sections.push('')
-  // Final check: if cargo still not found, try to find it anywhere.
-  // Use `|| true` to prevent SIGPIPE from `find|head` crashing with `set -eo pipefail`.
-  sections.push('if ! command -v cargo &>/dev/null; then')
-  sections.push('  echo "[buildkit] WARN: cargo not found in PATH before user script" >&2')
-  sections.push('  # Last resort: try to find cargo anywhere and add it')
-  sections.push('  _found_cargo="$(find "$REAL_HOME/.cargo" /usr/local/bin /usr/bin -name cargo -type f 2>/dev/null | head -1 || true)"')
-  sections.push('  if [ -n "$_found_cargo" ]; then')
-  sections.push('    echo "[buildkit] Found cargo at $_found_cargo, adding to PATH" >&2')
-  sections.push('    export PATH="$(dirname "$_found_cargo"):$PATH"')
-  sections.push('    hash -r 2>/dev/null || true')
-  sections.push('  fi')
-  sections.push('fi')
-  sections.push('')
-
-  // Python environment fix: on Debian/Ubuntu, /usr/lib/python3/dist-packages/ contains
-  // Debian-patched setuptools/wheel with install_layout that breaks standard wheel builds:
-  //   AttributeError: install_layout. Did you mean: 'install_platlib'?
-  // pip install --upgrade installs to a LOWER priority sys.path entry, so the patched
-  // versions still take precedence. We must remove the Debian-patched files and replace.
-  // Also ensure `python` resolves to our python3 (recipes often use bare `python`).
-  sections.push('# Python environment setup')
-  sections.push('if command -v python3 &>/dev/null; then')
-  // Ensure `python` command resolves to our python3 (many recipes use bare `python`)
-  sections.push('  if ! command -v python &>/dev/null; then')
-  sections.push('    ln -sf "$(command -v python3)" "${TMPDIR:-/tmp}/_cc_wrapper/python" 2>/dev/null || true')
-  sections.push('  fi')
-  // Remove Debian-patched setuptools/wheel that cause install_layout errors
-  // These sit at /usr/lib/python3/dist-packages/ which has HIGHER priority than
-  // where pip install --upgrade puts new versions
-  sections.push('  if [ -f /usr/lib/python3/dist-packages/wheel/__init__.py ]; then')
-  // env -u LD_LIBRARY_PATH/LD_PRELOAD so sudo's PAM uses the system libpam (a
-  // dep's libpam on LD_LIBRARY_PATH otherwise makes sudo fail → cleanup skipped)
-  sections.push('    env -u LD_LIBRARY_PATH -u LD_PRELOAD sudo rm -rf /usr/lib/python3/dist-packages/setuptools* \\')
-  sections.push('                /usr/lib/python3/dist-packages/wheel* \\')
-  sections.push('                /usr/lib/python3/dist-packages/pkg_resources* \\')
-  sections.push('                /usr/lib/python3/dist-packages/_distutils_hack* \\')
-  // distutils-precedence.pth is what IMPORTS _distutils_hack, at interpreter
-  // startup, from that same directory. Removing the module and leaving the
-  // .pth behind makes every subsequent `python3` in the build print
-  // `ModuleNotFoundError: No module named '_distutils_hack'` — which is how
-  // mergestat.com/mergestat-lite failed on every linux run. A .pth that
-  // imports a module we just deleted is wrong regardless of what it breaks.
-  sections.push('                /usr/lib/python3/dist-packages/distutils-precedence.pth 2>/dev/null || true')
-  sections.push('    python3 -m pip install --break-system-packages "setuptools<78" wheel 2>/dev/null || true')
-  sections.push('  fi')
   sections.push('fi')
   sections.push('')
 

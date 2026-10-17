@@ -11,6 +11,7 @@ import { parseArgs } from 'node:util'
 import { generateBuildScript, getSkips, type PackageRecipe, type NormalizedRecipe, type RecipeScriptStep, type RecipeTest } from './buildkit.ts'
 import { fixUp } from './fix-up.ts'
 import { reportBuild } from './report-build.ts'
+import { persistBuildDiagnostics, sanitizeBuildDiagnostic } from './build-diagnostics.ts'
 import { compareInstallerVersionsDesc, parseInstallerConstraint, satisfiesInstallerConstraint } from '../src/installer'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
 type ScriptStep = string | { run: string, 'working-directory'?: string, if?: string }
@@ -425,60 +426,6 @@ else if (typeof step === 'object' && step !== null) {
         )
       }
     }
-  }
-
-  // gnu.org/readline from S3 breaks system tools on Linux. S3 readline's libreadline.so.8
-  // needs libtinfo.so.6 (from ncurses), but system tools like gawk pick up S3 readline via
-  // LD_LIBRARY_PATH and can't resolve the UP/BC termcap symbols. System readline (from
-  // libreadline-dev) works fine since it's properly linked against system ncurses/tinfo.
-  if (os === 'linux') {
-    if (normalizedRecipe.dependencies?.['gnu.org/readline']) {
-      delete normalizedRecipe.dependencies['gnu.org/readline']
-    }
-    if (normalizedRecipe.build?.dependencies?.['gnu.org/readline']) {
-      delete normalizedRecipe.build.dependencies['gnu.org/readline']
-    }
-  }
-
-  // mesonbuild.com from S3 has hardcoded python paths from the build machine.
-  // When ninja runs meson internal commands, it tries to execute a non-existent path like
-  // /tmp/buildkit-<pkg>/-c which fails with "No such file or directory".
-  // Also, Ubuntu runner has meson 1.3.2 but many packages require >= 1.4.0.
-  // Fix: remove S3 dep and force-install fresh meson via pip system-wide.
-  // Note: python3 venv doesn't work on Debian/Ubuntu because their patched Python
-  // includes /usr/lib/python3/dist-packages even in venvs, making the old meson win.
-  if (normalizedRecipe.build?.dependencies?.['mesonbuild.com']) {
-    delete normalizedRecipe.build.dependencies['mesonbuild.com']
-    if (!normalizedRecipe.build.script) normalizedRecipe.build.script = []
-    const existing = normalizedRecipe.build.script
-    const existingArray = Array.isArray(existing) ? existing : [existing]
-    const mesonFixLines = os === 'linux'
-      ? [
-        // On Linux: Debian Python includes dist-packages in venvs, so venv approach fails.
-        // Remove apt meson (1.3.2) and install fresh via pip (1.10.x).
-        // Use sudo for system-wide install to /usr/local/bin (reliable PATH).
-        'sudo apt-get remove -y meson 2>/dev/null || true',
-        'sudo pip3 install --break-system-packages "meson>=1.4.0" 2>/dev/null || pip3 install --break-system-packages "meson>=1.4.0" 2>/dev/null || pip3 install "meson>=1.4.0" 2>/dev/null || true',
-        // Ensure pip user bin dir is in PATH (fallback if non-sudo install was used)
-        'export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"',
-      ]
-      : [
-        // On macOS: install meson+setuptools to a known --target dir and add to
-        // PYTHONPATH. pip installs to unpredictable locations when HOME is overridden
-        // (build script isolation), and meson's python3 module check fails if setuptools
-        // ends up in user site-packages under the fake HOME. Using --target gives us full
-        // control over where packages land.
-        '_MESON_PKGS="/tmp/buildkit-meson-pkgs"',
-        'python3 -m pip install --target "$_MESON_PKGS" "meson>=1.4.0" "setuptools<78" 2>/dev/null || python3 -m pip install --break-system-packages "meson>=1.4.0" "setuptools<78" 2>/dev/null || true',
-        'export PYTHONPATH="$_MESON_PKGS:${PYTHONPATH:-}"',
-        'export PATH="$_MESON_PKGS/bin:$(python3 -m site --user-base 2>/dev/null)/bin:/usr/local/bin:$PATH"',
-      ]
-    normalizedRecipe.build.script = [
-      ...mesonFixLines,
-      'hash -r 2>/dev/null || true',
-      'echo "[buildkit] meson=$(which meson 2>/dev/null || echo NOT_FOUND) version=$(meson --version 2>/dev/null || echo UNKNOWN)" >&2',
-      ...existingArray,
-    ]
   }
 
   // ── Inline legacy override ─────────────────────────────────────────
@@ -1115,6 +1062,85 @@ export function isRequiredHealthCheck(test: RecipeTest): boolean {
   return typeof test === 'object' && !Array.isArray(test) && test.required === true
 }
 
+/** Merge the declared metadata and normalized recipe graph before resolution. */
+export function collectBuildDependencies(
+  metadata: { dependencies?: string[], buildDependencies?: string[] },
+  yamlBuildDeps: string[],
+  yamlRuntimeDeps: string[],
+  removedDeps: ReadonlySet<string> = new Set(),
+): Map<string, string> {
+  const tsDeps = [...(metadata.dependencies || []), ...(metadata.buildDependencies || [])]
+  const depByDomain = new Map<string, string>()
+  // First pass: add TS deps
+  for (const dep of tsDeps) {
+    const domain = parseDep(dep)
+    if (domain && !removedDeps.has(domain)) depByDomain.set(domain, dep)
+  }
+  // Second pass: YAML deps from normalizedRecipe (after overrides) take precedence.
+  // When an override changes a constraint (e.g., python.org: ~3.10 → >=3.10<3.14),
+  // the overridden value should REPLACE the TS dep constraint, not merge with it.
+  // Only merge when both build AND runtime YAML deps specify different constraints
+  // for the same domain (e.g., build: ">=2.3" + runtime: "<4" → ">=2.3<4").
+  const recipeDomains = new Set<string>()
+  for (const dep of [...yamlBuildDeps, ...yamlRuntimeDeps]) {
+    const domain = parseDep(dep)
+    if (!domain || removedDeps.has(domain)) continue
+    const existing = depByDomain.get(domain)
+    const existingIsFromTs = !recipeDomains.has(domain)
+    recipeDomains.add(domain)
+    if (existing) {
+      const existingConstraint = parseDepConstraint(existing)
+      const newConstraint = parseDepConstraint(dep)
+      // Check if the existing entry came from TS deps (pre-override) vs YAML deps
+      if (existingIsFromTs) {
+        // Override replaces TS constraint entirely
+        depByDomain.set(domain, dep)
+      }
+else if (existingConstraint && newConstraint && existingConstraint !== newConstraint) {
+        // Both from YAML (build + runtime) — merge constraints
+        depByDomain.set(domain, `${domain} ${existingConstraint}${newConstraint}`)
+      }
+      continue
+    }
+    depByDomain.set(domain, dep)
+  }
+  return depByDomain
+}
+
+/** Resolve the complete runtime closure before choosing any artifact versions. */
+export async function resolveBuildDependencyGraph(
+  initial: Map<string, string>,
+  platform: string,
+  load: (domain: string) => Promise<{ dependencies?: PackageRecipe['dependencies'] }>,
+): Promise<Map<string, string>> {
+  const graph = new Map(initial)
+  const pending = [...graph.keys()]
+  const visited = new Set<string>()
+  for (let position = 0; position < pending.length; position++) {
+    const domain = pending[position]
+    if (visited.has(domain)) continue
+    visited.add(domain)
+    // These are already-built dependencies: their runtime closure is needed,
+    // while their own compiler/build dependencies are not part of this build.
+    const recipe = await load(domain)
+    for (const dependency of extractYamlDeps(recipe.dependencies, platform)) {
+      const child = parseDep(dependency)
+      if (!child) throw new Error(`Invalid runtime dependency of ${domain}: ${dependency}`)
+      const existing = graph.get(child)
+      if (!existing) {
+        graph.set(child, dependency)
+        pending.push(child)
+        continue
+      }
+      const previous = parseDepConstraint(existing)
+      const constraint = parseDepConstraint(dependency)
+      if (constraint && constraint !== previous)
+        graph.set(child, previous ? `${child} ${previous} ${constraint}` : dependency)
+    }
+  }
+  return graph
+}
+
 async function buildPackage(options: BuildOptions): Promise<void> {
   const { package: pkgName, version, platform, buildDir, prefix, depsDir, bucket, region } = options
   const [os, arch] = platform.split('-')
@@ -1186,25 +1212,6 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   for (const d of preOverrideRuntimeDeps) if (!postOverrideRuntimeDeps.has(d)) removedDeps.add(d)
   for (const d of preOverrideBuildDeps) if (!postOverrideBuildDeps.has(d)) removedDeps.add(d)
 
-  // On Linux, globally exclude S3 readline from deps (including transitive).
-  // S3 readline's libreadline.so.8 needs libtinfo.so.6 from ncurses, but when
-  // LD_LIBRARY_PATH includes S3 readline, system tools like gawk pick it up and
-  // crash with "undefined symbol: UP". System readline (libreadline-dev) works fine.
-  if (os === 'linux') {
-    removedDeps.add('gnu.org/readline')
-  }
-
-  // Globally exclude S3 rust-lang.org/cargo — its bin/rustc is an older version
-  // (e.g. 1.83.0) that conflicts with the CI runner's rustup stable (1.93.1).
-  // When S3 cargo's bin/ is prepended to PATH, cargo invokes S3's rustc instead
-  // of system rustc, causing E0514 ABI mismatch between crates compiled by
-  // different rustc versions. System cargo/rustc from rustup is always preferred.
-  removedDeps.add('rust-lang.org/cargo')
-
-  const pantryPath = loaded.yamlPath || `native recipe for ${pkgName}`
-  console.log(`\nBuild recipe: ${pantryPath}`)
-
-  // Extract build dependencies from YAML recipe and merge with TypeScript metadata deps
   const yamlBuildDeps = extractYamlDeps(normalizedRecipe.build?.dependencies, platform)
   const yamlRuntimeDeps = extractYamlDeps(normalizedRecipe.dependencies, platform)
   if (yamlBuildDeps.length > 0) {
@@ -1218,75 +1225,9 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     // Filter out deps that were explicitly removed by modifyRecipe overrides
     // When both build and runtime deps specify constraints for the same domain,
     // merge them into a compound constraint (e.g., ">=2.3" + "<4" → ">=2.3<4")
-    const tsDeps = [...(pkg.dependencies || []), ...(pkg.buildDependencies || [])]
-    const depByDomain = new Map<string, string>()
-    // First pass: add TS deps
-    for (const dep of tsDeps) {
-      const domain = parseDep(dep)
-      if (domain && !removedDeps.has(domain)) depByDomain.set(domain, dep)
-    }
-    // Second pass: YAML deps from normalizedRecipe (after overrides) take precedence.
-    // When an override changes a constraint (e.g., python.org: ~3.10 → >=3.10<3.14),
-    // the overridden value should REPLACE the TS dep constraint, not merge with it.
-    // Only merge when both build AND runtime YAML deps specify different constraints
-    // for the same domain (e.g., build: ">=2.3" + runtime: "<4" → ">=2.3<4").
-    for (const dep of [...yamlBuildDeps, ...yamlRuntimeDeps]) {
-      const domain = parseDep(dep)
-      if (!domain || removedDeps.has(domain)) continue
-      const existing = depByDomain.get(domain)
-      if (existing) {
-        const existingConstraint = parseDepConstraint(existing)
-        const newConstraint = parseDepConstraint(dep)
-        // Check if the existing entry came from TS deps (pre-override) vs YAML deps
-        const existingIsFromTs = tsDeps.includes(existing)
-        if (existingIsFromTs) {
-          // Override replaces TS constraint entirely
-          depByDomain.set(domain, dep)
-        }
-else if (existingConstraint && newConstraint && existingConstraint !== newConstraint) {
-          // Both from YAML (build + runtime) — merge constraints
-          depByDomain.set(domain, `${domain} ${existingConstraint}${newConstraint}`)
-        }
-        continue
-      }
-      depByDomain.set(domain, dep)
-    }
-    const allDeps = Array.from(depByDomain.values())
-    depPaths = await downloadDependencies(allDeps, depsDir, platform, bucket, region)
-
-    // Resolve transitive dependencies: deps of our deps that are needed for pkg-config
-    // (e.g., xmu → xt → ice: xt.pc has Requires: ice, so ice must also be available)
-    const resolvedDomains = new Set(depByDomain.keys())
-    for (let depth = 0; depth < 3; depth++) {
-      const transitiveDeps: string[] = []
-      // Snapshot so we don't re-walk domains added during this depth pass.
-      for (const domain of Array.from(resolvedDomains)) {
-        try {
-          // Load the dep's own recipe to read ITS deps. Use loadRecipe so this
-          // works for native TS recipes (src/recipes/*.ts) as well as legacy
-          // pantry YAML — reading only src/pantry/<domain>/package.yml silently
-          // skipped every TS-recipe dep, so transitive deps like x.org/protocol
-          // (xproto.pc, required by x.org/xau) were never downloaded and the
-          // whole X.org pkg-config chain failed to configure.
-          const depLoaded = await loadRecipe(domain, platform)
-          const depRecipe: any = depLoaded.recipe
-          const depRuntimeDeps = extractYamlDeps(depRecipe.dependencies, platform)
-          const depBuildDeps = extractYamlDeps(depRecipe.build?.dependencies, platform)
-          for (const td of [...depRuntimeDeps, ...depBuildDeps]) {
-            const tdDomain = parseDep(td)
-            if (tdDomain && !resolvedDomains.has(tdDomain) && !removedDeps.has(tdDomain)) {
-              transitiveDeps.push(td)
-              resolvedDomains.add(tdDomain)
-            }
-          }
-        }
-catch { /* skip deps whose recipe can't be loaded */ }
-      }
-      if (transitiveDeps.length === 0) break
-      console.log(`\nResolving ${transitiveDeps.length} transitive dependencies (depth ${depth + 1})...`)
-      const transitiveDepPaths = await downloadDependencies(transitiveDeps, depsDir, platform, bucket, region)
-      Object.assign(depPaths, transitiveDepPaths)
-    }
+    const declared = collectBuildDependencies(pkg, yamlBuildDeps, yamlRuntimeDeps, removedDeps)
+    const graph = await resolveBuildDependencyGraph(declared, platform, async (domain) => (await loadRecipe(domain, platform)).recipe)
+    depPaths = await downloadDependencies([...graph.values()], depsDir, platform, bucket, region)
 
     console.log(`\nDownloaded ${Object.keys(depPaths).filter(k => k.endsWith('.prefix')).length} dependencies (including transitive)`)
   }
@@ -1725,6 +1666,11 @@ else {
   }
 catch (error: unknown) {
     console.error('❌ Build script failed')
+    try {
+      const diagnostics = persistBuildDiagnostics({ buildDir, script: bashScript, error, runnerTemp: process.env.RUNNER_TEMP })
+      if (diagnostics) console.error(`Sanitized build diagnostics: ${diagnostics}`)
+    }
+    catch { console.error('Could not save build diagnostics; preserving the original build failure') }
     // A recipe that has established upstream ships nothing for this
     // platform/version says so by exiting 42, the same code this process uses
     // for its own download failures. That is a phantom version, not a build
@@ -1748,21 +1694,21 @@ catch (error: unknown) {
         const start = Math.max(0, compilerTestIdx - 200)
         const end = Math.min(logContent.length, compilerTestIdx + 2000)
         console.error('\n--- config.log (compiler test section) ---')
-        console.error(logContent.slice(start, end))
+        console.error(sanitizeBuildDiagnostic(logContent.slice(start, end)))
         console.error('--- End compiler test section ---')
       }
 else {
         // Fallback: show last 5000 chars
         const tail = logContent.length > 5000 ? logContent.slice(-5000) : logContent
         console.error('\n--- config.log (tail) ---')
-        console.error(tail)
+        console.error(sanitizeBuildDiagnostic(tail))
         console.error('--- End config.log ---')
       }
     }
     // Print the generated script for debugging (show last 3000 chars to see user script)
     console.error('\n--- Generated build script (tail) ---')
     const scriptTail = bashScript.length > 3000 ? bashScript.slice(-3000) : bashScript
-    console.error(scriptTail)
+    console.error(sanitizeBuildDiagnostic(scriptTail))
     console.error('--- End script ---')
     throw error
   }
