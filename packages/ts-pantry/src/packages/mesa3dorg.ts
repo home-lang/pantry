@@ -6,8 +6,8 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install mesa3d.org`
- * @dependencies `libexpat.github.io`, `x.org/x11`, `x.org/xcb`, ... (+21 more) (includes OS-specific dependencies with `os:package` format)
- * @buildDependencies `gnu.org/bison`, `mesonbuild.com`, `pygments.org`, ... (+6 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
+ * @dependencies `linux:gnome.org/libxml2~2.13`, `linux:elfutils.org`, `linux:khronos.org/glslang`, ... (+21 more) (includes platform-specific dependencies)
+ * @buildDependencies `linux:curl.se`, `linux:cmake.org@3`, `gnu.org/bison`, ... (+8 more) (includes platform-specific dependencies) - required only when building from source
  *
  * @example
  * ```typescript
@@ -48,18 +48,9 @@ export const mesa3dorgPackage = {
   /**
   * Runtime dependencies for this package.
   * These are required when running the package.
-  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:freetype.org`).
   */
   dependencies: [
-    'libexpat.github.io',
-    'x.org/x11',
-    'x.org/xcb',
-    'x.org/xdamage',
-    'x.org/exts',
-    'invisible-island.net/ncurses',
-    'zlib.net',
-    'x.org/xrandr',
-    'darwin:gnu.org/gettext',
     'linux:gnome.org/libxml2~2.13',
     'linux:elfutils.org',
     'linux:khronos.org/glslang',
@@ -75,22 +66,33 @@ export const mesa3dorgPackage = {
     'linux:github.com/lm-sensors/lm-sensors',
     'linux:wayland.freedesktop.org',
     'linux:wayland.freedesktop.org/protocols',
+    'darwin:gnu.org/gettext',
+    'libexpat.github.io',
+    'x.org/x11',
+    'x.org/xcb',
+    'x.org/xdamage',
+    'x.org/exts',
+    'invisible-island.net/ncurses',
+    'zlib.net',
+    'x.org/xrandr',
   ] as const,
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
-  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:gnu.org/gcc`).
   */
   buildDependencies: [
+    'linux:curl.se',
+    'linux:cmake.org@3',
     'gnu.org/bison',
     'mesonbuild.com',
+    'ninja-build.org',
+    'freedesktop.org/pkg-config',
     'pygments.org',
-    'python.org@~3.11',
+    'python.org~3.11',
     'x.org/protocol',
     'github.com/westes/flex',
     'llvm.org',
-    'linux:curl.se',
-    'linux:cmake.org@3',
   ] as const,
   /**
   * Available versions from newest to oldest.

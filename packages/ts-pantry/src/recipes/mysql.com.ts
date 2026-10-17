@@ -162,7 +162,7 @@ export const recipe: Recipe = {
     // statically instead (see -DWITH_ICU=bundled).
     'openssl.org': '^3',
     'perl.org': '^5',
-    'gnu.org/ncurses': '^6',
+    'invisible-island.net/ncurses': '^6',
     // Sun RPC (rpc/rpc.h) was dropped from glibc >= 2.32; MySQL's
     // MYSQL_CHECK_RPC needs it. libtirpc provides it (header at
     // <prefix>/include/tirpc, lib libtirpc.so.3), declared so the runtime dep

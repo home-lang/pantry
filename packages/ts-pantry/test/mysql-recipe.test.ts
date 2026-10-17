@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { loadRecipe } from '../scripts/recipe-loader'
 import { evaluateCondition } from '../scripts/buildkit'
 import { mysqlNativeVersions, mysqlDistributionUrl } from '../scripts/mysql-distribution'
+import { CUSTOM_BUILD_DOMAINS } from '../scripts/build-all-packages'
 
 function selectedScript(script: unknown[], platform: string, version: string): string {
   return script.flatMap((value) => {
@@ -12,6 +13,14 @@ function selectedScript(script: unknown[], platform: string, version: string): s
 }
 
 describe('MySQL runtime distributions', () => {
+  test('publishes the native recipe without substituting a vanilla pkgx artifact', async () => {
+    expect(CUSTOM_BUILD_DOMAINS.has('mysql.com')).toBe(true)
+    for (const platform of ['linux-x86-64', 'darwin-arm64']) {
+      const loaded = (await loadRecipe('mysql.com', platform, '26.7.0')).recipe
+      expect(loaded.dependencies?.['invisible-island.net/ncurses']).toBe('^6')
+      expect(loaded.dependencies?.['gnu.org/ncurses']).toBeUndefined()
+    }
+  })
   for (const [platform, asset] of [
     ['linux-x86-64', 'linux-glibc2.28-x86_64.tar.xz'],
     ['linux-arm64', 'linux-glibc2.28-aarch64.tar.xz'],

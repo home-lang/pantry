@@ -1196,7 +1196,9 @@ async function publishedDependencyGraph(initial: Map<string, string>, platform: 
   const storage = createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })
   const cache = new Map<string, Promise<BuildDependencyMetadata>>()
   const metadata = (domain: string) => {
-    if (!cache.has(domain)) cache.set(domain, storage.getObject(bucket, `binaries/${domain}/metadata.json`).then(value => JSON.parse(value)))
+    if (!cache.has(domain)) cache.set(domain, storage.getObject(bucket, `binaries/${domain}/metadata.json`).then(value => JSON.parse(value)).catch((cause) => {
+      throw new BuildDependencyResolutionError(`${domain}: declared dependency metadata is unavailable (${cause instanceof Error ? cause.message : String(cause)})`)
+    }))
     return cache.get(domain)!
   }
   const load = async (domain: string, version: string) => (await loadRecipe(domain, platform, version)).recipe
