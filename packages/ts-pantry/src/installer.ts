@@ -284,8 +284,8 @@ const resolvers: Record<string, PackageResolver> = {
  * a broken stub even though the genuine binary is present on disk.
  */
 function linkBinary(source: string, destination: string, platform: Platform): void {
-  try { fs.unlinkSync(destination) } catch { /* Entry does not exist yet. */ }
   if (platform.os === 'windows') {
+    try { fs.unlinkSync(destination) } catch { /* Entry does not exist yet. */ }
     fs.copyFileSync(source, destination)
     return
   }
@@ -297,7 +297,17 @@ function linkBinary(source: string, destination: string, platform: Platform): vo
   const magic = Buffer.alloc(2)
   try { fs.readSync(descriptor, magic, 0, 2, 0) }
   finally { fs.closeSync(descriptor) }
-  if (magic.toString() === '#!') {
+  let sourceable = false
+  const manifest = path.join(path.dirname(path.dirname(source)), 'share/pantry/interfaces.json')
+  if (magic.toString() === '#!' && fs.existsSync(manifest)) {
+    if (fs.statSync(manifest).size > 64 * 1024) throw new Error('Invalid package program interface')
+    const interfaces = JSON.parse(fs.readFileSync(manifest, 'utf8'))
+    if (interfaces?.version !== 1 || !Array.isArray(interfaces.sourceablePrograms) || interfaces.sourceablePrograms.some((name: unknown) => typeof name !== 'string' || !/^[a-zA-Z0-9_.+-]+$/.test(name)))
+      throw new Error('Invalid package program interface')
+    sourceable = interfaces.sourceablePrograms.includes(path.basename(source))
+  }
+  try { fs.unlinkSync(destination) } catch { /* Entry does not exist yet. */ }
+  if (magic.toString() === '#!' && !sourceable) {
     // A symlink leaves $0 pointing at .bin. Prefix-relative scripts such as
     // Git then look for libexec beside the environment rather than their
     // package. Execute the installed script so its own prefix stays intact.

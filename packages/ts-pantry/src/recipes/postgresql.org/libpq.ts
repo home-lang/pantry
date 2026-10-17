@@ -29,10 +29,12 @@ export const recipe: Recipe = {
     script: [
       'export CFLAGS="$(echo $CFLAGS | tr \' \' \'\\n\' | sed -e \'/^-w$/d\' | tr \'\\n\' \' \')"',
       './configure $ARGS',
-      'make -C src/interfaces/libpq --jobs {{ hw.concurrency }}',
+      // Upstream generates the shared frontend headers during its normal build.
+      // Install only client products; no database server executable is shipped.
+      'make --jobs {{ hw.concurrency }}',
       'make -C src/interfaces/libpq install $DIRS',
       'make -C src/bin/pg_config install $DIRS',
-      'install -m 0644 src/include/postgres_ext.h src/include/pg_config_ext.h src/include/pg_config_manual.h {{prefix}}/include/',
+      'make -C src/include install $DIRS',
       'make -C src/common install $DIRS',
       'make -C src/port install $DIRS',
       'mkdir -p {{prefix}}/share/licenses/postgresql',

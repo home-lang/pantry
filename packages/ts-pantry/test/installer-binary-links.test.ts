@@ -28,6 +28,28 @@ function run(program: string) {
 }
 
 describe.skipIf(process.platform === 'win32')('installed binary entrypoints', () => {
+  it('keeps declared shell libraries sourceable through project/global links after relocation', async () => {
+    const { root, tree, pkg } = fixture()
+    mkdirSync(join(pkg, 'share/pantry'), { recursive: true })
+    writeFileSync(join(pkg, 'bin/library.sh'), '#!/bin/sh\nfixture_function() { printf "source-ok\\n"; }\n', { mode: 0o755 })
+    writeFileSync(join(pkg, 'share/pantry/interfaces.json'), JSON.stringify({ version: 1, sourceablePrograms: ['library.sh'] }))
+    await installPackage('wrapper.test', '1.0.0', { installDir: tree, platform: detectPlatform(), globalBin: join(root, 'global bin'), quiet: true })
+    const sourced = (entry: string) => {
+      const result = Bun.spawnSync(['sh', '-c', '. "$1"; fixture_function; printf "caller-alive\\n"', '_', entry])
+      expect(result.exitCode, result.stderr.toString()).toBe(0)
+      expect(result.stdout.toString()).toBe('source-ok\ncaller-alive\n')
+    }
+    for (const entry of [join(tree, '.bin/library.sh'), join(root, 'global bin/library.sh')]) {
+      expect(lstatSync(entry).isSymbolicLink()).toBe(true)
+      sourced(entry)
+    }
+    run(join(tree, '.bin/tool'))
+    const moved = `${root} moved`
+    renameSync(root, moved)
+    scratch.push(moved)
+    sourced(join(moved, 'pantry/.bin/library.sh'))
+    sourced(join(moved, 'global bin/library.sh'))
+  })
   it('executes package-relative wrappers through project and global entries, including after cache repair', async () => {
     const { root, tree, pkg } = fixture()
     const options = { installDir: tree, platform: detectPlatform(), globalBin: join(root, 'global bin'), quiet: true }

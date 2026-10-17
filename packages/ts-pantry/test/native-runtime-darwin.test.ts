@@ -41,6 +41,9 @@ test.skipIf(process.platform !== 'darwin')('Mach-O publication uses only declare
     writeFileSync(bundledSecond, Buffer.concat([canonicalBytes, Buffer.from('tampered')]))
     await expect(fixUp(stage, 'darwin-arm64', [], [{ domain: 'first.example', version: '1.0', prefix: first }, { domain: 'second.example', version: '1.0', prefix: second }])).rejects.toThrow('Invalid bundled runtime provenance')
     writeFileSync(bundledSecond, canonicalBytes)
+    writeFileSync(join(root, 'second.c'), 'int second(void) { return 41; } int canonical_rebuild_marker(void) { return 0; }')
+    run(['xcrun', 'clang', '-dynamiclib', join(root, 'second.c'), '-Wl,-headerpad_max_install_names', '-install_name', '@rpath/libfixture-second.1.dylib', '-o', secondLib])
+    const currentSecondSha256 = new Bun.CryptoHasher('sha256').update(readFileSync(secondLib)).digest('hex')
     await fixUp(stage, 'darwin-arm64', [], [{ domain: 'first.example', version: '1.0', prefix: first }, { domain: 'second.example', version: '1.0', prefix: second }])
     const fresh = join(root, 'fresh consumer/pantry/example.org/v1.0')
     mkdirSync(dirname(fresh), { recursive: true })
@@ -50,6 +53,7 @@ test.skipIf(process.platform !== 'darwin')('Mach-O publication uses only declare
     expect(run([join(fresh, 'bin/fixture')])).toBe('42')
     const provenance = JSON.parse(readFileSync(join(fresh, 'share/pantry/runtime-libraries.json'), 'utf8'))
     expect(provenance.libraries.map((library: { domain: string }) => library.domain).sort()).toEqual(['first.example', 'second.example'])
+    expect(provenance.libraries.find((library: { domain: string }) => library.domain === 'second.example').sourceSha256).toBe(currentSecondSha256)
     for (const library of provenance.libraries) {
       expect(library.sourceSha256).toMatch(/^[a-f0-9]{64}$/)
       expect(library.bundledSha256).toMatch(/^[a-f0-9]{64}$/)

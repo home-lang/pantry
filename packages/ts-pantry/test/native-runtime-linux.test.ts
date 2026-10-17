@@ -44,6 +44,9 @@ test.skipIf(process.platform !== 'linux')('native runtime closure survives fresh
     symlinkSync(join(second, 'lib64/libfixture-second.so.1'), join(conflict, 'lib/escape.so'))
     await expect(fixUp(conflicted, 'linux-x86-64', [], [{ domain: 'conflict.example', version: '1.0', prefix: conflict }])).rejects.toThrow('escapes declared runtime package')
     await fixUp(first, 'linux-x86-64', [], [{ domain: 'second.example', version: '1.0', prefix: second }])
+    writeFileSync(join(root, 'second.c'), 'int second(void) { return 41; } int canonical_rebuild_marker(void) { return 0; }')
+    run([...compiler, '-shared', '-fPIC', join(root, 'second.c'), '-Wl,-soname,libfixture-second.so.1', '-o', join(second, 'lib64/libfixture-second.so.1')])
+    const currentSecondSha256 = new Bun.CryptoHasher('sha256').update(readFileSync(join(second, 'lib64/libfixture-second.so.1'))).digest('hex')
     await fixUp(stage, 'linux-x86-64', [], [{ domain: 'first.example', version: '1.0', prefix: first }, { domain: 'second.example', version: '1.0', prefix: second }])
     const fresh = join(root, 'fresh consumer/pantry/example.org/v1.0')
     mkdirSync(dirname(fresh), { recursive: true })
@@ -56,6 +59,7 @@ test.skipIf(process.platform !== 'linux')('native runtime closure survives fresh
     expect(run([process.execPath, probe, join(fresh, 'lib/libfixture-api.so')])).toBe('42')
     const provenance = JSON.parse(readFileSync(join(fresh, 'share/pantry/runtime-libraries.json'), 'utf8'))
     expect(provenance.libraries.map((library: { domain: string }) => library.domain).sort()).toEqual(['first.example', 'second.example'])
+    expect(provenance.libraries.find((library: { domain: string }) => library.domain === 'second.example').sourceSha256).toBe(currentSecondSha256)
     for (const library of provenance.libraries) {
       expect(library.sourceSha256).toMatch(/^[a-f0-9]{64}$/)
       expect(library.bundledSha256).toMatch(/^[a-f0-9]{64}$/)

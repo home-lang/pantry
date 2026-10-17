@@ -63,8 +63,9 @@ export function bundleRuntimeLibraries(
       if (!isBinary(actual)) return
       // A dependency can already carry a normalized copy of another declared
       // package. Loader-path rewrites change its hash without creating a new
-      // provider. Verify the complete provenance chain, then index the original
-      // package instead of falsely treating that copy as a conflicting ABI.
+      // provider. Verify the embedded copy's receipt, then use the currently
+      // resolved checksummed package, including a repaired rebuild at the same
+      // version, instead of retaining its stale bundled copy.
       const receipt = bundled.find(library => actual === join(owner, 'lib', library.name))
       if (receipt) {
         if (hash(actual) !== receipt.bundledSha256) throw new Error(`Invalid bundled runtime provenance for ${receipt.name}`)
@@ -72,7 +73,7 @@ export function bundleRuntimeLibraries(
         if (canonical) {
           const sourceRoot = realpathSync(canonical.prefix)
           const source = realpathSync(join(sourceRoot, receipt.source))
-          if (!inside(sourceRoot, source) || hash(source) !== receipt.sourceSha256)
+          if (!inside(sourceRoot, source) || !/^[a-f0-9]{64}$/.test(receipt.sourceSha256))
             throw new Error(`Invalid canonical runtime provenance for ${receipt.name}`)
           return
         }

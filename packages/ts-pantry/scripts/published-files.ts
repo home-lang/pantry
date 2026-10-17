@@ -12,7 +12,10 @@ export function selectPublishedFiles(prefix: string, patterns?: string[]): void 
   const walk = (directory: string): void => {
     for (const entry of readdirSync(directory)) {
       const path = join(directory, entry)
-      if (lstatSync(path).isDirectory()) { walk(path); directories.push(path) }
+      if (lstatSync(path).isDirectory()) {
+        walk(path)
+        directories.push(path)
+      }
       else files.push(path)
     }
   }
