@@ -1,6 +1,7 @@
 const std = @import("std");
 
 fn buildRootPathExists(b: *std.Build, sub_path: []const u8) bool {
+    dependOnBuildRootPathExistence(b, sub_path);
     if (@hasField(std.Build, "root")) {
         const path = b.root.join(b.allocator, sub_path) catch return false;
         path.root_dir.handle.access(b.graph.io, path.sub_path, .{}) catch return false;
@@ -17,16 +18,54 @@ fn buildRootPathExists(b: *std.Build, sub_path: []const u8) bool {
 }
 
 fn readBuildRootFileAlloc(b: *std.Build, sub_path: []const u8, max_bytes: usize) ![]u8 {
+    dependOnBuildRootPathExistence(b, sub_path);
     if (@hasField(std.Build, "root")) {
         const path = try b.root.join(b.allocator, sub_path);
-        return path.root_dir.handle.readFileAlloc(b.graph.io, path.sub_path, b.allocator, .limited(max_bytes));
+        return trackBuildRootFileContents(b, sub_path, try path.root_dir.handle.readFileAlloc(b.graph.io, path.sub_path, b.allocator, .limited(max_bytes)));
     }
 
     if (@hasField(std.Build.Graph, "io")) {
-        return b.build_root.handle.readFileAlloc(b.graph.io, sub_path, b.allocator, .limited(max_bytes));
+        return trackBuildRootFileContents(b, sub_path, try b.build_root.handle.readFileAlloc(b.graph.io, sub_path, b.allocator, .limited(max_bytes)));
     }
 
-    return b.build_root.handle.readFileAlloc(b.allocator, sub_path, max_bytes);
+    return trackBuildRootFileContents(b, sub_path, try b.build_root.handle.readFileAlloc(b.allocator, sub_path, max_bytes));
+}
+
+fn trackBuildRootFileContents(b: *std.Build, sub_path: []const u8, contents: []u8) []u8 {
+    if (@hasDecl(std.Build, "dependOnFileContents")) b.dependOnFileContents(b.path(sub_path));
+    return contents;
+}
+
+fn dependOnBuildRootPathExistence(b: *std.Build, sub_path: []const u8) void {
+    if (comptime !@hasDecl(std.Build, "dependOnDirectoryContents")) return;
+    // Missing files cannot be content inputs. Observe the closest existing
+    // parent directory so creation/removal (including Git packed refs) still
+    // invalidates configuration, while successful reads track file contents.
+    var parent = std.fs.path.dirname(sub_path) orelse ".";
+    while (true) {
+        if (buildRootDirectoryExists(b, parent)) {
+            b.dependOnDirectoryContents(b.path(parent));
+            return;
+        }
+        parent = std.fs.path.dirname(parent) orelse return;
+    }
+}
+
+fn buildRootDirectoryExists(b: *std.Build, sub_path: []const u8) bool {
+    if (@hasField(std.Build, "root")) {
+        const path = b.root.join(b.allocator, sub_path) catch return false;
+        var directory = path.root_dir.handle.openDir(b.graph.io, path.sub_path, .{}) catch return false;
+        directory.close(b.graph.io);
+        return true;
+    }
+    if (@hasField(std.Build.Graph, "io")) {
+        var directory = b.build_root.handle.openDir(b.graph.io, sub_path, .{}) catch return false;
+        directory.close(b.graph.io);
+        return true;
+    }
+    var directory = b.build_root.handle.openDir(sub_path, .{}) catch return false;
+    directory.close();
+    return true;
 }
 
 /// Resolve dependency path - uses workspace root pantry/ directory (created by `pantry install`)
@@ -584,6 +623,7 @@ pub fn build(b: *std.Build) void {
     test_all_step.dependOn(&run_publish_commit_tests.step);
     test_all_step.dependOn(&run_pm_commands_tests.step);
     test_all_step.dependOn(&run_token_tests.step);
+    test_all_step.dependOn(&run_install_tests.step);
     test_all_step.dependOn(&run_auto_link_tests.step);
     test_all_step.dependOn(&run_relocatable_tree_tests.step);
 
@@ -711,10 +751,8 @@ fn getGitCommitHash(b: *std.Build) ![]const u8 {
     // Run-step results are cached in .zig-cache keyed by argv, so the commit
     // stamp silently went stale on incremental builds after new commits.
     //
-    // Caveat: the configurer's output is itself cached in .zig-cache (keyed
-    // on build.zig), so on a no-op rebuild the stamp can still lag one commit.
-    // It is always correct on clean builds (CI/release) and after build.zig
-    // changes — git availability is no longer required either way.
+    // readBuildRootFileAlloc registers every observed file as a configure
+    // dependency, so incremental builds refresh the stamp after a commit too.
     const head = readBuildRootFileAlloc(b, "../../.git/HEAD", 512) catch
         (readBuildRootFileAlloc(b, ".git/HEAD", 512) catch return "unknown");
     const trimmed = std.mem.trim(u8, head, &std.ascii.whitespace);
