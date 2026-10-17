@@ -427,13 +427,9 @@ catch {
 //   - Exact version: '14.0.1' — skips that specific version
 //   - '*' — skips ALL versions (package can't be built with current S3 deps)
 const SKIP_VERSIONS: Record<string, string[]> = {
-  // MySQL "innovation" releases (8.1+, 9.x) and 8.4 LTS dropped the bundled-boost
-  // source tarball (mysql-boost-<v>.tar.gz) the recipe builds from — the CDN only
-  // 404s for them, so they get reported as phantom and nothing publishes. 8.0.43
-  // is the latest GA whose bundled-boost archive tarball exists and builds clean.
-  // Skip everything newer so the source build settles on 8.0.43. (ts-cloud pins
-  // `mysql.com@8.0.43` to match; MariaDB remains the default MySQL-compatible engine.)
-  'mysql.com': ['>=8.0.44'],
+  // 8.1 through 9.x do not use the supported bundled-Boost 8.0 source
+  // archive. Calendar releases have their own official native distribution.
+  'mysql.com': ['>=8.1.0 <26.0.0'],
   // clap_mangen 0.2.31 uses private get_display_order() from clap_builder 4.6.0
   'crates.io/topgrade': ['14.0.1'],
   // nix crate restructured API — Pid, SigSet, Signal, sigaction moved/feature-gated

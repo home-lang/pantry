@@ -550,3 +550,11 @@ test('native runner selection preserves exact versions through the CLI handoff',
   expect(emitted.pins.get('postgresql.org/libpq')).toEqual(['18.0.0'])
   expect(selectedPackageSelectors([{ domain: 'postgresql.org', name: 'postgresql' }], parseRequestedPackages('postgresql@17.10,postgresql@16.9'))).toEqual(['postgresql.org@17.10', 'postgresql.org@16.9'])
 })
+
+for (const platform of ['linux-x86-64', 'linux-arm64', 'darwin-arm64']) {
+  test(`selects the official MySQL calendar runtime for ${platform}`, () => {
+    const child = Bun.spawnSync([process.execPath, 'scripts/build-all-packages.ts', '--platform', platform, '-p', 'mysql.com@26.7.0', '--source-only', '--print-selected'], { cwd: import.meta.dir + '/..', stdout: 'pipe', stderr: 'pipe' })
+    expect(child.exitCode, child.stderr.toString()).toBe(0)
+    expect(child.stdout.toString().trim()).toBe('mysql.com@26.7.0')
+  })
+}
