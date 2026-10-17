@@ -1031,12 +1031,16 @@ else if (osName === 'linux') {
   sections.push('  mkdir -p "$wrapper_dir"')
   sections.push('  for cc_name in cc gcc clang c++ g++ clang++ cpp gfortran; do')
   sections.push('    local real_cc')
-  sections.push('    real_cc="$(command -v "$cc_name" 2>/dev/null || true)"')
+  sections.push('    local selected_cc="$cc_name"')
+  sections.push('    case "$cc_name" in')
+  sections.push('      cc|gcc|clang) selected_cc="${CC:-$cc_name}" ;;')
+  sections.push('      c++|g++|clang++) selected_cc="${CXX:-$cc_name}" ;;')
+  sections.push('    esac')
+  sections.push('    real_cc="$(command -v "$selected_cc" 2>/dev/null || true)"')
   sections.push('    [ -n "$real_cc" ] || continue')
-  // Use single-quoted heredoc (<<'CCEOF') to prevent shell expansion.
-  // Embed the real compiler path via sed replacement after writing.
-  sections.push('    cat > "$wrapper_dir/$cc_name" <<\'CCEOF\'')
-  sections.push('#!/bin/bash')
+  // Quote the selected path once; the literal body preserves every caller arg.
+  sections.push('    printf \'#!/bin/bash\\nreal_cc=%q\\n\' "$real_cc" > "$wrapper_dir/$cc_name"')
+  sections.push('    cat >> "$wrapper_dir/$cc_name" <<\'CCEOF\'')
   sections.push('args=()')
   // GCC can retain a configured absolute assembler/linker path after its
   // package is relocated. PATH alone does not override that search order.
@@ -1045,7 +1049,7 @@ else if (osName === 'linux') {
   const gccPrefix = depPaths['deps.gnu.org/gcc.prefix']
   const binutilsPrefix = depPaths['deps.gnu.org/binutils.prefix']
   if (osName === 'linux' && gccPrefix && binutilsPrefix && !['/usr', '/usr/local', '/'].includes(binutilsPrefix)) {
-    sections.push('case "__REAL_CC__" in')
+    sections.push('case "$real_cc" in')
     sections.push(`  '${gccPrefix}/'*) args+=("-B${binutilsPrefix}/bin/") ;;`)
     sections.push('esac')
   }
@@ -1213,16 +1217,13 @@ else if (osName === 'linux') {
   sections.push('    fi')
   sections.push('  fi')
   sections.push('  cd /tmp')
-  sections.push('  __REAL_CC__ "${_final_args[@]}"')
+  sections.push('  "$real_cc" "${_final_args[@]}"')
   sections.push('  _rc=$?')
   sections.push('  cd "$_orig_cwd"')
   sections.push('  exit $_rc')
   sections.push('fi')
-  sections.push('exec __REAL_CC__ "${args[@]}"')
+  sections.push('exec "$real_cc" "${args[@]}"')
   sections.push('CCEOF')
-  // Replace __REAL_CC__ placeholder with the actual compiler path
-  // Use perl for portable in-place edit (sed -i syntax differs on macOS vs Linux)
-  sections.push('    perl -pi -e "s|__REAL_CC__|$real_cc|g" "$wrapper_dir/$cc_name"')
   sections.push('    chmod +x "$wrapper_dir/$cc_name"')
   sections.push('  done')
   sections.push('  export PATH="$wrapper_dir:$PATH"')

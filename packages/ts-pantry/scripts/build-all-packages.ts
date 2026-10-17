@@ -1648,6 +1648,7 @@ const CUSTOM_BUILD_DOMAINS = new Set<string>([
   'postgresql.org', // build-time options/extensions we control
   'postgresql.org/libpq', // client-only products; upstream prebuilts link server-only ICU/readline
   'curl.se', // Pantry links against OpenSSL 3; pkgx's build still requires OpenSSL 1.1
+  'harfbuzz.org', // use the declared current ICU ABI on every native platform
 ])
 
 /**
@@ -3030,6 +3031,10 @@ Options:
       .map((p) => {
         const pinnedPkg = applyVersionPins(p, requested.pins)
         if (pinnedPkg !== p) {
+          for (const version of pinnedPkg.versions) {
+            if (isVersionSkipped(p.domain, version))
+              throw new Error(`Requested ${p.domain}@${version} is excluded from publication on ${platform}; fix its recipe before publishing`)
+          }
           const unknown = pinnedPkg.versions.filter(v => !p.versions.includes(v))
           logDiscovery(`Pinned ${p.domain} to ${pinnedPkg.versions.join(', ')}${unknown.length ? ` (not in the catalog, building anyway: ${unknown.join(', ')})` : ''}`)
         }

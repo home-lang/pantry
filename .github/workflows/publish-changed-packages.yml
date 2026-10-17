@@ -227,7 +227,7 @@ jobs:
         env:
           CC: clang
           CXX: clang++
-          LD: clang
+          LD: ld
           PANTRY_BUILD_DIAGNOSTICS_DIR: ${{ runner.temp }}/pantry-build-diagnostics
         working-directory: packages/ts-pantry
         shell: bash
@@ -320,7 +320,7 @@ jobs:
         env:
           CC: clang
           CXX: clang++
-          LD: clang
+          LD: ld
           PANTRY_BUILD_DIAGNOSTICS_DIR: ${{ runner.temp }}/pantry-build-diagnostics
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

@@ -20,8 +20,12 @@ export const recipe: Recipe = {
     'freetype.org': '2',
     'gnome.org/glib': '2',
     'graphite.sil.org': '*',
-    'unicode.org': '^71',
+    // HarfBuzz 14 handles ICU >=75's C++17 requirement in upstream Meson.
+    'unicode.org': '^77',
   },
+  dependencyOverrides: [
+    { if: '<14.0.0', dependencies: { 'unicode.org': '^71' } },
+  ],
   buildDependencies: {
     'mesonbuild.com': '>=0.63',
     'ninja-build.org': '1',
