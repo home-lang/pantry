@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative, resolve } from 'node:path'
 
@@ -9,7 +9,8 @@ const zig = process.env.PANTRY_ZIG_TEST_BIN || Bun.which('zig')
 describe('incremental native build metadata', () => {
   const check = zig ? it : it.skip
   check('refreshes the version and Git stamp without clearing the configuration cache', () => {
-    const root = mkdtempSync(join(tmpdir(), 'pantry-build-metadata-'))
+    // Git records physical paths; macOS exposes tmpdir through /var -> /private/var.
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'pantry-build-metadata-')))
     try {
       const directory = join(root, 'packages/zig')
       const manifest = join(root, 'packages/ts-pantry/package.json')
