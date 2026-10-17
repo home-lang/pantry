@@ -14,6 +14,7 @@ import { setupBunRuntime } from './bun-runtime'
 import { ensurePackageExecutorAliases } from './executor-aliases'
 import { installRequiredSystemPackages, jsPackageManager, needsJsInstall, pantryConfigMaySetLinker, selectSystemPackages, shouldInstallWorkspace } from './install-mode'
 import { installResolvedSystemPackage } from './system-packages'
+import { nativeArtifactCacheIdentity } from './native-cache'
 import type { ServiceSpec } from './services'
 import { mergeServicePackages, nativeServiceEnvironment, parseRedisVersion, parseServiceSpecs, readServiceLog, redisLaunchArgs, waitForRedisPid } from './services'
 import type { NativeServiceState } from './native-services'
@@ -883,10 +884,19 @@ export async function run(): Promise<void> {
     const lockHash = lockfile ? hashFile(lockfile) : 'no-lock'
     // Avoid hashing the same file twice when lockfile == depsFile
     const depsHash = (depsFileForKey && depsFileForKey !== lockfile) ? hashFile(depsFileForKey) : 'none'
-    const cacheKey = `pantry-v3-${resolvedVer}-${platform.os}-${platform.arch}-${lockHash}-${depsHash}-${cachePackages || 'all'}`
+    const systemDeps = selectSystemPackages(inputs.packages, inputs.setupOnly, extractSystemDeps)
+    let artifactIdentity: string | undefined
+    try {
+      artifactIdentity = await nativeArtifactCacheIdentity(systemDeps, platform)
+    }
+    catch (error) {
+      core.warning(`Native artifact identity unavailable; installing without a dependency cache: ${error}`)
+    }
+    const cachePrefix = `pantry-v4-${resolvedVer}-${platform.os}-${platform.arch}-${artifactIdentity}-`
+    const cacheKey = `${cachePrefix}${lockHash}-${depsHash}-${cachePackages || 'all'}`
     // Restore keys: try same OS/arch with any lock hash
     const restoreKeys = [
-      `pantry-v3-${resolvedVer}-${platform.os}-${platform.arch}-`,
+      cachePrefix,
     ]
     let cacheHit = false
     // Whether `pantry install` ran in this step, and so may have re-pointed
@@ -895,7 +905,7 @@ export async function run(): Promise<void> {
 
     // Try restoring from cache
     try {
-      const hit = await cache.restoreCache([pantryDir], cacheKey, restoreKeys)
+      const hit = artifactIdentity ? await cache.restoreCache([pantryDir], cacheKey, restoreKeys) : undefined
       if (hit) {
         // Verify cache is valid — .bin dir should exist with actual binaries
         const binDirExists = fs.existsSync(pantryBinDir)
@@ -1024,8 +1034,6 @@ export async function run(): Promise<void> {
       const installEnv = { ...process.env, CI: 'true', NO_COLOR: '1' }
 
       // Collect all system packages to install (from explicit input + deps files)
-      const systemDeps = selectSystemPackages(inputs.packages, inputs.setupOnly, extractSystemDeps)
-
       if (systemDeps.length > 0) {
         core.startGroup(`Installing system packages: ${systemDeps.join(', ')}`)
         try {
@@ -1060,8 +1068,10 @@ export async function run(): Promise<void> {
 
       // Save to cache for next run
       try {
-        await cache.saveCache([pantryDir], cacheKey)
-        core.info('Dependencies cached')
+        if (artifactIdentity) {
+          await cache.saveCache([pantryDir], cacheKey)
+          core.info('Dependencies cached')
+        }
       }
       catch {
         // cache save failed (already exists or unavailable)
