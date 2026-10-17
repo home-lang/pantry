@@ -1,5 +1,5 @@
 import type { Recipe } from '../../scripts/recipe-types'
-import { mysqlCalendarVersions, mysqlDistributionUrl } from '../../scripts/mysql-distribution'
+import { mysqlNativeVersions, mysqlDistributionUrl } from '../../scripts/mysql-distribution'
 
 /** The supported 8.0 build keeps its existing source configuration. */
 const legacySourceBuild: string[] = [
@@ -101,13 +101,13 @@ export const recipe: Recipe = {
   // does not contain. Router likewise: it is a separate product, and Vitess
   // supersedes it here.
   programs: ['my_print_defaults', 'myisam_ftdump', 'myisamchk', 'myisamlog', 'myisampack', 'mysql', 'mysql_config', 'mysql_config_editor', 'mysql_migrate_keyring', 'mysql_secure_installation', 'mysql_tzinfo_to_sql', 'mysqladmin', 'mysqlbinlog', 'mysqlcheck', 'mysqld', 'mysqld_multi', 'mysqld_safe', 'mysqldump', 'mysqldumpslow', 'mysqlimport', 'mysqlshow', 'mysqlslap'],
-  // Calendar releases ship official per-platform runtime archives. Older 8.0
+  // LTS and calendar releases ship official per-platform runtime archives. Older 8.0
   // releases retain the source build that supplies their supported ABI.
   platforms: ['darwin', 'linux'],
   versionSource: {
     type: 'custom',
     fetch: async () => {
-      const calendar = await mysqlCalendarVersions()
+      const calendar = await mysqlNativeVersions()
       // Keep the supported 8.0 source archives alongside verified modern
       // server distributions; Cluster tags never imply a server artifact.
       const FLOOR = 43 // 8.0.43, the oldest release this recipe is known to build
@@ -184,7 +184,7 @@ export const recipe: Recipe = {
   // Compiler dependencies belong only to the legacy source build. Native
   // runtime distributions do not inherit an unnecessary compiler toolchain.
   dependencyOverrides: [{
-    if: '<26.0.0',
+    if: '<8.4.0',
     buildDependencies: {
       'gnu.org/binutils': '*',
       'cmake.org': '^3',
@@ -196,14 +196,14 @@ export const recipe: Recipe = {
     'working-directory': 'build',
     script: [
       {
-        if: '>=26.0.0',
+        if: '>=8.4.0',
         run: [
           'mkdir -p "{{prefix}}"',
           'cp -R ../bin ../include ../lib ../share ../support-files "{{prefix}}/"',
           'for file in ../LICENSE* ../README*; do if [ -f "$file" ]; then cp "$file" "{{prefix}}/"; fi; done',
         ],
       },
-      ...legacySourceBuild.map(run => ({ run, if: '<26.0.0' })),
+      ...legacySourceBuild.map(run => ({ run, if: '<8.4.0' })),
     ],
   },
   test: {
