@@ -773,7 +773,7 @@ export function parseDepConstraint(dep: string): string | null {
 /** Use the SDK's runtime constraint policy for the libraries we compile against. */
 export function versionSatisfies(version: string, constraint: string): boolean {
   const requested = constraint.trim()
-  if (version === requested) return true
+  if (version === requested.replace(/^[=@]\s*/, '')) return true
   if (requested === '*' || requested === 'latest') return !version.includes('-')
 
   return requested.split('||').some((alternative) => {

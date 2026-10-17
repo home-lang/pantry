@@ -47,3 +47,11 @@ test('distinct OpenSSL runtime ABIs coexist while the direct compiler dependency
     async domain => ({ dependencies: domain === 'kerberos.example' ? { 'ssl.example': '^3' } : {} }))
   expect([...graph]).toEqual([['ssl.example', 'ssl.example =1.1.1'], ['kerberos.example', 'kerberos.example =1.0.0'], ['ssl.example@3.0.1', 'ssl.example =3.0.1']])
 })
+
+test('an exact resolved OpenSSL letter release remains installable without accepting a different release', () => {
+  expect(versionSatisfies('1.1.1w', '^1.1')).toBe(true)
+  expect(versionSatisfies('1.1.1w', '=1.1.1w')).toBe(true)
+  expect(versionSatisfies('1.1.1w', '@1.1.1w')).toBe(true)
+  expect(versionSatisfies('1.1.1v', '=1.1.1w')).toBe(false)
+  expect(versionSatisfies('3.6.5', '=1.1.1w')).toBe(false)
+})
