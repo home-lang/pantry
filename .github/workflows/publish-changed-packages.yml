@@ -155,12 +155,8 @@ jobs:
           echo "Re-upload versions already in S3 (--force): $REBUILD"
           echo "rebuild_existing=$REBUILD" >> "$GITHUB_OUTPUT"
 
-      # Which changed domains genuinely need a NATIVE macOS build: source recipes
-      # (not zig-style download recipes) that support darwin and aren't apps. The
-      # ubuntu legs cover pkgx-prebuilt + download-recipe darwin artifacts; only
-      # these source recipes require a real Mac (they can't cross-compile on
-      # linux). Empty ⇒ the darwin-native macOS job is skipped, so no Mac runner
-      # is allocated for the common case (pure pkgx/download updates).
+      # Darwin artifacts require native Mach-O inspection, loader normalization,
+      # and health checks, including packages that download a vendor archive.
       - name: Determine darwin-native domains
         if: inputs.platform != 'linux'
         id: darwin
@@ -173,14 +169,14 @@ jobs:
           # Native library normalization needs Mach-O tooling even when an
           # upstream prebuilt exists. Preserve exact versions in this handoff.
           NATIVE=$(bun scripts/build-all-packages.ts \
-            --platform darwin-arm64 -p "$PKGS" --source-only --print-selected | tr -s ' ' | sed 's/^ *//; s/ *$//')
+            --platform darwin-arm64 -p "$PKGS" --print-selected | tr -s ' ' | sed 's/^ *//; s/ *$//')
           echo "darwin-native (need a real Mac): ${NATIVE:-<none>}"
           echo "domains=$NATIVE" >> "$GITHUB_OUTPUT"
 
   build:
     name: Publish (${{ matrix.platform.name }})
     needs: detect
-    if: needs.detect.outputs.domains != ''
+    if: needs.detect.outputs.domains != '' && inputs.platform != 'darwin-arm64'
     runs-on: ${{ matrix.platform.os }}
     # Download-first (--pkgx-mirror) is seconds per package; the headroom is for
     # the CUSTOM source fallbacks (php/mysql/postgres) that DO compile on the
@@ -189,22 +185,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Download-first, ubuntu-only (this job never spins up a macOS runner):
-        #  - linux legs: --pkgx-mirror ⇒ mirror pkgx's official prebuilt, and
-        #    fall back to a SOURCE build only for packages pkgx lacks or that we
-        #    deliberately customize. Those compile natively here,
-        #    so the legs need the build toolchain.
-        #  - darwin-arm64 FROM UBUNTU: two download passes (pkgx --mirror-only,
-        #    then --download-only for zig-style recipes) — see the build step.
-        #    No source-build, no cross-compile, no Mac. Genuine darwin SOURCE
-        #    recipes go to the gated publish-darwin-native job below.
-        platform: ${{ fromJSON(
-          inputs.platform == 'linux'
-            && '[{"name":"linux-x86-64","os":"ubuntu-latest","needs_toolchain":true},{"name":"linux-arm64","os":"ubuntu-24.04-arm","needs_toolchain":true}]'
-          || inputs.platform == 'darwin-arm64'
-            && '[{"name":"darwin-arm64","os":"ubuntu-latest","needs_toolchain":false}]'
-          || '[{"name":"linux-x86-64","os":"ubuntu-latest","needs_toolchain":true},{"name":"linux-arm64","os":"ubuntu-24.04-arm","needs_toolchain":true},{"name":"darwin-arm64","os":"ubuntu-latest","needs_toolchain":false}]'
-          ) }}
+        # Linux publications execute on matching native CPU architectures.
+        # Darwin publication is handled by the native macOS job below.
+        platform:
+          - { name: linux-x86-64, os: ubuntu-latest, needs_toolchain: true }
+          - { name: linux-arm64, os: ubuntu-24.04-arm, needs_toolchain: true }
     steps:
       - uses: actions/checkout@v6
 
@@ -256,24 +241,8 @@ jobs:
             echo "Version bump only: leaving versions already in S3 alone."
           fi
           COMMON="-b $S3_BUCKET -r $S3_REGION --platform ${{ matrix.platform.name }} -p $PKGS --multi-version --max-versions $MAXV --popular-max-versions $POPULAR_MAXV $FORCE"
-          if [ "${{ matrix.platform.name }}" = "darwin-arm64" ]; then
-            # darwin FROM UBUNTU — two safe download passes, no cross-compile:
-            #  1) --pkgx-mirror --mirror-only: download pkgx's darwin prebuilt (skip
-            #     on a miss, never source-build).
-            #  2) --download-only: run the zig-style download recipes (curl the
-            #     official darwin asset + verify Mach-O/arm64 magic).
-            # Together these cover every darwin artifact producible without a Mac.
-            # Source recipes are handled by the gated publish-darwin-native job.
-            echo "Publishing darwin-arm64 from ubuntu (pkgx mirror-only): $PKGS"
-            bun scripts/build-all-packages.ts $COMMON --pkgx-mirror --mirror-only
-            echo "Publishing darwin-arm64 from ubuntu (download recipes): $PKGS"
-            bun scripts/build-all-packages.ts $COMMON --download-only
-          else
-            # linux legs: --pkgx-mirror mirrors pkgx's prebuilt and source-builds
-            # (natively) only what pkgx lacks or we customize.
-            echo "Publishing (download-first) $PKGS -> ${{ matrix.platform.name }}"
-            bun scripts/build-all-packages.ts $COMMON --pkgx-mirror
-          fi
+          echo "Publishing (download-first) $PKGS -> ${{ matrix.platform.name }}"
+          bun scripts/build-all-packages.ts $COMMON --pkgx-mirror
 
       - name: Retain toolchain provenance and failed build diagnostics
         if: always()
@@ -284,16 +253,10 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  # Genuine darwin SOURCE recipes (pkgx has no prebuilt, not a download recipe)
-  # can ONLY be produced on real Mac hardware — this ensures a darwin update is
-  # published PROPERLY rather than silently skipped by the ubuntu legs. It is
-  # TIGHTLY GATED: it runs only when `detect` finds such domains (so pure
-  # pkgx/download updates — the common case — allocate NO macOS runner at all),
-  # and it builds ONLY those domains, download-first (--pkgx-mirror),
-  # so anything the ubuntu legs already published is skipped and only true
-  # pkgx-misses actually compile. This is the one narrow, necessary macOS path.
+  # Every Darwin publication runs natively so downloaded and compiled binaries
+  # receive the same loader checks and required runtime health checks.
   publish-darwin-native:
-    name: Publish darwin-arm64 source (native macOS)
+    name: Publish darwin-arm64 (native macOS)
     needs: detect
     if: needs.detect.outputs.darwin_native != '' && inputs.platform != 'linux'
     # Current dependency binaries use APIs supplied by macOS 15 (for example
@@ -324,7 +287,7 @@ jobs:
       - name: Verify managed tools and the native Apple SDK
         run: bun packages/ts-pantry/scripts/native-publisher-toolchain.ts
 
-      - name: Source-build + publish darwin-arm64 (native)
+      - name: Build and publish darwin-arm64 (native)
         if: inputs.verify-tools-only != true
         working-directory: packages/ts-pantry
         env:
@@ -347,11 +310,11 @@ jobs:
           if [ "${{ needs.detect.outputs.rebuild_existing }}" != "false" ]; then
             FORCE_ARGS+=(--force)
           fi
-          echo "Native darwin-arm64 source build + publish: $PKGS"
+          echo "Native darwin-arm64 build + publish: $PKGS"
           bun scripts/build-all-packages.ts \
             -b "$S3_BUCKET" -r "$S3_REGION" \
             --platform darwin-arm64 \
-            -p "$PKGS" --source-only --pkgx-mirror --multi-version --max-versions "$MAXV" --popular-max-versions "$POPULAR_MAXV" "${FORCE_ARGS[@]}"
+            -p "$PKGS" --pkgx-mirror --multi-version --max-versions "$MAXV" --popular-max-versions "$POPULAR_MAXV" "${FORCE_ARGS[@]}"
 
       - name: Retain toolchain provenance and failed build diagnostics
         if: always()

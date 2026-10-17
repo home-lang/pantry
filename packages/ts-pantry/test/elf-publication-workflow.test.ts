@@ -53,3 +53,48 @@ test('targeted mirror dispatch preserves exact selectors and keeps scheduled run
   }
   finally { rmSync(root, { recursive: true, force: true }) }
 })
+
+test('Darwin vendor downloads are selected for the native Mach-O publisher', () => {
+  const workflow = Bun.YAML.parse(readFileSync(new URL('../../../.github/workflows/publish-changed-packages.yml', import.meta.url), 'utf8')) as {
+    jobs: Record<string, { 'runs-on'?: string, if?: string, strategy?: { matrix: { platform: Array<{ name: string, os: string }> } }, steps: Array<{ name?: string, run?: string }> }>
+  }
+  const root = mkdtempSync(join(tmpdir(), 'pantry-native-darwin-selection-'))
+  try {
+    const select = workflow.jobs.detect.steps.find(step => step.name === 'Determine darwin-native domains')!.run!
+      .replace('${{ steps.detect.outputs.domains }}', 'bun.com@1.4.3')
+    const output = join(root, 'output')
+    const result = spawnSync('bash', ['-e', '-o', 'pipefail', '-c', select], {
+      cwd: new URL('..', import.meta.url),
+      env: { ...process.env, GITHUB_OUTPUT: output },
+      encoding: 'utf8',
+    })
+    expect(result.status, result.stderr).toBe(0)
+    expect(readFileSync(output, 'utf8').trim()).toBe('domains=bun.com@1.4.3')
+    const native = workflow.jobs['publish-darwin-native']
+    expect(native['runs-on']).toBe('macos-15')
+    expect(native.steps.find(step => step.name === 'Build and publish darwin-arm64 (native)')!.run).not.toContain('--source-only')
+    expect(workflow.jobs.build.if).toContain("inputs.platform != 'darwin-arm64'")
+    expect(workflow.jobs.build.strategy!.matrix.platform.every(platform => platform.name.startsWith('linux-'))).toBe(true)
+  }
+  finally { rmSync(root, { recursive: true, force: true }) }
+})
+
+test('scheduled Darwin mirror and download matrices use native macOS runners', () => {
+  const workflow = Bun.YAML.parse(readFileSync(new URL('../../../.github/workflows/mirror.yml', import.meta.url), 'utf8')) as {
+    jobs: Record<string, { steps: Array<{ id?: string, run?: string }> }>
+  }
+  const root = mkdtempSync(join(tmpdir(), 'pantry-mirror-native-matrix-'))
+  try {
+    const output = join(root, 'output')
+    const script = workflow.jobs.setup.steps.find(step => step.id === 'gen')!.run!
+    const result = spawnSync('bash', ['-e', '-o', 'pipefail', '-c', script], {
+      env: { ...process.env, PLATFORM: 'darwin-arm64', STRIPES: '1', GITHUB_OUTPUT: output },
+      encoding: 'utf8',
+    })
+    expect(result.status, result.stderr).toBe(0)
+    const matrices = Object.fromEntries(readFileSync(output, 'utf8').trim().split('\n').map(line => [line.slice(0, line.indexOf('=')), JSON.parse(line.slice(line.indexOf('=') + 1))]))
+    for (const name of ['matrix', 'download_matrix'])
+      expect(matrices[name].include).toEqual([{ name: 'darwin-arm64', os: 'macos-15', stripe: '0/1' }])
+  }
+  finally { rmSync(root, { recursive: true, force: true }) }
+})

@@ -4,8 +4,8 @@ name: Mirror (pkgx download-only)
 # official prebuilt binaries from pkgx (dist.pkgx.dev) — NO compiling — and slowly
 # but surely grows coverage: the 5 most-popular versions of every package, and the
 # 20 most-popular versions of popular packages (languages/runtimes/databases/core
-# CLIs). All jobs run on CHEAP ubuntu runners: a download recipe is just a curl, so
-# one Linux box mirrors every target platform (darwin/arm included) via --platform.
+# CLIs). Each target runs natively: downloaded Darwin binaries still require
+# Mach-O loader inspection and normalization with the Apple toolchain.
 # Custom builds (such as php/postgres/curl) are NOT mirrored — on their native platform they
 # compile from source; on a foreign target they're skipped (built on their own runner).
 on:
@@ -71,9 +71,8 @@ jobs:
   # jobs (--stripe i/n partitions the package set) for ~10 concurrent runners by
   # default; linux-x86-64 gets the most since it also runs the native custom builds.
   # A single-platform dispatch narrows to that platform (a job-level `if` can't see
-  # `matrix`, hence the dynamic matrix). Every job runs on a CHEAP Linux runner —
-  # downloads fan out to any target platform; linux-arm64 uses an arm runner only so
-  # its own native custom builds compile.
+  # `matrix`, hence the dynamic matrix). Match the target architecture and OS so
+  # runtime normalization uses native ELF or Mach-O tools.
   setup:
     runs-on: ubuntu-latest
     outputs:
@@ -92,7 +91,7 @@ jobs:
           # (2026-09-07T06:11 run) against 25-53 for linux-x86-64: roughly 347
           # minutes of darwin download work in total, which unstriped exceeds
           # even the 6-hourly cron. Four stripes puts it near 87 minutes each.
-          BASE='[{"name":"linux-x86-64","os":"ubuntu-latest","stripes":4,"dl_stripes":2},{"name":"linux-arm64","os":"ubuntu-24.04-arm","stripes":2,"dl_stripes":2},{"name":"darwin-arm64","os":"ubuntu-latest","stripes":2,"dl_stripes":4}]'
+          BASE='[{"name":"linux-x86-64","os":"ubuntu-latest","stripes":4,"dl_stripes":2},{"name":"linux-arm64","os":"ubuntu-24.04-arm","stripes":2,"dl_stripes":2},{"name":"darwin-arm64","os":"macos-15","stripes":2,"dl_stripes":4}]'
           if [ -n "$PLATFORM" ]; then
             BASE=$(echo "$BASE" | jq -c --arg p "$PLATFORM" '[.[] | select(.name == $p)]')
             # An unrecognised value selected nothing, and an empty matrix is not
