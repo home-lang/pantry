@@ -1,3 +1,23 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.85...v0.11.86)
+
+## 🐛 Bug Fixes
+
+- **process**: own capture pipes across failed native launches ([c9ec7fa](https://github.com/pantry-pm/pantry/commit/c9ec7fa)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 👷 Build System
+
+- **action**: refresh bundled package catalog ([c533585](https://github.com/pantry-pm/pantry/commit/c533585)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.86 ([eea4f3d](https://github.com/pantry-pm/pantry/commit/eea4f3d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update craft-native.org, getmonero.org, github.com/ggerganov/llama.cpp, tunnelblick.net ([f0da326](https://github.com/pantry-pm/pantry/commit/f0da326)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.225 ([9688fd7](https://github.com/pantry-pm/pantry/commit/9688fd7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.84...v0.11.85)
 
 ## 🐛 Bug Fixes
