@@ -414,7 +414,11 @@ describe('Fetch Module', () => {
 
   describe('Error Handling', () => {
     test('should handle invalid output directory gracefully', () => {
-      const invalidDir = '/invalid/path/that/does/not/exist'
+      // A nonexistent path can be created, especially when CI runs as root.
+      // A regular file cannot be used as a parent directory on any host.
+      const blocker = path.join(tempDir, 'not-a-directory')
+      fs.writeFileSync(blocker, 'fixture')
+      const invalidDir = path.join(blocker, 'output')
 
       // Should throw when trying to create files in an invalid directory
       expect(() => {
