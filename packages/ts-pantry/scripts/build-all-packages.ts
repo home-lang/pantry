@@ -1719,6 +1719,8 @@ export function parseRequestedPackages(value: string): RequestedPackages {
     const at = entry.indexOf('@')
     const selector = at > 0 ? entry.slice(0, at) : entry
     const version = at > 0 ? entry.slice(at + 1).trim() : ''
+    if (at > 0 && !version)
+      throw new Error(`Pinned package selector needs a version: "${entry}"`)
     if (!selectors.includes(selector))
       selectors.push(selector)
     if (version) {

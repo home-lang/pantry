@@ -510,3 +510,7 @@ describe('exact version-pinned publication scope', () => {
     }
   })
 })
+
+test('an incomplete version pin cannot silently become a broad latest-family rebuild', () => {
+  expect(() => parseRequestedPackages('postgresql.org@')).toThrow('needs a version')
+})
