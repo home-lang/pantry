@@ -13,6 +13,7 @@
 
 import { describe, expect, it } from 'bun:test'
 import { pantry } from '../src/index'
+import { processScript } from '../scripts/buildkit'
 import * as mysqlRecipeModule from '../src/recipes/mysql.com'
 import { recipe } from '../src/recipes/vitess.io'
 
@@ -159,8 +160,12 @@ describe('mysql.com advertises only buildable versions', () => {
     for (const v of mysql.versions) expect(v.startsWith('9.')).toBe(false)
   })
 
-  it('advertises only the 8.0 GA line the recipe builds', () => {
-    for (const v of mysql.versions) expect(v).toMatch(/^8\.0\.\d+$/)
+  it('advertises the supported source and official native release families', () => {
+    for (const version of mysql.versions) {
+      expect(version).toMatch(/^\d+\.\d+\.\d+$/)
+      const [major, minor] = version.split('.')
+      expect((major === '8' && ['0', '4'].includes(minor)) || Number(major) >= 26).toBe(true)
+    }
   })
 
   it('is excluded from the pkgx fallback', async () => {
@@ -185,19 +190,27 @@ describe('mysql.com advertises only buildable versions', () => {
 
 describe('mysql.com builds a publishable artifact', () => {
   const mysqlRecipe = () => mysqlRecipeModule.recipe
-  const script = () => mysqlRecipe().build.script.map(String).join('\n')
+  const script = () => processScript(mysqlRecipe().build.script, [], 'linux-x86-64', '8.0.45')
 
-  it('builds Release, not the RelWithDebInfo cmake default', () => {
+  it('builds the legacy source family as Release, not the RelWithDebInfo cmake default', () => {
     expect(script()).toContain('-DCMAKE_BUILD_TYPE=Release')
   })
 
-  it('does not install the regression suite', () => {
+  it('does not install the legacy source regression suite', () => {
     expect(script()).toContain('-DWITH_TESTS=OFF')
     expect(script()).toContain('rm -rf {{prefix}}/mysql-test')
   })
 
-  it('strips what still carries symbols', () => {
+  it('strips legacy source binaries that still carry symbols', () => {
     expect(script()).toContain('strip --strip-unneeded')
+  })
+
+  it('selects native vendor distributions without running the legacy compiler steps', () => {
+    for (const version of ['8.4.11', '26.7.0']) {
+      const native = processScript(mysqlRecipe().build.script, [], 'linux-x86-64', version)
+      expect(native).toContain('cp -R ../bin ../include ../lib ../share ../support-files')
+      expect(native).not.toContain('cmake ..')
+    }
   })
 
   it('advertises nothing the build no longer produces', () => {
