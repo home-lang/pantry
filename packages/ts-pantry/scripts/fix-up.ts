@@ -37,7 +37,7 @@ export async function fixUp(prefix: string, platform: string, skips: string[] = 
     console.log(`\nRunning post-build fix-ups on ${prefix}...`)
 
     const bundled = (() => {
-      try { return bundleRuntimeLibraries(prefix, platform, runtimeDependencies, osName === 'linux' ? isDynamicElf : isDynamicMachO) }
+      try { return bundleRuntimeLibraries(prefix, platform, runtimeDependencies, osName === 'linux' ? isDynamicElf : isDynamicMachO, 'patchelf', { preserveInternalLayout: skips.includes(osName === 'linux' ? 'fix-patchelf' : 'fix-machos') }) }
       catch (cause) { throw new Error(`Cannot normalize ${osName === 'linux' ? 'ELF loader paths' : 'Mach-O runtime libraries'}: ${cause instanceof Error ? cause.message : String(cause)}`, { cause }) }
     })()
     if (osName === 'darwin' && !skips.includes('fix-machos')) normalizeMachoRuntime(prefix, isDynamicMachO)

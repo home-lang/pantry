@@ -114,6 +114,7 @@ export function bundleRuntimeLibraries(
   dependencies: RuntimePackage[],
   isBinary: (file: string) => boolean,
   patchelf = 'patchelf',
+  options: { preserveInternalLayout?: boolean } = {},
 ): RuntimeLibraryReceipt[] {
   const linux = platform.startsWith('linux-')
   const root = realpathSync(prefix)
@@ -178,6 +179,14 @@ export function bundleRuntimeLibraries(
       const selected = candidates.find(candidate => inside(root, candidate.file)) || candidates[0]
       if (!inside(root, selected.file) && candidates.some(candidate => hash(candidate.file) !== hash(selected.file)))
         throw new Error(`Conflicting declared runtime providers for ${name}: ${candidates.map(candidate => `${candidate.dependency?.domain}@${candidate.dependency?.version} (${candidate.file}, sha256 ${hash(candidate.file)})`).join('; ')}`)
+      // A vendor runtime can load the same internal library both through its
+      // linker and dlopen. Flattening it creates a second identity (notably a
+      // second JVM). Honor the recipe's preserved loader layout while still
+      // resolving every recursively needed provider from the owned artifact.
+      if (options.preserveInternalLayout && inside(root, selected.file)) {
+        queue.push(selected.file)
+        continue
+      }
       const destination = join(root, 'lib', name)
       mkdirSync(dirname(destination), { recursive: true })
       if (!existsSync(destination)) {
