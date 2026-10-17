@@ -2,7 +2,41 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { applyVersionPins, assignStripe, selectRecentVersions, isAppRecipePath, isPublishedArtifactRecord, isSourceUnavailableError, scriptCompiles, matchesRequestedPackage, parseRequestedPackages, pkgxHasPrebuilt, relocateMirroredPaths, summariseTimings, type PackageTiming } from './build-all-packages'
+import { applyVersionPins, assignStripe, selectRecentVersions, isAppRecipePath, isPublishedArtifactRecord, isSourceUnavailableError, scriptCompiles, matchesRequestedPackage, parseRequestedPackages, pkgxHasPrebuilt, relocateMirroredPaths, normalizeMirroredArtifact, summariseTimings, type PackageTiming } from './build-all-packages'
+
+describe('mirrored artifact publication normalization', () => {
+  test('Linux artifacts require ELF normalization even on a foreign build host', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'mirror-elf-'))
+    try {
+      mkdirSync(join(dir, 'bin'))
+      const elf = Buffer.alloc(120)
+      elf.set([0x7f, 0x45, 0x4c, 0x46, 2, 1, 1])
+      elf.writeUInt16LE(3, 16)
+      elf.writeBigUInt64LE(64n, 32)
+      elf.writeUInt16LE(56, 54)
+      elf.writeUInt16LE(1, 56)
+      elf.writeUInt32LE(2, 64)
+      writeFileSync(join(dir, 'bin', 'openssl'), elf)
+      expect(() => normalizeMirroredArtifact(dir, 'openssl.org', 'v3.6.5', 'linux-arm64', join(dir, 'missing-patchelf')))
+        .toThrow('Cannot normalize ELF loader paths')
+    }
+    finally { rmSync(dir, { recursive: true, force: true }) }
+  })
+
+  test('preserves signed Darwin application binaries without host Mach-O tools', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'mirror-signed-app-'))
+    try {
+      const contents = join(dir, 'Example.app', 'Contents', 'MacOS')
+      mkdirSync(contents, { recursive: true })
+      const binary = join(contents, 'Example')
+      const signedBytes = Buffer.from([0xcf, 0xfa, 0xed, 0xfe, 1, 2, 3, 4])
+      writeFileSync(binary, signedBytes)
+      expect(() => normalizeMirroredArtifact(dir, 'example.org', 'v1', 'darwin-arm64', join(dir, 'missing-patchelf'))).not.toThrow()
+      expect(readFileSync(binary)).toEqual(signedBytes)
+    }
+    finally { rmSync(dir, { recursive: true, force: true }) }
+  })
+})
 
 describe('pkgxHasPrebuilt', () => {
   const realFetch = globalThis.fetch

@@ -32,6 +32,7 @@ import { basename, dirname, join, relative } from 'node:path'
 import { parseArgs } from 'node:util'
 import { createObjectStorageClient } from '@stacksjs/ts-cloud'
 import { reportBuild, reportBuildLog } from './report-build'
+import { fixElfRpaths } from './fix-up'
 import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
 import { BINARY_SYNC_DOMAIN_SET } from './binary-sync-packages.ts'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
@@ -1800,6 +1801,7 @@ async function tryPkgxMirror(domain: string, version: string, platform: string, 
   }
   // Only NOW, with the download confirmed, is "mirroring from pkgx" truthful.
   reportBuild(domain, version, platform, 'building', { message: `mirroring ${version} from pkgx on ${platform}` })
+  let versionDir: string
   try {
     execSync(`rm -rf "${ex}" && mkdir -p "${ex}" && tar -xJf "${dl}" -C "${ex}"`, { stdio: 'pipe' })
     let prefixRoot = join(ex, domain, `v${version}`)
@@ -1813,8 +1815,7 @@ async function tryPkgxMirror(domain: string, version: string, platform: string, 
     if (!existsSync(prefixRoot))
       return false
     execSync(`rm -rf "${installDir}" && mkdir -p "${installDir}" && cp -a "${prefixRoot}/." "${installDir}/"`, { stdio: 'pipe' })
-    relocateMirroredPaths(installDir, domain, basename(prefixRoot))
-    return true
+    versionDir = basename(prefixRoot)
   }
   catch {
     return false
@@ -1823,6 +1824,14 @@ async function tryPkgxMirror(domain: string, version: string, platform: string, 
     try { execSync(`rm -rf "${dl}" "${ex}"`, { stdio: 'pipe' }) }
     catch { /* best-effort cleanup */ }
   }
+  normalizeMirroredArtifact(installDir, domain, versionDir, platform)
+  return true
+}
+
+/** Target-aware publication normalization, without altering signed Mach-O apps. */
+export function normalizeMirroredArtifact(installDir: string, domain: string, versionDir: string, platform: string, patchelf = 'patchelf'): void {
+  relocateMirroredPaths(installDir, domain, versionDir)
+  if (platform.startsWith('linux-')) fixElfRpaths(installDir, patchelf)
 }
 
 /**

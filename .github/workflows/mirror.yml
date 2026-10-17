@@ -146,6 +146,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
+      - name: Install Linux artifact normalizer
+        if: startsWith(matrix.name, 'linux-')
+        uses: ./packages/action
+        with:
+          packages: nixos.org/patchelf@0.18.0
+          install: 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Install dependencies
         run: bun install
 
@@ -228,6 +237,15 @@ jobs:
         uses: ./packages/action
         env:
           GH_TOKEN: ${{ github.token }}
+      - name: Install Linux artifact normalizer
+        if: startsWith(matrix.name, 'linux-')
+        uses: ./packages/action
+        with:
+          packages: nixos.org/patchelf@0.18.0
+          install: 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Install dependencies
         run: bun install
       - name: Build download recipes

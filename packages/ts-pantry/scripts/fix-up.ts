@@ -7,9 +7,9 @@
  * Ensures built binaries work when installed to any prefix.
  */
 
-import { existsSync, readdirSync, readFileSync, writeFileSync, unlinkSync, renameSync, mkdirSync, symlinkSync, statSync, lstatSync, realpathSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, writeFileSync, unlinkSync, renameSync, mkdirSync, symlinkSync, statSync, lstatSync, realpathSync, openSync, readSync, closeSync } from 'node:fs'
 import { execFileSync, execSync } from 'node:child_process'
-import { join, relative, dirname, extname, basename } from 'node:path'
+import { join, relative, dirname, extname, basename, sep } from 'node:path'
 
 /**
  * Run all post-build fix-ups on a package prefix
@@ -275,68 +275,63 @@ catch {
   }
 }
 
-/**
- * Fix Linux ELF binaries using patchelf
- * Enhanced with brewkit's fix-elf.ts patterns:
- * - Uses --force-rpath (RPATH not RUNPATH, so LD_LIBRARY_PATH takes precedence)
- * - Preserves existing $ORIGIN-relative rpaths and merges with new ones
- * - Skips script files (.py, .pyc, .pl, .sh)
- */
-function fixElfRpaths(prefix: string): void {
-  console.log('  Fixing ELF rpaths...')
-
-  // Check if patchelf is available
-  try {
-    execSync('which patchelf', { stdio: 'pipe' })
-  }
-catch {
-    console.log('  patchelf not found, skipping ELF rpath fixing')
-    return
-  }
-
-  const skipExts = new Set(['.py', '.pyc', '.pl', '.sh', '.rb', '.js', '.ts'])
-
-  const dirs = ['bin', 'sbin', 'lib', 'libexec'].filter(d => existsSync(join(prefix, d)))
-
+/** Normalize dynamic ELF loader paths before an artifact is published. */
+export function fixElfRpaths(prefix: string, patchelf = 'patchelf'): void {
+  const dirs = ['bin', 'sbin', 'lib', 'lib64', 'libexec'].filter(dir => existsSync(join(prefix, dir)) && lstatSync(join(prefix, dir)).isDirectory())
   for (const dir of dirs) {
-    const dirPath = join(prefix, dir)
-    walkFiles(dirPath, (filePath) => {
-      // Skip script files early (performance, from brewkit)
-      if (skipExts.has(extname(filePath))) return
-      if (!isELF(filePath)) return
-
+    walkFiles(join(prefix, dir), (filePath) => {
+      if (!isDynamicElf(filePath)) return
       try {
-        // Check if dynamically linked
-        const fileOutput = execSync(`file --mime-type "${filePath}"`, { encoding: 'utf-8' })
-        if (!fileOutput.includes('application/x-executable') &&
-            !fileOutput.includes('application/x-sharedlib') &&
-            !fileOutput.includes('application/x-pie-executable')) return
-
-        // Get existing rpaths and preserve $ORIGIN-relative ones (from brewkit)
-        let existingRpaths: string[] = []
-        try {
-          const rp = execFileSync('patchelf', ['--print-rpath', filePath], { encoding: 'utf-8' }).trim()
-          if (rp) existingRpaths = rp.split(':')
+        const existing = execFileSync(patchelf, ['--print-rpath', filePath], { encoding: 'utf8' }).trim().split(':')
+        const libraries = dir === 'lib64' ? ['lib64', 'lib'] : ['lib', 'lib64']
+        const paths = new Set(libraries.filter(lib => existsSync(join(prefix, lib))).map((lib) => {
+          const up = relative(dirname(filePath), join(prefix, lib)).split(sep).join('/')
+          return up ? `$ORIGIN/${up}` : '$ORIGIN'
+        }))
+        // The package's own libraries must precede dependency and host paths.
+        for (const path of existing) {
+          if (/^\$(?:ORIGIN|\{ORIGIN\})(?:\/|$)/.test(path)) paths.add(path)
         }
-catch { /* no rpath */ }
-
-        // Build merged rpath: our relative path + existing $ORIGIN paths
-        const relRpath = dir === 'lib' ? '$ORIGIN' : '$ORIGIN/../lib'
-        const rpathSet = new Set([relRpath])
-        for (const rp of existingRpaths) {
-          if (rp.startsWith('$ORIGIN')) rpathSet.add(rp)
-          // Skip absolute paths (build-time artifacts)
-        }
-        const mergedRpath = [...rpathSet].join(':')
-
-        // Use --force-rpath: sets RPATH (not RUNPATH) — LD_LIBRARY_PATH takes precedence (brewkit)
-        applyElfRpath(filePath, mergedRpath)
+        const expected = [...paths].join(':')
+        applyElfRpath(filePath, expected, patchelf)
+        if (execFileSync(patchelf, ['--print-rpath', filePath], { encoding: 'utf8' }).trim() !== expected)
+          throw new Error('rewritten loader path did not match')
       }
-catch {
-        // Not an ELF or patchelf failed, skip
+      catch (cause) {
+        throw new Error(`Cannot normalize ELF loader paths for ${filePath}; a working patchelf is required before publication`, { cause })
       }
     })
   }
+}
+
+/** Read only ELF headers; static executables and object files need no rewrite. */
+function isDynamicElf(filePath: string): boolean {
+  const file = openSync(filePath, 'r')
+  try {
+    const header = new Uint8Array(64)
+    const length = readSync(file, header, 0, header.length, 0)
+    if (length < 4 || header[0] !== 0x7f || header[1] !== 0x45 || header[2] !== 0x4c || header[3] !== 0x46) return false
+    const bits = header[4]
+    if ((bits !== 1 && bits !== 2) || (header[5] !== 1 && header[5] !== 2) || length < (bits === 2 ? 64 : 52))
+      throw new Error(`Invalid ELF header in ${filePath}`)
+    const view = new DataView(header.buffer)
+    const little = header[5] === 1
+    if (![2, 3].includes(view.getUint16(16, little))) return false
+    const offset = bits === 2 ? Number(view.getBigUint64(32, little)) : view.getUint32(28, little)
+    const size = view.getUint16(bits === 2 ? 54 : 42, little)
+    const count = view.getUint16(bits === 2 ? 56 : 44, little)
+    if (count === 0) return false
+    if (!Number.isSafeInteger(offset) || offset < (bits === 2 ? 64 : 52) || size < (bits === 2 ? 56 : 32) || count === 0xffff || offset + size * count > statSync(filePath).size)
+      throw new Error(`Invalid ELF program headers in ${filePath}`)
+    const type = new Uint8Array(4)
+    for (let index = 0; index < count; index++) {
+      if (readSync(file, type, 0, 4, offset + index * size) !== 4)
+        throw new Error(`Truncated ELF program header in ${filePath}`)
+      if (new DataView(type.buffer).getUint32(0, little) === 2) return true
+    }
+    return false
+  }
+  finally { closeSync(file) }
 }
 
 export function applyElfRpath(filePath: string, rpath: string, patchelf = 'patchelf'): void {
@@ -673,31 +668,6 @@ function isMachO(filePath: string): boolean {
     return magic === 0xfeedface || magic === 0xfeedfacf
       || magic === 0xcafebabe || magic === 0xbebafeca
       || magic === 0xcffaedfe || magic === 0xcefaedfe
-  }
-  catch {
-    return false
-  }
-  finally {
-    if (file !== undefined) {
-      try { require('node:fs').closeSync(file) } catch { /* already closed */ }
-    }
-  }
-}
-
-/**
- * Check if a file is an ELF binary
- */
-function isELF(filePath: string): boolean {
-  let file: number | undefined
-  try {
-    const buffer = new Uint8Array(4)
-    file = require('node:fs').openSync(filePath, 'r')
-    require('node:fs').readSync(file, buffer, 0, 4, 0)
-    require('node:fs').closeSync(file)
-    file = undefined
-
-    // ELF magic: 7f454c46 (.ELF)
-    return buffer[0] === 0x7f && buffer[1] === 0x45 && buffer[2] === 0x4c && buffer[3] === 0x46
   }
   catch {
     return false
