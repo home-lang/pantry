@@ -32,7 +32,7 @@ import { basename, dirname, join, relative } from 'node:path'
 import { parseArgs } from 'node:util'
 import { createObjectStorageClient } from '@stacksjs/ts-cloud'
 import { reportBuild, reportBuildLog } from './report-build'
-import { fixElfRpaths } from './fix-up'
+import { fixElfRpaths, fixUp } from './fix-up'
 import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
 import { BINARY_SYNC_DOMAIN_SET } from './binary-sync-packages.ts'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
@@ -1754,6 +1754,14 @@ export function applyVersionPins<T extends { domain: string, name: string, versi
   return { ...pkg, versions: [...pinned], latestVersion: pinned[0] }
 }
 
+/** Keep exact version intent when handing selected packages to another runner. */
+export function selectedPackageSelectors(packages: { domain: string, name: string }[], requested: RequestedPackages | null): string[] {
+  return packages.flatMap((pkg) => {
+    const pins = requested?.pins.get(pkg.domain) ?? requested?.pins.get(pkg.name)
+    return pins?.length ? pins.map(version => `${pkg.domain}@${version}`) : [pkg.domain]
+  })
+}
+
 // Is this exact artifact already on pkgx? A HEAD, so we never pull the body.
 //
 // Deliberately fail-CLOSED: anything other than a confirmed 200 — a 404, a
@@ -2060,7 +2068,7 @@ else {
   // A CUSTOM build compiles from source, which can't cross-compile. On a foreign
   // target (e.g. mirroring darwin from a Linux runner) skip it — it's built on its
   // own native runner. Without this it would fall through to a doomed source build.
-  if (PKGX_MIRROR_MODE && BUILD_IS_FOREIGN && CUSTOM_BUILD_DOMAINS.has(domain)) {
+  if (PKGX_MIRROR_MODE && BUILD_IS_FOREIGN && (CUSTOM_BUILD_DOMAINS.has(domain) || (platform.startsWith('darwin-') && !pkg.isDownloadRecipe))) {
     console.log(`   ⏭️  ${domain} is a custom source build; can't cross-compile for ${platform}, skipping (native runner builds it)`)
     return { status: 'skipped' }
   }
@@ -2081,6 +2089,9 @@ else {
       // doesn't host (our apps/deps, source builds) are never mislabeled as mirrored.
       // eslint-disable-next-line no-await-in-loop
       if (await timePhase(phases, 'mirror', () => tryPkgxMirror(domain, candidateVersion, platform, installDir, buildkitRoot))) {
+        const { downloadRuntimePackages } = await import('./build-package')
+        const runtime = await downloadRuntimePackages(domain, platform, depsDir, bucket, region)
+        await fixUp(installDir, platform, [], runtime)
         usedVersion = candidateVersion
         mirrored = true
         console.log(`   ⬇️  Mirrored ${domain}@${candidateVersion} from pkgx (${platform}) — no source build`)
@@ -3083,7 +3094,7 @@ Options:
       }
       selected = kept
     }
-    console.log(selected.map(p => p.domain).join(' '))
+    console.log(selectedPackageSelectors(selected, requested).join(' '))
     process.exit(0)
   }
 

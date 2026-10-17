@@ -1142,6 +1142,22 @@ export async function resolveBuildDependencyGraph(
   return graph
 }
 
+/** Mirrored binaries must satisfy the same declared runtime closure as source builds. */
+export async function downloadRuntimePackages(domain: string, platform: string, depsDir: string, bucket: string, region: string): Promise<RuntimePackage[]> {
+  const { loadRecipe } = await import('./recipe-loader')
+  const loaded = await loadRecipe(domain, platform)
+  const runtime = extractYamlDeps(loaded.recipe.dependencies, platform)
+  const declared = new Map(runtime.map(dependency => [parseDep(dependency), dependency]))
+  const graph = await resolveBuildDependencyGraph(declared, platform, async child => (await loadRecipe(child, platform)).recipe)
+  const paths = await downloadDependencies([...graph.values()], depsDir, platform, bucket, region)
+  return [...graph.keys()].map((child) => {
+    const prefix = paths[`deps.${child}.prefix`]
+    const version = paths[`deps.${child}.version`]
+    if (!prefix || !version) throw new Error(`Unresolved declared runtime package: ${child}`)
+    return { domain: child, version, prefix }
+  })
+}
+
 async function buildPackage(options: BuildOptions): Promise<void> {
   const { package: pkgName, version, platform, buildDir, prefix, depsDir, bucket, region } = options
   const [os, arch] = platform.split('-')

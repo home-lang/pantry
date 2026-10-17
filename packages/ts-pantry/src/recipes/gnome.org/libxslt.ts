@@ -17,11 +17,11 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   dependencies: {
-    'gnome.org/libxml2': '*', // varies by version :(
+    // Match the library used to compile the current libxslt ABI.
+    'gnome.org/libxml2': '~2.15.1',
   },
   buildDependencies: {
     'gnu.org/patch': '*',
-    'gnome.org/libxml2': '~2.15.1', // since 1.1.45
   },
   propsDir: '../props/gnome.org/libxslt',
 

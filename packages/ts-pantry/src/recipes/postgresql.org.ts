@@ -24,7 +24,9 @@ export const recipe: Recipe = {
     'gnu.org/readline': '*',
     'zlib.net': '*',
     'lz4.org': '*',
-    'gnome.org/libxml2': '~2.13',
+    // PostgreSQL 17.6+ supports libxml2 2.14+; compile against the same
+    // explicit library series as libxslt instead of loading two XML ABIs.
+    'gnome.org/libxml2': '~2.15.1',
     'gnome.org/libxslt': '*',
     'unicode.org': '^73',
   },

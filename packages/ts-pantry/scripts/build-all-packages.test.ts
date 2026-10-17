@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { applyVersionPins, assignStripe, selectRecentVersions, isAppRecipePath, isPublishedArtifactRecord, isSourceUnavailableError, scriptCompiles, matchesRequestedPackage, parseRequestedPackages, pkgxHasPrebuilt, relocateMirroredPaths, normalizeMirroredArtifact, summariseTimings, type PackageTiming } from './build-all-packages'
+import { selectedPackageSelectors, applyVersionPins, assignStripe, selectRecentVersions, isAppRecipePath, isPublishedArtifactRecord, isSourceUnavailableError, scriptCompiles, matchesRequestedPackage, parseRequestedPackages, pkgxHasPrebuilt, relocateMirroredPaths, normalizeMirroredArtifact, summariseTimings, type PackageTiming } from './build-all-packages'
 
 describe('mirrored artifact publication normalization', () => {
   test('Linux artifacts require ELF normalization even on a foreign build host', () => {
@@ -513,4 +513,14 @@ describe('exact version-pinned publication scope', () => {
 
 test('an incomplete version pin cannot silently become a broad latest-family rebuild', () => {
   expect(() => parseRequestedPackages('postgresql.org@')).toThrow('needs a version')
+})
+
+test('native runner selection preserves exact versions through the CLI handoff', () => {
+  const input = 'postgresql.org@17.10,postgresql.org/libpq@18.0.0'
+  const child = Bun.spawnSync(['bun', 'scripts/build-all-packages.ts', '--platform', 'darwin-arm64', '-p', input, '--source-only', '--print-selected'], { cwd: import.meta.dir + '/..', stdout: 'pipe', stderr: 'pipe' })
+  expect(child.exitCode, child.stderr.toString()).toBe(0)
+  const emitted = parseRequestedPackages(child.stdout.toString().trim().replace(/ +/g, ','))
+  expect(emitted.pins.get('postgresql.org')).toEqual(['17.10'])
+  expect(emitted.pins.get('postgresql.org/libpq')).toEqual(['18.0.0'])
+  expect(selectedPackageSelectors([{ domain: 'postgresql.org', name: 'postgresql' }], parseRequestedPackages('postgresql@17.10,postgresql@16.9'))).toEqual(['postgresql.org@17.10', 'postgresql.org@16.9'])
 })

@@ -163,15 +163,10 @@ jobs:
           DOMAINS="${{ steps.detect.outputs.domains }}"
           if [ -z "$DOMAINS" ]; then echo "domains=" >> "$GITHUB_OUTPUT"; exit 0; fi
           PKGS=$(echo "$DOMAINS" | tr ' ' ',')
-          # --exclude-pkgx-covered drops any domain whose every selected
-          # version pkgx already ships for darwin — the ubuntu mirror leg
-          # publishes those, so a Mac would only duplicate it. (cmake.org did
-          # exactly that: both legs uploaded the identical 4.4.3, 4.3.5 and
-          # 4.2.8 artifacts, and the Mac added nothing.) The probe fails
-          # CLOSED, so an unreachable dist.pkgx.dev costs a redundant runner
-          # rather than a silently missing darwin artifact.
+          # Native library normalization needs Mach-O tooling even when an
+          # upstream prebuilt exists. Preserve exact versions in this handoff.
           NATIVE=$(bun scripts/build-all-packages.ts \
-            --platform darwin-arm64 -p "$PKGS" --source-only --print-selected --exclude-pkgx-covered 2>/dev/null | tr -s ' ' | sed 's/^ *//; s/ *$//')
+            --platform darwin-arm64 -p "$PKGS" --source-only --print-selected 2>/dev/null | tr -s ' ' | sed 's/^ *//; s/ *$//')
           echo "darwin-native (need a real Mac): ${NATIVE:-<none>}"
           echo "domains=$NATIVE" >> "$GITHUB_OUTPUT"
 
