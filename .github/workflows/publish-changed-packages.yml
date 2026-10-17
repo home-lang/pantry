@@ -162,6 +162,7 @@ jobs:
       # linux). Empty ⇒ the darwin-native macOS job is skipped, so no Mac runner
       # is allocated for the common case (pure pkgx/download updates).
       - name: Determine darwin-native domains
+        if: inputs.platform != 'linux'
         id: darwin
         working-directory: packages/ts-pantry
         shell: bash
@@ -172,7 +173,7 @@ jobs:
           # Native library normalization needs Mach-O tooling even when an
           # upstream prebuilt exists. Preserve exact versions in this handoff.
           NATIVE=$(bun scripts/build-all-packages.ts \
-            --platform darwin-arm64 -p "$PKGS" --source-only --print-selected 2>/dev/null | tr -s ' ' | sed 's/^ *//; s/ *$//')
+            --platform darwin-arm64 -p "$PKGS" --source-only --print-selected | tr -s ' ' | sed 's/^ *//; s/ *$//')
           echo "darwin-native (need a real Mac): ${NATIVE:-<none>}"
           echo "domains=$NATIVE" >> "$GITHUB_OUTPUT"
 

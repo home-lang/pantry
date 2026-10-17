@@ -699,9 +699,9 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'facebook.com/edencommon': ['<2026.2.16.0'],
   // mvfst fails on both platforms (fizz API mismatch); needs version-matched deps
   'facebook.com/mvfst': ['*'],
-  // harfbuzz — FIXED via PYTHONPATH override for giscanner on linux
-  // Keep <12.0.0 for old versions that fail for other reasons
-  'harfbuzz.org': ['<12.0.0'],
+  // The managed JDK requires HarfBuzz 8.5. Its source recipe uses ICU 71
+  // and disables unused introspection; keep other unverified old releases gated.
+  'harfbuzz.org': ['<8.5.0', '>8.5.0 <12.0.0'],
   // glib fails on both platforms (darwin build errors, linux msgfmt/libxml2); 2.88.0+ works
   'gnome.org/glib': ['<2.88.0'],
   // dozzle old versions fail; 10.0.4+ works on both
