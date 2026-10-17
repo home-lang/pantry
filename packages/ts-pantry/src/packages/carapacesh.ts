@@ -3,7 +3,7 @@
  *
  * @domain `carapace.sh`
  * @programs `carapace`
- * @version `1.8.0` (57 versions available)
+ * @version `1.8.1` (58 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install carapace.sh`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "carapace"
  * console.log(pkg.description) // "Multi-shell multi-command argument completer"
  * console.log(pkg.programs)    // ["carapace"]
- * console.log(pkg.versions[0]) // "1.8.0" (latest)
+ * console.log(pkg.versions[0]) // "1.8.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/carapace-sh.md
@@ -67,6 +67,7 @@ export const carapaceshPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.8.1',
     '1.8.0',
     '1.7.3',
     '1.7.2',
