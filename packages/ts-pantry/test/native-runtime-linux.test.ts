@@ -24,6 +24,8 @@ test.skipIf(process.platform !== 'linux')('native runtime closure survives fresh
     writeFileSync(join(first, 'lib/runtime-data/init.txt'), 'required library data\n')
     writeFileSync(join(second, 'COPYING'), 'Second fixture license\n')
     symlinkSync('.', join(first, 'lib', 'directory-loop'))
+    mkdirSync(join(first, 'lib/environment.d'))
+    symlinkSync('../../etc/environment.d/99-environment.conf', join(first, 'lib/environment.d/99-environment.conf'))
     writeFileSync(join(root, 'second.c'), 'int second(void) { return 41; }')
     writeFileSync(join(root, 'first.c'), 'extern int second(void); int first(void) { return second() + 1; }')
     writeFileSync(join(root, 'api.c'), 'extern int first(void); int value(void) { return first(); }')

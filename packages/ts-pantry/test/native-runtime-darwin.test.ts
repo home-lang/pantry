@@ -23,6 +23,8 @@ test.skipIf(process.platform !== 'darwin')('Mach-O publication uses only declare
     writeFileSync(join(first, 'lib/runtime-data/init.txt'), 'required library data\n')
     writeFileSync(join(second, 'COPYING'), 'Second fixture license\n')
     symlinkSync('.', join(first, 'lib', 'directory-loop'))
+    mkdirSync(join(first, 'lib/environment.d'))
+    symlinkSync('../../etc/environment.d/99-environment.conf', join(first, 'lib/environment.d/99-environment.conf'))
     writeFileSync(join(root, 'second.c'), 'int second(void) { return 41; }')
     writeFileSync(join(root, 'first.c'), 'extern int second(void); int first(void) { return second() + 1; }')
     writeFileSync(join(root, 'main.c'), '#include <stdio.h>\nextern int first(void); int main(void) { printf("%d\\n", first()); return 0; }')

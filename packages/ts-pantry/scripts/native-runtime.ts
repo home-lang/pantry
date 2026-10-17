@@ -74,7 +74,19 @@ function walk(directory: string, visit: (file: string) => void): void {
     if (entry.name.endsWith('.app')) continue
     const path = join(directory, entry.name)
     if (entry.isDirectory()) walk(path, visit)
-    else if (entry.isFile() || (entry.isSymbolicLink() && statSync(path).isFile())) visit(path)
+    else if (entry.isFile()) visit(path)
+    else if (entry.isSymbolicLink()) {
+      let target: ReturnType<typeof statSync>
+      try { target = statSync(path) }
+      catch (error) {
+        // Configuration links may name files created only on an installed host.
+        // Index available providers; a missing DT_NEEDED library still fails
+        // resolution below, and explicitly declared resources remain strict.
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+        continue
+      }
+      if (target.isFile()) visit(path)
+    }
   }
 }
 
