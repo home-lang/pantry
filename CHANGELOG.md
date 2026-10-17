@@ -1,3 +1,23 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.88...v0.11.89)
+
+## 🐛 Bug Fixes
+
+- **publisher**: normalize Darwin artifacts on native macOS ([9c671dd](https://github.com/pantry-pm/pantry/commit/9c671dd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **curl**: share the complete OpenSSL 3 recipe across domains ([0638ae3](https://github.com/pantry-pm/pantry/commit/0638ae3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.89 ([bd9c75c](https://github.com/pantry-pm/pantry/commit/bd9c75c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update mise.jdx.dev, tox.wiki, virtualenv.pypa.io ([9b8917f](https://github.com/pantry-pm/pantry/commit/9b8917f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' into codex/craft-zig-publication ([4d8cd74](https://github.com/pantry-pm/pantry/commit/4d8cd74)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.87...v0.11.88)
 
 ## ✨ Features
