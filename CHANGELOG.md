@@ -1,3 +1,39 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.90...v0.11.91)
+
+## ✨ Features
+
+- **mysql**: retain native MySQL 8.4 LTS distributions ([5989894](https://github.com/pantry-pm/pantry/commit/5989894)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **mysql**: package official native MySQL 26.7 distributions ([0f8d444](https://github.com/pantry-pm/pantry/commit/0f8d444)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: resolve distribution URLs for native platforms ([124c1a3](https://github.com/pantry-pm/pantry/commit/124c1a3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **mysql**: select the verified 8.4 LTS publication family ([50e6171](https://github.com/pantry-pm/pantry/commit/50e6171)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **webp**: build and verify the advertised native viewer ([1b92278](https://github.com/pantry-pm/pantry/commit/1b92278)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **types**: describe normalized recipe program declarations ([9348fef](https://github.com/pantry-pm/pantry/commit/9348fef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **installer**: accept certificate-only package prefixes ([5e5f224](https://github.com/pantry-pm/pantry/commit/5e5f224)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **catalog**: synchronize supported tools from their native recipes ([fb77775](https://github.com/pantry-pm/pantry/commit/fb77775)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: preserve program declarations when normalizing recipes ([7aae878](https://github.com/pantry-pm/pantry/commit/7aae878)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **mysql**: select supported calendar releases for publication ([e89322f](https://github.com/pantry-pm/pantry/commit/e89322f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **publisher**: provision the native xz archive decoder ([527f917](https://github.com/pantry-pm/pantry/commit/527f917)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **mysql**: exercise native and legacy recipe branches explicitly ([b7e51c5](https://github.com/pantry-pm/pantry/commit/b7e51c5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 💚 Continuous Integration
+
+- verify the published Pantry 0.11.90 runtime ([05d959f](https://github.com/pantry-pm/pantry/commit/05d959f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.91 ([f1e262f](https://github.com/pantry-pm/pantry/commit/f1e262f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update curl.se/ssl3, github.com/ggerganov/llama.cpp ([9714950](https://github.com/pantry-pm/pantry/commit/9714950)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.89...v0.11.90)
 
 ## 🐛 Bug Fixes

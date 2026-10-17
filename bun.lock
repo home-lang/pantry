@@ -16,7 +16,7 @@
     },
     "packages/action": {
       "name": "pantry-setup",
-      "version": "0.11.90",
+      "version": "0.11.91",
       "dependencies": {
         "@actions/cache": "^6.0.0",
         "@actions/core": "^1.11.1",
@@ -31,14 +31,14 @@
     },
     "packages/benchmark": {
       "name": "@pantry/benchmark",
-      "version": "0.11.90",
+      "version": "0.11.91",
       "devDependencies": {
         "mitata": "^1.0.34",
       },
     },
     "packages/inspector": {
       "name": "@stacksjs/pantry-inspector",
-      "version": "0.11.90",
+      "version": "0.11.91",
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "^7.0.2",
@@ -46,7 +46,7 @@
     },
     "packages/registry": {
       "name": "@stacksjs/registry",
-      "version": "0.11.90",
+      "version": "0.11.91",
       "dependencies": {
         "@stacksjs/stx": "^0.2.82",
         "@ts-charts/array": "^0.2.0",
@@ -64,7 +64,7 @@
     },
     "packages/ts-pantry": {
       "name": "ts-pantry",
-      "version": "0.11.90",
+      "version": "0.11.91",
       "bin": {
         "ts-pantry": "./dist/bin/cli.js",
       },
