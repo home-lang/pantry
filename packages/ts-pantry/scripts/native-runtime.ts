@@ -1,14 +1,72 @@
 import { chmodSync, copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { basename, dirname, join, relative, sep } from 'node:path'
+import { basename, dirname, isAbsolute, join, relative, sep } from 'node:path'
 
-export interface RuntimePackage { domain: string, version: string, prefix: string }
-export interface RuntimeLibraryReceipt { name: string, domain: string, version: string, source: string, sourceSha256: string, licenseFiles: string[] }
+export interface RuntimePackage { domain: string, version: string, prefix: string, resources?: string[] }
+export interface RuntimeResourceReceipt { path: string, sha256: string }
+export interface RuntimeLibraryReceipt { name: string, domain: string, version: string, source: string, sourceSha256: string, licenseFiles: string[], resources?: RuntimeResourceReceipt[] }
 
 const linuxStandardLibraries = /^(?:lib(?:c|m|dl|pthread|rt|resolv|util|anl)\.so\.[0-9]+|libstdc\+\+\.so\.6|libgcc_s\.so\.1|ld-linux[^/]*\.so\.[0-9]+|ld-musl[^/]*\.so\.[0-9]+)$/
 const hash = (file: string) => createHash('sha256').update(readFileSync(file)).digest('hex')
 const inside = (root: string, path: string) => path === root || path.startsWith(root + sep)
+
+/** Preserve recipe-owned library data at the same relative path in its new artifact. */
+export function copyRuntimeResources(prefix: string, dependency: RuntimePackage): RuntimeResourceReceipt[] {
+  const root = realpathSync(prefix)
+  const owner = realpathSync(dependency.prefix)
+  const receipts: RuntimeResourceReceipt[] = []
+  const parents = (directory: string): void => {
+    if (!inside(root, directory)) throw new Error('Runtime resource destination escapes artifact')
+    if (directory === root) return
+    parents(dirname(directory))
+    const entry = lstatMaybe(directory)
+    if (entry) {
+      if (entry.isSymbolicLink() || !entry.isDirectory()) throw new Error(`Unsafe runtime resource destination: ${directory}`)
+    }
+    else mkdirSync(directory)
+  }
+  const copy = (source: string, destination: string, ancestors: Set<string>): void => {
+    const actual = realpathSync(source)
+    if (!inside(owner, actual)) throw new Error(`Runtime resource escapes declared package ${dependency.domain}: ${source}`)
+    const stat = statSync(actual)
+    if (stat.isDirectory()) {
+      if (ancestors.has(actual)) throw new Error(`Cyclic runtime resource: ${source}`)
+      parents(destination)
+      const next = new Set([...ancestors, actual])
+      for (const name of readdirSync(actual).sort()) copy(join(actual, name), join(destination, name), next)
+    }
+    else if (stat.isFile()) {
+      parents(dirname(destination))
+      const sha256 = hash(actual)
+      const entry = lstatMaybe(destination)
+      if (entry) {
+        if (entry.isSymbolicLink() || !entry.isFile() || hash(destination) !== sha256)
+          throw new Error(`Conflicting runtime resource: ${relative(root, destination)}`)
+      }
+      else {
+        copyFileSync(actual, destination)
+        chmodSync(destination, stat.mode & 0o777)
+      }
+      receipts.push({ path: relative(root, destination).split(sep).join('/'), sha256 })
+    }
+    else throw new Error(`Unsupported runtime resource: ${source}`)
+  }
+  for (const resource of dependency.resources ?? []) {
+    if (!resource || isAbsolute(resource) || resource.includes('\\') || resource.split('/').some(part => !part || part === '.' || part === '..'))
+      throw new Error(`Invalid runtime resource path: ${resource}`)
+    copy(join(owner, resource), join(root, resource), new Set())
+  }
+  return receipts
+}
+
+function lstatMaybe(path: string): ReturnType<typeof lstatSync> | undefined {
+  try { return lstatSync(path) }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined
+    throw error
+  }
+}
 
 function walk(directory: string, visit: (file: string) => void): void {
   if (!existsSync(directory) || lstatSync(directory).isSymbolicLink()) return
@@ -51,6 +109,7 @@ export function bundleRuntimeLibraries(
   const queue: string[] = []
   const receipts: RuntimeLibraryReceipt[] = []
   const licenses = new Map<string, string[]>()
+  const resources = new Map<string, RuntimeResourceReceipt[]>()
   const register = (directory: string, dependency?: RuntimePackage): void => {
     const owner = realpathSync(directory)
     const manifest = join(owner, 'share/pantry/runtime-libraries.json')
@@ -115,7 +174,8 @@ export function bundleRuntimeLibraries(
         if (selected.dependency) {
           const identity = `${selected.dependency.domain}@${selected.dependency.version}`
           if (!licenses.has(identity)) licenses.set(identity, preserveLicenses(root, selected.dependency))
-          receipts.push({ name, domain: selected.dependency.domain, version: selected.dependency.version, source: relative(realpathSync(selected.dependency.prefix), selected.file).split(sep).join('/'), sourceSha256: hash(selected.file), licenseFiles: licenses.get(identity)! })
+          if (!resources.has(identity)) resources.set(identity, copyRuntimeResources(root, selected.dependency))
+          receipts.push({ name, domain: selected.dependency.domain, version: selected.dependency.version, source: relative(realpathSync(selected.dependency.prefix), selected.file).split(sep).join('/'), sourceSha256: hash(selected.file), licenseFiles: licenses.get(identity)!, resources: resources.get(identity)! })
         }
       }
       else if (!inside(root, realpathSync(destination))) throw new Error(`Bundled runtime library escapes artifact: ${name}`)

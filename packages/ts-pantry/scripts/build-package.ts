@@ -1293,12 +1293,21 @@ export async function downloadRuntimePackages(domain: string, version: string, p
   const declared = new Map(runtime.map(dependency => [parseDep(dependency), dependency]))
   const graph = await publishedDependencyGraph(declared, platform, bucket, region)
   const paths = await downloadDependencies([...graph.values()], depsDir, platform, bucket, region)
-  return [...graph.keys()].map((child) => {
+  const packages = [...graph.keys()].map((child) => {
     const prefix = paths[`deps.${child}.prefix`]
     const version = paths[`deps.${child}.version`]
     if (!prefix || !version) throw new Error(`Unresolved declared runtime package: ${child}`)
     return { domain: parseDep(child), version, prefix }
   })
+  return withRuntimeResources(packages, platform)
+}
+
+async function withRuntimeResources(packages: RuntimePackage[], platform: string): Promise<RuntimePackage[]> {
+  const { loadRecipe } = await import('./recipe-loader')
+  return Promise.all(packages.map(async (dependency) => {
+    const loaded = await loadRecipe(dependency.domain, platform, dependency.version)
+    return { ...dependency, resources: loaded.recipe.runtimeResources }
+  }))
 }
 
 async function buildPackage(options: BuildOptions): Promise<void> {
@@ -1392,7 +1401,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
       initial => publishedDependencyGraph(initial, platform, bucket, region),
       (graph, directory) => downloadDependencies([...graph.values()], directory, platform, bucket, region))
     depPaths = installed.depPaths
-    runtimePackages = installed.runtimePackages
+    runtimePackages = await withRuntimeResources(installed.runtimePackages, platform)
 
     console.log(`\nDownloaded ${Object.keys(depPaths).filter(k => k.endsWith('.prefix')).length} dependencies (including transitive)`)
   }

@@ -6,6 +6,10 @@ export const recipe: Recipe = {
   description: 'Tool Command Language',
   homepage: 'https://www.tcl-lang.org',
   programs: ['tclsh', 'wish'],
+  runtimeResources: (version: string): string[] => {
+    const series = version.split('.').slice(0, 2).join('.')
+    return [`lib/tcl${series}`, `lib/tk${series}`]
+  },
   dependencies: {
     'zlib.net': '^1',
     linux: { 'x.org/x11': '^1', 'x.org/exts': '^1', 'x.org/xft': '^2' },
