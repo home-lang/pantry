@@ -1,3 +1,92 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.87...v0.11.88)
+
+## ✨ Features
+
+- publish the managed AT-SPI client runtime for Chrome ([5cfde73](https://github.com/pantry-pm/pantry/commit/5cfde73)) _(by Chris <chrisbreuer93@gmail.com>)_
+- select native platforms for targeted package publication ([401ef25](https://github.com/pantry-pm/pantry/commit/401ef25)) _(by Chris <chrisbreuer93@gmail.com>)_
+- manage Chrome automation and its native runtimes in Pantry ([e533aba](https://github.com/pantry-pm/pantry/commit/e533aba)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- bundle curl dependencies through canonical runtime ownership ([d222640](https://github.com/pantry-pm/pantry/commit/d222640)) _(by Chris <chrisbreuer93@gmail.com>)_
+- honor every bound in native publication exclusions ([1a7ee5e](https://github.com/pantry-pm/pantry/commit/1a7ee5e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use the canonical Bun recipe in native build dependencies ([f1c08fa](https://github.com/pantry-pm/pantry/commit/f1c08fa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- declare the supported Bun baseline for accessibility builds ([d1d1f2c](https://github.com/pantry-pm/pantry/commit/d1d1f2c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- align generated native aliases with the registry API ([41f29b9](https://github.com/pantry-pm/pantry/commit/41f29b9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve internal identities in vendor runtime layouts ([cca3115](https://github.com/pantry-pm/pantry/commit/cca3115)) _(by Chris <chrisbreuer93@gmail.com>)_
+- separate action input parsing from action execution ([b492101](https://github.com/pantry-pm/pantry/commit/b492101)) _(by Chris <chrisbreuer93@gmail.com>)_
+- discover runtime libraries without requiring host configuration files ([213b17b](https://github.com/pantry-pm/pantry/commit/213b17b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- run custom runtime publishers on native hosts ([c896233](https://github.com/pantry-pm/pantry/commit/c896233)) _(by Chris <chrisbreuer93@gmail.com>)_
+- publish exact verified Java runtime versions ([d2544da](https://github.com/pantry-pm/pantry/commit/d2544da)) _(by Chris <chrisbreuer93@gmail.com>)_
+- publish the legacy ICU ABI required by managed HarfBuzz ([41d798d](https://github.com/pantry-pm/pantry/commit/41d798d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve declared data resources beside bundled native libraries ([777d4bf](https://github.com/pantry-pm/pantry/commit/777d4bf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- publish the managed JDK HarfBuzz runtime from source ([38c4320](https://github.com/pantry-pm/pantry/commit/38c4320)) _(by Chris <chrisbreuer93@gmail.com>)_
+- configure the native mpdecimal ABI for CPython on macOS ([eeb1eab](https://github.com/pantry-pm/pantry/commit/eeb1eab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- declare the Linux Python crypt runtime ([8bed3b5](https://github.com/pantry-pm/pantry/commit/8bed3b5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- build modern Python against managed native dependencies ([30f8606](https://github.com/pantry-pm/pantry/commit/30f8606)) _(by Chris <chrisbreuer93@gmail.com>)_
+- classify Mach-O runtime images before loader normalization ([b037903](https://github.com/pantry-pm/pantry/commit/b037903)) _(by Chris <chrisbreuer93@gmail.com>)_
+- retain exact architecture boundaries in native build metadata ([ebbb599](https://github.com/pantry-pm/pantry/commit/ebbb599)) _(by Chris <chrisbreuer93@gmail.com>)_
+- normalize read-only native artifacts with platform-correct build graphs ([5e234fb](https://github.com/pantry-pm/pantry/commit/5e234fb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- build matching Tcl and Tk runtime products from source ([cc6d7c5](https://github.com/pantry-pm/pantry/commit/cc6d7c5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve Python runtime closure and complete catalog regeneration ([9a9f40f](https://github.com/pantry-pm/pantry/commit/9a9f40f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- publish owned Kerberos libraries before bundling runtime ABIs ([61ad65f](https://github.com/pantry-pm/pantry/commit/61ad65f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- synchronize native runtime metadata and preserve Meson licensing ([5d206fb](https://github.com/pantry-pm/pantry/commit/5d206fb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- run Meson with its declared Pantry Python runtime ([76eea18](https://github.com/pantry-pm/pantry/commit/76eea18)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve exact OpenSSL letter release constraints ([099cb84](https://github.com/pantry-pm/pantry/commit/099cb84)) _(by Chris <chrisbreuer93@gmail.com>)_
+- order the selected native publication cohort by dependencies ([a221dfc](https://github.com/pantry-pm/pantry/commit/a221dfc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- order native publications and link declared runtimes ([19b6c3a](https://github.com/pantry-pm/pantry/commit/19b6c3a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- publish canonical X11 runtime dependency closures ([5f6f1d2](https://github.com/pantry-pm/pantry/commit/5f6f1d2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- honor managed compilers and current HarfBuzz runtime ABI ([9f14c24](https://github.com/pantry-pm/pantry/commit/9f14c24)) _(by Chris <chrisbreuer93@gmail.com>)_
+- validate program interfaces before binary ownership checks ([c05931b](https://github.com/pantry-pm/pantry/commit/c05931b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve FreeType runtime dependencies from declared packages ([8e4b207](https://github.com/pantry-pm/pantry/commit/8e4b207)) _(by Chris <chrisbreuer93@gmail.com>)_
+- publish complete client headers and sourceable interfaces ([a4a886e](https://github.com/pantry-pm/pantry/commit/a4a886e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve declared shell library source semantics ([0d4e38b](https://github.com/pantry-pm/pantry/commit/0d4e38b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve coexisting native ABIs and verify build archives ([2855051](https://github.com/pantry-pm/pantry/commit/2855051)) _(by Chris <chrisbreuer93@gmail.com>)_
+- publish libpq client products without PostgreSQL server tools ([355dce1](https://github.com/pantry-pm/pantry/commit/355dce1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- isolate build tool ABIs and verify bundled library provenance ([c367b7f](https://github.com/pantry-pm/pantry/commit/c367b7f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve published runtime ABIs and ignore directory links ([6effa3f](https://github.com/pantry-pm/pantry/commit/6effa3f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- retain historical package runtime ABI constraints ([2be013f](https://github.com/pantry-pm/pantry/commit/2be013f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- validate mirrored package runtime closures before publishing ([8f0aee1](https://github.com/pantry-pm/pantry/commit/8f0aee1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- keep native build toolchains managed by Pantry ([3e6456d](https://github.com/pantry-pm/pantry/commit/3e6456d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- publish declared native runtime library closures ([0a357ca](https://github.com/pantry-pm/pantry/commit/0a357ca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- search managed dependency libraries in mirrored ELF artifacts ([4e6c473](https://github.com/pantry-pm/pantry/commit/4e6c473)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve managed native build dependency graphs ([605adee](https://github.com/pantry-pm/pantry/commit/605adee)) _(by Chris <chrisbreuer93@gmail.com>)_
+- read tool versions independently of installation paths ([a1ea08a](https://github.com/pantry-pm/pantry/commit/a1ea08a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- reject incomplete pinned package selectors ([f1873e1](https://github.com/pantry-pm/pantry/commit/f1873e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- scope pinned artifact rebuilds to exact packages ([13dcbdb](https://github.com/pantry-pm/pantry/commit/13dcbdb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- require managed artifacts for all native build dependencies ([bb3ab07](https://github.com/pantry-pm/pantry/commit/bb3ab07)) _(by Chris <chrisbreuer93@gmail.com>)_
+- honor runtime dependency constraints in native builds ([c3845f3](https://github.com/pantry-pm/pantry/commit/c3845f3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- track native build revisions in linked Git worktrees ([44eaa58](https://github.com/pantry-pm/pantry/commit/44eaa58)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bootstrap companion runtimes before workspace completion ([bb3be80](https://github.com/pantry-pm/pantry/commit/bb3be80)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- use physical paths for relative Git worktree fixtures ([1ce64e4](https://github.com/pantry-pm/pantry/commit/1ce64e4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- retain rejection coverage for unpublished ICU versions ([0d40676](https://github.com/pantry-pm/pantry/commit/0d40676)) _(by Chris <chrisbreuer93@gmail.com>)_
+- retain strict selection across the current XML ABI ([e7a7045](https://github.com/pantry-pm/pantry/commit/e7a7045)) _(by Chris <chrisbreuer93@gmail.com>)_
+- verify managed Python builds preserve host packages ([243a94a](https://github.com/pantry-pm/pantry/commit/243a94a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 💚 Continuous Integration
+
+- manage native publication toolchains through Pantry ([95baae0](https://github.com/pantry-pm/pantry/commit/95baae0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.88 ([703c9ef](https://github.com/pantry-pm/pantry/commit/703c9ef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- integrate current first-party package catalog ([7eb1995](https://github.com/pantry-pm/pantry/commit/7eb1995)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update carapace.sh, chezmoi.io, craft-native.org, github.com/ggerganov/llama.cpp, ollama.ai, virtualenv.pypa.io ([f9ab5f9](https://github.com/pantry-pm/pantry/commit/f9ab5f9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.236 ([a8806ee](https://github.com/pantry-pm/pantry/commit/a8806ee)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- merge published Craft package metadata ([49067e2](https://github.com/pantry-pm/pantry/commit/49067e2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update craft-native.org to 0.0.235 ([030ee80](https://github.com/pantry-pm/pantry/commit/030ee80)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- merge upstream package catalog updates ([c0630d8](https://github.com/pantry-pm/pantry/commit/c0630d8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update github.com/ggerganov/llama.cpp, gnu.org/gettext, soldeer.xyz, starship.rs ([7ab9eaf](https://github.com/pantry-pm/pantry/commit/7ab9eaf)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.234 ([633f567](https://github.com/pantry-pm/pantry/commit/633f567)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update github.com/ggerganov/llama.cpp, openshift.com, plantuml.com ([7ac2b63](https://github.com/pantry-pm/pantry/commit/7ac2b63)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.86...v0.11.87)
 
 ## ✨ Features
