@@ -983,6 +983,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'golang.org/tools',
   'golangci-lint.run',
   'gomplate.ca',
+  'google.com/chrome',
   'google.com/double-conversion',
   'google.com/firebase-tools',
   'google.com/fullycapable',

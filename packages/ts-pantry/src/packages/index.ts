@@ -1011,6 +1011,7 @@ import { gohugoioPackage } from './gohugoio'
 import { golangorgtoolsPackage } from './golang.org/tools'
 import { golangcilintrunPackage } from './golangci-lintrun'
 import { gomplatecaPackage } from './gomplateca'
+import { googlecomchromePackage } from './google.com/chrome'
 import { googlecomdoubleconversionPackage } from './google.com/double-conversion'
 import { googlecomfirebasetoolsPackage } from './google.com/firebase-tools'
 import { googlecomfullycapablePackage } from './google.com/fullycapable'
@@ -3560,6 +3561,8 @@ export interface Pantry {
   golangci_lintrun: typeof golangcilintrunPackage
   golangcilintrun: typeof golangcilintrunPackage
   gomplateca: typeof gomplatecaPackage
+  chrome: typeof googlecomchromePackage
+  googlecomchrome: typeof googlecomchromePackage
   double_conversion: typeof googlecomdoubleconversionPackage
   googlecomdoubleconversion: typeof googlecomdoubleconversionPackage
   firebase_tools: typeof googlecomfirebasetoolsPackage
@@ -4845,6 +4848,7 @@ export interface Pantry {
   checkov: typeof checkovioPackage
   chezmoi: typeof chezmoiioPackage
   chomp: typeof chompbuildcomPackage
+  'chrome-for-testing': typeof googlecomchromePackage
   chromedriver: typeof chromedriverchromiumorgPackage
   'chruby-exec': typeof chrubyPackage
   cicada: typeof hugowangcicadaPackage
@@ -8228,6 +8232,8 @@ export const pantry: Pantry = {
   golangci_lintrun: golangcilintrunPackage,
   golangcilintrun: golangcilintrunPackage,
   gomplateca: gomplatecaPackage,
+  chrome: googlecomchromePackage,
+  googlecomchrome: googlecomchromePackage,
   double_conversion: googlecomdoubleconversionPackage,
   googlecomdoubleconversion: googlecomdoubleconversionPackage,
   firebase_tools: googlecomfirebasetoolsPackage,
@@ -9513,6 +9519,7 @@ export const pantry: Pantry = {
   checkov: checkovioPackage,
   chezmoi: chezmoiioPackage,
   chomp: chompbuildcomPackage,
+  'chrome-for-testing': googlecomchromePackage,
   chromedriver: chromedriverchromiumorgPackage,
   'chruby-exec': chrubyPackage,
   cicada: hugowangcicadaPackage,
