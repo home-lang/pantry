@@ -10,6 +10,7 @@ import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { generateBuildScript, getSkips, type PackageRecipe, type NormalizedRecipe, type RecipeScriptStep, type RecipeTest } from './buildkit.ts'
 import { fixUp } from './fix-up.ts'
+import type { RuntimePackage } from './native-runtime'
 import { reportBuild } from './report-build.ts'
 import { persistBuildDiagnostics, sanitizeBuildDiagnostic } from './build-diagnostics.ts'
 import { compareInstallerVersionsDesc, parseInstallerConstraint, satisfiesInstallerConstraint } from '../src/installer'
@@ -1220,6 +1221,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
   // Download dependencies from S3 if bucket is provided
   let depPaths: Record<string, string> = {}
+  let runtimePackages: RuntimePackage[] = []
   if (bucket && region && depsDir) {
     // Merge TS metadata deps + YAML deps (deduplicate by domain)
     // Filter out deps that were explicitly removed by modifyRecipe overrides
@@ -1228,6 +1230,14 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     const declared = collectBuildDependencies(pkg, yamlBuildDeps, yamlRuntimeDeps, removedDeps)
     const graph = await resolveBuildDependencyGraph(declared, platform, async (domain) => (await loadRecipe(domain, platform)).recipe)
     depPaths = await downloadDependencies([...graph.values()], depsDir, platform, bucket, region)
+    const runtimeDeclared = collectBuildDependencies({ dependencies: pkg.dependencies }, [], yamlRuntimeDeps, removedDeps)
+    const runtimeGraph = await resolveBuildDependencyGraph(runtimeDeclared, platform, async (domain) => (await loadRecipe(domain, platform)).recipe)
+    runtimePackages = [...runtimeGraph.keys()].map((domain) => {
+      const resolvedPrefix = depPaths[`deps.${domain}.prefix`]
+      const resolvedVersion = depPaths[`deps.${domain}.version`]
+      if (!resolvedPrefix || !resolvedVersion) throw new Error(`Unresolved declared runtime package: ${domain}`)
+      return { domain, version: resolvedVersion, prefix: resolvedPrefix }
+    })
 
     console.log(`\nDownloaded ${Object.keys(depPaths).filter(k => k.endsWith('.prefix')).length} dependencies (including transitive)`)
   }
@@ -1715,13 +1725,8 @@ else {
 
   // Post-build fix-ups for relocatable binaries
   console.log('\n🔧 Running post-build fix-ups...')
-  // Tell fixUp where this build's deps live so it can bundle @rpath dep dylibs
-  // (e.g. libxml2.16.dylib) that aren't under the default /tmp/buildkit-deps* or
-  // Homebrew. Without it, binaries built against the S3 deps reference an
-  // @rpath/<dep>.dylib that nothing on the target resolves.
-  if (depsDir) process.env.PANTRY_DEPS_DIR = depsDir
   const skips = getSkips(recipe as PackageRecipe)
-  await fixUp(prefix, platform, skips)
+  await fixUp(prefix, platform, skips, runtimePackages)
 
   console.log(`\n✅ Build completed successfully!`)
   console.log(`📁 Installed to: ${prefix}`)
