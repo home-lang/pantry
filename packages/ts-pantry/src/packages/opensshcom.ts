@@ -67,9 +67,9 @@ export const opensshcomPackage = {
   * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
   */
   dependencies: [
+    'openssl.org^3',
     'nlnetlabs.nl/ldns',
     'developers.yubico.com/libfido2',
-    'openssl.org^3',
     'kerberos.org',
     'thrysoee.dk/editline',
     'github.com/besser82/libxcrypt',
