@@ -1636,6 +1636,7 @@ const CUSTOM_BUILD_DOMAINS = new Set<string>([
   'mesonbuild.com', // use Pantry Python without pkgx changing the build environment
   'tcl-lang.org', // publish matching Tcl and Tk libraries from their sources
   'python.org', // compile extensions against the declared managed ABI, including Linux NIS
+  'openjdk.org', // exact Temurin release, checksum and runtime identity; never latest-per-major
 ])
 
 /**

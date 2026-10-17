@@ -3,14 +3,14 @@
  *
  * @domain `openjdk.org`
  * @programs `jar`, `jarsigner`, `java`, `javac`, `javadoc`, ... (+22 more)
- * @version `21.0.8.7` (9 versions available)
+ * @version `27.0.0.35` (127 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install openjdk.org`
  * @aliases `java`, `jdk`
  * @homepage https://openjdk.java.net/
- * @dependencies Linux runtime libraries; macOS JDK artifacts bundle their native libraries.
- * @buildDependencies None: the recipe repackages upstream JDK binaries.
+ * @dependencies `linux:giflib.sourceforge.io`, `linux:harfbuzz.org^8`, `linux:libjpeg-turbo.org`, ... (+17 more) (includes platform-specific dependencies)
+ * @buildDependencies `curl.se`, `gnu.org/coreutils`, `gnu.org/tar` - required only when building from source
  *
  * @example
  * ```typescript
@@ -24,7 +24,7 @@
  * console.log(pkg.name)        // "openjdk"
  * console.log(pkg.description) // "Development kit for the Java programming language"
  * console.log(pkg.programs)    // ["jar", "jarsigner", ...]
- * console.log(pkg.versions[0]) // "21.0.8.7" (latest)
+ * console.log(pkg.versions[0]) // "27.0.0.35" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/openjdk-org.md
@@ -89,10 +89,8 @@ export const javaPackage = {
   /**
   * Runtime dependencies for this package.
   * These are required when running the package.
-  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:freetype.org`).
   */
-  // The macOS JDK includes its own native libraries. Keep Linux runtime
-  // dependencies platform-scoped so they do not block a macOS install.
   dependencies: [
     'linux:giflib.sourceforge.io',
     'linux:harfbuzz.org^8',
@@ -118,23 +116,144 @@ export const javaPackage = {
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
-  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
   */
-  buildDependencies: [] as const,
+  buildDependencies: [
+    'curl.se',
+    'gnu.org/coreutils',
+    'gnu.org/tar',
+  ] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '27.0.0.35',
+    '26.0.2.10',
+    '26.0.2.1.1',
+    '26.0.1.8',
+    '26.0.0.35',
+    '25.0.4.7',
+    '25.0.4.1.1',
+    '25.0.3.9',
+    '25.0.2.10',
+    '25.0.1.8',
+    '25.0.0.36',
+    '24.0.2.12',
+    '24.0.1.9',
+    '24.0.0.36',
+    '23.0.2.7',
+    '23.0.1.11',
+    '23.0.0.37',
+    '22.0.2.9',
+    '22.0.1.8',
+    '22.0.1.1.1',
+    '22.0.0.36',
+    '21.0.12.8',
+    '21.0.12.1.1',
+    '21.0.11.10',
+    '21.0.10.7',
+    '21.0.9.10',
+    '21.0.8.9',
     '21.0.8.7',
+    '21.0.7.6',
     '21.0.7.4',
+    '21.0.6.7',
     '21.0.6.6',
+    '21.0.5.11',
+    '21.0.4.7',
+    '21.0.3.9',
     '21.0.3.6',
+    '21.0.2.13',
+    '21.0.1.12',
+    '21.0.0.35',
+    '20.0.2.9',
+    '20.0.1.9',
+    '20.0.0.36',
+    '19.0.2.7',
+    '19.0.1.10',
+    '19.0.0.36',
+    '18.0.2.9',
+    '18.0.2.1.1',
+    '18.0.1.10',
+    '18.0.0.36',
+    '17.0.20.8',
+    '17.0.20.1.1',
+    '17.0.19.10',
+    '17.0.18.8',
+    '17.0.17.10',
+    '17.0.16.8',
     '17.0.16.7',
+    '17.0.15.6',
+    '17.0.14.7',
+    '17.0.13.11',
+    '17.0.12.7',
+    '17.0.11.9',
     '17.0.11.4',
+    '17.0.10.7',
     '17.0.10.6',
+    '17.0.9.9',
+    '17.0.8.7',
+    '17.0.8.1.1',
+    '17.0.7.7',
+    '17.0.6.10',
+    '17.0.5.8',
+    '17.0.4.8',
+    '17.0.4.1.1',
+    '17.0.3.7',
+    '17.0.2.8',
+    '17.0.1.12',
+    '17.0.0.35',
+    '16.0.2.7',
+    '11.0.32.9',
+    '11.0.32.1.1',
+    '11.0.31.11',
+    '11.0.30.7',
+    '11.0.29.7',
+    '11.0.28.6',
     '11.0.28.5',
+    '11.0.27.6',
+    '11.0.26.4',
+    '11.0.25.9',
+    '11.0.24.8',
+    '11.0.23.9',
     '11.0.23.6',
+    '11.0.22.7',
+    '11.0.21.9',
+    '11.0.20.8',
+    '11.0.20.1.1',
+    '11.0.19.7',
+    '11.0.18.10',
+    '11.0.17.8',
+    '11.0.16.8',
+    '11.0.16.1.1',
+    '11.0.15.10',
+    '11.0.14.9',
+    '11.0.14.1.1',
+    '11.0.13.8',
+    '11.0.12.7',
+    '8.0.504.1',
+    '8.0.502.7',
+    '8.0.492.9',
+    '8.0.482.8',
+    '8.0.472.8',
+    '8.0.462.8',
+    '8.0.452.9',
+    '8.0.442.6',
+    '8.0.432.6',
+    '8.0.422.5',
+    '8.0.412.8',
+    '8.0.402.6',
+    '8.0.392.8',
+    '8.0.382.5',
+    '8.0.372.7',
+    '8.0.362.9',
+    '8.0.352.8',
+    '8.0.345.1',
+    '8.0.342.7',
+    '8.0.332.9',
+    '8.0.322.6',
+    '8.0.312.7',
+    '8.0.302.8',
   ] as const,
   /**
   * Alternative names for this package.
