@@ -4,6 +4,23 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { selectPublishedFiles } from '../scripts/published-files'
 import { recipe } from '../src/recipes/postgresql.org/libpq'
+import { recipe as freetype } from '../src/recipes/freetype.org'
+
+test('FreeType publishes its products before canonical declared runtimes are bundled', () => {
+  const root = mkdtempSync(join(tmpdir(), 'pantry-freetype-products-'))
+  try {
+    for (const directory of ['lib/pkgconfig', 'include/freetype2']) mkdirSync(join(root, directory), { recursive: true })
+    const products = ['lib/libfreetype.so.6.20.6', 'lib/pkgconfig/freetype2.pc', 'include/freetype2/ft2build.h']
+    const privateSnapshots = ['lib/libpng16.so.16', 'lib/libbrotlidec.so.1', 'lib/libz.so.1']
+    for (const file of [...products, ...privateSnapshots]) writeFileSync(join(root, file), file)
+    symlinkSync('libfreetype.so.6.20.6', join(root, 'lib/libfreetype.so.6'))
+    selectPublishedFiles(root, freetype.publish?.include)
+    for (const file of [...products, 'lib/libfreetype.so.6']) expect(existsSync(join(root, file))).toBe(true)
+    for (const file of privateSnapshots) expect(existsSync(join(root, file))).toBe(false)
+    expect(freetype.dependencies?.['github.com/google/brotli']).toBe('1')
+  }
+  finally { rmSync(root, { recursive: true, force: true }) }
+})
 
 test('libpq exports its real client library, headers and license without server executables', () => {
   const root = mkdtempSync(join(tmpdir(), 'pantry-libpq-products-'))

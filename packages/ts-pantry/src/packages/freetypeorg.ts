@@ -6,8 +6,8 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install freetype.org`
- * @dependencies `libpng.org@1`, `zlib.net@1`, `sourceware.org/bzip2@1`
- * @buildDependencies `cmake.org` - required only when building from source
+ * @dependencies `libpng.org@1`, `zlib.net@1`, `sourceware.org/bzip2@1`, ... (+1 more)
+ * @buildDependencies `freedesktop.org/pkg-config^0.29`, `cmake.org` - required only when building from source
  *
  * @example
  * ```typescript
@@ -53,12 +53,14 @@ export const freetypeorgPackage = {
     'libpng.org@1',
     'zlib.net@1',
     'sourceware.org/bzip2@1',
+    'github.com/google/brotli@1',
   ] as const,
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
   */
   buildDependencies: [
+    'freedesktop.org/pkg-config^0.29',
     'cmake.org',
   ] as const,
   /**
