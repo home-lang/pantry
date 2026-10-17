@@ -11,6 +11,7 @@ import { chmodSync, existsSync, readdirSync, readFileSync, writeFileSync, unlink
 import { execFileSync, execSync } from 'node:child_process'
 import { join, relative, dirname, extname, basename, sep } from 'node:path'
 import { bundleRuntimeLibraries, normalizeMachoRuntime, writeRuntimeProvenance, type RuntimePackage } from './native-runtime'
+import { isDynamicMachO } from './macho'
 
 /**
  * Run all post-build fix-ups on a package prefix
@@ -19,7 +20,7 @@ export async function fixUp(prefix: string, platform: string, skips: string[] = 
   const [os] = platform.split('-')
   const osName = os === 'darwin' ? 'darwin' : 'linux'
   const originalModes = new Map<string, number>()
-  const isBinary = osName === 'linux' ? isDynamicElf : isMachO
+  const isBinary = osName === 'linux' ? isDynamicElf : isDynamicMachO
   try {
     for (const part of ['bin', 'sbin', 'lib', 'lib64', 'libexec']) {
       const directory = join(prefix, part)
@@ -36,10 +37,10 @@ export async function fixUp(prefix: string, platform: string, skips: string[] = 
     console.log(`\nRunning post-build fix-ups on ${prefix}...`)
 
     const bundled = (() => {
-      try { return bundleRuntimeLibraries(prefix, platform, runtimeDependencies, osName === 'linux' ? isDynamicElf : isMachO) }
+      try { return bundleRuntimeLibraries(prefix, platform, runtimeDependencies, osName === 'linux' ? isDynamicElf : isDynamicMachO) }
       catch (cause) { throw new Error(`Cannot normalize ${osName === 'linux' ? 'ELF loader paths' : 'Mach-O runtime libraries'}: ${cause instanceof Error ? cause.message : String(cause)}`, { cause }) }
     })()
-    if (osName === 'darwin' && !skips.includes('fix-machos')) normalizeMachoRuntime(prefix, isMachO)
+    if (osName === 'darwin' && !skips.includes('fix-machos')) normalizeMachoRuntime(prefix, isDynamicMachO)
     else if (osName === 'linux' && !skips.includes('fix-patchelf')) fixElfRpaths(prefix)
     writeRuntimeProvenance(prefix, bundled)
 
@@ -60,7 +61,6 @@ export async function fixUp(prefix: string, platform: string, skips: string[] = 
     for (const [file, mode] of originalModes) if (existsSync(file)) chmodSync(file, mode)
   }
 }
-
 export function fixElfRpaths(prefix: string, patchelf = 'patchelf'): void {
   const dirs = ['bin', 'sbin', 'lib', 'lib64', 'libexec'].filter(dir => existsSync(join(prefix, dir)) && lstatSync(join(prefix, dir)).isDirectory())
   for (const dir of dirs) {
@@ -238,35 +238,6 @@ function walkFiles(dir: string, callback: (filePath: string) => void): void {
     }
 else if (entry.isFile()) {
       callback(fullPath)
-    }
-  }
-}
-
-/**
- * Check if a file is a Mach-O binary
- */
-function isMachO(filePath: string): boolean {
-  let file: number | undefined
-  try {
-    const buffer = new Uint8Array(4)
-    file = require('node:fs').openSync(filePath, 'r')
-    require('node:fs').readSync(file, buffer, 0, 4, 0)
-    require('node:fs').closeSync(file)
-    file = undefined
-
-    // Mach-O magic: feedface, feedfacf, cafebabe (universal), bebafeca
-    // Use >>> 0 to force unsigned 32-bit (JS << returns signed, causing overflow for 0xcf...)
-    const magic = ((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]) >>> 0
-    return magic === 0xfeedface || magic === 0xfeedfacf
-      || magic === 0xcafebabe || magic === 0xbebafeca
-      || magic === 0xcffaedfe || magic === 0xcefaedfe
-  }
-  catch {
-    return false
-  }
-  finally {
-    if (file !== undefined) {
-      try { require('node:fs').closeSync(file) } catch { /* already closed */ }
     }
   }
 }

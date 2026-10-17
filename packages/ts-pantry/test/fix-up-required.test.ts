@@ -25,3 +25,17 @@ test('publication refuses a dynamic ELF when its loader cannot be normalized', a
   await expect(fixUp(directory, 'linux-x86-64')).rejects.toThrow('Cannot normalize ELF loader paths')
   expect(statSync(artifact).mode & 0o777).toBe(0o555)
 })
+
+test('macOS publication preserves read-only compiler object files without running loader edits on them', async () => {
+  directory = mkdtempSync(join(tmpdir(), 'pantry-python-object-'))
+  const configuration = join(directory, 'lib', 'python3.12', 'config-3.12-darwin')
+  mkdirSync(configuration, { recursive: true })
+  const header = Buffer.alloc(32)
+  header.writeUInt32LE(0xfeedfacf)
+  header.writeUInt32LE(1, 12) // MH_OBJECT, the real CPython python.o failure.
+  const artifact = join(configuration, 'python.o')
+  writeFileSync(artifact, header)
+  chmodSync(artifact, 0o555)
+  await fixUp(directory, 'darwin-arm64')
+  expect(statSync(artifact).mode & 0o777).toBe(0o555)
+})
