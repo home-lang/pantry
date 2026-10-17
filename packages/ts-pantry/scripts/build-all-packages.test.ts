@@ -484,3 +484,29 @@ describe('selectRecentVersions', () => {
     expect(selectRecentVersions(single, 4)).toEqual(['1.0.9', '1.0.8', '1.0.7', '1.0.6'])
   })
 })
+
+describe('exact version-pinned publication scope', () => {
+  const packages = [
+    { domain: 'postgresql.org', name: 'postgresql', versions: ['18.0', '17.10'], latestVersion: '18.0' },
+    { domain: 'postgresql.org/libpq', name: 'libpq', versions: ['18.0.0'], latestVersion: '18.0.0' },
+  ]
+  const selected = (value: string) => {
+    const requested = parseRequestedPackages(value)
+    return packages
+      .filter(pkg => matchesRequestedPackage(pkg.domain, pkg.name, requested.selectors, requested.exactSelectors))
+      .map(pkg => applyVersionPins(pkg, requested.pins))
+  }
+  test('postgresql.org@17.10 never republishes an unrequested libpq latest', () => {
+    expect(selected('postgresql.org@17.10')).toEqual([{ domain: 'postgresql.org', name: 'postgresql', versions: ['17.10'], latestVersion: '17.10' }])
+  })
+  test('a plain domain continues to explicitly select its family', () => {
+    expect(selected('postgresql.org').map(pkg => pkg.domain)).toEqual(['postgresql.org', 'postgresql.org/libpq'])
+  })
+  test('an explicit family plus a parent pin keeps both intents regardless of order', () => {
+    for (const input of ['postgresql.org,postgresql.org@17.10', 'postgresql.org@17.10,postgresql.org']) {
+      const result = selected(input)
+      expect(result.map(pkg => pkg.domain)).toEqual(['postgresql.org', 'postgresql.org/libpq'])
+      expect(result[0].versions).toEqual(['17.10'])
+    }
+  })
+})

@@ -1686,8 +1686,8 @@ export function assignStripe<T extends { domain: string }>(
 }
 
 /** Does this package match one of the `-p` selectors? */
-export function matchesRequestedPackage(domain: string, name: string, requested: string[]): boolean {
-  return requested.some(d => domain === d || name === d || domain.startsWith(`${d}/`))
+export function matchesRequestedPackage(domain: string, name: string, requested: string[], exactSelectors: ReadonlySet<string> = new Set()): boolean {
+  return requested.some(d => domain === d || name === d || (!exactSelectors.has(d) && domain.startsWith(`${d}/`)))
 }
 
 /**
@@ -1706,11 +1706,15 @@ export interface RequestedPackages {
   selectors: string[]
   /** Pinned versions per selector, in the order given. */
   pins: Map<string, string[]>
+  /** Version-pinned entries select only that package, unless its family is also explicit. */
+  exactSelectors: Set<string>
 }
 
 export function parseRequestedPackages(value: string): RequestedPackages {
   const selectors: string[] = []
   const pins = new Map<string, string[]>()
+  const exactSelectors = new Set<string>()
+  const families = new Set<string>()
   for (const entry of value.split(',').map(e => e.trim()).filter(Boolean)) {
     const at = entry.indexOf('@')
     const selector = at > 0 ? entry.slice(0, at) : entry
@@ -1718,13 +1722,18 @@ export function parseRequestedPackages(value: string): RequestedPackages {
     if (!selectors.includes(selector))
       selectors.push(selector)
     if (version) {
+      if (!families.has(selector)) exactSelectors.add(selector)
       const list = pins.get(selector) ?? []
       if (!list.includes(version))
         list.push(version)
       pins.set(selector, list)
     }
+    else {
+      families.add(selector)
+      exactSelectors.delete(selector)
+    }
   }
-  return { selectors, pins }
+  return { selectors, pins, exactSelectors }
 }
 
 /**
@@ -2998,7 +3007,7 @@ Options:
   const requested = values.package ? parseRequestedPackages(values.package) : null
   if (requested) {
     allPackages = allPackages
-      .filter(p => matchesRequestedPackage(p.domain, p.name, requested.selectors))
+      .filter(p => matchesRequestedPackage(p.domain, p.name, requested.selectors, requested.exactSelectors))
       .map((p) => {
         const pinnedPkg = applyVersionPins(p, requested.pins)
         if (pinnedPkg !== p) {
