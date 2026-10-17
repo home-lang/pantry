@@ -501,7 +501,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             };
 
             var workspace_options = options;
-            if (options.frozen_lockfile and has_companion_deps) {
+            // The committed lock must describe the complete install. Stage both
+            // phases even without --frozen-lockfile, so a companion failure or
+            // interruption cannot replace it with an npm-only workspace lock.
+            if (has_companion_deps and (options.frozen_lockfile or !options.no_save)) {
                 const lockfile_nonce = io_helper.clockGettime();
                 staged_lockfile_path = try std.fmt.allocPrint(
                     allocator,
@@ -518,48 +521,23 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 // Monorepos often keep system/runtime deps in deps.yaml (or pantry.json)
                 // alongside package.json workspaces. Install that companion file too.
                 if (lookup.deps_file) |df| {
+                    defer allocator.free(df.path);
                     if (!std.mem.eql(u8, df.path, ws_file.path)) {
                         var companion_options = options;
                         if (staged_lockfile_path != null) companion_options.frozen_lockfile = false;
-                        if (installCompanionDepsFile(
+                        try mergeCompanionResult(allocator, &final_result, installCompanionDepsFile(
                             allocator,
                             df,
                             ws_file.root_dir,
                             companion_options,
                             staged_lockfile_path,
-                        )) |companion_result| {
-                            var companion = companion_result;
-                            if (companion.exit_code != 0 and final_result.exit_code == 0) {
-                                final_result.exit_code = companion.exit_code;
-                                if (final_result.message) |m| allocator.free(m);
-                                final_result.message = companion.message;
-                                companion.message = null;
-                            }
-                            companion.deinit(allocator);
-                        } else |_| {}
+                            options.frozen_lockfile,
+                        ), df.path);
                     }
-                    allocator.free(df.path);
                 }
 
                 if (staged_lockfile_path) |generated_path| {
-                    const lockfile_module = @import("../../../packages/lockfile.zig");
-                    const committed_path = try std.fs.path.join(allocator, &.{ ws_file.root_dir, "pantry.lock" });
-                    defer allocator.free(committed_path);
-
-                    var committed = lockfile_module.readLockfile(allocator, committed_path) catch null;
-                    defer if (committed) |*lockfile| lockfile.deinit(allocator);
-                    var generated = lockfile_module.readLockfile(allocator, generated_path) catch null;
-                    defer if (generated) |*lockfile| lockfile.deinit(allocator);
-
-                    const lockfile_matches = if (committed) |*existing|
-                        if (generated) |*candidate| lockfile_module.lockfilesEqual(existing, candidate) else false
-                    else
-                        false;
-                    if (!lockfile_matches and final_result.exit_code == 0) {
-                        final_result.exit_code = 1;
-                        if (final_result.message) |message| allocator.free(message);
-                        final_result.message = try allocator.dupe(u8, "Error: lockfile is out of date (--frozen-lockfile)");
-                    }
+                    try finalizeCombinedWorkspaceLock(allocator, ws_file.root_dir, generated_path, options.frozen_lockfile, &final_result);
                 }
 
                 defer {
@@ -1788,6 +1766,95 @@ test "package.json keeps explicit Pantry dependencies native" {
     try std.testing.expect(shouldInstallWithNativePipeline(false, .npm));
 }
 
+fn mergeCompanionResult(allocator: std.mem.Allocator, final_result: *types.CommandResult, result: anyerror!types.CommandResult, deps_path: []const u8) !void {
+    if (result) |value| {
+        var companion = value;
+        defer companion.deinit(allocator);
+        if (companion.exit_code != 0 and final_result.exit_code == 0) {
+            final_result.exit_code = companion.exit_code;
+            if (final_result.message) |message| allocator.free(message);
+            final_result.message = companion.message;
+            companion.message = null;
+        }
+    } else |err| {
+        if (final_result.exit_code == 0) {
+            final_result.exit_code = 1;
+            if (final_result.message) |message| allocator.free(message);
+            final_result.message = null;
+            final_result.message = try std.fmt.allocPrint(allocator, "Error installing {s}: {s}", .{ std.fs.path.basename(deps_path), @errorName(err) });
+        }
+    }
+}
+
+fn finalizeCombinedWorkspaceLock(allocator: std.mem.Allocator, project_root: []const u8, generated_path: []const u8, frozen: bool, result: *types.CommandResult) !void {
+    if (result.exit_code != 0) return;
+    const committed_path = try std.fs.path.join(allocator, &.{ project_root, "pantry.lock" });
+    defer allocator.free(committed_path);
+    if (!frozen) return std.Io.Dir.renameAbsolute(generated_path, committed_path, io_helper.getIo());
+
+    const writer = @import("../../../packages/lockfile.zig");
+    var committed = writer.readLockfile(allocator, committed_path) catch null;
+    defer if (committed) |*lockfile| lockfile.deinit(allocator);
+    var generated = writer.readLockfile(allocator, generated_path) catch null;
+    defer if (generated) |*lockfile| lockfile.deinit(allocator);
+    const matches = if (committed) |*existing|
+        if (generated) |*candidate| writer.lockfilesEqual(existing, candidate) else false
+    else
+        false;
+    if (!matches) {
+        result.exit_code = 1;
+        if (result.message) |message| allocator.free(message);
+        result.message = null;
+        result.message = try allocator.dupe(u8, "Error: lockfile is out of date (--frozen-lockfile)");
+    }
+}
+
+test "companion exceptions fail the workspace install and preserve its committed lock" {
+    const allocator = std.testing.allocator;
+    var directory = std.testing.tmpDir(.{});
+    defer directory.cleanup();
+    try directory.dir.writeFile(io_helper.io, .{ .sub_path = "pantry.lock", .data = "committed complete lock" });
+    try directory.dir.writeFile(io_helper.io, .{ .sub_path = "staged.lock", .data = "workspace only lock" });
+    const cwd_path = try io_helper.getCwdAlloc(allocator);
+    defer allocator.free(cwd_path);
+    const root = try std.fs.path.join(allocator, &.{ cwd_path, ".zig-cache", "tmp", directory.sub_path[0..] });
+    defer allocator.free(root);
+    const staged = try std.fs.path.join(allocator, &.{ root, "staged.lock" });
+    defer allocator.free(staged);
+    var result = types.CommandResult{ .exit_code = 0 };
+    defer result.deinit(allocator);
+    try mergeCompanionResult(allocator, &result, error.InvalidDependencyFile, "deps.yaml");
+    try std.testing.expectEqual(@as(u8, 1), result.exit_code);
+    try std.testing.expectEqualStrings("Error installing deps.yaml: InvalidDependencyFile", result.message.?);
+    try finalizeCombinedWorkspaceLock(allocator, root, staged, false, &result);
+    const committed = try directory.dir.readFileAlloc(io_helper.io, "pantry.lock", allocator, .limited(1024));
+    defer allocator.free(committed);
+    try std.testing.expectEqualStrings("committed complete lock", committed);
+}
+
+test "successful companion workspace installs publish the complete staged lock" {
+    const allocator = std.testing.allocator;
+    var directory = std.testing.tmpDir(.{});
+    defer directory.cleanup();
+    try directory.dir.writeFile(io_helper.io, .{ .sub_path = "pantry.lock", .data = "previous complete lock" });
+    try directory.dir.writeFile(io_helper.io, .{ .sub_path = "staged.lock", .data = "new complete lock" });
+    const cwd_path = try io_helper.getCwdAlloc(allocator);
+    defer allocator.free(cwd_path);
+    const root = try std.fs.path.join(allocator, &.{ cwd_path, ".zig-cache", "tmp", directory.sub_path[0..] });
+    defer allocator.free(root);
+    const staged = try std.fs.path.join(allocator, &.{ root, "staged.lock" });
+    defer allocator.free(staged);
+    var result = types.CommandResult{ .exit_code = 0 };
+    defer result.deinit(allocator);
+    try mergeCompanionResult(allocator, &result, types.CommandResult{ .exit_code = 0 }, "deps.yaml");
+    try finalizeCombinedWorkspaceLock(allocator, root, staged, false, &result);
+    try std.testing.expectEqual(@as(u8, 0), result.exit_code);
+    const committed = try directory.dir.readFileAlloc(io_helper.io, "pantry.lock", allocator, .limited(1024));
+    defer allocator.free(committed);
+    try std.testing.expectEqualStrings("new complete lock", committed);
+    try std.testing.expectError(error.FileNotFound, directory.dir.access(io_helper.io, "staged.lock", .{}));
+}
+
 /// Install a companion deps file (e.g. deps.yaml) when a workspace manifest (package.json)
 /// was already installed. Keeps system/runtime deps in sync for monorepos.
 fn installCompanionDepsFile(
@@ -1796,11 +1863,12 @@ fn installCompanionDepsFile(
     project_root: []const u8,
     options: types.InstallOptions,
     lockfile_path: ?[]const u8,
+    frozen_environment: bool,
 ) !types.CommandResult {
     const parser = @import("../../../deps/parser.zig");
     const pipeline = @import("../../../install/pipeline.zig");
 
-    const declared_deps = parser.inferDependencies(allocator, df) catch return .{ .exit_code = 0 };
+    const declared_deps = try parser.inferDependencies(allocator, df);
     defer {
         for (declared_deps) |*dep| {
             var owned_dep = dep.*;
@@ -1810,10 +1878,11 @@ fn installCompanionDepsFile(
     }
 
     // Services the project's .env names, unless declared (#36). A non-null
-    // lockfile_path means a --frozen-lockfile run staging its lock: infer only
-    // what the committed lock already records, or the comparison fails.
+    // Frozen installs infer only what the committed lock already records.
+    // A staged path is also used by ordinary installs; it does not make their
+    // environment inference frozen.
     const env_inferred = env_deps.infer(allocator, project_root, declared_deps, .{
-        .frozen_lockfile = options.frozen_lockfile or lockfile_path != null,
+        .frozen_lockfile = frozen_environment,
     }) catch &.{};
     defer env_deps.freeDeps(allocator, env_inferred);
     const deps = if (env_inferred.len == 0) declared_deps else try std.mem.concat(allocator, parser.PackageDependency, &.{ declared_deps, env_inferred });

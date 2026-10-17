@@ -413,6 +413,18 @@ pub fn build(b: *std.Build) void {
     });
     const run_token_tests = b.addRunArtifact(token_tests);
 
+    const install_test_mod = b.createModule(.{
+        .root_source_file = b.path("src/test_install_root.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+        .imports = &.{
+            .{ .name = "zig_config", .module = zig_config_mod },
+            .{ .name = "version", .module = version_mod },
+        },
+    });
+    const run_install_tests = b.addRunArtifact(b.addTest(.{ .root_module = install_test_mod }));
+
     // Registry endpoint tests (which registry a request goes to, and whether it
     // carries a credential). Rooted inside src/ for the same reason.
     const registry_test_mod = b.createModule(.{
@@ -520,6 +532,7 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_publish_commit_tests.step);
     test_step.dependOn(&run_pm_commands_tests.step);
     test_step.dependOn(&run_token_tests.step);
+    test_step.dependOn(&run_install_tests.step);
     test_step.dependOn(&run_registry_tests.step);
     test_step.dependOn(&run_version_tests.step);
     test_step.dependOn(&run_workspace_tests.step);
@@ -527,6 +540,9 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_relocatable_tree_tests.step);
 
     const auto_link_step = b.step("test:auto-link", "Run auto-link tests");
+
+    const install_step = b.step("test:install", "Run process launch and combined workspace install tests");
+    install_step.dependOn(&run_install_tests.step);
     auto_link_step.dependOn(&run_auto_link_tests.step);
 
     const relocatable_tree_step = b.step("test:relocatable", "Run relocatable pantry tree tests");

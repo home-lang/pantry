@@ -10,6 +10,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const c = std.c;
+const owned_spawn = @import("process_spawn.zig");
 pub const Io = std.Io;
 pub const Threaded = std.Io.Threaded;
 pub const Dir = std.Io.Dir;
@@ -1205,6 +1206,49 @@ fn countOpenCaptureDescriptors() usize {
     return count;
 }
 
+fn countTestThreadChildren() !usize {
+    var path_buffer: [128]u8 = undefined;
+    const children_path = try std.fmt.bufPrint(&path_buffer, "/proc/self/task/{d}/children", .{std.Thread.getCurrentId()});
+    const children = try readFileAlloc(std.testing.allocator, children_path, 64 * 1024);
+    defer std.testing.allocator.free(children);
+    var entries = std.mem.tokenizeAny(u8, children, " \n\t");
+    var count: usize = 0;
+    while (entries.next()) |_| count += 1;
+    return count;
+}
+
+test "failed captured launches reap only their own children" {
+    if (comptime builtin.os.tag != .linux) return error.SkipZigTest;
+
+    // A failing baseline must not leave zombies on the host running this test.
+    // This test process owns every child below; production never reaps arbitrary PIDs.
+    defer {
+        var status: c_int = undefined;
+        while (true) {
+            const result = std.posix.system.waitpid(-1, &status, 1);
+            switch (std.posix.errno(result)) {
+                .SUCCESS => if (result == 0) break,
+                .INTR => continue,
+                else => break,
+            }
+        }
+    }
+    var sentinel = try std.process.spawn(getIo(), .{ .argv = &.{ "/bin/sh", "-c", "exit 23" } });
+    defer sentinel.kill(getIo());
+    const before = try countTestThreadChildren();
+    for (0..3) |_| {
+        try std.testing.expectError(error.FileNotFound, childRun(std.testing.allocator, &.{"/pantry-test-missing-program"}));
+        try std.testing.expectError(error.FileNotFound, childRun(std.testing.allocator, &.{"pantry-test-missing-program"}));
+        try std.testing.expectError(error.FileNotFound, childRunWithOptions(std.testing.allocator, &.{"/bin/sh"}, .{ .cwd = "/pantry-test-missing-directory" }));
+        try std.testing.expectError(error.FileNotFound, childRunWithOptions(std.testing.allocator, &.{"/pantry-test-missing-program"}, .{ .timeout_ms = 100 }));
+        try std.testing.expectError(error.FileNotFound, childRunWithOptions(std.testing.allocator, &.{"/bin/sh"}, .{ .cwd = "/pantry-test-missing-directory", .timeout_ms = 100 }));
+    }
+    try std.testing.expectEqual(before, try countTestThreadChildren());
+    const term = try sentinel.wait(getIo());
+    try std.testing.expect(term == .exited);
+    try std.testing.expectEqual(@as(u8, 23), term.exited);
+}
+
 test "failed captured launches release their pipes" {
     if (comptime is_windows) return error.SkipZigTest;
     const warm = try childRun(std.testing.allocator, &.{ "/bin/sh", "-c", "true" });
@@ -1230,6 +1274,38 @@ test "captured launches drain both streams and preserve exit status" {
     try std.testing.expectEqual(@as(usize, 6 * 16384), result.stderr.len);
     try std.testing.expect(std.mem.startsWith(u8, result.stdout, "stdoutstdout"));
     try std.testing.expect(std.mem.startsWith(u8, result.stderr, "stderrstderr"));
+}
+
+test "captured launches preserve argument boundaries cwd environment and stdin EOF" {
+    if (comptime is_windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    const directory = try getCwdAlloc(allocator);
+    defer allocator.free(directory);
+    const result = try childRunWithOptions(allocator, &.{ "sh", "-c", "printf '%s\\n' \"$1\"; pwd -P; test -n \"$PATH\" || exit 3; if read -r value; then exit 4; fi", "pantry-child-test", "one argument; $(not-a-command)" }, .{ .cwd = directory });
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+    const expected = try std.fmt.allocPrint(allocator, "one argument; $(not-a-command)\n{s}\n", .{directory});
+    defer allocator.free(expected);
+    try std.testing.expect(result.term == .exited);
+    try std.testing.expectEqual(@as(u8, 0), result.term.exited);
+    try std.testing.expectEqualStrings(expected, result.stdout);
+    try std.testing.expectEqualStrings("", result.stderr);
+}
+
+test "timeout launches retain exit status and reap terminated children" {
+    if (comptime builtin.os.tag != .linux) return error.SkipZigTest;
+    const before = try countTestThreadChildren();
+    const success = try childRunWithOptions(std.testing.allocator, &.{ "/bin/sh", "-c", "exit 31" }, .{ .timeout_ms = 1000 });
+    defer std.testing.allocator.free(success.stdout);
+    defer std.testing.allocator.free(success.stderr);
+    try std.testing.expect(!success.timed_out);
+    try std.testing.expect(success.term == .exited);
+    try std.testing.expectEqual(@as(u8, 31), success.term.exited);
+    const timeout = try childRunWithOptions(std.testing.allocator, &.{ "/bin/sh", "-c", "exec sleep 2" }, .{ .timeout_ms = 30 });
+    defer std.testing.allocator.free(timeout.stdout);
+    defer std.testing.allocator.free(timeout.stderr);
+    try std.testing.expect(timeout.timed_out);
+    try std.testing.expectEqual(before, try countTestThreadChildren());
 }
 
 const CapturePipe = struct {
@@ -1264,7 +1340,12 @@ fn runCapturedProcess(allocator: std.mem.Allocator, argv: []const []const u8, cw
     defer stdout.deinit();
     var stderr = try CapturePipe.init();
     defer stderr.deinit();
-    var child = try std.process.spawn(getIo(), .{
+    var child = if (comptime owned_spawn.supported) try owned_spawn.spawn(allocator, getIo(), argv, .{
+        .cwd = cwd_path,
+        .ignore_stdin = true,
+        .stdout = stdout.writer.?,
+        .stderr = stderr.writer.?,
+    }) else try std.process.spawn(getIo(), .{
         .argv = argv,
         .cwd = toCwd(cwd_path),
         .stdin = .ignore,
@@ -1348,10 +1429,11 @@ pub fn childRunWithOptions(allocator: std.mem.Allocator, argv: []const []const u
 fn childRunWithTimeout(allocator: std.mem.Allocator, argv: []const []const u8, options: ChildRunOptions) !ChildRunResult {
     const cwd_value: std.process.Child.Cwd = if (options.cwd) |p| .{ .path = p } else .inherit;
 
-    var child = try std.process.spawn(getIo(), .{
+    var child = if (comptime owned_spawn.supported) try owned_spawn.spawn(allocator, getIo(), argv, .{ .cwd = options.cwd }) else try std.process.spawn(getIo(), .{
         .argv = argv,
         .cwd = cwd_value,
     });
+    defer child.kill(getIo());
 
     const wait_result = try waitWithTimeout(&child, options.timeout_ms);
 
