@@ -60,8 +60,11 @@ export const recipe: Recipe = {
         run: 'sed -i "s|prefix=/usr/local|prefix={{prefix}}|g" Makefile',
         if: 'linux',
       },
-      'make --jobs {{hw.concurrency}}',
-      'make --jobs 1 install',
+      // Upstream exposes SSH_PROGRAM as a make variable. Client subprocesses
+      // use execvp, so the Pantry environment selects its managed ssh after
+      // relocation instead of an absolute path in the build worker.
+      'make --jobs {{hw.concurrency}} SSH_PROGRAM=ssh',
+      'make --jobs 1 SSH_PROGRAM=ssh install',
       {
         run: 'ln -s ssh slogin',
         'working-directory': '{{prefix}}/bin',
@@ -83,5 +86,28 @@ export const recipe: Recipe = {
         'CPPFLAGS': '$CPPFLAGS -D__APPLE_SANDBOX_NAMED_EXTERNAL__',
       },
     },
+  },
+  test: {
+    required: true,
+    script: [
+      `probe=$(mktemp -d)
+trap 'rm -rf "$probe"' EXIT
+mkdir "$probe/clients" "$probe/transport"
+printf '#!/bin/sh\nprintf "%%s\\n" "$@" > "$PANTRY_SSH_PROBE"\nexit 73\n' > "$probe/transport/ssh"
+chmod +x "$probe/transport/ssh"
+printf 'portable client probe\\n' > "$probe/input"
+export PANTRY_SSH_PROBE="$probe/transport-used"
+for client in scp sftp; do
+  cp "{{prefix}}/bin/$client" "$probe/clients/$client"
+  rm -f "$PANTRY_SSH_PROBE"
+  if [ "$client" = scp ]; then
+    if PATH="$probe/transport:$PATH" "$probe/clients/scp" "$probe/input" pantry-probe.invalid:/copy; then exit 1; fi
+  else
+    if PATH="$probe/transport:$PATH" "$probe/clients/sftp" -b /dev/null pantry-probe.invalid; then exit 1; fi
+  fi
+  test -s "$PANTRY_SSH_PROBE"
+  grep -q pantry-probe.invalid "$PANTRY_SSH_PROBE"
+done`,
+    ],
   },
 }
