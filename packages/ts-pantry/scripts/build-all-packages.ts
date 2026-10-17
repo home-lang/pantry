@@ -1615,6 +1615,7 @@ const CUSTOM_BUILD_DOMAINS = new Set<string>([
   'postgresql.org', // build-time options/extensions we control
   'postgresql.org/libpq', // client-only products; upstream prebuilts link server-only ICU/readline
   'curl.se', // Pantry links against OpenSSL 3; pkgx's build still requires OpenSSL 1.1
+  'curl.se/ssl3', // historical library-only domain uses the same canonical recipe
   'harfbuzz.org', // use the declared current ICU ABI on every native platform
   'mesonbuild.com', // use Pantry Python without pkgx changing the build environment
   'tcl-lang.org', // publish matching Tcl and Tk libraries from their sources

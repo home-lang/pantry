@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { curlPackage } from '../src/packages/curlse'
 import { recipe } from '../src/recipes/curl.se'
+import { recipe as ssl3 } from '../src/recipes/curl.se/ssl3'
 import { loadRecipe } from '../scripts/recipe-loader'
 
 describe('curl recipe dependencies', () => {
@@ -38,6 +39,16 @@ describe('curl recipe dependencies', () => {
       expect(recipe.dependencies?.[domain]).toBeString()
     expect(recipe.test?.required).toBe(true)
     expect(recipe.test?.script).toContain('env -u LD_LIBRARY_PATH -u DYLD_FALLBACK_LIBRARY_PATH {{prefix}}/bin/curl --version')
+  })
+
+  it('the historical OpenSSL 3 domain declares the full runtime closure and checks its own binary', async () => {
+    const loaded = await loadRecipe('curl.se/ssl3', 'linux-x86-64', '8.23.0')
+    for (const domain of ['facebook.com/zstd', 'github.com/google/brotli', 'gnu.org/libidn2'])
+      expect(loaded.recipe.dependencies?.[domain]).toBe(recipe.dependencies?.[domain])
+    expect(loaded.recipe.dependencies?.['openssl.org']).toBe('^3')
+    expect(ssl3.programs).toEqual([])
+    expect(loaded.recipe.test?.required).toBe(true)
+    expect(loaded.recipe.test?.script).toEqual(recipe.test?.script)
   })
 
   it('preserves its required health check through recipe normalization', async () => {

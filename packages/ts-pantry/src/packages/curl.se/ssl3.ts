@@ -6,7 +6,7 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install curl.se/ssl3`
- * @dependencies `openssl.org^3`, `curl.se/ca-certs`, `zlib.net^1.2.11`, ... (+1 more)
+ * @dependencies `openssl.org^3`, `curl.se/ca-certs`, `zlib.net^1.2.11`, ... (+4 more)
  *
  * @example
  * ```typescript
@@ -53,6 +53,9 @@ export const curlsessl3Package = {
     'curl.se/ca-certs',
     'zlib.net^1.2.11',
     'nghttp2.org',
+    'gnu.org/libidn2',
+    'github.com/google/brotli',
+    'facebook.com/zstd',
   ] as const,
   buildDependencies: [] as const,
   /**
