@@ -1,119 +1,8 @@
 import type { Recipe } from '../../scripts/recipe-types'
+import { mysqlCalendarVersions, mysqlDistributionUrl } from '../../scripts/mysql-distribution'
 
-export const recipe: Recipe = {
-  domain: 'mysql.com',
-  name: 'mysql',
-  description: 'MySQL Server, the world\\s most popular open source database, and MySQL Cluster, a real-time, open source transactional database.',
-  homepage: 'https://www.mysql.com/',
-  github: 'https://github.com/mysql/mysql-server',
-  // Trimmed to what a deployment runs. The test harnesses MySQL builds
-  // (mysqltest, mysql_client_test, mysqlxtest, ...) are no longer built at all
-  // (-DWITH_TESTS=OFF), so advertising them would promise binaries the tarball
-  // does not contain. Router likewise: it is a separate product, and Vitess
-  // supersedes it here.
-  programs: ['my_print_defaults', 'myisam_ftdump', 'myisamchk', 'myisamlog', 'myisampack', 'mysql', 'mysql_config', 'mysql_config_editor', 'mysql_migrate_keyring', 'mysql_secure_installation', 'mysql_tzinfo_to_sql', 'mysqladmin', 'mysqlbinlog', 'mysqlcheck', 'mysqld', 'mysqld_multi', 'mysqld_safe', 'mysqldump', 'mysqldumpslow', 'mysqlimport', 'mysqlshow', 'mysqlslap'],
-  // github-releases tags (mysql-server) surface "innovation" versions (9.x)
-  // whose source tarball is never published on the CDN, so a build for one
-  // fails with a 404 and - worse - the registry used to fall back to pkgx's
-  // vanilla binary, which links an external ICU the registry does not carry.
-  // See CUSTOM_BUILD_DOMAINS in packages/registry/src/pkgx-fallback.ts.
-  //
-  // So versions are not taken on trust: candidates come from the 8.0 GA line
-  // and each is kept only if its `mysql-boost-` tarball actually exists. That
-  // is what makes this self-maintaining - a new 8.0 patch is picked up on its
-  // own, and anything unbuildable never reaches the catalog.
-  versionSource: {
-    type: 'custom',
-    fetch: async () => {
-      // The CDN is the only authority for what can actually be built, so it
-      // is asked directly rather than inferred from git tags.
-      //
-      // GitHub's tag list is not usable here: mysql-server is tagged
-      // `mysql-cluster-8.0.48` for MySQL Cluster, a different product whose
-      // numbering does not track the server's, so trusting it advertises
-      // versions with no server tarball. Trusting the tags is also how the
-      // 9.x "innovation" releases got into the catalog in the first place -
-      // they are tagged but never published as source.
-      const FLOOR = 43 // 8.0.43, the oldest release this recipe is known to build
-      const MAX_PROBES = 24
-      const STOP_AFTER_MISSES = 3
-
-      const exists = async (version: string): Promise<boolean> => {
-        try {
-          const res = await fetch(
-            `https://cdn.mysql.com/archives/mysql-8.0/mysql-boost-${version}.tar.gz`,
-            { method: 'HEAD' },
-          )
-          return res.ok
-        }
-        catch {
-          return false
-        }
-      }
-
-      const found: string[] = []
-      let misses = 0
-      for (let patch = FLOOR; patch < FLOOR + MAX_PROBES && misses < STOP_AFTER_MISSES; patch++) {
-        const version = `8.0.${patch}`
-        // eslint-disable-next-line no-await-in-loop
-        if (await exists(version)) {
-          found.push(version)
-          misses = 0
-        }
-        else {
-          misses++
-        }
-      }
-
-      // Never hand back an empty catalog on a bad network day: removing the
-      // package outright is worse than serving the last known-good release.
-      return found.length > 0 ? found.reverse() : [`8.0.${FLOOR}`]
-    },
-  },
-
-  distributable: {
-    // The archive host serves stable, never-moving source URLs. 8.4+ dropped the
-    // bundled-boost tarball; 8.0.x keeps `mysql-boost-<version>.tar.gz`.
-    url: 'https://cdn.mysql.com/archives/mysql-{{version.marketing}}/mysql-boost-{{version}}.tar.gz',
-    stripComponents: 1,
-  },
-
-  // Link against pantry-built libs so the binary runs on a clean box. The
-  // published mirror needed libssl.so.1.1 / libicuuc.so.71 (long gone); pin the
-  // current majors and point cmake at them (WITH_SSL / WITH_ICU).
-  dependencies: {
-    // openssl 3.x is soname-stable (libssl.so.3), so the pantry dep matches at
-    // runtime. ICU is NOT (libicuuc.so.<major>): the registry only carries the
-    // latest ICU, so a build pinned to .so.73 won't load — ICU is bundled
-    // statically instead (see -DWITH_ICU=bundled).
-    'openssl.org': '^3',
-    // Sun RPC (rpc/rpc.h) was dropped from glibc >= 2.32; MySQL's
-    // MYSQL_CHECK_RPC needs it. libtirpc provides it (header at
-    // <prefix>/include/tirpc, lib libtirpc.so.3), declared so the runtime dep
-    // resolves on the box. The build host also installs libtirpc-dev so cmake
-    // finds /usr/include/tirpc/rpc/rpc.h.
-    //
-    // The linux scope is load-bearing rather than tidiness: macOS has Sun RPC
-    // in its own libc and the registry carries no darwin libtirpc, so declaring
-    // it for every platform made `pantry install mysql.com` fail on every Mac
-    // with "package sourceforge.net/libtirpc@1.3.7 not found in registry" - a
-    // dependency that platform neither has nor needs.
-    linux: {
-      'sourceforge.net/libtirpc': '*',
-    },
-  },
-
-  // GCC 15 emits the `.base64` assembler directive (binutils >= 2.44), but it
-  // otherwise picks up the host's `/usr/bin/as` (2.42) which rejects it, failing
-  // every compile. Depend on a current binutils and point GCC at its `as`/`ld`
-  // with `-B` (see CFLAGS below).
-  buildDependencies: {
-    'gnu.org/binutils': '*',
-  },
-
-  build: {
-    'working-directory': 'build',
-    script: [
+/** The supported 8.0 build keeps its existing source configuration. */
+const legacySourceBuild: string[] = [
       // Use the pantry binutils `as` (>= 2.44, understands GCC 15's `.base64`)
       // instead of the host /usr/bin/as (2.42). -B makes GCC search this dir for
       // as/ld first; prepended so it wins.
@@ -161,10 +50,9 @@ export const recipe: Recipe = {
       // of the long-gone libssl.so.1.1 and libicuuc.so.71) never actually
       // shipped, and the registry kept serving the broken artifact.
       //
-      // `system` is correct here rather than a workaround: the build image is
-      // Ubuntu 24.04, whose openssl is 3.x, so the binary links libssl.so.3 -
-      // the same soname the `openssl.org: ^3` runtime dependency provides on
-      // the target box. ICU stays bundled because its soname carries the
+      // CMake discovers OpenSSL through the managed dependency environment.
+      // The OpenSSL 3 ABI matches the declared runtime dependency.
+      // ICU stays bundled because its soname carries the
       // major version (libicuuc.so.<major>) and the registry only ever
       // carries one ICU, so an external link cannot be version-matched.
       'export ARGS="$ARGS -DWITH_SSL=system -DWITH_ICU=bundled"',
@@ -198,6 +86,128 @@ export const recipe: Recipe = {
       // must not fail an otherwise good build.
       'find {{prefix}}/bin {{prefix}}/lib -type f \\( -perm -u+x -o -name "*.so*" \\) -exec strip --strip-unneeded {} + 2>/dev/null || true',
       'rm -rf {{prefix}}/mysql-test {{prefix}}/share/doc {{prefix}}/docs {{prefix}}/man {{prefix}}/share/man',
+]
+
+
+export const recipe: Recipe = {
+  domain: 'mysql.com',
+  name: 'mysql',
+  description: 'MySQL Community Server and client tools.',
+  homepage: 'https://www.mysql.com/',
+  github: 'https://github.com/mysql/mysql-server',
+  // Trimmed to what a deployment runs. The test harnesses MySQL builds
+  // (mysqltest, mysql_client_test, mysqlxtest, ...) are no longer built at all
+  // (-DWITH_TESTS=OFF), so advertising them would promise binaries the tarball
+  // does not contain. Router likewise: it is a separate product, and Vitess
+  // supersedes it here.
+  programs: ['my_print_defaults', 'myisam_ftdump', 'myisamchk', 'myisamlog', 'myisampack', 'mysql', 'mysql_config', 'mysql_config_editor', 'mysql_migrate_keyring', 'mysql_secure_installation', 'mysql_tzinfo_to_sql', 'mysqladmin', 'mysqlbinlog', 'mysqlcheck', 'mysqld', 'mysqld_multi', 'mysqld_safe', 'mysqldump', 'mysqldumpslow', 'mysqlimport', 'mysqlshow', 'mysqlslap'],
+  // Calendar releases ship official per-platform runtime archives. Older 8.0
+  // releases retain the source build that supplies their supported ABI.
+  platforms: ['darwin', 'linux'],
+  versionSource: {
+    type: 'custom',
+    fetch: async () => {
+      const calendar = await mysqlCalendarVersions()
+      // Keep the supported 8.0 source archives alongside verified modern
+      // server distributions; Cluster tags never imply a server artifact.
+      const FLOOR = 43 // 8.0.43, the oldest release this recipe is known to build
+      const MAX_PROBES = 24
+      const STOP_AFTER_MISSES = 3
+
+      const exists = async (version: string): Promise<boolean> => {
+        try {
+          const res = await fetch(
+            `https://cdn.mysql.com/archives/mysql-8.0/mysql-boost-${version}.tar.gz`,
+            { method: 'HEAD', signal: AbortSignal.timeout(15_000) },
+          )
+          return res.ok
+        }
+        catch {
+          return false
+        }
+      }
+
+      const found: string[] = []
+      let misses = 0
+      for (let patch = FLOOR; patch < FLOOR + MAX_PROBES && misses < STOP_AFTER_MISSES; patch++) {
+        const version = `8.0.${patch}`
+        // eslint-disable-next-line no-await-in-loop
+        if (await exists(version)) {
+          found.push(version)
+          misses = 0
+        }
+        else {
+          misses++
+        }
+      }
+
+      // Never hand back an empty catalog on a bad network day: removing the
+      // package outright is worse than serving the last known-good release.
+      return [...calendar, ...(found.length > 0 ? found.reverse() : [`8.0.${FLOOR}`])]
+    },
+  },
+
+  distributable: {
+    url: mysqlDistributionUrl,
+    stripComponents: 1,
+  },
+
+  // Link against pantry-built libs so the binary runs on a clean box. The
+  // published mirror needed libssl.so.1.1 / libicuuc.so.71 (long gone); pin the
+  // current majors and point cmake at them (WITH_SSL / WITH_ICU).
+  dependencies: {
+    // openssl 3.x is soname-stable (libssl.so.3), so the pantry dep matches at
+    // runtime. ICU is NOT (libicuuc.so.<major>): the registry only carries the
+    // latest ICU, so a build pinned to .so.73 won't load — ICU is bundled
+    // statically instead (see -DWITH_ICU=bundled).
+    'openssl.org': '^3',
+    'perl.org': '^5',
+    'gnu.org/ncurses': '^6',
+    // Sun RPC (rpc/rpc.h) was dropped from glibc >= 2.32; MySQL's
+    // MYSQL_CHECK_RPC needs it. libtirpc provides it (header at
+    // <prefix>/include/tirpc, lib libtirpc.so.3), declared so the runtime dep
+    // resolves on the box. Source builds obtain headers from this dependency.
+    //
+    // The linux scope is load-bearing rather than tidiness: macOS has Sun RPC
+    // in its own libc and the registry carries no darwin libtirpc, so declaring
+    // it for every platform made `pantry install mysql.com` fail on every Mac
+    // with "package sourceforge.net/libtirpc@1.3.7 not found in registry" - a
+    // dependency that platform neither has nor needs.
+    linux: {
+      'sourceforge.net/libtirpc': '*',
+      'pagure.io/libaio': '^0.3.113',
+      'github.com/numactl/numactl': '^2',
+      'gnu.org/gcc/libstdcxx': '14',
+    },
+  },
+
+  // Compiler dependencies belong only to the legacy source build. Native
+  // runtime distributions do not inherit an unnecessary compiler toolchain.
+  dependencyOverrides: [{
+    if: '<26.0.0',
+    buildDependencies: {
+      'gnu.org/binutils': '*',
+      'cmake.org': '^3',
+      'gnu.org/bison': '>=3.0.4',
+    },
+  }],
+
+  build: {
+    'working-directory': 'build',
+    script: [
+      {
+        if: '>=26.0.0',
+        run: [
+          'mkdir -p "{{prefix}}"',
+          'cp -R ../bin ../include ../lib ../share ../support-files "{{prefix}}/"',
+          'for file in ../LICENSE* ../README*; do if [ -f "$file" ]; then cp "$file" "{{prefix}}/"; fi; done',
+        ],
+      },
+      ...legacySourceBuild.map(run => ({ run, if: '<26.0.0' })),
     ],
+  },
+  test: {
+    required: true,
+    script: ['mysql --version | grep -F "{{version}}"', 'mysqld --version | grep -F "{{version}}"'],
   },
 }

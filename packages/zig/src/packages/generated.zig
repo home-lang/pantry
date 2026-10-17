@@ -12684,10 +12684,10 @@ pub const packages = [_]PackageInfo{ .{
     .description = "MySQL Server, the world's most popular open source database, and MySQL Cluster, a real-time, open source transactional database.",
     .homepage_url = "http://www.mysql.com/",
     .programs = &[_][]const u8{ "my_print_defaults", "myisam_ftdump", "myisamchk", "myisamlog", "myisampack", "mysql", "mysql_config", "mysql_config_editor", "mysql_migrate_keyring", "mysql_secure_installation", "mysql_tzinfo_to_sql", "mysqladmin", "mysqlbinlog", "mysqlcheck", "mysqld", "mysqld_multi", "mysqld_safe", "mysqldump", "mysqldumpslow", "mysqlimport", "mysqlshow", "mysqlslap" },
-    .dependencies = &[_][]const u8{ "libevent.org^2", "lz4.org^1", "openssl.org^3", "zlib.net^1.2", "facebook.com/zstd^1", "curl.se>=6.0", "thrysoee.dk/editline^3", "developers.yubico.com/libfido2^1", "linux:sourceforge.net/libtirpc", "linux:gnu.org/gcc/libstdcxx@14" },
-    .build_dependencies = &[_][]const u8{ "cmake.org@^3", "gnu.org/bison@>=3.0.4", "linux:gnu.org/gcc" },
+    .dependencies = &[_][]const u8{ "openssl.org^3", "perl.org^5", "gnu.org/ncurses^6", "linux:sourceforge.net/libtirpc", "linux:pagure.io/libaio^0.3.113", "linux:github.com/numactl/numactl^2", "linux:gnu.org/gcc/libstdcxx@14" },
+    .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{"mysql"},
-    .versions = &[_][]const u8{ "8.0.45", "8.0.44", "8.0.43" },
+    .versions = &[_][]const u8{ "26.7.0", "8.0.45", "8.0.44", "8.0.43" },
 }, .{
     .name = "nano",
     .domain = "nano-editor.org",
