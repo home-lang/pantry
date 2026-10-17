@@ -7,7 +7,7 @@ export const recipe: Recipe = {
   homepage: 'https://freeglut.sourceforge.net',
   github: 'https://github.com/FreeGLUTProject/freeglut',
   programs: [],
-  platforms: ['linux/x86-64'],
+  platforms: ['linux'],
   versionSource: {
     type: 'github-releases',
     repo: 'FreeGLUTProject/freeglut',

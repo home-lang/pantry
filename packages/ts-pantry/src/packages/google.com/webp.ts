@@ -8,8 +8,7 @@
  *
  * @install `pantry install google.com/webp`
  * @homepage https://developers.google.com/speed/webp/
- * @dependencies `giflib.sourceforge.io^5`, `libjpeg-turbo.org^2`, `libpng.org^1`, ... (+1 more)
- * @buildDependencies `gnu.org/wget` - required only when building from source
+ * @dependencies `giflib.sourceforge.io^5`, `libjpeg-turbo.org^2`, `libpng.org^1`, ... (+2 more) (includes platform-specific dependencies)
  *
  * @example
  * ```typescript
@@ -64,20 +63,16 @@ export const googlecomwebpPackage = {
   /**
   * Runtime dependencies for this package.
   * These are required when running the package.
+  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:freetype.org`).
   */
   dependencies: [
     'giflib.sourceforge.io^5',
     'libjpeg-turbo.org^2',
     'libpng.org^1',
     'simplesystems.org/libtiff^4',
+    'linux:freeglut.sourceforge.io^3',
   ] as const,
-  /**
-  * Build dependencies for this package.
-  * These are only required when building the package from source.
-  */
-  buildDependencies: [
-    'gnu.org/wget',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions

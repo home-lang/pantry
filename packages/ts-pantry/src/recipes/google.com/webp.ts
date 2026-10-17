@@ -12,6 +12,7 @@ export const recipe: Recipe = {
     'libjpeg-turbo.org': '^2',
     'libpng.org': '^1',
     'simplesystems.org/libtiff': '^4',
+    linux: { 'freeglut.sourceforge.io': '^3' },
   },
   versionSource: {
     type: 'github-tags',
@@ -25,7 +26,7 @@ export const recipe: Recipe = {
 
   build: {
     script: [
-      './configure --prefix={{prefix}}',
+      './configure --prefix={{prefix}} --enable-everything',
       'make --jobs {{hw.concurrency}}',
       'make install',
       {
@@ -33,5 +34,9 @@ export const recipe: Recipe = {
         'working-directory': '{{prefix}}/lib',
       },
     ],
+  },
+  test: {
+    required: true,
+    script: ['cwebp -version | grep -F "{{version}}"', 'dwebp -version | grep -F "{{version}}"', 'vwebp -version | grep -F "{{version}}"'],
   },
 }
