@@ -1197,6 +1197,100 @@ pub fn childRun(allocator: std.mem.Allocator, argv: []const []const u8) !ChildRu
     return childRunWithOptions(allocator, argv, .{});
 }
 
+fn countOpenCaptureDescriptors() usize {
+    var count: usize = 0;
+    for (0..4096) |fd| {
+        if (c.fcntl(@intCast(fd), std.posix.F.GETFD, @as(c_int, 0)) != -1) count += 1;
+    }
+    return count;
+}
+
+test "failed captured launches release their pipes" {
+    if (comptime is_windows) return error.SkipZigTest;
+    const warm = try childRun(std.testing.allocator, &.{ "/bin/sh", "-c", "true" });
+    std.testing.allocator.free(warm.stdout);
+    std.testing.allocator.free(warm.stderr);
+    const before = countOpenCaptureDescriptors();
+    for (0..64) |_| {
+        try std.testing.expectError(error.FileNotFound, childRun(std.testing.allocator, &.{"/pantry-test-missing-program"}));
+        try std.testing.expectError(error.FileNotFound, childRun(std.testing.allocator, &.{"pantry-test-missing-program"}));
+        try std.testing.expectError(error.FileNotFound, childRunWithOptions(std.testing.allocator, &.{"/bin/sh"}, .{ .cwd = "/pantry-test-missing-directory" }));
+    }
+    try std.testing.expectEqual(before, countOpenCaptureDescriptors());
+}
+
+test "captured launches drain both streams and preserve exit status" {
+    if (comptime is_windows) return error.SkipZigTest;
+    const result = try childRun(std.testing.allocator, &.{ "/bin/sh", "-c", "i=0; while [ \"$i\" -lt 16384 ]; do printf stdout; printf stderr >&2; i=$((i+1)); done; exit 7" });
+    defer std.testing.allocator.free(result.stdout);
+    defer std.testing.allocator.free(result.stderr);
+    try std.testing.expect(result.term == .exited);
+    try std.testing.expectEqual(@as(u8, 7), result.term.exited);
+    try std.testing.expectEqual(@as(usize, 6 * 16384), result.stdout.len);
+    try std.testing.expectEqual(@as(usize, 6 * 16384), result.stderr.len);
+    try std.testing.expect(std.mem.startsWith(u8, result.stdout, "stdoutstdout"));
+    try std.testing.expect(std.mem.startsWith(u8, result.stderr, "stderrstderr"));
+}
+
+const CapturePipe = struct {
+    reader: File,
+    writer: ?File,
+
+    fn init() !CapturePipe {
+        const descriptors = try Threaded.pipe2(.{ .CLOEXEC = true });
+        return .{
+            .reader = .{ .handle = descriptors[0], .flags = .{ .nonblocking = false } },
+            .writer = .{ .handle = descriptors[1], .flags = .{ .nonblocking = false } },
+        };
+    }
+
+    fn closeWriter(self: *CapturePipe) void {
+        if (self.writer) |file| file.close(io);
+        self.writer = null;
+    }
+
+    fn deinit(self: *CapturePipe) void {
+        self.closeWriter();
+        self.reader.close(io);
+    }
+};
+
+fn runCapturedProcess(allocator: std.mem.Allocator, argv: []const []const u8, cwd_path: ?[]const u8) !ChildRunResult {
+    // Pantry owns capture descriptors from creation through cleanup, including
+    // a launch rejected before a Child is returned (missing program or cwd).
+    // Passing open files also keeps descriptor ownership independent of the
+    // process backend's success-only Child cleanup.
+    var stdout = try CapturePipe.init();
+    defer stdout.deinit();
+    var stderr = try CapturePipe.init();
+    defer stderr.deinit();
+    var child = try std.process.spawn(getIo(), .{
+        .argv = argv,
+        .cwd = toCwd(cwd_path),
+        .stdin = .ignore,
+        .stdout = .{ .file = stdout.writer.? },
+        .stderr = .{ .file = stderr.writer.? },
+    });
+    defer child.kill(getIo());
+    stdout.closeWriter();
+    stderr.closeWriter();
+
+    var buffer: Io.File.MultiReader.Buffer(2) = undefined;
+    var reader: Io.File.MultiReader = undefined;
+    reader.init(allocator, getIo(), buffer.toStreams(), &.{ stdout.reader, stderr.reader });
+    defer reader.deinit();
+    while (reader.fill(64, .none)) |_| {} else |err| switch (err) {
+        error.EndOfStream => {},
+        else => return err,
+    }
+    try reader.checkAnyError();
+    const term = try child.wait(getIo());
+    const out = try reader.toOwnedSlice(0);
+    errdefer allocator.free(out);
+    const err = try reader.toOwnedSlice(1);
+    return .{ .term = term, .stdout = out, .stderr = err };
+}
+
 /// Run a child process with additional options (cwd, env_map, timeout)
 pub fn childRunWithOptions(allocator: std.mem.Allocator, argv: []const []const u8, options: ChildRunOptions) !ChildRunResult {
     _ = options.env_map; // env_map support disabled for cross-version compat
@@ -1206,6 +1300,8 @@ pub fn childRunWithOptions(allocator: std.mem.Allocator, argv: []const []const u
     if (options.timeout_ms > 0) {
         return childRunWithTimeout(allocator, argv, options);
     }
+
+    if (comptime !is_windows) return runCapturedProcess(allocator, argv, options.cwd);
 
     // No timeout: use the blocking std.process.run which collects stdout/stderr
     // Try new API first (0.16.0-dev.2368+)
