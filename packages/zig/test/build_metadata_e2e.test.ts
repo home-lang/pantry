@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { spawnSync } from 'node:child_process'
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join, relative, resolve } from 'node:path'
 
 const zig = process.env.PANTRY_ZIG_TEST_BIN || Bun.which('zig')
 
@@ -36,14 +36,14 @@ pub fn build(b: *std.Build) void {
         if (result.error || result.status !== 0) throw new Error(`${command[0]} failed: ${result.error || result.stderr || result.stdout}`)
         return result.stdout.trim()
       }
-      function build(): string {
-        run([zig!, 'build'], directory)
-        return readFileSync(join(directory, 'zig-out/metadata.zig'), 'utf8')
+      function build(buildDirectory = directory): string {
+        run([zig!, 'build'], buildDirectory)
+        return readFileSync(join(buildDirectory, 'zig-out/metadata.zig'), 'utf8')
       }
-      function commit(): string {
-        run(['git', 'add', '.'])
-        run(['git', '-c', 'user.name=Pantry test', '-c', 'user.email=test@example.invalid', 'commit', '-qm', 'fixture'])
-        return run(['git', 'rev-parse', '--short=9', 'HEAD'])
+      function commit(cwd = root): string {
+        run(['git', 'add', '.'], cwd)
+        run(['git', '-c', 'user.name=Pantry test', '-c', 'user.email=test@example.invalid', 'commit', '-qm', 'fixture'], cwd)
+        return run(['git', 'rev-parse', '--short=9', 'HEAD'], cwd)
       }
       run(['git', 'init', '-q'])
       writeFileSync(join(root, '.gitignore'), 'packages/zig/.zig-cache/\npackages/zig/zig-out/\n')
@@ -64,6 +64,27 @@ pub fn build(b: *std.Build) void {
       expect(changedCommit).toContain('"1.2.4"')
       expect(changedCommit).toContain(`"${second}"`)
       expect(build()).toBe(changedCommit)
+
+      const linked = join(root, 'linked')
+      run(['git', 'worktree', 'add', '-q', '-b', 'metadata-linked', linked])
+      const linkedDirectory = join(linked, 'packages/zig')
+      expect(build(linkedDirectory)).toContain(`"${second}"`)
+      run(['git', 'pack-refs', '--all', '--prune'])
+      expect(build(linkedDirectory)).toContain(`"${second}"`)
+      writeFileSync(join(linked, 'packages/ts-pantry/package.json'), JSON.stringify({ name: 'ts-pantry', version: '1.2.5' }))
+      const linkedCommit = commit(linked)
+      const linkedBuild = build(linkedDirectory)
+      expect(linkedBuild).toContain('"1.2.5"')
+      expect(linkedBuild).toContain(`"${linkedCommit}"`)
+
+      const marker = join(linked, '.git')
+      const gitDirectory = readFileSync(marker, 'utf8').trim().slice('gitdir:'.length).trim()
+      writeFileSync(marker, `gitdir: ${relative(linked, gitDirectory)}\n`)
+      expect(build(linkedDirectory)).toBe(linkedBuild)
+      run(['git', 'checkout', '-q', '--detach', first], linked)
+      const detachedBuild = build(linkedDirectory)
+      expect(detachedBuild).toContain('"1.2.3"')
+      expect(detachedBuild).toContain(`"${first}"`)
     }
     finally {
       rmSync(root, { recursive: true, force: true })

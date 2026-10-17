@@ -2,6 +2,14 @@ const std = @import("std");
 
 fn buildRootPathExists(b: *std.Build, sub_path: []const u8) bool {
     dependOnBuildRootPathExistence(b, sub_path);
+    if (std.fs.path.isAbsolute(sub_path)) {
+        if (@hasField(std.Build.Graph, "io")) {
+            std.Io.Dir.cwd().access(b.graph.io, sub_path, .{}) catch return false;
+        } else {
+            std.fs.cwd().access(sub_path, .{}) catch return false;
+        }
+        return true;
+    }
     if (@hasField(std.Build, "root")) {
         const path = b.root.join(b.allocator, sub_path) catch return false;
         path.root_dir.handle.access(b.graph.io, path.sub_path, .{}) catch return false;
@@ -17,8 +25,20 @@ fn buildRootPathExists(b: *std.Build, sub_path: []const u8) bool {
     return true;
 }
 
+fn buildInputPath(b: *std.Build, sub_path: []const u8) std.Build.LazyPath {
+    if (!std.fs.path.isAbsolute(sub_path)) return b.path(sub_path);
+    if (@hasDecl(std.Build.Graph, "cwdRelativePath")) return b.graph.cwdRelativePath(sub_path);
+    return .{ .cwd_relative = sub_path };
+}
+
 fn readBuildRootFileAlloc(b: *std.Build, sub_path: []const u8, max_bytes: usize) ![]u8 {
     dependOnBuildRootPathExistence(b, sub_path);
+    if (std.fs.path.isAbsolute(sub_path)) {
+        if (@hasField(std.Build.Graph, "io")) {
+            return trackBuildRootFileContents(b, sub_path, try std.Io.Dir.cwd().readFileAlloc(b.graph.io, sub_path, b.allocator, .limited(max_bytes)));
+        }
+        return trackBuildRootFileContents(b, sub_path, try std.fs.cwd().readFileAlloc(b.allocator, sub_path, max_bytes));
+    }
     if (@hasField(std.Build, "root")) {
         const path = try b.root.join(b.allocator, sub_path);
         return trackBuildRootFileContents(b, sub_path, try path.root_dir.handle.readFileAlloc(b.graph.io, path.sub_path, b.allocator, .limited(max_bytes)));
@@ -32,7 +52,7 @@ fn readBuildRootFileAlloc(b: *std.Build, sub_path: []const u8, max_bytes: usize)
 }
 
 fn trackBuildRootFileContents(b: *std.Build, sub_path: []const u8, contents: []u8) []u8 {
-    if (@hasDecl(std.Build, "dependOnFileContents")) b.dependOnFileContents(b.path(sub_path));
+    if (@hasDecl(std.Build, "dependOnFileContents")) b.dependOnFileContents(buildInputPath(b, sub_path));
     return contents;
 }
 
@@ -44,7 +64,7 @@ fn dependOnBuildRootPathExistence(b: *std.Build, sub_path: []const u8) void {
     var parent = std.fs.path.dirname(sub_path) orelse ".";
     while (true) {
         if (buildRootDirectoryExists(b, parent)) {
-            b.dependOnDirectoryContents(b.path(parent));
+            b.dependOnDirectoryContents(buildInputPath(b, parent));
             return;
         }
         parent = std.fs.path.dirname(parent) orelse return;
@@ -52,6 +72,16 @@ fn dependOnBuildRootPathExistence(b: *std.Build, sub_path: []const u8) void {
 }
 
 fn buildRootDirectoryExists(b: *std.Build, sub_path: []const u8) bool {
+    if (std.fs.path.isAbsolute(sub_path)) {
+        if (@hasField(std.Build.Graph, "io")) {
+            var directory = std.Io.Dir.cwd().openDir(b.graph.io, sub_path, .{}) catch return false;
+            directory.close(b.graph.io);
+        } else {
+            var directory = std.fs.cwd().openDir(sub_path, .{}) catch return false;
+            directory.close();
+        }
+        return true;
+    }
     if (@hasField(std.Build, "root")) {
         const path = b.root.join(b.allocator, sub_path) catch return false;
         var directory = path.root_dir.handle.openDir(b.graph.io, path.sub_path, .{}) catch return false;
@@ -745,6 +775,17 @@ fn getPackageVersion(b: *std.Build) ![]const u8 {
     return after[start..i];
 }
 
+/// Resolve both normal repositories and Git's linked-worktree marker file.
+fn getGitDirectory(b: *std.Build, candidate: []const u8) !?[]const u8 {
+    if (buildRootDirectoryExists(b, candidate)) return candidate;
+    const marker = readBuildRootFileAlloc(b, candidate, 4096) catch return null;
+    if (!std.mem.startsWith(u8, marker, "gitdir:")) return null;
+    const target = std.mem.trim(u8, marker["gitdir:".len..], &std.ascii.whitespace);
+    if (target.len == 0) return null;
+    if (std.fs.path.isAbsolute(target)) return target;
+    return try std.fs.path.join(b.allocator, &.{ std.fs.path.dirname(candidate) orelse ".", target });
+}
+
 /// Get git commit hash (short)
 fn getGitCommitHash(b: *std.Build) ![]const u8 {
     // Resolve HEAD by reading .git directly instead of b.run("git rev-parse"):
@@ -753,8 +794,10 @@ fn getGitCommitHash(b: *std.Build) ![]const u8 {
     //
     // readBuildRootFileAlloc registers every observed file as a configure
     // dependency, so incremental builds refresh the stamp after a commit too.
-    const head = readBuildRootFileAlloc(b, "../../.git/HEAD", 512) catch
-        (readBuildRootFileAlloc(b, ".git/HEAD", 512) catch return "unknown");
+    const git_dir = (try getGitDirectory(b, "../../.git")) orelse
+        (try getGitDirectory(b, ".git")) orelse return "unknown";
+    const head_path = try std.fs.path.join(b.allocator, &.{ git_dir, "HEAD" });
+    const head = readBuildRootFileAlloc(b, head_path, 512) catch return "unknown";
     const trimmed = std.mem.trim(u8, head, &std.ascii.whitespace);
     if (trimmed.len == 0) {
         return "unknown";
@@ -767,14 +810,21 @@ fn getGitCommitHash(b: *std.Build) ![]const u8 {
 
     // "ref: refs/heads/<branch>" — resolve the loose ref first.
     const ref = std.mem.trim(u8, trimmed["ref:".len..], &std.ascii.whitespace);
-    const loose_path = std.fmt.allocPrint(b.allocator, "../../.git/{s}", .{ref}) catch return "unknown";
+    const common_path = try std.fs.path.join(b.allocator, &.{ git_dir, "commondir" });
+    const refs_dir = if (readBuildRootFileAlloc(b, common_path, 4096)) |content| blk: {
+        const target = std.mem.trim(u8, content, &std.ascii.whitespace);
+        if (target.len == 0) break :blk git_dir;
+        break :blk if (std.fs.path.isAbsolute(target)) target else try std.fs.path.join(b.allocator, &.{ git_dir, target });
+    } else |_| git_dir;
+    const loose_path = try std.fs.path.join(b.allocator, &.{ refs_dir, ref });
     if (readBuildRootFileAlloc(b, loose_path, 512)) |content| {
         const hash = std.mem.trim(u8, content, &std.ascii.whitespace);
         if (hash.len >= 7) return hash[0..@min(9, hash.len)];
     } else |_| {}
 
     // Fresh clones and gc'd repos keep refs only in packed-refs.
-    const packed_refs = readBuildRootFileAlloc(b, "../../.git/packed-refs", 4 * 1024 * 1024) catch return "unknown";
+    const packed_path = try std.fs.path.join(b.allocator, &.{ refs_dir, "packed-refs" });
+    const packed_refs = readBuildRootFileAlloc(b, packed_path, 4 * 1024 * 1024) catch return "unknown";
     var lines = std.mem.splitScalar(u8, packed_refs, '\n');
     while (lines.next()) |line| {
         if (line.len == 0 or line[0] == '#' or line[0] == '^') continue;
