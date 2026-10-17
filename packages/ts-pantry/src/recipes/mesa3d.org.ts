@@ -26,7 +26,7 @@ export const recipe: Recipe = {
       'wayland.freedesktop.org': '*',
       'wayland.freedesktop.org/protocols': '*',
     },
-    darwin: { 'gnu.org/gettext': '*' },
+    darwin: { 'gnu.org/gettext': '*', 'llvm.org': '^22' },
     'facebook.com/zstd': '^1',
     'libexpat.github.io': '*',
     'x.org/x11': '*',
