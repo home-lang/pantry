@@ -190,6 +190,7 @@ function recipeDefToNormalized(def: Recipe, platform = '', version?: string): Re
     },
     platforms: def.platforms,
     publish: def.publish,
+    sourceablePrograms: def.sourceablePrograms,
     test: def.test
       ? { script: def.test.script, env: def.test.env, required: def.test.required }
       : undefined,

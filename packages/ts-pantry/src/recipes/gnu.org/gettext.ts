@@ -4,6 +4,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'gnu.org/gettext',
   name: 'gettext',
+  sourceablePrograms: ['gettext.sh'],
   description: 'GNU internationalization (i18n) and localization (l10n) library',
   homepage: 'https://www.gnu.org/software/gettext/',
   github: 'https://github.com/autotools-mirror/gettext',

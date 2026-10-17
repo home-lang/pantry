@@ -10,7 +10,7 @@ import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { generateBuildScript, getSkips, type PackageRecipe, type NormalizedRecipe, type RecipeScriptStep, type RecipeTest } from './buildkit.ts'
 import { fixUp } from './fix-up.ts'
-import { selectPublishedFiles } from './published-files'
+import { selectPublishedFiles, writeProgramInterfaces } from './published-files'
 import type { RuntimePackage } from './native-runtime'
 import { reportBuild } from './report-build.ts'
 import { persistBuildDiagnostics, sanitizeBuildDiagnostic } from './build-diagnostics.ts'
@@ -1874,6 +1874,7 @@ else {
   console.log('\n🔧 Running post-build fix-ups...')
   const skips = getSkips(recipe as PackageRecipe)
   selectPublishedFiles(prefix, normalizedRecipe.publish?.include)
+  writeProgramInterfaces(prefix, normalizedRecipe.sourceablePrograms)
   await fixUp(prefix, platform, skips, runtimePackages)
 
   console.log(`\n✅ Build completed successfully!`)

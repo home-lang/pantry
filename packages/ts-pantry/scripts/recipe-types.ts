@@ -82,6 +82,8 @@ export interface Recipe {
 
   /** Executable programs provided by this package */
   programs: string[]
+  /** Shell libraries that callers source; they must keep source semantics in .bin. */
+  sourceablePrograms?: string[]
 
   /**
    * Runtime dependencies (domain → version constraint). Values may also be a
@@ -169,6 +171,7 @@ export interface LoadedRecipe {
     }
     platforms?: string[]
     publish?: { include: string[] }
+    sourceablePrograms?: string[]
     test?: any
   }
   /** Where the recipe came from */

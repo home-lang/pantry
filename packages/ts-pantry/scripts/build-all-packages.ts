@@ -33,7 +33,7 @@ import { parseArgs } from 'node:util'
 import { createObjectStorageClient } from '@stacksjs/ts-cloud'
 import { reportBuild, reportBuildLog } from './report-build'
 import { fixElfRpaths, fixUp } from './fix-up'
-import { selectPublishedFiles } from './published-files'
+import { selectPublishedFiles, writeProgramInterfaces } from './published-files'
 import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
 import { BINARY_SYNC_DOMAIN_SET } from './binary-sync-packages.ts'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
@@ -2093,7 +2093,9 @@ else {
       if (await timePhase(phases, 'mirror', () => tryPkgxMirror(domain, candidateVersion, platform, installDir, buildkitRoot))) {
         const { downloadRuntimePackages } = await import('./build-package')
         const { loadRecipe } = await import('./recipe-loader')
-        selectPublishedFiles(installDir, (await loadRecipe(domain, platform, candidateVersion)).recipe.publish?.include)
+        const recipe = (await loadRecipe(domain, platform, candidateVersion)).recipe
+        selectPublishedFiles(installDir, recipe.publish?.include)
+        writeProgramInterfaces(installDir, recipe.sourceablePrograms)
         const runtime = await downloadRuntimePackages(domain, candidateVersion, platform, depsDir, bucket, region)
         await fixUp(installDir, platform, [], runtime)
         usedVersion = candidateVersion

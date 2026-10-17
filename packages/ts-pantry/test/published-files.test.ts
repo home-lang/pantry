@@ -32,3 +32,17 @@ test('libpq source URLs preserve PostgreSQL upstream version spelling', async ()
   expect((await loadRecipe('postgresql.org/libpq', 'linux-x86-64', '17.10.0')).recipe.distributable?.url).toBe('https://ftp.postgresql.org/pub/source/v17.10/postgresql-17.10.tar.bz2')
   expect((await loadRecipe('postgresql.org/libpq', 'linux-x86-64', '9.6.24')).recipe.distributable?.url).toBe('https://ftp.postgresql.org/pub/source/v9.6.24/postgresql-9.6.24.tar.bz2')
 })
+
+test('sourceable interface declarations are checked before publication', async () => {
+  const { writeProgramInterfaces } = await import('../scripts/published-files')
+  const root = mkdtempSync(join(tmpdir(), 'pantry-program-interfaces-'))
+  try {
+    mkdirSync(join(root, 'bin'))
+    writeFileSync(join(root, 'bin/library.sh'), '#!/bin/sh\nfixture() { :; }\n')
+    expect(() => writeProgramInterfaces(root, ['../library.sh'])).toThrow('existing package bin files')
+    expect(() => writeProgramInterfaces(root, ['missing.sh'])).toThrow('existing package bin files')
+    writeProgramInterfaces(root, ['library.sh'])
+    expect(JSON.parse(readFileSync(join(root, 'share/pantry/interfaces.json'), 'utf8'))).toEqual({ version: 1, sourceablePrograms: ['library.sh'] })
+  }
+  finally { rmSync(root, { recursive: true, force: true }) }
+})

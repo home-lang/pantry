@@ -3240,14 +3240,16 @@ pub const Installer = struct {
                 return err;
             };
 
+            const symlink_module = @import("symlink.zig");
+            const use_shim = try symlink_module.requiresForwardingShim(self.allocator, source);
+
             // Remove existing symlink if it exists
             io_helper.deleteFile(link) catch {};
 
             // Script wrappers (e.g. git's libexec resolver) must be shimmed, not
             // symlinked, so the wrapper's `$0` resolves to its real path. See
             // symlink.zig for why a flat symlink breaks them.
-            const symlink_module = @import("symlink.zig");
-            if (symlink_module.isShebangScript(source) and symlink_module.writeForwardingShim(self.allocator, link, source, null)) continue;
+            if (use_shim and symlink_module.writeForwardingShim(self.allocator, link, source, null)) continue;
 
             // Create symlink
             io_helper.symLink(source, link) catch |err| {
@@ -3424,6 +3426,8 @@ pub const Installer = struct {
             );
             defer self.allocator.free(link);
 
+            const use_shim = try symlink.requiresForwardingShim(self.allocator, bin_info.path);
+
             // Remove existing link/shim if it exists
             io_helper.deleteFile(link) catch {};
 
@@ -3434,7 +3438,7 @@ pub const Installer = struct {
             // shell on every prompt render. Give scripts a forwarding shim that
             // execs the real path (so $0 is correct); real binaries keep the
             // cheaper symlink.
-            if (symlink.isShebangScript(bin_info.path)) {
+            if (use_shim) {
                 if (!symlink.writeForwardingShim(self.allocator, link, bin_info.path, tree_root)) {
                     symlink.symLinkInTree(self.allocator, tree_root, bin_info.path, link) catch {};
                 }

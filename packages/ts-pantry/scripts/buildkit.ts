@@ -92,6 +92,7 @@ export type RecipeTest = string | string[] | {
  */
 export interface PackageRecipe {
   publish?: { include: string[] }
+  sourceablePrograms?: string[]
   distributable?: RecipeDistributable
   dependencies?: RecipeDependencyMap
   buildDependencies?: RecipeDependencyMap

@@ -214,6 +214,8 @@ pub fn createBinarySymlinkFromPath(
         return;
     }
 
+    const use_shim = try requiresForwardingShim(allocator, bin_path);
+
     // Remove existing symlink if present (same package or stale)
     io_helper.deleteFile(symlink_path) catch {};
 
@@ -223,7 +225,7 @@ pub fn createBinarySymlinkFromPath(
     // nonexistent sibling. Emit a tiny forwarding shim that `exec`s the real
     // path, so the wrapper sees its true location. Real Mach-O/ELF binaries are
     // still plain symlinks.
-    if (isShebangScript(bin_path)) {
+    if (use_shim) {
         if (writeForwardingShim(allocator, symlink_path, bin_path, install_base)) {
             if (!style.isCI()) style.print("  ✓ Created shim: {s} -> {s}\n", .{ bin_name, bin_path });
             return;
@@ -253,6 +255,31 @@ pub fn isShebangScript(path: []const u8) bool {
     const n = std.posix.read(fd, &magic) catch return false;
     if (n != 2) return false;
     return magic[0] == '#' and magic[1] == '!';
+}
+
+/// Sourceable shell libraries must be linked, never exec'd by a forwarding shim.
+/// Their interface is declared in the package's checksummed publication metadata.
+pub fn requiresForwardingShim(allocator: std.mem.Allocator, path: []const u8) !bool {
+    if (!isShebangScript(path)) return false;
+    const bin_dir = std.fs.path.dirname(path) orelse return true;
+    const prefix = std.fs.path.dirname(bin_dir) orelse return true;
+    const manifest = try std.fs.path.join(allocator, &.{ prefix, "share", "pantry", "interfaces.json" });
+    defer allocator.free(manifest);
+    const content = io_helper.readFileAlloc(allocator, manifest, 64 * 1024) catch |err| {
+        if (err == error.FileNotFound) return true;
+        return err;
+    };
+    defer allocator.free(content);
+    const Interfaces = struct { version: u32, sourceablePrograms: []const []const u8 };
+    const parsed = std.json.parseFromSlice(Interfaces, allocator, content, .{ .ignore_unknown_fields = true }) catch return error.InvalidPackageInterface;
+    defer parsed.deinit();
+    if (parsed.value.version != 1) return error.InvalidPackageInterface;
+    var sourceable = false;
+    for (parsed.value.sourceablePrograms) |name| {
+        if (name.len == 0 or std.mem.indexOfScalar(u8, name, '/') != null) return error.InvalidPackageInterface;
+        if (std.mem.eql(u8, name, std.fs.path.basename(path))) sourceable = true;
+    }
+    return !sourceable;
 }
 
 /// Shell that sets `d` to the directory a shim really lives in: `$0`, after

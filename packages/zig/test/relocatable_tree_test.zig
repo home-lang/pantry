@@ -314,3 +314,33 @@ test "a dangling bin link left by a vanished install path is replaced" {
     try testing.expectEqualStrings("../bun.sh/v1.3.14/bin/bun", try f.linkTarget("main/pantry/.bin/bun"));
     try f.expectRuns("main/pantry/.bin/bun repaired", "repaired\n");
 }
+
+test "declared shell libraries preserve source semantics after relocation" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+    var f = try Fixture.init();
+    defer f.deinit();
+    const pkg = "base/packages/example.org/v1.0.0";
+    try f.write(pkg ++ "/bin/library.sh", "#!/bin/sh\nfixture_function() { printf 'source-ok\\n'; }\n", true);
+    try f.write(pkg ++ "/share/pantry/interfaces.json", "{\"version\":1,\"sourceablePrograms\":[\"library.sh\"]}\n", false);
+    try testing.expect(!try symlink.requiresForwardingShim(testing.allocator, f.abs(pkg ++ "/bin/library.sh")));
+    try symlink.createBinarySymlinkFromPath(testing.allocator, "library.sh", f.abs(pkg ++ "/bin/library.sh"), f.abs("base"));
+    try testing.expectEqualStrings("../packages/example.org/v1.0.0/bin/library.sh", try f.linkTarget("base/bin/library.sh"));
+    try f.expectRuns(". ./base/bin/library.sh; fixture_function; printf 'caller-alive\\n'", "source-ok\ncaller-alive\n");
+    try f.rename("base", "moved");
+    try f.expectRuns("PATH=\"$PWD/moved/bin:$PATH\"; . library.sh; fixture_function; printf 'caller-alive\\n'", "source-ok\ncaller-alive\n");
+}
+
+test "invalid source interface metadata preserves the previous binary link" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+    var f = try Fixture.init();
+    defer f.deinit();
+    const pkg = "base/packages/example.org/v1.0.0";
+    try f.nativeBinary(pkg ++ "/bin/old");
+    try symlink.createBinarySymlinkFromPath(testing.allocator, "library.sh", f.abs(pkg ++ "/bin/old"), f.abs("base"));
+    const before = try f.linkTarget("base/bin/library.sh");
+    try f.write(pkg ++ "/bin/library.sh", "#!/bin/sh\nexit 0\n", true);
+    try f.write(pkg ++ "/share/pantry/interfaces.json", "{\"version\":2,\"sourceablePrograms\":[\"library.sh\"]}\n", false);
+    try testing.expectError(error.InvalidPackageInterface, symlink.createBinarySymlinkFromPath(testing.allocator, "library.sh", f.abs(pkg ++ "/bin/library.sh"), f.abs("base")));
+    try testing.expectEqualStrings(before, try f.linkTarget("base/bin/library.sh"));
+    try f.expectRuns("base/bin/library.sh retained", "retained\n");
+}

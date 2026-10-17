@@ -1,4 +1,4 @@
-import { lstatSync, readdirSync, rmdirSync, unlinkSync } from 'node:fs'
+import { existsSync, lstatSync, mkdirSync, readdirSync, rmdirSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
 /** Apply the recipe's public product boundary before inspecting native runtimes. */
@@ -22,4 +22,14 @@ export function selectPublishedFiles(prefix: string, patterns?: string[]): void 
   const keep = new Set(selected)
   for (const file of files) if (!keep.has(file)) unlinkSync(file)
   for (const directory of directories) if (!readdirSync(directory).length) rmdirSync(directory)
+}
+
+/** Declare source interfaces in the checksummed artifact, independent of installer catalogs. */
+export function writeProgramInterfaces(prefix: string, sourceablePrograms?: string[]): void {
+  if (!sourceablePrograms) return
+  if (sourceablePrograms.some(name => !/^[a-zA-Z0-9_.+-]+$/.test(name) || !existsSync(join(prefix, 'bin', name))))
+    throw new Error('Sourceable programs must name existing package bin files')
+  const directory = join(prefix, 'share/pantry')
+  mkdirSync(directory, { recursive: true })
+  writeFileSync(join(directory, 'interfaces.json'), JSON.stringify({ version: 1, sourceablePrograms }) + '\n')
 }
