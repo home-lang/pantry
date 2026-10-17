@@ -32,6 +32,13 @@ jobs:
       - name: Setup Pantry and workspace dependencies
         uses: ./packages/action
 
+      - name: Verify native copy modes and Windows argument parsing
+        working-directory: packages/zig
+        run: |
+          zig test src/io_helper.zig -lc --test-filter 'buffered copies'
+          zig test src/io_helper.zig -lc --test-filter 'Windows arguments'
+          zig test src/packages/semver.zig -lc --test-filter 'conjunctive'
+
       - name: Build for All Platforms
         run: |
           set -e
@@ -51,3 +58,40 @@ jobs:
               exit 1
             fi
           done
+
+      - name: Retain the compiled Windows CLI for native verification
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-windows-cli
+          path: packages/zig/zig-out/bin/windows-x86_64/pantry.exe
+          if-no-files-found: error
+
+  windows-native:
+    name: Native Windows CLI and compiler links
+    needs: compile-all
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - name: Bootstrap published Bun through Pantry
+        uses: pantry-pm/pantry/packages/action@41c32f5ecb58b5494e63f8606be787d93b01a18a # v0.11.89
+        with:
+          version: 0.11.89
+          install: 'false'
+          packages: bun.com@1.4.3
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: compiled-windows-cli
+          path: ${{ runner.temp }}/pantry-compiled-cli
+      - name: Verify source SDK links and the compiled native CLI
+        env:
+          PANTRY_TEST_CLI: ${{ runner.temp }}/pantry-compiled-cli/pantry.exe
+        run: bun .github/scripts/windows-native-tools.ts
+      - name: Retain native Windows verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-native-tools
+          path: artifacts/windows-native-tools
+          if-no-files-found: error

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { copyFile, mkdir, mkdtemp, realpath, rm } from 'node:fs/promises'
+import { copyFile, mkdir, mkdtemp, realpath, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -44,6 +44,7 @@ try {
   env.PATH = `${work}/pantry/.bin:${env.PATH}`
   const paths = Object.fromEntries(await Promise.all(['bun', 'google-chrome-stable', 'ffmpeg', 'ffprobe', 'yt-dlp', 'python3'].map(async name => [name, await tool(name)])))
   checks.programs = paths
+  checks.programModes = Object.fromEntries(await Promise.all(Object.entries(paths).map(async ([name, path]) => [name, ((await stat(path)).mode & 0o777).toString(8)])))
   assert.match(await run('bun-version', [paths.bun, '--version']), /^1\.4\.3\s*$/)
   assert.match(await run('chrome-version', [paths['google-chrome-stable'], '--version']), /155\.0\.8059\.84/)
   assert.match(await run('ffmpeg-version', [paths.ffmpeg, '-version']), /ffmpeg version 8\.1/)
