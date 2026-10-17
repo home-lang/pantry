@@ -1470,6 +1470,17 @@ SYSLIB_OVERRIDE_EOF`)
   sections.push('    cat > "$wrapper_dir/$cc_name" <<\'CCEOF\'')
   sections.push('#!/bin/bash')
   sections.push('args=()')
+  // GCC can retain a configured absolute assembler/linker path after its
+  // package is relocated. PATH alone does not override that search order.
+  // Pair managed GCC with the resolved managed binutils using GCC's public
+  // -B option, rather than silently invoking the worker's older /usr/bin/as.
+  const gccPrefix = depPaths['deps.gnu.org/gcc.prefix']
+  const binutilsPrefix = depPaths['deps.gnu.org/binutils.prefix']
+  if (osName === 'linux' && gccPrefix && binutilsPrefix && !['/usr', '/usr/local', '/'].includes(binutilsPrefix)) {
+    sections.push('case "__REAL_CC__" in')
+    sections.push(`  '${gccPrefix}/'*) args+=("-B${binutilsPrefix}/bin/") ;;`)
+    sections.push('esac')
+  }
   sections.push('has_shared=false')
   sections.push('for arg in "$@"; do')
   sections.push('  case "$arg" in')

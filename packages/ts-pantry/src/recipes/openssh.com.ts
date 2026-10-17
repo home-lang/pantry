@@ -11,7 +11,9 @@ export const recipe: Recipe = {
   dependencies: {
     'nlnetlabs.nl/ldns': '*',
     'developers.yubico.com/libfido2': '*',
-    'openssl.org': '*',
+    // OpenSSH 10.x uses APIs removed in OpenSSL 4; keep headers and libraries
+    // on the supported OpenSSL 3 ABI throughout the build and runtime graph.
+    'openssl.org': '^3',
     'kerberos.org': '*',
     'thrysoee.dk/editline': '*',
     'github.com/besser82/libxcrypt': '*',
