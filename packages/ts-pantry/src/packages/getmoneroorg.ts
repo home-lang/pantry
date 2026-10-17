@@ -3,7 +3,7 @@
  *
  * @domain `getmonero.org`
  * @programs `monero-wallet-rpc`, `monero-wallet-cli`, `monero-gen-trusted-multisig`, `monero-gen-ssl-cert`, `monerod`, ... (+9 more)
- * @version `0.18.5.3` (53 versions available)
+ * @version `0.18.5.4` (54 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install getmonero.org`
@@ -17,7 +17,7 @@
  * const pkg = pantry.getmoneroorg
  * console.log(pkg.name)        // "getmonero"
  * console.log(pkg.programs)    // ["monero-wallet-rpc", "monero-wallet-cli", ...]
- * console.log(pkg.versions[0]) // "0.18.5.3" (latest)
+ * console.log(pkg.versions[0]) // "0.18.5.4" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/getmonero-org.md
@@ -92,6 +92,7 @@ export const getmoneroorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.18.5.4',
     '0.18.5.3',
     '0.18.5.1',
     '0.18.5.0',
