@@ -35,3 +35,18 @@ test('unknown or unverified artifacts cannot authorize cache reuse', async () =>
   for (const data of [{}, { versions: { '10.2.0': { platforms: { 'linux-x86-64': {} } } } }])
     await expect(nativeArtifactCacheIdentity(['openssh.com'], platform, async () => data, async () => [])).rejects.toThrow()
 })
+
+test('historical unsigned metadata does not hide a verified current artifact or a lock pin', async () => {
+  const data = metadata('a')
+  data.versions!['9.0.0'] = { platforms: { 'linux-x86-64': { tarball: 'historical.tar.gz' } } }
+  const current = await nativeArtifactCacheIdentity(['openssh.com@^10'], platform, async () => data, async () => [])
+  expect(current).toMatch(/^[a-f0-9]{64}$/)
+  await expect(nativeArtifactCacheIdentity(['openssh.com'], platform, async () => data, async () => [], new Map([['openssh.com', '9.0.0']]))).rejects.toThrow('missing artifact digest')
+})
+
+test('native major and minor pins select the matching published candidate', async () => {
+  const read = async () => metadata('a')
+  expect(await nativeArtifactCacheIdentity(['openssh.com@10'], platform, read, async () => [])).toBe(await nativeArtifactCacheIdentity(['openssh.com@10.2'], platform, read, async () => []))
+  const zeroMajor = { versions: { '0.13.0': metadata('a').versions!['10.2.0'] } }
+  expect(await nativeArtifactCacheIdentity(['github.com/PJK/libcbor@0'], platform, async () => zeroMajor, async () => [])).toMatch(/^[a-f0-9]{64}$/)
+})

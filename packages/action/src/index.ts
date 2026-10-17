@@ -885,9 +885,10 @@ export async function run(): Promise<void> {
     // Avoid hashing the same file twice when lockfile == depsFile
     const depsHash = (depsFileForKey && depsFileForKey !== lockfile) ? hashFile(depsFileForKey) : 'none'
     const systemDeps = selectSystemPackages(inputs.packages, inputs.setupOnly, extractSystemDeps)
+    const lockedVersions = readLockedVersions()
     let artifactIdentity: string | undefined
     try {
-      artifactIdentity = await nativeArtifactCacheIdentity(systemDeps, platform)
+      artifactIdentity = await nativeArtifactCacheIdentity(systemDeps, platform, undefined, undefined, lockedVersions)
     }
     catch (error) {
       core.warning(`Native artifact identity unavailable; installing without a dependency cache: ${error}`)
@@ -926,7 +927,6 @@ export async function run(): Promise<void> {
     // Lockfile-pinned versions (map of domain → concrete version). Consulted
     // before falling back to the deps file / "latest" when installing system
     // packages, so the action stays in lockstep with `pantry install`.
-    const lockedVersions = readLockedVersions()
     const resolvedSystemVersions = new Map<string, string>()
 
     // Bun is part of the action's baseline runtime contract even when callers
