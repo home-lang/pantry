@@ -74,6 +74,49 @@ describe('readPantryPackageInfo strips inline comments from dependency versions'
   })
 })
 
+describe('dependency platform groups in package metadata', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pantry-yaml-platforms-'))
+  afterAll(() => fs.rmSync(dir, { recursive: true, force: true }))
+
+  test('keeps OS/architecture groups, comments, blank lines and build scopes structural', async () => {
+    const pkg = 'example.org/platforms'
+    fs.mkdirSync(path.join(dir, pkg), { recursive: true })
+    fs.writeFileSync(path.join(dir, pkg, 'package.yml'), `dependencies:
+  zlib.net: 1
+  python.org: 3.10 # keep the minor version's trailing zero
+  darwin/x86-64: # since 15.1.0
+    libisl.sourceforge.io: ^0
+
+  # A note does not end the dependency section.
+  linux/aarch64:
+    openssl.org: ^3
+  curl.se: '*'
+build:
+  dependencies:
+    gnu.org/make: '*'
+    linux/x86-64:
+      gnu.org/gcc: ^14
+  script:
+    - echo build
+runtime:
+  nodejs.org: '>=18'
+  python.org: 3.10
+  env:
+    PATH: '${'${{prefix}}'}/bin'
+`)
+    const info = await readPantryPackageInfo(pkg, dir)
+    expect(info?.dependencies).toEqual([
+      'zlib.net@1',
+      'python.org@3.10',
+      'darwin/x86-64:libisl.sourceforge.io^0',
+      'linux/aarch64:openssl.org^3',
+      'curl.se',
+    ])
+    expect(info?.buildDependencies).toEqual(['gnu.org/make', 'linux/x86-64:gnu.org/gcc^14'])
+    expect(info?.companions).toEqual(['nodejs.org>=18', 'python.org@3.10'])
+  })
+})
+
 describe('generate-zig never emits a dependency note', () => {
   test('stripSpecComment', async () => {
     const { stripSpecComment } = await import('../src/generate-zig')

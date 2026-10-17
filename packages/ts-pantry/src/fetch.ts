@@ -5,6 +5,7 @@ import process from 'node:process'
 import { getAliasOverrides, shouldReplaceAliases } from './alias-overrides'
 import { DEFAULT_CACHE_DIR, DEFAULT_CACHE_EXPIRATION_MINUTES, DEFAULT_TIMEOUT_MS } from './consts'
 import { aliases } from './packages/aliases'
+import { dependencyPlatform, recipeDepsToSpecs } from './dependency-spec'
 // pkgx-scraper removed — version discovery now via scripts/version-fetcher.ts
 const scrapePkgxPackage = async (..._args: any[]): Promise<any> => null
 // Lazy import of utils functions to avoid module loading issues
@@ -98,7 +99,7 @@ function getPropertyJSDoc(key: string, value: any): string | null {
       if (Array.isArray(value) && value.length > 0) {
         // Check if any dependencies are OS-specific
         const hasOsDeps = value.some(dep => typeof dep === 'string' && dep.includes(':'))
-        const osNote = hasOsDeps ? '\n  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).' : ''
+        const osNote = hasOsDeps ? '\n  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:freetype.org`).' : ''
 
         return `  /**
   * Runtime dependencies for this package.
@@ -111,7 +112,7 @@ function getPropertyJSDoc(key: string, value: any): string | null {
       if (Array.isArray(value) && value.length > 0) {
         // Check if any dependencies are OS-specific
         const hasOsDeps = value.some(dep => typeof dep === 'string' && dep.includes(':'))
-        const osNote = hasOsDeps ? '\n  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).' : ''
+        const osNote = hasOsDeps ? '\n  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:gnu.org/gcc`).' : ''
 
         return `  /**
   * Build dependencies for this package.
@@ -337,7 +338,7 @@ function generatePackageJSDoc(packageInfo: PkgxPackage, domainName: string, pack
 
     // Check if any dependencies are OS-specific
     const hasOsDeps = packageInfo.dependencies.some(dep => dep.includes(':'))
-    const osNote = hasOsDeps ? ' (includes OS-specific dependencies with `os:package` format)' : ''
+    const osNote = hasOsDeps ? ' (includes platform-specific dependencies)' : ''
 
     lines.push(` * @dependencies \`${depsList}\`${moreDeps}${osNote}`)
   }
@@ -349,7 +350,7 @@ function generatePackageJSDoc(packageInfo: PkgxPackage, domainName: string, pack
 
     // Check if any dependencies are OS-specific
     const hasOsDeps = packageInfo.buildDependencies.some(dep => dep.includes(':'))
-    const osNote = hasOsDeps ? ' (includes OS-specific dependencies with `os:package` format)' : ''
+    const osNote = hasOsDeps ? ' (includes platform-specific dependencies)' : ''
 
     lines.push(` * @buildDependencies \`${depsList}\`${moreDeps}${osNote} - required only when building from source`)
   }
@@ -2033,6 +2034,57 @@ export function parseYamlScalar(raw: string): string {
   return (comment >= 0 ? value.slice(0, comment) : value).trim()
 }
 
+/** Extract the dependency mapping schema without coercing version text into numbers. */
+function dependencyDeclarations(content: string): {
+  dependencies: Record<string, unknown>
+  buildDependencies: Record<string, unknown>
+  companions: Record<string, unknown>
+} {
+  const maps = {
+    dependencies: Object.create(null) as Record<string, unknown>,
+    buildDependencies: Object.create(null) as Record<string, unknown>,
+    companions: Object.create(null) as Record<string, unknown>,
+  }
+  let section = ''
+  let active: Record<string, unknown> | undefined
+  let base = 2
+  let group: Record<string, unknown> | undefined
+  for (const line of content.split('\n')) {
+    if (!line.trim() || line.trimStart().startsWith('#')) continue
+    const mapping = /^(\s*)([^:#]+):\s*(.*)$/.exec(line)
+    if (!mapping) continue
+    const indent = mapping[1].length
+    const name = parseYamlScalar(mapping[2].trim())
+    const value = parseYamlScalar(mapping[3])
+    if (indent === 0) {
+      section = name
+      active = name === 'dependencies' ? maps.dependencies : name === 'runtime' ? maps.companions : undefined
+      group = undefined
+      base = 2
+      continue
+    }
+    if (section === 'build' && indent === 2) {
+      active = name === 'dependencies' ? maps.buildDependencies : undefined
+      group = undefined
+      base = 4
+      continue
+    }
+    if (!active) continue
+    if (indent === base) {
+      group = undefined
+      if (section === 'runtime' && (name === 'env' || /^[A-Z_]+$/.test(name))) continue
+      if (dependencyPlatform(name)) {
+        if (value) throw new TypeError(`Dependency platform ${name} must contain a dependency map`)
+        group = Object.create(null) as Record<string, unknown>
+        active[name] = group
+      }
+      else active[name] = value || '*'
+    }
+    else if (group && indent === base + 2) group[name] = value || '*'
+  }
+  return maps
+}
+
 /**
  * Reads package.yml file and extracts basic package information
  * @param packageName The package name (e.g., 'github.com/user/repo')
@@ -2050,185 +2102,11 @@ export async function readPantryPackageInfo(packageName: string, pantryDir = 'sr
   try {
     const yamlContent = fs.readFileSync(packageYmlPath, 'utf-8')
 
-    // Parse YAML content - for now we'll extract what we can with simple regex
-    // In a full implementation, you'd want to use a proper YAML parser
-
-    // Extract dependencies with version constraints
-    // Separate runtime dependencies (top-level) from build dependencies (build.dependencies)
-    const runtimeDependencies: string[] = []
-    const buildDependencies: string[] = []
+    const declarations = dependencyDeclarations(yamlContent)
+    const runtimeDependencies = recipeDepsToSpecs(declarations.dependencies)
+    const buildDependencies = recipeDepsToSpecs(declarations.buildDependencies)
+    const companions = recipeDepsToSpecs(declarations.companions)
     const depsLines = yamlContent.split('\n')
-    let inDepsSection = false
-    let inBuildDepsSection = false
-
-    let inOsSection = false
-    let currentOs = ''
-
-    for (const line of depsLines) {
-      // Check for top-level dependencies
-      if (line.match(/^dependencies:\s*$/)) {
-        inDepsSection = true
-        inBuildDepsSection = false
-        inOsSection = false
-        continue
-      }
-
-      // Check for build.dependencies (2-space indented)
-      if (line.match(/^\s{2}dependencies:\s*$/)) {
-        inBuildDepsSection = true
-        inDepsSection = false
-        inOsSection = false
-        continue
-      }
-
-      if (inDepsSection || inBuildDepsSection) {
-        // Exit conditions: empty line or non-indented line (for top-level deps)
-        // or less than 4-space indented line (for build deps)
-        if (line.match(/^\s*$/)
-          || (inDepsSection && line.match(/^\S/))
-          || (inBuildDepsSection && !line.match(/^\s{4,}/))) {
-          inDepsSection = false
-          inBuildDepsSection = false
-          inOsSection = false
-          continue
-        }
-
-        // Check for OS-specific sections like "linux:", "darwin:", etc.
-        const osMatch = line.match(/^\s{2}(linux|darwin|windows):\s*$/)
-        if (osMatch) {
-          inOsSection = true
-          currentOs = osMatch[1]
-          continue
-        }
-
-        // If we're in an OS section, look for packages with more indentation
-        if (inOsSection) {
-          // Parse lines like "    freetype.org: '*'" (4+ spaces)
-          const osDepMatch = line.match(/^\s{4,}([^\s:#]+):\s*(\S.*)$/)
-          if (osDepMatch) {
-            const pkg = osDepMatch[1]
-            const version = parseYamlScalar(osDepMatch[2])
-
-            // Add OS prefix to indicate conditional dependency
-            const osPrefix = `${currentOs}:`
-
-            if (version && version !== '*') {
-              // Include version constraint - add @ for specific versions, ^ for ranges
-              const hasVersionOperator = /^[~^>=<@]/.test(version)
-              const isSpecificVersion = /^[\d.]+$/.test(version) && /^\d/.test(version)
-              const operator = hasVersionOperator ? '' : (isSpecificVersion ? '@' : '^')
-              const depString = `${osPrefix}${pkg}${operator}${version}`
-              if (inBuildDepsSection) {
-                buildDependencies.push(depString)
-              }
-              else {
-                runtimeDependencies.push(depString)
-              }
-            }
-            else {
-              const depString = `${osPrefix}${pkg}`
-              if (inBuildDepsSection) {
-                buildDependencies.push(depString)
-              }
-              else {
-                runtimeDependencies.push(depString)
-              }
-            }
-          }
-          // If we hit a line with less than 4 spaces, we're out of this OS section
-          else if (!line.match(/^\s{4,}/) && !line.match(/^\s*$/)) {
-            inOsSection = false
-            currentOs = ''
-          }
-        }
-        else {
-          // Parse regular dependencies (direct under dependencies:)
-          const depMatch = line.match(/^\s{2,3}([^\s:#]+):\s*(\S.*)$/)
-          if (depMatch) {
-            const pkg = depMatch[1]
-            const version = parseYamlScalar(depMatch[2])
-
-            // Skip OS sections that we already handled
-            if (['linux', 'darwin', 'windows'].includes(pkg)) {
-              continue
-            }
-
-            if (version && version !== '*') {
-              // Include version constraint - add @ for specific versions, ^ for ranges
-              const hasVersionOperator = /^[~^>=<@]/.test(version)
-              const isSpecificVersion = /^[\d.]+$/.test(version) && /^\d/.test(version)
-              const operator = hasVersionOperator ? '' : (isSpecificVersion ? '@' : '^')
-              const depString = `${pkg}${operator}${version}`
-              if (inBuildDepsSection) {
-                buildDependencies.push(depString)
-              }
-              else {
-                runtimeDependencies.push(depString)
-              }
-            }
-            else {
-              const depString = pkg
-              if (inBuildDepsSection) {
-                buildDependencies.push(depString)
-              }
-              else {
-                runtimeDependencies.push(depString)
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Extract companions/runtime dependencies with version constraints
-    const companions: string[] = []
-    let inRuntimeSection = false
-
-    for (const line of depsLines) {
-      if (line.match(/^runtime:\s*$/)) {
-        inRuntimeSection = true
-        continue
-      }
-      if (inRuntimeSection) {
-        if (line.match(/^\s*$/) || line.match(/^\S/)) {
-          inRuntimeSection = false
-          continue
-        }
-
-        // Skip environment variable definitions (env: section)
-        if (line.match(/^\s+env:\s*$/)) {
-          continue
-        }
-
-        // Skip lines that are environment variable assignments
-        if (line.match(/^\s+[A-Z_]+:\s*\$\{\{/)) {
-          continue
-        }
-
-        // Parse lines like "nodejs.org: '>=5'" or "curl.se: '*'" (actual package dependencies)
-        const runtimeMatch = line.match(/^\s+([^\s:#]+):\s*(\S.*)$/)
-        if (runtimeMatch) {
-          const pkg = runtimeMatch[1]
-          const version = parseYamlScalar(runtimeMatch[2])
-
-          // Skip if this looks like an environment variable (all caps with underscores)
-          if (/^[A-Z_]+$/.test(pkg)) {
-            continue
-          }
-
-          if (version && version !== '*') {
-            // Include version constraint - add @ for specific versions, ^ for ranges
-            const hasVersionOperator = /^[~^>=<@]/.test(version)
-            const isSpecificVersion = /^[\d.]+$/.test(version) && /^\d/.test(version)
-            const operator = hasVersionOperator ? '' : (isSpecificVersion ? '@' : '^')
-            companions.push(`${pkg}${operator}${version}`)
-          }
-          else {
-            companions.push(pkg)
-          }
-        }
-      }
-    }
 
     // Extract homepage and GitHub URLs from distributable.url
     let homepageUrl = ''

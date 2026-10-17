@@ -907,6 +907,10 @@ export function satisfiesInstallerConstraint(version: string, constraint: Instal
 
   if (op === '^') {
     if (order < 0) return false
+    // Omitted components are ranges: ^0 permits every stable 0.x, and
+    // ^0.0 permits every 0.0 patch. An explicit ^0.0.3 still pins its patch.
+    if (target.length === 1) return vMaj === tMaj
+    if (tMaj === 0 && target.length === 2) return vMaj === 0 && vMin === tMin
     // ^0.0.3 pins the patch; ^0.15.1 pins the minor; ^1.2.3 pins the major.
     if (tMaj === 0 && tMin === 0) return vMaj === 0 && vMin === 0 && vPat === tPat
     if (tMaj === 0) return vMaj === 0 && vMin === tMin

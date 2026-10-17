@@ -6,8 +6,8 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install gnu.org/gcc/libstdcxx`
- * @dependencies `gnu.org/binutils`, `gnu.org/gmp>=4.2`, `gnu.org/mpfr>=2.4.0`, ... (+3 more)
- * @buildDependencies `linux:gnu.org/gcc`, `gnu.org/make`, `perl.org@^5.6.1`, ... (+3 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
+ * @dependencies `gnu.org/binutils`, `gnu.org/gmp>=4.2`, `gnu.org/mpfr>=2.4.0`, ... (+3 more) (includes platform-specific dependencies)
+ * @buildDependencies `linux:gnu.org/gcc`, `gnu.org/make`, `perl.org^5.6.1`, ... (+3 more) (includes platform-specific dependencies) - required only when building from source
  *
  * @example
  * ```typescript
@@ -48,6 +48,7 @@ export const gnuorggcclibstdcxxPackage = {
   /**
   * Runtime dependencies for this package.
   * These are required when running the package.
+  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:freetype.org`).
   */
   dependencies: [
     'gnu.org/binutils',
@@ -55,17 +56,17 @@ export const gnuorggcclibstdcxxPackage = {
     'gnu.org/mpfr>=2.4.0',
     'gnu.org/mpc>=0.8.0',
     'zlib.net^1.3',
-    'darwin/x86-64^# since 15.1.0',
+    'darwin/x86-64:libisl.sourceforge.io^0',
   ] as const,
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
-  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:gnu.org/gcc`).
   */
   buildDependencies: [
     'linux:gnu.org/gcc',
     'gnu.org/make',
-    'perl.org@^5.6.1',
+    'perl.org^5.6.1',
     'gnu.org/patch',
     'curl.se',
     'github.com/westes/flex',

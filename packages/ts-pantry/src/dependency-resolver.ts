@@ -1,4 +1,5 @@
 import type { PkgxPackage } from './types'
+import { dependencyPlatform, normalizeDependencyArch } from './dependency-spec'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -11,6 +12,7 @@ export interface Dependency {
   constraint: string
   isOsSpecific: boolean
   os?: string
+  arch?: string
 }
 
 /**
@@ -50,6 +52,8 @@ export interface DependencyResolverOptions {
   packagesDir?: string
   includeOsSpecific?: boolean
   targetOs?: 'linux' | 'darwin' | 'windows'
+  /** CPU selector; x86-64/x86_64 and aarch64 aliases normalize to x64 and arm64. */
+  targetArch?: string
   maxDepth?: number
   verbose?: boolean
 }
@@ -574,6 +578,7 @@ export async function resolveTransitiveDependencies(
     maxDepth = 10,
     verbose = false,
     targetOs,
+    targetArch,
     includeOsSpecific = true,
   } = options
 
@@ -600,12 +605,13 @@ export async function resolveTransitiveDependencies(
 
     // Helper to parse a dependency string into a Dependency + resolve transitives
     function parseDep(raw: string): { dep: Dependency, pkgName: string } | null {
-      const osMatch = raw.match(/^(linux|darwin|windows):(.+)$/)
-      const isOsSpecific = !!osMatch
-      const depName = osMatch ? osMatch[2] : raw
-      const osType = osMatch ? osMatch[1] : undefined
-
-      if (isOsSpecific && (!includeOsSpecific || (targetOs && osType !== targetOs))) {
+      const colon = raw.indexOf(':')
+      const platform = colon >= 0 ? dependencyPlatform(raw.slice(0, colon)) : undefined
+      const isOsSpecific = !!platform
+      const depName = platform ? raw.slice(colon + 1) : raw
+      const osType = platform?.os
+      if (platform && (!includeOsSpecific || (targetOs && platform.os !== targetOs)
+        || (targetArch && platform.arch && platform.arch !== normalizeDependencyArch(targetArch)))) {
         return null
       }
 
@@ -630,7 +636,7 @@ export async function resolveTransitiveDependencies(
       }
 
       return {
-        dep: { name: pkgName, version, constraint, isOsSpecific, os: osType },
+        dep: { name: pkgName, version, constraint, isOsSpecific, os: osType, ...(platform?.arch ? { arch: platform.arch } : {}) },
         pkgName,
       }
     }

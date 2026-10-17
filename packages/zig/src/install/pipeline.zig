@@ -378,17 +378,17 @@ const ResolveThreadCtx = struct {
 };
 
 /// Parse a generated-catalog dependency spec into a domain + version
-/// constraint, honoring the optional `os:` prefix and stripping ` # comments`.
+/// constraint, honoring `os:` / `os/arch:` prefixes and stripping ` # comments`.
 /// Examples: `apache.org/apr^1`, `linux:gnu.org/gcc/libstdcxx^14 # since …`,
 /// `gnome.org/libxml2~2.13`, `apache.org/thrift=0.22.0`, `…libstdcxx@14`.
-/// Returns null when the spec targets a different OS. Returned slices point
+/// Returns null when the spec targets a different OS or architecture. Returned slices point
 /// into `spec_in` (a static catalog string), so callers dupe before storing.
 fn parsePantryDepSpec(spec_in: []const u8) ?struct { domain: []const u8, version: []const u8 } {
     const parsed = parseDepSpecForOs(spec_in) orelse return null;
     return if (parsed.foreign) null else .{ .domain = parsed.domain, .version = parsed.version };
 }
 
-/// The same spec, but only when it is guarded for an OS this host is *not*.
+/// The same spec, but only when its OS or architecture guard excludes this host.
 ///
 /// `parsePantryDepSpec` answers null for those, which is right for installing -
 /// there is nothing to fetch. It is wrong for *recording*: the lockfile
@@ -405,7 +405,7 @@ pub fn parseForeignOsDepSpec(spec_in: []const u8) ?struct { domain: []const u8, 
     return if (parsed.foreign) .{ .domain = parsed.domain, .version = parsed.version } else null;
 }
 
-/// The same spec, but only when it carries an OS guard - whichever OS that is.
+/// The same spec, but only when it carries an OS or architecture guard.
 ///
 /// This is the question the lockfile actually needs answered, and it is not the
 /// same as `parseForeignOsDepSpec`. An OS guard on a VERSION CONSTRAINT means
@@ -436,7 +436,25 @@ pub fn parseAnyOsDepSpec(spec_in: []const u8) ?struct { domain: []const u8, vers
     return .{ .domain = parsed.domain, .version = parsed.version };
 }
 
-fn parseDepSpecForOs(spec_in: []const u8) ?struct { domain: []const u8, version: []const u8, foreign: bool, guarded: bool } {
+const ParsedPlatformDep = struct { domain: []const u8, version: []const u8, foreign: bool, guarded: bool };
+
+fn normalizedDepArch(arch: []const u8) []const u8 {
+    if (std.mem.eql(u8, arch, "x64") or std.mem.eql(u8, arch, "x86_64")) return "x86-64";
+    if (std.mem.eql(u8, arch, "arm64")) return "aarch64";
+    return arch;
+}
+
+fn parseDepSpecForOs(spec_in: []const u8) ?ParsedPlatformDep {
+    const os = switch (builtin.os.tag) {
+        .linux => "linux",
+        .macos => "darwin",
+        .windows => "windows",
+        else => @tagName(builtin.os.tag),
+    };
+    return parseDepSpecForPlatform(spec_in, os, @tagName(builtin.cpu.arch));
+}
+
+fn parseDepSpecForPlatform(spec_in: []const u8, os: []const u8, arch: []const u8) ?ParsedPlatformDep {
     var spec = spec_in;
     if (std.mem.indexOfScalar(u8, spec, '#')) |h| spec = spec[0..h];
     spec = std.mem.trim(u8, spec, " \t");
@@ -445,19 +463,20 @@ fn parseDepSpecForOs(spec_in: []const u8) ?struct { domain: []const u8, version:
     var foreign = false;
     var guarded = false;
 
-    // `linux:` / `darwin:` / `windows:` OS guard.
+    // The same OS/architecture guards as recipe and TypeScript metadata.
     if (std.mem.indexOfScalar(u8, spec, ':')) |colon| {
         const prefix = spec[0..colon];
-        const is_os = std.mem.eql(u8, prefix, "linux") or std.mem.eql(u8, prefix, "darwin") or std.mem.eql(u8, prefix, "windows");
+        const slash = std.mem.indexOfScalar(u8, prefix, '/');
+        const guard_os = if (slash) |at| prefix[0..at] else prefix;
+        const is_os = std.mem.eql(u8, guard_os, "linux") or std.mem.eql(u8, guard_os, "darwin") or std.mem.eql(u8, guard_os, "windows");
         if (is_os) {
-            const cur = switch (builtin.os.tag) {
-                .linux => "linux",
-                .macos => "darwin",
-                .windows => "windows",
-                else => "",
-            };
             guarded = true;
-            foreign = !std.mem.eql(u8, prefix, cur);
+            foreign = !std.mem.eql(u8, guard_os, os);
+            if (slash) |at| {
+                const guard_arch = prefix[at + 1 ..];
+                if (guard_arch.len == 0 or std.mem.indexOfScalar(u8, guard_arch, '/') != null) return null;
+                foreign = foreign or !std.mem.eql(u8, normalizedDepArch(guard_arch), normalizedDepArch(arch));
+            }
             spec = std.mem.trim(u8, spec[colon + 1 ..], " \t");
         }
     }
@@ -2021,4 +2040,19 @@ pub fn run(
         .failed_count = failed,
         .results = results,
     };
+}
+
+test "dependency architecture guards select the actual target and retain foreign pins" {
+    const spec = "darwin/x86-64:libisl.sourceforge.io^0";
+    const linux = parseDepSpecForPlatform(spec, "linux", "x86_64").?;
+    try std.testing.expect(linux.foreign and linux.guarded);
+    try std.testing.expectEqualStrings("libisl.sourceforge.io", linux.domain);
+    try std.testing.expectEqualStrings("^0", linux.version);
+    try std.testing.expect(!parseDepSpecForPlatform(spec, "darwin", "x64").?.foreign);
+    try std.testing.expect(parseDepSpecForPlatform(spec, "darwin", "aarch64").?.foreign);
+    try std.testing.expect(!parseDepSpecForPlatform("darwin/arm64:openssl.org@3", "darwin", "aarch64").?.foreign);
+    try std.testing.expect(!parseDepSpecForPlatform("linux/aarch64:openssl.org^3", "linux", "arm64").?.foreign);
+    try std.testing.expect(!parseDepSpecForPlatform("windows/x86_64:zlib.net", "windows", "x64").?.foreign);
+    try std.testing.expect(!parseDepSpecForPlatform("zlib.net^1", "linux", "x64").?.guarded);
+    try std.testing.expect(parseDepSpecForPlatform("darwin//x64:zlib.net", "darwin", "x64") == null);
 }

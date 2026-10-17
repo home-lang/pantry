@@ -65,6 +65,9 @@ describe('installer version constraints', () => {
   })
 
   it('implements caret boundaries for zero-major versions', () => {
+    expect(resolveInstallerConstraintFromCandidates('^0', ['1.0.0', '0.27.0', '0.26.0'])).toBe('0.27.0')
+    expect(resolveInstallerConstraintFromCandidates('^0.0', ['0.1.0', '0.0.9', '0.0.2'])).toBe('0.0.9')
+    expect(resolveInstallerConstraintFromCandidates('^0.0.0', ['0.0.9', '0.0.0'])).toBe('0.0.0')
     expect(satisfiesInstallerConstraint('0.15.9', parseInstallerConstraint('^0.15.1')!)).toBe(true)
     expect(satisfiesInstallerConstraint('0.16.0', parseInstallerConstraint('^0.15.1')!)).toBe(false)
     expect(satisfiesInstallerConstraint('0.0.4', parseInstallerConstraint('^0.0.3')!)).toBe(false)

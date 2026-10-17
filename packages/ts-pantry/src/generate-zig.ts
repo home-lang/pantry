@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { recipeDepsToSpecs } from './dependency-spec'
 import { getAliasOverrides, shouldReplaceAliases } from './alias-overrides'
 
 /**
@@ -183,34 +184,6 @@ function depKey(spec: string): string {
   const m = x.search(/[\^~><=@]/)
   const domain = (m >= 0 ? x.slice(0, m) : x).trim()
   return prefix + domain
-}
-
-/** Flatten a recipe's `dependencies` object (`{ 'php.net': '^8', darwin: { … } }`)
- * into the metadata's string-array form (`['php.net^8', 'darwin:…']`). */
-function recipeDepsToSpecs(deps: unknown): string[] {
-  if (!deps || typeof deps !== 'object')
-    return []
-  // Recipe constraints are operator-prefixed (`^3`, `>=10.30`, `~1.9`, `@14`)
-  // or a bare exact version (`14`, `1.1`) or `*`/empty. Metadata specs are
-  // `domain<constraint>`; a bare version must become `@<v>` so it doesn't fuse
-  // onto the domain (`libstdcxx14`) and so it dedupes against the metadata form.
-  const fmt = (c: string): string => {
-    const t = (c || '').trim()
-    if (t === '' || t === '*')
-      return ''
-    return /^[\^~><=@]/.test(t) ? t : `@${t}`
-  }
-  const out: string[] = []
-  for (const [k, v] of Object.entries(deps as Record<string, unknown>)) {
-    if ((k === 'linux' || k === 'darwin' || k === 'windows') && v && typeof v === 'object') {
-      for (const [d, c] of Object.entries(v as Record<string, string>))
-        out.push(`${k}:${d}${fmt(c)}`)
-    }
-    else if (typeof v === 'string') {
-      out.push(`${k}${fmt(v)}`)
-    }
-  }
-  return out
 }
 
 /** Load a package's build-recipe runtime dependencies (src/recipes/<domain>.ts),

@@ -15,7 +15,7 @@ export async function nativeArtifactCacheIdentity(
     return response.json() as Promise<RegistryMetadata>
   },
   dependencies: (domain: string) => Promise<string[]> = async domain =>
-    (await resolveTransitiveDependencies(domain, { targetOs: platform.os })).map(dep => `${dep.name}@${dep.constraint.replace(/^@/, '')}`),
+    (await resolveTransitiveDependencies(domain, { targetOs: platform.os, targetArch: platform.arch })).map(dep => `${dep.name}@${dep.constraint.replace(/^@/, '')}`),
   lockedVersions: Map<string, string> = new Map(),
 ): Promise<string> {
   const domains = new Map<string, Set<string>>()
