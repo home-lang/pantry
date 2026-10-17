@@ -290,7 +290,16 @@ export function fixElfRpaths(prefix: string, patchelf = 'patchelf'): void {
         }))
         // The package's own libraries must precede dependency and host paths.
         for (const path of existing) {
-          if (/^\$(?:ORIGIN|\{ORIGIN\})(?:\/|$)/.test(path)) paths.add(path)
+          if (!/^\$(?:ORIGIN|\{ORIGIN\})(?:\/|$)/.test(path)) continue
+          // Mirrored artifacts can name a managed dependency's versioned
+          // prefix rather than its library directory. ELF loaders do not
+          // descend into lib automatically; preserve the dependency and make
+          // its canonical library locations explicit before publication.
+          if (/\/v\d[\w.+-]*$/.test(path)) {
+            paths.add(`${path}/lib`)
+            paths.add(`${path}/lib64`)
+          }
+          paths.add(path)
         }
         const expected = [...paths].join(':')
         applyElfRpath(filePath, expected, patchelf)

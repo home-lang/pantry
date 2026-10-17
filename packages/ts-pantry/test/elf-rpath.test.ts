@@ -53,12 +53,12 @@ describe('ELF RPATH fix-up', () => {
     const plugin = join(dir, 'lib', 'engines-3', 'legacy.so')
     for (const file of [executable, nested, library, plugin]) dynamicElf(file)
     fixElfRpaths(dir, tool)
-    expect(readFileSync(`${executable}.rpath`, 'utf8')).toBe('$ORIGIN/../lib:$ORIGIN/../lib64:$ORIGIN/../../../perl.org/v5')
-    expect(readFileSync(`${nested}.rpath`, 'utf8')).toBe('$ORIGIN/../../lib:$ORIGIN/../../lib64:$ORIGIN/../../../perl.org/v5')
-    expect(readFileSync(`${library}.rpath`, 'utf8')).toBe('$ORIGIN:$ORIGIN/../lib:$ORIGIN/../../../perl.org/v5')
-    expect(readFileSync(`${plugin}.rpath`, 'utf8')).toBe('$ORIGIN/..:$ORIGIN/../../lib64:$ORIGIN/../../../perl.org/v5')
+    expect(readFileSync(`${executable}.rpath`, 'utf8')).toBe('$ORIGIN/../lib:$ORIGIN/../lib64:$ORIGIN/../../../perl.org/v5/lib:$ORIGIN/../../../perl.org/v5/lib64:$ORIGIN/../../../perl.org/v5')
+    expect(readFileSync(`${nested}.rpath`, 'utf8')).toBe('$ORIGIN/../../lib:$ORIGIN/../../lib64:$ORIGIN/../../../perl.org/v5/lib:$ORIGIN/../../../perl.org/v5/lib64:$ORIGIN/../../../perl.org/v5')
+    expect(readFileSync(`${library}.rpath`, 'utf8')).toBe('$ORIGIN:$ORIGIN/../lib:$ORIGIN/../../../perl.org/v5/lib:$ORIGIN/../../../perl.org/v5/lib64:$ORIGIN/../../../perl.org/v5')
+    expect(readFileSync(`${plugin}.rpath`, 'utf8')).toBe('$ORIGIN/..:$ORIGIN/../../lib64:$ORIGIN/../../../perl.org/v5/lib:$ORIGIN/../../../perl.org/v5/lib64:$ORIGIN/../../../perl.org/v5')
     fixElfRpaths(dir, tool)
-    expect(readFileSync(`${executable}.rpath`, 'utf8')).toBe('$ORIGIN/../lib:$ORIGIN/../lib64:$ORIGIN/../../../perl.org/v5')
+    expect(readFileSync(`${executable}.rpath`, 'utf8')).toBe('$ORIGIN/../lib:$ORIGIN/../lib64:$ORIGIN/../../../perl.org/v5/lib:$ORIGIN/../../../perl.org/v5/lib64:$ORIGIN/../../../perl.org/v5')
   })
 
   test('recognizes both ELF widths and byte orders without executing foreign binaries', () => {
@@ -119,4 +119,20 @@ describe('ELF RPATH fix-up', () => {
       '',
     ])
   })
+})
+
+test('versioned dependency prefix entries search the managed library directories', () => {
+  const { dir, tool } = fixture()
+  const library = join(dir, 'lib', 'libpq.so.5')
+  dynamicElf(library)
+  writeFileSync(`${library}.rpath`, '$ORIGIN/../../../../openssl.org/v1:$ORIGIN/../../../../kerberos.org/v1:$ORIGIN/../../../../unicode.org/v71/lib')
+  fixElfRpaths(dir, tool)
+  const paths = readFileSync(`${library}.rpath`, 'utf8').split(':')
+  expect(paths).toContain('$ORIGIN/../../../../openssl.org/v1/lib')
+  expect(paths).toContain('$ORIGIN/../../../../openssl.org/v1/lib64')
+  expect(paths).toContain('$ORIGIN/../../../../kerberos.org/v1/lib')
+  expect(paths).not.toContain('$ORIGIN/../../../../unicode.org/v71/lib/lib')
+  const once = readFileSync(`${library}.rpath`, 'utf8')
+  fixElfRpaths(dir, tool)
+  expect(readFileSync(`${library}.rpath`, 'utf8')).toBe(once)
 })
