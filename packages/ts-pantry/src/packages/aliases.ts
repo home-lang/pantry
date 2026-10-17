@@ -772,6 +772,7 @@ export const aliases: Record<string, string> = {
   'libass': 'github.com/libass/libass',
   'libassuan-config': 'gnupg.org/libassuan',
   'libatomic_ops': 'github.com/ivmai/libatomic_ops',
+  'libatspi': 'freedesktop.org/at-spi2-core/libatspi',
   'libb2': 'blake2.net/libb2',
   'libbluray': 'videolan.org/libbluray',
   'libbsd': 'freedesktop.org/libbsd',
