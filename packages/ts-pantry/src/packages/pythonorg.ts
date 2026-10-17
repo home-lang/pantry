@@ -10,7 +10,7 @@
  * @aliases `py`
  * @homepage https://www.python.org
  * @dependencies `zlib.net@1`, `sourceware.org/bzip2@1`, `openssl.org^1.1`, ... (+9 more)
- * @buildDependencies `freedesktop.org/pkg-config^0.29`, `gnu.org/patch`, `curl.se` - required only when building from source
+ * @buildDependencies `freedesktop.org/pkg-config^0.29`, `gnu.org/make`, `gnu.org/patch`, ... (+1 more) - required only when building from source
  *
  * @example
  * ```typescript
@@ -86,6 +86,7 @@ export const pythonPackage = {
   */
   buildDependencies: [
     'freedesktop.org/pkg-config^0.29',
+    'gnu.org/make',
     'gnu.org/patch',
     'curl.se',
   ] as const,

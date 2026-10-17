@@ -1634,6 +1634,7 @@ const CUSTOM_BUILD_DOMAINS = new Set<string>([
   'harfbuzz.org', // use the declared current ICU ABI on every native platform
   'mesonbuild.com', // use Pantry Python without pkgx changing the build environment
   'tcl-lang.org', // publish matching Tcl and Tk libraries from their sources
+  'python.org', // compile extensions against the declared managed ABI, including Linux NIS
 ])
 
 /**

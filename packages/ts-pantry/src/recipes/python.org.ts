@@ -33,12 +33,33 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'freedesktop.org/pkg-config': '^0.29',
+    'gnu.org/make': '*',
     'gnu.org/patch': '*',
     'curl.se': '*',
   },
+  dependencyOverrides: [{
+    if: '>=3.12<3.13',
+    dependencies: {
+      linux: {
+        'github.com/thkukuk/libnsl': '^2',
+        'sourceforge.net/libtirpc': '^1',
+      },
+    },
+  }],
 
   build: {
     script: [
+      // Modern CPython builds against the declared Pantry headers/libraries.
+      // Keep historical release patches below isolated from the current build.
+      'if test {{version.major}} -gt 3 || { test {{version.major}} -eq 3 && test {{version.minor}} -ge 12; }; then',
+      './configure $ARGS --with-ensurepip=install --with-pkg-config=yes --with-openssl={{deps.openssl.org.prefix}}',
+      'make --jobs {{hw.concurrency}}',
+      'make install',
+      'ln -sf python{{version.marketing}} {{prefix}}/bin/python',
+      'ln -sf python{{version.marketing}}-config {{prefix}}/bin/python-config',
+      'mkdir -p {{prefix}}/share/licenses/python',
+      'cp LICENSE {{prefix}}/share/licenses/python/LICENSE',
+      'else',
       // MacPorts has a series of patches to keep python2 working
       {
         run: [
@@ -202,6 +223,7 @@ export const recipe: Recipe = {
         ].join('\n'),
         'working-directory': '{{prefix}}/include',
       },
+      'fi',
     ],
     env: {
       'ARGS': [
@@ -231,5 +253,22 @@ export const recipe: Recipe = {
       'OPENSSL_LDFLAGS': '-L{{deps.openssl.org.prefix}}/lib',
       'PYTHON2PATCHES': ['https://raw.githubusercontent.com/macports/macports-ports/master/lang/python27/files/patch-Makefile.pre.in.diff', 'https://raw.githubusercontent.com/macports/macports-ports/master/lang/python27/files/patch-setup.py.diff', 'https://raw.githubusercontent.com/macports/macports-ports/master/lang/python27/files/patch-Lib-cgi.py.diff', 'https://raw.githubusercontent.com/macports/macports-ports/master/lang/python27/files/patch-Lib-ctypes-macholib-dyld.py.diff', 'https://raw.githubusercontent.com/macports/macports-ports/master/lang/python27/files/patch-configure.diff', 'https://raw.githubusercontent.com/macports/macports-ports/master/lang/python27/files/patch-libedit.diff', 'https://raw.githubusercontent.com/macports/macports-ports/master/lang/python27/files/enable-loadable-sqlite-extensions.patch', 'https://raw.githubusercontent.com/macports/macports-ports/master/lang/python27/files/patch-_osx_support.py.diff', 'https://raw.githubusercontent.com/macports/macports-ports/master/lang/python27/files/darwin20.diff', 'https://raw.githubusercontent.com/macports/macports-ports/master/lang/python27/files/arm.patch', 'https://raw.githubusercontent.com/macports/macports-ports/master/lang/python27/files/implicit.patch', 'https://raw.githubusercontent.com/macports/macports-ports/master/lang/python27/files/openssl_ver.patch'],
     },
+  },
+  test: {
+    required: true,
+    script: [
+      'if test {{version.major}} -gt 3 || { test {{version.major}} -eq 3 && test {{version.minor}} -ge 12; }; then',
+      "env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH -u DYLD_FALLBACK_LIBRARY_PATH -u TCL_LIBRARY -u TK_LIBRARY {{prefix}}/bin/python{{version.marketing}} - <<'PANTRY_PYTHON_HEALTH'",
+      'import bz2, ctypes, decimal, lzma, readline, sqlite3, ssl, sys, sysconfig, tkinter, zlib',
+      'assert sys.version.split()[0] == "{{version.raw}}", sys.version',
+      'assert sqlite3.connect(":memory:").execute("select 42").fetchone() == (42,)',
+      'assert tkinter.Tcl().eval("info patchlevel").startswith("8.6."), tkinter.TclVersion',
+      'assert sysconfig.get_config_var("INCLUDEPY"), "Missing development configuration"',
+      'if sys.platform.startswith("linux") and sys.version_info < (3, 13):',
+      '    import nis',
+      'print(sys.version, ssl.OPENSSL_VERSION, tkinter.TclVersion)',
+      'PANTRY_PYTHON_HEALTH',
+      'fi',
+    ],
   },
 }
