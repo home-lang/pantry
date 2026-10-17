@@ -40,6 +40,7 @@ pub const InstallOptions = struct {
     auto_link: bool = true, // Auto-discover and link unresolved link: deps from common project dirs
     link_search_paths: ?[]const u8 = null, // Comma-separated search dirs for auto-link (null = use defaults)
     lockfile_output_path: ?[]const u8 = null, // Internal: stage a generated workspace lockfile for combined validation
+    defer_ecosystem_install: bool = false, // Internal: the combined installer bootstraps companion runtimes before ecosystem completion
 };
 
 pub fn shouldRunProjectPostInstall(exit_code: u8, package_count: usize, dry_run: bool, ignore_scripts: bool) bool {

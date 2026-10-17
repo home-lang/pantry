@@ -521,6 +521,24 @@ fn delegateEcosystemInstalls(
     return null;
 }
 
+/// Complete the workspace only after its declared companion runtimes exist.
+/// The combined installer calls this after the system-dependency phase; a
+/// standalone workspace completes it immediately after linking its packages.
+pub fn completeEcosystemInstall(allocator: std.mem.Allocator, workspace_root: []const u8, options: types.InstallOptions) !?types.CommandResult {
+    if (try delegateEcosystemInstalls(allocator, workspace_root, options)) |failure| return failure;
+
+    install.flushAnalytics(allocator);
+    const lf_hooks = @import("lockfile_hooks.zig");
+    if (try lf_hooks.executePostInstallHook(allocator, workspace_root, options.verbose)) |*post_result| {
+        defer {
+            var result = post_result.*;
+            result.deinit(allocator);
+        }
+        if (!post_result.success) style.printWarn("Post-install hook failed\n", .{});
+    }
+    return null;
+}
+
 pub fn installWorkspaceCommand(
     allocator: std.mem.Allocator,
     workspace_root: []const u8,
@@ -814,8 +832,9 @@ pub fn installWorkspaceCommandWithOptions(
 
     if (all_deps_count == 0) {
         style.print("{s}{s}{s} No dependencies to install\n", .{ style.green, style.check, style.reset });
-        // Internal-only workspaces still need their member links, ecosystem
-        // install and complete staged lock before companion system deps merge.
+        // Internal-only workspaces still need member links and a complete
+        // staged lock. The combined caller completes ecosystem installation
+        // after companion runtimes are available.
     }
 
     // Execute pre-install hook
@@ -1674,20 +1693,8 @@ pub fn installWorkspaceCommandWithOptions(
         };
     }
 
-    if (try delegateEcosystemInstalls(allocator, workspace_root, options)) |failure| return failure;
-
-    // Flush batched analytics (single HTTP request in background thread)
-    install.flushAnalytics(allocator);
-
-    // Execute post-install hook
-    if (try lf_hooks.executePostInstallHook(allocator, workspace_root, options.verbose)) |*post_result| {
-        defer {
-            var r = post_result.*;
-            r.deinit(allocator);
-        }
-        if (!post_result.success) {
-            style.printWarn("Post-install hook failed\n", .{});
-        }
+    if (!options.defer_ecosystem_install) {
+        if (try completeEcosystemInstall(allocator, workspace_root, options)) |failure| return failure;
     }
 
     // Update env cache so shell:lookup finds this env on next cd (no binary re-scan needed)

@@ -501,6 +501,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             };
 
             var workspace_options = options;
+            // Bun/Node/PHP may be declared only in the companion deps file.
+            // Finish the ecosystem install once those runtimes are installed,
+            // without requiring an already configured host PATH or a retry.
+            workspace_options.defer_ecosystem_install = has_companion_deps;
             // The committed lock must describe the complete install. Stage both
             // phases even without --frozen-lockfile, so a companion failure or
             // interruption cannot replace it with an npm-only workspace lock.
@@ -533,6 +537,13 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                             staged_lockfile_path,
                             options.frozen_lockfile,
                         ), df.path);
+                    }
+                }
+
+                if (has_companion_deps and final_result.exit_code == 0) {
+                    if (try workspace.completeEcosystemInstall(allocator, ws_file.root_dir, options)) |failure| {
+                        final_result.deinit(allocator);
+                        final_result = failure;
                     }
                 }
 
