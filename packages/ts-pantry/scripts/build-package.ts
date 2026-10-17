@@ -15,6 +15,7 @@ import type { RuntimePackage } from './native-runtime'
 import { reportBuild } from './report-build.ts'
 import { persistBuildDiagnostics, sanitizeBuildDiagnostic } from './build-diagnostics.ts'
 import { compareInstallerVersionsDesc, parseInstallerConstraint, satisfiesInstallerConstraint } from '../src/installer'
+import { normalizeDependencyArch } from '../src/dependency-spec'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
 type ScriptStep = string | { run: string, 'working-directory'?: string, if?: string }
 const packageOverrides: Record<string, any> = {} // stub — overrides migrated to recipes
@@ -1083,7 +1084,7 @@ export function collectBuildDependencies(
     const condition = dep.match(/^(darwin|linux)(?:\/([^:]+))?:/)
     if (condition && platform) {
       const [os, arch] = normalizePlatform(platform)
-      if (condition[1] !== os || (condition[2] && normalizePlatform(`${os}-${condition[2]}`)[1] !== arch)) continue
+      if (condition[1] !== os || (condition[2] && normalizeDependencyArch(condition[2]) !== normalizeDependencyArch(arch))) continue
     }
     const selected = condition && platform ? dep.slice(condition[0].length) : dep
     const domain = parseDep(selected)

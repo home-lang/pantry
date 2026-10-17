@@ -67,11 +67,13 @@ test('recipe build and runtime bounds intersect even when metadata repeats the f
 })
 
 test('native build graphs filter opposite-platform metadata before resolving runtime packages', () => {
-  const metadata = { dependencies: ['zlib.net ^1', 'linux:x.org/x11 ^1', 'darwin:apple.example ^1', 'linux/x86-64:intel.example ^1', 'darwin/arm64:arm.example ^1'] }
+  const metadata = { dependencies: ['zlib.net ^1', 'linux:x.org/x11 ^1', 'darwin:apple.example ^1', 'linux/x86-64:intel.example ^1', 'darwin/arm64:arm.example ^1', 'linux/armv7:armv7.example ^1'] }
   const mac = collectBuildDependencies(metadata, [], ['zlib.net ^1'], new Set(), 'darwin-arm64')
   expect([...mac.keys()]).toEqual(['zlib.net', 'apple.example', 'arm.example'])
   const linux = collectBuildDependencies(metadata, [], ['zlib.net ^1'], new Set(), 'linux-arm64')
   expect([...linux.keys()]).toEqual(['zlib.net', 'x.org/x11'])
+  const intel = collectBuildDependencies(metadata, [], ['zlib.net ^1'], new Set(), 'linux-x86-64')
+  expect([...intel.keys()]).toEqual(['zlib.net', 'x.org/x11', 'intel.example'])
 })
 
 test('a build tool can use XML 2.13 while the target links XML 2.15', async () => {
