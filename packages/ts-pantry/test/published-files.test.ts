@@ -7,6 +7,20 @@ import { recipe } from '../src/recipes/postgresql.org/libpq'
 import { recipe as freetype } from '../src/recipes/freetype.org'
 import { recipe as x11 } from '../src/recipes/x.org/x11'
 import { recipe as xcb } from '../src/recipes/x.org/xcb'
+import { recipe as kerberos } from '../src/recipes/kerberos.org'
+
+test('Kerberos excludes private OpenSSL linker aliases before canonical runtime bundling', () => {
+  const root = mkdtempSync(join(tmpdir(), 'pantry-kerberos-products-'))
+  try {
+    mkdirSync(join(root, 'lib'))
+    for (const file of ['libkrb5.3.dylib', 'libk5crypto.3.dylib', 'libgssapi_krb5.2.dylib', 'libcrypto.1.1.dylib', 'libssl.dylib']) writeFileSync(join(root, 'lib', file), file)
+    symlinkSync('libcrypto.1.1.dylib', join(root, 'lib/libcrypto.dylib'))
+    selectPublishedFiles(root, kerberos.publish?.include)
+    for (const file of ['libkrb5.3.dylib', 'libk5crypto.3.dylib', 'libgssapi_krb5.2.dylib']) expect(existsSync(join(root, 'lib', file))).toBe(true)
+    for (const file of ['libcrypto.1.1.dylib', 'libssl.dylib', 'libcrypto.dylib']) expect(existsSync(join(root, 'lib', file))).toBe(false)
+  }
+  finally { rmSync(root, { recursive: true, force: true }) }
+})
 
 test('X11 and XCB export their libraries while canonical packages supply their dependency snapshots', () => {
   for (const [recipe, own, foreign] of [[x11, 'libX11.6.dylib', 'libxcb.1.dylib'], [xcb, 'libxcb.1.dylib', 'libXau.6.dylib']] as const) {
