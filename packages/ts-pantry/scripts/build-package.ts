@@ -1074,13 +1074,20 @@ export function collectBuildDependencies(
   yamlBuildDeps: string[],
   yamlRuntimeDeps: string[],
   removedDeps: ReadonlySet<string> = new Set(),
+  platform?: string,
 ): Map<string, string> {
   const tsDeps = [...(metadata.dependencies || []), ...(metadata.buildDependencies || [])]
   const depByDomain = new Map<string, string>()
   // First pass: add TS deps
   for (const dep of tsDeps) {
-    const domain = parseDep(dep)
-    if (domain && !removedDeps.has(domain)) depByDomain.set(domain, dep)
+    const condition = dep.match(/^(darwin|linux)(?:\/([^:]+))?:/)
+    if (condition && platform) {
+      const [os, arch] = normalizePlatform(platform)
+      if (condition[1] !== os || (condition[2] && normalizePlatform(`${os}-${condition[2]}`)[1] !== arch)) continue
+    }
+    const selected = condition && platform ? dep.slice(condition[0].length) : dep
+    const domain = parseDep(selected)
+    if (domain && !removedDeps.has(domain)) depByDomain.set(domain, selected)
   }
   // Second pass: YAML deps from normalizedRecipe (after overrides) take precedence.
   // When an override changes a constraint (e.g., python.org: ~3.10 → >=3.10<3.14),
@@ -1378,8 +1385,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     // Filter out deps that were explicitly removed by modifyRecipe overrides
     // When both build and runtime deps specify constraints for the same domain,
     // merge them into a compound constraint (e.g., ">=2.3" + "<4" → ">=2.3<4")
-    const declared = collectBuildDependencies(pkg, yamlBuildDeps, yamlRuntimeDeps, removedDeps)
-    const runtimeDeclared = collectBuildDependencies({ dependencies: pkg.dependencies }, [], yamlRuntimeDeps, removedDeps)
+    const declared = collectBuildDependencies(pkg, yamlBuildDeps, yamlRuntimeDeps, removedDeps, platform)
+    const runtimeDeclared = collectBuildDependencies({ dependencies: pkg.dependencies }, [], yamlRuntimeDeps, removedDeps, platform)
     const installed = await installBuildDependencyGraphs(runtimeDeclared, declared, depsDir,
       initial => publishedDependencyGraph(initial, platform, bucket, region),
       (graph, directory) => downloadDependencies([...graph.values()], directory, platform, bucket, region))

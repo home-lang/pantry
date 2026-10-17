@@ -7,7 +7,7 @@
  * Ensures built binaries work when installed to any prefix.
  */
 
-import { existsSync, readdirSync, readFileSync, writeFileSync, unlinkSync, mkdirSync, statSync, lstatSync, realpathSync, openSync, readSync, closeSync } from 'node:fs'
+import { chmodSync, existsSync, readdirSync, readFileSync, writeFileSync, unlinkSync, mkdirSync, statSync, lstatSync, realpathSync, openSync, readSync, closeSync } from 'node:fs'
 import { execFileSync, execSync } from 'node:child_process'
 import { join, relative, dirname, extname, basename, sep } from 'node:path'
 import { bundleRuntimeLibraries, normalizeMachoRuntime, writeRuntimeProvenance, type RuntimePackage } from './native-runtime'
@@ -18,29 +18,47 @@ import { bundleRuntimeLibraries, normalizeMachoRuntime, writeRuntimeProvenance, 
 export async function fixUp(prefix: string, platform: string, skips: string[] = [], runtimeDependencies: RuntimePackage[] = []): Promise<void> {
   const [os] = platform.split('-')
   const osName = os === 'darwin' ? 'darwin' : 'linux'
+  const originalModes = new Map<string, number>()
+  const isBinary = osName === 'linux' ? isDynamicElf : isMachO
+  try {
+    for (const part of ['bin', 'sbin', 'lib', 'lib64', 'libexec']) {
+      const directory = join(prefix, part)
+      if (!existsSync(directory) || !lstatSync(directory).isDirectory()) continue
+      walkFiles(directory, (file) => {
+        if (!isBinary(file)) return
+        const mode = statSync(file).mode & 0o7777
+        if (!(mode & 0o200)) {
+          originalModes.set(file, mode)
+          chmodSync(file, mode | 0o200)
+        }
+      })
+    }
+    console.log(`\nRunning post-build fix-ups on ${prefix}...`)
 
-  console.log(`\nRunning post-build fix-ups on ${prefix}...`)
+    const bundled = (() => {
+      try { return bundleRuntimeLibraries(prefix, platform, runtimeDependencies, osName === 'linux' ? isDynamicElf : isMachO) }
+      catch (cause) { throw new Error(`Cannot normalize ${osName === 'linux' ? 'ELF loader paths' : 'Mach-O runtime libraries'}: ${cause instanceof Error ? cause.message : String(cause)}`, { cause }) }
+    })()
+    if (osName === 'darwin' && !skips.includes('fix-machos')) normalizeMachoRuntime(prefix, isMachO)
+    else if (osName === 'linux' && !skips.includes('fix-patchelf')) fixElfRpaths(prefix)
+    writeRuntimeProvenance(prefix, bundled)
 
-  const bundled = (() => {
-    try { return bundleRuntimeLibraries(prefix, platform, runtimeDependencies, osName === 'linux' ? isDynamicElf : isMachO) }
-    catch (cause) { throw new Error(`Cannot normalize ${osName === 'linux' ? 'ELF loader paths' : 'Mach-O runtime libraries'}: ${cause instanceof Error ? cause.message : String(cause)}`, { cause }) }
-  })()
-  if (osName === 'darwin' && !skips.includes('fix-machos')) normalizeMachoRuntime(prefix, isMachO)
-  else if (osName === 'linux' && !skips.includes('fix-patchelf')) fixElfRpaths(prefix)
-  writeRuntimeProvenance(prefix, bundled)
+    // Fix pkg-config files
+    fixPkgConfigFiles(prefix)
 
-  // Fix pkg-config files
-  fixPkgConfigFiles(prefix)
+    // Fix cmake files
+    fixCmakeFiles(prefix)
 
-  // Fix cmake files
-  fixCmakeFiles(prefix)
+    // Remove libtool .la files
+    if (!skips.includes('libtool-cleanup')) {
+      removeLaFiles(prefix)
+    }
 
-  // Remove libtool .la files
-  if (!skips.includes('libtool-cleanup')) {
-    removeLaFiles(prefix)
+    console.log('Fix-ups complete.')
   }
-
-  console.log('Fix-ups complete.')
+  finally {
+    for (const [file, mode] of originalModes) if (existsSync(file)) chmodSync(file, mode)
+  }
 }
 
 export function fixElfRpaths(prefix: string, patchelf = 'patchelf'): void {
@@ -74,7 +92,7 @@ export function fixElfRpaths(prefix: string, patchelf = 'patchelf'): void {
           throw new Error('rewritten loader path did not match')
       }
       catch (cause) {
-        throw new Error(`Cannot normalize ELF loader paths for ${filePath}; a working patchelf is required before publication`, { cause })
+        throw new Error(`Cannot normalize ELF loader paths for ${filePath}: ${cause instanceof Error ? cause.message : String(cause)}; a working patchelf is required before publication`, { cause })
       }
     })
   }

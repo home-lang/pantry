@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fixUp } from '../scripts/fix-up'
@@ -43,7 +43,10 @@ test.skipIf(process.platform !== 'linux')('native runtime closure survives fresh
     await expect(fixUp(conflicted, 'linux-x86-64', [], [{ domain: 'first.example', version: '1.0', prefix: first }, { domain: 'conflict.example', version: '1.0', prefix: conflict }])).rejects.toThrow('Conflicting declared runtime providers')
     symlinkSync(join(second, 'lib64/libfixture-second.so.1'), join(conflict, 'lib/escape.so'))
     await expect(fixUp(conflicted, 'linux-x86-64', [], [{ domain: 'conflict.example', version: '1.0', prefix: conflict }])).rejects.toThrow('escapes declared runtime package')
+    const firstLibrary = join(first, 'lib/libfixture-first.so.1')
+    chmodSync(firstLibrary, 0o555)
     await fixUp(first, 'linux-x86-64', [], [{ domain: 'second.example', version: '1.0', prefix: second }])
+    expect(statSync(firstLibrary).mode & 0o777).toBe(0o555)
     writeFileSync(join(root, 'second.c'), 'int second(void) { return 41; } int canonical_rebuild_marker(void) { return 0; }')
     run([...compiler, '-shared', '-fPIC', join(root, 'second.c'), '-Wl,-soname,libfixture-second.so.1', '-o', join(second, 'lib64/libfixture-second.so.1')])
     const currentSecondSha256 = new Bun.CryptoHasher('sha256').update(readFileSync(join(second, 'lib64/libfixture-second.so.1'))).digest('hex')

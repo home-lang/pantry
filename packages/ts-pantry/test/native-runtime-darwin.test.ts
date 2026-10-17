@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fixUp } from '../scripts/fix-up'
@@ -35,7 +35,9 @@ test.skipIf(process.platform !== 'darwin')('Mach-O publication uses only declare
     const incomplete = join(root, 'incomplete')
     cpSync(stage, incomplete, { recursive: true })
     await expect(fixUp(incomplete, 'darwin-arm64', [], [{ domain: 'first.example', version: '1.0', prefix: first }])).rejects.toThrow('libfixture-second.1.dylib')
+    chmodSync(firstLib, 0o555)
     await fixUp(first, 'darwin-arm64', [], [{ domain: 'second.example', version: '1.0', prefix: second }])
+    expect(statSync(firstLib).mode & 0o777).toBe(0o555)
     const bundledSecond = join(first, 'lib/libfixture-second.1.dylib')
     const canonicalBytes = readFileSync(bundledSecond)
     writeFileSync(bundledSecond, Buffer.concat([canonicalBytes, Buffer.from('tampered')]))
