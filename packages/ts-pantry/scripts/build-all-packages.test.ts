@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { selectedPackageSelectors, applyVersionPins, assignStripe, selectRecentVersions, isAppRecipePath, isPublishedArtifactRecord, isSourceUnavailableError, scriptCompiles, matchesRequestedPackage, parseRequestedPackages, pkgxHasPrebuilt, relocateMirroredPaths, normalizeMirroredArtifact, summariseTimings, type PackageTiming } from './build-all-packages'
+import { classifyTargetedFailures as classify, selectedPackageSelectors, applyVersionPins, assignStripe, selectRecentVersions, isAppRecipePath, isPublishedArtifactRecord, isSourceUnavailableError, scriptCompiles, matchesRequestedPackage, parseRequestedPackages, pkgxHasPrebuilt, relocateMirroredPaths, normalizeMirroredArtifact, summariseTimings, type PackageTiming } from './build-all-packages'
 
 test('an explicitly requested excluded version fails instead of reporting an empty successful publication', () => {
   const child = Bun.spawnSync(['bun', 'scripts/build-all-packages.ts', '--platform', 'linux-arm64', '-p', 'unicode.org@70.1.0', '--source-only', '--print-selected'], { cwd: import.meta.dir + '/..', stdout: 'pipe', stderr: 'pipe' })
@@ -114,23 +114,17 @@ describe('pkgxHasPrebuilt', () => {
  * a genuinely missing current version publishes as green — which is exactly how
  * cmake.org 4.4.3 stayed missing for eleven days.
  */
-function classify(
-  failed: Array<[string, { version: string }]>,
-  latestOf: Map<string, string>,
-  knownBroken: Set<string>,
-  multiVersion = true,
-) {
-  const domainOf = (key: string) => (multiVersion ? key.replace(/@[^@]*$/, '') : key)
-  const isNewest = ([key, result]: [string, { version: string }]) => {
-    const latest = latestOf.get(domainOf(key))
-    return latest === undefined || result.version === latest
-  }
-  const eligible = failed.filter(([key]) => !knownBroken.has(domainOf(key)))
-  return { fatal: eligible.filter(isNewest), backfill: eligible.filter(e => !isNewest(e)) }
-}
-
 describe('targeted-build failure classification', () => {
   const latest = new Map([['cmake.org', '4.4.3'], ['lz4.org', '1.10.0']])
+
+  test('every exact LTS pin is fatal even when a newer family succeeds', () => {
+    const failed: Array<[string, { version: string }]> = [['mysql.com@8.4.11', { version: '8.4.11' }]]
+    const latest = new Map([['mysql.com', '26.7.0']])
+    const pins = new Map([['mysql.com', ['26.7.0', '8.4.11']]])
+    expect(classify(failed, latest, new Set(), true, pins).fatal).toHaveLength(1)
+    expect(classify(failed, latest, new Set(['mysql.com']), true, pins).fatal).toHaveLength(1)
+    expect(classify(failed, latest, new Set(), true, pins).backfill).toHaveLength(0)
+  })
 
   test('a failed CURRENT version is fatal', () => {
     const { fatal, backfill } = classify([['cmake.org@4.4.3', { version: '4.4.3' }]], latest, new Set())

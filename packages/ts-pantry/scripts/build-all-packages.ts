@@ -1605,6 +1605,7 @@ let BUILD_IS_FOREIGN = false
 // Domains we build from source even in mirror mode, because our recipe diverges
 // from pkgx's vanilla build (custom configure flags / extensions / patches).
 export const CUSTOM_BUILD_DOMAINS: ReadonlySet<string> = new Set<string>([
+  'invisible-island.net/ncurses', // publish real narrow and wide ABI libraries
   'mysql.com', // preserve official native distributions and the supported source ABI
   'openssh.com', // scp/sftp must resolve managed ssh after relocating the package
   'git-scm.org', // alias detection uses libexec/git to avoid recursive PATH wrapper calls
@@ -1621,6 +1622,24 @@ export const CUSTOM_BUILD_DOMAINS: ReadonlySet<string> = new Set<string>([
   'openjdk.org', // exact Temurin release, checksum and runtime identity; never latest-per-major
   'freedesktop.org/at-spi2-core/libatspi', // client ABI only; no accessibility session services
 ])
+
+/** Every explicitly pinned version is required, including an older LTS release. */
+export function classifyTargetedFailures<T extends { version: string }>(
+  failed: Array<[string, T]>,
+  latestOf: ReadonlyMap<string, string>,
+  knownBroken: ReadonlySet<string>,
+  multiVersion = true,
+  pins: ReadonlyMap<string, readonly string[]> = new Map(),
+): { fatal: Array<[string, T]>, backfill: Array<[string, T]> } {
+  const domainOf = (key: string): string => multiVersion ? key.replace(/@[^@]*$/, '') : key
+  const explicitlyPinned = ([key, result]: [string, T]): boolean => pins.get(domainOf(key))?.includes(result.version) === true
+  const required = (entry: [string, T]): boolean => {
+    const latest = latestOf.get(domainOf(entry[0]))
+    return explicitlyPinned(entry) || latest === undefined || entry[1].version === latest
+  }
+  const eligible = failed.filter(entry => explicitlyPinned(entry) || !knownBroken.has(domainOf(entry[0])))
+  return { fatal: eligible.filter(required), backfill: eligible.filter(entry => !required(entry)) }
+}
 
 /**
  * Split packages across `n` stripes by COST rather than by index.
@@ -3366,44 +3385,30 @@ else {
     // rescue the exit code. The gated darwin-native job deliberately omits
     // `--force`, so it could not fire there at all.
     if (isTargetedBuild) {
-      const domainOf = (key: string) => (multiVersion ? key.replace(/@[^@]*$/, '') : key)
       const latestOf = new Map(packagesToBuild.map(p => [p.domain, p.latestVersion]))
-
-      // What makes a targeted publish fail is failing to publish the version it
-      // was dispatched FOR. Backfilling an old release is a different job with a
-      // different standard: lz4 1.9.1 is from 2019 and its Makefile passes
-      // `-soname` to Apple's linker, so no darwin build of it will ever succeed.
-      // Failing the run on that means a permanently red pipeline that says
-      // nothing about today's release — and a red pipeline nobody can fix is
-      // indistinguishable from no pipeline at all.
-      //
-      // So: the newest version of each requested domain is fatal, older ones are
-      // reported and tolerated. cmake.org 4.4.3 — the failure that started all
-      // this — was the newest, and still fails the run.
-      const isNewest = ([key, result]: [string, BuildResult & { version: string }]) => {
-        const latest = latestOf.get(domainOf(key))
-        return latest === undefined || result.version === latest
+      const explicitPins = new Map<string, readonly string[]>()
+      for (const pkg of packagesToBuild) {
+        const versions = requested?.pins.get(pkg.domain) ?? requested?.pins.get(pkg.name)
+        if (versions) explicitPins.set(pkg.domain, versions)
       }
-      // Known-broken recipes are attempted on a targeted build (the filter above
-      // is bypassed for `-p`), and we already know they fail.
-      const eligible = failed.filter(([key]) => !knownBrokenDomains.has(domainOf(key)))
-      const fatal = eligible.filter(isNewest)
-      const backfill = eligible.filter(e => !isNewest(e))
+      // Automatic historical backfills may be reported separately. An exact
+      // requested pin, including an older LTS or known-broken recipe, is required.
+      const { fatal, backfill } = classifyTargetedFailures(failed, latestOf, knownBrokenDomains, multiVersion, explicitPins)
 
       if (backfill.length > 0) {
         console.log(`\nOlder versions that failed to build (${backfill.length}) — reported, not fatal:`)
         backfill.forEach(e => console.log(`   - ${formatEntry(e)}: ${e[1].error}`))
       }
       if (fatal.length > 0) {
-        console.log(`\nTargeted build requested ${values.package} and ${fatal.length} CURRENT version(s) failed:`)
+        console.log(`\nTargeted build requested ${values.package} and ${fatal.length} required version(s) failed:`)
         fatal.forEach(e => console.log(`   - ${formatEntry(e)}: ${e[1].error}`))
         console.log(`\nExiting non-zero: a targeted publish that cannot build the version`)
-        console.log(`it was asked for has not done its job. Fix the recipe, or add the`)
-        console.log(`domain to knownBrokenDomains if it is genuinely unbuildable.`)
+        console.log(`it was asked for has not done its job. Fix the recipe before`)
+        console.log(`publishing the requested versions.`)
         process.exit(1)
       }
       if (failed.length > 0)
-        console.log(`\nNo CURRENT version failed — not failing the run.`)
+        console.log(`\nNo required version failed — not failing the run.`)
     }
 
     console.log(`Note: Individual build failures are expected for packages with complex`)
