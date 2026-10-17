@@ -2,6 +2,14 @@ import { expect, test } from 'bun:test'
 import { generateBuildScript } from '../scripts/buildkit'
 import { collectBuildDependencies } from '../scripts/build-package'
 
+test('a native recipe replaces obsolete generated build and runtime dependency edges', () => {
+  const metadata = { dependencies: ['retired.example ^1'], buildDependencies: ['github.com/tmux/tmux@^3'] }
+  const graph = collectBuildDependencies(metadata, ['gnu.org/make', 'shared.example >=1'], ['shared.example <2'], new Set(), 'linux-x86-64', true)
+  expect([...graph]).toEqual([['gnu.org/make', 'gnu.org/make'], ['shared.example', 'shared.example >=1<2']])
+  expect(graph.has('retired.example')).toBe(false)
+  expect(graph.has('github.com/tmux/tmux')).toBe(false)
+})
+
 for (const platform of ['linux-x86-64', 'darwin-arm64']) {
   test(`${platform} uses declared dependency library and pkg-config roots`, async () => {
     const script = generateBuildScript({ build: { script: ['true'] } }, 'fixture', '1.0.0', platform, '/tmp/fixture-prefix', '/tmp/fixture-build', {

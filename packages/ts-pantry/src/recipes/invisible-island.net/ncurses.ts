@@ -38,8 +38,8 @@ export const recipe: Recipe = {
         run: ['../configure $ARGS --enable-widec', 'make --jobs {{hw.concurrency}}', 'make install'],
         'working-directory': 'build-wide',
       },
-      "sed -i 's|{{prefix}}|\\${pcfiledir}/../..|g' {{prefix}}/lib/pkgconfig/*.pc",
-      "sed -i 's|{{prefix}}|\\$(dirname \"\\$0\")/..|g' {{prefix}}/bin/ncurses{{version.major}}-config {{prefix}}/bin/ncursesw{{version.major}}-config",
+      "sed -i 's|{{prefix}}|${pcfiledir}/../..|g' {{prefix}}/lib/pkgconfig/*.pc",
+      "sed -i 's|{{prefix}}|$(dirname \"$0\")/..|g' {{prefix}}/bin/ncurses{{version.major}}-config {{prefix}}/bin/ncursesw{{version.major}}-config",
     ],
     env: {
       PCDIR: '{{prefix}}/lib/pkgconfig',
@@ -60,8 +60,8 @@ export const recipe: Recipe = {
   test: {
     required: true,
     script: [
-      'ncurses6-config --version | grep -Fx "{{version.marketing}}"',
-      'ncursesw6-config --version | grep -Fx "{{version.marketing}}"',
+      'ncurses6-config --version | grep -E \'^{{version.major}}[.]{{version.minor}}([.][0-9]+)?$\'',
+      'ncursesw6-config --version | grep -E \'^{{version.major}}[.]{{version.minor}}([.][0-9]+)?$\'',
       'pkg-config --exists ncurses ncursesw tinfo tinfow',
       'if [ "$(uname -s)" = Linux ]; then for library in ncurses ncursesw tinfo tinfow; do readelf --dynamic "{{prefix}}/lib/lib$library.so.6" | grep -F "[lib$library.so.6]"; done; fi',
     ],

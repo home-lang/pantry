@@ -1070,15 +1070,16 @@ export function isRequiredHealthCheck(test: RecipeTest): boolean {
   return typeof test === 'object' && !Array.isArray(test) && test.required === true
 }
 
-/** Merge the declared metadata and normalized recipe graph before resolution. */
+/** Native recipes own their graph; legacy YAML can supplement imported metadata. */
 export function collectBuildDependencies(
   metadata: { dependencies?: string[], buildDependencies?: string[] },
   yamlBuildDeps: string[],
   yamlRuntimeDeps: string[],
   removedDeps: ReadonlySet<string> = new Set(),
   platform?: string,
+  authoritativeRecipe = false,
 ): Map<string, string> {
-  const tsDeps = [...(metadata.dependencies || []), ...(metadata.buildDependencies || [])]
+  const tsDeps = authoritativeRecipe ? [] : [...(metadata.dependencies || []), ...(metadata.buildDependencies || [])]
   const depByDomain = new Map<string, string>()
   // First pass: add TS deps
   for (const dep of tsDeps) {
@@ -1398,8 +1399,9 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     // Filter out deps that were explicitly removed by modifyRecipe overrides
     // When both build and runtime deps specify constraints for the same domain,
     // merge them into a compound constraint (e.g., ">=2.3" + "<4" → ">=2.3<4")
-    const declared = collectBuildDependencies(pkg, yamlBuildDeps, yamlRuntimeDeps, removedDeps, platform)
-    const runtimeDeclared = collectBuildDependencies({ dependencies: pkg.dependencies }, [], yamlRuntimeDeps, removedDeps, platform)
+    const authoritativeRecipe = loaded.source === 'recipe'
+    const declared = collectBuildDependencies(pkg, yamlBuildDeps, yamlRuntimeDeps, removedDeps, platform, authoritativeRecipe)
+    const runtimeDeclared = collectBuildDependencies({ dependencies: pkg.dependencies }, [], yamlRuntimeDeps, removedDeps, platform, authoritativeRecipe)
     const installed = await installBuildDependencyGraphs(runtimeDeclared, declared, depsDir,
       initial => publishedDependencyGraph(initial, platform, bucket, region),
       (graph, directory) => downloadDependencies([...graph.values()], directory, platform, bucket, region))
