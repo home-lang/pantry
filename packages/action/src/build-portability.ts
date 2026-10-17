@@ -1,3 +1,6 @@
+/** Bun's loader supplies native paths on each build host. */
+export const azureCrc64SourceFilter: RegExp = /@azure[\\/]storage-common[\\/]dist[\\/]esm[\\/]crc64\.js$/
+
 export function makeCrc64SourcePortable(source: string): string {
   const urlImport = 'import { fileURLToPath } from "node:url";'
   if (!source.includes(urlImport)) throw new Error('Azure CRC64 source no longer has the expected node:url import')

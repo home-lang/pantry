@@ -1,5 +1,5 @@
 import { resolve } from 'node:path'
-import { assertPortableActionBundle, makeCrc64SourcePortable } from './src/build-portability'
+import { assertPortableActionBundle, azureCrc64SourceFilter, makeCrc64SourcePortable } from './src/build-portability'
 
 const result = await Bun.build({
   entrypoints: ['src/index.ts', 'src/post.ts'],
@@ -10,7 +10,7 @@ const result = await Bun.build({
   plugins: [{
     name: 'portable-azure-crc64',
     setup(build) {
-      build.onLoad({ filter: /@azure\/storage-common\/dist\/esm\/crc64\.js$/ }, async ({ path }) => ({
+      build.onLoad({ filter: azureCrc64SourceFilter }, async ({ path }) => ({
         contents: makeCrc64SourcePortable(await Bun.file(path).text()),
         loader: 'js',
       }))

@@ -1,8 +1,18 @@
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
-import { assertPortableActionBundle, makeCrc64SourcePortable } from './build-portability'
+import { assertPortableActionBundle, azureCrc64SourceFilter, makeCrc64SourcePortable } from './build-portability'
 
 describe('GitHub Action build portability', () => {
+  test('selects the CRC64 source on Unix and native Windows loader paths', () => {
+    for (const path of [
+      '/home/runner/pantry/node_modules/@azure/storage-common/dist/esm/crc64.js',
+      'D:/a/pantry/pantry/node_modules/@azure/storage-common/dist/esm/crc64.js',
+      String.raw`D:\a\pantry\pantry\node_modules\@azure\storage-common\dist\esm\crc64.js`,
+    ]) expect(azureCrc64SourceFilter.test(path)).toBe(true)
+    for (const path of ['@azure/storage-common/dist/esm/crc64.js.map', '@azure/other/dist/esm/crc64.js'])
+      expect(azureCrc64SourceFilter.test(path)).toBe(false)
+  })
+
   test('rewrites Azure CRC64 module URLs to the runtime bundle location', () => {
     const source = 'import { fileURLToPath } from "node:url"; const require = createRequire(import.meta.url); const dir = fileURLToPath(import.meta.url)'
     const portable = makeCrc64SourcePortable(source)
