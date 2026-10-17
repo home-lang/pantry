@@ -3,7 +3,7 @@
  *
  * @domain `gnu.org/gettext`
  * @programs `autopoint`, `envsubst`, `gettext`, `gettext.sh`, `gettextize`, ... (+17 more)
- * @version `1.0.0` (68 versions available)
+ * @version `1.0` (69 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install gnu.org/gettext`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "gettext"
  * console.log(pkg.description) // "GNU internationalization (i18n) and localizatio..."
  * console.log(pkg.programs)    // ["autopoint", "envsubst", ...]
- * console.log(pkg.versions[0]) // "1.0.0" (latest)
+ * console.log(pkg.versions[0]) // "1.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/gnu-org/gettext.md
@@ -98,6 +98,7 @@ export const gnuorggettextPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.0',
     '1.0.0',
     '0.26',
     '0.25.1',

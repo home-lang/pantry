@@ -185,6 +185,7 @@ export const aliases: Record<string, string> = {
   'checkov': 'checkov.io',
   'chezmoi': 'chezmoi.io',
   'chomp': 'chompbuild.com',
+  'chrome-for-testing': 'google.com/chrome',
   'chromedriver': 'chromedriver.chromium.org',
   'chruby-exec': 'github.com/postmodern/chruby',
   'cicada': 'hugo.wang/cicada',
