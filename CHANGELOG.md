@@ -1,3 +1,38 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.84...v0.11.85)
+
+## 🐛 Bug Fixes
+
+- **action**: fingerprint selected native versions and lock pins ([e449954](https://github.com/pantry-pm/pantry/commit/e449954)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **action**: invalidate native caches when registry artifacts change ([96889ef](https://github.com/pantry-pm/pantry/commit/96889ef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **openssh**: prefer the selected crypto library over bundled copies ([0a36a8c](https://github.com/pantry-pm/pantry/commit/0a36a8c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **openssh**: declare the supported crypto ABI for native installs ([0e5dd58](https://github.com/pantry-pm/pantry/commit/0e5dd58)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: pair managed GCC with binutils and constrain OpenSSH crypto ([7985080](https://github.com/pantry-pm/pantry/commit/7985080)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **openssh**: resolve client transport through the managed environment ([339b6b9](https://github.com/pantry-pm/pantry/commit/339b6b9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📝 Documentation
+
+- **action**: explain verified native cache invalidation ([3856ba0](https://github.com/pantry-pm/pantry/commit/3856ba0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- respect optional recipe dependency metadata ([28ae2df](https://github.com/pantry-pm/pantry/commit/28ae2df)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.85 ([353152f](https://github.com/pantry-pm/pantry/commit/353152f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update craft-native.org to 0.0.224 ([68a37ed](https://github.com/pantry-pm/pantry/commit/68a37ed)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.223 ([3d806f2](https://github.com/pantry-pm/pantry/commit/3d806f2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.222 ([83e9421](https://github.com/pantry-pm/pantry/commit/83e9421)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.221 ([b7668e6](https://github.com/pantry-pm/pantry/commit/b7668e6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.220 ([c16e2c3](https://github.com/pantry-pm/pantry/commit/c16e2c3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update codex.openai.com, craft-native.org, github.com/ggerganov/llama.cpp, systemd.io ([44f7044](https://github.com/pantry-pm/pantry/commit/44f7044)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.217 ([40a308e](https://github.com/pantry-pm/pantry/commit/40a308e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update anthropic.com/claude-code, github.com/ggerganov/llama.cpp, github.com/router-for-me/CLIProxyAPI, mise.jdx.dev, pulumi.io, railway.app, stripe.com ([a2289ce](https://github.com/pantry-pm/pantry/commit/a2289ce)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.83...v0.11.84)
 
 ## 🐛 Bug Fixes
