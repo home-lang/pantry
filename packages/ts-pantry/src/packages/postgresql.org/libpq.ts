@@ -6,7 +6,7 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install postgresql.org/libpq`
- * @dependencies `kerberos.org`, `openssl.org^1.1`, `zlib.net^1`
+ * @dependencies `kerberos.org`, `openssl.org^3`, `zlib.net^1`
  * @buildDependencies `linux:gnu.org/bison`, `linux:github.com/westes/flex` (includes platform-specific dependencies) - required only when building from source
  *
  * @example
@@ -51,7 +51,7 @@ export const postgresqlorglibpqPackage = {
   */
   dependencies: [
     'kerberos.org',
-    'openssl.org^1.1',
+    'openssl.org^3',
     'zlib.net^1',
   ] as const,
   /**

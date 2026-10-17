@@ -8,14 +8,15 @@ for (const platform of ['linux-x86-64', 'darwin-arm64']) {
       'deps.example.org/library.prefix': '/tmp/managed-library',
       'deps.python.org.prefix': '/tmp/managed-python',
     })
-    const exports = script.split('\n').filter(line => /^export (PKG_CONFIG_PATH|PKG_CONFIG_LIBDIR|LIBRARY_PATH|CPATH)=/.test(line)).join('\n')
-    const child = Bun.spawn(['bash', '-ec', `${exports}\nprintf '%s\\n' "$PKG_CONFIG_PATH" "$PKG_CONFIG_LIBDIR" "$LIBRARY_PATH" "$CPATH"`], {
+    const exports = script.split('\n').filter(line => /^export (PKG_CONFIG_PATH|PKG_CONFIG_LIBDIR|LIBRARY_PATH|CPATH|LDFLAGS)=/.test(line)).join('\n')
+    const child = Bun.spawn(['bash', '-ec', `${exports}\nprintf '%s\\n' "$PKG_CONFIG_PATH" "$PKG_CONFIG_LIBDIR" "$LIBRARY_PATH" "$CPATH" "$LDFLAGS"`], {
       env: { ...process.env, PKG_CONFIG_PATH: '/unmanaged/pc', PKG_CONFIG_LIBDIR: '/unmanaged/pc', LIBRARY_PATH: '/unmanaged/lib', CPATH: '/unmanaged/include' }, stdout: 'pipe', stderr: 'pipe',
     })
     const [status, stdout] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()])
     expect(status).toBe(0)
     expect(stdout).toContain('/tmp/managed-library/lib64/pkgconfig')
     expect(stdout).toContain('/tmp/managed-library/lib64')
+    expect(stdout).toContain('-L/tmp/managed-library/lib -L/tmp/managed-library/lib64')
     expect(stdout).not.toContain('/unmanaged')
     expect(stdout).not.toContain('/opt/homebrew')
     expect(stdout).not.toContain('/usr/lib')

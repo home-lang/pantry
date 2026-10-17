@@ -79,3 +79,12 @@ test('sourceable interface declarations are checked before publication', async (
   }
   finally { rmSync(root, { recursive: true, force: true }) }
 })
+
+test('gettext accepts the upstream 2026 release and preserves its archive version spelling', async () => {
+  const { loadRecipe } = await import('../scripts/recipe-loader')
+  const { recipe: gettext } = await import('../src/recipes/gnu.org/gettext')
+  expect(gettext.versionSource?.type).toBe('github-tags')
+  if (gettext.versionSource?.type === 'github-tags') expect('v1.0'.match(gettext.versionSource.tagPattern!)?.[1]).toBe('1.0')
+  expect((await loadRecipe('gnu.org/gettext', 'linux-x86-64', '1.0.0')).recipe.distributable?.url).toBe('https://ftp.gnu.org/gnu/gettext/gettext-1.0.tar.gz')
+  expect((await loadRecipe('gnu.org/gettext', 'linux-x86-64', '0.21.1')).recipe.distributable?.url).toBe('https://ftp.gnu.org/gnu/gettext/gettext-0.21.1.tar.gz')
+})

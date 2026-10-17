@@ -7,9 +7,12 @@ export const recipe: Recipe = {
   publish: { include: ['bin/pg_config', 'include/**', 'lib/libpq*', 'lib64/libpq*', 'lib/libpgcommon*.a', 'lib/libpgport*.a', 'lib/pkgconfig/libpq.pc', 'lib64/pkgconfig/libpq.pc', 'share/licenses/**', 'share/doc/**', 'COPY*', 'LICENSE*'] },
   dependencies: {
     'kerberos.org': '*',
-    'openssl.org': '^1.1',
+    'openssl.org': '^3',
     'zlib.net': '^1',
   },
+  dependencyOverrides: [
+    { if: '<14.0.0', dependencies: { 'openssl.org': '^1.1' } },
+  ],
   buildDependencies: {
     linux: {
       'gnu.org/bison': '*',

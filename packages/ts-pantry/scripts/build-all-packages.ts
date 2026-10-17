@@ -36,6 +36,8 @@ import { fixElfRpaths, fixUp } from './fix-up'
 import { selectPublishedFiles, writeProgramInterfaces } from './published-files'
 import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
 import { BINARY_SYNC_DOMAIN_SET } from './binary-sync-packages.ts'
+import { parseDep } from './build-package'
+import { publicationOrder } from './publication-order'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
 const packageOverrides: Record<string, any> = {}
 
@@ -282,7 +284,7 @@ else if (entry.name === 'package.yml') {
           const depDomains: string[] = []
           const allDeps = [...(pkg.dependencies || []), ...(pkg.buildDependencies || [])]
           for (const dep of allDeps) {
-            const depDomain = dep.replace(/@.*$/, '').replace(/\^.*$/, '').replace(/>=.*$/, '').replace(/:.*$/, '').trim()
+            const depDomain = parseDep(dep.replace(/^(?:darwin|linux|windows)(?:\/[^:]+)?:/, ''))
             if (depDomain) depDomains.push(depDomain)
           }
           // Also extract YAML build deps for ordering
@@ -385,7 +387,7 @@ catch {
         const isApp = isAppRecipePath(prefix)
           || (appPlatforms.length > 0 && !appPlatforms.some((p: string) => p.includes('linux')))
         const depDomains = [...(pkg.dependencies || []), ...(pkg.buildDependencies || [])]
-          .map((d: string) => d.replace(/@.*$/, '').replace(/\^.*$/, '').replace(/>=.*$/, '').replace(/:.*$/, '').trim())
+          .map((d: string) => parseDep(d.replace(/^(?:darwin|linux|windows)(?:\/[^:]+)?:/, '')))
           .filter(Boolean)
 
         // A TS recipe is a zig-style download recipe when it declares no real
@@ -414,25 +416,7 @@ catch {
   }
   findRecipes(recipesDir)
 
-  // Topological sort: packages with fewer deps come first
-  // This ensures dependency packages are built before their dependents
-  const domainSet = new Set(packages.map(p => p.domain))
-
-  // Count how many buildable deps each package has
-  function countBuildableDeps(pkg: BuildablePackage): number {
-    return pkg.depDomains.filter(d => domainSet.has(d)).length
-  }
-
-  // Sort by dependency depth (packages with 0 buildable deps first),
-  // then alphabetically for deterministic ordering within same depth
-  packages.sort((a, b) => {
-    const depCountA = countBuildableDeps(a)
-    const depCountB = countBuildableDeps(b)
-    if (depCountA !== depCountB) return depCountA - depCountB
-    return a.domain.localeCompare(b.domain)
-  })
-
-  return packages
+  return publicationOrder(packages)
 }
 
 // --- Version Selection ---
@@ -664,7 +648,6 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'gnome.org/libxml2': ['<2.15.1'],
   // gettext is 0.x (latest 0.26); a stray ancient v1.0 mirror tag sorts highest
   // and builds a broken 1995 release — skip 1.x so the build uses real 0.x.
-  'gnu.org/gettext': ['>=1.0.0'],
   // pkgx.sh 1.x fails; 2.5.0+ works on both
   'pkgx.sh': ['<2.0.0'],
   // Old pycairo fails on linux; 1.27.0+ works on both

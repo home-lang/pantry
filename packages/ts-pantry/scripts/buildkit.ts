@@ -969,6 +969,12 @@ else if (osName === 'linux') {
     if (depLibPaths.length > 0) {
       sections.push(`export LIBRARY_PATH="${depLibPaths.join(':')}"`)
       sections.push(`export LD_LIBRARY_PATH="${depLibPaths.join(':')}"`)
+      if (!usesGo) {
+        // Compiler drivers may search their standard library directories before
+        // LIBRARY_PATH. Explicit target paths keep headers and linked ABIs paired.
+        const searchFlags = [...new Set(depLibPaths)].map(p => `-L${p}`).join(' ')
+        sections.push(`export LDFLAGS="${searchFlags} \${LDFLAGS:-}"`)
+      }
       if (osName === 'darwin' && !usesGo) {
         // Dep dylibs ship @rpath-style install names (e.g. @rpath/libxslt.1.dylib).
         // configure's compile-and-RUN probes (PostgreSQL's "checking test program")

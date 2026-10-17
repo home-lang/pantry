@@ -45,13 +45,11 @@ export const recipe: Recipe = {
   versionSource: {
     type: 'github-tags',
     repo: 'autotools-mirror/gettext',
-    // Modern gettext is 0.x (latest 0.26). The mirror also carries a stray
-    // ancient `v1.0` (1995) tag that sorts ABOVE 0.26 and 404s nothing but
-    // produces a broken ancient build — match 0.x only so "latest" is real.
-    tagPattern: /^v(0\..+)$/,
+    // Upstream released v1.0 on 2026-01-29; retain current and historic tags.
+    tagPattern: /^v(\d+\.\d+(?:\.\d+){0,2})$/,
   },
   distributable: {
-    url: 'https://ftp.gnu.org/gnu/gettext/gettext-{{version.raw}}.tar.gz',
+    url: version => `https://ftp.gnu.org/gnu/gettext/gettext-${version.replace(/^(\d+\.\d+)\.0$/, '$1')}.tar.gz`,
     stripComponents: 1,
   },
 
