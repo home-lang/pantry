@@ -30,12 +30,12 @@ describe('curl recipe dependencies', () => {
     expect(customBuilds).toContain(`'curl.se'`)
   })
 
-  it('bundles its Linux runtime libraries and tests without library path injection', () => {
-    const linuxStep = recipe.build.script.find(step => typeof step === 'object' && step.if === 'linux')
-
-    expect(linuxStep).toBeDefined()
-    expect(JSON.stringify(linuxStep)).toContain('libssl.so.3')
-    expect(JSON.stringify(linuxStep)).toContain('libcrypto.so.3')
+  it('delegates runtime ownership to the generic native bundler and tests without injected loader paths', () => {
+    // Recipe-level copies lose the canonical owner and become conflicting
+    // providers when a downstream closure also contains the original package.
+    expect(recipe.build.script).toEqual(['./configure $ARGS', 'make --jobs {{hw.concurrency}} install'])
+    for (const domain of ['openssl.org', 'zlib.net', 'nghttp2.org', 'gnu.org/libidn2', 'github.com/google/brotli', 'facebook.com/zstd'])
+      expect(recipe.dependencies?.[domain]).toBeString()
     expect(recipe.test?.required).toBe(true)
     expect(recipe.test?.script).toContain('env -u LD_LIBRARY_PATH -u DYLD_FALLBACK_LIBRARY_PATH {{prefix}}/bin/curl --version')
   })

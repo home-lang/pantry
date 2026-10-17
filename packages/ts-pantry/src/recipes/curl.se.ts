@@ -42,40 +42,6 @@ export const recipe: Recipe = {
     script: [
       './configure $ARGS',
       'make --jobs {{hw.concurrency}} install',
-      {
-        // Everything libcurl.so records as NEEDED has to travel with it.
-        //
-        // The published 8.22.0 artifact does not: `readelf -d` on its
-        // libcurl.so.4.8.0 names libbrotlidec.so.1, libidn2.so.0 and
-        // libzstd.so.1, none of which is in the tarball. configure links
-        // whatever it finds on the build host, and only the four below were
-        // ever copied — so the artifact referenced three libraries it neither
-        // shipped nor declared. php.net's configure got as far as
-        // "checking for libcurl >= 7.61.0... yes" and then failed at
-        // "curl_easy_perform in -lcurl... no", because the linker could not
-        // follow that chain.
-        //
-        // Globbed by soname rather than pinned to an exact minor: the versions
-        // above were already stale spellings waiting to break on a dep bump.
-        run: [
-          'cp -L {{deps.openssl.org.prefix}}/lib/libssl.so.3 {{prefix}}/lib/',
-          'cp -L {{deps.openssl.org.prefix}}/lib/libcrypto.so.3 {{prefix}}/lib/',
-          'cp -L {{deps.zlib.net.prefix}}/lib/libz.so.1 {{prefix}}/lib/',
-          'cp -L {{deps.nghttp2.org.prefix}}/lib/libnghttp2.so.14 {{prefix}}/lib/',
-          'cp -L {{deps.gnu.org/libidn2.prefix}}/lib/libidn2.so.[0-9] {{prefix}}/lib/ 2>/dev/null || true',
-          'cp -L {{deps.github.com/google/brotli.prefix}}/lib/libbrotlidec.so.[0-9] {{prefix}}/lib/ 2>/dev/null || true',
-          'cp -L {{deps.github.com/google/brotli.prefix}}/lib/libbrotlicommon.so.[0-9] {{prefix}}/lib/ 2>/dev/null || true',
-          'cp -L {{deps.facebook.com/zstd.prefix}}/lib/libzstd.so.[0-9] {{prefix}}/lib/ 2>/dev/null || true',
-          // Fail loudly if anything libcurl needs is still missing, rather than
-          // shipping an artifact that only links where the build host's system
-          // libraries happen to be present.
-          'for _need in $(readelf -d {{prefix}}/lib/libcurl.so | sed -n "s/.*NEEDED.*\\[\\(.*\\)\\]/\\1/p"); do',
-          '  case "$_need" in libc.so.*|ld-linux*|libm.so.*|libpthread.so.*|libdl.so.*|librt.so.*) continue ;; esac',
-          '  [ -e "{{prefix}}/lib/$_need" ] || { echo "curl artifact is missing $_need" >&2; exit 1; }',
-          'done',
-        ],
-        if: 'linux',
-      },
     ],
     env: {
       'ARGS': ['--prefix={{prefix}}', '--with-openssl', '--without-libpsl', '--with-ca-fallback', '--with-nghttp2'],
