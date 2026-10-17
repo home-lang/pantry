@@ -13,6 +13,7 @@ export function nativeBuildTools(platform: string): BuildTool[] {
   const tools: BuildTool[] = [
     { package: 'curl.se', version: '8.23.0', programs: ['curl'] },
     { package: 'gnu.org/tar', version: '1.35.0', programs: ['tar'] },
+    { package: 'tukaani.org/xz', version: '5.8.2', programs: ['xz'] },
     { package: 'gnu.org/make', version: '4.3.0', programs: ['make'] },
     { package: 'gnu.org/sed', version: '4.10', programs: ['sed'] },
     { package: 'gnu.org/patch', version: '2.8.0', programs: ['patch'] },

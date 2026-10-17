@@ -2,9 +2,13 @@ import { describe, expect, test } from 'bun:test'
 import { copyFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { inspectManagedProgram, managedProgram, reportedVersionMatches } from '../scripts/native-publisher-toolchain'
+import { inspectManagedProgram, managedProgram, nativeBuildTools, reportedVersionMatches } from '../scripts/native-publisher-toolchain'
 
 describe('native publisher tool ownership', () => {
+  test('supplies the external xz decoder used by GNU tar on both native platforms', () => {
+    for (const platform of ['linux', 'darwin'])
+      expect(nativeBuildTools(platform)).toContainEqual({ package: 'tukaani.org/xz', version: '5.8.2', programs: ['xz'] })
+  })
   test('reads GNU sed identity rather than digits in its absolute argv path', () => {
     const executable = '/Users/runner/work/pantry/pantry/pantry/gnu.org/sed/v4.10/bin/sed'
     expect(reportedVersionMatches(executable, `${executable} (GNU sed) 4.10`, '4.10')).toBe(true)
