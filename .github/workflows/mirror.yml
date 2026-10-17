@@ -15,6 +15,15 @@ on:
     - cron: '0 */6 * * *'
   workflow_dispatch:
     inputs:
+      packages:
+        description: 'Optional domains or exact domain@version entries to mirror (comma or space separated).'
+        required: false
+        type: string
+      rebuild-existing:
+        description: 'Republish selected artifacts after a normalization fix; scheduled runs remain incremental.'
+        required: false
+        type: boolean
+        default: false
       platform:
         description: 'Single platform to mirror (darwin-arm64 / linux-x86-64 / linux-arm64). Empty = all three.'
         required: false
@@ -161,6 +170,8 @@ jobs:
       - name: Mirror from pkgx
         shell: bash
         env:
+          TARGET_PACKAGES: ${{ github.event.inputs.packages }}
+          REBUILD_EXISTING: ${{ github.event.inputs.rebuild-existing }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -170,14 +181,18 @@ jobs:
           MAXV="${{ github.event.inputs.max-versions || '5' }}"
           POPV="${{ github.event.inputs.popular-max-versions || '20' }}"
           # --mirror-only: download pkgx prebuilts, skip on a miss, never compile
-          #   (except custom builds on their native platform). No --force, so each
-          #   run only fills versions still missing from S3 → steady, cheap growth.
+          #   (except custom builds on their native platform). Scheduled runs
+          #   stay incremental; an explicit dispatch can repair exact artifacts.
+          EXTRA=()
+          if [ -n "$TARGET_PACKAGES" ]; then EXTRA+=(--package "$TARGET_PACKAGES"); fi
+          if [ "$REBUILD_EXISTING" = 'true' ]; then EXTRA+=(--force); fi
           bun scripts/build-all-packages.ts \
             -b "$S3_BUCKET" -r "$AWS_REGION" \
             --platform "${{ matrix.name }}" \
             --stripe "${{ matrix.stripe }}" \
             --mirror-only --multi-version \
             --max-versions "$MAXV" --popular-max-versions "$POPV" \
+            "${EXTRA[@]}" \
             --timing-json "$RUNNER_TEMP/timings.json"
 
       # Which packages cost the sweep its wall clock. The job summary carries
@@ -251,6 +266,8 @@ jobs:
       - name: Build download recipes
         shell: bash
         env:
+          TARGET_PACKAGES: ${{ github.event.inputs.packages }}
+          REBUILD_EXISTING: ${{ github.event.inputs.rebuild-existing }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -259,12 +276,16 @@ jobs:
           cd packages/ts-pantry
           MAXV="${{ github.event.inputs.max-versions || '5' }}"
           POPV="${{ github.event.inputs.popular-max-versions || '20' }}"
+          EXTRA=()
+          if [ -n "$TARGET_PACKAGES" ]; then EXTRA+=(--package "$TARGET_PACKAGES"); fi
+          if [ "$REBUILD_EXISTING" = 'true' ]; then EXTRA+=(--force); fi
           bun scripts/build-all-packages.ts \
             -b "$S3_BUCKET" -r "$AWS_REGION" \
             --platform "${{ matrix.name }}" \
             --stripe "${{ matrix.stripe }}" \
             --download-only --multi-version \
             --max-versions "$MAXV" --popular-max-versions "$POPV" \
+            "${EXTRA[@]}" \
             --timing-json "$RUNNER_TEMP/timings.json"
 
       - name: Upload timings
