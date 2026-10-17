@@ -575,8 +575,9 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'sentry.io': ['<3.2.0', '3.2.3'],
   // Old typst fails (Rust build); 0.12.0+ works on both
   'typst.app': ['<0.12.0'],
-  // Old ICU build fails; 74.2.0+ works. 78.1.0/78.2.0 are phantom/broken.
-  'unicode.org': ['<74.0.0', '78.1.0', '78.2.0'],
+  // ICU 71.1 is the declared ABI for the JDK's HarfBuzz 8.5; publish it
+  // natively where an upstream binary is absent. Other legacy releases stay gated.
+  'unicode.org': ['<71.1.0', '>71.1.0 <74.0.0', '78.1.0', '78.2.0'],
   // Old xcb-proto fails (missing dep); 1.15.2+ works
   'x.org/protocol/xcb': ['<1.15.2'],
   // Old xrender fails; 0.9.12 (latest) works

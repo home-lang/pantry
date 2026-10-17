@@ -23,3 +23,9 @@ test('other unverified legacy HarfBuzz releases still fail publication preflight
     expect(selection.stderr).toContain('is excluded from publication')
   }
 })
+
+test('the legacy ICU ABI required by HarfBuzz can be published on the missing ARM platform', () => {
+  const selection = spawnSync(process.execPath, ['scripts/build-all-packages.ts', '--platform', 'linux-arm64', '-p', 'unicode.org@71.1.0', '--source-only', '--print-selected'], { cwd: resolve(import.meta.dir, '..'), encoding: 'utf8' })
+  expect(selection.status, selection.stderr).toBe(0)
+  expect(selection.stdout.trim()).toBe('unicode.org@71.1.0')
+})

@@ -56,6 +56,12 @@ export const recipe: Recipe = {
       './configure $ARGS',
       'make --jobs {{hw.concurrency}}',
       'make install',
+      'mkdir -p {{prefix}}/share/licenses/icu',
+      'install -m 0644 ../LICENSE {{prefix}}/share/licenses/icu/LICENSE',
     ],
+  },
+  test: {
+    required: true,
+    script: ['env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH -u DYLD_FALLBACK_LIBRARY_PATH {{prefix}}/bin/uconv -V'],
   },
 }
