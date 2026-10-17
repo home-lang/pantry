@@ -3,7 +3,7 @@
  *
  * @domain `plantuml.com`
  * @programs `plantuml`
- * @version `1.2026.8` (56 versions available)
+ * @version `1.2026.9` (57 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install plantuml.com`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "plantuml"
  * console.log(pkg.description) // "Generate diagrams from textual description"
  * console.log(pkg.programs)    // ["plantuml"]
- * console.log(pkg.versions[0]) // "1.2026.8" (latest)
+ * console.log(pkg.versions[0]) // "1.2026.9" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/plantuml-com.md
@@ -75,6 +75,7 @@ export const plantumlcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.2026.9',
     '1.2026.8',
     '1.2026.7',
     '1.2026.6',
