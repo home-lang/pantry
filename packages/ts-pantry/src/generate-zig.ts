@@ -261,8 +261,10 @@ export async function generateZigDefinitions(packagesDir: string, outputFile: st
       }
 
       // Dynamically import the TypeScript file
-      const fileUrl = `file://${path.resolve(filePath)}`
-      const module = await import(fileUrl)
+      // Catalog modules are generated data. Load their current bytes rather
+      // than a path-cached module after a recipe sync rewrites the same file.
+      const javascript = new Bun.Transpiler({ loader: 'ts' }).transformSync(content)
+      const module = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString('base64')}`)
       const pkgData = module[constMatch[1]]
 
       if (!pkgData || !pkgData.domain) {
@@ -307,6 +309,7 @@ export async function generateZigDefinitions(packagesDir: string, outputFile: st
   }
 
   console.log(`✅ Processed ${processed} packages (${errors} errors)`)
+  if (errors) throw new Error(`Cannot publish an incomplete native catalog: ${errors} package errors`)
 
   // Sort packages by domain name for deterministic output
   packages.sort((a, b) => a.domain.localeCompare(b.domain))

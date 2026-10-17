@@ -4,6 +4,14 @@ import { generateBuildScript } from '../scripts/buildkit'
 import { recipe as awsCliRecipe } from '../src/recipes/aws.amazon.com/cli'
 
 describe('Python-backed package runtime wrappers', () => {
+  test('CPython preserves the Tcl/Tk 8.6 runtime required by its tkinter extension', async () => {
+    const { loadRecipe } = await import('../scripts/recipe-loader')
+    for (const platform of ['darwin-arm64', 'linux-arm64', 'linux-x86-64']) {
+      const { recipe } = await loadRecipe('python.org', platform, '3.12.14')
+      expect(recipe.dependencies?.['tcl-lang.org']).toBe('~8.6')
+    }
+  })
+
   test('AWS CLI declares Python as a runtime dependency', () => {
     expect(awsCliRecipe.dependencies?.['python.org']).toBe('>=3.11<3.15')
   })

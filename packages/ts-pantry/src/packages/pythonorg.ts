@@ -1,5 +1,5 @@
 /**
- * **python** - The Python programming language
+ * **py** - The Python programming language
  *
  * @domain `python.org`
  * @programs `python`, `python{{ version.major }}`, `python{{ version.marketing }}`
@@ -7,18 +7,17 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install python.org`
- * @name `python`
  * @aliases `py`
  * @homepage https://www.python.org
- * @dependencies `zlib.net@1`, `sourceware.org/bzip2@1`, `openssl.org^1.1`, ... (+10 more) (includes OS-specific dependencies with `os:package` format)
- * @buildDependencies `gnu.org/patch`, `curl.se` - required only when building from source
+ * @dependencies `zlib.net@1`, `sourceware.org/bzip2@1`, `openssl.org^1.1`, ... (+9 more)
+ * @buildDependencies `freedesktop.org/pkg-config^0.29`, `gnu.org/patch`, `curl.se` - required only when building from source
  *
  * @example
  * ```typescript
  * import { pantry } from 'ts-pantry'
  *
- * // Access the package
- * const pkg = pantry.python
+ * // Access via alias (recommended)
+ * const pkg = pantry.py
  * // Or access via domain
  * const samePkg = pantry.pythonorg
  * console.log(pkg === samePkg) // true
@@ -66,7 +65,6 @@ export const pythonPackage = {
   /**
   * Runtime dependencies for this package.
   * These are required when running the package.
-  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
   */
   dependencies: [
     'zlib.net@1',
@@ -80,14 +78,14 @@ export const pythonPackage = {
     'gnu.org/readline@8',
     'invisible-island.net/ncurses@6',
     'facebook.com/zstd>=1.5',
-    'linux:tcl-lang.org',
-    'darwin:tcl-lang.org=8.6.16',
+    'tcl-lang.org~8.6',
   ] as const,
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
   */
   buildDependencies: [
+    'freedesktop.org/pkg-config^0.29',
     'gnu.org/patch',
     'curl.se',
   ] as const,

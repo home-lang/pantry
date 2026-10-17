@@ -224,6 +224,14 @@ describe('Fetch Module', () => {
   })
 
   describe('savePackageAsTypeScript', () => {
+    test('regeneration preserves the public export when primary aliases change', () => {
+      const filePath = savePackageAsTypeScript(tempOutputDir, 'stable.example', { ...mockPackageInfo, aliases: ['original'] })
+      const first = fs.readFileSync(filePath, 'utf8').match(/^export const (\w+) =/m)![1]
+      savePackageAsTypeScript(tempOutputDir, 'stable.example', { ...mockPackageInfo, aliases: ['replacement'] })
+      expect(fs.readFileSync(filePath, 'utf8')).toContain(`export const ${first} =`)
+      expect(fs.readFileSync(filePath, 'utf8')).toContain(`typeof ${first}`)
+    })
+
     test('should generate valid TypeScript file', () => {
       const filePath = savePackageAsTypeScript(tempOutputDir, 'nodejs.org', mockPackageInfo)
 

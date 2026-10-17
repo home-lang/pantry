@@ -29,6 +29,7 @@ export const recipe: Recipe = {
     'gnu.org/readline': '8',
     'invisible-island.net/ncurses': '6',
     'facebook.com/zstd': '>=1.5',
+    'tcl-lang.org': '~8.6',
   },
   buildDependencies: {
     'freedesktop.org/pkg-config': '^0.29',

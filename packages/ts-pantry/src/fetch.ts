@@ -442,7 +442,7 @@ function generatePackageJSDoc(packageInfo: PkgxPackage, domainName: string, pack
 /**
  * Generates TypeScript content for a package
  */
-function generateTypeScriptContent(packageInfo: PkgxPackage, domainName: string): string {
+function generateTypeScriptContent(packageInfo: PkgxPackage, domainName: string, existingExport?: string): string {
   // Helper function to check if a string is a valid alias for variable naming
   function isValidAliasForVarName(alias: string): boolean {
     if (!alias || alias.length < 2)
@@ -503,7 +503,7 @@ function generateTypeScriptContent(packageInfo: PkgxPackage, domainName: string)
   }
 
   // Ensure the variable name doesn't contain any invalid JavaScript identifier characters
-  const safeVarName = varName.replace(/[^\w$]/g, '')
+  const safeVarName = existingExport || varName.replace(/[^\w$]/g, '')
 
   // Generate comprehensive JSDoc documentation
   const jsdoc = generatePackageJSDoc(packageInfo, domainName, packageDisplayName)
@@ -588,7 +588,10 @@ export function savePackageAsTypeScript(outputDir: string, domainName: string, p
   delete cleanPackageInfo.fetchedAt
 
   // Generate TypeScript content
-  const tsContent = generateTypeScriptContent(cleanPackageInfo, domainName)
+  const existingExport = fs.existsSync(filePath)
+    ? fs.readFileSync(filePath, 'utf8').match(/^export const ([A-Za-z_$][\w$]*) =/m)?.[1]
+    : undefined
+  const tsContent = generateTypeScriptContent(cleanPackageInfo, domainName, existingExport)
 
   // Write the file
   fs.writeFileSync(filePath, tsContent)
