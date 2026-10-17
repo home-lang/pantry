@@ -65,7 +65,7 @@ export interface BuildContext {
 /** Source distributable (tarball/archive to download) */
 export interface RecipeDistributable {
   /** URL template with {{version}} etc. */
-  url: string
+  url: string | ((version: string) => string)
   stripComponents?: number
   /** Git ref/tag to check out for `git+https://` source URLs (e.g. 'v{{version.raw}}').
    * Consumed by build-package.ts downloadSource (git clone --branch <ref>). */
@@ -102,6 +102,8 @@ export interface Recipe {
 
   /** Supported platforms */
   platforms?: string[]
+  /** Files that belong to this product, including when repackaging an upstream archive. */
+  publish?: { include: string[] }
 
   /** How to discover new versions */
   versionSource?: VersionSource
@@ -166,6 +168,7 @@ export interface LoadedRecipe {
       skip?: string | string[]
     }
     platforms?: string[]
+    publish?: { include: string[] }
     test?: any
   }
   /** Where the recipe came from */

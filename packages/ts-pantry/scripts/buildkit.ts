@@ -91,6 +91,7 @@ export type RecipeTest = string | string[] | {
  * Use this for generateBuildScript and initial YAML parsing.
  */
 export interface PackageRecipe {
+  publish?: { include: string[] }
   distributable?: RecipeDistributable
   dependencies?: RecipeDependencyMap
   buildDependencies?: RecipeDependencyMap

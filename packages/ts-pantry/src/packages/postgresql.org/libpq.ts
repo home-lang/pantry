@@ -6,8 +6,8 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install postgresql.org/libpq`
- * @dependencies `kerberos.org`, `openssl.org^1.1`, `zlib.net^1`, ... (+1 more) (includes platform-specific dependencies)
- * @buildDependencies `unicode.org^71`, `linux:gnu.org/bison`, `linux:github.com/westes/flex` (includes platform-specific dependencies) - required only when building from source
+ * @dependencies `kerberos.org`, `openssl.org^1.1`, `zlib.net^1`
+ * @buildDependencies `linux:gnu.org/bison`, `linux:github.com/westes/flex` (includes platform-specific dependencies) - required only when building from source
  *
  * @example
  * ```typescript
@@ -48,13 +48,11 @@ export const postgresqlorglibpqPackage = {
   /**
   * Runtime dependencies for this package.
   * These are required when running the package.
-  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:freetype.org`).
   */
   dependencies: [
     'kerberos.org',
     'openssl.org^1.1',
     'zlib.net^1',
-    'linux:gnu.org/readline',
   ] as const,
   /**
   * Build dependencies for this package.
@@ -62,7 +60,6 @@ export const postgresqlorglibpqPackage = {
   * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:gnu.org/gcc`).
   */
   buildDependencies: [
-    'unicode.org^71',
     'linux:gnu.org/bison',
     'linux:github.com/westes/flex',
   ] as const,

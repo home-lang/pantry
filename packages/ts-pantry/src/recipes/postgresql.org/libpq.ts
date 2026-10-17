@@ -3,37 +3,40 @@ import type { Recipe } from '../../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'postgresql.org/libpq',
   name: 'libpq',
-  programs: [],
+  programs: ['pg_config'],
+  publish: { include: ['bin/pg_config', 'include/**', 'lib/libpq*', 'lib64/libpq*', 'lib/libpgcommon*.a', 'lib/libpgport*.a', 'lib/pkgconfig/libpq.pc', 'lib64/pkgconfig/libpq.pc', 'share/licenses/**', 'share/doc/**', 'COPY*', 'LICENSE*'] },
   dependencies: {
     'kerberos.org': '*',
     'openssl.org': '^1.1',
     'zlib.net': '^1',
-    linux: {
-      'gnu.org/readline': '*',
-    },
   },
   buildDependencies: {
-    // PostgreSQL's server build uses ICU; the installed libpq client does not.
-    'unicode.org': '^71',
     linux: {
       'gnu.org/bison': '*',
       'github.com/westes/flex': '*',
     },
   },
   distributable: {
-    url: 'https://ftp.postgresql.org/pub/source/v{{version.raw}}/postgresql-{{version.raw}}.tar.bz2',
+    url(version) {
+      // Modern PostgreSQL releases use MAJOR.MINOR upstream; the catalog
+      // normalizes their patch-zero spelling. Older 9.x releases keep PATCH.
+      const raw = Number(version.split('.')[0]) >= 10 && /^\d+\.\d+\.0$/.test(version) ? version.replace(/\.0$/, '') : version
+      return `https://ftp.postgresql.org/pub/source/v${raw}/postgresql-${raw}.tar.bz2`
+    },
     stripComponents: 1,
   },
   build: {
     script: [
       'export CFLAGS="$(echo $CFLAGS | tr \' \' \'\\n\' | sed -e \'/^-w$/d\' | tr \'\\n\' \' \')"',
       './configure $ARGS',
-      'make --jobs {{ hw.concurrency }}',
-      'make -C src/bin install $DIRS',
-      'make -C src/include install $DIRS',
-      'make -C src/interfaces install $DIRS',
+      'make -C src/interfaces/libpq --jobs {{ hw.concurrency }}',
+      'make -C src/interfaces/libpq install $DIRS',
+      'make -C src/bin/pg_config install $DIRS',
+      'install -m 0644 src/include/postgres_ext.h src/include/pg_config_ext.h src/include/pg_config_manual.h {{prefix}}/include/',
       'make -C src/common install $DIRS',
       'make -C src/port install $DIRS',
+      'mkdir -p {{prefix}}/share/licenses/postgresql',
+      'install -m 0644 COPYRIGHT {{prefix}}/share/licenses/postgresql/COPYRIGHT',
     ],
     env: {
       ARGS: [
@@ -41,6 +44,8 @@ export const recipe: Recipe = {
         '--prefix={{prefix}}',
         '--with-gssapi',
         '--with-openssl',
+        '--without-icu',
+        '--without-readline',
         '--libdir={{prefix}}/lib',
         '--includedir={{prefix}}/include',
       ],
