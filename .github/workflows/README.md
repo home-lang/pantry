@@ -6,6 +6,7 @@ The main entry points are:
 - [Release](release.yml): build the native CLI for every supported release target and publish the public TypeScript package.
 - [Publish changed packages](publish-changed-packages.yml): publish the recipes changed by a commit, or an explicitly selected package and version.
 - [Mirror](mirror.yml): incrementally publish missing vendor archives and download recipes.
+- [Published native runtime smoke](native-runtime-smoke.yml): install public browser and media artifacts into a fresh prefix, encode H.264/AAC, and load real HTTPS through Bun WebView.
 - [Registry integrity](registry-integrity.yml): check the published registry's integrity.
 
 ## Native package publication

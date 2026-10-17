@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "bun.com": "1.4.3",
+    "google.com/chrome": "155.0.8059.84",
+    "ffmpeg.org": "8.1.0",
+    "yt-dlp.org": "2026.3.17"
+  }
+}

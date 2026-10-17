@@ -1,0 +1,44 @@
+name: Published native runtime smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Public HTTPS page to load with the published Chrome and Bun WebView.'
+        type: string
+        default: https://pantry.dev/
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/native-runtime-smoke.yml
+      - .github/scripts/native-runtime-smoke.ts
+      - .github/scripts/native-browser-smoke.ts
+      - .github/native-runtime-smoke/pantry.json
+
+permissions:
+  contents: read
+
+jobs:
+  linux-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install the published Pantry CLI and bootstrap Bun
+        uses: pantry-pm/pantry/packages/action@41c32f5ecb58b5494e63f8606be787d93b01a18a # v0.11.89
+        with:
+          version: 0.11.89
+          install: 'false'
+          packages: bun.com@1.4.3
+      - name: Verify a fresh production-user installation
+        env:
+          PANTRY_RUNTIME_SMOKE_URL: ${{ inputs.url || 'https://pantry.dev/' }}
+        # The production API runs as root; retain its normal Chrome backend policy.
+        run: sudo -n env PATH="$PATH" PANTRY_RUNTIME_SMOKE_URL="$PANTRY_RUNTIME_SMOKE_URL" bun .github/scripts/native-runtime-smoke.ts
+      - name: Retain exact runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-native-runtime-smoke
+          path: artifacts/native-runtime-smoke
+          if-no-files-found: error
