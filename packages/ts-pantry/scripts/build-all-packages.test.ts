@@ -5,9 +5,9 @@ import { join } from 'node:path'
 import { selectedPackageSelectors, applyVersionPins, assignStripe, selectRecentVersions, isAppRecipePath, isPublishedArtifactRecord, isSourceUnavailableError, scriptCompiles, matchesRequestedPackage, parseRequestedPackages, pkgxHasPrebuilt, relocateMirroredPaths, normalizeMirroredArtifact, summariseTimings, type PackageTiming } from './build-all-packages'
 
 test('an explicitly requested excluded version fails instead of reporting an empty successful publication', () => {
-  const child = Bun.spawnSync(['bun', 'scripts/build-all-packages.ts', '--platform', 'linux-arm64', '-p', 'unicode.org@71.1.0', '--source-only', '--print-selected'], { cwd: import.meta.dir + '/..', stdout: 'pipe', stderr: 'pipe' })
+  const child = Bun.spawnSync(['bun', 'scripts/build-all-packages.ts', '--platform', 'linux-arm64', '-p', 'unicode.org@70.1.0', '--source-only', '--print-selected'], { cwd: import.meta.dir + '/..', stdout: 'pipe', stderr: 'pipe' })
   expect(child.exitCode).not.toBe(0)
-  expect(child.stderr.toString()).toContain('Requested unicode.org@71.1.0 is excluded from publication on linux-arm64')
+  expect(child.stderr.toString()).toContain('Requested unicode.org@70.1.0 is excluded from publication on linux-arm64')
 })
 
 test('the actual selected X11 publication cohort builds XCB first', () => {
