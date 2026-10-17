@@ -26,13 +26,17 @@ describe('mirrored artifact publication normalization', () => {
   test('preserves signed Darwin application binaries without host Mach-O tools', () => {
     const dir = mkdtempSync(join(tmpdir(), 'mirror-signed-app-'))
     try {
-      const contents = join(dir, 'Example.app', 'Contents', 'MacOS')
+      const contents = join(dir, 'lib', 'cmake', 'Example.app', 'Contents', 'MacOS')
       mkdirSync(contents, { recursive: true })
       const binary = join(contents, 'Example')
       const signedBytes = Buffer.from([0xcf, 0xfa, 0xed, 0xfe, 1, 2, 3, 4])
       writeFileSync(binary, signedBytes)
+      const metadata = join(contents, 'ExampleConfig.cmake')
+      const signedMetadata = 'set(PREFIX "${CMAKE_CURRENT_LIST_DIR}/../../../../example.org/v1/lib")'
+      writeFileSync(metadata, signedMetadata)
       expect(() => normalizeMirroredArtifact(dir, 'example.org', 'v1', 'darwin-arm64', join(dir, 'missing-patchelf'))).not.toThrow()
       expect(readFileSync(binary)).toEqual(signedBytes)
+      expect(readFileSync(metadata, 'utf8')).toBe(signedMetadata)
     }
     finally { rmSync(dir, { recursive: true, force: true }) }
   })

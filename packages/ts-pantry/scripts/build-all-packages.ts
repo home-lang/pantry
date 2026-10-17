@@ -1861,7 +1861,7 @@ export function relocateMirroredPaths(installDir: string, domain: string, versio
       return
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const full = join(dir, entry.name)
-      if (entry.isDirectory())
+      if (entry.isDirectory() && !entry.name.toLowerCase().endsWith('.app'))
         walk(full, visit)
       else if (entry.isFile())
         visit(full)
