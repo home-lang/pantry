@@ -11,12 +11,17 @@ export const recipe: Recipe = {
   dependencies: {
     'cairographics.org': '^1.18',
     'freetype.org': '2',
-    'gnome.org/glib': '2',
-    'harfbuzz.org': '8',
-    'freedesktop.org/fontconfig': '2',
+    'gnome.org/glib': '^2.88',
+    'harfbuzz.org': '>=11.0.0',
+    'freedesktop.org/fontconfig': '>=2.17.0',
     'sourceware.org/libffi': '3',
     'gnu.org/fribidi': '1',
   },
+  dependencyOverrides: [
+    // Upstream meson.build for 1.57.x requires GLib 2.82 and HarfBuzz 8.4,
+    // with no HarfBuzz-major upper bound; its stable SONAME remains .so.0.
+    { if: '<1.58.0', dependencies: { 'gnome.org/glib': '>=2.82<3', 'harfbuzz.org': '>=8.4.0' } },
+  ],
   buildDependencies: {
     'mesonbuild.com': '*',
     'ninja-build.org': '1',

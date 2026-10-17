@@ -899,10 +899,13 @@ catch {
           // (AWS, Hetzner, B2); avoids the aws CLI and a hardcoded amazonaws.com host.
           const dlUrl = await s3.getSignedUrl({ bucket, key: info.tarball, expiresIn: 3600 })
           execSync(`curl -fsSL -o "${tarballPath}" "${dlUrl}"`, { stdio: 'pipe' })
+          if (!/^[a-f0-9]{64}$/i.test(info.sha256 || '') || new Bun.CryptoHasher('sha256').update(readFileSync(tarballPath)).digest('hex') !== info.sha256.toLowerCase())
+            throw new BuildDependencyResolutionError(`${domain}@${depVersion}: dependency archive checksum mismatch or missing`)
           execSync(`tar -xf "${tarballPath}" -C "${depInstallDir}"`, { stdio: 'pipe' })
           execSync(`rm "${tarballPath}"`)
         }
-catch {
+catch (cause) {
+          if (cause instanceof BuildDependencyResolutionError) throw cause
           return false
         }
         // Fix pkg-config files
@@ -924,14 +927,15 @@ catch { /* ignore */ }
           }
         }
         // Register paths and version template variables
-        depPaths[domain] = depInstallDir
-        depPaths[`deps.${domain}.prefix`] = depInstallDir
+        const key = depPaths[`deps.${domain}.version`] && depPaths[`deps.${domain}.version`] !== depVersion ? `${domain}@${depVersion}` : domain
+        depPaths[key] = depInstallDir
+        depPaths[`deps.${key}.prefix`] = depInstallDir
         const vParts = depVersion.split('.')
-        depPaths[`deps.${domain}.version`] = depVersion
-        depPaths[`deps.${domain}.version.major`] = vParts[0] || '0'
-        depPaths[`deps.${domain}.version.minor`] = vParts[1] || '0'
-        depPaths[`deps.${domain}.version.patch`] = vParts[2] || '0'
-        depPaths[`deps.${domain}.version.marketing`] = `${vParts[0] || '0'}.${vParts[1] || '0'}`
+        depPaths[`deps.${key}.version`] = depVersion
+        depPaths[`deps.${key}.version.major`] = vParts[0] || '0'
+        depPaths[`deps.${key}.version.minor`] = vParts[1] || '0'
+        depPaths[`deps.${key}.version.patch`] = vParts[2] || '0'
+        depPaths[`deps.${key}.version.marketing`] = `${vParts[0] || '0'}.${vParts[1] || '0'}`
         return true
       }
 
@@ -1159,7 +1163,13 @@ export async function resolveVersionedBuildDependencyGraph(
       const catalog = lookupPantryPackage(domain)?.versions as string[] | undefined
       const published = Object.keys(info.versions || {})
       const allowed = catalog?.length ? published.filter(version => catalog.includes(version)) : published
-      const version = buildDependencyCandidates(info, platform, parseDepConstraint(previous.get(domain) || '') || constraint, allowed.length ? allowed : published)[0]
+      let version: string
+      try {
+        version = buildDependencyCandidates(info, platform, parseDepConstraint(previous.get(domain) || '') || constraint, allowed.length ? allowed : published)[0]
+      }
+      catch (cause) {
+        throw new BuildDependencyResolutionError(`${domain}: ${cause instanceof Error ? cause.message : String(cause)}`)
+      }
       return load(domain, version)
     })
     const state = snapshot(graph)
@@ -1176,10 +1186,56 @@ async function publishedDependencyGraph(initial: Map<string, string>, platform: 
   const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
   const storage = createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })
   const cache = new Map<string, Promise<BuildDependencyMetadata>>()
-  return resolveVersionedBuildDependencyGraph(initial, platform, (domain) => {
+  const metadata = (domain: string) => {
     if (!cache.has(domain)) cache.set(domain, storage.getObject(bucket, `binaries/${domain}/metadata.json`).then(value => JSON.parse(value)))
     return cache.get(domain)!
-  }, async (domain, version) => (await loadRecipe(domain, platform, version)).recipe)
+  }
+  const load = async (domain: string, version: string) => (await loadRecipe(domain, platform, version)).recipe
+  try {
+    return await resolveVersionedBuildDependencyGraph(initial, platform, metadata, load)
+  }
+  catch (cause) {
+    if (!(cause instanceof BuildDependencyResolutionError) || !cause.message.includes('dependency binary satisfies')) throw cause
+    // Hoist compatible requirements; isolate genuinely different runtime ABIs.
+    // The native bundler still rejects ambiguous providers of the same SONAME.
+    return resolveCoexistingRuntimeGraph(initial, platform, metadata, load)
+  }
+}
+
+export async function resolveCoexistingRuntimeGraph(
+  initial: Map<string, string>,
+  platform: string,
+  metadata: (domain: string) => Promise<BuildDependencyMetadata>,
+  load: (domain: string, version: string) => Promise<{ dependencies?: PackageRecipe['dependencies'] }>,
+): Promise<Map<string, string>> {
+  const graph = new Map<string, string>()
+  const roots = new Map<string, string>()
+  const queue: Array<{ domain: string, version: string }> = []
+  const candidates = async (domain: string, constraint: string | null) => {
+    const info = await metadata(domain)
+    const published = Object.keys(info.versions || {})
+    const catalog = lookupPantryPackage(domain)?.versions as string[] | undefined
+    const allowed = catalog?.length ? published.filter(version => catalog.includes(version)) : published
+    try { return buildDependencyCandidates(info, platform, constraint, allowed.length ? allowed : published) }
+    catch (cause) { throw new BuildDependencyResolutionError(`${domain}: ${cause instanceof Error ? cause.message : String(cause)}`) }
+  }
+  for (const [domain, dependency] of initial) roots.set(domain, (await candidates(domain, parseDepConstraint(dependency)))[0])
+  const add = async (domain: string, constraint: string | null) => {
+    const preferred = roots.get(domain)
+    const version = preferred && (!constraint || versionSatisfies(preferred, constraint)) ? preferred : (await candidates(domain, constraint))[0]
+    const existing = [...graph].find(([, spec]) => parseDep(spec) === domain && parseDepConstraint(spec) === `=${version}`)
+    if (existing) return
+    const key = graph.has(domain) ? `${domain}@${version}` : domain
+    graph.set(key, `${domain} =${version}`)
+    queue.push({ domain, version })
+  }
+  for (const [domain, dependency] of initial) await add(domain, parseDepConstraint(dependency))
+  for (let index = 0; index < queue.length; index++) {
+    const parent = queue[index]
+    const recipe = await load(parent.domain, parent.version)
+    for (const dependency of extractYamlDeps(recipe.dependencies, platform)) await add(parseDep(dependency), parseDepConstraint(dependency))
+  }
+  return graph
 }
 
 /** Build executables keep their private runtime ABIs out of the target linker graph. */
@@ -1205,7 +1261,7 @@ export async function installBuildDependencyGraphs(
     const prefix = depPaths[`deps.${domain}.prefix`]
     const version = depPaths[`deps.${domain}.version`]
     if (!prefix || !version) throw new Error(`Unresolved declared runtime package: ${domain}`)
-    return { domain, version, prefix }
+    return { domain: parseDep(domain), version, prefix }
   })
   for (const [domain, dependency] of declared) {
     if (graph.has(domain)) continue
@@ -1233,7 +1289,7 @@ export async function downloadRuntimePackages(domain: string, version: string, p
     const prefix = paths[`deps.${child}.prefix`]
     const version = paths[`deps.${child}.version`]
     if (!prefix || !version) throw new Error(`Unresolved declared runtime package: ${child}`)
-    return { domain: child, version, prefix }
+    return { domain: parseDep(child), version, prefix }
   })
 }
 

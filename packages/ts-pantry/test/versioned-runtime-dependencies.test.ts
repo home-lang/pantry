@@ -38,3 +38,12 @@ test('published dependency versions recompute ABI edges after a later transitive
   expect(graph.has('new-abi.example')).toBe(false)
   expect(graph.get('shared.example')).toBe('shared.example <2')
 })
+
+test('distinct OpenSSL runtime ABIs coexist while the direct compiler dependency stays first', async () => {
+  const { resolveCoexistingRuntimeGraph } = await import('../scripts/build-package')
+  const platform = 'linux-x86-64'
+  const graph = await resolveCoexistingRuntimeGraph(new Map([['ssl.example', 'ssl.example ^1.1'], ['kerberos.example', 'kerberos.example ^1']]), platform,
+    async domain => ({ versions: Object.fromEntries((domain === 'ssl.example' ? ['3.0.1', '1.1.1'] : ['1.0.0']).map(version => [version, { platforms: { [platform]: {} } }])) }),
+    async domain => ({ dependencies: domain === 'kerberos.example' ? { 'ssl.example': '^3' } : {} }))
+  expect([...graph]).toEqual([['ssl.example', 'ssl.example =1.1.1'], ['kerberos.example', 'kerberos.example =1.0.0'], ['ssl.example@3.0.1', 'ssl.example =3.0.1']])
+})

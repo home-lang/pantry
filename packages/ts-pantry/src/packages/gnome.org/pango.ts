@@ -8,8 +8,8 @@
  *
  * @install `pantry install gnome.org/pango`
  * @homepage https://www.gtk.org/docs/architecture/pango
- * @dependencies `cairographics.org^1.18`, `freetype.org@2`, `gnome.org/glib@2`, ... (+4 more)
- * @buildDependencies `mesonbuild.com`, `python.org@>=3<3.12` - required only when building from source
+ * @dependencies `cairographics.org^1.18`, `freetype.org@2`, `gnome.org/glib^2.88`, ... (+4 more)
+ * @buildDependencies `mesonbuild.com`, `ninja-build.org@1`, `freedesktop.org/pkg-config^0.29`, ... (+2 more) - required only when building from source
  *
  * @example
  * ```typescript
@@ -64,9 +64,9 @@ export const gnomeorgpangoPackage = {
   dependencies: [
     'cairographics.org^1.18',
     'freetype.org@2',
-    'gnome.org/glib@2',
-    'harfbuzz.org@8',
-    'freedesktop.org/fontconfig@2',
+    'gnome.org/glib^2.88',
+    'harfbuzz.org>=11.0.0',
+    'freedesktop.org/fontconfig>=2.17.0',
     'sourceware.org/libffi@3',
     'gnu.org/fribidi@1',
   ] as const,
@@ -76,7 +76,10 @@ export const gnomeorgpangoPackage = {
   */
   buildDependencies: [
     'mesonbuild.com',
-    'python.org@>=3<3.12',
+    'ninja-build.org@1',
+    'freedesktop.org/pkg-config^0.29',
+    'gnome.org/gobject-introspection@1',
+    'python.org>=3<3.12',
   ] as const,
   /**
   * Available versions from newest to oldest.

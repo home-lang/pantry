@@ -1646,6 +1646,7 @@ const CUSTOM_BUILD_DOMAINS = new Set<string>([
   'git-scm.org', // alias detection uses libexec/git to avoid recursive PATH wrapper calls
   'php.net', // ~30 extension flags (fpm/gd/mbstring/pgsql/openssl/sodium/…) + php-config/phpize patching
   'postgresql.org', // build-time options/extensions we control
+  'postgresql.org/libpq', // client-only products; upstream prebuilts link server-only ICU/readline
   'curl.se', // Pantry links against OpenSSL 3; pkgx's build still requires OpenSSL 1.1
 ])
 
