@@ -3,7 +3,7 @@
  *
  * @domain `starship.rs`
  * @programs `starship`
- * @version `1.24.2` (24 versions available)
+ * @version `1.27.0` (54 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install starship.rs`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "starship"
  * console.log(pkg.description) // "☄🌌️  The minimal, blazing-fast, and infinitely..."
  * console.log(pkg.programs)    // ["starship"]
- * console.log(pkg.versions[0]) // "1.24.2" (latest)
+ * console.log(pkg.versions[0]) // "1.27.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/starship-rs.md
@@ -67,6 +67,7 @@ export const starshiprsPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.27.0',
     '1.26.0',
     '1.25.1',
     '1.25.0',
