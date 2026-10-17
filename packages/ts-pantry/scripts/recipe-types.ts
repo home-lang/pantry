@@ -171,6 +171,7 @@ export interface LoadedRecipe {
       'working-directory'?: string
       skip?: string | string[]
     }
+    programs?: string[]
     platforms?: string[]
     publish?: { include: string[] }
     sourceablePrograms?: string[]
