@@ -13,6 +13,8 @@ The main entry points are:
 
 Linux x64 and ARM packages run on matching Linux runners. Darwin ARM packages run on macOS, including recipes that download an upstream binary. A vendor archive still needs native Mach-O inspection, loader normalization and any required runtime health checks. A Linux download does not replace those checks.
 
+The targeted publisher and the manual Build, Build Multi-Version Packages and Sync Pre-Built Binaries workflows select their native tools through `native-publisher-toolchain.ts` and install them through the Pantry action. Tool verification rejects a host executable or an entry outside the managed prefix. Recipe dependencies supply additional compilers, build tools and libraries; the macOS runner supplies Apple’s licensed SDK. These publishing workflows do not bootstrap through apt, Homebrew, pip, rustup or Docker.
+
 Both the scheduled mirror and targeted publisher follow this rule. The targeted publisher preserves exact `domain@version` selectors when handing work to the macOS job. Custom recipes retain their own build configuration even when a vendor prebuilt exists.
 
 For a bounded repair, dispatch **Publish changed packages** with an exact selector such as `bun.com@1.4.3`, a platform, and the number of versions to publish. Leave `platform` empty for all supported publisher platforms. `linux` selects both Linux architectures; `darwin-arm64` selects the native Mac job.
