@@ -1143,9 +1143,9 @@ export async function resolveBuildDependencyGraph(
 }
 
 /** Mirrored binaries must satisfy the same declared runtime closure as source builds. */
-export async function downloadRuntimePackages(domain: string, platform: string, depsDir: string, bucket: string, region: string): Promise<RuntimePackage[]> {
+export async function downloadRuntimePackages(domain: string, version: string, platform: string, depsDir: string, bucket: string, region: string): Promise<RuntimePackage[]> {
   const { loadRecipe } = await import('./recipe-loader')
-  const loaded = await loadRecipe(domain, platform)
+  const loaded = await loadRecipe(domain, platform, version)
   const runtime = extractYamlDeps(loaded.recipe.dependencies, platform)
   const declared = new Map(runtime.map(dependency => [parseDep(dependency), dependency]))
   const graph = await resolveBuildDependencyGraph(declared, platform, async child => (await loadRecipe(child, platform)).recipe)
@@ -1198,7 +1198,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
   // Load recipe: tries src/recipes/*.ts first, then YAML + overrides
   const { loadRecipe } = await import('./recipe-loader')
-  const loaded = await loadRecipe(pkgName, platform)
+  const loaded = await loadRecipe(pkgName, platform, version)
   console.log(`Build recipe: ${loaded.yamlPath || 'native TS recipe'} (source: ${loaded.source})`)
 
   const recipe = loaded.recipe as PackageRecipe

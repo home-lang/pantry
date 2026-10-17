@@ -13,6 +13,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Recipe, LoadedRecipe } from './recipe-types'
 import type { NormalizedRecipe } from './buildkit'
+import { evaluateCondition } from './buildkit'
 
 // package-overrides.ts removed — overrides migrated to src/recipes/*.ts
 const packageOverrides: Record<string, any> = {}
@@ -31,6 +32,7 @@ const tsPackagesDir = join(scriptsDir, '..', 'src')
 export async function loadRecipe(
   domain: string,
   _platform?: string,
+  version?: string,
 ): Promise<LoadedRecipe & { yamlPath?: string }> {
   // 1. Try native TS recipe
   const recipePath = findRecipeFile(domain)
@@ -40,7 +42,7 @@ export async function loadRecipe(
       const def: Recipe = mod.recipe || mod.default
       if (def) {
         return {
-          recipe: recipeDefToNormalized(def),
+          recipe: recipeDefToNormalized(def, _platform, version),
           source: 'recipe',
           propsDir: def.propsDir ? join(recipePath, '..', def.propsDir) : undefined,
         }
@@ -163,14 +165,22 @@ function normalizeRecipe(recipe: Record<string, any>): Record<string, any> {
 }
 
 /** Convert a native Recipe to buildkit-compatible format */
-function recipeDefToNormalized(def: Recipe): Record<string, any> {
+function recipeDefToNormalized(def: Recipe, platform = '', version?: string): Record<string, any> {
+  let dependencies = { ...def.dependencies }
+  let buildDependencies = { ...def.buildDependencies }
+  for (const override of def.dependencyOverrides || []) {
+    if (version && evaluateCondition(override.if, platform, version)) {
+      dependencies = { ...dependencies, ...override.dependencies }
+      buildDependencies = { ...buildDependencies, ...override.buildDependencies }
+    }
+  }
   return {
     distributable: def.distributable
       ? { url: def.distributable.url, 'strip-components': def.distributable.stripComponents }
       : undefined,
-    dependencies: def.dependencies || {},
+    dependencies,
     build: {
-      dependencies: def.buildDependencies || {},
+      dependencies: buildDependencies,
       script: def.build.script,
       env: def.build.env || {},
       // Recipes author this as kebab-case `working-directory` (matching buildkit's

@@ -2090,7 +2090,7 @@ else {
       // eslint-disable-next-line no-await-in-loop
       if (await timePhase(phases, 'mirror', () => tryPkgxMirror(domain, candidateVersion, platform, installDir, buildkitRoot))) {
         const { downloadRuntimePackages } = await import('./build-package')
-        const runtime = await downloadRuntimePackages(domain, platform, depsDir, bucket, region)
+        const runtime = await downloadRuntimePackages(domain, candidateVersion, platform, depsDir, bucket, region)
         await fixUp(installDir, platform, [], runtime)
         usedVersion = candidateVersion
         mirrored = true

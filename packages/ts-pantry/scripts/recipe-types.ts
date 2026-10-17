@@ -93,6 +93,13 @@ export interface Recipe {
   /** Build-time only dependencies (same shape as {@link dependencies}). */
   buildDependencies?: Record<string, string | Record<string, string>>
 
+  /** ABI bounds that differ for an older release; evaluated using its exact version. */
+  dependencyOverrides?: Array<{
+    if: string
+    dependencies?: Record<string, string | Record<string, string>>
+    buildDependencies?: Record<string, string | Record<string, string>>
+  }>
+
   /** Supported platforms */
   platforms?: string[]
 

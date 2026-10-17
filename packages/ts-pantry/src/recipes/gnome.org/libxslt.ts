@@ -23,6 +23,9 @@ export const recipe: Recipe = {
   buildDependencies: {
     'gnu.org/patch': '*',
   },
+  dependencyOverrides: [
+    { if: '<1.1.45', dependencies: { 'gnome.org/libxml2': '~2.13' } },
+  ],
   propsDir: '../props/gnome.org/libxslt',
 
   build: {
