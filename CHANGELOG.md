@@ -1,3 +1,43 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.86...v0.11.87)
+
+## ✨ Features
+
+- support targeted artifact repairs in the mirror workflow ([061cd4a](https://github.com/pantry-pm/pantry/commit/061cd4a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- preserve signed app metadata during artifact relocation ([9224333](https://github.com/pantry-pm/pantry/commit/9224333)) _(by Chris <chrisbreuer93@gmail.com>)_
+- normalize mirrored ELF artifacts before publication ([6e7a524](https://github.com/pantry-pm/pantry/commit/6e7a524)) _(by Chris <chrisbreuer93@gmail.com>)_
+- validate and preserve complete workspace install locks ([d79c729](https://github.com/pantry-pm/pantry/commit/d79c729)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve dependency platform guards across package catalogs ([63dc761](https://github.com/pantry-pm/pantry/commit/63dc761)) _(by Chris <chrisbreuer93@gmail.com>)_
+- track native build metadata configuration inputs ([87ab409](https://github.com/pantry-pm/pantry/commit/87ab409)) _(by Chris <chrisbreuer93@gmail.com>)_
+- retain failed process ownership and complete install locks ([5b68fcb](https://github.com/pantry-pm/pantry/commit/5b68fcb)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- build the native CLI before incremental cache checks ([fccdf35](https://github.com/pantry-pm/pantry/commit/fccdf35)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use a deterministic invalid output directory ([fe5b3fa](https://github.com/pantry-pm/pantry/commit/fe5b3fa)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 👷 Build System
+
+- **action**: refresh the guarded package catalog ([654602b](https://github.com/pantry-pm/pantry/commit/654602b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 💚 Continuous Integration
+
+- budget complete native validation on cold runners ([c60be84](https://github.com/pantry-pm/pantry/commit/c60be84)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.87 ([39c1b6c](https://github.com/pantry-pm/pantry/commit/39c1b6c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- regenerate native catalog with architecture guards ([159f18e](https://github.com/pantry-pm/pantry/commit/159f18e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update craft-native.org to 0.0.233 ([0f6ca45](https://github.com/pantry-pm/pantry/commit/0f6ca45)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.231 ([8d04e3d](https://github.com/pantry-pm/pantry/commit/8d04e3d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.228 ([2130817](https://github.com/pantry-pm/pantry/commit/2130817)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.85...v0.11.86)
 
 ## 🐛 Bug Fixes
