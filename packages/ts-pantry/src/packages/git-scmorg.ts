@@ -2,13 +2,12 @@
  * **git** - Git Source Code Mirror - This is a publish-only repository but pull requests can be turned into patches to the mailing list via GitGitGadget (https://gitgitgadget.github.io/). Please follow Documentation/SubmittingPatches procedure for any of your improvements.
  *
  * @domain `git-scm.org`
- * @programs `git`, `git-cvsserver`, `git-receive-pack`, `git-shell`, `git-upload-archive`, ... (+3 more)
+ * @programs `git`, `git-cvsserver`, `git-receive-pack`, `git-shell`, `git-upload-archive`, ... (+2 more)
  * @version `2.53.0` (34 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install git-scm.org`
- * @dependencies `zlib.net@1`, `curl.se>=5`, `curl.se/ca-certs`, ... (+4 more) (includes OS-specific dependencies with `os:package` format)
- * @buildDependencies `pkgx.sh@>=1` - required only when building from source
+ * @dependencies `zlib.net@1`, `curl.se>=5`, `curl.se/ca-certs`, ... (+4 more) (includes platform-specific dependencies)
  *
  * @example
  * ```typescript
@@ -58,13 +57,12 @@ export const gitscmorgPackage = {
     'git-upload-archive',
     'git-upload-pack',
     'scalar',
-    'git-credential-osxkeychain',
   ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.
   * These are required when running the package.
-  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:freetype.org`).
   */
   dependencies: [
     'zlib.net@1',
@@ -75,13 +73,7 @@ export const gitscmorgPackage = {
     'gnu.org/gettext^0.21',
     'linux:gnu.org/libiconv',
   ] as const,
-  /**
-  * Build dependencies for this package.
-  * These are only required when building the package from source.
-  */
-  buildDependencies: [
-    'pkgx.sh@>=1',
-  ] as const,
+  buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
@@ -123,6 +115,11 @@ export const gitscmorgPackage = {
     '2.38.1',
   ] as const,
   aliases: [] as const,
+  platformPrograms: {
+  darwin: [
+    'git-credential-osxkeychain',
+  ] as const,
+},
 }
 
 export type GitscmorgPackage = typeof gitscmorgPackage

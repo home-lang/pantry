@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url'
 import type { Recipe, LoadedRecipe } from './recipe-types'
 import type { NormalizedRecipe } from './buildkit'
 import { evaluateCondition } from './buildkit'
+import { programsForPlatform } from '../src/programs'
 
 // package-overrides.ts removed — overrides migrated to src/recipes/*.ts
 const packageOverrides: Record<string, any> = {}
@@ -188,7 +189,8 @@ function recipeDefToNormalized(def: Recipe, platform = '', version?: string): Re
       'working-directory': (def.build as any)['working-directory'] ?? def.build.workingDirectory,
       skip: def.build.skip,
     },
-    programs: def.programs,
+    programs: programsForPlatform(def, platform),
+    platformPrograms: def.platformPrograms,
     platforms: def.platforms,
     publish: def.publish,
     sourceablePrograms: def.sourceablePrograms,

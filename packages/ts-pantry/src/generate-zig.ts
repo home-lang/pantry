@@ -2,6 +2,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { recipeDepsToSpecs } from './dependency-spec'
 import { getAliasOverrides, shouldReplaceAliases } from './alias-overrides'
+import { programsForPlatform } from './programs'
+import type { PlatformPrograms } from './programs'
 
 /**
  * Generate Zig package definitions from TypeScript package data
@@ -14,6 +16,7 @@ interface ZigPackageDefinition {
   description: string
   homepageUrl?: string
   programs: string[]
+  platformPrograms?: PlatformPrograms
   dependencies: string[]
   buildDependencies: string[]
   aliases: string[]
@@ -144,8 +147,18 @@ function escapeZigString(str: string): string {
 /**
  * Convert a package to Zig struct format
  */
+export function zigProgramsExpression(pkg: { programs: readonly string[], platformPrograms?: PlatformPrograms }): string {
+  const array = (platform: string): string => `&[_][]const u8{ ${programsForPlatform(pkg, platform).map(p => `"${escapeZigString(p)}"`).join(', ')} }`
+  let expression = array('')
+  for (const [platform, programs] of Object.entries(pkg.platformPrograms || {})) {
+    if (!['darwin', 'linux', 'windows'].includes(platform)) throw new Error(`Unsupported program platform: ${platform}`)
+    if (programs.length) expression = `if (@import("builtin").os.tag == .${platform === 'darwin' ? 'macos' : platform}) ${array(platform)} else ${expression}`
+  }
+  return expression
+}
+
 function packageToZigStruct(pkg: ZigPackageDefinition): string {
-  const programs = pkg.programs.map(p => `"${escapeZigString(p)}"`).join(', ')
+  const programs = zigProgramsExpression(pkg)
   const deps = pkg.dependencies.map(d => `"${escapeZigString(d)}"`).join(', ')
   const buildDeps = pkg.buildDependencies.map(d => `"${escapeZigString(d)}"`).join(', ')
   const aliases = pkg.aliases.map(a => `"${escapeZigString(a)}"`).join(', ')
@@ -156,7 +169,7 @@ function packageToZigStruct(pkg: ZigPackageDefinition): string {
         .domain = "${escapeZigString(pkg.domain)}",
         .description = "${escapeZigString(pkg.description)}",
         .homepage_url = ${pkg.homepageUrl ? `"${escapeZigString(pkg.homepageUrl)}"` : 'null'},
-        .programs = &[_][]const u8{ ${programs} },
+        .programs = ${programs},
         .dependencies = &[_][]const u8{ ${deps} },
         .build_dependencies = &[_][]const u8{ ${buildDeps} },
         .aliases = &[_][]const u8{ ${aliases} },
@@ -284,6 +297,7 @@ export async function generateZigDefinitions(packagesDir: string, outputFile: st
         description: pkgData.description || '',
         homepageUrl: pkgData.homepageUrl,
         programs: Array.isArray(pkgData.programs) ? pkgData.programs : [],
+        platformPrograms: pkgData.platformPrograms,
         // Merge the build recipe's runtime deps into the metadata deps so the
         // catalog reflects what we actually compiled against (e.g. php links
         // libpq, so php.net must depend on postgresql.org even though pkgx's

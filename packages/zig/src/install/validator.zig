@@ -143,6 +143,18 @@ pub fn hasUsableDeclaredPrograms(allocator: std.mem.Allocator, package_name: []c
     return false;
 }
 
+test "Git executable contract follows the native compilation target" {
+    const package = package_registry.getPackageByName("git-scm.org").?;
+    var has_keychain_helper = false;
+    var has_git = false;
+    for (package.programs) |program| {
+        if (std.mem.eql(u8, program, "git-credential-osxkeychain")) has_keychain_helper = true;
+        if (std.mem.eql(u8, program, "git")) has_git = true;
+    }
+    try std.testing.expect(has_git);
+    try std.testing.expectEqual(@import("builtin").os.tag == .macos, has_keychain_helper);
+}
+
 fn programsAreUsable(allocator: std.mem.Allocator, programs: []const []const u8, package_root: []const u8) bool {
     var checked: usize = 0;
     for (programs) |program| {

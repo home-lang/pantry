@@ -4,6 +4,7 @@
 
 import type { PackageAlias, PackageDomain, PackageInfo, PackageName, VersionSpec } from './package-types'
 import { aliases } from './packages/aliases'
+import { programsForPlatform } from './programs'
 
 // Create a dynamic packages loader function instead of importing the static packages object
 async function loadPackages(): Promise<Record<string, any>> {
@@ -226,7 +227,7 @@ export async function getPackageInfo(packageName: PackageName): Promise<PackageI
     description: pkg.description || '',
     latestVersion,
     totalVersions: pkg.versions?.length || 0,
-    programs: [...(pkg.programs || [])],
+    programs: programsForPlatform({ ...pkg, programs: pkg.programs || [] }, process.platform),
     dependencies: [...(pkg.dependencies || [])],
     companions: [...(pkg.companions || [])],
     versions: [...(pkg.versions || [])],

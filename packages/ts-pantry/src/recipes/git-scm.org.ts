@@ -6,7 +6,8 @@ export const recipe: Recipe = {
   name: 'git',
   description: 'Git Source Code Mirror - This is a publish-only repository but pull requests can be turned into patches to the mailing list via GitGitGadget (https://gitgitgadget.github.io/). Please follow Documentation/SubmittingPatches procedure for any of your improvements.',
   github: 'https://github.com/git/git',
-  programs: ['git', 'git-cvsserver', 'git-receive-pack', 'git-shell', 'git-upload-archive', 'git-upload-pack', 'scalar', 'git-credential-osxkeychain'],
+  programs: ['git', 'git-cvsserver', 'git-receive-pack', 'git-shell', 'git-upload-archive', 'git-upload-pack', 'scalar'],
+  platformPrograms: { darwin: ['git-credential-osxkeychain'] },
   dependencies: {
     'zlib.net': '1',
     'curl.se': '>=5',
