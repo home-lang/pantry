@@ -25,6 +25,8 @@ export const recipe: Recipe = {
       'mkdir -p {{prefix}}/bin {{prefix}}/libexec/meson',
       'cp -a meson.py mesonbuild {{prefix}}/libexec/meson/',
       'install -m 0755 props/meson {{prefix}}/bin/meson',
+      'mkdir -p {{prefix}}/share/licenses/meson',
+      'install -m 0644 COPYING {{prefix}}/share/licenses/meson/COPYING',
     ],
   },
   test: {
