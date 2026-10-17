@@ -65,7 +65,7 @@ export const freedesktoporgatspi2corelibatspiPackage = {
     'python.org~3.12',
     'gnu.org/gettext',
     'gnu.org/coreutils',
-    'bun.sh^1.3',
+    'bun.com^1.3',
   ] as const,
   /**
   * Available versions from newest to oldest.

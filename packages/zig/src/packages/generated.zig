@@ -4115,7 +4115,7 @@ pub const packages = [_]PackageInfo{ .{
     .homepage_url = "https://gitlab.gnome.org/GNOME/at-spi2-core",
     .programs = &[_][]const u8{},
     .dependencies = &[_][]const u8{ "gnome.org/glib^2", "freedesktop.org/dbus^1" },
-    .build_dependencies = &[_][]const u8{ "mesonbuild.com", "ninja-build.org", "freedesktop.org/pkg-config^0.29", "python.org~3.12", "gnu.org/gettext", "gnu.org/coreutils", "bun.sh^1.3" },
+    .build_dependencies = &[_][]const u8{ "mesonbuild.com", "ninja-build.org", "freedesktop.org/pkg-config^0.29", "python.org~3.12", "gnu.org/gettext", "gnu.org/coreutils", "bun.com^1.3" },
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{"2.38.0"},
 }, .{

@@ -13,7 +13,7 @@ export const recipe: Recipe = {
   buildDependencies: {
     'mesonbuild.com': '*', 'ninja-build.org': '*',
     'freedesktop.org/pkg-config': '^0.29', 'python.org': '~3.12',
-    'gnu.org/gettext': '*', 'gnu.org/coreutils': '*', 'bun.sh': '^1.3',
+    'gnu.org/gettext': '*', 'gnu.org/coreutils': '*', 'bun.com': '^1.3',
   },
   distributable: {
     url: 'https://download.gnome.org/sources/at-spi2-core/{{version.marketing}}/at-spi2-core-{{version}}.tar.xz',
