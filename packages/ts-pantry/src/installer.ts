@@ -46,7 +46,7 @@ export interface InstallOptions {
   installDir?: string
   /** Override the detected host platform, e.g. when fetching a Linux deploy binary from macOS. */
   platform?: Platform
-  /** Create .bin/ symlinks/copies (default: true) */
+  /** Create relocatable .bin/ links (default: true). Windows requires symbolic-link permission. */
   createBinLinks?: boolean
   /** Quiet mode — suppress progress output (default: false) */
   quiet?: boolean
@@ -284,15 +284,17 @@ const resolvers: Record<string, PackageResolver> = {
  * a broken stub even though the genuine binary is present on disk.
  */
 function linkBinary(source: string, destination: string, platform: Platform): void {
+  const target = path.relative(fs.realpathSync(path.dirname(destination)), path.join(fs.realpathSync(path.dirname(source)), path.basename(source)))
   if (platform.os === 'windows') {
     try { fs.unlinkSync(destination) } catch { /* Entry does not exist yet. */ }
-    fs.copyFileSync(source, destination)
+    // A copy changes the executable's own location. Compilers and other
+    // resource-owning programs then look for their runtime beside .bin.
+    fs.symlinkSync(target, destination, 'file')
     return
   }
 
   // Resolve directory aliases before computing a relocatable entrypoint, but
   // preserve the installed program's name for multicall wrappers.
-  const target = path.relative(fs.realpathSync(path.dirname(destination)), path.join(fs.realpathSync(path.dirname(source)), path.basename(source)))
   const descriptor = fs.openSync(source, 'r')
   const magic = Buffer.alloc(2)
   try { fs.readSync(descriptor, magic, 0, 2, 0) }

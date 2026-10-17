@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { lstatSync, mkdirSync, mkdtempSync, realpathSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { copyFileSync, lstatSync, mkdirSync, mkdtempSync, realpathSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { detectPlatform, installPackage } from '../src/installer'
@@ -93,3 +93,31 @@ describe.skipIf(process.platform === 'win32')('installed binary entrypoints', ()
     run(entryAlias)
   }, 15_000)
 })
+
+
+it('preserves native executable resources and arguments through Windows SDK links after relocation', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'pantry-native-context-'))
+  scratch.push(root)
+  const tree = join(root, 'pantry')
+  const pkg = join(tree, 'bun.com/v1.4.3')
+  mkdirSync(pkg, { recursive: true })
+  copyFileSync(process.execPath, join(pkg, 'bun.exe'))
+  writeFileSync(join(pkg, 'runtime-marker'), 'owned-runtime')
+  const script = join(root, 'context.ts')
+  writeFileSync(script, `import { readFileSync } from 'node:fs'; import { dirname, join } from 'node:path'; console.log(JSON.stringify({ directory: dirname(process.execPath), marker: readFileSync(join(dirname(process.execPath), 'runtime-marker'), 'utf8'), args: process.argv.slice(2) })); process.exit(23)`)
+  await installPackage('bun.com', '1.4.3', { installDir: tree, platform: { os: 'windows', arch: 'x86_64' }, quiet: true })
+  const verify = (prefix: string) => {
+    const alias = join(prefix, '.bin/bun.exe')
+    expect(lstatSync(alias).isSymbolicLink()).toBe(true)
+    const result = Bun.spawnSync([alias, script, 'two words', 'quote"arg', 'λ'], { cwd: root })
+    expect(result.exitCode, result.stderr.toString()).toBe(23)
+    const actual = JSON.parse(result.stdout.toString())
+    expect(actual.directory).toBe(realpathSync(join(prefix, 'bun.com/v1.4.3')))
+    expect(actual.marker).toBe('owned-runtime')
+    expect(actual.args).toEqual(['two words', 'quote"arg', 'λ'])
+  }
+  verify(tree)
+  const moved = join(root, 'moved pantry')
+  renameSync(tree, moved)
+  verify(moved)
+}, 15_000)
