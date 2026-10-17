@@ -240,6 +240,10 @@ export const recipe: Recipe = {
       'libdir': 'lib/python{{version.marketing}}',
       'darwin': {
         'confdir': '$libdir/config-{{version.marketing}}-darwin',
+        // Installed mpdecimal headers declare MPD_CONFIG_64. CPython's older
+        // decimal hashing code additionally needs its own CONFIG_64 ABI flag;
+        // Darwin configure otherwise supplies only the bundled UNIVERSAL flag.
+        'LIBMPDEC_CFLAGS': '-DCONFIG_64=1',
         'PYTHON2PATCHES': ['https://raw.githubusercontent.com/macports/macports-ports/master/lang/python27/files/patch-getpath.diff'],
       },
       'linux': {
@@ -260,7 +264,8 @@ export const recipe: Recipe = {
     script: [
       'if test {{version.major}} -gt 3 || { test {{version.major}} -eq 3 && test {{version.minor}} -ge 12; }; then',
       "env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH -u DYLD_FALLBACK_LIBRARY_PATH -u TCL_LIBRARY -u TK_LIBRARY {{prefix}}/bin/python{{version.marketing}} - <<'PANTRY_PYTHON_HEALTH'",
-      'import bz2, ctypes, decimal, lzma, readline, sqlite3, ssl, sys, sysconfig, tkinter, zlib',
+      'import _decimal, bz2, ctypes, decimal, lzma, readline, sqlite3, ssl, sys, sysconfig, tkinter, zlib',
+      'assert hash(decimal.Decimal(42)) == hash(42)',
       'assert sys.version.split()[0] == "{{version.raw}}", sys.version',
       'assert sqlite3.connect(":memory:").execute("select 42").fetchone() == (42,)',
       'assert tkinter.Tcl().eval("info patchlevel").startswith("8.6."), tkinter.TclVersion',

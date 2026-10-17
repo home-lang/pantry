@@ -28,6 +28,7 @@ describe('Python-backed package runtime wrappers', () => {
         const script = generateBuildScript(recipe as PackageRecipe, 'python.org', version, platform, '/tmp/python', '/tmp/build', {})
         const syntax = spawnSync('/bin/bash', ['-n'], { input: script, encoding: 'utf8' })
         expect(syntax.status).toBe(0)
+        if (platform.startsWith('darwin')) expect(script).toContain('LIBMPDEC_CFLAGS="-DCONFIG_64=1"')
         expect(recipe.test?.required).toBe(true)
       }
     }
