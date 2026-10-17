@@ -3,7 +3,7 @@
  *
  * @domain `systemd.io`
  * @programs `busctl`, `coredumpctl`, `hostnamectl`, `journalctl`, `kernel-install`, ... (+50 more)
- * @version `262.1` (59 versions available)
+ * @version `262.1` (60 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install systemd.io`
@@ -157,6 +157,7 @@ export const systemdioPackage = {
     '261.2',
     '261.1',
     '261',
+    '260.6',
     '260.5',
     '260.4',
     '260.3',
