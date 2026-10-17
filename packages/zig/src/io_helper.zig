@@ -923,6 +923,11 @@ fn copyFileFallback(src_path: []const u8, dest_path: []const u8) !void {
         if (bytes_read == 0) break;
         try writeAllToFile(dest_file, buf[0..bytes_read]);
     }
+    // Native helpers also live under lib/, not only bin/ or libexec/.
+    // Preserve ordinary source permissions instead of guessing from its path.
+    const source_permissions = (try src_file.stat(io)).permissions;
+    const permissions = if (comptime is_windows) source_permissions else File.Permissions.fromMode(source_permissions.toMode() & 0o777);
+    try dest_file.setPermissions(io, permissions);
 }
 
 /// Copy a directory tree using platform-optimized methods.
@@ -974,16 +979,16 @@ pub fn copyTree(src_path: []const u8, dest_path: []const u8) !void {
 /// Create a symbolic link using platform-specific syscalls
 pub fn symLink(target: []const u8, link_path: []const u8) !void {
     if (comptime is_windows) {
-        // Symlinks require elevated privileges on Windows; copy file instead
-        // Check if destination already exists
-        cwd().access(io, link_path, .{}) catch |err| {
-            if (err != error.FileNotFound) return error.SymLinkError;
-            // File doesn't exist, proceed with copy
-            copyFile(target, link_path) catch return error.SymLinkError;
-            return;
-        };
-        // File exists
-        return error.PathAlreadyExists;
+        // Preserve the target's executable/resource identity. Copying a native
+        // program into .bin breaks compilers and adjacent DLL/data lookup.
+        const parent = std.fs.path.dirname(link_path) orelse ".";
+        const resolved_target = if (std.fs.path.isAbsolute(target)) null else try std.fs.path.join(std.heap.page_allocator, &.{ parent, target });
+        defer if (resolved_target) |path| std.heap.page_allocator.free(path);
+        const target_stat = cwd().statFile(io, resolved_target orelse target, .{}) catch null;
+        try cwd().symLink(io, target, link_path, .{
+            .is_directory = if (target_stat) |stat| stat.kind == .directory else false,
+        });
+        return;
     }
 
     var target_buf: [std.fs.max_path_bytes:0]u8 = undefined;
@@ -1544,18 +1549,35 @@ pub fn argsAlloc(allocator: std.mem.Allocator) ![]const [:0]const u8 {
         }
         return args;
     } else if (native_os == .windows) {
-        // Windows: use kernel32 GetCommandLineW (placeholder — returns empty for now)
-        return try allocator.alloc([:0]const u8, 0);
+        const GetCommandLineW = @extern(*const fn () callconv(.winapi) [*:0]const u16, .{ .name = "GetCommandLineW" });
+        return windowsArgsAlloc(allocator, std.mem.span(GetCommandLineW()));
     } else {
         @compileError("argsAlloc not supported on this platform");
     }
+}
+
+/// Parse the real Windows command line with the standard runtime rules.
+pub fn windowsArgsAlloc(allocator: std.mem.Allocator, command_line: []const u16) ![]const [:0]const u8 {
+    var iterator = try std.process.Args.Iterator.Windows.init(allocator, command_line);
+    defer iterator.deinit();
+    var args: std.ArrayList([:0]const u8) = .empty;
+    errdefer {
+        for (args.items) |arg| allocator.free(arg);
+        args.deinit(allocator);
+    }
+    while (iterator.next()) |arg| {
+        const owned = try dupeZ(allocator, u8, arg);
+        errdefer allocator.free(owned);
+        try args.append(allocator, owned);
+    }
+    return args.toOwnedSlice(allocator);
 }
 
 /// Free the result of argsAlloc. Mirrors its per-platform allocation: on
 /// macOS/iOS the arg strings are borrowed from the OS argv (free only the
 /// array); on Linux/FreeBSD each string was dup'd (free strings + array).
 pub fn argsFree(allocator: std.mem.Allocator, args: []const [:0]const u8) void {
-    if (builtin.os.tag == .linux or builtin.os.tag == .freebsd) {
+    if (builtin.os.tag == .linux or builtin.os.tag == .freebsd or builtin.os.tag == .windows) {
         for (args) |a| allocator.free(a);
     }
     allocator.free(args);
@@ -2309,4 +2331,46 @@ pub fn httpPostJsonTimeout(allocator: std.mem.Allocator, url: []const u8, json_b
     };
     defer client.deinit();
     return httpPostJsonWithClientTimeout(&client, allocator, url, json_body, timeout_ms);
+}
+
+test "Windows arguments preserve native quoting and Unicode" {
+    const command = std.unicode.utf8ToUtf16LeStringLiteral("\"C:\\Program Files\\pantry.exe\" install \"two words\" λ");
+    const args = try windowsArgsAlloc(std.testing.allocator, command);
+    defer {
+        for (args) |arg| std.testing.allocator.free(arg);
+        std.testing.allocator.free(args);
+    }
+    try std.testing.expectEqual(@as(usize, 4), args.len);
+    try std.testing.expectEqualStrings("C:\\Program Files\\pantry.exe", args[0]);
+    try std.testing.expectEqualStrings("install", args[1]);
+    try std.testing.expectEqualStrings("two words", args[2]);
+    try std.testing.expectEqualStrings("λ", args[3]);
+}
+
+test "buffered copies preserve executable and private data permissions" {
+    if (comptime is_windows) return error.SkipZigTest;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    try tmp.dir.writeFile(io, .{ .sub_path = "program", .data = "#!/bin/sh\nexit 0\n" });
+    try tmp.dir.writeFile(io, .{ .sub_path = "data", .data = "fixture" });
+    var root_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const root_len = try tmp.dir.realPathFile(io, ".", &root_buf);
+    const allocator = std.testing.allocator;
+    for ([_]struct { name: []const u8, mode: std.posix.mode_t }{
+        .{ .name = "program", .mode = 0o751 },
+        .{ .name = "data", .mode = 0o600 },
+    }) |entry| {
+        const source = try std.fs.path.join(allocator, &.{ root_buf[0..root_len], entry.name });
+        defer allocator.free(source);
+        const dest = try std.fmt.allocPrint(allocator, "{s}.copy", .{source});
+        defer allocator.free(dest);
+        const file = try openFileAbsolute(source, .{});
+        try file.setPermissions(io, File.Permissions.fromMode(entry.mode));
+        file.close(io);
+        try copyFileFallback(source, dest);
+        const copied = try openFileAbsolute(dest, .{});
+        defer copied.close(io);
+        try std.testing.expectEqual(entry.mode, (try copied.stat(io)).permissions.toMode() & 0o777);
+        try std.testing.expectEqual(entry.mode & 0o111 != 0, isExecutable(dest));
+    }
 }

@@ -14,9 +14,7 @@ pub const SymlinkError = error{
 /// Cross-platform symlink creation
 pub fn createSymlinkCrossPlatform(target_path: []const u8, link_path: []const u8) !void {
     if (builtin.os.tag == .windows) {
-        // On Windows, copy the file instead of creating a symlink
-        // This avoids privilege requirements
-        try io_helper.copyFile(target_path, link_path);
+        try io_helper.symLink(target_path, link_path);
     } else {
         // On Unix systems, create actual symlink using io_helper
         io_helper.symLink(target_path, link_path) catch |err| switch (err) {

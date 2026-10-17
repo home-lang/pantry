@@ -4887,7 +4887,7 @@ pub fn main() !void {
 
     // Parse arguments
     const args = try io_helper.argsAlloc(allocator);
-    defer allocator.free(args);
+    defer io_helper.argsFree(allocator, args);
 
     // Detect if invoked as panx/pnx (package executor aliases, like npx/bunx)
     if (args.len >= 1) {

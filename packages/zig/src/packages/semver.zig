@@ -32,6 +32,8 @@ pub const Constraint = struct {
     /// a written zero without this - and the two mean different things under a
     /// caret on a zero major.
     components: u8 = 3,
+    /// Remaining AND bounds, borrowed from the original constraint string.
+    and_rest: ?[]const u8 = null,
 };
 
 /// Parse a semver version string into major.minor.patch
@@ -103,6 +105,33 @@ test "parseVersion accepts openssl-style letter-suffixed patch (1.1.1w)" {
 
 /// Parse a version constraint string like "^1.2.3" or ">=1.0.0"
 pub fn parseConstraint(constraint_str: []const u8) !Constraint {
+    const first = try splitBound(constraint_str);
+    var result = try parseAtomicConstraint(first.head);
+    if (first.rest.len > 0) result.and_rest = first.rest;
+    var rest = first.rest;
+    while (rest.len > 0) {
+        const token = try splitBound(rest);
+        _ = try parseAtomicConstraint(token.head);
+        rest = token.rest;
+    }
+    return result;
+}
+
+const BoundToken = struct { head: []const u8, rest: []const u8 };
+
+fn splitBound(input: []const u8) !BoundToken {
+    const text = std.mem.trim(u8, input, " \t\r\n");
+    if (text.len == 0 or std.mem.indexOfAny(u8, text, "|&,()") != null) return error.InvalidConstraint;
+    var start: usize = 0;
+    while (start < text.len and std.mem.indexOfScalar(u8, "<>=^~", text[start]) != null) : (start += 1) {}
+    while (start < text.len and std.ascii.isWhitespace(text[start])) : (start += 1) {}
+    var end = start;
+    while (end < text.len and !std.ascii.isWhitespace(text[end]) and std.mem.indexOfScalar(u8, "<>=^~", text[end]) == null) : (end += 1) {}
+    if (end == start) return error.InvalidConstraint;
+    return .{ .head = text[0..end], .rest = std.mem.trim(u8, text[end..], " \t\r\n") };
+}
+
+fn parseAtomicConstraint(constraint_str: []const u8) !Constraint {
     var version_str = constraint_str;
     var constraint_type = ConstraintType.exact;
 
@@ -130,6 +159,7 @@ pub fn parseConstraint(constraint_str: []const u8) !Constraint {
         version_str = version_str[1..];
     }
 
+    version_str = std.mem.trim(u8, version_str, " \t");
     const version = try parseVersion(version_str);
 
     // Normalize partial / loose specifiers to ranges, matching npm/bun semantics.
@@ -326,7 +356,7 @@ fn versionOrderAgainstConstraint(version_str: []const u8, version: Version, cons
     if (version.minor != constraint.minor) return std.math.order(version.minor, constraint.minor);
     if (version.patch != constraint.patch) return std.math.order(version.patch, constraint.patch);
 
-    if (!constraint.allows_prerelease) return .eq;
+    if (!constraint.allows_prerelease) return if (isPrerelease(version_str)) .lt else .eq;
     if (!isPrerelease(version_str)) return .gt;
     return std.math.order(prereleaseNumber(version_str) orelse 0, constraint.prerelease_number orelse 0);
 }
@@ -345,11 +375,43 @@ fn sameRegistryVersion(a: []const u8, b: []const u8) bool {
 
 /// Check if a version satisfies a constraint
 pub fn satisfiesConstraint(version_str: []const u8, constraint: Constraint) bool {
+    if (constraint.and_rest == null) return satisfiesAtomicConstraint(version_str, constraint, false);
+    const version = parseVersion(version_str) catch return false;
+    var allow_prerelease = false;
+    var probe = BoundIterator{ .first = constraint, .rest = constraint.and_rest.? };
+    while (probe.next() catch return false) |bound| {
+        if (bound.allows_prerelease and version.major == bound.major and version.minor == bound.minor and version.patch == bound.patch)
+            allow_prerelease = true;
+    }
+    var bounds = BoundIterator{ .first = constraint, .rest = constraint.and_rest.? };
+    while (bounds.next() catch return false) |bound| {
+        if (!satisfiesAtomicConstraint(version_str, bound, allow_prerelease)) return false;
+    }
+    return true;
+}
+
+const BoundIterator = struct {
+    first: ?Constraint,
+    rest: []const u8,
+
+    fn next(self: *BoundIterator) !?Constraint {
+        if (self.first) |bound| {
+            self.first = null;
+            return bound;
+        }
+        if (self.rest.len == 0) return null;
+        const token = try splitBound(self.rest);
+        self.rest = token.rest;
+        return try parseAtomicConstraint(token.head);
+    }
+};
+
+fn satisfiesAtomicConstraint(version_str: []const u8, constraint: Constraint, allow_prerelease: bool) bool {
     const version = parseVersion(version_str) catch return false;
 
     // Stable constraints never opt into prereleases. A constraint which names a
     // prerelease channel, such as ^0.17.0-dev, may select matching builds.
-    if (isPrerelease(version_str) and !constraint.allows_prerelease) return false;
+    if (isPrerelease(version_str) and !constraint.allows_prerelease and !allow_prerelease) return false;
 
     const order = versionOrderAgainstConstraint(version_str, version, constraint);
 
@@ -785,4 +847,23 @@ test "and the dependency that found this resolves" {
     const resolved = resolveVersion("github.com/PJK/libcbor", "^0") orelse return error.NoVersion;
 
     try std.testing.expect(std.mem.startsWith(u8, resolved, "0."));
+}
+
+test "conjunctive native ranges enforce every upper and lower bound" {
+    for ([_][]const u8{ ">=3.10<3.15", ">=3.10 <3.15", ">= 3.10 < 3.15" }) |text| {
+        const constraint = try parseConstraint(text);
+        try std.testing.expect(satisfiesConstraint("3.10.0", constraint));
+        try std.testing.expect(satisfiesConstraint("3.14.8", constraint));
+        try std.testing.expect(!satisfiesConstraint("3.9.18", constraint));
+        try std.testing.expect(!satisfiesConstraint("3.15.0", constraint));
+        try std.testing.expectEqualStrings("3.14.8", findBestMatch(&.{ "3.15.0", "3.14.8", "3.10.0" }, text).?);
+    }
+    const strict = try parseConstraint(">8.5<12");
+    try std.testing.expect(!satisfiesConstraint("8.5.0", strict));
+    try std.testing.expect(satisfiesConstraint("9.0.0", strict));
+    try std.testing.expect(satisfiesConstraint("11.9.0", strict));
+    try std.testing.expect(!satisfiesConstraint("12.0.0", strict));
+    const development = try parseConstraint(">=0.17.0-dev.131<0.18.0");
+    try std.testing.expect(satisfiesConstraint("0.17.0-dev.2384+ac77c23af", development));
+    try std.testing.expect(!satisfiesConstraint("0.18.0-dev.1+abcdef", development));
 }

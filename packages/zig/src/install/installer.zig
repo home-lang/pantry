@@ -3101,9 +3101,8 @@ pub const Installer = struct {
         const package_source = try self.findPackageRoot(extract_dir, domain, spec.version);
         defer self.allocator.free(package_source);
 
-        // Copy package contents to project directory
-        try io_helper.makePath(project_pkg_dir);
-        try self.copyDirectoryStructure(package_source, project_pkg_dir);
+        // Downloads and cache repairs use the same verified, atomic copy.
+        try self.materializeVerifiedProjectPackage(package_source, project_pkg_dir, domain);
 
         // Fix library paths for macOS; references to other packages in this
         // project's pantry/ are written relative to the referencing binary.
@@ -3685,8 +3684,7 @@ pub const Installer = struct {
         defer self.allocator.free(package_source);
 
         // Copy/move package contents to global cache location
-        try io_helper.makePath(global_pkg_dir);
-        try self.copyDirectoryStructure(package_source, global_pkg_dir);
+        try self.materializeVerifiedProjectPackage(package_source, global_pkg_dir, domain);
 
         // Fix library paths for macOS (especially for Node.js OpenSSL issue)
         try libfixer.fixDirectoryLibraryPaths(self.allocator, global_pkg_dir);
@@ -4012,18 +4010,14 @@ pub const Installer = struct {
 
     /// Copy directory structure from source to destination
     fn copyDirectoryStructure(self: *Installer, source: []const u8, dest: []const u8) !void {
-        return self.copyDirectoryStructureInner(source, dest, false);
+        return self.copyDirectoryStructureInner(source, dest);
     }
 
-    /// `inherited_executable` marks that we are already somewhere beneath a
-    /// directory whose purpose is to hold executables, so nested entries keep
-    /// the bit. git needs both halves of this: its helpers live in `libexec`,
-    /// and the ones that matter are a further level down in `libexec/git-core`.
+    /// Preserve the archive's file modes, including executables under lib/.
     fn copyDirectoryStructureInner(
         self: *Installer,
         source: []const u8,
         dest: []const u8,
-        inherited_executable: bool,
     ) !void {
         // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
         var src_dir = try io_helper.openDirAbsoluteForIteration(source);
@@ -4031,17 +4025,6 @@ pub const Installer = struct {
 
         // Ensure destination exists
         try io_helper.makePath(dest);
-
-        // Files in a directory that exists to hold executables need the bit.
-        // `libexec` belongs here as much as `bin`: leaving it out produced a
-        // git whose `bin/git` wrapper ran and then died on
-        // `exec .../libexec/git: Permission denied`, which every consumer
-        // reported as "not a git repository".
-        const base = std.fs.path.basename(source);
-        const is_bin_dir = inherited_executable or
-            std.mem.eql(u8, base, "bin") or
-            std.mem.eql(u8, base, "sbin") or
-            std.mem.eql(u8, base, "libexec");
 
         var it = src_dir.iterate();
         while (it.next() catch null) |entry| {
@@ -4058,9 +4041,7 @@ pub const Installer = struct {
             defer self.allocator.free(dst_path);
 
             if (entry.kind == .directory) {
-                // Recursively copy directory, carrying the executable context
-                // down so `libexec/git-core/*` is not left unexecutable.
-                try self.copyDirectoryStructureInner(src_path, dst_path, is_bin_dir);
+                try self.copyDirectoryStructureInner(src_path, dst_path);
             } else if (entry.kind == .sym_link) {
                 // Recreate symlink — read the target and create a new symlink at dest
                 const link_target = io_helper.readLinkAlloc(self.allocator, src_path) catch continue;
@@ -4075,11 +4056,6 @@ pub const Installer = struct {
             } else {
                 // Copy file using io_helper wrapper
                 try io_helper.copyFile(src_path, dst_path);
-
-                // Make files in bin directories executable
-                if (is_bin_dir) {
-                    self.makeExecutable(dst_path);
-                }
             }
         }
     }
@@ -5035,4 +5011,45 @@ test "project links stay inside pantry/ when it is installed through a worktree'
         try std.testing.expect(result.term == .exited and result.term.exited == 0);
         try std.testing.expectEqualStrings(case.out, result.stdout);
     }
+}
+
+test "verified materialization preserves executables beneath lib without making data executable" {
+    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var cache = try PackageCache.init(allocator);
+    defer cache.deinit();
+    var installer = try Installer.init(allocator, &cache);
+    defer installer.deinit();
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    try tmp.dir.createDirPath(io_helper.io, "source/bin");
+    try tmp.dir.createDirPath(io_helper.io, "source/lib/application");
+    try tmp.dir.writeFile(io_helper.io, .{ .sub_path = "source/lib/application/chrome", .data = "#!/bin/sh\nprintf 'owned-helper-ok\\n'\n" });
+    try tmp.dir.writeFile(io_helper.io, .{ .sub_path = "source/lib/application/data", .data = "owned-data" });
+    var root_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const root_len = try tmp.dir.realPathFile(io_helper.io, ".", &root_buf);
+    const root = root_buf[0..root_len];
+    const source = try std.fs.path.join(allocator, &.{ root, "source" });
+    defer allocator.free(source);
+    const dest = try std.fs.path.join(allocator, &.{ root, "installed" });
+    defer allocator.free(dest);
+    const program = try std.fs.path.join(allocator, &.{ source, "lib/application/chrome" });
+    defer allocator.free(program);
+    const file = try io_helper.openFileAbsolute(program, .{});
+    try file.setPermissions(io_helper.io, io_helper.File.Permissions.fromMode(0o751));
+    file.close(io_helper.io);
+    const link = try std.fs.path.join(allocator, &.{ source, "bin/google-chrome-stable" });
+    defer allocator.free(link);
+    try io_helper.symLink("../lib/application/chrome", link);
+    try installer.materializeVerifiedProjectPackage(source, dest, "google.com/chrome");
+    const installed = try std.fs.path.join(allocator, &.{ dest, "bin/google-chrome-stable" });
+    defer allocator.free(installed);
+    const result = try io_helper.childRun(allocator, &.{installed});
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+    try std.testing.expect(result.term == .exited and result.term.exited == 0);
+    try std.testing.expectEqualStrings("owned-helper-ok\n", result.stdout);
+    const data = try std.fs.path.join(allocator, &.{ dest, "lib/application/data" });
+    defer allocator.free(data);
+    try std.testing.expect(!io_helper.isExecutable(data));
 }
