@@ -22,6 +22,10 @@ jobs:
         uses: ./packages/action
         with:
           version: 0.11.93
+          install: 'false'
+          # Catalog generation and the published-CLI contract run in Bun.
+          # Native recipe builds provision their own declared build tools.
+          packages: bun.com@1.4.3
       - name: Install first-party JavaScript dependencies
         run: bun install --frozen-lockfile
       - name: Record the exact source and runtime before recipe validation
