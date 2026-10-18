@@ -9,7 +9,6 @@ import { dependencyPlatform, recipeDepsToSpecs } from './dependency-spec'
 import { convertDomainToVarName } from './utils'
 // pkgx-scraper removed — version discovery now via scripts/version-fetcher.ts
 const scrapePkgxPackage = async (..._args: any[]): Promise<any> => null
-// Lazy import of utils functions to avoid module loading issues
 
 // Legacy browser references - keeping for backwards compatibility but not used
 type Browser = any
