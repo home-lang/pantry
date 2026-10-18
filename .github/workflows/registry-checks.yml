@@ -56,4 +56,3 @@ jobs:
           name: registry-availability-bun-${{ matrix.bun }}
           path: artifacts/registry-availability
           if-no-files-found: error
-
