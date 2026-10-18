@@ -13,6 +13,7 @@ export const recipe: Recipe = {
     'gnu.org/make': '*',
     'gnu.org/sed': '*',
     'gnu.org/findutils': '*',
+    'gnu.org/help2man': '^1',
     'gnu.org/m4': '1',
   },
   distributable: {
