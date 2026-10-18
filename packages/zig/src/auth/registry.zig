@@ -950,7 +950,21 @@ pub const RegistryClient = struct {
                 } else {
                     if (response.head.status == .not_found) return null;
                     if (response.head.status != .ok) return error.RegistryUnavailable;
-                    return response.reader(&.{}).allocRemaining(self.allocator, std.Io.Limit.limited(limit)) catch |err| publicationRequestError(&req, err);
+                    // Decode the declared HTTP representation before parsing JSON
+                    // or comparing the original uploaded tarball's integrity.
+                    // The tarball itself stays gzip-compressed; only the outer
+                    // Content-Encoding layer is decoded by the standard reader.
+                    const decode_buffer: []u8 = switch (response.head.content_encoding) {
+                        .identity => &.{},
+                        .zstd => try self.allocator.alloc(u8, std.compress.zstd.default_window_len),
+                        .deflate, .gzip => try self.allocator.alloc(u8, std.compress.flate.max_window_len),
+                        .compress => return error.UnsupportedCompressionMethod,
+                    };
+                    defer self.allocator.free(decode_buffer);
+                    var transfer_buffer: [64]u8 = undefined;
+                    var decompress: http.Decompress = undefined;
+                    const reader = response.readerDecompressing(&transfer_buffer, &decompress, decode_buffer);
+                    return reader.allocRemaining(self.allocator, std.Io.Limit.limited(limit)) catch |err| publicationRequestError(&req, err);
                 }
             }
             // Request.deinit has finished before any externally owned URI or
