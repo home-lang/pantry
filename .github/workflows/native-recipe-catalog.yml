@@ -37,6 +37,11 @@ jobs:
           mkdir -p artifacts/native-catalog
           git rev-parse HEAD > artifacts/native-catalog/source-commit.txt
           bun --version > artifacts/native-catalog/bun-version.txt
+      - name: Build and verify the Action's source compiler-selection contract
+        if: inputs.build-publication-source
+        run: |
+          bun test packages/action/src/lock-version.test.ts
+          bun run --cwd packages/action build
       - name: Provision the supported native publication compiler through Pantry
         if: inputs.build-publication-source
         uses: ./packages/action
