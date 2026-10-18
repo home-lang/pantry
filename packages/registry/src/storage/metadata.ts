@@ -426,11 +426,12 @@ export interface FullMetadataState {
 export class FileMetadataStorage extends InMemoryMetadataStorage {
   private filePath: string
   private saveTimeout: Timer | null = null
+  private readonly loading: Promise<void>
 
   constructor(filePath: string) {
     super()
     this.filePath = filePath
-    this.load()
+    this.loading = this.load()
   }
 
   private async load(): Promise<void> {
@@ -461,6 +462,19 @@ export class FileMetadataStorage extends InMemoryMetadataStorage {
       this.saveTimeout = null
       this.save().catch(err => console.error('FileMetadataStorage save failed:', (err as Error).message))
     }, 1000)
+  }
+
+  /** Drain the debounce and active write before callers release this store. */
+  async flush(): Promise<void> {
+    await this.loading
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout)
+      this.saveTimeout = null
+      await this.save()
+    }
+    else {
+      while (this.savePromise) await this.savePromise
+    }
   }
 
   // Guard against concurrent saves overwriting each other.
