@@ -64,8 +64,11 @@ Use the service input when tests need Redis. Pantry installs the exact requested
 Redis package, binds it only to loopback, disables persistence for the ephemeral
 runner, allocates a private port and random password, waits for authenticated
 `PONG` and server identity, and stops only its owned process after the job.
-`REDIS_URL`, `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDISCLI_AUTH`
+`REDIS_URL`, `REDIS_HOST`, `REDIS_PORT`, `REDIS_USERNAME`, `REDIS_PASSWORD`, `REDISCLI_AUTH`
 and `REDIS_SERVICE_VERSION` describe that instance.
+The URL names Redis's `default` ACL user explicitly; an empty username is a
+different user for clients that send two-argument `AUTH`. Both URL-based and
+environment-based authentication are verified against the real service.
 
 Foreground startup records the process identity, then waits up to 30 seconds
 for an authenticated `redis-cli ping`. A startup

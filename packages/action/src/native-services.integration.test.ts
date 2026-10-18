@@ -233,6 +233,20 @@ if (args.includes('start')) {
       expect((await query(0, ['SET', 'private-job', '42'])).stdout.trim()).toBe('OK')
       expect((await query(0, ['GET', 'private-job'])).stdout.trim()).toBe('42')
       expect((await query(1, ['GET', 'private-job'])).stdout.trim()).toBe('')
+      for (const service of started) {
+        const url = new URL(service.environment.REDIS_URL!)
+        expect(url.username).toBe('default')
+        expect(url.password).toBe(service.environment.REDIS_PASSWORD!)
+        const uriQuery = await execute(join(binDir!, 'redis-cli'), ['-u', url.href, 'PING'], {
+          env: { ...process.env, REDISCLI_AUTH: '' }, timeout: 5000,
+        })
+        expect(uriQuery.stdout.trim()).toBe('PONG')
+        url.password = 'wrong'
+        const wrong = await execute(join(binDir!, 'redis-cli'), ['-u', url.href, 'PING'], {
+          env: { ...process.env, REDISCLI_AUTH: '' }, timeout: 5000,
+        })
+        expect(wrong.stderr).toContain('WRONGPASS')
+      }
       const rejected = await execute(join(binDir!, 'redis-cli'), ['-h', '127.0.0.1', '-p', started[0]!.environment.REDIS_PORT!, 'PING'], { env: { ...process.env, REDISCLI_AUTH: '' }, timeout: 5000 })
       expect(rejected.stdout).toContain('NOAUTH')
     }

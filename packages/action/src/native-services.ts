@@ -291,7 +291,7 @@ export async function startNativeService(service: ServiceSpec, binDir: string, t
       }
       const info = await execute(client, ['-h', '127.0.0.1', '-p', String(port), 'INFO', 'server'], { env: authenticated, timeout: 2000 })
       if (!info.stdout.includes(`redis_version:${version}\r\n`)) throw new Error('Redis readiness version mismatch')
-      return { state, version, environment: { REDIS_HOST: '127.0.0.1', REDIS_PORT: String(port), REDIS_PASSWORD: password, REDISCLI_AUTH: password, REDIS_URL: `redis://:${password}@127.0.0.1:${port}/0`, REDIS_SERVICE_VERSION: version } }
+      return { state, version, environment: { REDIS_HOST: '127.0.0.1', REDIS_PORT: String(port), REDIS_USERNAME: 'default', REDIS_PASSWORD: password, REDISCLI_AUTH: password, REDIS_URL: `redis://default:${password}@127.0.0.1:${port}/0`, REDIS_SERVICE_VERSION: version } }
     }
     const apiKey = secret()
     const data = join(directory, 'data')
