@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { recipe } from '../src/recipes/gnu.org/libtool'
@@ -10,8 +10,9 @@ test('libtoolize finds its own installed data after relocation, including paths 
     const prefix = join(root, 'original')
     mkdirSync(join(prefix, 'bin'), { recursive: true })
     mkdirSync(join(prefix, 'share/libtool/build-aux'), { recursive: true })
+    writeFileSync(join(prefix, 'share/libtool/build-aux/ltmain.sh'), 'fixture')
     // These quoted assignments occur inside func_init in upstream libtoolize.
-    writeFileSync(join(prefix, 'bin/libtoolize'), `#!/bin/sh
+    writeFileSync(join(root, 'libtoolize.in'), `#!/bin/sh
 set -eu
 func_init () {
   prefix="${prefix}"
@@ -20,9 +21,16 @@ func_init () {
 }
 func_init
 test -d "$pkgauxdir"
+my_dir=$pkgauxdir
+test -n "\`{ cd $my_dir && ls; } 2>/dev/null\`"
 printf '%s\\n' "$prefix"
 `)
     const commands = recipe.build!.script as string[]
+    for (const command of commands.filter(command => command.endsWith('libtoolize.in'))) {
+      const prepared = Bun.spawnSync(['bash', '-eu', '-c', command], { cwd: root })
+      expect(prepared.exitCode).toBe(0)
+    }
+    copyFileSync(join(root, 'libtoolize.in'), join(prefix, 'bin/libtoolize'))
     const first = commands.indexOf('cd {{prefix}}/bin')
     const last = commands.indexOf('rm libtoolize.bak')
     expect(first).toBeGreaterThanOrEqual(0)

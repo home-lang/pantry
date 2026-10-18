@@ -21,6 +21,9 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
+      // Upstream's data-directory check must retain whitespace after relocation.
+      'sed -i.bak \'s|cd \\$my_dir && ls|cd "$my_dir" \\&\\& ls|\' libtoolize.in',
+      'rm libtoolize.in.bak',
       './configure --prefix={{ prefix }}',
       'make --jobs {{ hw.concurrency }} install',
       // configure bakes the buildkit compiler-wrapper path (".../_cc_wrapper/cc"
