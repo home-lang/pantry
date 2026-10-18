@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 import { generateBuildScript } from '../scripts/buildkit'
-import { collectBuildDependencies } from '../scripts/build-package'
-import { externalRuntimePackages } from '../scripts/build-package'
+import { collectBuildDependencies, externalRuntimePackages } from '../scripts/build-package'
 
 test('runtime cycles use the current artifact while retaining different versions and dependencies', () => {
   const self = { domain: 'tukaani.org/xz', version: '5.8.2', prefix: '/old-self' }
