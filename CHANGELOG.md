@@ -1,3 +1,33 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.92...v0.11.93)
+
+## 🐛 Bug Fixes
+
+- resolve Android health fixture through package inventory ([ebf8915](https://github.com/pantry-pm/pantry/commit/ebf8915)) _(by Chris <chrisbreuer93@gmail.com>)_
+- package Android launcher assets through the native recipe loader ([d0f138e](https://github.com/pantry-pm/pantry/commit/d0f138e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve Android recipe assets from the source root ([0e630b0](https://github.com/pantry-pm/pantry/commit/0e630b0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- build the repaired Android launchers before publication ([ab7de2e](https://github.com/pantry-pm/pantry/commit/ab7de2e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- quote Android launcher SDK paths before JVM argument expansion ([1a077c3](https://github.com/pantry-pm/pantry/commit/1a077c3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- generate version-aware JDK executable contracts ([bdc2718](https://github.com/pantry-pm/pantry/commit/bdc2718)) _(by Chris <chrisbreuer93@gmail.com>)_
+- expose release-aware executable metadata to package consumers ([1b90572](https://github.com/pantry-pm/pantry/commit/1b90572)) _(by Chris <chrisbreuer93@gmail.com>)_
+- validate materialized executables against the requested release ([efa30be](https://github.com/pantry-pm/pantry/commit/efa30be)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve executable release bounds in both installer catalogs ([fde8dc3](https://github.com/pantry-pm/pantry/commit/fde8dc3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- scope executable contracts to upstream major releases ([2aac327](https://github.com/pantry-pm/pantry/commit/2aac327)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- exercise the exact Android tools in a complete relocated SDK ([f39108d](https://github.com/pantry-pm/pantry/commit/f39108d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- provision real Android build tools for APK Analyzer health checks ([7685164](https://github.com/pantry-pm/pantry/commit/7685164)) _(by Chris <chrisbreuer93@gmail.com>)_
+- diagnose and verify fresh native Android tool installations ([b87a7a3](https://github.com/pantry-pm/pantry/commit/b87a7a3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.93 ([540d5b3](https://github.com/pantry-pm/pantry/commit/540d5b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update github.com/ggerganov/llama.cpp, gomplate.ca, wails.io ([517b5c2](https://github.com/pantry-pm/pantry/commit/517b5c2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.91...v0.11.92)
 
 ## ✨ Features
