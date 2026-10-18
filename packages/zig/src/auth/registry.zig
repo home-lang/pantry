@@ -116,13 +116,13 @@ pub fn urlEncodePackageName(allocator: std.mem.Allocator, package_name: []const 
     return result;
 }
 
-/// Whether a publish request's status means the registry took the package.
+/// Whether a publish request's status means the registry accepted the upload.
 ///
 /// `200 OK`, `201 Created` and **`202 Accepted`**. The third one is the reason
 /// this is a named function rather than an inline comparison: npm answers 202
 /// when it *queues* a publish rather than completing it inline, which it does
 /// routinely for larger packages and for publishes carrying provenance. The
-/// package is published; the response simply says so asynchronously.
+/// upload is accepted; public metadata and immutable bytes still need checking.
 ///
 /// Reading 202 as a failure cost a failed release job on every single release,
 /// in two distinct ways:
@@ -859,6 +859,112 @@ pub const RegistryClient = struct {
         // Treat other statuses as "unknown" — caller will fall through to a
         // real publish attempt rather than incorrectly skipping.
         return error.RegistryError;
+    }
+
+    fn publicBytes(self: *RegistryClient, url: []const u8, limit: usize) !?[]u8 {
+        const uri = try std.Uri.parse(url);
+        const headers = [_]http.Header{
+            .{ .name = "Accept-Encoding", .value = "identity" },
+            .{ .name = "Cache-Control", .value = "no-cache" },
+        };
+        // Public readback never forwards a publish credential to the tarball
+        // host, which may differ from the registry host.
+        var req = try self.http_client.request(.GET, uri, .{ .extra_headers = &headers });
+        defer req.deinit();
+        try req.sendBodiless();
+        var redirect_buffer: [4096]u8 = undefined;
+        var response = try req.receiveHead(&redirect_buffer);
+        if (response.head.status == .not_found) return null;
+        if (response.head.status != .ok) return error.RegistryUnavailable;
+        return try response.reader(&.{}).allocRemaining(self.allocator, std.Io.Limit.limited(limit));
+    }
+
+    fn publicationString(value: std.json.Value, key: []const u8) ![]const u8 {
+        if (value != .object) return error.InvalidPublicationMetadata;
+        const field = value.object.get(key) orelse return error.InvalidPublicationMetadata;
+        if (field != .string) return error.InvalidPublicationMetadata;
+        return field.string;
+    }
+
+    /// A version endpoint alone does not prove a package can be installed.
+    /// Require its named version and the exact SHA-512 bytes we uploaded.
+    fn publicationReady(self: *RegistryClient, package_name: []const u8, version: []const u8, expected_integrity: ?[]const u8) !bool {
+        const encoded = try urlEncodePackageName(self.allocator, package_name);
+        defer self.allocator.free(encoded);
+        const url = try std.fmt.allocPrint(self.allocator, "{s}/{s}/{s}", .{ std.mem.trimEnd(u8, self.registry_url, "/"), encoded, version });
+        defer self.allocator.free(url);
+        const body = try self.publicBytes(url, 1024 * 1024) orelse return false;
+        defer self.allocator.free(body);
+        const parsed = try std.json.parseFromSlice(std.json.Value, self.allocator, body, .{});
+        defer parsed.deinit();
+        const matching_name = std.mem.eql(u8, try publicationString(parsed.value, "name"), package_name);
+        const matching_version = std.mem.eql(u8, try publicationString(parsed.value, "version"), version);
+        if (!matching_name or !matching_version) return error.PublicationMetadataMismatch;
+        const dist = parsed.value.object.get("dist") orelse return error.InvalidPublicationMetadata;
+        const integrity = publicationString(dist, "integrity") catch null;
+        const shasum = publicationString(dist, "shasum") catch null;
+        if (integrity == null and shasum == null) return error.InvalidPublicationMetadata;
+        if (expected_integrity) |expected| {
+            if (integrity) |advertised| {
+                if (!std.mem.eql(u8, advertised, expected)) return error.PublicationIntegrityMismatch;
+            }
+        }
+        const tarball_url = try publicationString(dist, "tarball");
+        const tarball = try self.publicBytes(tarball_url, 100 * 1024 * 1024) orelse return false;
+        defer self.allocator.free(tarball);
+        var digest: [64]u8 = undefined;
+        std.crypto.hash.sha2.Sha512.hash(tarball, &digest, .{});
+        var actual: [95]u8 = undefined;
+        @memcpy(actual[0..7], "sha512-");
+        _ = std.base64.standard.Encoder.encode(actual[7..], &digest);
+        if (expected_integrity) |expected| {
+            if (!std.mem.eql(u8, &actual, expected)) return error.PublicationIntegrityMismatch;
+        }
+        if (integrity) |advertised| {
+            if (!std.mem.eql(u8, &actual, advertised)) return error.PublicationIntegrityMismatch;
+        } else if (shasum) |advertised| {
+            // Historical npm versions may advertise only SHA-1. This applies
+            // to verified skip-existing, not a weaker check of our new upload.
+            var sha1: [20]u8 = undefined;
+            std.crypto.hash.Sha1.hash(tarball, &sha1, .{});
+            const actual_sha1 = std.fmt.bytesToHex(sha1, .lower);
+            if (!std.ascii.eqlIgnoreCase(&actual_sha1, advertised)) return error.PublicationIntegrityMismatch;
+        }
+        return true;
+    }
+
+    fn awaitPublicationTask(self: *RegistryClient, package_name: []const u8, version: []const u8, expected_integrity: ?[]const u8) anyerror!bool {
+        var delay_ms: u64 = 1000;
+        while (true) {
+            const ready = self.publicationReady(package_name, version, expected_integrity) catch |err| switch (err) {
+                error.Canceled, error.PublicationMetadataMismatch, error.PublicationIntegrityMismatch => return err,
+                else => false,
+            };
+            if (ready) return true;
+            try io_helper.getIo().sleep(.{ .nanoseconds = @as(i96, @intCast(delay_ms * std.time.ns_per_ms)) }, .awake);
+            delay_ms = @min(delay_ms * 2, 8000);
+        }
+    }
+
+    /// Bound the entire readback, including a server that stalls mid-body.
+    /// Timing out means pending, never that an accepted upload should be sent
+    /// again. Cancel and reap every outstanding I/O task before returning.
+    pub fn confirmPublication(self: *RegistryClient, package_name: []const u8, version: []const u8, expected_integrity: ?[]const u8, timeout_ms: u64) !bool {
+        const Selection = union(enum) {
+            ready: anyerror!bool,
+            timeout: void,
+        };
+        var result_buffer: [2]Selection = undefined;
+        var selection = std.Io.Select(Selection).init(io_helper.getIo(), &result_buffer);
+        defer {
+            while (selection.cancel()) |_| {}
+        }
+        try selection.concurrent(.ready, awaitPublicationTask, .{ self, package_name, version, expected_integrity });
+        try selection.concurrent(.timeout, publishTimeoutTask, .{timeout_ms});
+        return switch (try selection.await()) {
+            .ready => |ready| try ready,
+            .timeout => false,
+        };
     }
 
     // Private helper methods
