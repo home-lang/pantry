@@ -12,8 +12,8 @@ if (!['all', 'transport', 'lookup', 'availability'].includes(segment)) throw new
 const root = await mkdtemp(join(tmpdir(), 'pantry-publication-confirmation-'))
 const name = '@pantry-fixture/confirmation', version = '1.0.0'
 
-async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 'never-visible' | 'stalled-tarball' | 'generic-command' | 'restricted-package' | 'restricted-redirect') {
-  const privateMode = mode === 'restricted-package' || mode === 'restricted-redirect'
+async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 'never-visible' | 'stalled-tarball' | 'generic-command' | 'restricted-package' | 'restricted-redirect' | 'restricted-existing') {
+  const privateMode = mode === 'restricted-package' || mode === 'restricted-redirect' || mode === 'restricted-existing'
   const cwd = join(root, mode)
   await mkdir(cwd)
   await writeFile(join(cwd, 'index.txt'), 'Immutable publication fixture\n')
@@ -45,6 +45,7 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
           integrity: `sha512-${createHash('sha512').update(tarball).digest('base64')}`,
           shasum: createHash('sha1').update(tarball).digest('hex'),
         } }
+        if (mode === 'restricted-existing') return Response.json({ error: 'EPUBLISHCONFLICT', reason: 'Cannot publish over previously staged version' }, { status: 409 })
         return Response.json({ success: true }, { status: mode === 'tarball-delay' ? 201 : 202 })
       }
       if (request.method === 'GET' && path === `/${name}/${version}`) {
@@ -228,7 +229,7 @@ try {
     try { await checkAmbiguousUpload(mode) }
     catch (error) { console.error(error); failures.push(mode) }
   }
-  if (segment === 'all' || segment === 'availability') for (const mode of ['restricted-package', 'restricted-redirect', 'metadata-delay', 'tarball-delay', 'wrong-bytes', 'never-visible', 'stalled-tarball', 'generic-command'] as const) {
+  if (segment === 'all' || segment === 'availability') for (const mode of ['restricted-package', 'restricted-redirect', 'restricted-existing', 'metadata-delay', 'tarball-delay', 'wrong-bytes', 'never-visible', 'stalled-tarball', 'generic-command'] as const) {
     try { await check(mode) }
     catch (error) {
       console.error(error)
