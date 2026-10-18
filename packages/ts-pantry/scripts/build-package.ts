@@ -11,6 +11,7 @@ import { parseArgs } from 'node:util'
 import { generateBuildScript, getSkips, type PackageRecipe, type NormalizedRecipe, type RecipeScriptStep, type RecipeTest } from './buildkit.ts'
 import { fixUp } from './fix-up.ts'
 import { selectPublishedFiles, writeProgramInterfaces } from './published-files'
+import { copyRecipeProps } from './copy-recipe-props'
 import { verifyDeclaredPrograms } from './declared-programs'
 import type { RuntimePackage } from './native-runtime'
 import { reportBuild } from './report-build.ts'
@@ -1404,18 +1405,9 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   // Copy props to build dir: sibling files of package.yml become buildDir/props/
   // For native recipes, use the loaded.propsDir if available
   const packageDir = loaded.propsDir || (loaded.yamlPath ? dirname(loaded.yamlPath) : null)
-  if (packageDir && existsSync(packageDir)) {
-    const destProps = join(buildDir, 'props')
-    const siblings = readdirSync(packageDir).filter(f => f !== 'package.yml' && !f.endsWith('.ts'))
-    if (siblings.length > 0) {
-      mkdirSync(destProps, { recursive: true })
-      for (const entry of siblings) {
-        const srcPath = join(packageDir, entry)
-        execSync(`cp -a "${srcPath}" "${destProps}/"`, { stdio: 'pipe' })
-      }
-      console.log(`📋 Copied ${siblings.length} props files to build dir: ${siblings.join(', ')}`)
-    }
-  }
+  const copiedProps = copyRecipeProps(packageDir, join(buildDir, 'props'), !!loaded.propsDir)
+  if (copiedProps.length)
+    console.log(`📋 Copied ${copiedProps.length} props files to build dir: ${copiedProps.join(', ')}`)
 
   // Determine version.tag from the versions.strip pattern in YAML
   // In pkgx, version.tag is the original git tag before strip was applied

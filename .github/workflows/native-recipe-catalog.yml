@@ -1,6 +1,11 @@
 name: Generate Native Recipe Catalogs
 on:
   workflow_dispatch:
+    inputs:
+      verify-dynamodb:
+        description: Build the immutable DynamoDB Local recipe and require its live database health check
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -12,11 +17,14 @@ jobs:
       - name: Set up published Pantry and managed workspace tools
         uses: ./packages/action
         with:
-          version: 0.11.91
+          version: 0.11.93
       - name: Install first-party JavaScript dependencies
         run: bun install --frozen-lockfile
       - name: Verify registration invariants
         run: bun test packages/ts-pantry/test/native-ci-metadata.test.ts packages/ts-pantry/test/native-ci-tools-recipe.test.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts
+      - name: Lint the native DynamoDB provider and build assets
+        if: inputs.verify-dynamodb
+        run: bunx --bun pickier run --mode lint packages/ts-pantry/scripts/maven-versions.ts packages/ts-pantry/scripts/copy-recipe-props.ts packages/ts-pantry/src/recipes/aws.amazon.com/dynamodb-local.ts packages/ts-pantry/src/recipes/props/aws.amazon.com/dynamodb-local/health.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts
       - name: Generate native package metadata and both installer catalogs
         run: |
           set -e
@@ -26,7 +34,15 @@ jobs:
           git diff --check -- packages/ts-pantry/src/packages packages/zig/src/packages/generated.zig
           git diff --binary -- packages/ts-pantry/src/packages packages/zig/src/packages/generated.zig > artifacts/native-catalog/catalogs.patch
           git rev-parse HEAD > artifacts/native-catalog/source-commit.txt
+      - name: Build the native DynamoDB distribution and require its live health check
+        if: inputs.verify-dynamodb
+        env:
+          PANTRY_REPORTED_BY_PARENT: '1'
+        run: |
+          set -o pipefail
+          bun packages/ts-pantry/scripts/build-package.ts --package aws.amazon.com/dynamodb-local --version 3.3.0 --platform linux-x86-64 --build-dir "$RUNNER_TEMP/dynamodb-build" --prefix "$RUNNER_TEMP/dynamodb-install" --deps-dir "$RUNNER_TEMP/dynamodb-deps" 2>&1 | tee artifacts/native-catalog/native-build.log
       - name: Retain the generated source patch and registration evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: native-recipe-catalog
