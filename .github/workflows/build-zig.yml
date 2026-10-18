@@ -20,7 +20,7 @@ jobs:
   compile-all:
     name: compile-all
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v6
@@ -58,6 +58,19 @@ jobs:
               exit 1
             fi
           done
+
+      - name: Verify the compiled Linux CLI and platform-specific Git programs
+        env:
+          PANTRY_TEST_CLI: packages/zig/zig-out/bin/linux-x86_64/pantry
+        run: bun .github/scripts/linux-native-tools.ts
+
+      - name: Retain native Linux verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-native-tools
+          path: artifacts/linux-native-tools
+          if-no-files-found: error
 
       - name: Retain the compiled Windows CLI for native verification
         uses: actions/upload-artifact@v4
