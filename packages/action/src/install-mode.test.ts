@@ -5,6 +5,15 @@ import path from 'node:path'
 import { installRequiredSystemPackages, jsPackageManager, needsJsInstall, pantryConfigMaySetLinker, selectSystemPackages, shouldInstallWorkspace } from './install-mode'
 
 describe('Pantry Action install mode', () => {
+  test('all explicit roots reach one dependency plan before transitive selection', async () => {
+    const roots = ['openjdk.org@17.0.20.8', 'android.com/cmdline-tools@14742923.0.0']
+    const plans: string[][] = []
+    await installRequiredSystemPackages(roots, async requested => {
+      plans.push(Array.isArray(requested) ? requested : [requested])
+    })
+    expect(plans).toEqual([roots])
+  })
+
   test('service-only setup does not install project dependencies', () => {
     let detected = false
     expect(selectSystemPackages('', true, () => {
@@ -24,10 +33,10 @@ describe('Pantry Action install mode', () => {
 
   test('required system package failures reject the action', async () => {
     const attempted: string[] = []
-    await expect(installRequiredSystemPackages(['bun.sh', 'zig@0.17.0-dev'], async packageSpec => {
-      attempted.push(packageSpec)
-      if (packageSpec.startsWith('zig')) throw new Error('socket hang up')
-    })).rejects.toThrow('Required system package zig@0.17.0-dev failed to install: socket hang up')
+    await expect(installRequiredSystemPackages(['bun.sh', 'zig@0.17.0-dev'], async packageSpecs => {
+      attempted.push(...packageSpecs)
+      throw new Error('socket hang up')
+    })).rejects.toThrow('Required system packages bun.sh, zig@0.17.0-dev failed to install: socket hang up')
     expect(attempted).toEqual(['bun.sh', 'zig@0.17.0-dev'])
   })
 

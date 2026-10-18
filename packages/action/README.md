@@ -47,6 +47,10 @@ This action allows you to easily install dependencies with pantry in your GitHub
 
 ### Native dependency caches
 
+Explicit native system packages enter one dependency plan. For example,
+`openjdk.org@17.0.20.8 android.com/cmdline-tools@14742923.0.0` keeps JDK 17
+selected while satisfying Android's `>=17` runtime dependency.
+
 The cache identity includes the Pantry version, platform, project manifests,
 lockfile, and registry artifact digests for native packages and their runtime
 dependencies. Rebuilding a package at the same version therefore invalidates

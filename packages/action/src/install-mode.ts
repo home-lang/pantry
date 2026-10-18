@@ -13,16 +13,15 @@ export function shouldInstallWorkspace(explicitPackages: string, setupOnly: bool
 
 export async function installRequiredSystemPackages(
   packages: string[],
-  install: (packageSpec: string) => Promise<void>,
+  install: (packageSpecs: string[]) => Promise<void>,
 ): Promise<void> {
-  for (const packageSpec of packages) {
-    try {
-      await install(packageSpec)
-    }
-    catch (error) {
-      const detail = error instanceof Error ? error.message : String(error)
-      throw new Error(`Required system package ${packageSpec} failed to install: ${detail}`)
-    }
+  if (!packages.length) return
+  try {
+    await install(packages)
+  }
+  catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    throw new Error(`Required system packages ${packages.join(', ')} failed to install: ${detail}`)
   }
 }
 

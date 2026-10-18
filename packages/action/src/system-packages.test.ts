@@ -1,7 +1,37 @@
 import { describe, expect, it } from 'bun:test'
-import { installResolvedSystemPackage } from './system-packages'
+import { installResolvedSystemPackage, installResolvedSystemPackages } from './system-packages'
 
 describe('native system package dependency graphs', () => {
+  it('preserves both declared roots for the native dependency solver, in either order', async () => {
+    const roots = [
+      { domain: 'openjdk.org', version: '17.0.20.8' },
+      { domain: 'android.com/cmdline-tools', version: '14742923.0.0' },
+    ]
+    for (const requests of [roots, [...roots].reverse()]) {
+      const plans: string[][] = []
+      const versions = await installResolvedSystemPackages(requests, {
+        installDir: '/unused', nativeInstall: async specs => {
+          plans.push(specs)
+          return 0
+        },
+      })
+      expect(plans).toEqual([requests.map(({ domain, version }) => `${domain}@${version}`)])
+      expect(versions.get('openjdk.org')).toBe('17.0.20.8')
+    }
+  })
+
+  it('rejects conflicting explicit versions before invoking the native installer', async () => {
+    let called = false
+    await expect(installResolvedSystemPackages([
+      { domain: 'openjdk.org', version: '17.0.20.8' },
+      { domain: 'openjdk.org', version: '27.0.0.35' },
+    ], { installDir: '/unused', nativeInstall: async () => {
+      called = true
+      return 0
+    } })).rejects.toThrow('Conflicting required versions for openjdk.org')
+    expect(called).toBe(false)
+  })
+
   it('installs Git through the native resolver and returns its exact version', async () => {
     const requests: string[] = []
     const version = await installResolvedSystemPackage('git-scm.org', '2.53.0', {

@@ -14,7 +14,7 @@ import { isRollingVersionSpec, normalizeLockedVersion, reassertVersionSpec, shou
 import { setupBunRuntime } from './bun-runtime'
 import { ensurePackageExecutorAliases } from './executor-aliases'
 import { installRequiredSystemPackages, jsPackageManager, needsJsInstall, pantryConfigMaySetLinker, selectSystemPackages, shouldInstallWorkspace } from './install-mode'
-import { installResolvedSystemPackage } from './system-packages'
+import { installResolvedSystemPackages } from './system-packages'
 import { nativeArtifactCacheIdentity } from './native-cache'
 import type { ServiceSpec } from './services'
 import { mergeServicePackages, nativeServiceEnvironment, parseServiceSpecs } from './services'
@@ -265,14 +265,12 @@ async function publishedRegistryVersions(
   }
 }
 
-async function installSystemPackage(
+async function resolveSystemPackageRequest(
   spec: string,
-  pantryDir: string,
   lockedVersions: Map<string, string>,
-  pantryExecutable: string,
   resolvedVersions?: Map<string, string>,
   reuseResolved = false,
-): Promise<void> {
+): Promise<{ domain: string, version: string }> {
   // Import from the pantry TS installer SDK
   const installer = await import('../../ts-pantry/src/installer')
 
@@ -311,17 +309,29 @@ async function installSystemPackage(
   }
 
   core.info(`Installing ${domain}@${version} via ${installer.isSupported(domain) ? 'Pantry SDK' : 'Pantry native dependency resolver'}${source}`)
-  // `installPackage` handles "latest", "*", empty, semver ranges, and concrete
-  // versions — don't pre-resolve here or semver ranges get flattened to latest.
-  const installed = await installResolvedSystemPackage(domain, version, {
+  return { domain, version }
+}
+
+async function installSystemPackages(
+  specs: string[],
+  pantryDir: string,
+  lockedVersions: Map<string, string>,
+  pantryExecutable: string,
+  resolvedVersions?: Map<string, string>,
+  reuseResolved = false,
+): Promise<void> {
+  const requests = []
+  for (const spec of specs)
+    requests.push(await resolveSystemPackageRequest(spec, lockedVersions, resolvedVersions, reuseResolved))
+  const installed = await installResolvedSystemPackages(requests, {
     installDir: pantryDir,
     onRetry: message => core.warning(message),
-    nativeInstall: packageSpec => exec.exec(pantryExecutable, ['install', packageSpec, '--no-save'], {
+    nativeInstall: packageSpecs => exec.exec(pantryExecutable, ['install', ...packageSpecs, '--no-save'], {
       cwd: path.dirname(pantryDir),
       env: { ...process.env, CI: 'true', NO_COLOR: '1' } as { [key: string]: string },
     }),
   })
-  resolvedVersions?.set(domain, installed)
+  for (const [domain, version] of installed) resolvedVersions?.set(domain, version)
 }
 
 /** Parse pantry.lock and return a map of `domain` → concrete `version`. */
@@ -763,7 +773,7 @@ export async function run(): Promise<void> {
       // A failed install fails the setup here, with the download error,
       // instead of a warning and a downstream `bun: command not found`.
       await setupBunRuntime({
-        install: () => installSystemPackage('bun.sh', pantryDir, readLockedVersions(), path.join(installDir, platform.binaryName)),
+        install: () => installSystemPackages(['bun.sh'], pantryDir, readLockedVersions(), path.join(installDir, platform.binaryName)),
         binDir: pantryBinDir,
         onLinked: () => core.exportVariable('BUN_INSTALL', pantryDir),
       })
@@ -842,7 +852,7 @@ export async function run(): Promise<void> {
     // Bun is part of the action's baseline runtime contract even when callers
     // provide an explicit package/service list. Keep downstream `bun` steps
     // working without requiring every workflow to repeat `bun.sh`.
-    await installSystemPackage('bun.sh', pantryDir, lockedVersions, path.join(installDir, platform.binaryName), resolvedSystemVersions)
+    await installSystemPackages(['bun.sh'], pantryDir, lockedVersions, path.join(installDir, platform.binaryName), resolvedSystemVersions)
 
     // Put `pantry/.bin` (and `~/.pantry/bin`) on PATH *before* any install
     // branch runs. `core.addPath` mutates `process.env.PATH` in-process in
@@ -854,21 +864,18 @@ export async function run(): Promise<void> {
     core.addPath(pantryBinDir)
     core.addPath(path.join(homeDir, '.pantry', 'bin'))
 
-    // Service packages use Pantry's native resolver so their dependency graph,
-    // integrity checks, registry platform mapping, and binary links stay
-    // identical to `pantry install` outside GitHub Actions. The TypeScript SDK
-    // intentionally covers only self-contained bootstrap tools.
-    await installRequestedServicePackages(
-      requestedServices,
-      path.join(installDir, platform.binaryName),
-      platform,
-    )
+    await installRequestedServicePackages(requestedServices, path.join(installDir, platform.binaryName), platform)
+
+    // Keep every explicit native system root in the same dependency plan.
+    // Otherwise Android's >=17 dependency replaces a declared JDK 17 with 27.
+    await installRequiredSystemPackages(systemDeps, specs =>
+      installSystemPackages(specs, pantryDir, lockedVersions, path.join(installDir, platform.binaryName), resolvedSystemVersions))
 
     // Even on cache hit, reconcile critical deps. A stale cache may lack
     // system binaries (zig, bun) OR workspace source deps (e.g.
     // pantry/zig-cli/src/root.zig) needed by `zig build`. Validate both.
     //
-    // We always call `installSystemPackage` instead of gating on a cheap
+    // We always call `installSystemPackages` instead of gating on a cheap
     // bin-existence check: the SDK's own "already installed" short-circuit
     // makes it a no-op when the correct version is on disk, and otherwise it
     // installs the right one. The cheap bin-existence check is unsafe because
@@ -877,20 +884,6 @@ export async function run(): Promise<void> {
     // — the symlink exists so the check passes, and the stale version stays.
     if (cacheHit) {
       const installEnv = { ...process.env, CI: 'true', NO_COLOR: '1' }
-      // Honour the explicit `packages:` input here too, not just deps files.
-      // The cache key is constant for a rolling spec like `zig@0.17.0-dev`, so
-      // without this a cache hit would serve whatever dev build was first cached
-      // and never pick up a newer master — the reconcile re-resolves the spec
-      // (installPackage is a no-op when the resolved version is already on disk).
-      const systemDeps = selectSystemPackages(inputs.packages, inputs.setupOnly, extractSystemDeps)
-      if (systemDeps.length > 0) {
-        core.info(`Cache hit — reconciling system deps against lock/spec: ${systemDeps.join(', ')}`)
-        await installRequiredSystemPackages(
-          systemDeps,
-          dep => installSystemPackage(dep, pantryDir, lockedVersions, path.join(installDir, platform.binaryName), resolvedSystemVersions),
-        )
-      }
-
       // Validate workspace deps: pantry/<name>/ dirs exist for every non-system
       // dep declared in package.json. A missing dir (e.g. zig-cli) means the
       // cache was saved before `pantry install` completed; re-run to heal it.
@@ -943,23 +936,6 @@ export async function run(): Promise<void> {
     if (!cacheHit) {
       const installEnv = { ...process.env, CI: 'true', NO_COLOR: '1' }
 
-      // Collect all system packages to install (from explicit input + deps files)
-      if (systemDeps.length > 0) {
-        core.startGroup(`Installing system packages: ${systemDeps.join(', ')}`)
-        try {
-          // Standalone runtimes use the SDK; package graphs use the native resolver.
-          // Every selected package is part of the action contract; a partial
-          // install must fail this step rather than surprising a later command.
-          await installRequiredSystemPackages(
-            systemDeps,
-            dep => installSystemPackage(dep, pantryDir, lockedVersions, path.join(installDir, platform.binaryName), resolvedSystemVersions),
-          )
-        }
-        finally {
-          core.endGroup()
-        }
-      }
-
       if (shouldInstallWorkspace(inputs.packages, inputs.setupOnly)) {
         // Also run workspace install for JS deps (package.json)
         ranPantryInstall = true
@@ -992,7 +968,7 @@ export async function run(): Promise<void> {
     // `pantry install` resolves system deps from the registry. For a platform
     // the registry lacks (e.g. darwin-x86-64 bun before it's been published),
     // it drops a placeholder stub and repoints `.bin/<name>` at it — clobbering
-    // the genuine upstream binary that `installSystemPackage` (ts installer,
+    // the genuine upstream binary that `installSystemPackages` (ts installer,
     // fetched from the official source) put in place earlier. Re-run the ts
     // or native installer for each system dep *after* `pantry install`: it's idempotent
     // (no-op download when present) and re-links `.bin/<name>` to the real
@@ -1001,10 +977,10 @@ export async function run(): Promise<void> {
     // Only `pantry install` re-points those links, so a run that skipped it
     // (a cache hit) has nothing to re-assert.
     if (ranPantryInstall) {
-      const reassertDeps = selectSystemPackages(inputs.packages, inputs.setupOnly, extractSystemDeps)
+      const reassertDeps = systemDeps
       await installRequiredSystemPackages(
         reassertDeps,
-        dep => installSystemPackage(dep, pantryDir, lockedVersions, path.join(installDir, platform.binaryName), resolvedSystemVersions, true),
+        specs => installSystemPackages(specs, pantryDir, lockedVersions, path.join(installDir, platform.binaryName), resolvedSystemVersions, true),
       )
     }
 

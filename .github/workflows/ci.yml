@@ -370,3 +370,36 @@ jobs:
               {"name": "Author", "value": "${{ github.actor }}", "inline": true}
             ]
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+  native-toolchain-pins:
+    name: Explicit native toolchain pins (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Bootstrap the published Bun runtime
+        uses: pantry-pm/pantry/packages/action@da17bb9317e8f8c247618fb176fe97269f15bfe4
+        with:
+          version: 0.11.94
+          install: 'false'
+          packages: bun.com@1.4.3
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd packages/action build
+      - name: Install explicit JDK and Android roots through this Action
+        uses: ./packages/action
+        with:
+          version: 0.11.94
+          install: 'false'
+          packages: openjdk.org@17.0.20.8 android.com/cmdline-tools@14742923.0.0 bun.com@1.4.3
+      - name: Verify the explicit JVM survives the Android dependency graph
+        run: bun .github/scripts/native-toolchain-pins.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-toolchain-pins-${{ matrix.os }}
+          path: artifacts/native-toolchain-pins
+          if-no-files-found: error
