@@ -10,7 +10,7 @@ import { handlePhpRoutes, createPhpStorage } from './php-routes'
 import type { PhpPackageStorage } from './php'
 import { getPackagistCount, searchPackagist, fetchFromPackagist } from './packagist-fallback'
 import { createS3Client, resolveStorageProvider } from './storage/provider'
-import { isS3ObjectNotFound } from './storage/aws-client'
+import { isS3ObjectNotFound, S3RequestError } from './storage/aws-client'
 import { augmentMetadataWithPkgx, isPendingMaterialize, materializeFromPkgx } from './pkgx-fallback'
 import { ObjectAnalytics } from './storage/object-analytics'
 import { BuildStatusStore } from './storage/build-status'
@@ -5254,7 +5254,7 @@ async function findActiveBinaryRecord(
   catch (error) {
     // Injected BinaryStorage implementations retain their historical missing
     // object contract; production S3 reads distinguish absence from failure.
-    if (cacheable && !isS3ObjectNotFound(error)) throw error
+    if (!isS3ObjectNotFound(error) && (cacheable || error instanceof S3RequestError)) throw error
     return null
   }
   // Match the quarantine on any spelling of the version. Comparing the request's
@@ -5593,7 +5593,7 @@ async function handleBinaryProxy(
   }
   catch (error) {
     console.error(`Binary proxy error for ${s3Key}:`, error)
-    if (!isS3ObjectNotFound(error)) {
+    if (!isS3ObjectNotFound(error) && (!storage || error instanceof S3RequestError)) {
       return Response.json({
         error: 'Binary storage is temporarily unavailable',
         code: 'BINARY_STORAGE_UNAVAILABLE',
