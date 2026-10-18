@@ -34,6 +34,7 @@ if (import.meta.main) {
       homepageUrl: recipe.homepage || '', githubUrl: recipe.github || '',
       installCommand: `pantry install ${domain}`, pantryInstallCommand: `pantry install ${domain}`,
       programs: recipe.programs, ...(recipe.platformPrograms ? { platformPrograms: recipe.platformPrograms } : {}),
+      ...(recipe.programVersions ? { programVersions: recipe.programVersions } : {}),
       companions: current?.companions || [], dependencies: recipeDepsToSpecs(recipe.dependencies),
       buildDependencies: recipeDepsToSpecs(recipe.buildDependencies),
       versions: mergeRecipeVersions(current?.versions || [], requested), aliases: current?.aliases || [recipe.name],

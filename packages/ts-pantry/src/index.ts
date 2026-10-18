@@ -1,7 +1,7 @@
 export * from './cli-utils'
 export * from './consts'
 export { programsForPlatform } from './programs'
-export type { PlatformPrograms } from './programs'
+export type { PlatformPrograms, ProgramVersions } from './programs'
 export * from './dependency-resolver'
 export {
   detectPlatform,

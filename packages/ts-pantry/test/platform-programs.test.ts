@@ -39,3 +39,12 @@ test('JDK 26 removal of jrunscript changes only the executable contract for newe
     expect(loaded.programs?.includes('jrunscript')).toBe(Number(version.split('.')[0]) < 26)
   }
 })
+
+test('program release boundaries retain strict validation when the version is unknown', () => {
+  const pkg = { programs: ['common', 'new', 'removed'], programVersions: { new: { since: 2 }, removed: { before: 3 } } }
+  expect(programsForPlatform(pkg, 'linux', '1.9')).toEqual(['common', 'removed'])
+  expect(programsForPlatform(pkg, 'linux', '2.0')).toEqual(['common', 'new', 'removed'])
+  expect(programsForPlatform(pkg, 'linux', '3.0')).toEqual(['common', 'new'])
+  expect(programsForPlatform(pkg, 'linux', 'unknown')).toEqual(pkg.programs)
+  expect(programsForPlatform(pkg, 'linux')).toEqual(pkg.programs)
+})

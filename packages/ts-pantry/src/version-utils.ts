@@ -227,7 +227,7 @@ export async function getPackageInfo(packageName: PackageName): Promise<PackageI
     description: pkg.description || '',
     latestVersion,
     totalVersions: pkg.versions?.length || 0,
-    programs: programsForPlatform({ ...pkg, programs: pkg.programs || [] }, process.platform),
+    programs: programsForPlatform({ ...pkg, programs: pkg.programs || [] }, process.platform, latestVersion),
     dependencies: [...(pkg.dependencies || [])],
     companions: [...(pkg.companions || [])],
     versions: [...(pkg.versions || [])],
