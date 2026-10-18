@@ -33,6 +33,8 @@ jobs:
           bun test packages/ts-pantry/test/native-ci-metadata.test.ts packages/ts-pantry/test/native-ci-tools-recipe.test.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts packages/ts-pantry/test/generated-package-docs.test.ts packages/ts-pantry/test/fetch.test.ts packages/action/src/services.test.ts packages/ts-pantry/test/resolve-build-version.test.ts 2>&1 | tee artifacts/native-catalog/recipe-tests.log
       - name: Verify locked tool selection against the installer contract
         run: bun test packages/action/src/lock-version.test.ts
+      - name: Verify real HTTP registry lookup failures and credential scope
+        run: bun test packages/ts-pantry/test/installer-registry-availability.test.ts
       - name: Typecheck the normal Pantry source
         run: bun run typecheck
       - name: Lint package documentation generation
