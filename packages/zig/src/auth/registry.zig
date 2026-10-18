@@ -255,6 +255,9 @@ pub const RegistryClient = struct {
     publish_access: []const u8 = "public",
     publish_tag: []const u8 = "latest",
     publish_otp: ?[]const u8 = null,
+    // Owned only for restricted packages. Anonymous reads remain mandatory
+    // for public publications, even when the upload used a credential.
+    publication_authorization: ?[]u8 = null,
 
     pub fn init(allocator: std.mem.Allocator, registry_url: []const u8) !RegistryClient {
         return RegistryClient{
@@ -269,6 +272,15 @@ pub const RegistryClient = struct {
 
     pub fn deinit(self: *RegistryClient) void {
         self.http_client.deinit();
+        if (self.publication_authorization) |authorization| self.allocator.free(authorization);
+    }
+
+    fn rememberPublicationAuthorization(self: *RegistryClient, authorization: []const u8) !void {
+        if (self.publication_authorization) |previous| self.allocator.free(previous);
+        self.publication_authorization = null;
+        if (std.mem.eql(u8, self.publish_access, "restricted")) {
+            self.publication_authorization = try self.allocator.dupe(u8, authorization);
+        }
     }
 
     /// Publish package using OIDC authentication with full token validation
@@ -349,6 +361,8 @@ pub const RegistryClient = struct {
             .{token.raw_token},
         );
         defer self.allocator.free(auth_header);
+
+        try self.rememberPublicationAuthorization(auth_header);
 
         // Create extra headers (npm requires specific headers)
         // npm-auth-type: oidc tells npm this is OIDC authentication
@@ -553,6 +567,8 @@ pub const RegistryClient = struct {
         );
         defer self.allocator.free(auth_header);
 
+        try self.rememberPublicationAuthorization(auth_header);
+
         // Create extra headers (npm requires specific headers for OIDC provenance)
         // npm-auth-type: oidc tells npm this is OIDC authentication
         // Accept-Encoding: identity prevents gzip responses we can't decode
@@ -659,6 +675,8 @@ pub const RegistryClient = struct {
             .{trimmed_token},
         );
         defer self.allocator.free(auth_header);
+
+        try self.rememberPublicationAuthorization(auth_header);
 
         // Extract scope from scoped package name (e.g., "@glenn123/foo" → "@glenn123")
         // npm's CDN uses this header for routing, especially for first-time publishes
@@ -861,28 +879,67 @@ pub const RegistryClient = struct {
         return error.RegistryError;
     }
 
+    fn samePublicationOrigin(a: std.Uri, b: std.Uri) bool {
+        if (!std.ascii.eqlIgnoreCase(a.scheme, b.scheme)) return false;
+        const a_host = a.host orelse return false;
+        const b_host = b.host orelse return false;
+        var a_buffer: [512]u8 = undefined;
+        var b_buffer: [512]u8 = undefined;
+        const a_name = a_host.toRaw(&a_buffer) catch return false;
+        const b_name = b_host.toRaw(&b_buffer) catch return false;
+        if (!std.ascii.eqlIgnoreCase(a_name, b_name)) return false;
+        const default_port: u16 = if (std.ascii.eqlIgnoreCase(a.scheme, "https")) 443 else 80;
+        return (a.port orelse default_port) == (b.port orelse default_port);
+    }
+
     fn publicBytes(self: *RegistryClient, url: []const u8, limit: usize) !?[]u8 {
-        const uri = try std.Uri.parse(url);
-        const headers = [_]http.Header{
-            .{ .name = "Accept-Encoding", .value = "identity" },
-            .{ .name = "Cache-Control", .value = "no-cache" },
-        };
-        // Public readback never forwards a publish credential to the tarball
-        // host, which may differ from the registry host.
-        // A canceled read must close its owned connection. Returning an
-        // incomplete response to the keep-alive pool makes Request.deinit
-        // drain the stalled body after cancellation, defeating our deadline.
-        var req = try self.http_client.request(.GET, uri, .{
-            .extra_headers = &headers,
-            .keep_alive = false,
-        });
-        defer req.deinit();
-        try req.sendBodiless();
-        var redirect_buffer: [4096]u8 = undefined;
-        var response = try req.receiveHead(&redirect_buffer);
-        if (response.head.status == .not_found) return null;
-        if (response.head.status != .ok) return error.RegistryUnavailable;
-        return try response.reader(&.{}).allocRemaining(self.allocator, std.Io.Limit.limited(limit));
+        const registry_uri = try std.Uri.parse(self.registry_url);
+        var current_url = try self.allocator.dupe(u8, url);
+        defer self.allocator.free(current_url);
+        // Handle each redirect explicitly: credentials are scoped to the exact
+        // configured registry origin, including scheme and effective port.
+        for (0..6) |_| {
+            const uri = try std.Uri.parse(current_url);
+            if (uri.user != null or uri.password != null) return error.InvalidPublicationUrl;
+            if (!std.ascii.eqlIgnoreCase(uri.scheme, "http") and !std.ascii.eqlIgnoreCase(uri.scheme, "https")) return error.InvalidPublicationUrl;
+            var headers: [3]http.Header = undefined;
+            headers[0] = .{ .name = "Accept-Encoding", .value = "identity" };
+            headers[1] = .{ .name = "Cache-Control", .value = "no-cache" };
+            var count: usize = 2;
+            if (samePublicationOrigin(registry_uri, uri)) {
+                if (self.publication_authorization) |authorization| {
+                    headers[count] = .{ .name = "Authorization", .value = authorization };
+                    count += 1;
+                }
+            }
+            // A canceled read closes its owned connection. Returning a partial
+            // body to the keep-alive pool makes deinit drain it after cancellation.
+            var req = try self.http_client.request(.GET, uri, .{
+                .extra_headers = headers[0..count],
+                .keep_alive = false,
+                .redirect_behavior = .unhandled,
+            });
+            defer req.deinit();
+            try req.sendBodiless();
+            var redirect_buffer: [8192]u8 = undefined;
+            var response = try req.receiveHead(&redirect_buffer);
+            if (response.head.status.class() == .redirect) {
+                const location = response.head.location orelse return error.InvalidPublicationUrl;
+                var resolution_buffer: [16384]u8 = undefined;
+                if (location.len > resolution_buffer.len) return error.InvalidPublicationUrl;
+                @memcpy(resolution_buffer[0..location.len], location);
+                var available: []u8 = &resolution_buffer;
+                const next_uri = try uri.resolveInPlace(location.len, &available);
+                const next_url = try std.fmt.allocPrint(self.allocator, "{f}", .{next_uri});
+                self.allocator.free(current_url);
+                current_url = next_url;
+                continue;
+            }
+            if (response.head.status == .not_found) return null;
+            if (response.head.status != .ok) return error.RegistryUnavailable;
+            return try response.reader(&.{}).allocRemaining(self.allocator, std.Io.Limit.limited(limit));
+        }
+        return error.TooManyHttpRedirects;
     }
 
     fn publicationString(value: std.json.Value, key: []const u8) ![]const u8 {
@@ -1169,6 +1226,15 @@ test "npm publish metadata applies resolved access and dist-tag" {
     const dist_tags = parsed.value.object.get("dist-tags").?.object;
     try std.testing.expectEqualStrings("1.2.3", dist_tags.get("next").?.string);
     try std.testing.expect(dist_tags.get("latest") == null);
+}
+
+test "restricted publication credentials require the exact registry origin" {
+    const origin = try std.Uri.parse("https://registry.example:443/packages");
+    try std.testing.expect(RegistryClient.samePublicationOrigin(origin, try std.Uri.parse("https://REGISTRY.example/tarball")));
+    try std.testing.expect(!RegistryClient.samePublicationOrigin(origin, try std.Uri.parse("http://registry.example:443/tarball")));
+    try std.testing.expect(!RegistryClient.samePublicationOrigin(origin, try std.Uri.parse("https://registry.example:8443/tarball")));
+    try std.testing.expect(!RegistryClient.samePublicationOrigin(origin, try std.Uri.parse("https://cdn.registry.example/tarball")));
+    try std.testing.expect(!RegistryClient.samePublicationOrigin(origin, try std.Uri.parse("https://elsewhere.example/tarball")));
 }
 
 /// Response from registry publish operation

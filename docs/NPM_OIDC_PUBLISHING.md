@@ -190,6 +190,12 @@ release. A tarball or metadata mismatch fails immediately. Preserve the version
 and investigate its registry state; do not bump or reupload merely because an
 accepted version has not propagated yet.
 
+Restricted packages receive the same metadata and integrity checks using the
+publication credential at the configured registry origin. A redirect to a
+different scheme, host, or effective port never receives that credential;
+external tarball hosts must provide anonymously readable or signed download
+URLs. Public packages must remain readable without a publishing credential.
+
 Existing versions are skipped only after their advertised tarball is readable
 and matches its integrity. Historical versions with only a SHA-1 `shasum` are
 verified against that hash; newly uploaded bytes always require local SHA-512.

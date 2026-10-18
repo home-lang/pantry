@@ -8,13 +8,22 @@ if (!process.argv[2]) throw new Error('Pass the actual published or normally bui
 const root = await mkdtemp(join(tmpdir(), 'pantry-publication-confirmation-'))
 const name = '@pantry-fixture/confirmation', version = '1.0.0'
 
-async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 'never-visible' | 'stalled-tarball' | 'generic-command' | 'restricted-package') {
+async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 'never-visible' | 'stalled-tarball' | 'generic-command' | 'restricted-package' | 'restricted-redirect') {
+  const privateMode = mode === 'restricted-package' || mode === 'restricted-redirect'
   const cwd = join(root, mode)
   await mkdir(cwd)
   await writeFile(join(cwd, 'index.txt'), 'Immutable publication fixture\n')
-  let uploads = 0, metadataReads = 0, tarballReads = 0, credentialReads = 0
+  let uploads = 0, metadataReads = 0, tarballReads = 0, credentialReads = 0, foreignCredentialReads = 0, foreignTarballReads = 0
   const requests: Array<{ method: string, path: string }> = []
   let tarball = Buffer.alloc(0), metadata: Record<string, unknown> = {}
+  const downloadServer = mode === 'restricted-redirect' ? Bun.serve({
+    hostname: '127.0.0.1', port: 0,
+    fetch(request) {
+      foreignTarballReads++
+      if (request.headers.has('authorization')) foreignCredentialReads++
+      return new Response(tarball)
+    },
+  }) : null
   const server: Bun.Server<undefined> = Bun.serve({
     hostname: '127.0.0.1', port: 0, idleTimeout: 0,
     async fetch(request) {
@@ -36,7 +45,7 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
       }
       if (request.method === 'GET' && path === `/${name}/${version}`) {
         metadataReads++
-        if (uploads && mode === 'restricted-package' && request.headers.get('authorization') !== 'Bearer disposable-loopback-fixture-only')
+        if (uploads && privateMode && request.headers.get('authorization') !== 'Bearer disposable-loopback-fixture-only')
           return new Response('Private package needs its registry credential', { status: 401 })
         if (uploads === 0 || mode === 'never-visible' || (mode === 'metadata-delay' && metadataReads <= 2))
           return Response.json({ error: 'not yet visible' }, { status: 404 })
@@ -44,8 +53,9 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
       }
       if (request.method === 'GET' && path === '/fixture.tgz') {
         tarballReads++
-        if (mode === 'restricted-package' && request.headers.get('authorization') !== 'Bearer disposable-loopback-fixture-only')
+        if (privateMode && request.headers.get('authorization') !== 'Bearer disposable-loopback-fixture-only')
           return new Response('Private tarball needs its registry credential', { status: 401 })
+        if (downloadServer) return new Response(null, { status: 302, headers: { Location: `${downloadServer.url}payload.tgz` } })
         if (mode === 'tarball-delay' && tarballReads <= 2) return new Response('not yet visible', { status: 404 })
         if (mode === 'stalled-tarball') {
           // A valid response head and partial body must not defeat the CLI's
@@ -68,7 +78,7 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
   }))
   // Both command surfaces must preserve the explicit private registry URL.
   const command = mode === 'generic-command' ? ['publish', '--npm'] : ['npm:publish']
-  const child = Bun.spawn([executable, ...command, '--no-oidc', '--ignore-scripts', '--access', mode === 'restricted-package' ? 'restricted' : 'public', '--registry', server.url.origin], {
+  const child = Bun.spawn([executable, ...command, '--no-oidc', '--ignore-scripts', '--access', privateMode ? 'restricted' : 'public', '--registry', server.url.origin], {
     cwd, env: { ...process.env, NPM_TOKEN: 'disposable-loopback-fixture-only' }, stdout: 'pipe', stderr: 'pipe',
   })
   const timeout = setTimeout(() => child.kill(), 145_000)
@@ -77,26 +87,30 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
     const output = stdout + stderr
     if (uploads !== 1) throw new Error(`${mode}: expected exactly one upload, got ${uploads}; requests=${JSON.stringify(requests)}; exit=${code}\n${output}`)
     if (!metadataReads) throw new Error(`${mode}: CLI reported completion without reading public version metadata\n${output}`)
-    if (mode !== 'restricted-package' && credentialReads) throw new Error(`${mode}: public verification forwarded publishing credentials`)
-    const success = mode === 'metadata-delay' || mode === 'tarball-delay' || mode === 'generic-command' || mode === 'restricted-package'
+    if (!privateMode && credentialReads) throw new Error(`${mode}: public verification forwarded publishing credentials`)
+    if (privateMode && !credentialReads) throw new Error(`${mode}: private readback never authenticated to its registry`)
+    if (foreignCredentialReads) throw new Error('Restricted credentials crossed a redirect origin')
+    if (downloadServer && !foreignTarballReads) throw new Error('The separate tarball origin was not exercised')
+    const success = mode === 'metadata-delay' || mode === 'tarball-delay' || mode === 'generic-command' || privateMode
     if (success && (code !== 0 || !tarballReads)) throw new Error(`${mode}: publication was not verified\n${output}`)
     if (!success && (code === 0 || /✓ Published/.test(output))) throw new Error(`${mode}: unverified publication was reported successful\n${output}`)
     if (mode === 'metadata-delay' && metadataReads < 3) throw new Error('Metadata delay was not exercised')
     if (mode === 'tarball-delay' && tarballReads < 3) throw new Error('Tarball delay was not exercised')
     if ((mode === 'never-visible' || mode === 'stalled-tarball') && !/pending|not yet.*public/i.test(output)) throw new Error(`An accepted upload must remain pending, not be declared missing\n${output}`)
-    console.log(JSON.stringify({ mode, code, uploads, metadataReads, tarballReads, credentialReads, verified: success }))
+    console.log(JSON.stringify({ mode, code, uploads, metadataReads, tarballReads, credentialReads, foreignCredentialReads, foreignTarballReads, verified: success }))
   }
   finally {
     clearTimeout(timeout)
     if (child.exitCode === null) child.kill()
     await child.exited
     await server.stop(true)
+    await downloadServer?.stop(true)
   }
 }
 
 try {
   const failures: string[] = []
-  for (const mode of ['restricted-package', 'metadata-delay', 'tarball-delay', 'wrong-bytes', 'never-visible', 'stalled-tarball', 'generic-command'] as const) {
+  for (const mode of ['restricted-package', 'restricted-redirect', 'metadata-delay', 'tarball-delay', 'wrong-bytes', 'never-visible', 'stalled-tarball', 'generic-command'] as const) {
     try { await check(mode) }
     catch (error) {
       console.error(error)

@@ -1127,7 +1127,11 @@ fn publishSingleToNpm(
     // semantics — Pantry's own registry uses a different shape). Network
     // failures here fall through to a real publish attempt; we'd rather
     // double-publish-attempt than incorrectly skip.
-    if (options.skip_existing) blk: {
+    // Private metadata requires the credential obtained by the publication
+    // path below. Keep the cheap anonymous precheck for public packages only;
+    // authenticated immutable-version conflicts still verify before skipping.
+    const precheck_access = resolveNpmAccess(options.access, if (metadata.publish_config) |pc| pc.access else null, metadata.name);
+    if (options.skip_existing and std.mem.eql(u8, precheck_access, "public")) blk: {
         var precheck_client = registry.RegistryClient.init(allocator, registry_url) catch break :blk;
         defer precheck_client.deinit();
         const exists = precheck_client.versionExists(metadata.name, metadata.version) catch break :blk;

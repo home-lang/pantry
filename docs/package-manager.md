@@ -263,7 +263,9 @@ metadata that only supplies `shasum`.
 
 Both npm commands honor `--registry <url>` before `publishConfig.registry`;
 `--registry npm` selects the default npm registry. Public verification never
-forwards publishing credentials to the metadata or tarball host.
+forwards publishing credentials to the metadata or tarball host. Restricted
+packages use authenticated readback at the exact configured registry origin;
+redirects across scheme, host, or effective port strip the credential.
 
 Token discovery is deterministic:
 
