@@ -163,6 +163,7 @@ export const recipe: Recipe = {
     'openssl.org': '^3',
     'perl.org': '^5',
     'invisible-island.net/ncurses': '^6',
+    'curl.se': '^8',
     // Sun RPC (rpc/rpc.h) was dropped from glibc >= 2.32; MySQL's
     // MYSQL_CHECK_RPC needs it. libtirpc provides it (header at
     // <prefix>/include/tirpc, lib libtirpc.so.3), declared so the runtime dep
@@ -178,6 +179,7 @@ export const recipe: Recipe = {
       'pagure.io/libaio': '^0.3.113',
       'github.com/numactl/numactl': '^2',
       'gnu.org/gcc/libstdcxx': '14',
+      'systemd.io/libudev': '*',
     },
   },
 

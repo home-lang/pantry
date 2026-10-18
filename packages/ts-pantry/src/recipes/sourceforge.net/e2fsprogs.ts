@@ -3,7 +3,8 @@ import type { Recipe } from '../../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'sourceforge.net/e2fsprogs',
   name: 'e2fsprogs',
-  programs: [],
+  programs: ['chattr', 'compile_et', 'lsattr', 'mk_cmds', 'mke2fs', 'debugfs', 'dumpe2fs'],
+  buildDependencies: { 'gnu.org/coreutils': '*' },
   dependencies: {
     darwin: {
       'gnu.org/gettext': '^0.22',
@@ -31,7 +32,7 @@ export const recipe: Recipe = {
       'make install-libs',
       {
         run: "sed -i 's|{{prefix}}|\\$(dirname \\$0)/..|g' compile_et mk_cmds",
-        'working-directory': '${{prefix}}/bin',
+        'working-directory': '{{prefix}}/bin',
       },
     ],
     env: {
@@ -63,9 +64,15 @@ export const recipe: Recipe = {
     },
   },
   test: {
+    required: true,
     script: [
-      'lsattr -al | grep Extents',
-      "lsattr -al | grep '\\-\\-\\-'\nuuidgen | wc -c | grep 37 # 36 + 1 newline\n",
+      'mke2fs -V 2>&1 | grep -F "{{version}}"',
+      'mkdir guest-fixture',
+      'printf "pantry-rootless-ext4" > guest-fixture/probe',
+      'truncate -s 32M guest.ext4',
+      'mke2fs -q -F -t ext4 -d guest-fixture guest.ext4',
+      'test "$(debugfs -R \'cat /probe\' guest.ext4 2>/dev/null)" = pantry-rootless-ext4',
+      'dumpe2fs -h guest.ext4 2>/dev/null | grep -F 0xEF53',
     ],
   },
 }

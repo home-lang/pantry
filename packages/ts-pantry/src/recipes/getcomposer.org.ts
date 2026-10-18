@@ -1,4 +1,5 @@
 import type { Recipe } from '../../scripts/recipe-types'
+import { githubAssetBuildDependencies, githubAssetSteps } from '../../scripts/github-asset-recipe'
 
 export const recipe: Recipe = {
   domain: 'getcomposer.org',
@@ -14,16 +15,14 @@ export const recipe: Recipe = {
   dependencies: {
     'php.net': '*',
   },
-  buildDependencies: {
-    'curl.se': '*',
-  },
+  buildDependencies: githubAssetBuildDependencies,
 
   build: {
     script: [
-      'curl -sSLO https://github.com/composer/composer/releases/download/{{version}}/composer.phar',
-      'install -D composer.phar {{prefix}}/bin/composer.phar',
-      'cd "${{prefix}}/bin"',
-      'ln -sf composer.phar composer',
+      ...githubAssetSteps('composer/composer', '{{version}}', 'composer.phar', 'composer.phar'),
+      'install -Dm755 composer.phar "{{prefix}}/bin/composer.phar"',
+      'ln -s composer.phar "{{prefix}}/bin/composer"',
     ],
   },
+  test: { required: true, script: ['composer --version | grep -F "{{version}}"'] },
 }

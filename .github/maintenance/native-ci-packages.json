@@ -1,0 +1,10 @@
+{
+  "github.com/hatoo/oha": ["1.16.0"],
+  "bun.com/profile": ["1.4.2"],
+  "github.com/firecracker-microvm/firecracker": ["1.17.0"],
+  "kernel.org/perf": ["7.2.11"],
+  "netfilter.org/libmnl": ["1.0.5"],
+  "netfilter.org/libnftnl": ["1.3.2"],
+  "netfilter.org/nftables": ["1.1.7"],
+  "systemd.io/libudev": ["262.1"]
+}
