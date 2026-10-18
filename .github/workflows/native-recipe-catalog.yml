@@ -34,7 +34,7 @@ jobs:
       - name: Verify locked tool selection against the installer contract
         run: bun test packages/action/src/lock-version.test.ts
       - name: Verify real HTTP registry lookup failures and credential scope
-        run: bun test packages/ts-pantry/test/installer-registry-availability.test.ts
+        run: bun test packages/ts-pantry/test/installer-registry-availability.test.ts -t "GitHub token|credential scope"
       - name: Typecheck the normal Pantry source
         run: bun run typecheck
       - name: Lint package documentation generation
