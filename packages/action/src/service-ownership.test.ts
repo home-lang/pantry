@@ -66,6 +66,25 @@ test('a failed ownership checkpoint starts no service and closes its gated launc
   }
 })
 
+test('cleanup observes short-lived owned groups through kernel exit transitions', async () => {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const directory = realpathSync(mkdtempSync(join(tmpdir(), 'pantry-exit-transition-')))
+    const state: NativeServiceState = { name: 'typesense', directory, owner: claimServiceDirectory(directory), binDir: directory, libraries: {} }
+    try {
+      await spawnNativeService(state, process.execPath, ['-e', 'setInterval(() => {}, 1000)', directory], process.env)
+      expect(state.process?.group).toBe(state.pid)
+      expect(await assertServiceProcess(state.process!, directory)).toBe(true)
+      process.kill(-state.process!.group, 'SIGTERM')
+      await stopNativeService(state)
+      expect(await serviceProcessIdentity(state.pid!)).toBeUndefined()
+      expect(existsSync(directory)).toBe(false)
+    }
+    finally {
+      if (existsSync(directory)) await stopNativeService(state)
+    }
+  }
+}, 25_000)
+
 test('forced service cleanup waits for its child to exit before removing private data', async () => {
   const directory = realpathSync(mkdtempSync(join(tmpdir(), 'pantry-force-stop-')))
   const marker = join(directory, 'child-ready')

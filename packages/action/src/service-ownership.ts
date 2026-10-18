@@ -64,16 +64,26 @@ export async function serviceProcessIdentity(pid: number): Promise<ServiceProces
     throw new Error('Could not verify native service process identity; retained private data')
   }
   if (process.platform !== 'darwin') throw new Error('Native service ownership requires Linux or macOS')
-  const result = await execute('/bin/ps', ['-p', String(pid), '-o', 'uid=,pgid=,stat=,lstart=,command='], { timeout: 2000 }).catch((error) => {
-    if (error.code === 1 && !error.stdout?.trim()) return { stdout: '' }
-    throw error
-  })
-  const line = result.stdout.trim()
-  if (!line) return undefined
-  const match = /^(\d+)\s+(\d+)\s+(\S+)\s+(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+\s+\d+)\s+(.+)$/.exec(line)
-  if (!match) throw new Error('Could not read native service process ownership')
-  if (match[3]!.startsWith('Z')) return undefined
-  return { pid, uid: Number(match[1]), group: Number(match[2]), birth: match[4]!, command: match[5]! }
+  const deadline = Date.now() + 2000
+  while (Date.now() < deadline) {
+    const result = await execute('/bin/ps', ['-ww', '-p', String(pid), '-o', 'uid=,pgid=,stat=,lstart=,command='], { timeout: Math.max(1, deadline - Date.now()) }).catch((error) => {
+      if (error.code === 1 && !error.stdout?.trim()) return { stdout: '' }
+      throw error
+    })
+    const line = result.stdout.trim()
+    if (!line) return undefined
+    const match = /^(\d+)\s+(\d+)\s+(\S+)\s+(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+\s+\d+)\s+(.+)$/.exec(line)
+    if (!match) throw new Error('Could not read native service process ownership')
+    if (match[3]!.startsWith('Z')) return undefined
+    // Darwin can release argv before publishing zombie state. ps then exposes
+    // only its parenthesized accounting name, or the E (exiting) flag. Neither
+    // is a live command identity or proof of exit. Wait for a verifiable sample;
+    // never authorize a signal or directory removal from this partial snapshot.
+    if (!match[3]!.includes('E') && !/^\([^)]*\)$/.test(match[5]!) && match[5] !== '<exiting>')
+      return { pid, uid: Number(match[1]), group: Number(match[2]), birth: match[4]!, command: match[5]! }
+    await new Promise(resolve => setTimeout(resolve, 5))
+  }
+  throw new Error('Could not verify native service process identity; retained private data')
 }
 
 export async function assertServiceProcess(identity: ServiceProcessIdentity, directory: string): Promise<boolean> {
