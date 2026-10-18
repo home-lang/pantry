@@ -11,7 +11,6 @@ const name = '@pantry-fixture/confirmation', version = '1.0.0'
 async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 'never-visible') {
   const cwd = join(root, mode)
   await mkdir(cwd)
-  await writeFile(join(cwd, 'package.json'), JSON.stringify({ name, version, files: ['index.txt'] }))
   await writeFile(join(cwd, 'index.txt'), 'Immutable publication fixture\n')
   let uploads = 0, metadataReads = 0, tarballReads = 0
   const requests: Array<{ method: string, path: string }> = []
@@ -48,7 +47,12 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
       return new Response('Unexpected publication request', { status: 400 })
     },
   })
-  const child = Bun.spawn([executable, 'publish', '--npm', '--no-oidc', '--ignore-scripts', '--access', 'public', '--registry', server.url.origin], {
+  await writeFile(join(cwd, 'package.json'), JSON.stringify({
+    name, version, files: ['index.txt'], publishConfig: { registry: server.url.origin },
+  }))
+  // Exercise the dedicated npm command. The generic `publish --npm` command
+  // has a separate registry-option forwarding contract to verify at source.
+  const child = Bun.spawn([executable, 'npm:publish', '--no-oidc', '--ignore-scripts', '--access', 'public', '--registry', server.url.origin], {
     cwd, env: { ...process.env, NPM_TOKEN: 'disposable-loopback-fixture-only' }, stdout: 'pipe', stderr: 'pipe',
   })
   const timeout = setTimeout(() => child.kill(), 145_000)
