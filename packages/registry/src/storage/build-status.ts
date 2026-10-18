@@ -180,6 +180,7 @@ export class BuildStatusStore {
   private snapshot: ObjectSnapshot
   private coverageSnapshot: ObjectSnapshot
   private hydrated = false
+  private loading: Promise<void> | null = null
 
   // Derived coverage cache (domain -> version -> set of platforms) + freshness.
   private coverage = new Map<string, Map<string, Set<string>>>()
@@ -322,7 +323,19 @@ export class BuildStatusStore {
     }
   }
 
-  async load(): Promise<void> {
+  load(): Promise<void> {
+    if (!this.loading) {
+      this.loading = this.hydrate().finally(() => { this.loading = null })
+    }
+    return this.loading
+  }
+
+  /** Share an in-flight initial read and retry a failed read before accepting writes. */
+  async ready(): Promise<void> {
+    if (!this.hydrated) await this.load()
+  }
+
+  private async hydrate(): Promise<void> {
     this.hydrated = false
     const [state, coverage] = await Promise.all([
       this.snapshot.load() as Promise<PersistedState | null>,
@@ -433,6 +446,9 @@ export class BuildStatusStore {
     // "__auth_probe__") so the dashboard only ever shows accurate package data.
     if (!isValidPackageDomain(String(raw.domain)))
       return null
+    // Reject before mutation/ACK: a pending snapshot must not replace a
+    // builder event we already told its sender was accepted.
+    this.assertHydrated()
     const event: BuildEvent = {
       domain: String(raw.domain),
       version: String(raw.version || ''),
@@ -573,6 +589,7 @@ export class BuildStatusStore {
    * something.
    */
   requestRebuild(domain: string, priority = false): boolean {
+    this.assertHydrated()
     const d = String(domain || '').trim()
     if (!d) return false
 
@@ -600,6 +617,7 @@ export class BuildStatusStore {
 
   /** Remove domains from the queue (called once a build run has claimed them). */
   clearQueue(domains?: string[]): void {
+    this.assertHydrated()
     if (!domains) {
       this.queue = []
     }
@@ -637,12 +655,14 @@ export class BuildStatusStore {
 
   /** Rebuild the coverage cache by listing the binaries/ prefix. */
   async refreshCoverage(force = false): Promise<void> {
+    this.assertHydrated()
     if (!force && Date.now() - this.coverageAt < COVERAGE_TTL_MS)
       return
     if (this.coveragePromise)
       return this.coveragePromise
     this.coveragePromise = (async () => {
       const objects = await this.s3.list({ bucket: this.bucket, prefix: 'binaries/', maxKeys: 1_000_000 })
+      this.assertHydrated()
       const cov = new Map<string, Map<string, Set<string>>>()
       const lastBuilt = new Map<string, string>()
       for (const obj of objects) {
@@ -813,6 +833,7 @@ export class BuildStatusStore {
   }
 
   async flush(): Promise<void> {
+    this.assertHydrated()
     await this.snapshot.flush()
   }
 }
