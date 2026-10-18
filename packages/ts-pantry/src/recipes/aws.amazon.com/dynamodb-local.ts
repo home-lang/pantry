@@ -11,7 +11,7 @@ export const recipe: Recipe = {
   // Other platforms need their own real native acceptance before registration.
   platforms: ['linux/x86-64'],
   dependencies: { 'openjdk.org': '>=17' },
-  buildDependencies: { 'maven.apache.org': '^3', 'bun.sh': '>=1.3' },
+  buildDependencies: { 'maven.apache.org': '^3', 'bun.com': '>=1.3' },
   versionSource: {
     type: 'custom',
     fetch: async () => (await mavenVersions('software.amazon.dynamodb', 'DynamoDBLocal')).filter(version => Number(version.split('.')[0]) >= 3),

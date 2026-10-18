@@ -13,6 +13,7 @@ test('DynamoDB Local has a native Pantry provider with a managed JVM and mandato
   expect(loaded.recipe.programs).toContain('dynamodb-local')
   expect(loaded.recipe.dependencies?.['openjdk.org']).toBe('>=17')
   expect(loaded.recipe.build?.dependencies?.['maven.apache.org']).toBe('^3')
+  expect(loaded.recipe.build?.dependencies?.['bun.com']).toBe('>=1.3')
   expect(loaded.recipe.test?.required).toBe(true)
   expect(loaded.recipe.test?.script?.length).toBeGreaterThan(0)
   expect(JSON.stringify(loaded.recipe)).not.toMatch(/\b(?:docker|podman)\b/i)
