@@ -165,11 +165,20 @@ export async function spawnNativeService(state: NativeServiceState, executable: 
   // launcher stays alive with its foreground child, so post cleanup can verify
   // PID, UID, birth, group and command before signalling the owned group.
   writeFileSync(launcher, `#!/bin/sh
+stop_signal=
+trap 'stop_signal=INT' INT
+trap 'stop_signal=TERM' TERM
+trap 'stop_signal=HUP' HUP
 IFS= read -r permission || exit 125
 [ "$permission" = start ] || exit 126
-trap ':' INT TERM HUP
+[ -z "$stop_signal" ] || exit 125
 "$@" &
 child=$!
+# A stop can arrive after admission but before the foreground child forks.
+# This live session leader still anchors the current owned process group.
+if [ -n "$stop_signal" ]; then
+  kill -s "$stop_signal" 0 || exit 126
+fi
 while :; do
   wait "$child"
   status=$?

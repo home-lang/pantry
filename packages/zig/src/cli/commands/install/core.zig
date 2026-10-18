@@ -1677,7 +1677,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     helpers.ensureBinSymlinks(allocator, project_root, options.modules_dir);
 
     // Generate/update lockfile for installed packages
-    if (installed_packages.items.len > 0) {
+    if (installed_packages.items.len > 0 and !options.no_save) {
         const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{project_root});
         defer allocator.free(lockfile_path);
 
