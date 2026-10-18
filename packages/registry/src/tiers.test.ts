@@ -4,11 +4,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { createServer } from './server'
-import { Registry } from './registry'
+import { createLocalRegistry } from './registry'
 import { AuthService, InMemoryAuthStorage } from './auth'
 import { calculateFee } from './subscriptions'
 import { getAvailablePort } from './test-utils'
@@ -20,8 +17,7 @@ describe('subscription tiers', () => {
   let baseUrl: string
   let server: ReturnType<typeof createServer>
   let auth: AuthService
-  let registry: Registry
-  let registryDirectory: string
+  let registry: ReturnType<typeof createLocalRegistry>
   const savedEnv: Record<string, string | undefined> = {}
   const ENV_KEYS = ['PANTRY_REGISTRY_TOKEN', 'PANTRY_TOKEN', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET']
 
@@ -46,34 +42,18 @@ describe('subscription tiers', () => {
 
     port = await getAvailablePort()
     baseUrl = `http://localhost:${port}`
-    registryDirectory = mkdtempSync(join(tmpdir(), 'pantry-registry-tiers-'))
-    registry = new Registry({
-      s3Bucket: 'local',
-      dynamoTable: 'local',
-      baseUrl,
-      npmFallback: true,
-      port,
-      localStoragePath: registryDirectory,
-    })
+    registry = createLocalRegistry(baseUrl)
     const storage = new InMemoryAuthStorage()
     auth = new AuthService(storage)
     server = createServer(registry, port, undefined, undefined, undefined, undefined, storage)
     server.start()
   })
 
-  afterEach(async () => {
-    try {
-      // Stop requests before removing their storage. This suite really uploads
-      // 300 MiB; each test owns its directory rather than leaking that payload.
-      await server?.stop(true)
-      if (registryDirectory)
-        rmSync(registryDirectory, { recursive: true, force: true })
-    }
-    finally {
-      for (const key of ENV_KEYS) {
-        if (savedEnv[key] === undefined) delete process.env[key]
-        else process.env[key] = savedEnv[key]
-      }
+  afterEach(() => {
+    server.stop()
+    for (const key of ENV_KEYS) {
+      if (savedEnv[key] === undefined) delete process.env[key]
+      else process.env[key] = savedEnv[key]
     }
   })
 
