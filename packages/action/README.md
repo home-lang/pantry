@@ -31,7 +31,7 @@ This action allows you to easily install dependencies with pantry in your GitHub
 | Name       | Description                           | Required | Default              |
 |------------|---------------------------------------|----------|----------------------|
 | packages   | Space-separated list of packages to install (overrides auto-detection) | No  | (empty) - auto-detects from project files |
-| services   | Native CI services to install, start, health-check, and stop: `redis@X.Y.Z`, `postgres@17.11`, `mysql@26.7.0`, `typesense@30.2` | No | (empty) |
+| services   | Native CI services to install, start, health-check, and stop: `redis@X.Y.Z`, `postgres@17.11`, `mysql@26.7.0`, `typesense@30.2`, `dynamodb@3.3.0` (Linux x86-64) | No | (empty) |
 | config-path | Path to pantry config file        | No       | `pantry.config.ts` |
 | package-dir | Directory to publish from for monorepo packages | No | (empty) - repository root |
 
@@ -129,6 +129,31 @@ supplies SSL configuration to framework drivers. Typesense exports
 and masked in action logs. `postgres-url`, `postgres-version`, `typesense-url`
 `mysql-url`, `mysql-version` and `typesense-version` are also action outputs. Keep these services on the
 provided addresses; no fixed host ports or pre-existing databases are needed.
+
+### DynamoDB Local
+
+Use `services: dynamodb@3.3.0` on Linux x86-64. `dynamodb-local` and
+`aws.amazon.com/dynamodb-local` select the same native provider. The Pantry
+release must contain this provider's catalog and service API so its JVM and
+launcher utilities are installed through Pantry, rather than supplied by the
+runner image. Other platforms fail before a service starts.
+
+The action allocates a private port and database directory, verifies the actual
+version, and exercises table creation, item writes, consistent reads and table
+deletion before returning the endpoint. Every readiness connection must belong
+to the recorded service group before HTTP bytes are sent. Post cleanup stops
+that owned group and removes its data using the same ownership checks as the
+other services.
+
+`DYNAMODB_URL`, `DYNAMODB_HOST`, `DYNAMODB_PORT`, `DYNAMODB_SERVICE_VERSION`,
+`DYNAMODB_REGION`, `DYNAMODB_ACCESS_KEY_ID` and `DYNAMODB_SECRET_ACCESS_KEY`
+describe the test instance. `dynamodb-url` and `dynamodb-version` are action
+outputs. Configure the test client with those values; the action preserves
+existing `AWS_*` credentials and region settings.
+
+DynamoDB Local is a development server without AWS cloud authentication. The
+exported credentials are local placeholders. The action connects over loopback;
+it does not change the upstream server's listener bind behavior.
 
 ### Apple code signing
 
