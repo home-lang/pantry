@@ -1,9 +1,9 @@
 import { execFile } from 'node:child_process'
 import { createHash, createHmac, randomUUID } from 'node:crypto'
-import { readFileSync, readdirSync, readlinkSync } from 'node:fs'
+import { readFileSync, readdirSync, readlinkSync, realpathSync } from 'node:fs'
 import { Agent, request } from 'node:http'
 import { connect } from 'node:net'
-import { join } from 'node:path'
+import { dirname, isAbsolute, join, relative } from 'node:path'
 import { promisify } from 'node:util'
 import type { NativeServiceOptions, NativeServiceState } from './native-services'
 import { spawnNativeService } from './native-services'
@@ -132,6 +132,14 @@ export async function requestNativeDynamodb(state: NativeServiceState, port: num
 }
 
 export async function startNativeDynamodb(service: ServiceSpec, state: NativeServiceState, env: NodeJS.ProcessEnv, port: number, onState?: NativeServiceOptions['onState']) {
+  // A new registry-only provider must not appear healthy by borrowing the
+  // runner image's JVM when an old installer omitted its dependency graph.
+  for (const program of ['java', 'readlink']) {
+    const executable = realpathSync(join(state.binDir, program))
+    const local = relative(realpathSync(dirname(state.binDir)), executable)
+    if (isAbsolute(local) || local === '..' || local.startsWith('../'))
+      throw new Error(`DynamoDB requires Pantry-managed ${program}`)
+  }
   const { stdout } = await execute(join(state.binDir, 'dynamodb-local'), ['-version'], { env, timeout: 10_000 })
   const versions = stdout.match(/\b\d+\.\d+\.\d+\b/g) || []
   const version = versions.length === 1 ? versions[0] : undefined

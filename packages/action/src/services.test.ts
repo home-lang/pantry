@@ -58,6 +58,8 @@ describe('GitHub Actions services', () => {
       expect(nativeServiceEnvironment(pantryBin, 'darwin', {}).DYLD_LIBRARY_PATH)
         .toBe(`${curl}:${openssl}`)
       const environment = nativeServiceEnvironment(pantryBin, 'linux', { LD_LIBRARY_PATH: '/system/lib' })
+      expect(environment.PATH).toBe(pantryBin)
+      expect(nativeServiceEnvironment(pantryBin, 'linux', { PATH: '/system/bin' }).PATH).toBe(`${pantryBin}:/system/bin`)
       expect(nativeServiceEnvironment(pantryBin, 'linux', environment)).toEqual(environment)
       expect(nativeServiceEnvironment(pantryBin, 'windows', { PATH: 'C:\\Windows' }))
         .toEqual({ PATH: 'C:\\Windows' })

@@ -106,6 +106,7 @@ export function nativeServiceEnvironment(
     Object.entries(baseEnvironment).filter((entry): entry is [string, string] => entry[1] !== undefined),
   )
   if (platform === 'windows') return environment
+  environment.PATH = [...new Set([pantryBinDir, ...(environment.PATH?.split(path.delimiter) || [])].filter(Boolean))].join(path.delimiter)
 
   const variable = platform === 'darwin' ? 'DYLD_LIBRARY_PATH' : 'LD_LIBRARY_PATH'
   const value = [...new Set([...pantryLibraryPaths(pantryBinDir), ...(environment[variable]?.split(path.delimiter) || [])].filter(Boolean))].join(path.delimiter)
