@@ -57,15 +57,8 @@ jobs:
           zig fmt --check packages/zig/src/auth/registry.zig packages/zig/src/cli/commands/package.zig packages/zig/src/main.zig
           (cd packages/zig && zig build -j2 -Doptimize=ReleaseSafe)
           packages/zig/zig-out/bin/pantry --version > artifacts/native-catalog/publication-cli-version.txt
-          sha256sum packages/zig/zig-out/bin/pantry > artifacts/native-catalog/publication-cli-sha256.txt
-      - name: Verify public publication completion against an isolated registry
-        if: inputs.verify-publication
-        run: |
-          if [ '${{ inputs.build-publication-source }}' = true ]; then
-            bun .github/scripts/verify-npm-publication.ts "$GITHUB_WORKSPACE/packages/zig/zig-out/bin/pantry"
-          else
-            bun .github/scripts/verify-npm-publication.ts "$(command -v pantry)"
-          fi
+          cp packages/zig/zig-out/bin/pantry artifacts/native-catalog/publication-cli
+          sha256sum artifacts/native-catalog/publication-cli > artifacts/native-catalog/publication-cli-sha256.txt
       - name: Verify registration invariants
         run: |
           set -o pipefail
@@ -108,3 +101,42 @@ jobs:
           name: native-recipe-catalog
           path: artifacts/native-catalog
           if-no-files-found: error
+
+  publication:
+    name: Native publication contract (${{ matrix.segment }})
+    needs: catalog
+    if: inputs.verify-publication
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        segment: [transport, lookup, availability]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Provision the published fixture runtime through Pantry
+        uses: ./packages/action
+        with:
+          version: 0.11.93
+          install: 'false'
+          packages: bun.com@1.4.3
+      - name: Download the normal source build and its identity
+        if: inputs.build-publication-source
+        uses: actions/download-artifact@v4
+        with:
+          name: native-recipe-catalog
+          path: artifacts/native-catalog
+      - name: Verify the exact normally built executable before use
+        if: inputs.build-publication-source
+        run: |
+          test "$(cat artifacts/native-catalog/source-commit.txt)" = "$GITHUB_SHA"
+          sha256sum -c artifacts/native-catalog/publication-cli-sha256.txt
+          chmod +x artifacts/native-catalog/publication-cli
+      - name: Verify every contract in the required segment
+        run: |
+          if [ '${{ inputs.build-publication-source }}' = true ]; then
+            fixture_cli="$GITHUB_WORKSPACE/artifacts/native-catalog/publication-cli"
+          else
+            fixture_cli="$(command -v pantry)"
+          fi
+          bun .github/scripts/verify-npm-publication.ts "$fixture_cli" '${{ matrix.segment }}'

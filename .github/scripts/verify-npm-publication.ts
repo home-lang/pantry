@@ -7,6 +7,8 @@ import { join, resolve } from 'node:path'
 
 const executable = resolve(process.argv[2] || '')
 if (!process.argv[2]) throw new Error('Pass the actual published or normally built Pantry executable')
+const segment = process.argv[3] || 'all'
+if (!['all', 'transport', 'lookup', 'availability'].includes(segment)) throw new Error('Unknown publication contract segment')
 const root = await mkdtemp(join(tmpdir(), 'pantry-publication-confirmation-'))
 const name = '@pantry-fixture/confirmation', version = '1.0.0'
 
@@ -110,7 +112,7 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
   }
 }
 
-async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-commit' | 'upload-redirect' | 'stalled-upload-response') {
+async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-commit' | 'upload-redirect' | 'stalled-upload-response' | 'precheck-stalled-head' | 'precheck-stalled-body') {
   const cwd = join(root, mode)
   await mkdir(cwd)
   await writeFile(join(cwd, 'index.txt'), 'Immutable ambiguous-response fixture\n')
@@ -148,14 +150,21 @@ async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-
         else if (mode === 'lost-response') request.socket.destroy()
         else if (mode === 'server-error-after-commit') response.writeHead(503).end('Upload committed; response failed')
         else if (mode === 'upload-redirect') response.writeHead(303, { Location: foreignUrl }).end()
-        else {
+        else if (mode === 'stalled-upload-response') {
           response.writeHead(202, { 'Content-Type': 'application/json', 'Content-Length': '16' })
           response.write('{')
         }
+        else response.writeHead(202, { 'Content-Type': 'application/json' }).end('{"success":true}')
         return
       }
       if (request.method === 'GET' && path === `/${name}/${version}`) {
         metadataReads++
+        if (!uploads && mode === 'precheck-stalled-head') return
+        if (!uploads && mode === 'precheck-stalled-body') {
+          response.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': '16' })
+          response.write('{')
+          return
+        }
         if (!uploads || mode === 'upload-redirect') { response.writeHead(404).end(); return }
         if (existsSync(marker)) prematureHook = true
         response.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(metadata))
@@ -211,11 +220,15 @@ async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-
 
 try {
   const failures: string[] = []
-  for (const mode of ['lost-response', 'server-error-after-commit', 'upload-redirect', 'stalled-upload-response'] as const) {
+  if (segment === 'all' || segment === 'transport') for (const mode of ['lost-response', 'server-error-after-commit', 'upload-redirect', 'stalled-upload-response'] as const) {
     try { await checkAmbiguousUpload(mode) }
     catch (error) { console.error(error); failures.push(mode) }
   }
-  for (const mode of ['restricted-package', 'restricted-redirect', 'metadata-delay', 'tarball-delay', 'wrong-bytes', 'never-visible', 'stalled-tarball', 'generic-command'] as const) {
+  if (segment === 'all' || segment === 'lookup') for (const mode of ['precheck-stalled-head', 'precheck-stalled-body'] as const) {
+    try { await checkAmbiguousUpload(mode) }
+    catch (error) { console.error(error); failures.push(mode) }
+  }
+  if (segment === 'all' || segment === 'availability') for (const mode of ['restricted-package', 'restricted-redirect', 'metadata-delay', 'tarball-delay', 'wrong-bytes', 'never-visible', 'stalled-tarball', 'generic-command'] as const) {
     try { await check(mode) }
     catch (error) {
       console.error(error)
