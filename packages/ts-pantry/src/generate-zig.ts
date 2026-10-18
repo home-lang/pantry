@@ -3,7 +3,7 @@ import path from 'node:path'
 import { recipeDepsToSpecs } from './dependency-spec'
 import { getAliasOverrides, shouldReplaceAliases } from './alias-overrides'
 import { programsForPlatform } from './programs'
-import type { PlatformPrograms } from './programs'
+import type { PlatformPrograms, ProgramVersions } from './programs'
 
 /**
  * Generate Zig package definitions from TypeScript package data
@@ -17,6 +17,7 @@ interface ZigPackageDefinition {
   homepageUrl?: string
   programs: string[]
   platformPrograms?: PlatformPrograms
+  programVersions?: ProgramVersions
   dependencies: string[]
   buildDependencies: string[]
   aliases: string[]
@@ -163,13 +164,20 @@ function packageToZigStruct(pkg: ZigPackageDefinition): string {
   const buildDeps = pkg.buildDependencies.map(d => `"${escapeZigString(d)}"`).join(', ')
   const aliases = pkg.aliases.map(a => `"${escapeZigString(a)}"`).join(', ')
   const versions = pkg.versions.map(v => `"${escapeZigString(v)}"`).join(', ')
+  const programVersions = Object.entries(pkg.programVersions || {}).map(([name, bounds]) => {
+    for (const value of [bounds.since, bounds.before]) {
+      if (value !== undefined && (!Number.isSafeInteger(value) || value < 0)) throw new Error(`Invalid program release boundary: ${name}`)
+    }
+    if (bounds.since !== undefined && bounds.before !== undefined && bounds.since >= bounds.before) throw new Error(`Empty program release range: ${name}`)
+    return `.{ .name = "${escapeZigString(name)}", .since = ${bounds.since ?? 'null'}, .before = ${bounds.before ?? 'null'} }`
+  }).join(', ')
 
   return `    .{
         .name = "${escapeZigString(pkg.name)}",
         .domain = "${escapeZigString(pkg.domain)}",
         .description = "${escapeZigString(pkg.description)}",
         .homepage_url = ${pkg.homepageUrl ? `"${escapeZigString(pkg.homepageUrl)}"` : 'null'},
-        .programs = ${programs},
+        .programs = ${programs},${programVersions ? `\n        .program_versions = &[_]ProgramVersion{ ${programVersions} },` : ''}
         .dependencies = &[_][]const u8{ ${deps} },
         .build_dependencies = &[_][]const u8{ ${buildDeps} },
         .aliases = &[_][]const u8{ ${aliases} },
@@ -298,6 +306,7 @@ export async function generateZigDefinitions(packagesDir: string, outputFile: st
         homepageUrl: pkgData.homepageUrl,
         programs: Array.isArray(pkgData.programs) ? pkgData.programs : [],
         platformPrograms: pkgData.platformPrograms,
+        programVersions: pkgData.programVersions,
         // Merge the build recipe's runtime deps into the metadata deps so the
         // catalog reflects what we actually compiled against (e.g. php links
         // libpq, so php.net must depend on postgresql.org even though pkgx's
@@ -376,6 +385,13 @@ function generateZigFile(packages: ZigPackageDefinition[]): string {
 
 const std = @import("std");
 
+/// Major-release boundaries for executable interfaces.
+pub const ProgramVersion = struct {
+    name: []const u8,
+    since: ?u32 = null,
+    before: ?u32 = null,
+};
+
 /// Package information
 pub const PackageInfo = struct {
     name: []const u8,
@@ -383,6 +399,7 @@ pub const PackageInfo = struct {
     description: []const u8,
     homepage_url: ?[]const u8,
     programs: []const []const u8,
+    program_versions: []const ProgramVersion = &.{},
     dependencies: []const []const u8,
     build_dependencies: []const []const u8,
     aliases: []const []const u8,

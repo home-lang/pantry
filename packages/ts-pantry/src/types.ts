@@ -46,6 +46,7 @@ export interface PkgxPackage {
   pantryInstallCommand: string
   programs: string[]
   platformPrograms?: import('./programs').PlatformPrograms
+  programVersions?: import('./programs').ProgramVersions
   companions: string[]
   /**
    * Runtime dependencies (from top-level dependencies in package.yml)
