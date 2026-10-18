@@ -3,7 +3,7 @@
  *
  * @domain `mise.jdx.dev`
  * @programs `rtx`, `mise`
- * @version `2026.10.13` (595 versions available)
+ * @version `2026.10.14` (596 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install mise.jdx.dev`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "mise"
  * console.log(pkg.description) // "dev tools, env vars, task runner"
  * console.log(pkg.programs)    // ["rtx", "mise"]
- * console.log(pkg.versions[0]) // "2026.10.13" (latest)
+ * console.log(pkg.versions[0]) // "2026.10.14" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/mise-jdx-dev.md
@@ -76,6 +76,7 @@ export const misejdxdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2026.10.14',
     '2026.10.13',
     '2026.10.12',
     '2026.10.11',
