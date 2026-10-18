@@ -1088,8 +1088,8 @@ export function setupCleanupHandlers(): void {
   })
 }
 
-/** Explicit opt-in for a command that owns the process and browser lifecycle. */
-export function setupFetchProcessHandlers(): void {
+// Negative control: retain the original implicit library main-path check.
+if (typeof Bun !== 'undefined' && Bun.main === import.meta.path) {
   // Initialize handlers
   setupCleanupHandlers()
 
