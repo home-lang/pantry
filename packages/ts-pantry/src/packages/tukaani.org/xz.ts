@@ -8,6 +8,8 @@
  *
  * @install `pantry install tukaani.org/xz`
  * @homepage https://tukaani.org/xz/
+ * @dependencies `darwin:gnu.org/gettext` (includes platform-specific dependencies)
+ * @buildDependencies `gnu.org/make`, `freedesktop.org/pkg-config` - required only when building from source
  *
  * @example
  * ```typescript
@@ -75,8 +77,22 @@ export const tukaaniorgxzPackage = {
     'xzmore',
   ] as const,
   companions: [] as const,
-  dependencies: [] as const,
-  buildDependencies: [] as const,
+  /**
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:freetype.org`).
+  */
+  dependencies: [
+    'darwin:gnu.org/gettext',
+  ] as const,
+  /**
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
+  buildDependencies: [
+    'gnu.org/make',
+    'freedesktop.org/pkg-config',
+  ] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions

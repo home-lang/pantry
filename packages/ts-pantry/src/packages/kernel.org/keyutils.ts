@@ -6,7 +6,6 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install kernel.org/keyutils`
- * @name `libkeyutils`
  * @homepage https://kernel.googlesource.com/pub/scm/linux/kernel/git/dhowells/keyutils/
  * @buildDependencies `gnu.org/make`, `gnu.org/sed`, `gnu.org/coreutils`, ... (+3 more) - required only when building from source
  *
@@ -14,11 +13,7 @@
  * ```typescript
  * import { pantry } from 'ts-pantry'
  *
- * // Access the package
- * const pkg = pantry.libkeyutils
- * // Or access via domain
- * const samePkg = pantry.kernelorgkeyutils
- * console.log(pkg === samePkg) // true
+ * const pkg = pantry.kernelorgkeyutils
  * console.log(pkg.name)        // "libkeyutils"
  * console.log(pkg.description) // "Linux key retention client library and developm..."
  * console.log(pkg.versions[0]) // "1.6.3" (latest)
@@ -71,10 +66,6 @@ export const libkeyutilsPackage = {
   versions: [
     '1.6.3',
   ] as const,
-  /**
-  * Alternative names for this package.
-  * You can use any of these names to access the package.
-  */
   aliases: [] as const,
 }
 
