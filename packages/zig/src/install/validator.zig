@@ -187,6 +187,25 @@ fn isUsableExecutable(path: []const u8) bool {
     return true;
 }
 
+/// Explain a failed executable contract before an invalid extraction is removed.
+/// Keep validation strict and expose the actual path, type, size and permissions.
+pub fn reportUnusableDeclaredPrograms(allocator: std.mem.Allocator, package_name: []const u8, package_root: []const u8) void {
+    const package = package_registry.getPackageByName(package_name) orelse return;
+    for (package.programs) |program| {
+        if (std.mem.indexOf(u8, program, "{{") != null) continue;
+        if (programsAreUsable(allocator, &.{program}, package_root)) continue;
+        for ([_][]const u8{ "bin", "sbin", "" }) |directory| {
+            const path = std.fs.path.join(allocator, &.{ package_root, directory, program }) catch continue;
+            defer allocator.free(path);
+            const stat = io_helper.statFile(path) catch |err| {
+                std.debug.print("[pantry:validate] {s}: {s}\n", .{ path, @errorName(err) });
+                continue;
+            };
+            std.debug.print("[pantry:validate] {s}: kind={s} size={d} executable={}\n", .{ path, @tagName(stat.kind), stat.size, io_helper.isExecutable(path) });
+        }
+    }
+}
+
 /// Validate directory structure
 pub fn validateDirectoryStructure(
     allocator: std.mem.Allocator,
@@ -320,6 +339,34 @@ test "declared program validation repairs only from usable versioned packages" {
     try io_helper.writeAllToFile(usable, "#!/bin/sh\nexit 0\n");
     usable.close(io_helper.io);
     try std.testing.expect(hasUsableDeclaredPrograms(allocator, "ziglang.org", package_root));
+}
+
+test "declared Android programs follow executable links into libexec" {
+    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var tmp_dir = std.testing.tmpDir(.{});
+    defer tmp_dir.cleanup();
+    try tmp_dir.dir.createDirPath(io_helper.io, "bin");
+    try tmp_dir.dir.createDirPath(io_helper.io, "libexec/cmdline-tools/latest/bin");
+    var root_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const root_len = try tmp_dir.dir.realPath(io_helper.io, &root_buf);
+    const root = root_buf[0..root_len];
+    const package = package_registry.getPackageByName("android.com/cmdline-tools").?;
+    for (package.programs) |program| {
+        const target = try std.fmt.allocPrint(allocator, "libexec/cmdline-tools/latest/bin/{s}", .{program});
+        defer allocator.free(target);
+        const file = try tmp_dir.dir.createFile(io_helper.io, target, .{ .permissions = .executable_file });
+        try io_helper.writeAllToFile(file, "#!/bin/sh\nexit 0\n");
+        file.close(io_helper.io);
+        const relative = try std.fmt.allocPrint(allocator, "../{s}", .{target});
+        defer allocator.free(relative);
+        const link = try std.fs.path.join(allocator, &.{ root, "bin", program });
+        defer allocator.free(link);
+        try io_helper.symLink(relative, link);
+    }
+    try std.testing.expect(hasUsableDeclaredPrograms(allocator, package.domain, root));
+    try tmp_dir.dir.deleteFile(io_helper.io, "libexec/cmdline-tools/latest/bin/sdkmanager");
+    try std.testing.expect(!hasUsableDeclaredPrograms(allocator, package.domain, root));
 }
 
 test "validateDirectoryStructure" {

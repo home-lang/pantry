@@ -4067,6 +4067,8 @@ pub const Installer = struct {
         if (!self.hasPackageStructure(source) or
             !validator.hasUsableDeclaredPrograms(self.allocator, domain, source))
         {
+            std.debug.print("[pantry:validate] Invalid package source for {s}: {s} (package structure={})\n", .{ domain, source, self.hasPackageStructure(source) });
+            validator.reportUnusableDeclaredPrograms(self.allocator, domain, source);
             return error.InvalidPackageSource;
         }
 

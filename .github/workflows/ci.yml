@@ -112,6 +112,20 @@ jobs:
           PANTRY_TEST_CLI: packages/zig/zig-out/bin/pantry
         run: bun .github/scripts/linux-native-tools.ts
 
+      - name: Verify Android tools installation with the source Linux CLI
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          PANTRY_TEST_CLI: packages/zig/zig-out/bin/pantry
+        run: bun .github/scripts/android-native-tools.ts
+
+      - name: Retain source Android tools verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-android-native-tools
+          path: artifacts/android-native-tools
+          if-no-files-found: error
+
       - name: Retain source Linux CLI verification evidence
         if: always()
         uses: actions/upload-artifact@v4
