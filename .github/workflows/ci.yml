@@ -266,6 +266,7 @@ jobs:
         run: |
           test -x "$PANTRY_NATIVE_SERVICE_TEST_BIN/mysqld"
           test -x "$PANTRY_NATIVE_SERVICE_TEST_BIN/redis-server"
+          bun install --frozen-lockfile
           bun test packages/action/src/native-services.integration.test.ts packages/action/src/services.test.ts
 
   action-native-tools:

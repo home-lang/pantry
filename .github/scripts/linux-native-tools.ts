@@ -19,7 +19,7 @@ async function run(name: string, command: string[]): Promise<string> {
   try {
     const [code, stdout, stderr] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()])
     await Bun.write(join(artifacts, `${name}.log`), stdout + stderr)
-    assert.equal(code, 0, `${name}: ${stderr}`)
+    assert.equal(code, 0, `${name}: ${stdout}${stderr}`)
     return stdout + stderr
   }
   finally { clearTimeout(timeout) }
@@ -28,7 +28,7 @@ async function run(name: string, command: string[]): Promise<string> {
 try {
   proof.cliVersion = (await run('cli-version', [cli, '--version'])).trim()
   assert.match(String(proof.cliVersion), /^pantry \d+\.\d+\.\d+ \([0-9a-f]+\)$/)
-  await run('git-install', [cli, 'install', 'git-scm.org@2.53.0', '--no-save'])
+  await run('git-install', [cli, 'install', 'git-scm.org@2.53.0', '--no-save', '--verbose'])
   const bin = join(root, 'pantry/.bin')
   const programs = programsForPlatform(gitRecipe, 'linux-x86-64')
   assert(!programs.includes('git-credential-osxkeychain'))
