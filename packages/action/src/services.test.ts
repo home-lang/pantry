@@ -109,3 +109,12 @@ describe('GitHub Actions services', () => {
     }
   })
 })
+
+
+test('MySQL service versions are exact and install the canonical native package', () => {
+  expect(parseServiceSpecs('mysql@26.7.0')).toEqual([{ name: 'mysql', packageSpec: 'mysql.com@26.7.0', expectedVersion: '26.7.0' }])
+  expect(parseServiceSpecs('mysql.com@26.7.0')).toEqual(parseServiceSpecs('mysql@26.7.0'))
+  expect(() => parseServiceSpecs('mysql@26.7')).toThrow('exact semantic versions')
+  expect(() => parseServiceSpecs('mysql mysql.com')).toThrow('Duplicate')
+  expect(() => mergeServicePackages('mysql.com@8.0.43', parseServiceSpecs('mysql@26.7.0'))).toThrow('Conflicting')
+})

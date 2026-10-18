@@ -2,7 +2,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 
 export interface ServiceSpec {
-  name: 'redis' | 'postgres' | 'typesense'
+  name: 'redis' | 'postgres' | 'typesense' | 'mysql'
   packageSpec: string
   expectedVersion?: string
 }
@@ -13,13 +13,13 @@ export function parseServiceSpecs(input: string): ServiceSpec[] {
   for (const raw of input.split(/[\s,]+/).filter(Boolean)) {
     if (raw.split('@').length > 2) throw new Error(`Invalid Pantry Action service: ${raw}`)
     const [requested, version] = raw.split('@')
-    const name = requested === 'postgresql' || requested === 'postgresql.org' ? 'postgres' : requested === 'typesense.org' ? 'typesense' : requested
-    if (name !== 'redis' && name !== 'postgres' && name !== 'typesense') throw new Error(`Unsupported Pantry Action service: ${name}`)
+    const name = requested === 'postgresql' || requested === 'postgresql.org' ? 'postgres' : requested === 'typesense.org' ? 'typesense' : requested === 'mysql.com' ? 'mysql' : requested
+    if (name !== 'redis' && name !== 'postgres' && name !== 'typesense' && name !== 'mysql') throw new Error(`Unsupported Pantry Action service: ${name}`)
     if (seen.has(name)) throw new Error(`Duplicate Pantry Action service: ${name}`)
-    if (version !== undefined && !(name === 'redis' ? /^\d+\.\d+\.\d+$/ : /^\d+\.\d+(?:\.\d+)?$/).test(version))
+    if (version !== undefined && !(name === 'redis' || name === 'mysql' ? /^\d+\.\d+\.\d+$/ : /^\d+\.\d+(?:\.\d+)?$/).test(version))
       throw new Error(`Service versions must be exact semantic versions: ${raw}`)
     seen.add(name)
-    const domain = name === 'postgres' ? 'postgresql.org' : name === 'typesense' ? 'typesense.org' : 'redis'
+    const domain = name === 'postgres' ? 'postgresql.org' : name === 'typesense' ? 'typesense.org' : name === 'mysql' ? 'mysql.com' : 'redis'
     services.push({ name, packageSpec: version ? `${domain}@${version}` : domain, expectedVersion: version })
   }
   return services
