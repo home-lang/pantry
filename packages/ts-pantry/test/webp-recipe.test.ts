@@ -22,3 +22,12 @@ test('the advertised WebP viewer has a managed Linux GLUT dependency and mandato
   expect(native.programs).toContain('vwebp')
   expect(native.build?.script).toContain('./configure --prefix={{prefix}} --enable-everything')
 })
+
+
+test('Mesa release ABI bounds preserve the complete platform graph', async () => {
+  const old = (await loadRecipe('mesa3d.org', 'linux-x86-64', '26.0.1')).recipe
+  const current = (await loadRecipe('mesa3d.org', 'linux-x86-64', '26.0.3')).recipe
+  expect(old.dependencies?.linux).toMatchObject({ 'llvm.org': '^21', 'dri.freedesktop.org': '^2.4.110' })
+  expect(current.dependencies?.linux).toMatchObject({ 'llvm.org': '^22', 'dri.freedesktop.org': '^2.4.110' })
+  expect(old.dependencies?.darwin).toEqual(current.dependencies?.darwin)
+})

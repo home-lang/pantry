@@ -1,5 +1,23 @@
 import type { Recipe } from '../../scripts/recipe-types'
 
+const linuxDependencies = {
+  'gnome.org/libxml2': '~2.13',
+  'elfutils.org': '*',
+  'khronos.org/glslang': '*',
+  'info-zip.org/zip': '*',
+  'dri.freedesktop.org': '^2.4.110',
+  'intel.com/libva': '*',
+  'freedesktop.org/vdpau': '*',
+  'x.org/xfixes': '*',
+  'x.org/xshmfence': '*',
+  'x.org/xv': '*',
+  'x.org/xxf86vm': '*',
+  'llvm.org': '^22',
+  'github.com/lm-sensors/lm-sensors': '*',
+  'wayland.freedesktop.org': '*',
+  'wayland.freedesktop.org/protocols': '*',
+}
+
 export const recipe: Recipe = {
   domain: 'mesa3d.org',
   name: 'mesa3d',
@@ -9,23 +27,7 @@ export const recipe: Recipe = {
     stripComponents: 1,
   },
   dependencies: {
-    linux: {
-      'gnome.org/libxml2': '~2.13',
-      'elfutils.org': '*',
-      'khronos.org/glslang': '*',
-      'info-zip.org/zip': '*',
-      'dri.freedesktop.org': '^2.4.110',
-      'intel.com/libva': '*',
-      'freedesktop.org/vdpau': '*',
-      'x.org/xfixes': '*',
-      'x.org/xshmfence': '*',
-      'x.org/xv': '*',
-      'x.org/xxf86vm': '*',
-      'llvm.org': '^22',
-      'github.com/lm-sensors/lm-sensors': '*',
-      'wayland.freedesktop.org': '*',
-      'wayland.freedesktop.org/protocols': '*',
-    },
+    linux: linuxDependencies,
     darwin: { 'gnu.org/gettext': '*', 'llvm.org': '^22' },
     'facebook.com/zstd': '^1',
     'libexpat.github.io': '*',
@@ -37,6 +39,11 @@ export const recipe: Recipe = {
     'zlib.net': '*',
     'x.org/xrandr': '*',
   },
+  // The 26.0.1 Linux release was linked against LLVM 21; later 26.0
+  // releases use LLVM 22. Resolve the actual release ABI before relocation.
+  dependencyOverrides: [
+    { if: '<26.0.2', dependencies: { linux: { ...linuxDependencies, 'llvm.org': '^21' } } },
+  ],
   buildDependencies: {
     linux: { 'curl.se': '*', 'cmake.org': '3' },
     'gnu.org/bison': '*',
