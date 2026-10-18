@@ -10,7 +10,7 @@ import { handlePhpRoutes, createPhpStorage } from './php-routes'
 import type { PhpPackageStorage } from './php'
 import { getPackagistCount, searchPackagist, fetchFromPackagist } from './packagist-fallback'
 import { createS3Client, resolveStorageProvider } from './storage/provider'
-import { isS3ObjectNotFound, S3RequestError } from './storage/aws-client'
+import { isS3ObjectNotFound } from './storage/aws-client'
 import { augmentMetadataWithPkgx, isPendingMaterialize, materializeFromPkgx } from './pkgx-fallback'
 import { ObjectAnalytics } from './storage/object-analytics'
 import { BuildStatusStore } from './storage/build-status'
@@ -517,6 +517,7 @@ const categorySlugMap: Record<string, AnalyticsCategory> = {
  * Interface for fetching binary data from storage (S3 in prod, mock in tests)
  */
 export interface BinaryStorage {
+  /** Confirm absence with S3RequestError/NoSuchKey; other failures remain retryable. */
   getObject(key: string): Promise<Buffer>
   createDownloadUrl?(key: string): string
 }
@@ -5252,9 +5253,7 @@ async function findActiveBinaryRecord(
     metadata = await loadBinaryMetadata(store, parsed.domain, cacheable)
   }
   catch (error) {
-    // Injected BinaryStorage implementations retain their historical missing
-    // object contract; production S3 reads distinguish absence from failure.
-    if (!isS3ObjectNotFound(error) && (cacheable || error instanceof S3RequestError)) throw error
+    if (!isS3ObjectNotFound(error)) throw error
     return null
   }
   // Match the quarantine on any spelling of the version. Comparing the request's
@@ -5454,7 +5453,8 @@ async function handleBinaryProxy(
             headers: { ...corsHeaders, 'Content-Type': contentType, 'Cache-Control': cacheControl, 'Content-Length': String(buffer.byteLength) },
           })
         }
-        catch {
+        catch (error) {
+          if (!isS3ObjectNotFound(error)) throw error
           return Response.json({ error: 'Not found' }, { status: 404, headers: corsHeaders })
         }
       }
@@ -5593,7 +5593,7 @@ async function handleBinaryProxy(
   }
   catch (error) {
     console.error(`Binary proxy error for ${s3Key}:`, error)
-    if (!isS3ObjectNotFound(error) && (!storage || error instanceof S3RequestError)) {
+    if (!isS3ObjectNotFound(error)) {
       return Response.json({
         error: 'Binary storage is temporarily unavailable',
         code: 'BINARY_STORAGE_UNAVAILABLE',

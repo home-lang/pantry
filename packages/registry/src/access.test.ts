@@ -5,6 +5,7 @@ import { AuthService, InMemoryAuthStorage } from './auth'
 import { isPublicPath, registryInfo, resolveVisibility, signupsEnabled } from './access'
 import { resetPlugins, setPlugins, type RegistryPlugin } from './plugins'
 import { getAvailablePort } from './test-utils'
+import { S3RequestError } from './storage/aws-client'
 
 const ADMIN_TOKEN = 'ptry_test_admin_token_for_access_tests'
 
@@ -18,7 +19,7 @@ class MockBinaryStorage implements BinaryStorage {
 
   async getObject(key: string): Promise<Buffer> {
     const data = this.files.get(key)
-    if (!data) throw new Error(`Not found: ${key}`)
+    if (!data) throw new S3RequestError('GET', 404, 'NoSuchKey')
     return data
   }
 }

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { createLocalRegistry } from './registry'
 import { createServer } from './server'
 import { getAvailablePort } from './test-utils'
+import { S3RequestError } from './storage/aws-client'
 
 /** Binary storage stub so /binaries/... has something real to serve. */
 class MockBinaryStorage implements BinaryStorage {
@@ -14,7 +15,7 @@ class MockBinaryStorage implements BinaryStorage {
 
   async getObject(key: string): Promise<Buffer> {
     const data = this.files.get(key)
-    if (!data) throw new Error(`Not found: ${key}`)
+    if (!data) throw new S3RequestError('GET', 404, 'NoSuchKey')
     return data
   }
 }
