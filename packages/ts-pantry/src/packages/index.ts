@@ -113,6 +113,7 @@ import { authzedcomspicedbPackage } from './authzed.com/spicedb'
 import { aux4ioPackage } from './aux4io'
 import { cdkPackage } from './aws.amazon.com/cdk'
 import { awsamazoncomcliPackage } from './aws.amazon.com/cli'
+import { dynamodblocalPackage } from './aws.amazon.com/dynamodb-local'
 import { awsamazoncomqPackage } from './aws.amazon.com/q'
 import { awsamazoncomsamPackage } from './aws.amazon.com/sam'
 import { awsamazoncomsessionmanagerpluginPackage } from './aws.amazon.com/session-manager-plugin'
@@ -1917,6 +1918,8 @@ export interface Pantry {
   awsamazoncomcdk: typeof cdkPackage
   cli: typeof awsamazoncomcliPackage
   awsamazoncomcli: typeof awsamazoncomcliPackage
+  dynamodb_local: typeof dynamodblocalPackage
+  awsamazoncomdynamodblocal: typeof dynamodblocalPackage
   q: typeof awsamazoncomqPackage
   awsamazoncomq: typeof awsamazoncomqPackage
 
@@ -5039,6 +5042,7 @@ export interface Pantry {
   duti: typeof dutiPackage
   dxc: typeof microsoftcomdxcPackage
   dym: typeof cratesiodidyoumeanPackage
+  'dynamodb-local': typeof dynamodblocalPackage
   e2fsprogs: typeof sourceforgenete2fsprogsPackage
   earthly: typeof earthlydevearthlyPackage
   eas: typeof expodeveascliPackage
@@ -6618,6 +6622,8 @@ export const pantry: Pantry = {
   awsamazoncomcdk: cdkPackage,
   cli: awsamazoncomcliPackage,
   awsamazoncomcli: awsamazoncomcliPackage,
+  dynamodb_local: dynamodblocalPackage,
+  awsamazoncomdynamodblocal: dynamodblocalPackage,
   q: awsamazoncomqPackage,
   awsamazoncomq: awsamazoncomqPackage,
 
@@ -9740,6 +9746,7 @@ export const pantry: Pantry = {
   duti: dutiPackage,
   dxc: microsoftcomdxcPackage,
   dym: cratesiodidyoumeanPackage,
+  'dynamodb-local': dynamodblocalPackage,
   e2fsprogs: sourceforgenete2fsprogsPackage,
   earthly: earthlydevearthlyPackage,
   eas: expodeveascliPackage,

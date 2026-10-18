@@ -346,6 +346,7 @@ export const aliases: Record<string, string> = {
   'duti': 'github.com/moretension/duti',
   'dxc': 'microsoft.com/dxc',
   'dym': 'crates.io/didyoumean',
+  'dynamodb-local': 'aws.amazon.com/dynamodb-local',
   'e2fsprogs': 'sourceforge.net/e2fsprogs',
   'earthly': 'earthly.dev/earthly',
   'eas': 'expo.dev/eas-cli',
