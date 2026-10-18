@@ -551,6 +551,12 @@ function getBuildStatus(): BuildStatusStore {
   return _buildStatus
 }
 
+async function getReadyBuildStatus(): Promise<BuildStatusStore> {
+  const store = getBuildStatus()
+  await store.ready()
+  return store
+}
+
 interface GitHubActionRun {
   id: number
   name: string
@@ -882,7 +888,7 @@ export function createHandler(
       // ================================================================
       // Full package table: per-platform coverage + live building state.
       if (path === '/api/packages' && req.method === 'GET') {
-        const data = await getBuildStatus().getPackages()
+        const data = await (await getReadyBuildStatus()).getPackages()
         return Response.json(data, { headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=15' } })
       }
       // Live build status: what's building now, recent outcomes, rebuild queue.
@@ -896,7 +902,7 @@ export function createHandler(
 
       if (path === '/api/build-status' && req.method === 'GET') {
         return Response.json({
-          ...getBuildStatus().getStatus(),
+          ...(await getReadyBuildStatus()).getStatus(),
           githubActions: await getGitHubActionsStatus(),
         }, { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } })
       }
@@ -908,7 +914,7 @@ export function createHandler(
       // /packages dashboard updates instantly instead of polling. A periodic
       // comment line keeps the connection alive through proxies (Caddy/nginx).
       if (path === '/api/build-events-stream' && req.method === 'GET') {
-        const store = getBuildStatus()
+        const store = await getReadyBuildStatus()
         const encoder = new TextEncoder()
         let unsubscribe: (() => void) | null = null
         let heartbeat: ReturnType<typeof setInterval> | null = null
@@ -983,7 +989,7 @@ export function createHandler(
         const events = Array.isArray(body) ? body : [body]
         let count = 0
         for (const e of events.slice(0, 200)) {
-          if (getBuildStatus().record(e))
+          if ((await getReadyBuildStatus()).record(e))
             count++
         }
         return Response.json({ ok: true, recorded: count }, { headers: corsHeaders })
@@ -1008,12 +1014,12 @@ export function createHandler(
         // mean holding a credential that can write to the pantry repository,
         // and a standing write credential on an internet-facing service is a
         // poor trade for turning "within the hour" into "within a minute".
-        const queued = getBuildStatus().requestRebuild(domain, priority)
+        const queued = (await getReadyBuildStatus()).requestRebuild(domain, priority)
         return Response.json({ queued, domain, priority }, { headers: corsHeaders })
       }
       // The build-driver reads (and optionally clears) the rebuild queue.
       if (path === '/api/rebuild-queue' && req.method === 'GET') {
-        return Response.json({ queue: getBuildStatus().getQueue() }, { headers: corsHeaders })
+        return Response.json({ queue: (await getReadyBuildStatus()).getQueue() }, { headers: corsHeaders })
       }
       // Claim the queue: return it and empty it in one step, so the run that
       // takes the work is the only one that acts on it.
@@ -1031,7 +1037,7 @@ export function createHandler(
       if (path === '/api/rebuild-queue/claim' && req.method === 'POST') {
         if (!(await isAuthorizedRequest(req)))
           return Response.json({ error: 'Authentication required' }, { status: 401, headers: corsHeaders })
-        const status = getBuildStatus()
+        const status = await getReadyBuildStatus()
         const claimed = status.getQueue()
         if (claimed.length > 0)
           status.clearQueue(claimed)
@@ -1043,7 +1049,7 @@ export function createHandler(
       // can show which requested versions are phantom. A version that later builds
       // successfully is reconciled out of this list (see BuildStatusStore.record).
       if (path === '/api/unavailable-versions' && req.method === 'GET') {
-        const versions = getBuildStatus().getUnavailableVersions()
+        const versions = (await getReadyBuildStatus()).getUnavailableVersions()
         return Response.json(
           { versions, count: versions.length, generatedAt: new Date().toISOString() },
           { headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=30' } },
@@ -1054,7 +1060,7 @@ export function createHandler(
         const domain = decodeURIComponent(path.slice('/api/build-logs/'.length))
         if (!/^[a-zA-Z0-9._/-]{1,128}$/.test(domain))
           return Response.json({ error: 'valid domain required' }, { status: 400, headers: corsHeaders })
-        return Response.json({ domain, logs: getBuildStatus().getLogs(domain) }, { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } })
+        return Response.json({ domain, logs: (await getReadyBuildStatus()).getLogs(domain) }, { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } })
       }
       // Builders stream batches of build-output lines here while a build runs, so
       // the per-package log panel updates live. Authenticated (registry token) so
@@ -1067,7 +1073,8 @@ export function createHandler(
         const lines = Array.isArray(body?.lines) ? body.lines.filter((l: unknown) => typeof l === 'string') : []
         if (!/^[a-zA-Z0-9._/-]{1,128}$/.test(domain))
           return Response.json({ error: 'valid domain required' }, { status: 400, headers: corsHeaders })
-        getBuildStatus().recordLogs(domain, typeof body?.platform === 'string' ? body.platform : '', lines.slice(0, 500))
+        const store = await getReadyBuildStatus()
+        store.recordLogs(domain, typeof body?.platform === 'string' ? body.platform : '', lines.slice(0, 500))
         return Response.json({ ok: true, recorded: Math.min(lines.length, 500) }, { headers: corsHeaders })
       }
 
