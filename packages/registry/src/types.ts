@@ -406,6 +406,8 @@ export interface TarballStorage {
  * Metadata storage interface
  */
 export interface MetadataStorage {
+  /** Drain pending persistence before shutting down an owned store. */
+  flush?: () => Promise<void>
   getPackage(name: string): Promise<PackageRecord | null>
   getPackageVersion(name: string, version: string): Promise<PackageMetadata | null>
   putPackage(record: PackageRecord): Promise<void>

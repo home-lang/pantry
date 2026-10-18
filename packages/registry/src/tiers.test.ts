@@ -66,6 +66,7 @@ describe('subscription tiers', () => {
       // Stop requests before removing their storage. This suite really uploads
       // 300 MiB; each test owns its directory rather than leaking that payload.
       await server?.stop(true)
+      await registry?.metadata.flush?.()
       if (registryDirectory)
         rmSync(registryDirectory, { recursive: true, force: true })
     }
