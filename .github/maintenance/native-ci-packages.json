@@ -1,4 +1,5 @@
 {
+  "aws.amazon.com/dynamodb-local": ["3.3.0"],
   "github.com/hatoo/oha": ["1.16.0"],
   "bun.com/profile": ["1.4.2"],
   "github.com/firecracker-microvm/firecracker": ["1.17.0"],
