@@ -42,7 +42,9 @@ export const recipe: Recipe = {
     'gnome.org/libxml2': '*',
     'thrysoee.dk/editline': '^3',
     'sourceware.org/libffi': '>=3.4.7',
-    'gnome.org/libxslt': '>=1.1.0<1.1.43',
+    // Match PHP's upstream XSL requirement; the retired cap selected a second
+    // XML/XSLT ABI beside libpq's current declared dependency graph.
+    'gnome.org/libxslt': '>=1.1.0',
     'libpng.org': '^1',
     'google.com/webp': '^1',
     'ijg.org': '^9',
@@ -93,7 +95,18 @@ export const recipe: Recipe = {
     script: [
       'test "$(php-config --version)" = "{{version}}"',
       'php -r \'if (PHP_VERSION !== "{{version}}") exit(1);\'',
-      'php -r \'foreach (["bcmath", "curl", "ffi", "gd", "intl", "mbstring", "mysqli", "pdo_mysql", "pdo_pgsql", "pdo_sqlite", "pgsql", "Phar", "sodium", "sqlite3", "zip"] as $module) { if (!extension_loaded($module)) { fwrite(STDERR, "Missing extension: $module\\n"); exit(1); } }\'',
+      'php -r \'foreach (["bcmath", "curl", "ffi", "gd", "intl", "mbstring", "mysqli", "pdo_mysql", "pdo_pgsql", "pdo_sqlite", "pgsql", "Phar", "sodium", "sqlite3", "xsl", "zip"] as $module) { if (!extension_loaded($module)) { fwrite(STDERR, "Missing extension: $module\\n"); exit(1); } }\'',
+      `cat > transform.php <<'PANTRY_PHP'
+<?php
+$style = new DOMDocument;
+$style->loadXML('<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"><xsl:output method="text"/><xsl:template match="/"><xsl:value-of select="/probe/value"/></xsl:template></xsl:stylesheet>');
+$source = new DOMDocument;
+$source->loadXML('<probe><value>PantryNativeXSLT</value></probe>');
+$processor = new XSLTProcessor;
+$processor->importStylesheet($style);
+if ($processor->transformToXML($source) !== 'PantryNativeXSLT') exit(1);
+PANTRY_PHP`,
+      'php transform.php',
       'phar help > /dev/null',
       '{{prefix}}/sbin/php-fpm -v | grep -F "{{version}}"',
     ],
