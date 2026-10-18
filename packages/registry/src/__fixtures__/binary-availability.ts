@@ -80,7 +80,18 @@ try {
     localStoragePath: temporary,
     npmFallback: false,
   })
-  const handler = createHandler(registry, new InMemoryAnalytics(), new InMemoryZigStorage(), 'http://registry.fixture.test')
+  const adapter = scenario === 'adapter-transport' ? {
+    async getObject(object: string): Promise<Buffer> {
+      requests.push(object)
+      metadataReads++
+      if (metadataReads === 1) throw new TypeError('Fixture adapter connection failed')
+      return Buffer.from(JSON.stringify(metadata))
+    },
+    createDownloadUrl(object: string): string {
+      return `https://binary-availability.storage.test/pantry-registry/${object}`
+    },
+  } : undefined
+  const handler = createHandler(registry, new InMemoryAnalytics(), new InMemoryZigStorage(), 'http://registry.fixture.test', adapter)
   const path = scenario === 'metadata-route-503' ? `binaries/${domain}/metadata.json`
     : scenario === 'checksum-503' ? `${key}.sha256` : key
   const responses = []

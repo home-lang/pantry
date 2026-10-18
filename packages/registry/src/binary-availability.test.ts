@@ -89,4 +89,13 @@ describe('binary storage availability through the production HTTP route', () => 
     expect(result.responses.map(response => response.status)).toEqual([404, 404])
     expect(result.attestationReads).toBe(0)
   })
+
+  it('does not interpret an unknown storage-adapter connection failure as a missing object', () => {
+    // This exercises adapter error classification only. The scan-attestation
+    // cases above all use the normal production S3 path without an adapter.
+    const result = observe('adapter-transport')
+    expect(result.responses[0]).toMatchObject({ status: 503, code: 'BINARY_STORAGE_UNAVAILABLE', location: null, cacheControl: 'no-store' })
+    expect(result.responses[1].status).toBe(302)
+    expect(result.metadataReads).toBe(2)
+  })
 })
