@@ -71,6 +71,10 @@ pub fn downloadFileInline(allocator: std.mem.Allocator, url: []const u8, dest_pa
 }
 
 fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool, inline_progress: ?InlineProgressOptions) !void {
+    return io_helper.runWithTimeout(downloadFileTask, .{ allocator, url, dest_path, quiet, inline_progress }, 300_000);
+}
+
+fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool, inline_progress: ?InlineProgressOptions) anyerror!void {
     // Validate URL format
     if (!std.mem.startsWith(u8, url, "http://") and !std.mem.startsWith(u8, url, "https://")) {
         style.printInvalidUrl(url);

@@ -76,10 +76,10 @@ jobs:
           zig fmt src/io_helper.zig src/install/downloader.zig src/install/installer.zig src/install/native_apps.zig src/install/pipeline.zig src/install/runtime.zig
           git diff --binary -- src/io_helper.zig src/install > ../../artifacts/native-catalog/native-format.patch
           zig build -Doptimize=Debug -j2
-      - name: Verify native registry lookup against real owned HTTP servers
-        env:
-          PANTRY_SOURCE_CLI: packages/zig/zig-out/bin/pantry
-        run: bun .github/scripts/verify-registry-lookup.ts
+      - name: Retain the exact built native CLI for isolated HTTP contracts
+        run: |
+          cp packages/zig/zig-out/bin/pantry artifacts/native-catalog/lookup-cli
+          sha256sum artifacts/native-catalog/lookup-cli > artifacts/native-catalog/lookup-cli-sha256.txt
       - name: Build the native DynamoDB distribution and require its live health check
         if: inputs.verify-dynamodb
         env:
@@ -101,4 +101,41 @@ jobs:
         with:
           name: native-recipe-catalog
           path: artifacts/native-catalog
+          if-no-files-found: error
+  registry-lookup:
+    needs: catalog
+    strategy:
+      fail-fast: false
+      matrix:
+        segment: [metadata, artifact-stalled-head, artifact-stalled-body]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up published Pantry and its managed test runtime
+        uses: ./packages/action
+        with:
+          version: 0.11.93
+          install: 'false'
+          packages: bun.com@1.4.3
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-recipe-catalog
+          path: artifacts/native-catalog
+      - name: Verify the built CLI source and bytes
+        run: |
+          test "$(cat artifacts/native-catalog/source-commit.txt)" = "$(git rev-parse HEAD)"
+          sha256sum -c artifacts/native-catalog/lookup-cli-sha256.txt
+          chmod +x artifacts/native-catalog/lookup-cli
+      - name: Verify every real HTTP case in the required segment
+        env:
+          PANTRY_SOURCE_CLI: artifacts/native-catalog/lookup-cli
+          PANTRY_LOOKUP_SEGMENT: ${{ matrix.segment }}
+        run: bun .github/scripts/verify-registry-lookup.ts
+      - name: Retain HTTP observations
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: registry-lookup-${{ matrix.segment }}
+          path: artifacts/native-catalog/native-registry-lookup.json
           if-no-files-found: error

@@ -1805,6 +1805,10 @@ pub fn httpGet(allocator: std.mem.Allocator, url: []const u8) ![]u8 {
 
 /// Stream a download through the same origin-scoped native transport.
 pub fn httpDownloadFile(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8) !void {
+    return runWithTimeout(httpDownloadFileTask, .{ allocator, url, dest_path }, 300_000);
+}
+
+fn httpDownloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8) anyerror!void {
     const stream = try httpStreamGet(allocator, url);
     defer stream.deinit();
     const file = try cwd().createFile(io, dest_path, .{});
@@ -2228,6 +2232,24 @@ fn httpGetResponseWithPolicy(allocator: std.mem.Allocator, url: []const u8, extr
     }
 }
 
+
+/// A finite owned operation. Cancellation always joins the request and timer
+/// before caller-owned buffers, paths or clients can be released.
+pub fn runWithTimeout(comptime task: anytype, args: anytype, timeout_ms: u64) !void {
+    const Selection = union(enum) { response: anyerror!void, timeout: void };
+    var buffer: [2]Selection = undefined;
+    var select = std.Io.Select(Selection).init(getIo(), &buffer);
+    defer {
+        while (select.cancel()) |_| {}
+    }
+    try select.concurrent(.response, task, args);
+    try select.concurrent(.timeout, httpTimeoutTask, .{timeout_ms});
+    const first = try select.await();
+    return switch (first) {
+        .response => |response| response,
+        .timeout => error.Timeout,
+    };
+}
 
 /// HTTP POST with JSON body. Returns response body as owned slice.
 pub fn httpPostJson(allocator: std.mem.Allocator, url: []const u8, json_body: []const u8) ![]u8 {

@@ -9,6 +9,7 @@ const domain = 'redis.io'
 const token = 'disposable-registry-fixture-token'
 const root = await mkdtemp(join(tmpdir(), 'pantry-native-lookup-'))
 const observations: object[] = []
+const segment = process.env.PANTRY_LOOKUP_SEGMENT || 'metadata'
 let mode = ''
 let requests: string[] = []
 let registryCredentials = 0
@@ -39,6 +40,12 @@ const registry = createServer((req, res) => {
   requests.push(url)
   if (req.headers.authorization === `Bearer ${token}`) registryCredentials += 1
   if (!url.endsWith('/metadata.json')) {
+    if (mode === 'artifact-stalled-head') return
+    if (mode === 'artifact-stalled-body') {
+      res.writeHead(200, { 'Content-Length': 1000 })
+      res.write('partial archive bytes')
+      return
+    }
     res.writeHead(mode === 'artifact503' ? 503 : mode === 'artifact403' ? 403 : 404)
     res.end('fixture archive unavailable')
     return
@@ -64,7 +71,8 @@ const registry = createServer((req, res) => {
 })
 const base = await listen(registry)
 try {
-  for (const scenario of ['503', '403', 'malformed', 'null', 'array', 'disconnect', 'stalled-head', 'stalled-body', 'artifact503', 'artifact403', 'redirect']) {
+  const scenarios = segment === 'metadata' ? ['503', '403', 'malformed', 'null', 'array', 'disconnect', 'stalled-head', 'stalled-body', 'artifact503', 'artifact403', 'redirect'] : [segment]
+  for (const scenario of scenarios) {
     try {
       mode = scenario
       requests = []
@@ -81,7 +89,7 @@ try {
         stdout: 'pipe', stderr: 'pipe',
       })
       let killed = false
-      const timer = setTimeout(() => { killed = true; child?.kill() }, 45_000)
+      const timer = setTimeout(() => { killed = true; child?.kill() }, scenario.startsWith('artifact-stalled') ? 330_000 : 45_000)
       const [stdout, stderr, exit] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited])
       clearTimeout(timer)
       child = undefined
@@ -99,7 +107,7 @@ try {
         assert.doesNotMatch(output, /not found in (?:pantry|registry)/i, 'failures cannot become package absence')
         if (scenario.includes('503')) assert.match(output, /HTTP 503/)
         else if (scenario.includes('403')) assert.match(output, /HTTP 403/)
-        else if (scenario.startsWith('stalled')) assert.match(output, /timeout|timed out/i)
+        else if (scenario.includes('stalled')) assert.match(output, /timeout|timed out/i)
         else if (['malformed', 'null', 'array'].includes(scenario)) assert.match(output, /invalid.?registry.?metadata/i)
         if (!scenario.startsWith('artifact')) assert.equal(requests.filter(url => !url.endsWith('/metadata.json')).length, 0, 'metadata errors must stop fallback and archive downloads')
       }
