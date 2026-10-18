@@ -3,7 +3,7 @@
  *
  * @domain `harlequin.sh`
  * @programs `harlequin`
- * @version `2.16.1` (66 versions available)
+ * @version `2.16.2` (67 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install harlequin.sh`
@@ -17,7 +17,7 @@
  * const pkg = pantry.harlequinsh
  * console.log(pkg.name)        // "harlequin.sh"
  * console.log(pkg.programs)    // ["harlequin"]
- * console.log(pkg.versions[0]) // "2.16.1" (latest)
+ * console.log(pkg.versions[0]) // "2.16.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/harlequin-sh.md
@@ -73,6 +73,7 @@ export const harlequinshPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.16.2',
     '2.16.1',
     '2.16.0',
     '2.15.0',
