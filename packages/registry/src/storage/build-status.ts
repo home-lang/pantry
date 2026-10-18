@@ -179,6 +179,7 @@ export class BuildStatusStore {
   private unavailable = new Map<string, UnavailableVersion>()
   private snapshot: ObjectSnapshot
   private coverageSnapshot: ObjectSnapshot
+  private hydrated = false
 
   // Derived coverage cache (domain -> version -> set of platforms) + freshness.
   private coverage = new Map<string, Map<string, Set<string>>>()
@@ -203,8 +204,18 @@ export class BuildStatusStore {
   private logs = new Map<string, BuildLogLine[]>()
 
   constructor(private s3: S3Client, private bucket: string) {
-    this.snapshot = new ObjectSnapshot(s3, bucket, 'build-status/status.json', () => this.captureState())
-    this.coverageSnapshot = new ObjectSnapshot(s3, bucket, 'build-status/coverage.json', () => this.captureCoverage())
+    this.snapshot = new ObjectSnapshot(s3, bucket, 'build-status/status.json', () => {
+      this.assertHydrated()
+      return this.captureState()
+    })
+    this.coverageSnapshot = new ObjectSnapshot(s3, bucket, 'build-status/coverage.json', () => {
+      this.assertHydrated()
+      return this.captureCoverage()
+    })
+  }
+
+  private assertHydrated(): void {
+    if (!this.hydrated) throw new Error('Build status snapshots have not been applied')
   }
 
   /**
@@ -312,6 +323,7 @@ export class BuildStatusStore {
   }
 
   async load(): Promise<void> {
+    this.hydrated = false
     const [state, coverage] = await Promise.all([
       this.snapshot.load() as Promise<PersistedState | null>,
       this.coverageSnapshot.load() as Promise<PersistedCoverage | null>,
@@ -344,6 +356,7 @@ export class BuildStatusStore {
       if (event.state === 'built' && event.version)
         this.mergeCoverage(event.domain, event.version, event.platform, new Date(event.ts).toISOString())
     }
+    this.hydrated = true
   }
 
   private key(e: { domain: string, version: string, platform: string }): string {
