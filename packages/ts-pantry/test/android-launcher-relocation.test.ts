@@ -11,6 +11,8 @@ test('Android launcher JVM properties retain an installed and relocated SDK path
     const bin = join(prefix, 'libexec/cmdline-tools/latest/bin')
     mkdirSync(bin, { recursive: true })
     mkdirSync(join(root, 'props'))
+    const extracted = join(root, 'cmdline-tools')
+    mkdirSync(extracted)
     copyFileSync(new URL('../props/android.com/cmdline-tools/quote-tools-dir.sed', import.meta.url), join(root, 'props/quote-tools-dir.sed'))
     // The exact default property and eval boundary from the official launcher.
     writeFileSync(join(bin, 'apkanalyzer'), String.raw`APP_HOME=$1
@@ -23,7 +25,7 @@ printf '%s\n' "$@"
     const first = script.findIndex(line => typeof line === 'string' && line.startsWith('for launcher'))
     const last = script.indexOf('done', first)
     expect(first).toBeGreaterThanOrEqual(0)
-    const patched = Bun.spawnSync(['bash', '-eu', '-c', script.slice(first, last + 1).join('\n').replaceAll('{{prefix}}', prefix)], { cwd: root })
+    const patched = Bun.spawnSync(['bash', '-eu', '-c', script.slice(first, last + 1).join('\n').replaceAll('{{prefix}}', prefix).replaceAll('{{srcroot}}', root)], { cwd: extracted })
     expect(patched.exitCode).toBe(0)
     const moved = join(root, 'relocated SDK with spaces')
     renameSync(prefix, moved)

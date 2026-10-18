@@ -37,7 +37,7 @@ export const recipe: Recipe = {
       // The official Gradle launchers expand this property through eval.
       // Quote its value so an installed SDK path with spaces remains one argument.
       'for launcher in "{{prefix}}"/libexec/cmdline-tools/latest/bin/*; do',
-      '  sed -i.bak -f props/quote-tools-dir.sed "$launcher"',
+      '  sed -i.bak -f "{{srcroot}}/props/quote-tools-dir.sed" "$launcher"',
       '  rm "$launcher.bak"',
       'done',
       {
