@@ -96,9 +96,11 @@ export const recipe: Recipe = {
     required: true,
     script: [
       'autoconf --version | grep -F "{{version.marketing}}"',
-      'printf "AC_INIT([pantry-native-check], [1.0])\\nAC_CONFIG_SRCDIR([probe.c])\\nAC_PROG_CC\\nAC_OUTPUT\\n" > configure.ac',
+      'printf "AC_INIT([pantry-native-check], [1.0])\\nAC_CONFIG_SRCDIR([probe.c])\\nAC_CONFIG_HEADERS([config.h])\\nAC_PROG_CC\\nAC_OUTPUT\\n" > configure.ac',
       'printf "int main(void) { return 0; }\\n" > probe.c',
-      'autoreconf --force',
+      'autoheader',
+      'autoconf --force',
+      'autoreconf --version | grep -F "{{version.marketing}}"',
       './configure',
       'test -f config.status',
     ],

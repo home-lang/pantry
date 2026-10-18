@@ -1607,6 +1607,7 @@ let BUILD_IS_FOREIGN = false
 export const CUSTOM_BUILD_DOMAINS: ReadonlySet<string> = new Set<string>([
   'invisible-island.net/ncurses', // publish real narrow and wide ABI libraries
   'gnu.org/autoconf', // preserve source relocation and real autoreconf health checks
+  'cmake.org', // publish managed curl, curses and relocatable CMake module paths
   'mysql.com', // preserve official native distributions and the supported source ABI
   'openssh.com', // scp/sftp must resolve managed ssh after relocating the package
   'git-scm.org', // alias detection uses libexec/git to avoid recursive PATH wrapper calls

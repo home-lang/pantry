@@ -33,13 +33,15 @@ export const recipe: Recipe = {
     },
   },
   test: {
+    required: true,
     script: [
-      'aclocal',
-      'automake --add-missing --foreign',
-      'autoconf',
+      'printf "AC_INIT([pantry-automake-check], [1.0])\\nAC_CONFIG_SRCDIR([probe.c])\\nAC_CONFIG_AUX_DIR([build-aux])\\nAM_INIT_AUTOMAKE([foreign])\\nAC_PROG_CC\\nAC_CONFIG_FILES([Makefile])\\nAC_OUTPUT\\n" > configure.ac',
+      'printf "int main(void) { return 0; }\\n" > probe.c',
+      'printf "bin_PROGRAMS = probe\\nprobe_SOURCES = probe.c\\n" > Makefile.am',
+      'autoreconf --force --install',
       './configure',
       'make',
-      './test',
+      './probe',
     ],
   },
 }

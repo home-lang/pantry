@@ -18,7 +18,11 @@ export const recipe: Recipe = {
   dependencies: {
     'zlib.net': '1',
     'sourceware.org/bzip2': '1',
+    'curl.se': '^8',
+    'invisible-island.net/ncurses': '^6',
+    linux: { 'gnu.org/gcc/libstdcxx': '14' },
   },
+  buildDependencies: { 'gnu.org/make': '*', 'freedesktop.org/pkg-config': '*' },
 
   build: {
     script: [
@@ -28,7 +32,20 @@ export const recipe: Recipe = {
     ],
     env: {
       'V': '1',
-      'ARGS': ['--prefix={{prefix}}', '--parallel=1', '--datadir=/var', '--docdir=/share/doc', '--mandir=/share/man', '--system-zlib', '--', '-DCMake_BUILD_LTO=ON', '-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON'],
+      'ARGS': ['--prefix={{prefix}}', '--parallel={{hw.concurrency}}', '--datadir=share/cmake-{{version.marketing}}', '--docdir=share/doc/cmake', '--mandir=share/man', '--system-zlib', '--system-curl', '--', '-DBUILD_CursesDialog=ON', '-DCURSES_NEED_WIDE=ON', '-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON'],
     },
+  },
+  test: {
+    required: true,
+    script: [
+      'cmake --version | grep -F "{{version}}"',
+      'ccmake --version | grep -F "{{version}}"',
+      'printf "cmake_minimum_required(VERSION 3.20)\\nproject(PantryCMakeCheck C)\\nenable_testing()\\nadd_executable(probe probe.c)\\nadd_test(NAME probe COMMAND probe)\\n" > CMakeLists.txt',
+      'printf "int main(void) { return 0; }\\n" > probe.c',
+      'cp -a "{{prefix}}" relocated',
+      'relocated/bin/cmake -S . -B project-build',
+      'relocated/bin/cmake --build project-build',
+      'relocated/bin/ctest --test-dir project-build --output-on-failure',
+    ],
   },
 }
