@@ -84,6 +84,19 @@ are not equivalent: forcing a refresh does not imply that state must be saved.
 
 ## Resolution and install pipeline
 
+Binary metadata lookups distinguish confirmed absence from failure. HTTP 404 or
+valid metadata without the requested version/platform may continue normal
+absence resolution; authentication failures, server errors, malformed metadata
+and interrupted requests propagate as failures. Native metadata reads share one
+30-second deadline across redirects and body reads. Native archive downloads
+share one five-minute deadline and join cancelled I/O before returning.
+
+`PANTRY_REGISTRY_URL` applies through the shared native HTTP transport. Each
+redirect resolves its effective endpoint and recomputes credentials for that
+origin; a registry token does not follow a download onto a foreign object-storage
+origin. The Action's TypeScript installer likewise propagates registry errors
+and scopes GitHub API tokens to `https://api.github.com` on every redirect.
+
 The normal project operation follows this order:
 
 1. Discover the effective project/workspace root and dependency manifest.

@@ -101,32 +101,35 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev
 
 ### Network/Download Issues
 
-**Symptoms:**
+A registry failure is different from a missing package. Run the failing install
+with diagnostics enabled:
 
-- Timeouts during installation
-- Download failures
-- "Connection refused" errors
+```bash
+pantry install --verbose nodejs.org@22
+```
 
-**Solutions:**
+- **HTTP 401 or 403:** check the configured registry and its credential. For a
+  private registry, store its token with
+  `pantry token set --registry https://registry.example.com`.
+- **HTTP 503 or another server error:** the registry or its storage provider is
+  unavailable. Restore the service or retry after it recovers; changing a package
+  name does not resolve an outage.
+- **Invalid registry metadata:** the response was not a valid package listing.
+  Inspect the registry response or report the failure instead of treating the
+  package as unpublished.
+- **Timeout or interrupted response:** check connectivity and service health.
+  Native metadata requests have a 30-second deadline across headers, redirects
+  and body reads. Native archive transfers have a five-minute deadline, including
+  stalled headers and partial bodies.
 
-1. **Check internet connection:**
+Only a confirmed missing metadata response or a valid listing without a matching
+version/platform permits absence handling. Authentication, transport and malformed
+response failures stop that lookup. The installer does not silently skip a
+required system package because its registry is unavailable.
 
-   ```bash
-   curl -I https://pkgx.sh
-   ```
-
-2. **Increase timeout:**
-
-   ```bash
-   pantry install --timeout 120000 node@22  # 2 minutes
-   ```
-
-3. **Try different mirror or later:**
-
-   ```bash
-# Sometimes pkgx mirrors are temporarily down
-# Wait a few minutes and try again
-   ```
+`PANTRY_REGISTRY_URL` selects a self-hosted registry. Registry credentials remain
+scoped to their issuer on every redirect, including redirects to object storage.
+GitHub API credentials are sent only to the HTTPS GitHub API origin.
 
 ## Environment Issues
 
