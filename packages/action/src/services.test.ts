@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { mergeServicePackages, nativeServiceEnvironment, pantryLibraryPaths, parseRedisVersion, parseServiceSpecs, readRedisPid, readServiceLog, redisLaunchArgs, waitForRedisPid } from './services'
+import type { ServiceSpec } from './services'
 
 describe('GitHub Actions services', () => {
   test('parses an exact Redis service and rejects ambiguous declarations', () => {
@@ -122,7 +123,7 @@ test('MySQL service versions are exact and install the canonical native package'
 })
 
 test('DynamoDB Local services use the native provider for every supported alias', () => {
-  const expected = [{ name: 'dynamodb', packageSpec: 'aws.amazon.com/dynamodb-local@3.3.0', expectedVersion: '3.3.0' }]
+  const expected: ServiceSpec[] = [{ name: 'dynamodb', packageSpec: 'aws.amazon.com/dynamodb-local@3.3.0', expectedVersion: '3.3.0' }]
   for (const alias of ['dynamodb', 'dynamodb-local', 'aws.amazon.com/dynamodb-local']) {
     expect(parseServiceSpecs(`${alias}@3.3.0`)).toEqual(expected)
     expect(mergeServicePackages(`${alias}@3.3.0`, parseServiceSpecs('dynamodb@3.3.0'))).toBe(`${alias}@3.3.0`)

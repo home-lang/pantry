@@ -1,13 +1,28 @@
 import { expect, test } from 'bun:test'
-import { existsSync, mkdtempSync, realpathSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, realpathSync, rmSync, symlinkSync } from 'node:fs'
 import { createServer } from 'node:net'
 import type { Socket } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { requestNativeDynamodb } from './native-dynamodb'
-import { spawnNativeService, stopNativeService } from './native-services'
+import { spawnNativeService, startNativeService, stopNativeService } from './native-services'
 import type { NativeServiceState } from './native-services'
 import { claimServiceDirectory, serviceProcessIdentity } from './service-ownership'
+import { parseServiceSpecs } from './services'
+
+test('DynamoDB rejects an ambient JVM before launching a service', async () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'pantry-dynamo-jvm-')))
+  const binaries = join(root, 'pantry', '.bin')
+  mkdirSync(binaries, { recursive: true })
+  symlinkSync(process.execPath, join(binaries, 'java'))
+  try {
+    await expect(startNativeService(parseServiceSpecs('dynamodb@3.3.0')[0]!, binaries, root)).rejects.toThrow(
+      process.platform === 'linux' && process.arch === 'x64' ? 'Pantry-managed java' : 'Linux x86-64',
+    )
+    expect(readdirSync(root)).toEqual(['pantry'])
+  }
+  finally { rmSync(root, { recursive: true, force: true }) }
+})
 
 test('DynamoDB sends no HTTP bytes to a listener outside its owned service group', async () => {
   const directory = realpathSync(mkdtempSync(join(tmpdir(), 'pantry-dynamo-foreign-')))

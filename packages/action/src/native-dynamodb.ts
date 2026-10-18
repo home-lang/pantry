@@ -131,10 +131,10 @@ export async function requestNativeDynamodb(state: NativeServiceState, port: num
   }
 }
 
-export async function startNativeDynamodb(service: ServiceSpec, state: NativeServiceState, env: NodeJS.ProcessEnv, port: number, onState?: NativeServiceOptions['onState']) {
+export async function startNativeDynamodb(service: ServiceSpec, state: NativeServiceState, env: NodeJS.ProcessEnv, port: number, onState?: NativeServiceOptions['onState']): Promise<{ state: NativeServiceState, environment: Record<string, string>, version: string }> {
   // A new registry-only provider must not appear healthy by borrowing the
   // runner image's JVM when an old installer omitted its dependency graph.
-  for (const program of ['java', 'readlink']) {
+  for (const program of ['java', 'readlink', 'dirname']) {
     const executable = realpathSync(join(state.binDir, program))
     const local = relative(realpathSync(dirname(state.binDir)), executable)
     if (isAbsolute(local) || local === '..' || local.startsWith('../'))
