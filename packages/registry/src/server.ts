@@ -1925,7 +1925,7 @@ export function createServer(
   authStorage?: AuthStorage,
   malwareScanner: MalwareScanner = createMalwareScannerFromEnv(),
   binaryPublisher?: BinaryArtifactPublisher,
-): { start: () => void, stop: () => void } {
+): { start: () => void, stop: (closeActiveConnections?: boolean) => Promise<void> } {
   let server: ReturnType<typeof Bun.serve> | null = null
   const analyticsStorage = analytics || createAnalytics()
   const zigPackageStorage = zigStorage || createZigStorage()
