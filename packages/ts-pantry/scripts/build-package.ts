@@ -65,7 +65,7 @@ interface BuildOptions {
 // PackageRecipe is imported from ./buildkit.ts (line 11)
 
 // Template variable interpolation
-function interpolate(template: string | any, vars: Record<string, string>): string {
+export function interpolate(template: string | any, vars: Record<string, string>): string {
   if (typeof template !== 'string') {
     return String(template)
   }
@@ -80,10 +80,8 @@ function interpolate(template: string | any, vars: Record<string, string>): stri
       const trimmedKey = key.trim()
       return vars[trimmedKey] ?? `{{${trimmedKey}}}`
     })
-    // Handle $ENV_VAR style
-    .replace(/\$([A-Z_][A-Z0-9_]*)/g, (_, key) => {
-      return process.env[key] ?? vars[key] ?? `\$${key}`
-    })
+    // Shell variables, quoting, and heredocs belong to the executing shell.
+    // Expanding them here freezes PWD before a test's cd and corrupts literals.
 }
 
 /**

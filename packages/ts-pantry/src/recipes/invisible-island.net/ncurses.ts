@@ -69,8 +69,8 @@ export const recipe: Recipe = {
       'ncurses6-config --version | grep -E \'^{{version.major}}[.]{{version.minor}}([.][0-9]+)?$\'',
       'ncursesw6-config --version | grep -E \'^{{version.major}}[.]{{version.minor}}([.][0-9]+)?$\'',
       'pkg-config --exists ncurses ncursesw tinfo tinfow',
-      'test "$(pkg-config --variable=includedir ncurses)" = "{{prefix}}/include"',
-      'test "$(pkg-config --variable=includedir ncursesw)" = "{{prefix}}/include/ncursesw"',
+      'test "$(cd "$(pkg-config --variable=includedir ncurses)" && pwd -P)" = "$(cd "{{prefix}}/include" && pwd -P)"',
+      'test "$(cd "$(pkg-config --variable=includedir ncursesw)" && pwd -P)" = "$(cd "{{prefix}}/include/ncursesw" && pwd -P)"',
       // NCURSES_WIDECHAR is selected by the consumer's feature macros, even in
       // narrow headers. Explicitly request the narrow ABI and exercise real
       // WINDOW access against its library using headless terminal streams.
