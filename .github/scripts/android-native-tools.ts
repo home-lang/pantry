@@ -16,7 +16,9 @@ await mkdir(home, { recursive: true })
 const proof: Record<string, unknown> = { cliSha256: Bun.SHA256.hash(await readFile(cli), 'hex') }
 
 async function run(name: string, command: string[]): Promise<string> {
-  const child = Bun.spawn(command, { cwd: root, env, stdout: 'pipe', stderr: 'pipe' })
+  const child = Bun.spawn(command, { cwd: root, env, stdin: 'pipe', stdout: 'pipe', stderr: 'pipe' })
+  child.stdin.write('y\n'.repeat(100))
+  child.stdin.end()
   const timeout = setTimeout(() => child.kill(), 600_000)
   try {
     const [code, stdout, stderr] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()])
@@ -42,6 +44,8 @@ try {
   await run('java-version', [join(bin, 'java'), '-version'])
   // sdkmanager resolves its linked package and JVM through the normal SDK scripts.
   assert.match((await run('sdkmanager-version', [join(bin, 'sdkmanager'), '--version'])).trim(), /^\d+(?:\.\d+)*$/)
+  env.ANDROID_HOME = join(root, 'managed SDK health')
+  await run('sdkmanager-build-tools', [join(bin, 'sdkmanager'), `--sdk_root=${env.ANDROID_HOME}`, 'build-tools;35.0.0'])
   await run('apkanalyzer-help', [join(bin, 'apkanalyzer'), '--help'])
   proof.programs = recipe.programs
   proof.passed = true
