@@ -14,11 +14,13 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
   await writeFile(join(cwd, 'package.json'), JSON.stringify({ name, version, files: ['index.txt'] }))
   await writeFile(join(cwd, 'index.txt'), 'Immutable publication fixture\n')
   let uploads = 0, metadataReads = 0, tarballReads = 0
+  const requests: Array<{ method: string, path: string }> = []
   let tarball = Buffer.alloc(0), metadata: Record<string, unknown> = {}
   const server: Bun.Server<undefined> = Bun.serve({
     hostname: '127.0.0.1', port: 0,
     async fetch(request) {
       const path = decodeURIComponent(new URL(request.url).pathname)
+      requests.push({ method: request.method, path })
       if (request.method === 'PUT' && path === `/${name}`) {
         uploads++
         const body = await request.json() as { versions: Record<string, Record<string, unknown>>, _attachments: Record<string, { data: string }> }
@@ -53,7 +55,7 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
   try {
     const [stdout, stderr, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited])
     const output = stdout + stderr
-    if (uploads !== 1) throw new Error(`${mode}: expected exactly one upload, got ${uploads}`)
+    if (uploads !== 1) throw new Error(`${mode}: expected exactly one upload, got ${uploads}; requests=${JSON.stringify(requests)}; exit=${code}\n${output}`)
     if (!metadataReads) throw new Error(`${mode}: CLI reported completion without reading public version metadata\n${output}`)
     const success = mode === 'metadata-delay' || mode === 'tarball-delay'
     if (success && (code !== 0 || !tarballReads)) throw new Error(`${mode}: publication was not verified\n${output}`)
