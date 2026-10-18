@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
 const cli = resolve(process.env.PANTRY_SOURCE_CLI || 'packages/zig/zig-out/bin/pantry')
-const domain = 'redis.io'
+const domain = 'registry-lookup.test'
 const token = 'disposable-registry-fixture-token'
 const root = await mkdtemp(join(tmpdir(), 'pantry-native-lookup-'))
 const observations: object[] = []
@@ -104,6 +104,7 @@ try {
       assert.ok(requests.some(url => url.endsWith('/metadata.json')), 'normal registry setting must reach the owned fixture')
       assert.ok(registryCredentials > 0, 'configured registry must receive its scoped token')
       assert.equal(foreignCredentials, 0, 'credentials must not cross origin')
+      if (scenario.startsWith('artifact')) assert.ok(requests.some(url => url === `/binaries/${domain}/1.0.0/archive.tar.gz`), 'artifact cases must reach the requested archive rather than fail on a dependency')
       if (scenario === 'redirect') assert.ok(foreignRequests > 0)
       else {
         assert.doesNotMatch(output, /not found in (?:pantry|registry)/i, 'failures cannot become package absence')
