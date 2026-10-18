@@ -70,6 +70,11 @@ jobs:
           test "$(zig version)" = 0.17.0
           case "$(command -v zig)" in "$GITHUB_WORKSPACE"/pantry/*) ;; *) exit 1 ;; esac
           zig version > artifacts/native-catalog/zig-version.txt
+      - name: Check native transport formatting and build the source CLI
+        run: |
+          cd packages/zig
+          zig fmt --check src/io_helper.zig src/install/downloader.zig src/install/installer.zig src/install/native_apps.zig src/install/pipeline.zig src/install/runtime.zig
+          zig build -Doptimize=Debug -j2
       - name: Build the native DynamoDB distribution and require its live health check
         if: inputs.verify-dynamodb
         env:

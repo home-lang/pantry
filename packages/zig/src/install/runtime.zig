@@ -259,7 +259,7 @@ pub const RuntimeInstaller = struct {
         };
 
         // Try S3 registry first
-        if (downloader_mod.lookupS3Registry(self.allocator, domain, version)) |s3_result| {
+        if (try downloader_mod.lookupS3Registry(self.allocator, domain, version)) |s3_result| {
             self.allocator.free(s3_result.version);
             return s3_result.tarball_url;
         }

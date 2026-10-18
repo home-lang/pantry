@@ -580,8 +580,8 @@ fn resolvePantryRegistryTarball(
     allocator: std.mem.Allocator,
     name: []const u8,
     version: []const u8,
-) ?ResolvedPackage {
-    if (downloader.lookupS3Registry(allocator, name, version)) |s3_result| {
+) !?ResolvedPackage {
+    if (try downloader.lookupS3Registry(allocator, name, version)) |s3_result| {
         return .{
             .name = allocator.dupe(u8, name) catch {
                 allocator.free(s3_result.version);
@@ -624,7 +624,7 @@ fn expandTransitivePantryDeps(
     allocator: std.mem.Allocator,
     resolved: *std.ArrayList(ResolvedPackage),
     verbose: bool,
-) void {
+) !void {
     var present = std.StringHashMap(void).init(allocator);
     defer present.deinit();
     for (resolved.items) |p| present.put(p.name, {}) catch {};
@@ -636,7 +636,7 @@ fn expandTransitivePantryDeps(
         for (info.dependencies) |spec| {
             const parsed = parsePantryDepSpec(spec) orelse continue;
             if (present.contains(parsed.domain)) continue;
-            const pkg = resolvePantryRegistryTarball(allocator, parsed.domain, parsed.version) orelse {
+            const pkg = try resolvePantryRegistryTarball(allocator, parsed.domain, parsed.version) orelse {
                 if (verbose) std.debug.print("[verbose:pipeline] transitive dep {s} not in registry — skipped\n", .{parsed.domain});
                 continue;
             };
@@ -808,7 +808,7 @@ fn resolveFullTree(
                 // their own paths in the download phase (or out-of-band).
                 const dep = current_wave.items[ri];
                 if (dep.source == .npm) {
-                    if (resolvePantryRegistryTarball(allocator, dep.name, dep.version)) |pantry_pkg| {
+                    if (try resolvePantryRegistryTarball(allocator, dep.name, dep.version)) |pantry_pkg| {
                         if (!seen.contains(dep.name)) {
                             try seen.put(try allocator.dupe(u8, dep.name), {});
                             try resolved.append(allocator, pantry_pkg);
@@ -829,7 +829,7 @@ fn resolveFullTree(
                             const pantry_pkg = if (packages.isRollingZigDevChannel(dep.name, dep.version))
                                 null
                             else
-                                resolvePantryRegistryTarball(allocator, dep.name, dep.version);
+                                try resolvePantryRegistryTarball(allocator, dep.name, dep.version);
                             if (pantry_pkg) |resolved_pkg| {
                                 try resolved.append(allocator, resolved_pkg);
                             } else {
@@ -1390,7 +1390,7 @@ fn resolveViaRegistry(
     for (top_level_deps) |dep| {
         if (dep.source == .npm) continue;
         if (dep.source == .pantry and !packages.isRollingZigDevChannel(dep.name, dep.version)) {
-            if (resolvePantryRegistryTarball(allocator, dep.name, dep.version)) |pantry_pkg| {
+            if (try resolvePantryRegistryTarball(allocator, dep.name, dep.version)) |pantry_pkg| {
                 try resolved.append(allocator, pantry_pkg);
                 continue;
             }
@@ -1867,7 +1867,7 @@ pub fn run(
 
     // Pull in transitive system (pantry) dependencies so dependent binaries can
     // load their shared libraries. Independent of which resolver ran above.
-    expandTransitivePantryDeps(allocator, &resolved, verbose);
+    try expandTransitivePantryDeps(allocator, &resolved, verbose);
 
     // Each pantry package also installs its own dependencies; tell the
     // installer which versions this run already chose, so those reuse them

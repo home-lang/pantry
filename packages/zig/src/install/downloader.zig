@@ -77,20 +77,10 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
         return error.InvalidUrl;
     }
 
-    // The pantry registry 302-redirects binary tarballs to presigned object-storage
-    // URLs (Hetzner / S3). The native Zig HTTP client mishandles that redirect chain:
-    // it returns status 200 but streams corrupt bytes (no truncation signal, so the
-    // size check below never trips), which then fails checksum verification. curl
-    // follows the presigned redirect correctly, so use it directly for registry
-    // downloads. We lose the live progress bar for these, but correctness wins.
-    if (std.mem.indexOf(u8, url, "registry.pantry.dev") != null) {
-        return downloadFileWithCurl(allocator, url, dest_path, quiet);
-    }
-
-    // Native Zig HTTP download with TLS. Falls back to curl on connection failure.
-    var stream = io_helper.httpStreamGet(allocator, url) catch {
-        return downloadFileWithCurl(allocator, url, dest_path, quiet);
-    };
+    // The native transport owns redirect lifetimes and recomputes credentials
+    // per origin. Preserve its typed failures rather than invoking a second
+    // downloader with different endpoint and authentication behavior.
+    var stream = try io_helper.httpStreamGet(allocator, url);
     defer stream.deinit();
 
     const total_bytes = stream.contentLength();
@@ -116,11 +106,8 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     while (true) {
         const n = body_reader.stream(&file_writer.interface, .unlimited) catch |err| switch (err) {
             error.EndOfStream => break,
-            else => {
-                // Native HTTP stream failed mid-download — close file and fall back to curl
-                file_writer.flush() catch {};
-                return downloadFileWithCurl(allocator, url, dest_path, quiet);
-            },
+            else => return err,
+
         };
         bytes_downloaded += n;
 
@@ -304,7 +291,7 @@ pub fn resolveZigDevVersion(allocator: std.mem.Allocator, version: []const u8) !
 
     if (!is_wildcard and !is_short_dev and !is_range) return allocator.dupe(u8, version);
 
-    if (lookupS3Registry(allocator, "ziglang.org", version)) |result| {
+    if (try lookupS3Registry(allocator, "ziglang.org", version)) |result| {
         allocator.free(result.tarball_url);
         return result.version;
     }
@@ -519,71 +506,41 @@ fn lookupZiglangIndexVersion(allocator: std.mem.Allocator, version_constraint: [
 
 /// Try to find a package tarball in the pantry S3 registry.
 /// Fetches metadata.json, resolves version constraint, returns download URL.
-/// Returns null if not found or on any error.
+/// Only confirmed absence returns null; transport, status and schema errors propagate.
 pub fn lookupS3Registry(
     allocator: std.mem.Allocator,
     domain: []const u8,
     version_constraint: []const u8,
-) ?S3PackageResult {
-    // Build metadata URL
-    var metadata_url_buf: [256]u8 = undefined;
-    const metadata_url = std.fmt.bufPrint(
-        &metadata_url_buf,
-        "https://registry.pantry.dev/binaries/{s}/metadata.json",
-        .{domain},
-    ) catch return null;
-
-    // Fetch metadata using curl subprocess (more reliable than Zig HTTP client)
-    // Try multiple curl paths for CI compatibility
-    const curl_paths = [_][]const u8{ "/usr/bin/curl", "curl" };
-    var metadata_response: []const u8 = "";
-    var curl_stderr: []const u8 = "";
-    var found_curl = false;
-
-    for (curl_paths) |curl_bin| {
-        const curl_result = io_helper.childRun(allocator, &[_][]const u8{
-            curl_bin, "-sfL", "--connect-timeout", "10", "--max-time", "30", metadata_url,
-        }) catch continue;
-
-        const s3_curl_failed = switch (curl_result.term) {
-            .exited => |code| code != 0,
-            else => true,
-        };
-        if (s3_curl_failed) {
-            allocator.free(curl_result.stdout);
-            allocator.free(curl_result.stderr);
-            continue;
-        }
-
-        metadata_response = curl_result.stdout;
-        curl_stderr = curl_result.stderr;
-        found_curl = true;
-        break;
+) !?S3PackageResult {
+    const metadata_url = try std.fmt.allocPrint(allocator, "https://registry.pantry.dev/binaries/{s}/metadata.json", .{domain});
+    defer allocator.free(metadata_url);
+    const response = try io_helper.httpGetResponseTimeout(allocator, metadata_url, &.{}, 30_000);
+    defer response.deinit(allocator);
+    if (response.status == 404) return null;
+    if (!response.ok()) {
+        style.print("  Registry metadata HTTP {d} for {s}\n", .{ response.status, domain });
+        return if (response.status == 401 or response.status == 403) error.RegistryAuthenticationRequired else error.RegistryUnavailable;
     }
-
-    if (!found_curl) {
-        // All curl paths failed — try native Zig HTTP as last resort
-        const native_response = io_helper.httpGet(allocator, metadata_url) catch return null;
-        if (native_response.len == 0) {
-            allocator.free(native_response);
-            return null;
-        }
-        metadata_response = native_response;
-    }
-    defer allocator.free(metadata_response);
-    defer if (found_curl) allocator.free(curl_stderr);
-
-    if (metadata_response.len == 0) return null;
-
-    // Parse metadata JSON
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, metadata_response, .{}) catch return null;
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, response.body, .{}) catch return error.InvalidRegistryMetadata;
     defer parsed.deinit();
-
     const root = parsed.value;
-    if (root != .object) return null;
-
-    const versions_obj = root.object.get("versions") orelse return null;
-    if (versions_obj != .object) return null;
+    if (root != .object) return error.InvalidRegistryMetadata;
+    const versions_obj = root.object.get("versions") orelse return error.InvalidRegistryMetadata;
+    if (versions_obj != .object) return error.InvalidRegistryMetadata;
+    var versions = versions_obj.object.iterator();
+    while (versions.next()) |entry| {
+        const version = entry.value_ptr.*;
+        if (version != .object) return error.InvalidRegistryMetadata;
+        const platforms = version.object.get("platforms") orelse return error.InvalidRegistryMetadata;
+        if (platforms != .object) return error.InvalidRegistryMetadata;
+        var entries = platforms.object.iterator();
+        while (entries.next()) |platform| {
+            const info = platform.value_ptr.*;
+            if (info != .object) return error.InvalidRegistryMetadata;
+            const tarball = info.object.get("tarball") orelse return error.InvalidRegistryMetadata;
+            if (tarball != .string or tarball.string.len == 0) return error.InvalidRegistryMetadata;
+        }
+    }
 
     // Detect current platform
     const platform = comptime blk: {
@@ -606,24 +563,21 @@ pub fn lookupS3Registry(
     const matched_version = selection.version;
     const platform_info = selection.platform_info;
 
-    const tarball_path_val = platform_info.object.get("tarball") orelse return null;
-    const tarball_path = if (tarball_path_val == .string) tarball_path_val.string else return null;
+    const tarball_path_val = platform_info.object.get("tarball") orelse return error.InvalidRegistryMetadata;
+    const tarball_path = if (tarball_path_val == .string) tarball_path_val.string else return error.InvalidRegistryMetadata;
 
     // Download binary-registry artifacts via the registry proxy, which 302-
     // redirects to a (presigned, for private buckets) object URL — so large
     // prebuilt archives stream straight from object storage without being
     // buffered through the registry process. `tarball_path` already carries the
     // `binaries/...` prefix, so this resolves to registry.pantry.dev/binaries/…
-    const tarball_url = std.fmt.allocPrint(
+    const tarball_url = try std.fmt.allocPrint(
         allocator,
         "https://registry.pantry.dev/{s}",
         .{tarball_path},
-    ) catch return null;
-
-    const version_dupe = allocator.dupe(u8, matched_version) catch {
-        allocator.free(tarball_url);
-        return null;
-    };
+    );
+    errdefer allocator.free(tarball_url);
+    const version_dupe = try allocator.dupe(u8, matched_version);
 
     return S3PackageResult{
         .tarball_url = tarball_url,

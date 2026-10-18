@@ -762,7 +762,7 @@ pub const Installer = struct {
         if (options.verbose) std.debug.print("[verbose:installer] looking up S3 registry for domain={s}, version={s} (skip_s3={})\n", .{ domain, spec.version, skip_s3_lookup });
 
         if (!skip_s3_lookup) {
-            if (downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| {
+            if (try downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| {
                 if (options.verbose) std.debug.print("[verbose:installer] S3 registry hit: {s} @ {s} url={s}\n", .{ domain, s3_result.version, s3_result.tarball_url });
                 s3_version_alloc = s3_result.version;
                 s3_tarball_url = s3_result.tarball_url;
@@ -2640,7 +2640,7 @@ pub const Installer = struct {
             };
         }
 
-        const registry_artifact = downloader.lookupS3Registry(self.allocator, "ziglang.org", resolved_version);
+        const registry_artifact = try downloader.lookupS3Registry(self.allocator, "ziglang.org", resolved_version);
         defer if (registry_artifact) |artifact| {
             self.allocator.free(artifact.tarball_url);
             self.allocator.free(artifact.version);
@@ -2949,7 +2949,7 @@ pub const Installer = struct {
         // Checks: binaries/ (publish:binary) → packages/pantry/ (publish) → fallback URL
         const s3_url: ?[]const u8 = if (transferred_url) |url|
             url
-        else if (downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| blk: {
+        else if (try downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| blk: {
             self.allocator.free(s3_result.version);
             break :blk s3_result.tarball_url;
         } else if (downloader.lookupPantryPublished(self.allocator, domain, spec.version)) |pub_result| blk: {
@@ -3011,12 +3011,16 @@ pub const Installer = struct {
                 }
 
                 if (options.inline_progress) |progress_opts| {
-                    downloader.downloadFileInline(self.allocator, url, temp_archive_path, progress_opts) catch {
-                        break :blk false;
+                    downloader.downloadFileInline(self.allocator, url, temp_archive_path, progress_opts) catch |err| {
+                        self.allocator.free(temp_archive_path);
+                        self.allocator.free(@constCast(url));
+                        return err;
                     };
                 } else {
-                    downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch {
-                        break :blk false;
+                    downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
+                        self.allocator.free(temp_archive_path);
+                        self.allocator.free(@constCast(url));
+                        return err;
                     };
                 }
                 break :blk true;
@@ -3576,7 +3580,7 @@ pub const Installer = struct {
         // Checks: binaries/ (publish:binary) → packages/pantry/ (publish) → fallback URL
         const s3_url: ?[]const u8 = if (transferred_url) |url|
             url
-        else if (downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| blk: {
+        else if (try downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| blk: {
             self.allocator.free(s3_result.version);
             break :blk s3_result.tarball_url;
         } else if (downloader.lookupPantryPublished(self.allocator, domain, spec.version)) |pub_result| blk: {
@@ -3613,12 +3617,16 @@ pub const Installer = struct {
 
             const s3_ok = blk: {
                 if (options.inline_progress) |progress_opts| {
-                    downloader.downloadFileInline(self.allocator, url, temp_archive_path, progress_opts) catch {
-                        break :blk false;
+                    downloader.downloadFileInline(self.allocator, url, temp_archive_path, progress_opts) catch |err| {
+                        self.allocator.free(temp_archive_path);
+                        self.allocator.free(@constCast(url));
+                        return err;
                     };
                 } else {
-                    downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch {
-                        break :blk false;
+                    downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
+                        self.allocator.free(temp_archive_path);
+                        self.allocator.free(@constCast(url));
+                        return err;
                     };
                 }
                 break :blk true;

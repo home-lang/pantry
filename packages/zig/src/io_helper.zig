@@ -1939,6 +1939,9 @@ pub const HttpStream = struct {
     req: std.http.Client.Request,
     response: std.http.Client.Response,
     redirect_buf: [8192]u8,
+    request_url: []u8,
+    authorization: ?[]u8 = null,
+    auth_headers: [1]std.http.Header = undefined,
 
     /// Content-Length from the response headers, if provided by the server.
     pub fn contentLength(self: *const HttpStream) ?u64 {
@@ -1955,6 +1958,8 @@ pub const HttpStream = struct {
         const alloc = self.client.allocator;
         self.req.deinit();
         self.client.deinit();
+        alloc.free(self.request_url);
+        if (self.authorization) |authorization| alloc.free(authorization);
         alloc.destroy(self);
     }
 };
@@ -1963,63 +1968,66 @@ pub const HttpStream = struct {
 /// Returns a heap-allocated HttpStream with the response ready for body reading.
 pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream {
     const stream = try allocator.create(HttpStream);
+    errdefer allocator.destroy(stream);
+    const initial = decorateRequest(allocator, url);
+    defer initial.deinit(allocator);
     stream.* = .{
         .client = .{ .allocator = allocator, .io = io },
         .req = undefined,
         .response = undefined,
         .redirect_buf = undefined,
+        .request_url = try allocator.dupe(u8, initial.effectiveUrl(url)),
     };
     errdefer {
         stream.client.deinit();
-        allocator.destroy(stream);
+        allocator.free(stream.request_url);
+        if (stream.authorization) |authorization| allocator.free(authorization);
     }
-
-    const decoration = decorateRequest(allocator, url);
-    defer decoration.deinit(allocator);
-    var header_buf: [1]std.http.Header = undefined;
-
-    const uri = std.Uri.parse(decoration.effectiveUrl(url)) catch return error.InvalidUrl;
-
-    stream.req = stream.client.request(.GET, uri, .{
-        .redirect_behavior = @fromBackingInt(@intCast(10)),
-        .keep_alive = false,
-        .headers = .{
-            // Don't request compression for file downloads — we want raw bytes
-            .accept_encoding = .{ .override = "identity" },
-        },
-        .extra_headers = decoration.headers(&header_buf),
-    }) catch return error.NetworkError;
-    errdefer stream.req.deinit();
-
-    stream.req.sendBodiless() catch return error.NetworkError;
-
-    stream.response = stream.req.receiveHead(&stream.redirect_buf) catch return error.HttpRequestFailed;
-
-    if (stream.response.head.status != .ok) {
-        const status_code = @backingInt(stream.response.head.status);
-        // 402 Payment Required — package has a paywall
-        if (status_code == 402) {
-            return error.PaymentRequired;
+    for (0..11) |_| {
+        const decoration = decorateRequest(allocator, stream.request_url);
+        defer decoration.deinit(allocator);
+        if (decoration.authorization) |authorization| stream.authorization = try allocator.dupe(u8, authorization);
+        const uri = try std.Uri.parse(stream.request_url);
+        if (uri.user != null or uri.password != null) return error.InvalidUrl;
+        if (stream.authorization) |authorization| stream.auth_headers[0] = .{ .name = "Authorization", .value = authorization };
+        stream.req = try stream.client.request(.GET, uri, .{
+            .redirect_behavior = .unhandled,
+            .keep_alive = false,
+            .headers = .{ .accept_encoding = .{ .override = "identity" } },
+            .extra_headers = if (stream.authorization != null) &stream.auth_headers else &.{},
+        });
+        errdefer stream.req.deinit();
+        stream.req.sendBodiless() catch |err| return requestTransportError(&stream.req, err);
+        stream.response = stream.req.receiveHead(&stream.redirect_buf) catch |err| return requestTransportError(&stream.req, err);
+        if (stream.response.head.status.class() == .redirect) {
+            const location = stream.response.head.location orelse return error.InvalidUrl;
+            var resolution_buffer: [16384]u8 = undefined;
+            if (location.len > resolution_buffer.len) return error.InvalidUrl;
+            @memcpy(resolution_buffer[0..location.len], location);
+            var available: []u8 = &resolution_buffer;
+            const next_uri = try uri.resolveInPlace(location.len, &available);
+            const next_url = try std.fmt.allocPrint(allocator, "{f}", .{next_uri});
+            stream.req.deinit();
+            allocator.free(stream.request_url);
+            stream.request_url = next_url;
+            if (stream.authorization) |authorization| allocator.free(authorization);
+            stream.authorization = null;
+            continue;
         }
-        // Log non-200 status only in interactive mode (CI has too much noise).
-        // 404s on the pantry registry are expected for packages without pre-built
-        // binaries — they fall back to npm/source silently. Only surface non-404s.
-        const style = @import("cli/style.zig");
-        // A private registry answers 401/403 to anyone without a credential.
-        // Say so plainly — "HTTP 401" during an install otherwise looks like an
-        // outage rather than a missing token.
-        if (status_code == 401 or status_code == 403) {
-            style.print(
-                "  {s}HTTP {d} from {s} — this registry requires authentication.\n  Store a token with: pantry token set --registry <registry-url>{s}\n",
-                .{ style.dim, status_code, url, style.reset },
-            );
-        } else if (!style.isCI() and status_code != 404) {
-            style.print("  {s}HTTP {d} from {s}{s}\n", .{ style.dim, status_code, url, style.reset });
+        const status = @backingInt(stream.response.head.status);
+        if (status != 200) {
+            const style = @import("cli/style.zig");
+            style.print("  Download HTTP {d}\n", .{status});
+            return switch (status) {
+                401, 403 => error.RegistryAuthenticationRequired,
+                404 => error.RegistryArtifactNotFound,
+                402 => error.PaymentRequired,
+                else => error.RegistryUnavailable,
+            };
         }
-        return error.HttpRequestFailed;
+        return stream;
     }
-
-    return stream;
+    return error.TooManyHttpRedirects;
 }
 
 /// Like `httpGet`, but reuses an existing `std.http.Client` for connection pooling.
@@ -2185,6 +2193,8 @@ pub fn httpRequest(
     body: ?[]const u8,
     extra_headers: []const std.http.Header,
 ) !HttpResponse {
+    if (method == .GET and body == null) return httpGetResponseTimeout(allocator, url, extra_headers, 30_000);
+
     var client: std.http.Client = .{ .allocator = allocator, .io = io };
     defer client.deinit();
 
@@ -2203,7 +2213,7 @@ pub fn httpRequest(
         .payload = body,
         .response_writer = &alloc_writer.writer,
         .redirect_buffer = &redirect_buf,
-        .redirect_behavior = @fromBackingInt(@intCast(10)),
+        .redirect_behavior = .unhandled,
         .headers = .{
             .content_type = if (body != null) .{ .override = "application/json" } else .default,
         },
@@ -2217,6 +2227,117 @@ pub fn httpRequest(
     alloc_writer.deinit();
     return .{ .status = @backingInt(result.status), .body = owned };
 }
+
+// Preserve cancellation before Io.Reader erases it as ReadFailed. Threaded
+// acknowledges cancellation once, so swallowing it can strand Select.cancel.
+fn requestTransportError(req: *std.http.Client.Request, fallback: anyerror) anyerror {
+    if (req.connection) |connection| {
+        if (fallback == error.ReadFailed) {
+            if (connection.stream_reader.err) |err| return err;
+            if (req.reader.body_err) |err| return err;
+        }
+    }
+    return fallback;
+}
+
+fn sameHttpOrigin(a: std.Uri, b: std.Uri) bool {
+    if (!std.ascii.eqlIgnoreCase(a.scheme, b.scheme)) return false;
+    var a_buffer: [512]u8 = undefined;
+    var b_buffer: [512]u8 = undefined;
+    const a_host = (a.host orelse return false).toRaw(&a_buffer) catch return false;
+    const b_host = (b.host orelse return false).toRaw(&b_buffer) catch return false;
+    const default_port: u16 = if (std.ascii.eqlIgnoreCase(a.scheme, "https")) 443 else 80;
+    return std.ascii.eqlIgnoreCase(a_host, b_host) and (a.port orelse default_port) == (b.port orelse default_port);
+}
+
+fn httpGetResponseTask(allocator: std.mem.Allocator, url: []const u8, extra_headers: []const std.http.Header) anyerror!HttpResponse {
+    var client: std.http.Client = .{ .allocator = allocator, .io = io };
+    defer client.deinit();
+    var current_url = try allocator.dupe(u8, url);
+    defer allocator.free(current_url);
+    const initial_decoration = decorateRequest(allocator, url);
+    defer initial_decoration.deinit(allocator);
+    const initial_uri = try std.Uri.parse(initial_decoration.effectiveUrl(url));
+    for (0..11) |_| {
+        var next_url: ?[]u8 = null;
+        {
+            const decoration = decorateRequest(allocator, current_url);
+            defer decoration.deinit(allocator);
+            const uri = try std.Uri.parse(decoration.effectiveUrl(current_url));
+            if (uri.user != null or uri.password != null) return error.InvalidUrl;
+            if (!std.ascii.eqlIgnoreCase(uri.scheme, "http") and !std.ascii.eqlIgnoreCase(uri.scheme, "https")) return error.InvalidUrl;
+            var headers = std.ArrayList(std.http.Header).empty;
+            defer headers.deinit(allocator);
+            for (extra_headers) |header| {
+                const sensitive = std.ascii.eqlIgnoreCase(header.name, "Authorization") or std.ascii.eqlIgnoreCase(header.name, "Cookie") or std.ascii.eqlIgnoreCase(header.name, "Proxy-Authorization");
+                if (!sensitive or sameHttpOrigin(initial_uri, uri)) try headers.append(allocator, header);
+            }
+            if (decoration.authorization) |authorization| try headers.append(allocator, .{ .name = "Authorization", .value = authorization });
+            var req = try client.request(.GET, uri, .{
+                .extra_headers = headers.items,
+                .keep_alive = false,
+                .redirect_behavior = .unhandled,
+                .headers = .{ .accept_encoding = .{ .override = "identity" } },
+            });
+            defer req.deinit();
+            req.sendBodiless() catch |err| return requestTransportError(&req, err);
+            var redirect_buffer: [8192]u8 = undefined;
+            var response = req.receiveHead(&redirect_buffer) catch |err| return requestTransportError(&req, err);
+            if (response.head.status.class() == .redirect) {
+                const location = response.head.location orelse return error.InvalidUrl;
+                var resolution_buffer: [16384]u8 = undefined;
+                if (location.len > resolution_buffer.len) return error.InvalidUrl;
+                @memcpy(resolution_buffer[0..location.len], location);
+                var available: []u8 = &resolution_buffer;
+                const next_uri = try uri.resolveInPlace(location.len, &available);
+                next_url = try std.fmt.allocPrint(allocator, "{f}", .{next_uri});
+            } else {
+                const status = @backingInt(response.head.status);
+                // An error's status is decisive; never wait for an untrusted
+                // error body before reporting authentication or availability.
+                if (status < 200 or status >= 300) return .{ .status = status, .body = try allocator.alloc(u8, 0) };
+                const body = response.reader(&.{}).allocRemaining(allocator, std.Io.Limit.limited(32 * 1024 * 1024)) catch |err| return requestTransportError(&req, err);
+                return .{ .status = status, .body = body };
+            }
+        }
+        allocator.free(current_url);
+        current_url = next_url orelse unreachable;
+    }
+    return error.TooManyHttpRedirects;
+}
+
+/// Status-preserving GET with one deadline for headers, redirects and body.
+/// Every redirect recomputes registry credentials for its exact origin.
+pub fn httpGetResponseTimeout(allocator: std.mem.Allocator, url: []const u8, extra_headers: []const std.http.Header, timeout_ms: u64) !HttpResponse {
+    const Selection = union(enum) { response: anyerror!HttpResponse, timeout: void };
+    var buffer: [2]Selection = undefined;
+    var select = std.Io.Select(Selection).init(getIo(), &buffer);
+    try select.concurrent(.response, httpGetResponseTask, .{ allocator, url, extra_headers });
+    select.concurrent(.timeout, httpTimeoutTask, .{timeout_ms}) catch |err| {
+        while (select.cancel()) |result| {
+            if (result == .response) {
+                if (result.response) |response| response.deinit(allocator) else |_| {}
+            }
+        }
+        return err;
+    };
+    const first = try select.await();
+    switch (first) {
+        .response => |response| {
+            while (select.cancel()) |_| {}
+            return response;
+        },
+        .timeout => {
+            while (select.cancel()) |result| {
+                if (result == .response) {
+                    if (result.response) |response| response.deinit(allocator) else |_| {}
+                }
+            }
+            return error.Timeout;
+        },
+    }
+}
+
 
 /// HTTP POST with JSON body. Returns response body as owned slice.
 pub fn httpPostJson(allocator: std.mem.Allocator, url: []const u8, json_body: []const u8) ![]u8 {

@@ -132,7 +132,10 @@ pub fn install(allocator: std.mem.Allocator, domain: []const u8, quiet: bool) Ou
     if (builtin.os.tag != .macos) return .unsupported;
 
     // Resolve via pantry's own binary registry (binaries/<domain>/metadata.json).
-    const resolved = downloader.lookupS3Registry(allocator, domain, "latest") orelse return .failed;
+    const resolved = (downloader.lookupS3Registry(allocator, domain, "latest") catch |err| {
+        style.print("  Registry lookup failed for {s}: {s}\n", .{ domain, @errorName(err) });
+        return .failed;
+    }) orelse return .failed;
     defer allocator.free(resolved.tarball_url);
     defer allocator.free(resolved.version);
 
