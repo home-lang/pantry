@@ -125,10 +125,14 @@ pub fn validateBinary(
 /// a non-empty executable. Project roots may contain a version directory, so
 /// both `<root>/bin` and `<root>/v*/bin` layouts are supported.
 pub fn hasUsableDeclaredPrograms(allocator: std.mem.Allocator, package_name: []const u8, package_root: []const u8) bool {
+    return hasUsableDeclaredProgramsAtVersion(allocator, package_name, package_root, versionFromDirectory(package_root));
+}
+
+pub fn hasUsableDeclaredProgramsAtVersion(allocator: std.mem.Allocator, package_name: []const u8, package_root: []const u8, version: ?[]const u8) bool {
     const package = package_registry.getPackageByName(package_name) orelse return true;
     if (package.programs.len == 0) return true;
 
-    if (programsAreUsable(allocator, package.programs, package_root)) return true;
+    if (programsAreUsable(allocator, package, package_root, version)) return true;
 
     var root = io_helper.openDirAbsoluteForIteration(package_root) catch return false;
     defer root.close();
@@ -137,7 +141,7 @@ pub fn hasUsableDeclaredPrograms(allocator: std.mem.Allocator, package_name: []c
         if (entry.kind != .directory or !std.mem.startsWith(u8, entry.name, "v")) continue;
         const version_root = std.fs.path.join(allocator, &.{ package_root, entry.name }) catch continue;
         defer allocator.free(version_root);
-        if (programsAreUsable(allocator, package.programs, version_root)) return true;
+        if (programsAreUsable(allocator, package, version_root, entry.name[1..])) return true;
     }
 
     return false;
@@ -155,12 +159,30 @@ test "Git executable contract follows the native compilation target" {
     try std.testing.expectEqual(@import("builtin").os.tag == .macos, has_keychain_helper);
 }
 
-fn programsAreUsable(allocator: std.mem.Allocator, programs: []const []const u8, package_root: []const u8) bool {
+fn versionFromDirectory(path: []const u8) ?[]const u8 {
+    const name = std.fs.path.basename(path);
+    return if (name.len > 1 and name[0] == 'v' and std.ascii.isDigit(name[1])) name[1..] else null;
+}
+
+fn programIsRequired(package: *const package_registry.PackageInfo, program: []const u8, version: ?[]const u8) bool {
+    const actual = version orelse return true;
+    var parts = std.mem.splitScalar(u8, actual, '.');
+    const major = std.fmt.parseInt(u32, parts.first(), 10) catch return true;
+    for (package.program_versions) |bounds| {
+        if (!std.mem.eql(u8, bounds.name, program)) continue;
+        if (bounds.since) |since| if (major < since) return false;
+        if (bounds.before) |before| if (major >= before) return false;
+    }
+    return true;
+}
+
+fn programsAreUsable(allocator: std.mem.Allocator, package: *const package_registry.PackageInfo, package_root: []const u8, version: ?[]const u8) bool {
     var checked: usize = 0;
-    for (programs) |program| {
+    for (package.programs) |program| {
         // Catalog templates cannot be resolved without the package's recipe
         // variables. Concrete declarations are still enforced strictly.
         if (std.mem.indexOf(u8, program, "{{") != null) continue;
+        if (!programIsRequired(package, program, version)) continue;
         checked += 1;
 
         var usable = false;
@@ -177,7 +199,7 @@ fn programsAreUsable(allocator: std.mem.Allocator, programs: []const []const u8,
         }
         if (!usable) return false;
     }
-    return checked > 0 or programs.len > 0;
+    return checked > 0 or package.programs.len > 0;
 }
 
 fn isUsableExecutable(path: []const u8) bool {
@@ -189,11 +211,14 @@ fn isUsableExecutable(path: []const u8) bool {
 
 /// Explain a failed executable contract before an invalid extraction is removed.
 /// Keep validation strict and expose the actual path, type, size and permissions.
-pub fn reportUnusableDeclaredPrograms(allocator: std.mem.Allocator, package_name: []const u8, package_root: []const u8) void {
+pub fn reportUnusableDeclaredPrograms(allocator: std.mem.Allocator, package_name: []const u8, package_root: []const u8, version: ?[]const u8) void {
     const package = package_registry.getPackageByName(package_name) orelse return;
     for (package.programs) |program| {
         if (std.mem.indexOf(u8, program, "{{") != null) continue;
-        if (programsAreUsable(allocator, &.{program}, package_root)) continue;
+        if (!programIsRequired(package, program, version)) continue;
+        var single = package.*;
+        single.programs = &.{program};
+        if (programsAreUsable(allocator, &single, package_root, version)) continue;
         for ([_][]const u8{ "bin", "sbin", "" }) |directory| {
             const path = std.fs.path.join(allocator, &.{ package_root, directory, program }) catch continue;
             defer allocator.free(path);
@@ -204,6 +229,18 @@ pub fn reportUnusableDeclaredPrograms(allocator: std.mem.Allocator, package_name
             std.debug.print("[pantry:validate] {s}: kind={s} size={d} executable={}\n", .{ path, @tagName(stat.kind), stat.size, io_helper.isExecutable(path) });
         }
     }
+}
+
+test "JDK executable validation follows upstream major release boundaries" {
+    const package = package_registry.getPackageByName("openjdk.org").?;
+    try std.testing.expect(programIsRequired(package, "jrunscript", "17.0.20.8"));
+    try std.testing.expect(programIsRequired(package, "jrunscript", "25.0.0.36"));
+    try std.testing.expect(!programIsRequired(package, "jrunscript", "26.0.0.35"));
+    try std.testing.expect(!programIsRequired(package, "jrunscript", "27.0.0.35"));
+    try std.testing.expect(programIsRequired(package, "java", "27.0.0.35"));
+    try std.testing.expect(programIsRequired(package, "javac", "27.0.0.35"));
+    try std.testing.expect(programIsRequired(package, "jrunscript", null));
+    try std.testing.expect(programIsRequired(package, "jrunscript", "unknown"));
 }
 
 /// Validate directory structure

@@ -4064,11 +4064,13 @@ pub const Installer = struct {
     /// Materialize a project package from a verified global package without
     /// allowing an interrupted copy to masquerade as an installed package.
     fn materializeVerifiedProjectPackage(self: *Installer, source: []const u8, dest: []const u8, domain: []const u8) !void {
+        const directory = std.fs.path.basename(dest);
+        const version: ?[]const u8 = if (directory.len > 1 and directory[0] == 'v' and std.ascii.isDigit(directory[1])) directory[1..] else null;
         if (!self.hasPackageStructure(source) or
-            !validator.hasUsableDeclaredPrograms(self.allocator, domain, source))
+            !validator.hasUsableDeclaredProgramsAtVersion(self.allocator, domain, source, version))
         {
             std.debug.print("[pantry:validate] Invalid package source for {s}: {s} (package structure={})\n", .{ domain, source, self.hasPackageStructure(source) });
-            validator.reportUnusableDeclaredPrograms(self.allocator, domain, source);
+            validator.reportUnusableDeclaredPrograms(self.allocator, domain, source, version);
             return error.InvalidPackageSource;
         }
 
@@ -4079,7 +4081,7 @@ pub const Installer = struct {
 
         try self.copyDirectoryStructure(source, partial);
         if (!self.hasPackageStructure(partial) or
-            !validator.hasUsableDeclaredPrograms(self.allocator, domain, partial))
+            !validator.hasUsableDeclaredProgramsAtVersion(self.allocator, domain, partial, version))
         {
             return error.InvalidPackageMaterialization;
         }
