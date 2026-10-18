@@ -55,7 +55,12 @@ export const recipe: Recipe = {
         '--without-ada',
         '--with-pkg-config-libdir=$PCDIR',
       ],
-      linux: { ARGS: ['--with-versioned-syms'] },
+      linux: {
+        ARGS: ['--with-versioned-syms'],
+        // Ncurses shares GNU version maps across its split libraries. Use the
+        // declared GNU linker for that format and require resolved references.
+        LDFLAGS: '${LDFLAGS:-} -B{{deps.gnu.org/binutils.prefix}}/bin -fuse-ld=bfd -Wl,--no-undefined',
+      },
     },
   },
   test: {
