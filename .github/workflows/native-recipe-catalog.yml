@@ -70,6 +70,11 @@ jobs:
           test "$(zig version)" = 0.17.0
           case "$(command -v zig)" in "$GITHUB_WORKSPACE"/pantry/*) ;; *) exit 1 ;; esac
           zig version > artifacts/native-catalog/zig-version.txt
+      - name: Install every declared native workspace dependency through Pantry
+        run: |
+          pantry install
+          test "$(zig version)" = 0.17.0
+          git diff --binary -- pantry.lock bun.lock > artifacts/native-catalog/workspace-locks.patch
       - name: Check native transport formatting and build the source CLI
         run: |
           cd packages/zig
@@ -148,7 +153,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        segment: [transport, lookup, availability]
+        segment: [transport, lookup, availability, encoding]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
