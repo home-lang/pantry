@@ -69,57 +69,17 @@ jobs:
         with:
           version: '0.11.93'
           install: 'false'
-          packages: 'bun.com@1.4.1 git-scm.org@2.53.0 darwinsys.com/file@5.47.0 nixos.org/patchelf@0.18.0 curl.se@8.23.0 gnu.org/tar@1.35.0 gnu.org/coreutils@9.10.0'
+          packages: >-
+            bun.com@1.4.1 git-scm.org@2.53.0 darwinsys.com/file@5.47.0
+            curl.se@8.23.0 gnu.org/tar@1.35.0 gnu.org/coreutils@9.10.0
+            ${{ runner.os == 'Linux' && 'nixos.org/patchelf@0.18.0' || '' }}
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
       - name: Determine version
         id: version
-        run: |
-          PACKAGE="$REQUESTED_PACKAGE"
-          INPUT_VERSION="$REQUESTED_VERSION"
-
-          if ! [[ "$PACKAGE" =~ ^[a-zA-Z0-9][a-zA-Z0-9._/-]*$ ]] || [[ "$PACKAGE" == *..* || "$PACKAGE" == *//* || "$PACKAGE" == */ ]]; then
-            echo "::error::Provide a canonical package domain"
-            exit 1
-          fi
-          if [ -n "$INPUT_VERSION" ] && ! [[ "$INPUT_VERSION" =~ ^[0-9][a-zA-Z0-9._+-]*$ ]]; then
-            echo "::error::Provide an exact package version"
-            exit 1
-          fi
-
-          if [ -n "$INPUT_VERSION" ]; then
-            VERSION="$INPUT_VERSION"
-          else
-            # Try various filename conversion patterns for package domain
-            # e.g., "php.net" might be phpnet.ts, php-net.ts, or php.net.ts
-            PACKAGE_FILE=""
-            for candidate in \
-              "packages/ts-pantry/src/packages/${PACKAGE//./}.ts" \
-              "packages/ts-pantry/src/packages/${PACKAGE//./-}.ts" \
-              "packages/ts-pantry/src/packages/${PACKAGE}.ts"; do
-              if [ -f "$candidate" ]; then
-                PACKAGE_FILE="$candidate"
-                break
-              fi
-            done
-
-            if [ -z "$PACKAGE_FILE" ]; then
-              echo "Could not find package file for $PACKAGE. Please specify version manually."
-              exit 1
-            fi
-
-            VERSION=$(grep -A1 "versions:" "$PACKAGE_FILE" | grep -oE "'[0-9]+\.[0-9]+\.[0-9]+'" | head -1 | tr -d "'")
-
-            if [ -z "$VERSION" ]; then
-              echo "Could not determine version from $PACKAGE_FILE, please specify manually"
-              exit 1
-            fi
-          fi
-
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Building $PACKAGE version $VERSION"
+        run: bun packages/ts-pantry/scripts/resolve-build-version.ts
 
       - name: Set build matrix
         id: matrix
@@ -156,7 +116,10 @@ jobs:
         with:
           version: '0.11.93'
           install: 'false'
-          packages: 'bun.com@1.4.1 git-scm.org@2.53.0 darwinsys.com/file@5.47.0 nixos.org/patchelf@0.18.0 curl.se@8.23.0 gnu.org/tar@1.35.0 gnu.org/coreutils@9.10.0'
+          packages: >-
+            bun.com@1.4.1 git-scm.org@2.53.0 darwinsys.com/file@5.47.0
+            curl.se@8.23.0 gnu.org/tar@1.35.0 gnu.org/coreutils@9.10.0
+            ${{ runner.os == 'Linux' && 'nixos.org/patchelf@0.18.0' || '' }}
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -259,7 +222,10 @@ jobs:
         with:
           version: '0.11.93'
           install: 'false'
-          packages: 'bun.com@1.4.1 git-scm.org@2.53.0 darwinsys.com/file@5.47.0 nixos.org/patchelf@0.18.0 curl.se@8.23.0 gnu.org/tar@1.35.0 gnu.org/coreutils@9.10.0'
+          packages: >-
+            bun.com@1.4.1 git-scm.org@2.53.0 darwinsys.com/file@5.47.0
+            curl.se@8.23.0 gnu.org/tar@1.35.0 gnu.org/coreutils@9.10.0
+            ${{ runner.os == 'Linux' && 'nixos.org/patchelf@0.18.0' || '' }}
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
