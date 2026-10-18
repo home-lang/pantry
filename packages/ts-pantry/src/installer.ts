@@ -717,9 +717,32 @@ export function registryVersionsForPlatform(metadata: RegistryMetadata | null, p
     .map(([version]) => version)
 }
 
+function isMetadataObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function validateRegistryMetadata(value: unknown, domain: string): RegistryMetadata {
+  const invalid = () => new Error(`Invalid registry metadata for ${domain}`)
+  if (!isMetadataObject(value) || !isMetadataObject(value.versions)) throw invalid()
+  for (const version of Object.values(value.versions)) {
+    if (!isMetadataObject(version) || !isMetadataObject(version.platforms)) throw invalid()
+    for (const platform of Object.values(version.platforms)) {
+      if (!isMetadataObject(platform) || typeof platform.tarball !== 'string' || !platform.tarball.trim()
+        || (platform.sha256 !== undefined && typeof platform.sha256 !== 'string')) throw invalid()
+    }
+  }
+  return value as RegistryMetadata
+}
+
 async function registryMetadata(domain: string, retryOptions: NetworkRetryOptions = {}): Promise<RegistryMetadata | null> {
-  return await fetchJSON(`${registryBase()}/binaries/${encodeURI(domain)}/metadata.json`, 5, retryOptions)
-    .catch(() => null) as RegistryMetadata | null
+  try {
+    const metadata = await fetchJSON(`${registryBase()}/binaries/${encodeURI(domain)}/metadata.json`, 5, retryOptions)
+    return validateRegistryMetadata(metadata, domain)
+  }
+  catch (error) {
+    if (errorStatus(error) === 404) return null
+    throw error
+  }
 }
 
 async function registryVersions(domain: string, platform: Platform, retryOptions: NetworkRetryOptions = {}): Promise<string[]> {
@@ -1119,7 +1142,9 @@ export async function retryNetworkOperation<T>(
     }
   }
 
-  throw new Error(`${label} failed after ${maxAttempts} attempts: ${errorMessage(lastError)}`)
+  throw Object.assign(new Error(`${label} failed after ${maxAttempts} attempts: ${errorMessage(lastError)}`, { cause: lastError }), {
+    statusCode: errorStatus(lastError),
+  })
 }
 
 function openDownload(url: string, maxRedirects: number, stallTimeoutMs: number): Promise<http.IncomingMessage> {
@@ -1281,45 +1306,58 @@ function makeTreeExecutable(dir: string): void {
   }
 }
 
-function fetchJSONOnce(url: string, maxRedirects: number): Promise<unknown> {
+function fetchJSONOnce(url: string, maxRedirects: number, deadline = Date.now() + 30_000): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    const get = url.startsWith('https') ? https.get : http.get
+    const target = new URL(url)
+    const get = target.protocol === 'https:' ? https.get : http.get
     const headers: Record<string, string> = {
       'User-Agent': 'pantry-installer',
       'Accept': 'application/json',
     }
-    // Authenticate api.github.com calls when a GITHUB_TOKEN is available.
-    // Unauthenticated requests share a 60 req/hr quota across the entire
-    // runner pool's IP range, which is routinely exhausted on busy CI;
-    // an authenticated request gets 5000/hr per token. The token is set
-    // automatically on GitHub Actions runners — outside CI we just skip.
-    if (url.includes('api.github.com')) {
+    // Rebuild credentials on every redirect. A path, query, subdomain, HTTP
+    // endpoint or non-default port cannot acquire the GitHub API credential.
+    if (target.origin === 'https://api.github.com' && !target.username && !target.password) {
       const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
       if (token) headers.Authorization = `Bearer ${token}`
     }
-    const req = get(url, { headers, timeout: 30000 }, (res) => {
+    let response: http.IncomingMessage | undefined
+    const req = get(target, { headers }, (res) => {
+      response = res
+      res.once('error', reject)
       if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        clearTimeout(timer)
+        res.destroy()
         if (maxRedirects <= 0) return reject(new Error(`Too many redirects for ${url}`))
         const redirect = new URL(res.headers.location, url).href
-        return fetchJSONOnce(redirect, maxRedirects - 1).then(resolve, reject)
+        return fetchJSONOnce(redirect, maxRedirects - 1, deadline).then(resolve, reject)
       }
       if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
+        clearTimeout(timer)
+        res.destroy()
         return reject(Object.assign(new Error(`HTTP ${res.statusCode || 'unknown'} fetching ${url}`), {
           statusCode: res.statusCode,
         }))
       }
+      res.once('aborted', () => reject(new Error(`Incomplete JSON response: ${url}`)))
       let data = ''
       res.on('data', chunk => data += chunk)
-      res.on('end', () => {
+      res.once('end', () => {
+        clearTimeout(timer)
         try { resolve(JSON.parse(data)) }
-        catch (e) { reject(e) }
+        catch (error) { reject(error) }
       })
     })
-    req.on('error', reject)
-    req.on('timeout', () => {
-      req.destroy()
-      reject(new Error(`Request timed out: ${url}`))
+    const timer = setTimeout(() => {
+      const error = new Error(`Request timed out: ${url}`)
+      response?.destroy(error)
+      req.destroy(error)
+      reject(error)
+    }, Math.max(1, deadline - Date.now()))
+    req.once('error', (error) => {
+      clearTimeout(timer)
+      reject(error)
     })
+    req.once('close', () => clearTimeout(timer))
   })
 }
 
@@ -1353,9 +1391,9 @@ export function isSupported(domain: string): boolean {
  * `craft-native.org` came to be skipped on Linux runners while its Linux
  * tarball sat in the registry.
  *
- * A registry that cannot be reached answers `false` rather than throwing: the
- * caller's next move is to report a skip, and a network blip should not fail
- * the run outright.
+ * Only a confirmed 404 or valid metadata without a matching artifact answers
+ * `false`. Authentication, availability and malformed-response errors propagate
+ * so an unavailable registry cannot silently skip required system packages.
  */
 export async function isInstallable(
   domain: string,

@@ -35,6 +35,8 @@ jobs:
         run: bun test packages/action/src/lock-version.test.ts
       - name: Verify real HTTP registry lookup failures and credential scope
         run: bun test packages/ts-pantry/test/installer-registry-availability.test.ts
+      - name: Lint installer availability source and real HTTP fixtures
+        run: bunx --bun pickier run --mode lint packages/ts-pantry/src/installer.ts packages/ts-pantry/test/installer-registry-availability.test.ts
       - name: Typecheck the normal Pantry source
         run: bun run typecheck
       - name: Lint package documentation generation
