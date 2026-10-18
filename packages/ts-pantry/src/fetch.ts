@@ -1088,9 +1088,8 @@ export function setupCleanupHandlers(): void {
   })
 }
 
-// Only register process-level handlers when running as the main module,
-// not when imported as a library (which would pollute the host process)
-if (typeof Bun !== 'undefined' && Bun.main === import.meta.path) {
+/** Explicit opt-in for a command that owns the process and browser lifecycle. */
+export function setupFetchProcessHandlers(): void {
   // Initialize handlers
   setupCleanupHandlers()
 

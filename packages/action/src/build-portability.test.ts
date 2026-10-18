@@ -22,6 +22,8 @@ describe('GitHub Action build portability', () => {
 
   test('rejects host paths and platform-specific file URLs', () => {
     expect(() => assertPortableActionBundle('const ok = true', '/workspace/pantry')).not.toThrow()
+    expect(() => assertPortableActionBundle('const main = Bun.main === "/workspace/pantry/src/fetch.ts"', '/workspace/pantry')).toThrow('build-host workspace path')
+    expect(() => assertPortableActionBundle(String.raw`const main = "D:\\a\\pantry\\src\\fetch.ts"`, String.raw`D:\a\pantry`)).toThrow('build-host workspace path')
     expect(() => assertPortableActionBundle('const p = "file:///workspace/pantry/node_modules"', '/workspace/pantry')).toThrow('build-host file URL')
     expect(() => assertPortableActionBundle('const p = "file:///Users/chris/repo"', '/workspace/pantry')).toThrow('macOS build-time file URL')
     expect(() => assertPortableActionBundle('const p = "file:///D:/a/repo"', '/workspace/pantry')).toThrow('Windows build-time file URL')

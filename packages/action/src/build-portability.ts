@@ -13,6 +13,7 @@ export function makeCrc64SourcePortable(source: string): string {
 export function assertPortableActionBundle(bundle: string, workspaceRoot: string): void {
   const normalizedRoot = workspaceRoot.replaceAll('\\', '/')
   const violations = [
+    bundle.includes(normalizedRoot) || bundle.includes(JSON.stringify(workspaceRoot).slice(1, -1)) ? `build-host workspace path ${normalizedRoot}` : '',
     bundle.includes(`createRequire("file://${normalizedRoot}`) ? `build-host createRequire URL ${normalizedRoot}` : '',
     bundle.includes(`file://${normalizedRoot}`) ? `build-host file URL ${normalizedRoot}` : '',
     /file:\/\/\/[A-Za-z]:\//.test(bundle) ? 'Windows build-time file URL' : '',
