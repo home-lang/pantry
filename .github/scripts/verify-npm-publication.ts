@@ -35,7 +35,7 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
       }
       if (request.method === 'GET' && path === `/${name}/${version}`) {
         metadataReads++
-        if (mode === 'never-visible' || (mode === 'metadata-delay' && metadataReads <= 2))
+        if (uploads === 0 || mode === 'never-visible' || (mode === 'metadata-delay' && metadataReads <= 2))
           return Response.json({ error: 'not yet visible' }, { status: 404 })
         return Response.json(metadata)
       }

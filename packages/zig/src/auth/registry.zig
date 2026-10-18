@@ -145,10 +145,10 @@ pub fn publishSucceeded(status: std.http.Status) bool {
     };
 }
 
-test "a queued publish is a successful publish" {
+test "a queued publish is an accepted upload" {
     // npm returns 202 when it accepts a publish for asynchronous processing,
-    // which it does for large packages and for provenance. The package is
-    // published.
+    // which it does for large packages and for provenance. Public completion
+    // is verified separately against the metadata and immutable tarball.
     try std.testing.expect(publishSucceeded(.ok));
     try std.testing.expect(publishSucceeded(.created));
     try std.testing.expect(publishSucceeded(.accepted));
