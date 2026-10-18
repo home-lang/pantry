@@ -37,10 +37,9 @@ jobs:
       # which reads like a cache fault and is a missing dependency. Every
       # release build since has failed this way.
       #
-      # The override was also redundant: deps.yaml already pins `zig:
-      # 0.17.0-dev`, the same rolling spec, and the workspace install resolves
-      # it. This is what ci.yml has always done, which is why its Zig Tests job
-      # builds and this one did not.
+      # deps.yaml pins the supported stable compiler. A rolling development
+      # series stops resolving when upstream master advances to the next
+      # version; release builds must use the same stable pin as the test job.
       - name: Setup Pantry and Zig from the registry
         uses: ./packages/action
 

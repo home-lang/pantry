@@ -1,7 +1,7 @@
 name: Sync Zig Dev
 
 # Hourly dispatch of build-versions.yml targeted at ziglang.org so the latest
-# 0.17-dev master build from ziglang.org/download/index.json is mirrored into
+# master build from ziglang.org/download/index.json is mirrored into
 # Pantry before framework and application workflows request the rolling channel.
 
 on:
