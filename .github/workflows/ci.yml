@@ -239,18 +239,30 @@ jobs:
         mysql: ['26.7.0', '8.4.11']
     steps:
       - uses: actions/checkout@v6
-      - name: Set up native MySQL, PostgreSQL, Redis and Typesense through Pantry
+      - name: Bootstrap the published workspace runtime through Pantry
+        uses: pantry-pm/pantry/packages/action@da17bb9317e8f8c247618fb176fe97269f15bfe4 # v0.11.94
+        with:
+          install: 'false'
+          version: 0.11.94
+          packages: bun.com@1.4.2
+      - name: Build the current Action from frozen first-party dependencies
+        run: |
+          bun install --frozen-lockfile
+          bun run --cwd packages/action build
+      - name: Set up native MySQL, PostgreSQL, Redis, Typesense and DynamoDB through Pantry
         id: pantry
         uses: ./packages/action
         with:
           install: 'false'
-          version: 0.11.91
-          packages: bun.sh@1.4.2
-          services: postgres@17.11 mysql@${{ matrix.mysql }} typesense@30.2 redis@8.8.0
+          version: 0.11.94
+          packages: bun.com@1.4.2
+          services: postgres@17.11 mysql@${{ matrix.mysql }} typesense@30.2 redis@8.8.0 dynamodb@3.3.0
       - name: Verify authenticated PostgreSQL and action exports
         env:
           ACTION_MYSQL_URL: ${{ steps.pantry.outputs.mysql-url }}
           ACTION_MYSQL_VERSION: ${{ steps.pantry.outputs.mysql-version }}
+          ACTION_DYNAMODB_URL: ${{ steps.pantry.outputs.dynamodb-url }}
+          ACTION_DYNAMODB_VERSION: ${{ steps.pantry.outputs.dynamodb-version }}
         run: |
           test "$POSTGRES_SERVICE_VERSION" = 17.11
           test "$(psql -X -A -t -c 'SELECT 42')" = 42
@@ -260,6 +272,11 @@ jobs:
           test "$ACTION_MYSQL_URL" = "$MYSQL_URL"
           test "$MYSQL_HOST" = 127.0.0.1
           test "$MYSQL_PORT" -ne 3306
+          test "$DYNAMODB_SERVICE_VERSION" = 3.3.0
+          test "$ACTION_DYNAMODB_VERSION" = "$DYNAMODB_SERVICE_VERSION"
+          test "$ACTION_DYNAMODB_URL" = "$DYNAMODB_URL"
+          test "$DYNAMODB_HOST" = 127.0.0.1
+          test "$DYNAMODB_PORT" -ne 8000
       - name: Verify native isolation, indexing and cleanup
         env:
           PANTRY_NATIVE_SERVICE_TEST_BIN: ${{ github.workspace }}/pantry/.bin
@@ -267,7 +284,6 @@ jobs:
         run: |
           test -x "$PANTRY_NATIVE_SERVICE_TEST_BIN/mysqld"
           test -x "$PANTRY_NATIVE_SERVICE_TEST_BIN/redis-server"
-          bun install --frozen-lockfile
           bun test packages/action/src/native-services.integration.test.ts packages/action/src/services.test.ts
 
   action-native-tools:

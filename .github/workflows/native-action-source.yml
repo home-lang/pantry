@@ -56,6 +56,8 @@ jobs:
         env:
           ACTION_MYSQL_URL: ${{ steps.pantry.outputs.mysql-url }}
           ACTION_MYSQL_VERSION: ${{ steps.pantry.outputs.mysql-version }}
+          ACTION_DYNAMODB_URL: ${{ steps.pantry.outputs.dynamodb-url }}
+          ACTION_DYNAMODB_VERSION: ${{ steps.pantry.outputs.dynamodb-version }}
         run: |
           set -e
           test "$POSTGRES_SERVICE_VERSION" = 17.11
@@ -67,6 +69,13 @@ jobs:
           test "$MYSQL_PORT" -ne 3306
           test "$REDIS_PORT" -ne 6379
           test "$TYPESENSE_SERVICE_VERSION" = 30.2
+          if [ '${{ runner.os }}' = Linux ]; then
+            test "$DYNAMODB_SERVICE_VERSION" = 3.3.0
+            test "$ACTION_DYNAMODB_VERSION" = "$DYNAMODB_SERVICE_VERSION"
+            test "$ACTION_DYNAMODB_URL" = "$DYNAMODB_URL"
+            test "$DYNAMODB_HOST" = 127.0.0.1
+            test "$DYNAMODB_PORT" -ne 8000
+          fi
       - name: Exercise real native isolation, authentication, TLS and cleanup
         env:
           PANTRY_NATIVE_SERVICE_TEST_BIN: ${{ github.workspace }}/pantry/.bin
