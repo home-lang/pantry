@@ -148,7 +148,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        segment: [transport, lookup, availability]
+        segment: [transport, lookup, availability, encoding]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

@@ -8,11 +8,11 @@ import { join, resolve } from 'node:path'
 const executable = resolve(process.argv[2] || '')
 if (!process.argv[2]) throw new Error('Pass the actual published or normally built Pantry executable')
 const segment = process.argv[3] || 'all'
-if (!['all', 'transport', 'lookup', 'availability'].includes(segment)) throw new Error('Unknown publication contract segment')
+if (!['all', 'transport', 'lookup', 'availability', 'encoding'].includes(segment)) throw new Error('Unknown publication contract segment')
 const root = await mkdtemp(join(tmpdir(), 'pantry-publication-confirmation-'))
 const name = '@pantry-fixture/confirmation', version = '1.0.0'
 
-async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 'never-visible' | 'stalled-tarball' | 'generic-command' | 'restricted-package' | 'restricted-redirect' | 'restricted-existing') {
+async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 'never-visible' | 'stalled-tarball' | 'generic-command' | 'restricted-package' | 'restricted-redirect' | 'restricted-existing' | 'compressed-metadata' | 'compressed-tarball') {
   const privateMode = mode === 'restricted-package' || mode === 'restricted-redirect' || mode === 'restricted-existing'
   const cwd = join(root, mode)
   await mkdir(cwd)
@@ -54,6 +54,7 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
           return new Response('Private package needs its registry credential', { status: 401 })
         if (uploads === 0 || mode === 'never-visible' || (mode === 'metadata-delay' && metadataReads <= 2))
           return Response.json({ error: 'not yet visible' }, { status: 404 })
+        if (mode === 'compressed-metadata') return new Response(Bun.gzipSync(JSON.stringify(metadata)), { headers: { 'Content-Encoding': 'gzip', 'Content-Type': 'application/json' } })
         return Response.json(metadata)
       }
       if (request.method === 'GET' && path === '/fixture.tgz') {
@@ -69,6 +70,7 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
             start(controller) { controller.enqueue(tarball.subarray(0, 1)) },
           }), { headers: { 'Content-Length': String(tarball.length) } })
         }
+        if (mode === 'compressed-tarball') return new Response(Bun.gzipSync(tarball), { headers: { 'Content-Encoding': 'gzip' } })
         return new Response(mode === 'wrong-bytes' ? 'different immutable bytes' : tarball)
       }
       return new Response('Unexpected publication request', { status: 400 })
@@ -96,7 +98,7 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
     if (privateMode && !credentialReads) throw new Error(`${mode}: private readback never authenticated to its registry`)
     if (foreignCredentialReads) throw new Error('Restricted credentials crossed a redirect origin')
     if (downloadServer && !foreignTarballReads) throw new Error('The separate tarball origin was not exercised')
-    const success = mode === 'metadata-delay' || mode === 'tarball-delay' || mode === 'generic-command' || privateMode
+    const success = mode === 'metadata-delay' || mode === 'tarball-delay' || mode === 'generic-command' || privateMode || mode === 'compressed-metadata' || mode === 'compressed-tarball'
     if (success && (code !== 0 || !tarballReads)) throw new Error(`${mode}: publication was not verified\n${output}`)
     if (!success && (code === 0 || /✓ Published/.test(output))) throw new Error(`${mode}: unverified publication was reported successful\n${output}`)
     if (mode === 'metadata-delay' && metadataReads < 3) throw new Error('Metadata delay was not exercised')
@@ -235,6 +237,10 @@ try {
       console.error(error)
       failures.push(mode)
     }
+  }
+  if (segment === 'all' || segment === 'encoding') for (const mode of ['compressed-metadata', 'compressed-tarball'] as const) {
+    try { await check(mode) }
+    catch (error) { console.error(error); failures.push(mode) }
   }
   if (failures.length) throw new Error(`Publication contracts failed: ${failures.join(', ')}`)
 }
