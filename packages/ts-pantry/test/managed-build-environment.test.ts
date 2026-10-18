@@ -29,8 +29,8 @@ for (const platform of ['linux-x86-64', 'darwin-arm64']) {
       'deps.example.org/library.prefix': '/tmp/managed-library',
       'deps.python.org.prefix': '/tmp/managed-python',
     })
-    const exports = script.split('\n').filter(line => /^export (PKG_CONFIG_PATH|PKG_CONFIG_LIBDIR|LIBRARY_PATH|CPATH|LDFLAGS)=/.test(line)).join('\n')
-    const child = Bun.spawn(['bash', '-ec', `${exports}\nprintf '%s\\n' "$PKG_CONFIG_PATH" "$PKG_CONFIG_LIBDIR" "$LIBRARY_PATH" "$CPATH" "$LDFLAGS"`], {
+    const exports = script.split('\n').filter(line => /^export (PKG_CONFIG_PATH|PKG_CONFIG_LIBDIR|LIBRARY_PATH|C_INCLUDE_PATH|CPLUS_INCLUDE_PATH|LDFLAGS)=/.test(line) || line === 'unset CPATH').join('\n')
+    const child = Bun.spawn(['bash', '-ec', `${exports}\nprintf '%s\\n' "$PKG_CONFIG_PATH" "$PKG_CONFIG_LIBDIR" "$LIBRARY_PATH" "$C_INCLUDE_PATH" "$CPLUS_INCLUDE_PATH" "$CPATH" "$LDFLAGS"`], {
       env: { ...process.env, PKG_CONFIG_PATH: '/unmanaged/pc', PKG_CONFIG_LIBDIR: '/unmanaged/pc', LIBRARY_PATH: '/unmanaged/lib', CPATH: '/unmanaged/include' }, stdout: 'pipe', stderr: 'pipe',
     })
     const [status, stdout] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()])
@@ -108,8 +108,8 @@ test('a build tool can use XML 2.13 while the target links XML 2.15', async () =
     async (graph, directory) => Object.fromEntries([...graph].flatMap(([domain, spec]) => [[`deps.${domain}.prefix`, `${directory}/${domain}`], [`deps.${domain}.version`, spec.includes('2.13') ? '2.13.9' : '2.15.4']])))
   expect(installed.runtimePackages.map(pkg => `${pkg.domain}@${pkg.version}`)).toEqual(['xml.example@2.15.4'])
   const script = generateBuildScript({ build: { script: ['true'] } }, 'fixture', '1.0.0', 'linux-x86-64', '/artifact', '/build', installed.depPaths)
-  const exports = script.split('\n').filter(line => /^export (PATH|PKG_CONFIG_PATH|LIBRARY_PATH|CPATH)=/.test(line)).join('\n')
-  const child = Bun.spawnSync(['bash', '-ec', `${exports}\nprintf '%s\\n' "$PATH" "$PKG_CONFIG_PATH" "$LIBRARY_PATH" "$CPATH"`], { env: { PATH: '/usr/bin:/bin' }, stdout: 'pipe', stderr: 'pipe' })
+  const exports = script.split('\n').filter(line => /^export (PATH|PKG_CONFIG_PATH|LIBRARY_PATH|C_INCLUDE_PATH)=/.test(line) || line === 'unset CPATH').join('\n')
+  const child = Bun.spawnSync(['bash', '-ec', `${exports}\nprintf '%s\\n' "$PATH" "$PKG_CONFIG_PATH" "$LIBRARY_PATH" "$C_INCLUDE_PATH"`], { env: { PATH: '/usr/bin:/bin' }, stdout: 'pipe', stderr: 'pipe' })
   expect(child.exitCode, child.stderr.toString()).toBe(0)
   const [bins, pc, libs, headers] = child.stdout.toString().trim().split('\n')
   expect(bins).toContain('/.build-tools/gettext.example/xml.example/bin')

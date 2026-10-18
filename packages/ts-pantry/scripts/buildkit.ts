@@ -942,8 +942,8 @@ else if (osName === 'linux') {
     if (key.includes('gnu.org/autoconf'))
       autoconfDataDir = `${depPath}/share/autoconf`
     // A dep whose prefix fell back to a system root (/usr, /usr/local) would
-    // contribute /usr/include to CPATH — which the comment below warns breaks
-    // GCC header resolution: forcing /usr/include onto CPATH (≈ -I/usr/include)
+    // contribute /usr/include to the managed include path. Forcing a system
+    // include directory ahead of the compiler default
     // reorders the multiarch search so e.g. <poll.h>'s bits/poll.h chain no
     // longer resolves, producing "incomplete type 'struct pollfd'" (perl ext/IO)
     // and similar. Those system roots are already in the compiler's default
@@ -1004,7 +1004,13 @@ else if (osName === 'linux') {
       }
     }
     if (depIncludePaths.length > 0) {
-      sections.push(`export CPATH="${depIncludePaths.join(':')}"`)
+      // CPATH behaves like -I and would override a project's explicit -isystem
+      // compatibility headers (for example systemd's linux/keyctl.h wrapper).
+      // Language-specific system paths follow explicit -isystem arguments while
+      // keeping declared headers ahead of ambient compiler defaults.
+      sections.push('unset CPATH')
+      for (const variable of ['C_INCLUDE_PATH', 'CPLUS_INCLUDE_PATH', 'OBJC_INCLUDE_PATH', 'OBJCPLUS_INCLUDE_PATH'])
+        sections.push(`export ${variable}="${depIncludePaths.join(':')}"`)
     }
     if (depPkgConfigPaths.length > 0) {
       sections.push(`export PKG_CONFIG_PATH="${depPkgConfigPaths.join(':')}"`)
