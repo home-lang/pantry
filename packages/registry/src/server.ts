@@ -2030,10 +2030,11 @@ export function createServer(
     console.log('  GET  /dashboard/login            - Login')
   }
 
-  const stop = () => {
+  const stop = async (closeActiveConnections = false) => {
     if (server) {
-      server.stop()
+      const stopping = server
       server = null
+      await stopping.stop(closeActiveConnections)
     }
   }
 
