@@ -18,6 +18,8 @@ jobs:
         uses: ./packages/action
         with:
           version: 0.11.93
+          install: 'false'
+          packages: bun.com@1.4.3
       - name: Install first-party JavaScript dependencies
         run: bun install --frozen-lockfile
       - name: Record the exact source and runtime before recipe validation
@@ -29,6 +31,10 @@ jobs:
         run: |
           set -o pipefail
           bun test packages/ts-pantry/test/native-ci-metadata.test.ts packages/ts-pantry/test/native-ci-tools-recipe.test.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts packages/ts-pantry/test/generated-package-docs.test.ts packages/ts-pantry/test/fetch.test.ts packages/action/src/services.test.ts packages/ts-pantry/test/resolve-build-version.test.ts 2>&1 | tee artifacts/native-catalog/recipe-tests.log
+      - name: Verify locked tool selection against the installer contract
+        run: bun test packages/action/src/lock-version.test.ts
+      - name: Typecheck the normal Pantry source
+        run: bun run typecheck
       - name: Lint package documentation generation
         run: bunx --bun pickier run --mode lint packages/ts-pantry/src/fetch.ts packages/ts-pantry/test/generated-package-docs.test.ts packages/ts-pantry/scripts/resolve-build-version.ts packages/ts-pantry/test/resolve-build-version.test.ts packages/action/src/services.ts packages/action/src/services.test.ts
       - name: Lint the native DynamoDB provider and build assets
@@ -43,6 +49,23 @@ jobs:
           git diff --check -- packages/ts-pantry/src/packages packages/zig/src/packages/generated.zig
           git diff --binary -- packages/ts-pantry/src/packages packages/zig/src/packages/generated.zig > artifacts/native-catalog/catalogs.patch
           git rev-parse HEAD > artifacts/native-catalog/source-commit.txt
+      - name: Produce the normal Action bundles from verified source
+        run: |
+          bun run --cwd packages/action build
+          mkdir -p artifacts/native-catalog/action
+          cp packages/action/dist/index.js packages/action/dist/post.js artifacts/native-catalog/action/
+          git rev-parse HEAD > artifacts/native-catalog/action/source-commit.txt
+      - name: Verify that a stale development lock cannot replace the stable compiler
+        uses: ./packages/action
+        with:
+          version: 0.11.93
+          install: 'false'
+          packages: ziglang.org@0.17.0 bun.com@1.4.3
+      - name: Verify the actual managed compiler identity
+        run: |
+          test "$(zig --version)" = 0.17.0
+          case "$(command -v zig)" in "$GITHUB_WORKSPACE"/pantry/*) ;; *) exit 1 ;; esac
+          zig --version > artifacts/native-catalog/zig-version.txt
       - name: Build the native DynamoDB distribution and require its live health check
         if: inputs.verify-dynamodb
         env:
