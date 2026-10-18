@@ -79,34 +79,34 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
+        with:
+          version: '0.11.93'
+          install: 'false'
+          packages: 'bun@1.4.1 darwinsys.com/file@5.47.0 nixos.org/patchelf@0.18.0 curl.se@8.23.0 gnu.org/tar@1.35.0'
 
       - name: Install dependencies
-        run: bun install
-
-      - name: Install artifact tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y file patchelf
+        run: bun install --frozen-lockfile
 
       - name: Build and upload download recipes
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REQUESTED_PACKAGES: ${{ inputs.packages }}
+          TARGET_PLATFORM: ${{ matrix.platform }}
+          FORCE_BUILD: ${{ inputs.force }}
         run: |
           set -o pipefail
           cd packages/ts-pantry
 
-          PKGS=$(echo "${{ github.event.inputs.packages }}" | tr -cd 'a-zA-Z0-9._\-/,' | sed 's/^,*//; s/,*$//')
-          if [ -z "$PKGS" ]; then
-            echo "::error::No valid packages provided"
+          if ! [[ "$REQUESTED_PACKAGES" =~ ^[a-zA-Z0-9][a-zA-Z0-9._/-]*(,[a-zA-Z0-9][a-zA-Z0-9._/-]*)*$ ]]; then
+            echo "::error::Provide comma-separated package domains"
             exit 1
           fi
 
-          ARGS="-b $S3_BUCKET -r $AWS_REGION --platform ${{ matrix.platform }} --download-only -p $PKGS"
-          if [ "${{ github.event.inputs.force || 'false' }}" = "true" ]; then
-            ARGS="$ARGS --force"
+          ARGS=(-b "$S3_BUCKET" -r "$AWS_REGION" --platform "$TARGET_PLATFORM" --download-only -p "$REQUESTED_PACKAGES")
+          if [ "$FORCE_BUILD" = "true" ]; then
+            ARGS+=(--force)
           fi
 
-          echo "Running: bun scripts/build-all-packages.ts $ARGS"
-          bun scripts/build-all-packages.ts $ARGS
+          bun scripts/build-all-packages.ts "${ARGS[@]}"
