@@ -14,7 +14,7 @@ export const recipe: Recipe = {
       const refs = JSON.parse(body.slice(body.indexOf('\n') + 1)) as Record<string, unknown>
       const versions = Object.keys(refs).filter(tag => /^v\d+\.\d+\.\d+$/.test(tag)).map(tag => tag.slice(1))
       if (!versions.length) throw new Error('Keyutils upstream returned no stable release tags')
-      return versions
+      return versions.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))
     },
   },
   // kernel.googlesource.com is the kernel.org Git mirror. Its archive is rooted
