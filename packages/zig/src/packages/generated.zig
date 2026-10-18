@@ -642,7 +642,7 @@ pub const packages = [_]PackageInfo{ .{
     .description = "Amazon DynamoDB Local for development and integration tests",
     .homepage_url = "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html",
     .programs = &[_][]const u8{"dynamodb-local"},
-    .dependencies = &[_][]const u8{"openjdk.org>=17"},
+    .dependencies = &[_][]const u8{ "openjdk.org>=17", "gnu.org/coreutils^9" },
     .build_dependencies = &[_][]const u8{ "maven.apache.org^3", "bun.com>=1.3" },
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{"3.3.0"},
