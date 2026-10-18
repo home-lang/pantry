@@ -9,6 +9,7 @@ import { parseServiceSpecs } from './services'
 import { setSecret } from '@actions/core'
 import { assertServiceDirectory, assertServiceProcess, claimServiceDirectory, serviceProcessIdentity } from './service-ownership'
 import type { ServiceProcessIdentity } from './service-ownership'
+import { requestNativeDynamodb } from './native-dynamodb'
 
 const execute = promisify(execFile)
 const options = { maskSecret: process.env.GITHUB_ACTIONS === 'true' ? setSecret : undefined }
@@ -17,6 +18,50 @@ const mysqlVersion = process.env.PANTRY_NATIVE_MYSQL_TEST_VERSION || '26.7.0'
 const integration = binDir ? describe : describe.skip
 
 integration('Pantry native action services against installed packages', () => {
+  test('DynamoDB has private native databases, owned HTTP readiness and independent cleanup', async () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'pantry-dynamodb-native-')))
+    const started: Awaited<ReturnType<typeof startNativeService>>[] = []
+    try {
+      if (process.platform !== 'linux' || process.arch !== 'x64') {
+        await expect(startNativeService(parseServiceSpecs('dynamodb@3.3.0')[0]!, binDir!, root, options)).rejects.toThrow('Linux x86-64')
+        expect(readdirSync(root)).toEqual([])
+        return
+      }
+      const awsEnvironment = Object.fromEntries(Object.entries(process.env).filter(([name]) => name.startsWith('AWS_')))
+      for (let index = 0; index < 2; index++) started.push(await startNativeService(parseServiceSpecs('dynamodb@3.3.0')[0]!, binDir!, root, options))
+      const [first, second] = started
+      expect(first!.state.directory).not.toBe(second!.state.directory)
+      expect(first!.environment.DYNAMODB_PORT).not.toBe(second!.environment.DYNAMODB_PORT)
+      for (const [index, service] of started.entries()) {
+        expect(service.version).toBe('3.3.0')
+        expect(service.environment.DYNAMODB_HOST).toBe('127.0.0.1')
+        expect(service.environment.DYNAMODB_PORT).not.toBe('8000')
+        expect(Object.keys(service.environment).some(name => name.startsWith('AWS_'))).toBe(false)
+        const port = Number(service.environment.DYNAMODB_PORT)
+        await requestNativeDynamodb(service.state, port, 'CreateTable', { TableName: 'PantryIsolation', AttributeDefinitions: [{ AttributeName: 'id', AttributeType: 'S' }], KeySchema: [{ AttributeName: 'id', KeyType: 'HASH' }], BillingMode: 'PAY_PER_REQUEST' })
+        await requestNativeDynamodb(service.state, port, 'PutItem', { TableName: 'PantryIsolation', Item: { id: { S: 'same-key' }, value: { N: String(index) } } })
+      }
+      // The HTTP mutation must never reach B merely because A supplied its port.
+      await expect(requestNativeDynamodb(first!.state, Number(second!.environment.DYNAMODB_PORT), 'DeleteTable', { TableName: 'PantryIsolation' }, 200)).rejects.toThrow('not owned')
+      for (const [index, service] of started.entries()) {
+        const result = await requestNativeDynamodb(service.state, Number(service.environment.DYNAMODB_PORT), 'GetItem', { TableName: 'PantryIsolation', Key: { id: { S: 'same-key' } }, ConsistentRead: true })
+        expect(result.Item).toEqual({ id: { S: 'same-key' }, value: { N: String(index) } })
+      }
+      await stopNativeService(first!.state)
+      expect(existsSync(first!.state.directory)).toBe(false)
+      expect(await serviceProcessIdentity(first!.state.pid!)).toBeUndefined()
+      expect((await requestNativeDynamodb(second!.state, Number(second!.environment.DYNAMODB_PORT), 'ListTables')).TableNames).toContain('PantryIsolation')
+      const directories = readdirSync(root).sort()
+      await expect(startNativeService(parseServiceSpecs('dynamodb@3.2.0')[0]!, binDir!, root, options)).rejects.toThrow('version mismatch')
+      expect(readdirSync(root).sort()).toEqual(directories)
+      expect(Object.fromEntries(Object.entries(process.env).filter(([name]) => name.startsWith('AWS_')))).toEqual(awsEnvironment)
+    }
+    finally {
+      for (const service of started.reverse()) await stopNativeService(service.state)
+      rmSync(root, { recursive: true, force: true })
+    }
+  }, 60_000)
+
   // Public lifecycle + actual post action: catches parent cancellation before
   // readiness, including lost ownership. Does not prove runner hard-power loss.
   test('post cleanup recovers interrupted startup while preserving a foreign native service', async () => {

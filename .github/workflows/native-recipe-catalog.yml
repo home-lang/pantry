@@ -28,9 +28,11 @@ jobs:
       - name: Verify registration invariants
         run: |
           set -o pipefail
-          bun test packages/ts-pantry/test/native-ci-metadata.test.ts packages/ts-pantry/test/native-ci-tools-recipe.test.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts packages/ts-pantry/test/generated-package-docs.test.ts packages/ts-pantry/test/fetch.test.ts packages/action/src/services.test.ts packages/ts-pantry/test/resolve-build-version.test.ts 2>&1 | tee artifacts/native-catalog/recipe-tests.log
+          bun test packages/ts-pantry/test/native-ci-metadata.test.ts packages/ts-pantry/test/native-ci-tools-recipe.test.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts packages/ts-pantry/test/generated-package-docs.test.ts packages/ts-pantry/test/fetch.test.ts packages/action/src/services.test.ts packages/action/src/native-dynamodb.test.ts packages/ts-pantry/test/resolve-build-version.test.ts 2>&1 | tee artifacts/native-catalog/recipe-tests.log
+      - name: Typecheck the normal Pantry source
+        run: bun run typecheck
       - name: Lint package documentation generation
-        run: bunx --bun pickier run --mode lint packages/ts-pantry/src/fetch.ts packages/ts-pantry/test/generated-package-docs.test.ts packages/ts-pantry/scripts/resolve-build-version.ts packages/ts-pantry/test/resolve-build-version.test.ts packages/action/src/services.ts packages/action/src/services.test.ts
+        run: bunx --bun pickier run --mode lint packages/ts-pantry/src/fetch.ts packages/ts-pantry/test/generated-package-docs.test.ts packages/ts-pantry/scripts/resolve-build-version.ts packages/ts-pantry/test/resolve-build-version.test.ts packages/action/src/services.ts packages/action/src/services.test.ts packages/action/src/native-dynamodb.ts packages/action/src/native-dynamodb.test.ts
       - name: Lint the native DynamoDB provider and build assets
         if: inputs.verify-dynamodb
         run: bunx --bun pickier run --mode lint packages/ts-pantry/scripts/maven-versions.ts packages/ts-pantry/scripts/copy-recipe-props.ts packages/ts-pantry/src/recipes/aws.amazon.com/dynamodb-local.ts packages/ts-pantry/src/recipes/props/aws.amazon.com/dynamodb-local/health.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts
