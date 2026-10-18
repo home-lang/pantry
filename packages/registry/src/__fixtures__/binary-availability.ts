@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { InMemoryAnalytics } from '../analytics'
 import { binaryAttestationKey } from '../binary-publishing'
 import { Registry } from '../registry'
+import { augmentMetadataWithPkgx } from '../pkgx-fallback'
 import { createHandler } from '../server'
 import { InMemoryZigStorage } from '../zig'
 
@@ -29,6 +30,8 @@ const requests: string[] = []
 const unexpectedNetwork: string[] = []
 let metadataReads = 0
 let attestationReads = 0
+let storageHeads = 0
+let fallbackDownloads = 0
 const originalFetch = globalThis.fetch
 
 function storageError(status: number, code: string): Response {
@@ -37,12 +40,24 @@ function storageError(status: number, code: string): Response {
 
 globalThis.fetch = Object.assign(async (input: Parameters<typeof fetch>[0], init?: RequestInit) => {
   const url = new URL(input instanceof Request ? input.url : String(input))
-  if (url.hostname !== 'binary-availability.storage.test' || init?.method !== 'GET') {
+  if (url.hostname === 'dist.pkgx.dev' && url.pathname.startsWith(`/${domain}/`)) {
+    if (init?.method === 'HEAD')
+      return new Response(null, { status: url.pathname.includes('/linux/x86-64/') ? 200 : 404 })
+    fallbackDownloads++
+    return storageError(scenario === 'pending-fallback-503' && fallbackDownloads === 1 ? 503 : 404, 'FixtureUnavailable')
+  }
+  if (url.hostname !== 'binary-availability.storage.test' || !['GET', 'HEAD'].includes(init?.method || 'GET')) {
     unexpectedNetwork.push(`${init?.method || 'GET'} ${url.origin}${url.pathname}`)
     throw new Error('Unexpected network request outside the private S3 fixture')
   }
   const object = decodeURIComponent(url.pathname).replace('/pantry-registry/', '')
   requests.push(object)
+  if (init?.method === 'HEAD') {
+    storageHeads++
+    if (scenario === 'pending-head-503' && storageHeads === 1) return new Response(null, { status: 503 })
+    if (scenario === 'pending-head-denied' && storageHeads === 1) return new Response(null, { status: 403 })
+    return new Response(null, { status: scenario === 'checksum-read-503' ? 200 : 404 })
+  }
   if (object === `binaries/${domain}/metadata.json`) {
     metadataReads++
     if (scenario === 'metadata-missing') return storageError(404, 'NoSuchKey')
@@ -50,7 +65,7 @@ globalThis.fetch = Object.assign(async (input: Parameters<typeof fetch>[0], init
       return storageError(503, 'ServiceUnavailable')
     if (scenario === 'metadata-malformed' && metadataReads === 1)
       return new Response('{')
-    return Response.json(metadata)
+    return Response.json(scenario.startsWith('pending-') ? { ...metadata, versions: {} } : metadata)
   }
   if (object === binaryAttestationKey(key)) {
     attestationReads++
@@ -67,12 +82,18 @@ globalThis.fetch = Object.assign(async (input: Parameters<typeof fetch>[0], init
       artifactSha256: scenario === 'attestation-mismatch' ? 'b'.repeat(64) : digest,
     } })
   }
-  if (object === `${key}.sha256`) return new Response(`${digest}  ${domain}-1.0.0.tar.gz`)
+  if (object === `${key}.sha256`) {
+    if (scenario === 'checksum-read-503' && requests.filter(request => request === object).length === 1)
+      return storageError(503, 'ServiceUnavailable')
+    return new Response(`${digest}  ${domain}-1.0.0.tar.gz`)
+  }
   throw new Error('Unexpected fixture object')
 }, { preconnect: originalFetch.preconnect })
 
 const temporary = mkdtempSync(join(tmpdir(), 'registry-availability-'))
 try {
+  if (scenario.startsWith('pending-') || scenario === 'checksum-read-503')
+    await augmentMetadataWithPkgx(domain, null, ['1.0.0'])
   const registry = new Registry({
     s3Bucket: 'local',
     dynamoTable: 'local',
@@ -93,7 +114,7 @@ try {
   } : undefined
   const handler = createHandler(registry, new InMemoryAnalytics(), new InMemoryZigStorage(), 'http://registry.fixture.test', adapter)
   const path = scenario === 'metadata-route-503' ? `binaries/${domain}/metadata.json`
-    : scenario === 'checksum-503' ? `${key}.sha256` : key
+    : scenario === 'checksum-503' || scenario === 'checksum-read-503' ? `${key}.sha256` : key
   const responses = []
   for (let attempt = 0; attempt < 2; attempt++) {
     // Exercise the public production route with its normal S3 client, including
@@ -106,6 +127,8 @@ try {
       location: response.headers.get('location'),
       cacheControl: response.headers.get('cache-control'),
       retryAfter: response.headers.get('retry-after'),
+      storageHeads,
+      fallbackDownloads,
     })
   }
   console.log(`AVAILABILITY_RESULT ${JSON.stringify({ responses, metadataReads, attestationReads, requests, unexpectedNetwork })}`)

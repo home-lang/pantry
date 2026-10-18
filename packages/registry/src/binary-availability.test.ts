@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { fileURLToPath } from 'node:url'
 
 interface Result {
-  responses: { status: number, code?: string, location: string | null, cacheControl: string | null, retryAfter: string | null }[]
+  responses: { status: number, code?: string, location: string | null, cacheControl: string | null, retryAfter: string | null, storageHeads: number, fallbackDownloads: number }[]
   metadataReads: number
   attestationReads: number
   requests: string[]
@@ -27,6 +27,7 @@ function observe(scenario: string): Result {
       S3_FORCE_PATH_STYLE: 'true',
       S3_ACCESS_KEY_ID: 'fixture-key',
       S3_SECRET_ACCESS_KEY: 'fixture-secret',
+      PANTRY_BINARY_STAGING_SECRET: 'private-fixture-staging-secret-1234567890',
     },
   })
   if (child.exitCode !== 0)
@@ -40,6 +41,24 @@ function observe(scenario: string): Result {
 }
 
 describe('binary storage availability through the production HTTP route', () => {
+  it.each(['pending-head-503', 'pending-head-denied'])('%s refuses fallback until storage confirms absence', (scenario) => {
+    const result = observe(scenario)
+    expect(result.responses[0]).toMatchObject({ status: 503, code: 'BINARY_STORAGE_UNAVAILABLE', cacheControl: 'no-store', storageHeads: 1, fallbackDownloads: 0 })
+    expect(result.responses[1]).toMatchObject({ status: 404, storageHeads: 2, fallbackDownloads: 1 })
+  })
+
+  it('does not materialize or retry a checksum after an unavailable storage read', () => {
+    const result = observe('checksum-read-503')
+    expect(result.responses[0]).toMatchObject({ status: 503, code: 'BINARY_STORAGE_UNAVAILABLE', cacheControl: 'no-store', storageHeads: 0, fallbackDownloads: 0 })
+    expect(result.responses[1]).toMatchObject({ status: 200, storageHeads: 0, fallbackDownloads: 0 })
+  })
+
+  it('distinguishes a fallback provider outage from confirmed missing fallback bytes', () => {
+    const result = observe('pending-fallback-503')
+    expect(result.responses[0]).toMatchObject({ status: 503, code: 'BINARY_STORAGE_UNAVAILABLE', cacheControl: 'no-store', fallbackDownloads: 1 })
+    expect(result.responses[1]).toMatchObject({ status: 404, fallbackDownloads: 2 })
+  })
+
   it.each(['attestation-503', 'attestation-denied', 'attestation-timeout'])('%s recovers immediately without caching a failed attestation read', (scenario) => {
     const result = observe(scenario)
     expect(result.responses[0]).toMatchObject({

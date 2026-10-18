@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
-import { S3Client } from './aws-client'
+import { isS3ObjectNotFound, S3Client } from './aws-client'
 
 const originalFetch = globalThis.fetch
 afterEach(() => { globalThis.fetch = originalFetch })
@@ -97,6 +97,15 @@ describe('idempotent S3 writes', () => {
 })
 
 describe('typed S3 read failures', () => {
+  it.each([403, 404, 503])('preserves a bodyless HEAD %s and confirms only 404 as absence', async (status) => {
+    installFetch(async () => new Response(null, { status }))
+    let failure: unknown
+    try { await client().headObject('registry', 'artifact') }
+    catch (error) { failure = error }
+    expect(failure).toMatchObject({ name: 'S3RequestError', operation: 'HEAD', statusCode: status })
+    expect(isS3ObjectNotFound(failure)).toBe(status === 404)
+  })
+
   it.each([
     [404, 'NoSuchKey'],
     [403, 'AccessDenied'],
