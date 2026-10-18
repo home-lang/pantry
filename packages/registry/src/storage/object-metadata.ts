@@ -1,4 +1,5 @@
 import type { S3Client } from './aws-client'
+import { isS3ObjectNotFound } from './aws-client'
 import { InMemoryMetadataStorage } from './metadata'
 
 /**
@@ -15,6 +16,7 @@ import { InMemoryMetadataStorage } from './metadata'
  * snapshot from the bucket.
  */
 export class ObjectMetadataStorage extends InMemoryMetadataStorage {
+  private hydrated = false
   private s3: S3Client
   private bucket: string
   private key: string
@@ -38,19 +40,13 @@ export class ObjectMetadataStorage extends InMemoryMetadataStorage {
   private async load(): Promise<void> {
     try {
       const buf = await this.s3.getObjectBuffer(this.bucket, this.key)
-      if (!buf || buf.byteLength === 0)
-        return
       const data = JSON.parse(buf.toString('utf-8'))
       this.applyState(data)
+      this.hydrated = true
     }
     catch (err) {
-      // A missing object on first run is expected (404/403). Anything else we
-      // log loudly but still start empty rather than block the server boot —
-      // and we do NOT overwrite the remote object until the next real save.
-      const msg = (err as Error).message || ''
-      if (!/\b40[34]\b/.test(msg)) {
-        console.error(`ObjectMetadataStorage: failed to load ${this.bucket}/${this.key}: ${msg}. Starting empty.`)
-      }
+      if (!isS3ObjectNotFound(err)) throw err
+      this.hydrated = true
     }
   }
 
@@ -65,6 +61,8 @@ export class ObjectMetadataStorage extends InMemoryMetadataStorage {
   }
 
   private async save(): Promise<void> {
+    if (!this.hydrated)
+      throw new Error(`Snapshot not hydrated: ${this.key}`)
     // Serialize saves so a slow upload can't be overtaken by a newer one.
     while (this.savePromise) await this.savePromise
     this.savePromise = this._doSave()
@@ -88,6 +86,7 @@ export class ObjectMetadataStorage extends InMemoryMetadataStorage {
 
   /** Flush any pending save immediately (e.g. before shutdown). */
   async flush(): Promise<void> {
+    await this.loaded
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout)
       this.saveTimeout = null

@@ -1,4 +1,5 @@
 import type { S3Client } from './aws-client'
+import { isS3ObjectNotFound } from './aws-client'
 
 /**
  * Reusable debounced JSON-snapshot persistence to an S3-compatible bucket.
@@ -13,6 +14,7 @@ import type { S3Client } from './aws-client'
  * the bucket under their own keys by the owning store.
  */
 export class ObjectSnapshot {
+  private hydrated = false
   private saveTimeout: ReturnType<typeof setTimeout> | null = null
   private savePromise: Promise<void> | null = null
 
@@ -27,17 +29,13 @@ export class ObjectSnapshot {
   async load(): Promise<unknown | null> {
     try {
       const buf = await this.s3.getObjectBuffer(this.bucket, this.key)
-      if (!buf || buf.byteLength === 0)
-        return null
-      return JSON.parse(buf.toString('utf-8'))
+      const state = JSON.parse(buf.toString('utf-8'))
+      this.hydrated = true
+      return state
     }
     catch (err) {
-      // A missing object on first run is expected (404/403). Anything else we
-      // surface but still start empty rather than block boot — and we do NOT
-      // overwrite the remote object until the next real save.
-      const msg = (err as Error).message || ''
-      if (!/\b40[34]\b/.test(msg))
-        console.error(`ObjectSnapshot: failed to load ${this.bucket}/${this.key}: ${msg}. Starting empty.`)
+      if (!isS3ObjectNotFound(err)) throw err
+      this.hydrated = true
       return null
     }
   }
@@ -53,6 +51,8 @@ export class ObjectSnapshot {
   }
 
   private async save(): Promise<void> {
+    if (!this.hydrated)
+      throw new Error(`Snapshot not hydrated: ${this.key}`)
     // Serialize saves so a slow upload can't be overtaken by a newer one.
     while (this.savePromise) await this.savePromise
     this.savePromise = this.s3.putObject({

@@ -1,3 +1,4 @@
+import { S3RequestError } from './storage/aws-client'
 import { describe, expect, it } from 'bun:test'
 import { BuildStatusStore } from './storage/build-status'
 
@@ -7,7 +8,7 @@ function mockBucket() {
   const client = {
     async getObjectBuffer(_bucket: string, key: string): Promise<Buffer> {
       const value = objects.get(key)
-      if (!value) throw new Error('S3 GET failed: 404 Not Found')
+      if (!value) throw new S3RequestError('GET', 404, 'NoSuchKey')
       return value
     },
     async putObject(input: { key: string, body: Buffer | string }): Promise<void> {
@@ -74,7 +75,7 @@ describe('BuildStatusStore partial coverage', () => {
     const client = {
       async getObjectBuffer(_bucket: string, key: string): Promise<Buffer> {
         const value = objects.get(key)
-        if (!value) throw new Error('S3 GET failed: 404 Not Found')
+        if (!value) throw new S3RequestError('GET', 404, 'NoSuchKey')
         return value
       },
       async putObject(input: { key: string, body: Buffer | string }): Promise<void> {
@@ -135,7 +136,7 @@ describe('BuildStatusStore partial coverage', () => {
     const client = {
       async getObjectBuffer(_bucket: string, key: string): Promise<Buffer> {
         const value = objects.get(key)
-        if (!value) throw new Error('S3 GET failed: 404 Not Found')
+        if (!value) throw new S3RequestError('GET', 404, 'NoSuchKey')
         return value
       },
       async putObject(input: { key: string, body: Buffer | string }): Promise<void> {
@@ -196,7 +197,7 @@ describe('BuildStatusStore retired platforms', () => {
     const client = {
       async getObjectBuffer(_bucket: string, key: string): Promise<Buffer> {
         const value = objects.get(key)
-        if (!value) throw new Error('S3 GET failed: 404 Not Found')
+        if (!value) throw new S3RequestError('GET', 404, 'NoSuchKey')
         return value
       },
       async putObject(input: { key: string, body: Buffer | string }): Promise<void> {

@@ -8,6 +8,7 @@
  * starts empty.
  */
 
+import { S3RequestError } from './storage/aws-client'
 import { describe, expect, it } from 'bun:test'
 import { ObjectAnalytics } from './storage/object-analytics'
 
@@ -17,7 +18,7 @@ function mockBucket() {
     async getObjectBuffer(_bucket: string, key: string): Promise<Buffer> {
       const v = store.get(key)
       if (!v)
-        throw new Error('S3 GET failed: 404 Not Found')
+        throw new S3RequestError('GET', 404, 'NoSuchKey')
       return v
     },
     async putObject(o: { bucket: string, key: string, body: Buffer | string }): Promise<void> {

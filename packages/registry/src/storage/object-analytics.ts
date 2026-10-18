@@ -1,4 +1,5 @@
 import type { S3Client } from './aws-client'
+import { isS3ObjectNotFound } from './aws-client'
 import { InMemoryAnalytics } from '../analytics'
 
 /**
@@ -16,6 +17,7 @@ import { InMemoryAnalytics } from '../analytics'
  * are debounced (counters accumulate in memory between flushes).
  */
 export class ObjectAnalytics extends InMemoryAnalytics {
+  private hydrated = false
   private s3: S3Client
   private bucket: string
   private key: string
@@ -39,16 +41,12 @@ export class ObjectAnalytics extends InMemoryAnalytics {
   private async load(): Promise<void> {
     try {
       const buf = await this.s3.getObjectBuffer(this.bucket, this.key)
-      if (!buf || buf.byteLength === 0)
-        return
       this.applyAnalyticsState(JSON.parse(buf.toString('utf-8')))
+      this.hydrated = true
     }
     catch (err) {
-      const msg = (err as Error).message || ''
-      // A missing object on first run is expected (404/403); start empty otherwise.
-      if (!/\b40[34]\b/.test(msg)) {
-        console.error(`ObjectAnalytics: failed to load ${this.bucket}/${this.key}: ${msg}. Starting empty.`)
-      }
+      if (!isS3ObjectNotFound(err)) throw err
+      this.hydrated = true
     }
   }
 
@@ -66,6 +64,8 @@ export class ObjectAnalytics extends InMemoryAnalytics {
   }
 
   private async save(): Promise<void> {
+    if (!this.hydrated)
+      throw new Error(`Snapshot not hydrated: ${this.key}`)
     while (this.savePromise) await this.savePromise
     this.savePromise = this.doSave()
     try {
@@ -88,6 +88,7 @@ export class ObjectAnalytics extends InMemoryAnalytics {
 
   /** Flush any pending save immediately (e.g. before shutdown). */
   async flush(): Promise<void> {
+    await this.loaded
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout)
       this.saveTimeout = null
