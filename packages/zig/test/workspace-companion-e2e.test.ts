@@ -41,6 +41,17 @@ describe.skipIf(!binary)('source CLI companion workspace lifecycle', () => {
       run(['install', '--frozen-lockfile'])
       expect(readFileSync(lockPath, 'utf8')).toBe(lock)
 
+      // Explicit temporary native tools must honor --no-save just like a
+      // workspace install. Keep every existing declaration and lock byte.
+      const packageBeforeNoSave = readFileSync(join(root, 'package.json'), 'utf8')
+      const depsBeforeNoSave = readFileSync(join(root, 'deps.yaml'), 'utf8')
+      run(['install', 'bun.com@1.4.2', '--no-save', '--ignore-scripts'])
+      expect(readFileSync(lockPath, 'utf8')).toBe(lock)
+      expect(readFileSync(join(root, 'package.json'), 'utf8')).toBe(packageBeforeNoSave)
+      expect(readFileSync(join(root, 'deps.yaml'), 'utf8')).toBe(depsBeforeNoSave)
+      run(['install'])
+      expect(readFileSync(lockPath, 'utf8')).toBe(lock)
+
       // A real managed Bun lifecycle failure must not publish the staged
       // combined lock, even though the companion runtime installed correctly.
       const manifest = join(root, 'package.json')
