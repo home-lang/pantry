@@ -28,7 +28,9 @@ async function run(name: string, command: string[]): Promise<string> {
 try {
   proof.cliVersion = (await run('cli-version', [cli, '--version'])).trim()
   assert.match(String(proof.cliVersion), /^pantry \d+\.\d+\.\d+ \([0-9a-f]+\)$/)
-  await run('git-install', [cli, 'install', 'git-scm.org@2.53.0', '--no-save', '--verbose'])
+  const installed = await run('git-install', [cli, 'install', 'git-scm.org@2.53.0', '--no-save', '--verbose'])
+  assert.match(installed, /\[verbose:installer\] install\(\) called: name=git-scm\.org, version=2\.53\.0/,
+    'Named package installs must forward verbose diagnostics to the actual installer')
   const bin = join(root, 'pantry/.bin')
   const programs = programsForPlatform(gitRecipe, 'linux-x86-64')
   assert(!programs.includes('git-credential-osxkeychain'))

@@ -422,6 +422,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             options.auto_link = false;
         } else if (std.mem.eql(u8, arg, "--quiet") or std.mem.eql(u8, arg, "-q")) {
             options.quiet = true;
+        } else if (std.mem.eql(u8, arg, "--verbose") or std.mem.eql(u8, arg, "-v")) {
+            options.verbose = true;
         } else if (!std.mem.startsWith(u8, arg, "-")) {
             try package_args.append(allocator, arg);
         }
@@ -1415,6 +1417,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
     var installer = try install.Installer.init(allocator, &pkg_cache);
     installer.modules_dir = options.modules_dir;
+    installer.verbose = options.verbose;
     defer installer.deinit();
 
     // Start timing (millisecond precision)
@@ -1606,6 +1609,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         var result = installer.install(spec, .{
             .project_root = project_root,
+            .verbose = options.verbose,
             .quiet = false, // Show download progress
         }) catch |err| {
             style.clearLine();
