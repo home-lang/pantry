@@ -59,11 +59,13 @@ How the run works:
   the order is the same on every machine.
 - **Workspace ranges.** `workspace:` and `catalog:` ranges are rewritten in the
   published manifest. The `package.json` on disk is not changed.
-- **Versions already on npm are skipped.** Before packing, pantry asks npm
-  whether `name@version` exists and its advertised tarball can be downloaded
-  and verified. Only then is the package skipped. Re-running
-  a release publishes only what's missing. `--force-republish` turns the check
-  off, but npm still refuses a version it already has.
+- **Versions already on npm are skipped after verification.** Public packages
+  receive an anonymous existing-version check before packing. Their metadata
+  and advertised tarball must be readable and verified before skipping.
+  Restricted packages authenticate through the publication path; an immutable
+  version conflict is skipped only after authenticated metadata and tarball
+  verification. Re-running a release publishes only what's missing.
+  `--force-republish` disables skipping, but npm still refuses an existing version.
 - **Held back.** If a package fails to publish, every package that lists it in
   `dependencies`, `peerDependencies`, or `optionalDependencies` is held back
   for the rest of the run. Publishing them would put versions on npm that
@@ -147,8 +149,9 @@ resolved stops that package with an error that names the dependency.
 `--access` accepts only `public` or `restricted`. An empty tag is rejected.
 Both are checked before authentication.
 
-The dry run still asks npm which versions exist, and still runs lifecycle
-scripts unless you pass `--ignore-scripts`.
+The dry run still performs the public existing-version precheck and runs
+lifecycle scripts unless you pass `--ignore-scripts`. It does not acquire a
+credential to inspect restricted versions.
 
 ## Authentication
 

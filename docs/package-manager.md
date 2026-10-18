@@ -212,10 +212,11 @@ or upload bytes.
 
 At a monorepo root, the npm pipeline publishes every non-private package under
 `packages/` in dependency order (`dependencies`, `devDependencies`, and
-required `peerDependencies`, ties broken by name). Before packing, it asks the
-registry whether `name@version` exists, downloads and verifies its advertised
-tarball, and skips the package only after that succeeds;
-`--force-republish` disables that check. A package whose `dependencies`,
+required `peerDependencies`, ties broken by name). Public packages receive an
+anonymous existing-version precheck before packing; the advertised tarball must
+be readable and verified before skipping. Restricted packages authenticate
+through the publication path and verify an immutable-version conflict before
+skipping. `--force-republish` disables skipping. A package whose `dependencies`,
 `peerDependencies`, or `optionalDependencies` include a sibling that did not
 publish in the same run is held back rather than published uninstallable, and
 the run exits non-zero. Root `README.md`, `LICENSE`, and `LICENSE.md` are
