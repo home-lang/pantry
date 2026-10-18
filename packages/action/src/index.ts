@@ -17,7 +17,7 @@ import { installRequiredSystemPackages, jsPackageManager, needsJsInstall, pantry
 import { installResolvedSystemPackage } from './system-packages'
 import { nativeArtifactCacheIdentity } from './native-cache'
 import type { ServiceSpec } from './services'
-import { mergeServicePackages, nativeServiceEnvironment, parseRedisVersion, parseServiceSpecs, readServiceLog, redisLaunchArgs, waitForRedisPid } from './services'
+import { mergeServicePackages, nativeServiceEnvironment, parseServiceSpecs } from './services'
 import type { NativeServiceState } from './native-services'
 import { startNativeService } from './native-services'
 import * as fs from 'node:fs'
@@ -67,84 +67,26 @@ function configureNativeLibraryEnvironment(pantryBinDir: string, platform: Platf
 }
 
 async function startRequestedServices(services: ServiceSpec[], pantryBinDir: string, platform: Platform): Promise<void> {
-  const serviceEnvironment = configureNativeLibraryEnvironment(pantryBinDir, platform)
+  configureNativeLibraryEnvironment(pantryBinDir, platform)
   if (!services.length) return
   if (platform.os === 'windows') throw new Error('Pantry Action services are not yet supported on Windows runners')
-
   const nativeStates: NativeServiceState[] = []
   for (const service of services) {
-    if (service.name !== 'redis') {
-      core.startGroup(`Starting Pantry ${service.name} service`)
-      try {
-        const started = await startNativeService(service, pantryBinDir, process.env.RUNNER_TEMP || os.tmpdir())
-        nativeStates.push(started.state)
-        core.saveState('native-services', JSON.stringify(nativeStates))
-        for (const [key, value] of Object.entries(started.environment)) {
-          if (/PASSWORD|API_KEY/.test(key)) core.setSecret(value)
-          core.exportVariable(key, value)
-        }
-        core.setOutput(`${service.name}-url`, started.environment[service.name === 'postgres' ? 'POSTGRES_URL' : 'TYPESENSE_URL'])
-        core.setOutput(`${service.name}-version`, started.version)
-        core.info(`${service.name} ${started.version} is healthy with private job data`)
-      }
-      finally { core.endGroup() }
-      continue
-    }
-    const serviceDir = path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'pantry-services', 'redis')
-    fs.mkdirSync(serviceDir, { recursive: true })
-    const server = path.join(pantryBinDir, 'redis-server')
-    const client = path.join(pantryBinDir, 'redis-cli')
-    const pidfile = path.join(serviceDir, 'redis.pid')
-    const logfile = path.join(serviceDir, 'redis.log')
-    if (!fs.existsSync(server) || !fs.existsSync(client))
-      throw new Error('Redis service binaries were not installed into pantry/.bin')
-
-    core.startGroup('Starting Pantry Redis service')
+    core.startGroup(`Starting Pantry ${service.name} service`)
     try {
-      await exec.exec(server, redisLaunchArgs(process.env.RUNNER_TEMP || os.tmpdir()), { env: serviceEnvironment })
-      let pid: number
-      try {
-        pid = await waitForRedisPid(pidfile)
+      const started = await startNativeService(service, pantryBinDir, process.env.RUNNER_TEMP || os.tmpdir(), { maskSecret: core.setSecret })
+      nativeStates.push(started.state)
+      core.saveState('native-services', JSON.stringify(nativeStates))
+      for (const [key, value] of Object.entries(started.environment)) {
+        if (/PASSWORD|API_KEY|REDISCLI_AUTH/.test(key)) core.setSecret(value)
+        core.exportVariable(key, value)
       }
-      catch (error) {
-        throw new Error(`${error instanceof Error ? error.message : String(error)}\nRedis startup log:\n${readServiceLog(logfile)}`)
-      }
-      core.saveState('redis-cli', client)
-      core.saveState('redis-started', 'true')
-
-      let ready = false
-      for (let attempt = 0; attempt < 60; attempt++) {
-        const exitCode = await exec.exec(client, ['-h', '127.0.0.1', '-p', '6379', 'ping'], {
-          env: serviceEnvironment,
-          silent: true,
-        }).catch(() => 1)
-        if (exitCode === 0) {
-          ready = true
-          break
-        }
-        await new Promise(resolve => setTimeout(resolve, 500))
-      }
-      if (!ready) throw new Error(`Redis did not become healthy. Startup log:\n${readServiceLog(logfile)}`)
-
-      let versionOutput = ''
-      await exec.exec(server, ['--version'], {
-        env: serviceEnvironment,
-        listeners: { stdout: (data: Buffer) => { versionOutput += data.toString() } },
-        silent: true,
-      })
-      const version = parseRedisVersion(versionOutput)
-      if (service.expectedVersion && service.expectedVersion !== version)
-        throw new Error(`Redis service requested ${service.expectedVersion} but installed ${version}`)
-      const url = 'redis://127.0.0.1:6379/0'
-      core.exportVariable('REDIS_URL', url)
-      core.exportVariable('REDIS_SERVICE_VERSION', version)
-      core.setOutput('redis-url', url)
-      core.setOutput('redis-version', version)
-      core.info(`Redis ${version} (pid ${pid}) is healthy at ${url}`)
+      const urlKey = service.name === 'postgres' ? 'POSTGRES_URL' : `${service.name.toUpperCase()}_URL`
+      core.setOutput(`${service.name}-url`, started.environment[urlKey])
+      core.setOutput(`${service.name}-version`, started.version)
+      core.info(`${service.name} ${started.version} is healthy with private job data`)
     }
-    finally {
-      core.endGroup()
-    }
+    finally { core.endGroup() }
   }
 }
 
@@ -1081,30 +1023,6 @@ export async function run(): Promise<void> {
         reassertDeps,
         dep => installSystemPackage(dep, pantryDir, lockedVersions, path.join(installDir, platform.binaryName), resolvedSystemVersions, true),
       )
-    }
-
-    // ── Ensure installed binaries are executable ──
-    // Some extracted archives (e.g. zig from ziglang.org) may lose +x during copy
-    if (platform.os !== 'windows') {
-      try {
-        const binEntries = fs.readdirSync(pantryBinDir)
-        for (const entry of binEntries) {
-          const binPath = path.join(pantryBinDir, entry)
-          try {
-            fs.chmodSync(binPath, 0o755)
-          }
-          catch { /* not a file or already executable */ }
-          // Also chmod the symlink target if it's a symlink (but only if within pantry dir)
-          try {
-            const realPath = fs.realpathSync(binPath)
-            if (!path.relative(pantryDir, realPath).startsWith('..')) {
-              fs.chmodSync(realPath, 0o755)
-            }
-          }
-          catch { /* not a symlink */ }
-        }
-      }
-      catch { /* .bin dir may not exist yet */ }
     }
 
     // ── Configure PATH for zig install directories ──
