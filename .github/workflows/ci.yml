@@ -181,7 +181,10 @@ jobs:
           ACTION_REDIS_URL: ${{ steps.pantry.outputs.redis-url }}
           ACTION_REDIS_VERSION: ${{ steps.pantry.outputs.redis-version }}
         run: |
-          test "$REDIS_URL" = "redis://127.0.0.1:6379/0"
+          test "$REDIS_HOST" = 127.0.0.1
+          test "$REDIS_PORT" -ne 6379
+          test -n "$REDIS_PASSWORD"
+          test -n "$REDIS_URL"
           test "$ACTION_REDIS_URL" = "$REDIS_URL"
           test "$ACTION_REDIS_VERSION" = "8.8.0"
           test "$REDIS_SERVICE_VERSION" = "$ACTION_REDIS_VERSION"
@@ -192,24 +195,42 @@ jobs:
 
   action-native-services:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        mysql: ['26.7.0', '8.4.11']
     steps:
       - uses: actions/checkout@v6
-      - name: Set up native PostgreSQL and Typesense through Pantry
+      - name: Set up native MySQL, PostgreSQL, Redis and Typesense through Pantry
+        id: pantry
         uses: ./packages/action
         with:
           install: 'false'
+          version: 0.11.91
           packages: bun.sh@1.4.2
-          services: postgres@17.10 typesense@30.2
+          services: postgres@17.11 mysql@${{ matrix.mysql }} typesense@30.2 redis@8.8.0
       - name: Verify authenticated PostgreSQL and action exports
+        env:
+          ACTION_MYSQL_URL: ${{ steps.pantry.outputs.mysql-url }}
+          ACTION_MYSQL_VERSION: ${{ steps.pantry.outputs.mysql-version }}
         run: |
-          test "$POSTGRES_SERVICE_VERSION" = 17.10
+          test "$POSTGRES_SERVICE_VERSION" = 17.11
           test "$(psql -X -A -t -c 'SELECT 42')" = 42
           test "$TYPESENSE_SERVICE_VERSION" = 30.2
+          test "$MYSQL_SERVICE_VERSION" = "${{ matrix.mysql }}"
+          test "$ACTION_MYSQL_VERSION" = "$MYSQL_SERVICE_VERSION"
+          test "$ACTION_MYSQL_URL" = "$MYSQL_URL"
+          test "$MYSQL_HOST" = 127.0.0.1
+          test "$MYSQL_PORT" -ne 3306
       - name: Verify native isolation, indexing and cleanup
         env:
           PANTRY_NATIVE_SERVICE_TEST_BIN: ${{ github.workspace }}/pantry/.bin
-        run: bun test packages/action/src/native-services.integration.test.ts packages/action/src/services.test.ts
+          PANTRY_NATIVE_MYSQL_TEST_VERSION: ${{ matrix.mysql }}
+        run: |
+          test -x "$PANTRY_NATIVE_SERVICE_TEST_BIN/mysqld"
+          test -x "$PANTRY_NATIVE_SERVICE_TEST_BIN/redis-server"
+          bun test packages/action/src/native-services.integration.test.ts packages/action/src/services.test.ts
 
   action-native-tools:
     runs-on: ubuntu-latest

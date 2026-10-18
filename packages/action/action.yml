@@ -16,7 +16,7 @@ inputs:
     required: false
     default: ''
   services:
-    description: Space-separated native CI services (redis@X.Y.Z, postgres@17.10, typesense@30.2); each is health-checked and stopped after the job
+    description: Space-separated native CI services (redis@X.Y.Z, postgres@17.11, mysql@26.7.0, typesense@30.2); each is health-checked and stopped after the job
     required: false
     default: ''
   config-path:
@@ -239,6 +239,10 @@ outputs:
     description: Authenticated loopback PostgreSQL URL for this job's private database
   postgres-version:
     description: Running PostgreSQL version
+  mysql-url:
+    description: Authenticated loopback MySQL URL with mandatory TLS for this job
+  mysql-version:
+    description: Running MySQL version
   typesense-url:
     description: Loopback Typesense URL for this job's private search node
   typesense-version:

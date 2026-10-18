@@ -31,7 +31,7 @@ This action allows you to easily install dependencies with pantry in your GitHub
 | Name       | Description                           | Required | Default              |
 |------------|---------------------------------------|----------|----------------------|
 | packages   | Space-separated list of packages to install (overrides auto-detection) | No  | (empty) - auto-detects from project files |
-| services   | Native CI services to install, start, health-check, and stop: `redis@X.Y.Z`, `postgres@17.10`, `typesense@30.2` | No | (empty) |
+| services   | Native CI services to install, start, health-check, and stop: `redis@X.Y.Z`, `postgres@17.11`, `mysql@26.7.0`, `typesense@30.2` | No | (empty) |
 | config-path | Path to pantry config file        | No       | `pantry.config.ts` |
 | package-dir | Directory to publish from for monorepo packages | No | (empty) - repository root |
 
@@ -62,11 +62,13 @@ Pin the action to a release commit in production workflows.
 
 Use the service input when tests need Redis. Pantry installs the exact requested
 Redis package, binds it only to loopback, disables persistence for the ephemeral
-runner, waits for `PONG`, exports `REDIS_URL` and `REDIS_SERVICE_VERSION`, and
-stops the process after the job.
+runner, allocates a private port and random password, waits for authenticated
+`PONG` and server identity, and stops only its owned process after the job.
+`REDIS_URL`, `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDISCLI_AUTH`
+and `REDIS_SERVICE_VERSION` describe that instance.
 
-Daemon startup is bounded in two phases: the action first waits up to 10 seconds
-for a live process ID, then up to 30 seconds for `redis-cli ping`. A startup
+Foreground startup records the process identity, then waits up to 30 seconds
+for an authenticated `redis-cli ping`. A startup
 failure includes the Redis logfile in the Actions error so port collisions,
 binary linkage failures, and invalid configuration are directly diagnosable.
 
@@ -86,11 +88,12 @@ also available as action outputs. Pin both the action revision and the Pantry
 binary `version` in release-sensitive workflows so source and CLI behavior are
 independently reproducible.
 
-### PostgreSQL and Typesense
+### PostgreSQL, MySQL and Typesense
 
 Pantry installs the complete native dependency graph, creates private service
 data for each action invocation, allocates loopback ports and checks the running
-versions. PostgreSQL readiness includes an authenticated SQL query; Typesense
+versions. PostgreSQL readiness includes an authenticated SQL query. MySQL
+readiness verifies the private data directory and an authenticated TLS session; Typesense
 readiness includes an authenticated API request. The post action stops the
 owned services and removes their private data, including after a failed job.
 
@@ -100,15 +103,21 @@ owned services and removes their private data, including after a failed job.
   with:
     install: 'false'
     packages: bun.sh@1.4.2
-    services: postgres@17.10 typesense@30.2
+    services: postgres@17.11 mysql@26.7.0 typesense@30.2
 ```
 
 PostgreSQL exports `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`,
-`POSTGRES_URL` and `POSTGRES_SERVICE_VERSION`. Typesense exports
+`POSTGRES_URL` and `POSTGRES_SERVICE_VERSION`. MySQL exports `MYSQL_HOST`,
+`MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`, `MYSQL_SSL_CA`,
+`MYSQL_URL` (with `ssl=true`) and `MYSQL_SERVICE_VERSION`. Its disposable user
+can create and drop test databases; TCP connections require encryption. Native
+Bun clients can use the URL directly or pass `{ tls: true }` explicitly;
+both forms are checked against the live encrypted session. The URL flag also
+supplies SSL configuration to framework drivers. Typesense exports
 `TYPESENSE_HOST`, `TYPESENSE_PORT`, `TYPESENSE_PROTOCOL`, `TYPESENSE_API_KEY`,
 `TYPESENSE_URL` and `TYPESENSE_SERVICE_VERSION`. Credentials are random per job
 and masked in action logs. `postgres-url`, `postgres-version`, `typesense-url`
-and `typesense-version` are also action outputs. Keep these services on the
+`mysql-url`, `mysql-version` and `typesense-version` are also action outputs. Keep these services on the
 provided addresses; no fixed host ports or pre-existing databases are needed.
 
 ### Apple code signing
