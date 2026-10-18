@@ -3,6 +3,7 @@ import { nativeArtifactCacheIdentity } from './native-cache'
 import type { RegistryMetadata } from '../../ts-pantry/src/installer'
 import type { Platform } from './types'
 import { packages } from '../../ts-pantry/src/packages'
+import { mergeServicePackages, parseServiceSpecs } from './services'
 
 const platform: Platform = { os: 'linux', arch: 'x64', binaryName: 'pantry', assetName: '' }
 const metadata = (digest: string, macDigest = 'c'): RegistryMetadata => ({ versions: {
@@ -30,6 +31,31 @@ test('transitive artifact rebuilds invalidate cache, independent of input orderi
 test('another platform rebuild does not invalidate the installed platform', async () => {
   const identity = (digest: string) => nativeArtifactCacheIdentity(['openssh.com'], platform, async () => metadata('a', digest), async () => [])
   expect(await identity('b')).toBe(await identity('c'))
+})
+
+test('service roots and their runtime dependencies participate in the restored prefix identity', async () => {
+  const specs = mergeServicePackages('bun.com@1.4.3', parseServiceSpecs('dynamodb@3.3.0')).split(/\s+/)
+  let serverDigest = 'a', javaDigest = 'b'
+  const seen = new Set<string>()
+  const read = async (domain: string): Promise<RegistryMetadata> => {
+    seen.add(domain)
+    const version = domain === 'aws.amazon.com/dynamodb-local' ? '3.3.0' : '17.0.18'
+    return { versions: { [version]: { platforms: { 'linux-x86-64': {
+      tarball: `${domain}/${version}.tar.gz`,
+      sha256: (domain === 'aws.amazon.com/dynamodb-local' ? serverDigest : javaDigest).repeat(64),
+    } } } } }
+  }
+  const dependencies = async (domain: string) => domain === 'aws.amazon.com/dynamodb-local' ? ['openjdk.org@17.0.18'] : []
+  const identity = () => nativeArtifactCacheIdentity(specs, platform, read, dependencies)
+  const before = await identity()
+  expect(seen).toEqual(new Set(['aws.amazon.com/dynamodb-local', 'openjdk.org']))
+  serverDigest = 'c'
+  const rebuiltServer = await identity()
+  expect(rebuiltServer).not.toBe(before)
+  javaDigest = 'd'
+  expect(await identity()).not.toBe(rebuiltServer)
+  javaDigest = 'z'
+  await expect(identity()).rejects.toThrow('missing artifact digest')
 })
 
 test('unknown or unverified artifacts cannot authorize cache reuse', async () => {
