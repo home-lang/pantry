@@ -53,7 +53,7 @@ export interface S3ClientOptions {
 /** Keep transport status separate from the S3 error code carried on the wire. */
 export class S3RequestError extends Error {
   constructor(
-    readonly operation: 'GET',
+    readonly operation: 'GET' | 'HEAD',
     readonly statusCode: number,
     readonly code?: string,
   ) {
@@ -65,15 +65,17 @@ export class S3RequestError extends Error {
 export function isS3ObjectNotFound(error: unknown): boolean {
   return error instanceof S3RequestError
     && error.statusCode === 404
-    && (error.code === 'NoSuchKey' || error.code === 'NotFound')
+    && (error.code === 'NoSuchKey' || error.code === 'NotFound'
+      // S3 HEAD returns an empty body, even for an absent object.
+      || (error.operation === 'HEAD' && error.code === undefined))
 }
 
-async function objectReadError(response: Response): Promise<S3RequestError> {
+async function objectReadError(response: Response, operation: 'GET' | 'HEAD' = 'GET'): Promise<S3RequestError> {
   const body = await response.text().catch(() => '')
   // This is the structured S3 XML response, not an exception message. A 403,
   // malformed response, timeout, or missing bucket cannot prove object absence.
   const code = /<(?:[\w.-]+:)?Code>([\w.-]+)<\/(?:[\w.-]+:)?Code>/.exec(body)?.[1]
-  return new S3RequestError('GET', response.status, code)
+  return new S3RequestError(operation, response.status, code)
 }
 
 /**
@@ -323,8 +325,7 @@ export class S3Client {
     })
 
     if (!response.ok) {
-      const text = await response.text().catch(() => '')
-      throw new Error(`S3 HEAD failed: ${response.status} ${text}`)
+      throw await objectReadError(response, 'HEAD')
     }
 
     const result: Record<string, string> = {}

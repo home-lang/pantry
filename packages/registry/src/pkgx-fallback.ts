@@ -259,18 +259,15 @@ export async function materializeFromPkgx(
     const work = mkdtempSync(join(tmpdir(), `pkgx-${safe}-`))
     try {
       const xzPath = join(work, 'pkg.tar.xz')
-      try {
-        const res = await fetch(url, { signal: AbortSignal.timeout(120000) })
-        if (!res.ok || !res.body)
-          return null
-        await pipeline(
-          Readable.fromWeb(res.body as never),
-          createWriteStream(xzPath),
-        )
-      }
-      catch {
+      const res = await fetch(url, { signal: AbortSignal.timeout(120000) })
+      if (res.status === 404)
         return null
-      }
+      if (!res.ok || !res.body)
+        throw new Error(`pkgx download unavailable: HTTP ${res.status}`)
+      await pipeline(
+        Readable.fromWeb(res.body as never),
+        createWriteStream(xzPath),
+      )
       const exDir = join(work, 'ex')
       mkdirSync(exDir, { recursive: true })
       execSync(`tar -xJf "${xzPath}" -C "${exDir}"`, { stdio: 'pipe' })
@@ -284,7 +281,7 @@ export async function materializeFromPkgx(
           root = join(domDir, vs[0])
       }
       if (!existsSync(root))
-        return null
+        throw new Error('pkgx archive is missing its package directory')
 
       const gzPath = join(work, 'out.tar.gz')
       execSync(`tar -czf "${gzPath}" -C "${root}" .`, { stdio: 'pipe' })
@@ -319,9 +316,10 @@ export async function materializeFromPkgx(
       if (err instanceof BinaryPublishError && err.code === 'MALWARE_DETECTED') {
         _augCache.delete(domain)
         _pending.delete(pendKey(domain, version, platform))
+        return null
       }
       console.error(`pkgx materialize failed for ${key}:`, (err as Error).message)
-      return null
+      throw err
     }
     finally {
       try { rmSync(work, { recursive: true, force: true }) }

@@ -5291,7 +5291,9 @@ async function ensureBinaryAvailable(
     await client.headObject(process.env.S3_BUCKET || 'pantry-registry', s3Key)
     return true
   }
-  catch { /* missing — try the on-the-fly pkgx fallback below */ }
+  catch (error) {
+    if (!isS3ObjectNotFound(error)) throw error
+  }
   const m = parseBinaryKey(s3Key)
   if (!m)
     return false
@@ -5555,6 +5557,7 @@ async function handleBinaryProxy(
       buffer = await binaryStore.getObject(s3Key)
     }
     catch (missErr) {
+      if (!isS3ObjectNotFound(missErr)) throw missErr
       const tarKey = s3Key.replace(/\.sha256$/, '')
       const ck = parseBinaryKey(tarKey)
       if (!isChecksum || storage || !ck || !isPendingMaterialize(ck.domain, ck.version, ck.platform))
