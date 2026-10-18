@@ -16,7 +16,7 @@ jobs:
       - name: Install first-party JavaScript dependencies
         run: bun install --frozen-lockfile
       - name: Verify registration invariants
-        run: bun test packages/ts-pantry/test/native-ci-metadata.test.ts packages/ts-pantry/test/native-ci-tools-recipe.test.ts
+        run: bun test packages/ts-pantry/test/native-ci-metadata.test.ts packages/ts-pantry/test/native-ci-tools-recipe.test.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts
       - name: Generate native package metadata and both installer catalogs
         run: |
           set -e
