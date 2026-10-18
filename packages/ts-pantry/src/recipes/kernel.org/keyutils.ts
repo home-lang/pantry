@@ -29,6 +29,12 @@ export const recipe: Recipe = {
   },
   build: {
     script: [
+      // Correct the two nonexistent exports in the released upstream map.
+      // https://lore.kernel.org/keyrings/85561febfcf0618a9280448d5c53775646f470d6.1703712863.git.nvinson234@gmail.com/raw
+      {
+        run: "sed -i '/^[[:space:]]*keyctl_restrict;$/d; /^[[:space:]]*keyctl_dh_compute_kdf_alloc;$/d' version.lds",
+        if: '<=1.6.3',
+      },
       'make --jobs {{hw.concurrency}} LIBDIR={{prefix}}/lib USRLIBDIR={{prefix}}/lib BUILDFOR=64-bit CFLAGS="${CFLAGS:-} -O2 -Wall -Werror" libkeyutils.so',
       'mkdir -p "{{prefix}}/lib/pkgconfig" "{{prefix}}/include" "{{prefix}}/share/licenses/libkeyutils"',
       'cp -a libkeyutils.so* "{{prefix}}/lib/"',
@@ -42,6 +48,8 @@ export const recipe: Recipe = {
     script: [
       'readelf --dynamic "{{prefix}}/lib/libkeyutils.so.1" | grep -F "[libkeyutils.so.1]"',
       'readelf --version-info "{{prefix}}/lib/libkeyutils.so.1" | grep -F KEYUTILS_1.0',
+      'readelf --dyn-syms --wide "{{prefix}}/lib/libkeyutils.so.1" | grep -F "keyctl_get_keyring_ID@@KEYUTILS_0.3"',
+      'readelf --dyn-syms --wide "{{prefix}}/lib/libkeyutils.so.1" | grep -F "keyctl_pkey_query@@KEYUTILS_1.6"',
       'pkg-config --exists libkeyutils',
       'printf "#include <keyutils.h>\\nint main(void) { key_serial_t (*entry)(key_serial_t, int) = keyctl_get_keyring_ID; return entry == 0; }\\n" > probe.c',
       'cc probe.c $(pkg-config --cflags --libs libkeyutils) -o probe',
