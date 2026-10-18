@@ -73,6 +73,7 @@ const base = await listen(registry)
 try {
   const scenarios = segment === 'metadata' ? ['503', '403', 'malformed', 'null', 'array', 'disconnect', 'stalled-head', 'stalled-body', 'artifact503', 'artifact403', 'redirect'] : [segment]
   for (const scenario of scenarios) {
+    let timer: ReturnType<typeof setTimeout> | undefined
     try {
       mode = scenario
       requests = []
@@ -89,7 +90,8 @@ try {
         stdout: 'pipe', stderr: 'pipe',
       })
       let killed = false
-      const timer = setTimeout(() => { killed = true; child?.kill() }, scenario.startsWith('artifact-stalled') ? 330_000 : 45_000)
+      const ownedChild = child
+      timer = setTimeout(() => { killed = true; ownedChild.kill() }, scenario.startsWith('artifact-stalled') ? 330_000 : 45_000)
       const [stdout, stderr, exit] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited])
       clearTimeout(timer)
       child = undefined
@@ -118,6 +120,7 @@ try {
       console.error(failures.at(-1))
     }
     finally {
+      clearTimeout(timer)
       if (child) { child.kill(); await child.exited; child = undefined }
       registry.closeAllConnections()
       foreign.closeAllConnections()
