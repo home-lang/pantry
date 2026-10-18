@@ -2,7 +2,7 @@ import type { ActionInputs, Platform } from './types'
 import { boolInput } from './bool-input'
 import { preferArchivedReleaseAssets, rawAssetNamesForArchives, resolveReleaseFilePatterns } from './release-assets'
 import { normalizeReleaseMakeLatest, resolveSemanticMakeLatest } from './release-latest'
-import { downloadReleaseAssetReliably } from './release-download'
+import { installBootstrap } from './bootstrap'
 import { isRetryableGitHubReleaseError, retryGitHubReleaseOperation, uploadReleaseAssetReliably } from './release-upload'
 import { deliverReleaseToAppStore } from './release-app-store'
 import { setupAppleSigning } from './apple-signing'
@@ -30,7 +30,6 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as github from '@actions/github'
 import * as glob from '@actions/glob'
-import * as tc from '@actions/tool-cache'
 import { getPrimaryBinary } from '../../ts-pantry/src/installer'
 import { isKnownAlias, resolvePackageDomain } from '../../ts-pantry/src/utils'
 
@@ -159,31 +158,7 @@ async function resolveVersion(version: string): Promise<string> {
 }
 
 async function downloadAndInstall(version: string, platform: Platform): Promise<string> {
-  if (version !== 'latest') {
-    const cached = tc.find('pantry', version, platform.arch)
-    if (cached) {
-      ensurePackageExecutorAliases(cached, platform)
-      return cached
-    }
-  }
-
-  // Use /releases/latest/download for non-semver versions (like 'main', 'latest')
-  const isSemver = /^\d+\.\d+/.test(version)
-  const url = !isSemver
-    ? `https://github.com/${REPO}/releases/latest/download/${platform.assetName}`
-    : `https://github.com/${REPO}/releases/download/v${version}/${platform.assetName}`
-
-  const zipPath = await downloadReleaseAssetReliably(
-    `Pantry ${version} ${platform.os}-${platform.arch} release asset`,
-    () => tc.downloadTool(url),
-    { onRetry: message => core.warning(message) },
-  )
-  const dir = await tc.extractZip(zipPath)
-
-  if (platform.os !== 'windows')
-    await exec.exec('chmod', ['+x', path.join(dir, platform.binaryName)])
-
-  const installDir = version !== 'latest' ? await tc.cacheDir(dir, 'pantry', version, platform.arch) : dir
+  const installDir = await installBootstrap({ version, platform, onRetry: message => core.warning(message) })
   ensurePackageExecutorAliases(installDir, platform)
   return installDir
 }

@@ -82,11 +82,11 @@ export function isRetryableReleaseDownloadError(error: unknown): boolean {
     || RETRYABLE_NETWORK_MESSAGE.test(message)
 }
 
-export async function downloadReleaseAssetReliably(
+export async function downloadReleaseAssetReliably<T>(
   label: string,
-  download: () => Promise<string>,
+  download: () => Promise<T>,
   options: ReleaseDownloadRetryOptions = {},
-): Promise<string> {
+): Promise<T> {
   const maxAttempts = options.maxAttempts ?? DEFAULT_RELEASE_DOWNLOAD_MAX_ATTEMPTS
   const retryDelayMs = options.retryDelayMs ?? 2000
   const sleep = options.sleep ?? (milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)))
