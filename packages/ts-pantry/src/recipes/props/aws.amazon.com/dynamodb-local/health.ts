@@ -40,23 +40,31 @@ async function ownedSocket(port: number, pid: number) {
       socket.once('connect', resolve)
       socket.once('error', reject)
     }), remaining())
-    const inodes = new Set<string>()
-    for (const fd of readdirSync(`/proc/${pid}/fd`)) {
-      try {
-        const match = /^socket:\[(\d+)\]$/.exec(readlinkSync(`/proc/${pid}/fd/${fd}`))
-        if (match) inodes.add(match[1]!)
+    const acceptedBy = Date.now() + remaining()
+    // TCP connect completes before Java accepts the queued connection. Wait
+    // for its real accepted descriptor, on this same socket, within the
+    // existing per-request and overall health deadlines. Never send a request
+    // to an unproven listener or reconnect after proving a different socket.
+    while (Date.now() < acceptedBy && !socket.destroyed) {
+      const inodes = new Set<string>()
+      for (const fd of readdirSync(`/proc/${pid}/fd`)) {
+        try {
+          const match = /^socket:\[(\d+)\]$/.exec(readlinkSync(`/proc/${pid}/fd/${fd}`))
+          if (match) inodes.add(match[1]!)
+        }
+        catch { /* Java may close an unrelated descriptor while it is sampled. */ }
       }
-      catch { /* Java may close an unrelated descriptor while it is sampled. */ }
+      const owned = ['tcp', 'tcp6'].some(protocol => readFileSync(`/proc/net/${protocol}`, 'utf8').split('\n').some(line => {
+        const fields = line.trim().split(/\s+/)
+        return fields[3] === '01'
+          && Number.parseInt(fields[1]?.split(':')[1] || '', 16) === port
+          && Number.parseInt(fields[2]?.split(':')[1] || '', 16) === socket.localPort
+          && inodes.has(fields[9] || '')
+      }))
+      if (owned) return socket
+      await Bun.sleep(10)
     }
-    const owned = ['tcp', 'tcp6'].some(protocol => readFileSync(`/proc/net/${protocol}`, 'utf8').split('\n').some(line => {
-      const fields = line.trim().split(/\s+/)
-      return fields[3] === '01'
-        && Number.parseInt(fields[1]?.split(':')[1] || '', 16) === port
-        && Number.parseInt(fields[2]?.split(':')[1] || '', 16) === socket.localPort
-        && inodes.has(fields[9] || '')
-    }))
-    if (!owned) throw new Error('DynamoDB accepted connection is not owned by the health-check child')
-    return socket
+    throw new Error('DynamoDB accepted connection is not owned by the health-check child')
   }
   catch (error) {
     socket.destroy()
