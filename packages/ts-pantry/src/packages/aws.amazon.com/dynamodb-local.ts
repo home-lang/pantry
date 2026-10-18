@@ -8,7 +8,7 @@
  *
  * @install `pantry install aws.amazon.com/dynamodb-local`
  * @homepage https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html
- * @dependencies `openjdk.org>=17`
+ * @dependencies `openjdk.org>=17`, `gnu.org/coreutils^9`
  * @buildDependencies `maven.apache.org^3`, `bun.com>=1.3` - required only when building from source
  *
  * @example
@@ -61,6 +61,7 @@ export const dynamodblocalPackage = {
   */
   dependencies: [
     'openjdk.org>=17',
+    'gnu.org/coreutils^9',
   ] as const,
   /**
   * Build dependencies for this package.
