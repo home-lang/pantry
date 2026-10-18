@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     # This job now builds/tests the source CLI as well as Bun and every native
     # suite. Cold compilation exhausted the old aggregate ten-minute budget.
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v6
@@ -105,6 +105,20 @@ jobs:
           cd packages/zig
           zig build -Doptimize=Debug -j2
           PANTRY_SOURCE_CLI="$PWD/zig-out/bin/pantry" bun test test/workspace-companion-e2e.test.ts
+
+      - name: Verify Git installation with the source Linux CLI
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          PANTRY_TEST_CLI: packages/zig/zig-out/bin/pantry
+        run: bun .github/scripts/linux-native-tools.ts
+
+      - name: Retain source Linux CLI verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-linux-native-tools
+          path: artifacts/linux-native-tools
+          if-no-files-found: error
 
       - name: Install native runtime fixture tools through Pantry
         uses: ./packages/action
