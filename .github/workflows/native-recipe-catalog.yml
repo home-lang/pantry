@@ -20,8 +20,15 @@ jobs:
           version: 0.11.93
       - name: Install first-party JavaScript dependencies
         run: bun install --frozen-lockfile
+      - name: Record the exact source and runtime before recipe validation
+        run: |
+          mkdir -p artifacts/native-catalog
+          git rev-parse HEAD > artifacts/native-catalog/source-commit.txt
+          bun --version > artifacts/native-catalog/bun-version.txt
       - name: Verify registration invariants
-        run: bun test packages/ts-pantry/test/native-ci-metadata.test.ts packages/ts-pantry/test/native-ci-tools-recipe.test.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts
+        run: |
+          set -o pipefail
+          bun test packages/ts-pantry/test/native-ci-metadata.test.ts packages/ts-pantry/test/native-ci-tools-recipe.test.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts 2>&1 | tee artifacts/native-catalog/recipe-tests.log
       - name: Lint the native DynamoDB provider and build assets
         if: inputs.verify-dynamodb
         run: bunx --bun pickier run --mode lint packages/ts-pantry/scripts/maven-versions.ts packages/ts-pantry/scripts/copy-recipe-props.ts packages/ts-pantry/src/recipes/aws.amazon.com/dynamodb-local.ts packages/ts-pantry/src/recipes/props/aws.amazon.com/dynamodb-local/health.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts
