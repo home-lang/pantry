@@ -33,22 +33,35 @@ export function assertServiceDirectory(directory: string, owner: string): void {
 export async function serviceProcessIdentity(pid: number): Promise<ServiceProcessIdentity | undefined> {
   if (!Number.isSafeInteger(pid) || pid <= 1) throw new Error('Invalid native service PID')
   if (process.platform === 'linux') {
-    try {
-      const directory = `/proc/${pid}`
+    const directory = `/proc/${pid}`
+    const snapshot = (): string[] => {
       const fields = readFileSync(join(directory, 'stat'), 'utf8')
-      const trailing = fields.slice(fields.lastIndexOf(')') + 2).split(' ')
-      // A zombie has exited and cannot be signalled as a running service.
-      if (trailing[0] === 'Z') return undefined
-      return {
-        pid, uid: statSync(directory).uid, group: Number(trailing[2]),
-        birth: trailing[19]!,
-        command: readFileSync(join(directory, 'cmdline'), 'utf8').replaceAll('\0', ' ').trim(),
+      return fields.slice(fields.lastIndexOf(')') + 2).split(' ')
+    }
+    const exited = (fields: string[]): boolean => ['Z', 'X', 'x'].includes(fields[0]!)
+    for (let attempt = 0; attempt < 20; attempt++) {
+      try {
+        const before = snapshot()
+        if (exited(before)) return undefined
+        const uid = statSync(directory).uid
+        const command = readFileSync(join(directory, 'cmdline'), 'utf8').replaceAll('\0', ' ').trim()
+        const after = snapshot()
+        if (before[19] !== after[19] || before[2] !== after[2])
+          throw new Error('Native service process ownership changed while reading its identity')
+        if (exited(after)) return undefined
+        if (command) return { pid, uid, group: Number(after[2]), birth: after[19]!, command }
+        // Linux clears the address space before publishing zombie state. An
+        // empty cmdline between those events is not a different live command
+        // and is not proof of exit. Resample until the kernel proves either;
+        // a persistently unverifiable process still fails closed.
+        await new Promise(resolve => setTimeout(resolve, 5))
+      }
+      catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined
+        throw error
       }
     }
-    catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined
-      throw error
-    }
+    throw new Error('Could not verify native service process identity; retained private data')
   }
   if (process.platform !== 'darwin') throw new Error('Native service ownership requires Linux or macOS')
   const result = await execute('/bin/ps', ['-p', String(pid), '-o', 'uid=,pgid=,stat=,lstart=,command='], { timeout: 2000 }).catch((error) => {
