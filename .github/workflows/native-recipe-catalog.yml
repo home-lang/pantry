@@ -6,6 +6,10 @@ on:
         description: Build the immutable DynamoDB Local recipe and require its live database health check
         type: boolean
         default: false
+      verify-publication:
+        description: Require real HTTP public-availability and immutable-tarball checks from the published CLI
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -25,6 +29,9 @@ jobs:
           mkdir -p artifacts/native-catalog
           git rev-parse HEAD > artifacts/native-catalog/source-commit.txt
           bun --version > artifacts/native-catalog/bun-version.txt
+      - name: Verify public publication completion against an isolated registry
+        if: inputs.verify-publication
+        run: bun .github/scripts/verify-npm-publication.ts "$(command -v pantry)"
       - name: Verify registration invariants
         run: |
           set -o pipefail
