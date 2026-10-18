@@ -1,3 +1,4 @@
+import { S3RequestError } from './storage/aws-client'
 import { describe, expect, test } from 'bun:test'
 import { ObjectPhpStorage } from './php'
 import { ObjectZigStorage } from './zig'
@@ -14,7 +15,7 @@ class MockS3 {
   async getObjectBuffer(bucket: string, key: string): Promise<Buffer> {
     const v = this.store.get(`${bucket}/${key}`)
     if (!v)
-      throw new Error('404 Not Found')
+      throw new S3RequestError('GET', 404, 'NoSuchKey')
     return v
   }
 

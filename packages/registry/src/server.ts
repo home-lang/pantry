@@ -6846,7 +6846,16 @@ if (import.meta.main) {
   // Ensure auth storage uses the same DynamoDB table as the registry
   const authStorage = createAuthStorage(dynamoTable, awsRegion)
 
-  const { start } = createServer(registry, port, analytics, undefined, undefined, undefined, authStorage)
+  const zigStorage = createZigStorage()
+  const phpStorage = createPhpStorage()
+  // Hydrate durable state before accepting any request that can mutate it.
+  // Only a confirmed missing object can initialize an empty registry.
+  await Promise.all([registry.metadata, analytics, authStorage, zigStorage, phpStorage].map(async (store) => {
+    if ('ready' in store && typeof store.ready === 'function')
+      await store.ready()
+  }))
+
+  const { start } = createServer(registry, port, analytics, zigStorage, undefined, phpStorage, authStorage)
   start()
 
   console.log('\nEnvironment:')

@@ -7,6 +7,7 @@
  * used to hold), and that a missing snapshot starts empty rather than throwing.
  */
 
+import { S3RequestError } from './storage/aws-client'
 import type { CommitPublish, PackageMetadata } from './types'
 import { describe, expect, it } from 'bun:test'
 import { ObjectMetadataStorage } from './storage/object-metadata'
@@ -18,7 +19,7 @@ function mockBucket() {
     async getObjectBuffer(_bucket: string, key: string): Promise<Buffer> {
       const v = store.get(key)
       if (!v)
-        throw new Error('S3 GET failed: 404 Not Found')
+        throw new S3RequestError('GET', 404, 'NoSuchKey')
       return v
     },
     async putObject(o: { bucket: string, key: string, body: Buffer | string }): Promise<void> {
