@@ -7,7 +7,6 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install aws.amazon.com/dynamodb-local`
- * @name `dynamodb-local`
  * @homepage https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html
  * @dependencies `openjdk.org>=17`
  * @buildDependencies `maven.apache.org^3`, `bun.com>=1.3` - required only when building from source
@@ -16,11 +15,7 @@
  * ```typescript
  * import { pantry } from 'ts-pantry'
  *
- * // Access the package
- * const pkg = pantry.dynamodblocal
- * // Or access via domain
- * const samePkg = pantry.awsamazoncomdynamodblocal
- * console.log(pkg === samePkg) // true
+ * const pkg = pantry.awsamazoncomdynamodblocal
  * console.log(pkg.name)        // "dynamodb-local"
  * console.log(pkg.description) // "Amazon DynamoDB Local for development and integ..."
  * console.log(pkg.programs)    // ["dynamodb-local"]
@@ -82,10 +77,6 @@ export const dynamodblocalPackage = {
   versions: [
     '3.3.0',
   ] as const,
-  /**
-  * Alternative names for this package.
-  * You can use any of these names to access the package.
-  */
   aliases: [] as const,
 }
 

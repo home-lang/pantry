@@ -14,7 +14,7 @@
  * ```typescript
  * import { pantry } from 'ts-pantry'
  *
- * const pkg = pantry.githubcomhatoooha
+ * const pkg = pantry.githubcomhatoo
  * console.log(pkg.name)        // "oha"
  * console.log(pkg.description) // "Native HTTP load generator with paced requests ..."
  * console.log(pkg.programs)    // ["oha"]

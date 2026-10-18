@@ -14,7 +14,7 @@
  * ```typescript
  * import { pantry } from 'ts-pantry'
  *
- * const pkg = pantry.githubcomfirecrackermicrovmfirecracker
+ * const pkg = pantry.githubcomfirecrackermicrovm
  * console.log(pkg.name)        // "firecracker"
  * console.log(pkg.description) // "Native KVM microVM monitor and jailer."
  * console.log(pkg.programs)    // ["firecracker", "jailer"]
