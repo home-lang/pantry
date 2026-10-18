@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, readFile, rm, stat } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, readFile, realpath, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { recipe } from '../../packages/ts-pantry/src/recipes/android.com/cmdline-tools'
 
 assert.equal(process.platform, 'linux')
@@ -45,8 +45,12 @@ try {
   // sdkmanager resolves its linked package and JVM through the normal SDK scripts.
   assert.match((await run('sdkmanager-version', [join(bin, 'sdkmanager'), '--version'])).trim(), /^\d+(?:\.\d+)*$/)
   env.ANDROID_HOME = join(root, 'managed SDK health')
+  const tools = dirname(dirname(await realpath(join(bin, 'apkanalyzer'))))
+  const relocated = join(env.ANDROID_HOME, 'cmdline-tools/latest')
+  await mkdir(dirname(relocated), { recursive: true })
+  await cp(tools, relocated, { recursive: true })
   await run('sdkmanager-build-tools', [join(bin, 'sdkmanager'), `--sdk_root=${env.ANDROID_HOME}`, 'build-tools;35.0.0'])
-  await run('apkanalyzer-help', [join(bin, 'apkanalyzer'), '--help'])
+  await run('apkanalyzer-help', [join(relocated, 'bin/apkanalyzer'), '--help'])
   proof.programs = recipe.programs
   proof.passed = true
 }

@@ -47,8 +47,9 @@ export const recipe: Recipe = {
       // APK Analyzer constructs its native build-tools provider even for help.
       // Provision a real, private SDK fixture with this managed sdkmanager;
       // the fixture lives outside the published prefix.
-      'export ANDROID_HOME="{{srcroot}}/_health-sdk"',
-      'mkdir -p "$ANDROID_HOME"',
+      'export ANDROID_HOME="{{srcroot}}/SDK health fixture"',
+      'mkdir -p "$ANDROID_HOME/cmdline-tools"',
+      'cp -R "{{prefix}}/libexec/cmdline-tools/latest" "$ANDROID_HOME/cmdline-tools/latest"',
       'printf \'y\\n%.0s\' {1..100} | "{{prefix}}/bin/sdkmanager" --sdk_root="$ANDROID_HOME" "build-tools;35.0.0"',
     ],
     env: {
@@ -66,9 +67,9 @@ export const recipe: Recipe = {
   test: {
     required: true,
     script: [
-      'export ANDROID_HOME="{{srcroot}}/_health-sdk"',
+      'export ANDROID_HOME="{{srcroot}}/SDK health fixture"',
       'sdkmanager --version >/dev/null',
-      'apkanalyzer --help >/dev/null',
+      '"$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" --help >/dev/null',
     ],
   },
 }
