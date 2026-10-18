@@ -95,3 +95,26 @@ describe('idempotent S3 writes', () => {
     }
   })
 })
+
+describe('typed S3 read failures', () => {
+  it.each([
+    [404, 'NoSuchKey'],
+    [403, 'AccessDenied'],
+    [503, 'ServiceUnavailable'],
+    [429, 'SlowDown'],
+  ] as const)('preserves HTTP %s and its wire error code %s', async (status, code) => {
+    installFetch(async () => new Response(`<Error><Code>${code}</Code></Error>`, { status }))
+    await expect(client().getObjectBuffer('registry', 'metadata.json')).rejects.toMatchObject({
+      name: 'S3RequestError',
+      operation: 'GET',
+      statusCode: status,
+      code,
+    })
+  })
+
+  it('continues returning the exact binary bytes on a successful read', async () => {
+    const bytes = new Uint8Array([0, 255, 128, 1, 0])
+    installFetch(async () => new Response(bytes))
+    expect(await client().getObjectBuffer('registry', 'artifact')).toEqual(Buffer.from(bytes))
+  })
+})

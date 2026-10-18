@@ -1,0 +1,105 @@
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { InMemoryAnalytics } from '../analytics'
+import { binaryAttestationKey } from '../binary-publishing'
+import { Registry } from '../registry'
+import { createHandler } from '../server'
+import { InMemoryZigStorage } from '../zig'
+
+// A separate process gives every scenario fresh production caches and storage
+// configuration. Only this fixture's S3 host is intercepted; no public storage,
+// package service, registry credential, or injected BinaryStorage is used.
+const scenario = process.argv[2]
+const domain = 'binary-availability.fixture.test'
+const key = `binaries/${domain}/1.0.0/linux-x86-64/${domain}-1.0.0.tar.gz`
+const digest = 'a'.repeat(64)
+const record = {
+  tarball: key,
+  sha256: digest,
+  size: 32,
+  malwareScan: { verdict: 'clean', artifactSha256: digest },
+}
+const metadata = {
+  name: domain,
+  latestVersion: '1.0.0',
+  versions: { '1.0.0': { platforms: { 'linux-x86-64': record } } },
+}
+const requests: string[] = []
+const unexpectedNetwork: string[] = []
+let metadataReads = 0
+let attestationReads = 0
+const originalFetch = globalThis.fetch
+
+function storageError(status: number, code: string): Response {
+  return new Response(`<Error><Code>${code}</Code></Error>`, { status })
+}
+
+globalThis.fetch = Object.assign(async (input: Parameters<typeof fetch>[0], init?: RequestInit) => {
+  const url = new URL(input instanceof Request ? input.url : String(input))
+  if (url.hostname !== 'binary-availability.storage.test' || init?.method !== 'GET') {
+    unexpectedNetwork.push(`${init?.method || 'GET'} ${url.origin}${url.pathname}`)
+    throw new Error('Unexpected network request outside the private S3 fixture')
+  }
+  const object = decodeURIComponent(url.pathname).replace('/pantry-registry/', '')
+  requests.push(object)
+  if (object === `binaries/${domain}/metadata.json`) {
+    metadataReads++
+    if (scenario === 'metadata-missing') return storageError(404, 'NoSuchKey')
+    if ((scenario === 'metadata-503' || scenario === 'metadata-route-503') && metadataReads === 1)
+      return storageError(503, 'ServiceUnavailable')
+    if (scenario === 'metadata-malformed' && metadataReads === 1)
+      return new Response('{')
+    return Response.json(metadata)
+  }
+  if (object === binaryAttestationKey(key)) {
+    attestationReads++
+    if (scenario === 'attestation-missing') return storageError(404, 'NoSuchKey')
+    if (scenario === 'attestation-malformed') return new Response('{')
+    if ((scenario === 'attestation-503' || scenario === 'checksum-503') && attestationReads === 1)
+      return storageError(503, 'ServiceUnavailable')
+    if (scenario === 'attestation-denied' && attestationReads === 1)
+      return storageError(403, 'AccessDenied')
+    if (scenario === 'attestation-timeout' && attestationReads === 1)
+      throw new DOMException('Fixture storage timed out', 'TimeoutError')
+    return Response.json({ scan: {
+      verdict: scenario === 'attestation-unclean' ? 'infected' : 'clean',
+      artifactSha256: scenario === 'attestation-mismatch' ? 'b'.repeat(64) : digest,
+    } })
+  }
+  if (object === `${key}.sha256`) return new Response(`${digest}  ${domain}-1.0.0.tar.gz`)
+  throw new Error('Unexpected fixture object')
+}, { preconnect: originalFetch.preconnect })
+
+const temporary = mkdtempSync(join(tmpdir(), 'registry-availability-'))
+try {
+  const registry = new Registry({
+    s3Bucket: 'local',
+    dynamoTable: 'local',
+    baseUrl: 'http://registry.fixture.test',
+    localStoragePath: temporary,
+    npmFallback: false,
+  })
+  const handler = createHandler(registry, new InMemoryAnalytics(), new InMemoryZigStorage(), 'http://registry.fixture.test')
+  const path = scenario === 'metadata-route-503' ? `binaries/${domain}/metadata.json`
+    : scenario === 'checksum-503' ? `${key}.sha256` : key
+  const responses = []
+  for (let attempt = 0; attempt < 2; attempt++) {
+    // Exercise the public production route with its normal S3 client, including
+    // both the active-record lookup and the independent scan attestation read.
+    const response = await handler(new Request(`http://registry.fixture.test/${path}`))
+    const body = await response.text()
+    responses.push({
+      status: response.status,
+      code: response.headers.get('content-type')?.includes('application/json') ? JSON.parse(body).code : undefined,
+      location: response.headers.get('location'),
+      cacheControl: response.headers.get('cache-control'),
+      retryAfter: response.headers.get('retry-after'),
+    })
+  }
+  console.log(`AVAILABILITY_RESULT ${JSON.stringify({ responses, metadataReads, attestationReads, requests, unexpectedNetwork })}`)
+}
+finally {
+  globalThis.fetch = originalFetch
+  rmSync(temporary, { recursive: true, force: true })
+}
