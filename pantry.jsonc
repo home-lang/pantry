@@ -7,8 +7,8 @@
     "zig-cli": { "version": "4629d10a7e8aa6de9c26996109138683235a2273", "source": "github", "repo": "zig-utils/zig-cli" },
     "zig-test-framework": { "version": "c149e957e3989bdb8f9148a161f6eef4ae63d75e", "source": "github", "repo": "zig-utils/zig-test-framework" },
     "zig-bump": { "version": "15ddba7d124d32dbb7884dd74ec942baced2d6bf", "source": "github", "repo": "zig-utils/zig-bump" },
-    "bun.sh": "1.4.1",
-    "ziglang.org": "0.17.0-dev"
+    "bun.sh": "1.4.3",
+    "ziglang.org": "0.17.0"
   },
   "devDependencies": {
     "better-dx": "^0.2.0"

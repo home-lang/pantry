@@ -195,6 +195,7 @@ jobs:
       - name: Zig Tests
         run: |
           command -v zig >/dev/null
+          test "$(zig version)" = 0.17.0
           cd packages/zig
           zig build test -j2 --summary all
 
