@@ -63,9 +63,9 @@ jobs:
           packages: ziglang.org@0.17.0 bun.com@1.4.3
       - name: Verify the actual managed compiler identity
         run: |
-          test "$(zig --version)" = 0.17.0
+          test "$(zig version)" = 0.17.0
           case "$(command -v zig)" in "$GITHUB_WORKSPACE"/pantry/*) ;; *) exit 1 ;; esac
-          zig --version > artifacts/native-catalog/zig-version.txt
+          zig version > artifacts/native-catalog/zig-version.txt
       - name: Build the native DynamoDB distribution and require its live health check
         if: inputs.verify-dynamodb
         env:
