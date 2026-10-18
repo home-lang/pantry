@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { execFile, spawn } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -20,7 +20,7 @@ integration('Pantry native action services against installed packages', () => {
   // Public lifecycle + actual post action: catches parent cancellation before
   // readiness, including lost ownership. Does not prove runner hard-power loss.
   test('post cleanup recovers interrupted startup while preserving a foreign native service', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'pantry cancellation '))
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'pantry cancellation ')))
     const foreignRoot = join(root, 'foreign')
     const temporary = join(root, 'interrupted')
     const binaries = join(root, 'bin')
@@ -43,12 +43,21 @@ await Bun.sleep(120000)
     const child = spawn(process.execPath, [join(import.meta.dir, 'fixtures/native-service-cancellation.ts'), binaries, temporary, savedState], {
       env: process.env, stdio: 'ignore', detached: true,
     })
+    const childSpawned = new Promise<void>((resolve, reject) => {
+      child.once('spawn', resolve)
+      child.once('error', reject)
+    })
     let childError: Error | undefined
     const childExited = new Promise<void>((resolve) => {
       child.once('error', (error) => { childError = error; resolve() })
       child.once('exit', () => resolve())
     })
     let parent: ServiceProcessIdentity | undefined
+    const parentAlive = async () => {
+      if (!parent) return false
+      if (parent.group !== parent.pid) throw new Error('Cancellation parent is not its owned process group leader')
+      return assertServiceProcess(parent, root)
+    }
     let fallback: Awaited<ReturnType<typeof startNativeService>>['state'] | undefined
     const captureFallback = async () => {
       for (const name of readdirSync(temporary)) {
@@ -70,6 +79,7 @@ await Bun.sleep(120000)
       })
     }
     try {
+      await childSpawned
       if (!child.pid) throw new Error('Cancellation parent did not spawn')
       parent = await serviceProcessIdentity(child.pid)
       const deadline = Date.now() + 90_000
@@ -84,7 +94,7 @@ await Bun.sleep(120000)
       await captureFallback()
       if (!fallback) throw new Error('Fixture did not capture its owned PostgreSQL process')
       const pid = fallback.pid!
-      if (!parent || !await assertServiceProcess(parent, root)) throw new Error('Cancellation parent identity changed')
+      if (!parent || !await parentAlive()) throw new Error('Cancellation parent identity changed')
       process.kill(-parent.pid, 'SIGKILL')
       await childExited
 
@@ -106,7 +116,7 @@ await Bun.sleep(120000)
       // This path also runs when readiness times out or an assertion fails.
       await attempt(captureFallback)
       await attempt(async () => {
-        if (parent && await assertServiceProcess(parent, root)) {
+        if (parent && await parentAlive()) {
           process.kill(-parent.pid, 'SIGKILL')
           await childExited
         }
