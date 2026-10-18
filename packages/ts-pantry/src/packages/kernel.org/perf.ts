@@ -3,7 +3,7 @@
  *
  * @domain `kernel.org/perf`
  * @programs `perf`
- * @version `7.2.11` (1 versions available)
+ * @version `7.2.11` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install kernel.org/perf`
@@ -82,6 +82,12 @@ export const perfPackage = {
   */
   versions: [
     '7.2.11',
+    '6.18.57',
+    '6.12.113',
+    '6.6.159',
+    '6.1.190',
+    '5.15.223',
+    '5.10.272',
   ] as const,
   aliases: [] as const,
 }

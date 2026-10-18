@@ -3,7 +3,7 @@
  *
  * @domain `github.com/hatoo/oha`
  * @programs `oha`
- * @version `1.16.0` (1 versions available)
+ * @version `1.16.0` (20 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/hatoo/oha`
@@ -70,6 +70,25 @@ export const ohaPackage = {
   */
   versions: [
     '1.16.0',
+    '1.15.0',
+    '1.14.0',
+    '1.13.0',
+    '1.12.1',
+    '1.12.0',
+    '1.11.0',
+    '1.10.0',
+    '1.9.0',
+    '1.8.0',
+    '1.7.0',
+    '1.6.0',
+    '1.5.0',
+    '1.4.7',
+    '1.4.6',
+    '1.4.5',
+    '1.4.4',
+    '1.4.3',
+    '1.4.2',
+    '1.4.1',
   ] as const,
   aliases: [] as const,
 }

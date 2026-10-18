@@ -3,7 +3,7 @@
  *
  * @domain `github.com/firecracker-microvm/firecracker`
  * @programs `firecracker`, `jailer`
- * @version `1.17.0` (1 versions available)
+ * @version `1.17.0` (20 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/firecracker-microvm/firecracker`
@@ -71,6 +71,25 @@ export const firecrackerPackage = {
   */
   versions: [
     '1.17.0',
+    '1.16.2',
+    '1.16.1',
+    '1.16.0',
+    '1.15.1',
+    '1.15.0',
+    '1.14.4',
+    '1.14.3',
+    '1.14.2',
+    '1.14.1',
+    '1.14.0',
+    '1.13.2',
+    '1.13.1',
+    '1.13.0',
+    '1.12.1',
+    '1.12.0',
+    '1.11.0',
+    '1.10.1',
+    '1.10.0',
+    '1.9.1',
   ] as const,
   aliases: [] as const,
 }

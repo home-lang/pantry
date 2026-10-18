@@ -3,7 +3,7 @@
  *
  * @domain `netfilter.org/nftables`
  * @programs `nft`
- * @version `1.1.7` (1 versions available)
+ * @version `1.1.7` (20 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install netfilter.org/nftables`
@@ -82,6 +82,25 @@ export const nftablesPackage = {
   */
   versions: [
     '1.1.7',
+    '1.1.6',
+    '1.1.5',
+    '1.1.4',
+    '1.1.3',
+    '1.1.2',
+    '1.1.1',
+    '1.1.0',
+    '1.0.9',
+    '1.0.8',
+    '1.0.7',
+    '1.0.6',
+    '1.0.5',
+    '1.0.4',
+    '1.0.3',
+    '1.0.2',
+    '1.0.1',
+    '1.0.0',
+    '0.9.9',
+    '0.9.8',
   ] as const,
   aliases: [] as const,
 }

@@ -2,7 +2,7 @@
  * **libmnl** - Minimal userspace library for Netlink communications.
  *
  * @domain `netfilter.org/libmnl`
- * @version `1.0.5` (1 versions available)
+ * @version `1.0.5` (6 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install netfilter.org/libmnl`
@@ -61,6 +61,11 @@ export const libmnlPackage = {
   */
   versions: [
     '1.0.5',
+    '1.0.4',
+    '1.0.3',
+    '1.0.2',
+    '1.0.1',
+    '1.0.0',
   ] as const,
   aliases: [] as const,
 }

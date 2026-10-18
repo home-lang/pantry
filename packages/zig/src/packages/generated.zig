@@ -907,7 +907,7 @@ pub const packages = [_]PackageInfo{ .{
     .dependencies = &[_][]const u8{},
     .build_dependencies = &[_][]const u8{ "curl.se", "stedolan.github.io/jq^1", "gnu.org/coreutils", "info-zip.org/unzip", "gnu.org/binutils" },
     .aliases = &[_][]const u8{},
-    .versions = &[_][]const u8{"1.4.2"},
+    .versions = &[_][]const u8{ "1.4.3", "1.4.2", "1.4.1", "1.4.0", "1.3.14", "1.3.13", "1.3.12", "1.3.11", "1.3.10", "1.3.9", "1.3.8", "1.3.7", "1.3.6", "1.3.5", "1.3.4", "1.3.3", "1.3.2", "1.3.1", "1.3.0", "1.2.23" },
 }, .{
     .name = "bytebase",
     .domain = "bytebase.com",
@@ -5867,7 +5867,7 @@ pub const packages = [_]PackageInfo{ .{
     .dependencies = &[_][]const u8{},
     .build_dependencies = &[_][]const u8{ "curl.se", "stedolan.github.io/jq^1", "gnu.org/coreutils" },
     .aliases = &[_][]const u8{},
-    .versions = &[_][]const u8{"1.17.0"},
+    .versions = &[_][]const u8{ "1.17.0", "1.16.2", "1.16.1", "1.16.0", "1.15.1", "1.15.0", "1.14.4", "1.14.3", "1.14.2", "1.14.1", "1.14.0", "1.13.2", "1.13.1", "1.13.0", "1.12.1", "1.12.0", "1.11.0", "1.10.1", "1.10.0", "1.9.1" },
 }, .{
     .name = "pstree",
     .domain = "github.com/FredHucht/pstree",
@@ -6137,7 +6137,7 @@ pub const packages = [_]PackageInfo{ .{
     .dependencies = &[_][]const u8{},
     .build_dependencies = &[_][]const u8{ "curl.se", "stedolan.github.io/jq^1", "gnu.org/coreutils" },
     .aliases = &[_][]const u8{},
-    .versions = &[_][]const u8{"1.16.0"},
+    .versions = &[_][]const u8{ "1.16.0", "1.15.0", "1.14.0", "1.13.0", "1.12.1", "1.12.0", "1.11.0", "1.10.0", "1.9.0", "1.8.0", "1.7.0", "1.6.0", "1.5.0", "1.4.7", "1.4.6", "1.4.5", "1.4.4", "1.4.3", "1.4.2", "1.4.1" },
 }, .{
     .name = "helmfile",
     .domain = "github.com/helmfile/helmfile",
@@ -10997,7 +10997,7 @@ pub const packages = [_]PackageInfo{ .{
     .dependencies = &[_][]const u8{ "elfutils.org", "zlib.net^1", "tukaani.org/xz^5", "facebook.com/zstd^1", "gnu.org/gcc/libstdcxx@14" },
     .build_dependencies = &[_][]const u8{ "freedesktop.org/pkg-config", "gnu.org/bison", "github.com/westes/flex", "python.org^3" },
     .aliases = &[_][]const u8{},
-    .versions = &[_][]const u8{"7.2.11"},
+    .versions = &[_][]const u8{ "7.2.11", "6.18.57", "6.12.113", "6.6.159", "6.1.190", "5.15.223", "5.10.272" },
 }, .{
     .name = "genqlient",
     .domain = "khanacademy.org/genqlient",
@@ -12777,7 +12777,7 @@ pub const packages = [_]PackageInfo{ .{
     .dependencies = &[_][]const u8{},
     .build_dependencies = &[_][]const u8{ "kernel.org/linux-headers", "freedesktop.org/pkg-config" },
     .aliases = &[_][]const u8{},
-    .versions = &[_][]const u8{"1.0.5"},
+    .versions = &[_][]const u8{ "1.0.5", "1.0.4", "1.0.3", "1.0.2", "1.0.1", "1.0.0" },
 }, .{
     .name = "libnftnl",
     .domain = "netfilter.org/libnftnl",
@@ -12787,7 +12787,7 @@ pub const packages = [_]PackageInfo{ .{
     .dependencies = &[_][]const u8{"netfilter.org/libmnl^1"},
     .build_dependencies = &[_][]const u8{ "kernel.org/linux-headers", "freedesktop.org/pkg-config" },
     .aliases = &[_][]const u8{},
-    .versions = &[_][]const u8{"1.3.2"},
+    .versions = &[_][]const u8{ "1.3.2", "1.3.1", "1.3.0", "1.2.9", "1.2.8", "1.2.7", "1.2.6", "1.2.5", "1.2.4", "1.2.3", "1.2.2", "1.2.1", "1.2.0", "1.1.9", "1.1.8", "1.1.7", "1.1.6", "1.1.5", "1.1.4", "1.1.3" },
 }, .{
     .name = "nftables",
     .domain = "netfilter.org/nftables",
@@ -12797,7 +12797,7 @@ pub const packages = [_]PackageInfo{ .{
     .dependencies = &[_][]const u8{ "netfilter.org/libmnl^1", "netfilter.org/libnftnl^1", "gnu.org/readline^8", "digip.org/jansson^2", "gnu.org/gmp^6" },
     .build_dependencies = &[_][]const u8{ "kernel.org/linux-headers", "freedesktop.org/pkg-config", "gnu.org/bison", "github.com/westes/flex" },
     .aliases = &[_][]const u8{},
-    .versions = &[_][]const u8{"1.1.7"},
+    .versions = &[_][]const u8{ "1.1.7", "1.1.6", "1.1.5", "1.1.4", "1.1.3", "1.1.2", "1.1.1", "1.1.0", "1.0.9", "1.0.8", "1.0.7", "1.0.6", "1.0.5", "1.0.4", "1.0.3", "1.0.2", "1.0.1", "1.0.0", "0.9.9", "0.9.8" },
 }, .{
     .name = "vmaf",
     .domain = "netflix.com/vmaf",
@@ -15857,7 +15857,7 @@ pub const packages = [_]PackageInfo{ .{
     .dependencies = &[_][]const u8{},
     .build_dependencies = &[_][]const u8{ "mesonbuild.com", "ninja-build.org", "freedesktop.org/pkg-config", "python.org~3.12", "palletsprojects.com/jinja^3", "gnu.org/gperf", "gnu.org/coreutils", "gnu.org/binutils", "kernel.org/linux-headers" },
     .aliases = &[_][]const u8{},
-    .versions = &[_][]const u8{"262.1"},
+    .versions = &[_][]const u8{ "262.1", "262", "261.4", "261.3", "261.2", "261.1", "261", "260.6", "260.5", "260.4", "260.3", "260.2", "260.1", "260", "259.10", "259.9", "259.8", "259.7", "259.6", "259.5" },
 }, .{
     .name = "TablePlus",
     .domain = "tableplus.com",
