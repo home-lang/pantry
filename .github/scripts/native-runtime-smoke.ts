@@ -9,6 +9,8 @@ const work = await mkdtemp(join(tmpdir(), 'pantry-native-runtime-smoke-'))
 const target = new URL(process.env.PANTRY_RUNTIME_SMOKE_URL || 'https://pantry.dev/')
 assert.equal(target.protocol, 'https:')
 assert(!target.username && !target.password, 'Use a public HTTPS URL without inline credentials')
+const expectedPantry = process.env.PANTRY_RUNTIME_SMOKE_PANTRY_VERSION || '0.11.91'
+assert(/^\d+\.\d+\.\d+$/.test(expectedPantry), 'Use an exact published Pantry version')
 const checks: Record<string, unknown> = { target: target.href, platform: process.platform, architecture: process.arch }
 const env = { ...process.env }
 // Exercise the artifact's own loader paths, independent of an activated SDK.
@@ -40,7 +42,7 @@ try {
   const pantry = Bun.which('pantry')
   assert(pantry, 'The published Pantry CLI must be installed by the action')
   checks.pantry = (await run('pantry-version', [pantry, '--version'])).trim()
-  assert.match(checks.pantry as string, /^pantry 0\.11\.90(?:\s|$)/)
+  assert.equal((checks.pantry as string).split(/\s+/).slice(0, 2).join(' '), `pantry ${expectedPantry}`)
   await run('install', [pantry, 'install', '--no-save'], 15 * 60_000)
   env.PATH = `${work}/pantry/.bin:${env.PATH}`
   const paths = Object.fromEntries(await Promise.all(['bun', 'google-chrome-stable', 'ffmpeg', 'ffprobe', 'yt-dlp', 'python3'].map(async name => [name, await tool(name)])))
