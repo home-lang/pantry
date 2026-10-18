@@ -3,7 +3,7 @@ import { BuildStatusStore } from './storage/build-status'
 
 /** Each HTTP fixture owns its snapshot objects and exercises normal hydration. */
 class MemoryBuildStatusStorage extends S3Client {
-  readonly objects = new Map<string, Buffer>()
+  readonly objects: Map<string, Buffer> = new Map()
 
   constructor(private beforeRead?: (key: string) => Promise<void>) {
     super()
@@ -21,14 +21,18 @@ class MemoryBuildStatusStorage extends S3Client {
     this.objects.set(input.key, Buffer.from(input.body))
   }
 
-  override async list(input: Parameters<S3Client['list']>[0]) {
+  override async list(input: Parameters<S3Client['list']>[0]): Promise<Array<{ Key: string, Size: number }>> {
     return [...this.objects.entries()]
       .filter(([key]) => key.startsWith(input.prefix || ''))
       .map(([key, value]) => ({ Key: key, Size: value.length }))
   }
 }
 
-export function createBuildStatusFixture(beforeRead?: (key: string) => Promise<void>) {
+export function createBuildStatusFixture(beforeRead?: (key: string) => Promise<void>): {
+  storage: MemoryBuildStatusStorage
+  bucket: string
+  store: BuildStatusStore
+} {
   const storage = new MemoryBuildStatusStorage(beforeRead)
   const bucket = 'owned-build-status-fixture'
   const store = new BuildStatusStore(storage, bucket)
