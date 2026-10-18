@@ -9035,7 +9035,7 @@ pub const packages = [_]PackageInfo{ .{
     .homepage_url = "https://www.gnu.org/software/automake/",
     .programs = &[_][]const u8{ "aclocal", "automake" },
     .dependencies = &[_][]const u8{ "gnu.org/autoconf^2.65.0", "perl.org" },
-    .build_dependencies = &[_][]const u8{"gnu.org/patch"},
+    .build_dependencies = &[_][]const u8{ "gnu.org/patch", "gnu.org/make", "gnu.org/sed" },
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "1.18.1", "1.18.0", "1.17.0", "1.16.5" },
 }, .{
@@ -9345,7 +9345,7 @@ pub const packages = [_]PackageInfo{ .{
     .homepage_url = null,
     .programs = &[_][]const u8{ "libtool", "libtoolize" },
     .dependencies = &[_][]const u8{},
-    .build_dependencies = &[_][]const u8{ "gnu.org/autoconf@^2.65.0", "gnu.org/m4@1" },
+    .build_dependencies = &[_][]const u8{ "gnu.org/autoconf^2.65.0", "gnu.org/automake^1", "gnu.org/make", "gnu.org/sed", "gnu.org/findutils", "gnu.org/m4@1" },
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "2.5.4", "2.5.3", "2.4.7" },
 }, .{

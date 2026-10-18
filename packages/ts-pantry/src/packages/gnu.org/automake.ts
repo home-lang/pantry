@@ -9,7 +9,7 @@
  * @install `pantry install gnu.org/automake`
  * @homepage https://www.gnu.org/software/automake/
  * @dependencies `gnu.org/autoconf^2.65.0`, `perl.org`
- * @buildDependencies `gnu.org/patch` - required only when building from source
+ * @buildDependencies `gnu.org/patch`, `gnu.org/make`, `gnu.org/sed` - required only when building from source
  *
  * @example
  * ```typescript
@@ -70,6 +70,8 @@ export const gnuorgautomakePackage = {
   */
   buildDependencies: [
     'gnu.org/patch',
+    'gnu.org/make',
+    'gnu.org/sed',
   ] as const,
   /**
   * Available versions from newest to oldest.

@@ -7,7 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install gnu.org/libtool`
- * @buildDependencies `gnu.org/autoconf@^2.65.0`, `gnu.org/m4@1` - required only when building from source
+ * @buildDependencies `gnu.org/autoconf^2.65.0`, `gnu.org/automake^1`, `gnu.org/make`, ... (+3 more) - required only when building from source
  *
  * @example
  * ```typescript
@@ -59,7 +59,11 @@ export const gnuorglibtoolPackage = {
   * These are only required when building the package from source.
   */
   buildDependencies: [
-    'gnu.org/autoconf@^2.65.0',
+    'gnu.org/autoconf^2.65.0',
+    'gnu.org/automake^1',
+    'gnu.org/make',
+    'gnu.org/sed',
+    'gnu.org/findutils',
     'gnu.org/m4@1',
   ] as const,
   /**
