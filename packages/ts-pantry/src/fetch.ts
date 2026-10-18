@@ -6,6 +6,7 @@ import { getAliasOverrides, shouldReplaceAliases } from './alias-overrides'
 import { DEFAULT_CACHE_DIR, DEFAULT_CACHE_EXPIRATION_MINUTES, DEFAULT_TIMEOUT_MS } from './consts'
 import { aliases } from './packages/aliases'
 import { dependencyPlatform, recipeDepsToSpecs } from './dependency-spec'
+import { convertDomainToVarName } from './utils'
 // pkgx-scraper removed — version discovery now via scripts/version-fetcher.ts
 const scrapePkgxPackage = async (..._args: any[]): Promise<any> => null
 // Lazy import of utils functions to avoid module loading issues
@@ -264,6 +265,10 @@ function formatObjectWithAsConst(obj: Record<string, any>): string {
 /**
  * Generates comprehensive JSDoc documentation for a package
  */
+function documentedPackageAccess(key: string): string {
+  return /^[a-z_$][\w$]*$/i.test(key) ? `pantry.${key}` : `pantry[${JSON.stringify(key)}]`
+}
+
 function generatePackageJSDoc(packageInfo: PkgxPackage, domainName: string, packageDisplayName: string): string {
   const lines: string[] = []
 
@@ -369,6 +374,7 @@ function generatePackageJSDoc(packageInfo: PkgxPackage, domainName: string, pack
   lines.push(' * ```typescript')
   lines.push(' * import { pantry } from \'ts-pantry\'')
   lines.push(' *')
+  const domainAccess = documentedPackageAccess(convertDomainToVarName(domainName))
 
   // Show both alias and domain access if valid aliases exist
   if (packageInfo.aliases && packageInfo.aliases.length > 0) {
@@ -378,38 +384,36 @@ function generatePackageJSDoc(packageInfo: PkgxPackage, domainName: string, pack
     })
 
     if (validAlias) {
-      const aliasVarName = validAlias.replace(/[^a-z0-9]/gi, '')
-      // Use the same function as the index generation to ensure consistency
-      const domainVarName = domainName.replace(/[.-]/g, '').replace(/\//g, '').toLowerCase()
+      // The index exposes literal aliases. Removing punctuation invented keys
+      // such as dynamodblocal instead of the real ['dynamodb-local'] property.
+      const aliasAccess = documentedPackageAccess(validAlias)
 
       // Check if the alias is the same as the package name
       const isAliasPackageName = validAlias === packageInfo.name
 
       if (isAliasPackageName) {
         lines.push(` * // Access the package`)
-        lines.push(` * const pkg = pantry.${aliasVarName}`)
+        lines.push(` * const pkg = ${aliasAccess}`)
         lines.push(` * // Or access via domain`)
-        lines.push(` * const samePkg = pantry.${domainVarName}`)
+        lines.push(` * const samePkg = ${domainAccess}`)
         lines.push(` * console.log(pkg === samePkg) // true`)
       }
       else {
         lines.push(` * // Access via alias (recommended)`)
-        lines.push(` * const pkg = pantry.${aliasVarName}`)
+        lines.push(` * const pkg = ${aliasAccess}`)
         lines.push(` * // Or access via domain`)
-        lines.push(` * const samePkg = pantry.${domainVarName}`)
+        lines.push(` * const samePkg = ${domainAccess}`)
         lines.push(` * console.log(pkg === samePkg) // true`)
       }
     }
     else {
       // No valid aliases, use domain only
-      const domainVarName = domainName.replace(/[.-]/g, '').replace(/\//g, '').toLowerCase()
-      lines.push(` * const pkg = pantry.${domainVarName}`)
+      lines.push(` * const pkg = ${domainAccess}`)
     }
   }
   else {
     // Use the same function as the index generation to ensure consistency
-    const domainVarName = domainName.replace(/[.-]/g, '').replace(/\//g, '').toLowerCase()
-    lines.push(` * const pkg = pantry.${domainVarName}`)
+    lines.push(` * const pkg = ${domainAccess}`)
   }
 
   lines.push(` * console.log(pkg.name)        // "${packageInfo.name || packageDisplayName}"`)
