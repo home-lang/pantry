@@ -90,7 +90,7 @@ export const phpPackage = {
     'gnome.org/libxml2',
     'thrysoee.dk/editline^3',
     'sourceware.org/libffi>=3.4.7',
-    'gnome.org/libxslt>=1.1.0<1.1.43',
+    'gnome.org/libxslt>=1.1.0',
     'libpng.org^1',
     'google.com/webp^1',
     'ijg.org^9',
