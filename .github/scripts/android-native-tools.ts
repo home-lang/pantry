@@ -24,7 +24,7 @@ async function run(name: string, command: string[]): Promise<string> {
     const [code, stdout, stderr] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()])
     await Bun.write(join(artifacts, `${name}.log`), stdout + stderr)
     assert.equal(code, 0, `${name}: ${stdout}\n${stderr}`)
-    return stdout + stderr
+    return stdout
   }
   finally { clearTimeout(timeout) }
 }
@@ -45,7 +45,17 @@ try {
   // sdkmanager resolves its linked package and JVM through the normal SDK scripts.
   assert.match((await run('sdkmanager-version', [join(bin, 'sdkmanager'), '--version'])).trim(), /^\d+(?:\.\d+)*$/)
   env.ANDROID_HOME = join(root, 'managed SDK health')
-  const tools = dirname(dirname(await realpath(join(bin, 'apkanalyzer'))))
+  // Project .bin entries are executable wrappers, not symlinks. Resolve the
+  // installed package through the CLI's public inventory instead of guessing
+  // a package-store layout or parsing generated shell code.
+  const installed = JSON.parse(await run('installed-packages', [cli, 'list', '--format', 'json', '--verbose']))
+  assert(Array.isArray(installed), 'Package inventory must be a JSON array')
+  const matches = installed.filter((entry: { name: string, version: string, path?: string }) => entry.name === 'android.com/cmdline-tools' && entry.version === '14742923.0.0')
+  assert.equal(matches.length, 1, 'Resolve exactly one installed Android package')
+  assert.equal(typeof matches[0].path, 'string', 'Verbose inventory must expose the installed package path')
+  assert(resolve(matches[0].path).startsWith(`${root}/`), 'Use the isolated project package, never a global installation')
+  const tools = dirname(dirname(await realpath(join(matches[0].path, 'bin/apkanalyzer'))))
+  proof.installedPackage = matches[0]
   const relocated = join(env.ANDROID_HOME, 'cmdline-tools/latest')
   await mkdir(dirname(relocated), { recursive: true })
   await cp(tools, relocated, { recursive: true })
