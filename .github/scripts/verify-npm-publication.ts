@@ -16,7 +16,7 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
   const requests: Array<{ method: string, path: string }> = []
   let tarball = Buffer.alloc(0), metadata: Record<string, unknown> = {}
   const server: Bun.Server<undefined> = Bun.serve({
-    hostname: '127.0.0.1', port: 0,
+    hostname: '127.0.0.1', port: 0, idleTimeout: 0,
     async fetch(request) {
       const path = decodeURIComponent(new URL(request.url).pathname)
       requests.push({ method: request.method, path })
@@ -56,7 +56,11 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
     },
   })
   await writeFile(join(cwd, 'package.json'), JSON.stringify({
-    name, version, files: ['index.txt'], publishConfig: { registry: server.url.origin },
+    name, version, files: ['index.txt'], publishConfig: {
+      // The generic command must use the explicit option ahead of this
+      // different private manifest URL, without contacting a public registry.
+      registry: mode === 'generic-command' ? 'http://127.0.0.1:1' : server.url.origin,
+    },
   }))
   // Both command surfaces must preserve the explicit private registry URL.
   const command = mode === 'generic-command' ? ['publish', '--npm'] : ['npm:publish']
