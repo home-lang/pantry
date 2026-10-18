@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { generateBuildScript } from '../scripts/buildkit'
 
-// CI supplies the actual Pantry-managed compiler; this regression starts no
-// services and performs only preprocessing against its own temporary headers.
+// CI supplies the Pantry-managed Clang used by native package publication.
+// This performs only preprocessing against its own temporary headers.
 test.skipIf(!process.env.PANTRY_TEST_CC)('declared headers preserve upstream system wrappers and include_next in C and C++', () => {
   const root = mkdtempSync(join(tmpdir(), 'pantry-header-order-'))
   try {
