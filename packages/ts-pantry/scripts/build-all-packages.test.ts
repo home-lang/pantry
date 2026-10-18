@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { classifyTargetedFailures as classify, selectedPackageSelectors, applyVersionPins, selectVersionsForBuild, assignStripe, selectRecentVersions, isAppRecipePath, isPublishedArtifactRecord, isSourceUnavailableError, scriptCompiles, matchesRequestedPackage, parseRequestedPackages, pkgxHasPrebuilt, relocateMirroredPaths, normalizeMirroredArtifact, summariseTimings, type PackageTiming } from './build-all-packages'
+import { CUSTOM_BUILD_DOMAINS, classifyTargetedFailures as classify, selectedPackageSelectors, applyVersionPins, selectVersionsForBuild, assignStripe, selectRecentVersions, isAppRecipePath, isPublishedArtifactRecord, isSourceUnavailableError, scriptCompiles, matchesRequestedPackage, parseRequestedPackages, pkgxHasPrebuilt, relocateMirroredPaths, normalizeMirroredArtifact, summariseTimings, type PackageTiming } from './build-all-packages'
 
 test('an explicitly requested excluded version fails instead of reporting an empty successful publication', () => {
   const child = Bun.spawnSync(['bun', 'scripts/build-all-packages.ts', '--platform', 'linux-arm64', '-p', 'unicode.org@70.1.0', '--source-only', '--print-selected'], { cwd: import.meta.dir + '/..', stdout: 'pipe', stderr: 'pipe' })
@@ -566,4 +566,8 @@ test('every exact pin survives the automatic version selection limit', async () 
   const pkg = { domain: 'mysql.com', name: 'mysql', versions: ['26.7.0', '8.4.11'], latestVersion: '26.7.0', pantryYamlPath: '', hasDistributable: true, hasBuildScript: true, needsProps: false, hasProps: false, depDomains: [], isApp: false, isDownloadRecipe: false }
   const pinned = applyVersionPins(pkg, new Map([['mysql.com', ['26.7.0', '8.4.11']]]))
   expect(await selectVersionsForBuild(pinned, 1)).toEqual(['26.7.0', '8.4.11'])
+})
+
+test('Android publication executes the repaired recipe instead of mirroring old launchers', () => {
+  expect(CUSTOM_BUILD_DOMAINS.has('android.com/cmdline-tools')).toBe(true)
 })
