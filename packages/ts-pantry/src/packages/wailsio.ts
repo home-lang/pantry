@@ -3,7 +3,7 @@
  *
  * @domain `wails.io`
  * @programs `wails`
- * @version `2.11.0` (11 versions available)
+ * @version `2.17.0` (15 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install wails.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "wails"
  * console.log(pkg.description) // "Create beautiful applications using Go"
  * console.log(pkg.programs)    // ["wails"]
- * console.log(pkg.versions[0]) // "2.11.0" (latest)
+ * console.log(pkg.versions[0]) // "2.17.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/wails-io.md
@@ -72,6 +72,7 @@ export const wailsioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.17.0',
     '2.14.0',
     '2.13.0',
     '2.12.0',

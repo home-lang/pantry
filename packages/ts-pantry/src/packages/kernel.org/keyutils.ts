@@ -2,7 +2,7 @@
  * **libkeyutils** - Linux key retention client library and development interface.
  *
  * @domain `kernel.org/keyutils`
- * @version `1.6.3` (1 versions available)
+ * @version `1.6.3` (13 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install kernel.org/keyutils`
@@ -65,6 +65,18 @@ export const libkeyutilsPackage = {
   */
   versions: [
     '1.6.3',
+    '1.6.2',
+    '1.6.1',
+    '1.5.11',
+    '1.5.10',
+    '1.5.9',
+    '1.5.8',
+    '1.5.6',
+    '1.5.5',
+    '1.5.4',
+    '1.5.3',
+    '1.5.2',
+    '1.5.1',
   ] as const,
   aliases: [] as const,
 }

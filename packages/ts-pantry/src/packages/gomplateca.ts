@@ -3,7 +3,7 @@
  *
  * @domain `gomplate.ca`
  * @programs `gomplate`
- * @version `5.0.0` (13 versions available)
+ * @version `5.3.0` (51 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install gomplate.ca`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "gomplate"
  * console.log(pkg.description) // "A flexible commandline tool for template render..."
  * console.log(pkg.programs)    // ["gomplate"]
- * console.log(pkg.versions[0]) // "5.0.0" (latest)
+ * console.log(pkg.versions[0]) // "5.3.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/gomplate-ca.md
@@ -67,6 +67,7 @@ export const gomplatecaPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.3.0',
     '5.2.0',
     '5.1.0',
     '5.0.0',
