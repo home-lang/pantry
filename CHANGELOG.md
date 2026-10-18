@@ -1,3 +1,71 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.91...v0.11.92)
+
+## ✨ Features
+
+- **catalog**: register the native keyutils client library ([0a9c1ef](https://github.com/pantry-pm/pantry/commit/0a9c1ef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **catalog**: register verified-source native CI recipe definitions ([9db274e](https://github.com/pantry-pm/pantry/commit/9db274e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: manage native CI tools and libudev from source ([63359c5](https://github.com/pantry-pm/pantry/commit/63359c5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **catalog**: synchronize supported PHP and declared Libtool build dependencies ([1c70e12](https://github.com/pantry-pm/pantry/commit/1c70e12)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **php**: share the supported current XSLT ABI and verify transformations ([e643815](https://github.com/pantry-pm/pantry/commit/e643815)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **libtool**: declare the manual generator needed for rebuilt source ([1380592](https://github.com/pantry-pm/pantry/commit/1380592)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **libtool**: quote the upstream data directory check before building ([3bef8bb](https://github.com/pantry-pm/pantry/commit/3bef8bb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **recipes**: preserve runtime shell expansion and canonical header locations ([0d67110](https://github.com/pantry-pm/pantry/commit/0d67110)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **libtool**: relocate quoted prefix assignments and verify actual library builds ([6292a78](https://github.com/pantry-pm/pantry/commit/6292a78)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ncurses**: preserve C literals in the native terminal probe ([9850ff0](https://github.com/pantry-pm/pantry/commit/9850ff0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ncurses**: validate consumer-selected narrow ABI with real terminal IO ([4389e91](https://github.com/pantry-pm/pantry/commit/4389e91)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **catalog**: publish the declared native XZ dependency graph ([6c00065](https://github.com/pantry-pm/pantry/commit/6c00065)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **runtime**: rebuild XZ against declared libraries without stale self providers ([7ca6259](https://github.com/pantry-pm/pantry/commit/7ca6259)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ncurses**: build split versioned libraries with the managed GNU linker ([df442b5](https://github.com/pantry-pm/pantry/commit/df442b5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **keyutils**: correct nonexistent upstream exports with strict ABI checks ([cf395cb](https://github.com/pantry-pm/pantry/commit/cf395cb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ncurses**: preserve narrow and wide headers with versioned native ABIs ([ae7fe1a](https://github.com/pantry-pm/pantry/commit/ae7fe1a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **cmake**: use the supported bundled-form Curses configuration ([da59b6d](https://github.com/pantry-pm/pantry/commit/da59b6d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **keyutils**: order discovered stable releases newest first ([9c3b21f](https://github.com/pantry-pm/pantry/commit/9c3b21f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **runtime**: report all missing libraries and provide the keyutils client ABI ([46d42ed](https://github.com/pantry-pm/pantry/commit/46d42ed)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **p11-kit**: publish discoverable native development metadata ([b486520](https://github.com/pantry-pm/pantry/commit/b486520)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **catalog**: include the native MySQL SASL crypt dependency ([8851beb](https://github.com/pantry-pm/pantry/commit/8851beb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **publisher**: preserve every requested pin and declare MySQL crypt ABI ([5f38914](https://github.com/pantry-pm/pantry/commit/5f38914)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **catalog**: generate the native browser client library closure ([32adc23](https://github.com/pantry-pm/pantry/commit/32adc23)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **runtime**: use the native udev component and restore managed PKCS11 tools ([8f217ff](https://github.com/pantry-pm/pantry/commit/8f217ff)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **catalog**: declare managed Autotools build dependencies ([7459c79](https://github.com/pantry-pm/pantry/commit/7459c79)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: preserve upstream system header precedence for managed dependencies ([97e48be](https://github.com/pantry-pm/pantry/commit/97e48be)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build-tools**: require declared managed tools and native autotools health checks ([c58e6a0](https://github.com/pantry-pm/pantry/commit/c58e6a0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **mesa**: resolve the LLVM ABI for older Linux releases ([cd5e670](https://github.com/pantry-pm/pantry/commit/cd5e670)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **catalog**: publish managed CMake runtime and build dependencies ([8099a67](https://github.com/pantry-pm/pantry/commit/8099a67)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: expose declared Python modules and use native tool paths ([302df1a](https://github.com/pantry-pm/pantry/commit/302df1a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **catalog**: regenerate managed CMake dependency declarations ([1fe37ec](https://github.com/pantry-pm/pantry/commit/1fe37ec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build-tools**: validate relocated CMake and complete autotools integration ([648e865](https://github.com/pantry-pm/pantry/commit/648e865)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **autoconf**: preserve executable Perl scripts and require native configure health ([69fa669](https://github.com/pantry-pm/pantry/commit/69fa669)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: use native recipes as the dependency graph authority ([8830f8e](https://github.com/pantry-pm/pantry/commit/8830f8e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **mesa**: declare the native macOS LLVM runtime ([021ead8](https://github.com/pantry-pm/pantry/commit/021ead8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **publisher**: require every exact pin and build genuine ncurses ABIs ([a8a7597](https://github.com/pantry-pm/pantry/commit/a8a7597)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **publisher**: retain Mesa native ABIs and complete declaration types ([b5a8b58](https://github.com/pantry-pm/pantry/commit/b5a8b58)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **catalog**: preserve target-specific native executable interfaces ([7f94cb2](https://github.com/pantry-pm/pantry/commit/7f94cb2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **release**: verify public npm archive bytes before success ([003fffe](https://github.com/pantry-pm/pantry/commit/003fffe)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **publisher**: preserve native MySQL and complete Mesa runtime graph ([eedbf2e](https://github.com/pantry-pm/pantry/commit/eedbf2e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **publisher**: verify every declared executable before upload ([d133226](https://github.com/pantry-pm/pantry/commit/d133226)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **publisher**: assert exact public selection independently of tracking fields ([6a44eb6](https://github.com/pantry-pm/pantry/commit/6a44eb6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **p11-kit**: verify the installed package version through pkg-config ([913eefb](https://github.com/pantry-pm/pantry/commit/913eefb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **build**: use the managed publication compiler for native C fixtures ([8cdfd23](https://github.com/pantry-pm/pantry/commit/8cdfd23)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **ci**: exercise Git with the compiled source CLI before release ([30e7caf](https://github.com/pantry-pm/pantry/commit/30e7caf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **runtime**: verify exact published Pantry versions against HTTPS pages ([c187c79](https://github.com/pantry-pm/pantry/commit/c187c79)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **action**: verify source bundles against published native services ([1abbd57](https://github.com/pantry-pm/pantry/commit/1abbd57)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **cli**: verify platform Git programs with the native Linux build ([1282dae](https://github.com/pantry-pm/pantry/commit/1282dae)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.92 ([db384c1](https://github.com/pantry-pm/pantry/commit/db384c1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update bun.com/profile to 1.4.3 ([e0e2765](https://github.com/pantry-pm/pantry/commit/e0e2765)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.90...v0.11.91)
 
 ## ✨ Features
