@@ -33,3 +33,9 @@ test('the native publisher selects the exact AT-SPI client release on both Linux
     expect(p.stdout.trim()).toBe(`${domain}@2.38.0`)
   }
 })
+
+
+test('Chrome declares the libudev client component', () => {
+  expect(chrome.dependencies?.['systemd.io/libudev']).toBe('^262')
+  expect(chrome.dependencies?.['systemd.io']).toBeUndefined()
+})

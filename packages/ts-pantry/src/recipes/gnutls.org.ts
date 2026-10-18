@@ -3,14 +3,13 @@ import type { Recipe } from '../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'gnutls.org',
   name: 'gnutls',
-  // NOTE: p11tool is omitted — it requires p11-kit, which isn't yet built in the
-  // registry, so gnutls is configured --without-p11-kit (see build env below).
-  programs: ['certtool', 'danetool', 'gnutls-cli', 'gnutls-cli-debug', 'gnutls-serv', 'ocsptool', 'psktool'],
+  programs: ['certtool', 'danetool', 'gnutls-cli', 'gnutls-cli-debug', 'gnutls-serv', 'ocsptool', 'p11tool', 'psktool'],
   distributable: {
     url: 'https://www.gnupg.org/ftp/gcrypt/gnutls/v{{version.marketing}}/gnutls-{{version.raw}}.tar.xz',
     stripComponents: 1,
   },
   dependencies: {
+    'freedesktop.org/p11-kit': '^0.26',
     'gnu.org/libidn2': '*',
     'gnu.org/libunistring': '^1',
     'gnu.org/libtasn1': '^4',
@@ -32,6 +31,8 @@ export const recipe: Recipe = {
     // early (matches the ~8s configure failure in CI). The working sibling
     // gnupg.org recipe relies on the same explicit pkg-config build dep.
     'freedesktop.org/pkg-config': '*',
+    'gnu.org/make': '*',
+    'gnu.org/sed': '*',
     linux: {
       'gnu.org/gcc': '*',
     },
@@ -49,14 +50,20 @@ export const recipe: Recipe = {
       'make --jobs {{hw.concurrency}} install',
     ],
     env: {
-      // --with-included-unistring: libunistring isn't published in the registry,
-      // so use gnutls' bundled copy rather than chaining yet another dependency.
-      // --without-p11-kit: p11-kit isn't built in the registry yet; configure
-      // hard-fails ("p11-kit >= 0.23.1 was not found") unless PKCS#11 is disabled.
-      'ARGS': ['--prefix={{prefix}}', '--disable-guile', '--disable-doc', '--with-included-unistring', '--without-p11-kit'],
+      'ARGS': ['--prefix={{prefix}}', '--disable-guile', '--disable-doc', '--with-p11-kit'],
       darwin: {
         CFLAGS: '$CFLAGS -Wno-implicit-int',
       },
     },
+  },
+  test: {
+    required: true,
+    script: [
+      'for tool in certtool danetool gnutls-cli gnutls-cli-debug gnutls-serv ocsptool p11tool psktool; do "$tool" --version | grep -F "{{version}}"; done',
+      'certtool --generate-privkey --bits=2048 --outfile fixture-key.pem',
+      'printf "cn=Pantry native check\\nserial=1\\nexpiration_days=1\\nca\\ncert_signing_key\\n" > fixture-template',
+      'certtool --generate-self-signed --load-privkey fixture-key.pem --template fixture-template --outfile fixture-cert.pem',
+      'certtool --verify --load-ca-certificate fixture-cert.pem --infile fixture-cert.pem',
+    ],
   },
 }

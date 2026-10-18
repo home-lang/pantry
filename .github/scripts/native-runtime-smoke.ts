@@ -53,7 +53,7 @@ try {
   assert.match(await run('ffmpeg-version', [paths.ffmpeg, '-version']), /ffmpeg version 8\.1/)
   checks.python = JSON.parse(await run('python-runtime', [paths.python3, '-c', 'import sys, ssl, decimal, ctypes, sqlite3, bz2, lzma, json; print(json.dumps({"version": sys.version, "minor": sys.version_info.minor, "major": sys.version_info.major}))']))
   assert.equal((checks.python as { major: number }).major, 3)
-  assert((checks.python as { minor: number }).minor >= 10 && (checks.python as { minor: number }).minor < 15)
+  assert.equal((checks.python as { minor: number }).minor, 14)
   assert.match(await run('yt-dlp-version', [paths['yt-dlp'], '--version']), /^2026\.0?3\.17\s*$/)
   const video = join(work, 'fixture.mp4')
   await run('encode', [paths.ffmpeg, '-y', '-f', 'lavfi', '-i', 'color=c=blue:size=16x16:rate=4', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono', '-t', '0.5', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart', video])

@@ -1619,6 +1619,8 @@ export const CUSTOM_BUILD_DOMAINS: ReadonlySet<string> = new Set<string>([
   'curl.se', // Pantry links against OpenSSL 3; pkgx's build still requires OpenSSL 1.1
   'curl.se/ssl3', // historical library-only domain uses the same canonical recipe
   'harfbuzz.org', // use the declared current ICU ABI on every native platform
+  'google.com/chrome', // package the browser with its managed client-library closure
+  'gnutls.org', // preserve the declared PKCS#11 tool and native certificate health check
   'google.com/webp', // build every advertised tool, including the managed GLUT viewer
   'mesonbuild.com', // use Pantry Python without pkgx changing the build environment
   'tcl-lang.org', // publish matching Tcl and Tk libraries from their sources
