@@ -181,6 +181,7 @@ export const recipe: Recipe = {
       'gnu.org/gcc/libstdcxx': '14',
       'systemd.io/libudev': '*',
       'github.com/besser82/libxcrypt': '^4',
+      'kernel.org/keyutils': '^1',
     },
   },
 

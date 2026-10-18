@@ -161,6 +161,7 @@ export function bundleRuntimeLibraries(
     if (!lstatSync(file).isSymbolicLink() && isBinary(file)) queue.push(file)
   })
   const visited = new Set<string>()
+  const missing = new Set<string>()
   for (let position = 0; position < queue.length; position++) {
     const file = queue[position]
     if (visited.has(file)) continue
@@ -175,7 +176,10 @@ export function bundleRuntimeLibraries(
       const name = basename(dependencyName)
       const candidates = index.get(name) || []
       if (candidates.length === 0 && linux && linuxStandardLibraries.test(name)) continue
-      if (candidates.length === 0) throw new Error(`Undeclared or missing runtime library ${dependencyName} required by ${relative(root, file)}`)
+      if (candidates.length === 0) {
+        missing.add(`Undeclared or missing runtime library ${dependencyName} required by ${relative(root, file)}`)
+        continue
+      }
       const selected = candidates.find(candidate => inside(root, candidate.file)) || candidates[0]
       if (!inside(root, selected.file) && candidates.some(candidate => hash(candidate.file) !== hash(selected.file)))
         throw new Error(`Conflicting declared runtime providers for ${name}: ${candidates.map(candidate => `${candidate.dependency?.domain}@${candidate.dependency?.version} (${candidate.file}, sha256 ${hash(candidate.file)})`).join('; ')}`)
@@ -207,6 +211,7 @@ export function bundleRuntimeLibraries(
         execFileSync('install_name_tool', ['-change', dependencyName, `@rpath/${name}`, file], { stdio: 'pipe' })
     }
   }
+  if (missing.size) throw new Error([...missing].join('; '))
   return receipts
 }
 
