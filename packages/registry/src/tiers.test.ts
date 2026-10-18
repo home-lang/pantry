@@ -12,6 +12,7 @@ import { Registry } from './registry'
 import { AuthService, InMemoryAuthStorage } from './auth'
 import { calculateFee } from './subscriptions'
 import { getAvailablePort } from './test-utils'
+import { createBuildStatusFixture } from './build-status-test-utils'
 
 const ADMIN_TOKEN = 'ptry_admin_token_for_tier_tests'
 
@@ -22,6 +23,7 @@ describe('subscription tiers', () => {
   let auth: AuthService
   let registry: Registry
   let registryDirectory: string
+  let buildStatus: ReturnType<typeof createBuildStatusFixture>
   const savedEnv: Record<string, string | undefined> = {}
   const ENV_KEYS = ['PANTRY_REGISTRY_TOKEN', 'PANTRY_TOKEN', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET']
 
@@ -57,7 +59,8 @@ describe('subscription tiers', () => {
     })
     const storage = new InMemoryAuthStorage()
     auth = new AuthService(storage)
-    server = createServer(registry, port, undefined, undefined, undefined, undefined, storage)
+    buildStatus = createBuildStatusFixture()
+    server = createServer(registry, port, undefined, undefined, undefined, undefined, storage, undefined, undefined, buildStatus.store)
     server.start()
   })
 
@@ -67,6 +70,8 @@ describe('subscription tiers', () => {
       // 300 MiB; each test owns its directory rather than leaking that payload.
       await server?.stop(true)
       await registry?.metadata.flush?.()
+      await buildStatus.store.ready()
+      await buildStatus.store.flush()
       if (registryDirectory)
         rmSync(registryDirectory, { recursive: true, force: true })
     }

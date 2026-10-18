@@ -551,12 +551,6 @@ function getBuildStatus(): BuildStatusStore {
   return _buildStatus
 }
 
-async function getReadyBuildStatus(): Promise<BuildStatusStore> {
-  const store = getBuildStatus()
-  await store.ready()
-  return store
-}
-
 interface GitHubActionRun {
   id: number
   name: string
@@ -730,7 +724,13 @@ export function createHandler(
   internalBaseUrl: string = baseUrl,
   malwareScanner: MalwareScanner = createMalwareScannerFromEnv(),
   injectedBinaryPublisher?: BinaryArtifactPublisher,
+  injectedBuildStatus?: BuildStatusStore,
 ): (req: Request) => Promise<Response> {
+  const getReadyBuildStatus = async (): Promise<BuildStatusStore> => {
+    const store = injectedBuildStatus || getBuildStatus()
+    await store.ready()
+    return store
+  }
   let binaryPublisher = injectedBinaryPublisher
   const getBinaryPublisher = (): BinaryArtifactPublisher => {
     if (binaryPublisher) return binaryPublisher
@@ -1934,6 +1934,7 @@ export function createServer(
   authStorage?: AuthStorage,
   malwareScanner: MalwareScanner = createMalwareScannerFromEnv(),
   binaryPublisher?: BinaryArtifactPublisher,
+  buildStatus?: BuildStatusStore,
 ): { start: () => void, stop: (closeActiveConnections?: boolean) => Promise<void> } {
   let server: ReturnType<typeof Bun.serve> | null = null
   const analyticsStorage = analytics || createAnalytics()
@@ -1955,6 +1956,7 @@ export function createServer(
     internalBaseUrl,
     malwareScanner,
     binaryPublisher,
+    buildStatus,
   )
 
   const start = () => {

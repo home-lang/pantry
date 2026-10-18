@@ -4,6 +4,7 @@ import { createLocalRegistry } from './registry'
 import { InMemoryAnalytics } from './analytics'
 import { getAvailablePort } from './test-utils'
 import { S3RequestError } from './storage/aws-client'
+import { createBuildStatusFixture } from './build-status-test-utils'
 
 // --- Helpers ---
 
@@ -55,6 +56,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
   let analytics: InMemoryAnalytics
   let binaryStore: MockBinaryStorage
   let server: ReturnType<typeof createServer>
+  let buildStatus: ReturnType<typeof createBuildStatusFixture>
 
   // Use a fixed token for dashboard auth tests
   const TEST_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN || 'ABCD1234'
@@ -93,12 +95,15 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
     )
 
     const registry = createLocalRegistry(baseUrl)
-    server = createServer(registry, port, analytics, undefined, binaryStore)
+    buildStatus = createBuildStatusFixture()
+    server = createServer(registry, port, analytics, undefined, binaryStore, undefined, undefined, undefined, undefined, buildStatus.store)
     server.start()
   })
 
-  afterEach(() => {
-    server.stop()
+  afterEach(async () => {
+    await server.stop(true)
+    await buildStatus.store.ready()
+    await buildStatus.store.flush()
   })
 
   // ==========================================
