@@ -8,6 +8,18 @@ import {
 } from './lock-version'
 
 describe('versionSatisfiesSpec', () => {
+  test('stable constraints never accept a prerelease with the same numeric core', () => {
+    for (const spec of ['0.17.0', '=0.17.0', '^0.17.0', '~0.17.0', '>=0.17.0', '<0.18.0']) {
+      expect(versionSatisfiesSpec('0.17.0-dev.1978+c961124d9', spec)).toBe(false)
+      expect(versionSatisfiesSpec('0.17.0', spec)).toBe(true)
+    }
+  })
+
+  test('explicit development ranges preserve build ordering', () => {
+    expect(versionSatisfiesSpec('0.17.0-dev.1978+c961124d9', '>=0.17.0-dev.2000')).toBe(false)
+    expect(versionSatisfiesSpec('0.17.0-dev.2384+ac77c23af', '>=0.17.0-dev.2000')).toBe(true)
+  })
+
   test('supports sentinels, exact versions, and common ranges', () => {
     expect(versionSatisfiesSpec('1.3.14', '*')).toBe(true)
     expect(versionSatisfiesSpec('1.3.14', '^1.3.10')).toBe(true)
@@ -22,6 +34,13 @@ describe('versionSatisfiesSpec', () => {
 })
 
 describe('shouldUseLockedVersion', () => {
+  test('a filesystem-encoded development lock cannot override a stable Zig pin', () => {
+    expect(shouldUseLockedVersion('ziglang.org', '0.17.0-dev.1978_c961124d9', '0.17.0', [
+      '0.17.0-dev.1978+c961124d9', '0.17.0',
+    ])).toBe(false)
+    expect(shouldUseLockedVersion('ziglang.org', '0.17.0', '0.17.0')).toBe(true)
+  })
+
   test('does not freeze a rolling Zig development channel when availability is unknown', () => {
     expect(shouldUseLockedVersion(
       'ziglang.org',

@@ -1,3 +1,5 @@
+import { parseInstallerConstraint, satisfiesInstallerConstraint } from '../../ts-pantry/src/installer'
+
 /**
  * Lightweight "does this concrete version satisfy this spec?" check for the
  * dependency operators accepted by Pantry's action.
@@ -9,35 +11,12 @@ export function versionSatisfiesSpec(version: string, spec: string): boolean {
   // to major.minor.patch would make every 0.17.0-dev.N snapshot appear equal.
   if (/^v?\d/.test(spec) && spec.includes('-'))
     return version.replace(/^v/, '') === spec.replace(/^v/, '')
-  const parse = (v: string) => v.replace(/^v/, '').split('.').map(n => Number.parseInt(n, 10) || 0)
-  const cmp = (a: number[], b: number[]) => {
-    for (let i = 0; i < 3; i++) {
-      if ((a[i] ?? 0) !== (b[i] ?? 0))
-        return (a[i] ?? 0) - (b[i] ?? 0)
-    }
-    return 0
-  }
-  const v = parse(version)
-  const match = spec.match(/^([~^>=<]+)?(\d[\d.]*)/)
-  if (!match) return false
-  const op = match[1] || ''
-  const t = parse(match[2])
-
-  if (!op || op === '=' || op === '==') return cmp(v, t) === 0
-  if (op === '>=') return cmp(v, t) >= 0
-  if (op === '>') return cmp(v, t) > 0
-  if (op === '<=') return cmp(v, t) <= 0
-  if (op === '<') return cmp(v, t) < 0
-  if (op === '~')
-    return v[0] === t[0] && v[1] === t[1] && (v[2] ?? 0) >= (t[2] ?? 0)
-  if (op === '^') {
-    if (t[0] === 0 && t[1] === 0)
-      return cmp(v, t) === 0
-    if (t[0] === 0)
-      return v[0] === 0 && v[1] === t[1] && (v[2] ?? 0) >= (t[2] ?? 0)
-    return v[0] === t[0] && cmp(v, t) >= 0
-  }
-  return false
+  // The installer owns version ordering and prerelease eligibility. Reusing
+  // it prevents a lock entry from overriding a stable request with a dev build
+  // merely because parseInt erased the prerelease suffix.
+  const normalized = spec.replace(/^v/, '').replace(/^==/, '=')
+  const constraint = parseInstallerConstraint(/^\d/.test(normalized) ? `=${normalized}` : normalized)
+  return constraint !== null && satisfiesInstallerConstraint(version.replace(/^v/, ''), constraint)
 }
 
 export function isRollingVersionSpec(domain: string, spec: string): boolean {
