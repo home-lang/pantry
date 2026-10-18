@@ -232,9 +232,8 @@ export async function startNativeService(service: ServiceSpec, binDir: string, t
     return value
   }
   try {
-    checkpointNativeService(state, options.onState)
     const port = await freeServicePort()
-    if (service.name === 'mysql') return await startNativeMysql(service, state, env, port, secret, options.onState)
+    if (service.name === 'mysql') return await startNativeMysql(service, state, env, port, secret)
     if (service.name === 'postgres') {
       const { stdout } = await execute(join(binDir, 'postgres'), ['--version'], { env, timeout: 10_000 })
       const version = /PostgreSQL\)?\s+(\d+\.\d+(?:\.\d+)?)/.exec(stdout)?.[1]
@@ -248,7 +247,7 @@ export async function startNativeService(service: ServiceSpec, binDir: string, t
       }
       finally { rmSync(passwordFile, { force: true }) }
       // TCP only avoids macOS's short Unix socket path limit on hosted runners.
-      await spawnNativeService(state, join(binDir, 'postgres'), ['-D', data, '-h', '127.0.0.1', '-p', String(port), '-k', ''], env, options.onState)
+      await spawnNativeService(state, join(binDir, 'postgres'), ['-D', data, '-h', '127.0.0.1', '-p', String(port), '-k', ''], env)
       const pg = { PGHOST: '127.0.0.1', PGPORT: String(port), PGUSER: 'postgres', PGPASSWORD: password, PGDATABASE: 'pantry_ci' }
       const deadline = Date.now() + 30_000
       for (;;) {
@@ -275,7 +274,7 @@ export async function startNativeService(service: ServiceSpec, binDir: string, t
       const password = secret()
       const config = join(directory, 'redis.conf')
       writeFileSync(config, `bind 127.0.0.1\nport ${port}\nprotected-mode yes\nsave ""\nappendonly no\ndaemonize no\nset-proc-title no\nrequirepass ${password}\ndir ${JSON.stringify(directory)}\n`, { mode: 0o600 })
-      await spawnNativeService(state, join(binDir, 'redis-server'), [config], env, options.onState)
+      await spawnNativeService(state, join(binDir, 'redis-server'), [config], env)
       const client = join(binDir, 'redis-cli')
       const authenticated = { ...env, REDISCLI_AUTH: password }
       const deadline = Date.now() + 30_000
@@ -298,7 +297,7 @@ export async function startNativeService(service: ServiceSpec, binDir: string, t
     mkdirSync(data)
     let peeringPort = await freeServicePort()
     while (peeringPort === port) peeringPort = await freeServicePort()
-    await spawnNativeService(state, join(binDir, 'typesense-server'), ['--data-dir', data, '--api-address', '127.0.0.1', '--api-port', String(port), '--peering-address', '127.0.0.1', '--peering-port', String(peeringPort)], { ...env, TYPESENSE_API_KEY: apiKey }, options.onState)
+    await spawnNativeService(state, join(binDir, 'typesense-server'), ['--data-dir', data, '--api-address', '127.0.0.1', '--api-port', String(port), '--peering-address', '127.0.0.1', '--peering-port', String(peeringPort)], { ...env, TYPESENSE_API_KEY: apiKey })
     const url = `http://127.0.0.1:${port}`
     const deadline = Date.now() + 60_000
     let version = ''
