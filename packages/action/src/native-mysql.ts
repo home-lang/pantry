@@ -2,14 +2,14 @@ import { execFile } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { promisify } from 'node:util'
-import type { NativeServiceState } from './native-services'
-import { serviceAlive, spawnNativeService } from './native-services'
+import type { NativeServiceOptions, NativeServiceState } from './native-services'
+import { checkpointNativeService, serviceAlive, spawnNativeService } from './native-services'
 import type { ServiceSpec } from './services'
 
 const execute = promisify(execFile)
 
 /** Official mysqld initialization, private credentials and mandatory TCP TLS. */
-export async function startNativeMysql(service: ServiceSpec, state: NativeServiceState, env: NodeJS.ProcessEnv, port: number, secret: () => string): Promise<{ state: NativeServiceState, environment: Record<string, string>, version: string }> {
+export async function startNativeMysql(service: ServiceSpec, state: NativeServiceState, env: NodeJS.ProcessEnv, port: number, secret: () => string, onState?: NativeServiceOptions['onState']): Promise<{ state: NativeServiceState, environment: Record<string, string>, version: string }> {
   const server = realpathSync(join(state.binDir, 'mysqld'))
   const base = dirname(dirname(server))
   const { stdout } = await execute(server, ['--no-defaults', '--version'], { env, timeout: 10_000 })
@@ -32,6 +32,7 @@ export async function startNativeMysql(service: ServiceSpec, state: NativeServic
   const sockets = realpathSync(mkdtempSync('/tmp/pantry-mysql-'))
   writeFileSync(join(sockets, '.pantry-service-owner'), state.owner, { mode: 0o600, flag: 'wx' })
   state.auxiliaryDirectories = [sockets]
+  checkpointNativeService(state, onState)
   const args = [
     '--no-defaults', `--basedir=${base}`, `--datadir=${data}`,
     '--bind-address=127.0.0.1', `--port=${port}`, '--mysqlx=OFF',
@@ -42,7 +43,7 @@ export async function startNativeMysql(service: ServiceSpec, state: NativeServic
   // MySQL refuses to run as root unless the choice is explicit. Hosted action
   // jobs normally run as an unprivileged user; isolated root jobs remain owned.
   if (process.getuid?.() === 0) args.push('--user=root')
-  await spawnNativeService(state, server, args, env)
+  await spawnNativeService(state, server, args, env, onState)
   const client = join(state.directory, 'client.cnf')
   writeFileSync(client, `[client]\nuser=pantry\npassword=${password}\nhost=127.0.0.1\nport=${port}\nprotocol=TCP\nssl-mode=REQUIRED\n`, { mode: 0o600 })
   const deadline = Date.now() + 60_000

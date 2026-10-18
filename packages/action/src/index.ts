@@ -74,9 +74,13 @@ async function startRequestedServices(services: ServiceSpec[], pantryBinDir: str
   for (const service of services) {
     core.startGroup(`Starting Pantry ${service.name} service`)
     try {
-      const started = await startNativeService(service, pantryBinDir, process.env.RUNNER_TEMP || os.tmpdir(), { maskSecret: core.setSecret })
-      nativeStates.push(started.state)
-      core.saveState('native-services', JSON.stringify(nativeStates))
+      const started = await startNativeService(service, pantryBinDir, process.env.RUNNER_TEMP || os.tmpdir(), {
+        maskSecret: core.setSecret,
+        onState(state) {
+          if (!nativeStates.includes(state)) nativeStates.push(state)
+          core.saveState('native-services', JSON.stringify(nativeStates))
+        },
+      })
       for (const [key, value] of Object.entries(started.environment)) {
         if (/PASSWORD|API_KEY|REDISCLI_AUTH/.test(key)) core.setSecret(value)
         core.exportVariable(key, value)

@@ -9,6 +9,7 @@ const execute = promisify(execFile)
 export interface ServiceProcessIdentity {
   pid: number
   uid: number
+  group: number
   birth: string
   command: string
 }
@@ -39,7 +40,7 @@ export async function serviceProcessIdentity(pid: number): Promise<ServiceProces
       // A zombie has exited and cannot be signalled as a running service.
       if (trailing[0] === 'Z') return undefined
       return {
-        pid, uid: statSync(directory).uid,
+        pid, uid: statSync(directory).uid, group: Number(trailing[2]),
         birth: trailing[19]!,
         command: readFileSync(join(directory, 'cmdline'), 'utf8').replaceAll('\0', ' ').trim(),
       }
@@ -50,21 +51,22 @@ export async function serviceProcessIdentity(pid: number): Promise<ServiceProces
     }
   }
   if (process.platform !== 'darwin') throw new Error('Native service ownership requires Linux or macOS')
-  const result = await execute('/bin/ps', ['-p', String(pid), '-o', 'uid=,lstart=,command='], { timeout: 2000 }).catch((error) => {
+  const result = await execute('/bin/ps', ['-p', String(pid), '-o', 'uid=,pgid=,stat=,lstart=,command='], { timeout: 2000 }).catch((error) => {
     if (error.code === 1 && !error.stdout?.trim()) return { stdout: '' }
     throw error
   })
   const line = result.stdout.trim()
   if (!line) return undefined
-  const match = /^(\d+)\s+(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+\s+\d+)\s+(.+)$/.exec(line)
+  const match = /^(\d+)\s+(\d+)\s+(\S+)\s+(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+\s+\d+)\s+(.+)$/.exec(line)
   if (!match) throw new Error('Could not read native service process ownership')
-  return { pid, uid: Number(match[1]), birth: match[2]!, command: match[3]! }
+  if (match[3]!.startsWith('Z')) return undefined
+  return { pid, uid: Number(match[1]), group: Number(match[2]), birth: match[4]!, command: match[5]! }
 }
 
 export async function assertServiceProcess(identity: ServiceProcessIdentity, directory: string): Promise<boolean> {
   const live = await serviceProcessIdentity(identity.pid)
   if (!live) return false
-  if (live.uid !== process.getuid?.() || live.uid !== identity.uid || live.birth !== identity.birth
+  if (live.uid !== process.getuid?.() || live.uid !== identity.uid || live.group !== identity.group || live.birth !== identity.birth
     || live.command !== identity.command || !live.command.includes(realpathSync(directory)))
     throw new Error('Refusing to signal a foreign or reused native service PID')
   return true

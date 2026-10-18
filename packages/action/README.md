@@ -97,6 +97,13 @@ readiness verifies the private data directory and an authenticated TLS session; 
 readiness includes an authenticated API request. The post action stops the
 owned services and removes their private data, including after a failed job.
 
+Startup saves private-directory ownership before readiness checks. A gated
+foreground launcher starts the native server only after its PID, user, birth,
+command and process group have been saved for the post action. Cancellation
+before that checkpoint starts no server. Cleanup signals only the verified
+owned group and checks that its live members have exited before removing data.
+Changed ownership or incomplete shutdown fails cleanup and retains the data.
+
 ```yaml
 - name: Set up the native test stack
   uses: pantry-pm/pantry/packages/action@main

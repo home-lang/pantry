@@ -1,6 +1,6 @@
 import { execFile, spawn } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { closeSync, existsSync, lstatSync, mkdirSync, mkdtempSync, openSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -21,8 +21,44 @@ export interface NativeServiceState {
   binDir: string
   pid?: number
   process?: ServiceProcessIdentity
+  /** A gated, immutable launcher owns this foreground service's process group. */
+  launcher?: boolean
   auxiliaryDirectories?: string[]
   libraries: Record<string, string>
+}
+
+export interface NativeServiceOptions {
+  maskSecret?: (secret: string) => void
+  /** Persist post-job ownership synchronously, before startup may continue. */
+  onState?: (state: NativeServiceState) => void
+}
+
+export function checkpointNativeService(state: NativeServiceState, onState?: NativeServiceOptions['onState']): void {
+  const pending: unknown = onState?.(state)
+  if (pending !== undefined) {
+    if (pending instanceof Promise) void pending.catch(() => {})
+    throw new TypeError('Native service ownership must be persisted synchronously')
+  }
+}
+
+function directoryExists(directory: string): boolean {
+  try { lstatSync(directory); return true }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false
+    throw error
+  }
+}
+
+async function groupHasLiveProcesses(group: number): Promise<boolean> {
+  if (!Number.isSafeInteger(group) || group <= 1) throw new Error('Invalid native service process group')
+  const { stdout } = await execute('/bin/ps', ['-axo', 'pgid=,stat='], { timeout: 2000 })
+  for (const line of stdout.split('\n')) {
+    if (!line.trim()) continue
+    const match = /^\s*(\d+)\s+(\S+)\s*$/.exec(line)
+    if (!match) throw new Error('Could not verify native service group shutdown')
+    if (Number(match[1]) === group && !match[2]!.startsWith('Z')) return true
+  }
+  return false
 }
 
 export async function freeServicePort(): Promise<number> {
@@ -53,13 +89,43 @@ function logTail(directory: string): string {
 
 /** Stop only this action's private cluster/process, then remove its data. */
 export async function stopNativeService(state: NativeServiceState): Promise<void> {
+  if (state.launcher && (state.pid === undefined || !Number.isSafeInteger(state.pid) || state.pid <= 1 || !state.process || state.process.pid !== state.pid || state.process.group !== state.pid))
+    throw new Error('Invalid native service launcher ownership; retained private data')
+  // Startup failure may already have completed cleanup before the post step.
+  if (!directoryExists(state.directory)) {
+    if (state.pid && await serviceProcessIdentity(state.pid)) throw new Error('Missing native service ownership directory; refusing to signal a live PID')
+    if (state.launcher && state.process && await groupHasLiveProcesses(state.process.group))
+      throw new Error('Missing ownership directory with a live service group; retained auxiliary data')
+    for (const directory of state.auxiliaryDirectories || []) {
+      if (!directoryExists(directory)) continue
+      assertServiceDirectory(directory, state.owner)
+      rmSync(directory, { recursive: true, force: true })
+    }
+    return
+  }
   assertServiceDirectory(state.directory, state.owner)
   for (const directory of state.auxiliaryDirectories || []) assertServiceDirectory(directory, state.owner)
   const env = { ...process.env, ...state.libraries }
   if (state.pid && !state.process && serviceAlive(state.pid))
     throw new Error('Service process identity was not captured; retained its private directory')
   const running = state.process && await assertServiceProcess(state.process, state.directory)
-  if (state.name === 'postgres' && running) {
+  if (state.launcher && running && state.process) {
+    const identity = state.process
+    if (identity.group !== identity.pid || identity.group <= 1)
+      throw new Error('Native service launcher is not its owned process group leader')
+    // The launcher retains its original PID/birth/command until its foreground
+    // child exits. Check that identity immediately before each group signal.
+    if (await assertServiceProcess(identity, state.directory)) process.kill(-identity.group, state.name === 'postgres' ? 'SIGINT' : 'SIGTERM')
+    const deadline = Date.now() + 10_000
+    while (await assertServiceProcess(identity, state.directory) && Date.now() < deadline) await pause(50)
+    if (await assertServiceProcess(identity, state.directory)) {
+      process.kill(-identity.group, 'SIGKILL')
+      const killDeadline = Date.now() + 2000
+      while (await assertServiceProcess(identity, state.directory) && Date.now() < killDeadline) await pause(50)
+      if (await assertServiceProcess(identity, state.directory)) throw new Error('Native service group did not stop; retained its private data')
+    }
+  }
+  else if (state.name === 'postgres' && running) {
     const data = join(state.directory, 'data')
     if (existsSync(join(data, 'postmaster.pid'))) {
       await execute(join(state.binDir, 'pg_ctl'), ['-D', data, '-m', 'fast', '-w', '-t', '30', 'stop'], { env, timeout: 35_000 })
@@ -76,6 +142,15 @@ export async function stopNativeService(state: NativeServiceState): Promise<void
       if (await assertServiceProcess(state.process, state.directory)) throw new Error('Native service did not stop; retained its data directory')
     }
   }
+  // A dead launcher alone does not prove its children have exited, including
+  // when it was already absent at post entry. Observation never authorizes a
+  // signal after losing the recorded leader; a reused group retains the data.
+  if (state.launcher && state.process) {
+    const group = state.process.group
+    const groupDeadline = Date.now() + 2000
+    while (await groupHasLiveProcesses(group) && Date.now() < groupDeadline) await pause(50)
+    if (await groupHasLiveProcesses(group)) throw new Error('Native service group still has live processes; retained its private data')
+  }
   if (state.process && await assertServiceProcess(state.process, state.directory))
     throw new Error('Native service is still running; retained its private directory')
   for (const directory of state.auxiliaryDirectories || []) rmSync(directory, { recursive: true, force: true })
@@ -83,24 +158,66 @@ export async function stopNativeService(state: NativeServiceState): Promise<void
 }
 
 /** Keep the unique private directory in argv, then capture the live process. */
-export async function spawnNativeService(state: NativeServiceState, executable: string, args: string[], env: NodeJS.ProcessEnv): Promise<void> {
+export async function spawnNativeService(state: NativeServiceState, executable: string, args: string[], env: NodeJS.ProcessEnv, onState?: NativeServiceOptions['onState']): Promise<void> {
+  const launcher = join(state.directory, 'launch.sh')
+  // EOF before the checkpoint starts no server. After admission the immutable
+  // launcher stays alive with its foreground child, so post cleanup can verify
+  // PID, UID, birth, group and command before signalling the owned group.
+  writeFileSync(launcher, `#!/bin/sh
+IFS= read -r permission || exit 125
+[ "$permission" = start ] || exit 126
+trap ':' INT TERM HUP
+"$@" &
+child=$!
+while :; do
+  wait "$child"
+  status=$?
+  [ "$status" -lt 128 ] && exit "$status"
+  kill -0 "$child" 2>/dev/null || exit "$status"
+done
+`, { mode: 0o700, flag: 'wx' })
   const log = openSync(join(state.directory, 'server.log'), 'a', 0o600)
   try {
-    const child = spawn(executable, args, { env, stdio: ['ignore', log, log], detached: true })
-    await new Promise<void>((resolve, reject) => {
-      child.once('spawn', resolve)
-      child.once('error', reject)
+    const child = spawn('/bin/sh', [launcher, executable, ...args], { env, stdio: ['pipe', log, log], detached: true })
+    const exited = new Promise<void>(resolve => {
+      child.once('exit', () => resolve())
+      child.once('error', () => resolve())
     })
-    state.pid = child.pid
-    child.unref()
-    state.process = state.pid ? await serviceProcessIdentity(state.pid) : undefined
-    if (!state.process || !await assertServiceProcess(state.process, state.directory)) throw new Error('Native service exited before ownership could be recorded')
+    try {
+      await new Promise<void>((resolve, reject) => {
+        child.once('spawn', resolve)
+        child.once('error', reject)
+      })
+      const identity = child.pid ? await serviceProcessIdentity(child.pid) : undefined
+      if (!identity || identity.group !== identity.pid || !await assertServiceProcess(identity, state.directory))
+        throw new Error('Native launcher ownership could not be captured')
+      state.pid = identity.pid
+      state.process = identity
+      state.launcher = true
+      checkpointNativeService(state, onState)
+      await new Promise<void>((resolve, reject) => {
+        child.stdin!.once('error', reject)
+        child.stdin!.end('start\n', resolve)
+      })
+      child.unref()
+    }
+    catch (error) {
+      child.stdin?.destroy()
+      let timeout: ReturnType<typeof setTimeout> | undefined
+      try {
+        await Promise.race([exited, new Promise<never>((resolve, reject) => {
+          timeout = setTimeout(() => reject(new Error('Unadmitted native launcher did not exit')), 2000)
+        })])
+      }
+      finally { clearTimeout(timeout) }
+      throw error
+    }
   }
   finally { closeSync(log) }
 }
 
 /** Pantry-installed binaries, private data, authenticated readiness, bounded cleanup. */
-export async function startNativeService(service: ServiceSpec, binDir: string, temporaryRoot: string, options: { maskSecret?: (secret: string) => void } = {}): Promise<{ state: NativeServiceState, environment: Record<string, string>, version: string }> {
+export async function startNativeService(service: ServiceSpec, binDir: string, temporaryRoot: string, options: NativeServiceOptions = {}): Promise<{ state: NativeServiceState, environment: Record<string, string>, version: string }> {
   if (process.platform !== 'darwin' && process.platform !== 'linux') throw new Error('Native Pantry services require Linux or macOS')
   mkdirSync(temporaryRoot, { recursive: true })
   const directory = realpathSync(mkdtempSync(join(temporaryRoot, `pantry-${service.name}-`)))
@@ -115,8 +232,9 @@ export async function startNativeService(service: ServiceSpec, binDir: string, t
     return value
   }
   try {
+    checkpointNativeService(state, options.onState)
     const port = await freeServicePort()
-    if (service.name === 'mysql') return await startNativeMysql(service, state, env, port, secret)
+    if (service.name === 'mysql') return await startNativeMysql(service, state, env, port, secret, options.onState)
     if (service.name === 'postgres') {
       const { stdout } = await execute(join(binDir, 'postgres'), ['--version'], { env, timeout: 10_000 })
       const version = /PostgreSQL\)?\s+(\d+\.\d+(?:\.\d+)?)/.exec(stdout)?.[1]
@@ -130,7 +248,7 @@ export async function startNativeService(service: ServiceSpec, binDir: string, t
       }
       finally { rmSync(passwordFile, { force: true }) }
       // TCP only avoids macOS's short Unix socket path limit on hosted runners.
-      await spawnNativeService(state, join(binDir, 'postgres'), ['-D', data, '-h', '127.0.0.1', '-p', String(port), '-k', ''], env)
+      await spawnNativeService(state, join(binDir, 'postgres'), ['-D', data, '-h', '127.0.0.1', '-p', String(port), '-k', ''], env, options.onState)
       const pg = { PGHOST: '127.0.0.1', PGPORT: String(port), PGUSER: 'postgres', PGPASSWORD: password, PGDATABASE: 'pantry_ci' }
       const deadline = Date.now() + 30_000
       for (;;) {
@@ -157,7 +275,7 @@ export async function startNativeService(service: ServiceSpec, binDir: string, t
       const password = secret()
       const config = join(directory, 'redis.conf')
       writeFileSync(config, `bind 127.0.0.1\nport ${port}\nprotected-mode yes\nsave ""\nappendonly no\ndaemonize no\nset-proc-title no\nrequirepass ${password}\ndir ${JSON.stringify(directory)}\n`, { mode: 0o600 })
-      await spawnNativeService(state, join(binDir, 'redis-server'), [config], env)
+      await spawnNativeService(state, join(binDir, 'redis-server'), [config], env, options.onState)
       const client = join(binDir, 'redis-cli')
       const authenticated = { ...env, REDISCLI_AUTH: password }
       const deadline = Date.now() + 30_000
@@ -180,7 +298,7 @@ export async function startNativeService(service: ServiceSpec, binDir: string, t
     mkdirSync(data)
     let peeringPort = await freeServicePort()
     while (peeringPort === port) peeringPort = await freeServicePort()
-    await spawnNativeService(state, join(binDir, 'typesense-server'), ['--data-dir', data, '--api-address', '127.0.0.1', '--api-port', String(port), '--peering-address', '127.0.0.1', '--peering-port', String(peeringPort)], { ...env, TYPESENSE_API_KEY: apiKey })
+    await spawnNativeService(state, join(binDir, 'typesense-server'), ['--data-dir', data, '--api-address', '127.0.0.1', '--api-port', String(port), '--peering-address', '127.0.0.1', '--peering-port', String(peeringPort)], { ...env, TYPESENSE_API_KEY: apiKey }, options.onState)
     const url = `http://127.0.0.1:${port}`
     const deadline = Date.now() + 60_000
     let version = ''
