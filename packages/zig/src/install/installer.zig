@@ -771,7 +771,7 @@ pub const Installer = struct {
                     .version = s3_result.version,
                 };
                 from_s3 = true;
-            } else if (downloader.lookupPantryPublished(self.allocator, domain, spec.version)) |pub_result| {
+            } else if (try downloader.lookupPantryPublished(self.allocator, domain, spec.version)) |pub_result| {
                 if (options.verbose) std.debug.print("[verbose:installer] pantry published hit: {s} @ {s}\n", .{ domain, pub_result.version });
                 s3_version_alloc = pub_result.version;
                 s3_tarball_url = pub_result.tarball_url;
@@ -2952,7 +2952,7 @@ pub const Installer = struct {
         else if (try downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| blk: {
             self.allocator.free(s3_result.version);
             break :blk s3_result.tarball_url;
-        } else if (downloader.lookupPantryPublished(self.allocator, domain, spec.version)) |pub_result| blk: {
+        } else if (try downloader.lookupPantryPublished(self.allocator, domain, spec.version)) |pub_result| blk: {
             self.allocator.free(pub_result.version);
             break :blk pub_result.tarball_url;
         } else blk: {
@@ -3583,7 +3583,7 @@ pub const Installer = struct {
         else if (try downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| blk: {
             self.allocator.free(s3_result.version);
             break :blk s3_result.tarball_url;
-        } else if (downloader.lookupPantryPublished(self.allocator, domain, spec.version)) |pub_result| blk: {
+        } else if (try downloader.lookupPantryPublished(self.allocator, domain, spec.version)) |pub_result| blk: {
             self.allocator.free(pub_result.version);
             break :blk pub_result.tarball_url;
         } else blk: {

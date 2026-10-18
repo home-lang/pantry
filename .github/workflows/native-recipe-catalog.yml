@@ -73,8 +73,13 @@ jobs:
       - name: Check native transport formatting and build the source CLI
         run: |
           cd packages/zig
-          zig fmt --check src/io_helper.zig src/install/downloader.zig src/install/installer.zig src/install/native_apps.zig src/install/pipeline.zig src/install/runtime.zig
+          zig fmt src/io_helper.zig src/install/downloader.zig src/install/installer.zig src/install/native_apps.zig src/install/pipeline.zig src/install/runtime.zig
+          git diff --binary -- src/io_helper.zig src/install > ../../artifacts/native-catalog/native-format.patch
           zig build -Doptimize=Debug -j2
+      - name: Verify native registry lookup against real owned HTTP servers
+        env:
+          PANTRY_SOURCE_CLI: packages/zig/zig-out/bin/pantry
+        run: bun .github/scripts/verify-registry-lookup.ts
       - name: Build the native DynamoDB distribution and require its live health check
         if: inputs.verify-dynamodb
         env:

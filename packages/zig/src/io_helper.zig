@@ -2339,7 +2339,14 @@ fn httpGetResponseWithPolicy(allocator: std.mem.Allocator, url: []const u8, extr
         }
         return err;
     };
-    const first = try select.await();
+    const first = select.await() catch |err| {
+        while (select.cancel()) |result| {
+            if (result == .response) {
+                if (result.response) |response| response.deinit(allocator) else |_| {}
+            }
+        }
+        return err;
+    };
     switch (first) {
         .response => |response| {
             while (select.cancel()) |_| {}

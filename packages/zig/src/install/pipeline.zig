@@ -595,7 +595,7 @@ fn resolvePantryRegistryTarball(
         };
     }
 
-    if (downloader.lookupPantryPublished(allocator, name, version)) |pub_result| {
+    if (try downloader.lookupPantryPublished(allocator, name, version)) |pub_result| {
         return .{
             .name = allocator.dupe(u8, name) catch {
                 allocator.free(pub_result.version);

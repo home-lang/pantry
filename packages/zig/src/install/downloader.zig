@@ -603,12 +603,12 @@ test "Zig prerelease ranges are resolved through registry metadata" {
 
 /// Try to find a package tarball published via `pantry publish` (packages/pantry/ prefix).
 /// This is the S3 path used by the standard `pantry publish` command.
-/// Returns null if not found or on any error.
+/// Only confirmed absence or a valid nonmatching version returns null.
 pub fn lookupPantryPublished(
     allocator: std.mem.Allocator,
     domain: []const u8,
     version_constraint: []const u8,
-) ?S3PackageResult {
+) !?S3PackageResult {
     const semver = @import("../packages/semver.zig");
     const pkg_registry = @import("../packages/generated.zig");
 
@@ -628,25 +628,24 @@ pub fn lookupPantryPublished(
     _ = clean_name; // May be used for fallback later
 
     // Query registry API using package name (npm-style publish uses name, not domain)
-    const metadata_url = std.fmt.allocPrint(
+    const metadata_url = try std.fmt.allocPrint(
         allocator,
         "https://registry.pantry.dev/packages/{s}",
         .{pkg_name},
-    ) catch return null;
+    );
     defer allocator.free(metadata_url);
 
-    // Fetch metadata
-    const metadata_response = io_helper.httpGet(allocator, metadata_url) catch return null;
-    defer allocator.free(metadata_response);
-
-    if (metadata_response.len == 0) return null;
-
-    // Parse metadata (this is the raw package.json content)
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, metadata_response, .{}) catch return null;
+    const response = try io_helper.httpGetStatusTimeout(allocator, metadata_url, 30_000);
+    defer response.deinit(allocator);
+    if (response.status == 404) return null;
+    if (!response.ok()) {
+        style.print("  Registry package metadata HTTP {d} for {s}\n", .{ response.status, domain });
+        return if (response.status == 401 or response.status == 403) error.RegistryAuthenticationRequired else error.RegistryUnavailable;
+    }
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, response.body, .{}) catch return error.InvalidRegistryMetadata;
     defer parsed.deinit();
-
     const root = parsed.value;
-    if (root != .object) return null;
+    if (root != .object) return error.InvalidRegistryMetadata;
 
     // The npm namespace is not this namespace.
     //
@@ -666,7 +665,7 @@ pub fn lookupPantryPublished(
     }
 
     // Extract version from metadata
-    const version_str = if (root.object.get("version")) |v| (if (v == .string) v.string else return null) else return null;
+    const version_str = if (root.object.get("version")) |v| (if (v == .string) v.string else return error.InvalidRegistryMetadata) else return error.InvalidRegistryMetadata;
 
     // Check if the published version satisfies the constraint
     const is_any = std.mem.eql(u8, version_constraint, "latest") or
@@ -679,16 +678,13 @@ pub fn lookupPantryPublished(
     }
 
     // Use the canonical tarball endpoint (always works via registry proxy)
-    const tarball_url = std.fmt.allocPrint(
+    const tarball_url = try std.fmt.allocPrint(
         allocator,
         "https://registry.pantry.dev/packages/{s}/{s}/tarball",
         .{ pkg_name, version_str },
-    ) catch return null;
-
-    const version_dupe = allocator.dupe(u8, version_str) catch {
-        allocator.free(tarball_url);
-        return null;
-    };
+    );
+    errdefer allocator.free(tarball_url);
+    const version_dupe = try allocator.dupe(u8, version_str);
 
     return S3PackageResult{
         .tarball_url = tarball_url,
