@@ -2236,6 +2236,9 @@ fn requestTransportError(req: *std.http.Client.Request, fallback: anyerror) anye
             if (connection.stream_reader.err) |err| return err;
             if (req.reader.body_err) |err| return err;
         }
+        if (fallback == error.WriteFailed) {
+            if (connection.stream_writer.err) |err| return err;
+        }
     }
     return fallback;
 }
@@ -2250,7 +2253,7 @@ fn sameHttpOrigin(a: std.Uri, b: std.Uri) bool {
     return std.ascii.eqlIgnoreCase(a_host, b_host) and (a.port orelse default_port) == (b.port orelse default_port);
 }
 
-fn httpGetResponseTask(allocator: std.mem.Allocator, url: []const u8, extra_headers: []const std.http.Header) anyerror!HttpResponse {
+fn httpGetResponseTask(allocator: std.mem.Allocator, url: []const u8, extra_headers: []const std.http.Header, status_only_errors: bool) anyerror!HttpResponse {
     var client: std.http.Client = .{ .allocator = allocator, .io = io };
     defer client.deinit();
     var current_url = try allocator.dupe(u8, url);
@@ -2272,7 +2275,13 @@ fn httpGetResponseTask(allocator: std.mem.Allocator, url: []const u8, extra_head
                 const sensitive = std.ascii.eqlIgnoreCase(header.name, "Authorization") or std.ascii.eqlIgnoreCase(header.name, "Cookie") or std.ascii.eqlIgnoreCase(header.name, "Proxy-Authorization");
                 if (!sensitive or sameHttpOrigin(initial_uri, uri)) try headers.append(allocator, header);
             }
-            if (decoration.authorization) |authorization| try headers.append(allocator, .{ .name = "Authorization", .value = authorization });
+            var has_authorization = false;
+            for (headers.items) |header| {
+                if (std.ascii.eqlIgnoreCase(header.name, "Authorization")) has_authorization = true;
+            }
+            if (!has_authorization) {
+                if (decoration.authorization) |authorization| try headers.append(allocator, .{ .name = "Authorization", .value = authorization });
+            }
             var req = try client.request(.GET, uri, .{
                 .extra_headers = headers.items,
                 .keep_alive = false,
@@ -2295,7 +2304,7 @@ fn httpGetResponseTask(allocator: std.mem.Allocator, url: []const u8, extra_head
                 const status = @backingInt(response.head.status);
                 // An error's status is decisive; never wait for an untrusted
                 // error body before reporting authentication or availability.
-                if (status < 200 or status >= 300) return .{ .status = status, .body = try allocator.alloc(u8, 0) };
+                if (status_only_errors and (status < 200 or status >= 300)) return .{ .status = status, .body = try allocator.alloc(u8, 0) };
                 const body = response.reader(&.{}).allocRemaining(allocator, std.Io.Limit.limited(32 * 1024 * 1024)) catch |err| return requestTransportError(&req, err);
                 return .{ .status = status, .body = body };
             }
@@ -2309,10 +2318,19 @@ fn httpGetResponseTask(allocator: std.mem.Allocator, url: []const u8, extra_head
 /// Status-preserving GET with one deadline for headers, redirects and body.
 /// Every redirect recomputes registry credentials for its exact origin.
 pub fn httpGetResponseTimeout(allocator: std.mem.Allocator, url: []const u8, extra_headers: []const std.http.Header, timeout_ms: u64) !HttpResponse {
+    return httpGetResponseWithPolicy(allocator, url, extra_headers, timeout_ms, false);
+}
+
+/// Metadata lookup needs the failure status immediately, even if an error body stalls.
+pub fn httpGetStatusTimeout(allocator: std.mem.Allocator, url: []const u8, timeout_ms: u64) !HttpResponse {
+    return httpGetResponseWithPolicy(allocator, url, &.{}, timeout_ms, true);
+}
+
+fn httpGetResponseWithPolicy(allocator: std.mem.Allocator, url: []const u8, extra_headers: []const std.http.Header, timeout_ms: u64, status_only_errors: bool) !HttpResponse {
     const Selection = union(enum) { response: anyerror!HttpResponse, timeout: void };
     var buffer: [2]Selection = undefined;
     var select = std.Io.Select(Selection).init(getIo(), &buffer);
-    try select.concurrent(.response, httpGetResponseTask, .{ allocator, url, extra_headers });
+    try select.concurrent(.response, httpGetResponseTask, .{ allocator, url, extra_headers, status_only_errors });
     select.concurrent(.timeout, httpTimeoutTask, .{timeout_ms}) catch |err| {
         while (select.cancel()) |result| {
             if (result == .response) {

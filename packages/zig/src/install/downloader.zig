@@ -107,7 +107,6 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
         const n = body_reader.stream(&file_writer.interface, .unlimited) catch |err| switch (err) {
             error.EndOfStream => break,
             else => return err,
-
         };
         bytes_downloaded += n;
 
@@ -514,7 +513,7 @@ pub fn lookupS3Registry(
 ) !?S3PackageResult {
     const metadata_url = try std.fmt.allocPrint(allocator, "https://registry.pantry.dev/binaries/{s}/metadata.json", .{domain});
     defer allocator.free(metadata_url);
-    const response = try io_helper.httpGetResponseTimeout(allocator, metadata_url, &.{}, 30_000);
+    const response = try io_helper.httpGetStatusTimeout(allocator, metadata_url, 30_000);
     defer response.deinit(allocator);
     if (response.status == 404) return null;
     if (!response.ok()) {
