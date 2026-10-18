@@ -41,7 +41,7 @@ jobs:
           set -e
           git rev-parse HEAD
           bun run typecheck
-          bun test packages/action/src/services.test.ts packages/action/src/service-ownership.test.ts
+          bun test packages/action/src/services.test.ts packages/action/src/service-ownership.test.ts packages/action/src/bootstrap.test.ts packages/action/src/build-portability.test.ts packages/action/src/release-download.test.ts
       - name: Build this checkout's Action bundles
         run: bun run --cwd packages/action build
       - name: Run the built Action with published native service packages
@@ -84,3 +84,37 @@ jobs:
           name: native-action-${{ matrix.os }}-mysql-${{ matrix.mysql }}
           path: artifacts/native-action-source
           if-no-files-found: error
+
+  bootstrap-windows:
+    name: Native Node bootstrap (Windows)
+    needs: services
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.source-ref }}
+      # Consume this exact source's normal build, before installing any runtime.
+      # The bootstrap must run with the Action's Node24 host alone on Windows.
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-action-ubuntu-latest-mysql-26.7.0
+          path: packages/action/dist
+      - name: Verify the generated bundle source
+        run: test "$(cat packages/action/dist/source-commit.txt)" = "$(git rev-parse HEAD)"
+      - name: Bootstrap the real native CLI and Bun through the built Action
+        uses: ./packages/action
+        env:
+          RUNNER_TOOL_CACHE: ${{ runner.temp }}/pantry-source-bootstrap
+        with:
+          version: ${{ inputs.pantry-version }}
+          install: 'false'
+          packages: bun.com@1.4.3
+      - name: Verify native bootstrap and portable ZIP/cache contracts
+        run: |
+          pantry --version | grep -F '${{ inputs.pantry-version }}'
+          bun --version | grep -Fx '1.4.3'
+          bun test packages/action/src/bootstrap.test.ts
