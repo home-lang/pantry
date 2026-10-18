@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { execFile } from 'node:child_process'
+import { execFile, spawn } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -17,6 +17,112 @@ const mysqlVersion = process.env.PANTRY_NATIVE_MYSQL_TEST_VERSION || '26.7.0'
 const integration = binDir ? describe : describe.skip
 
 integration('Pantry native action services against installed packages', () => {
+  // Public lifecycle + actual post action: catches parent cancellation before
+  // readiness, including lost ownership. Does not prove runner hard-power loss.
+  test('post cleanup recovers interrupted startup while preserving a foreign native service', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'pantry cancellation '))
+    const foreignRoot = join(root, 'foreign')
+    const temporary = join(root, 'interrupted')
+    const binaries = join(root, 'bin')
+    mkdirSync(foreignRoot)
+    mkdirSync(temporary)
+    mkdirSync(binaries)
+    const savedState = join(root, 'state.json')
+    const ready = join(root, 'readiness-entered')
+    for (const name of ['postgres', 'initdb', 'createdb', 'pg_ctl']) symlinkSync(join(binDir!, name), join(binaries, name))
+    // A real query confirms the cluster is alive; delaying the readiness client
+    // then leaves the action in the cancellation interval under test.
+    writeFileSync(join(binaries, 'psql'), `#!/usr/bin/env bun
+import { execFileSync } from 'node:child_process'
+import { writeFileSync } from 'node:fs'
+execFileSync(${JSON.stringify(join(binDir!, 'psql'))}, process.argv.slice(2), { stdio: 'inherit' })
+writeFileSync(${JSON.stringify(ready)}, 'ready', { mode: 0o600 })
+await Bun.sleep(120000)
+`, { mode: 0o700 })
+    const foreign = await startNativeService(parseServiceSpecs('postgres@17.11')[0]!, binDir!, foreignRoot, options)
+    const child = spawn(process.execPath, [join(import.meta.dir, 'fixtures/native-service-cancellation.ts'), binaries, temporary, savedState], {
+      env: process.env, stdio: 'ignore', detached: true,
+    })
+    let childError: Error | undefined
+    const childExited = new Promise<void>((resolve) => {
+      child.once('error', (error) => { childError = error; resolve() })
+      child.once('exit', () => resolve())
+    })
+    let parent: ServiceProcessIdentity | undefined
+    let fallback: Awaited<ReturnType<typeof startNativeService>>['state'] | undefined
+    const captureFallback = async () => {
+      for (const name of readdirSync(temporary)) {
+        const directory = join(temporary, name)
+        const pidfile = join(directory, 'data/postmaster.pid')
+        if (!existsSync(pidfile)) continue
+        const pid = Number(readFileSync(pidfile, 'utf8').split('\n')[0])
+        const identity = await serviceProcessIdentity(pid)
+        if (!identity || !await assertServiceProcess(identity, directory)) continue
+        const owner = readFileSync(join(directory, '.pantry-service-owner'), 'utf8')
+        assertServiceDirectory(directory, owner)
+        fallback = { name: 'postgres', directory, owner, binDir: binaries, pid, process: identity, libraries: foreign.state.libraries }
+      }
+    }
+    const runPost = async () => {
+      const records = existsSync(savedState) ? readFileSync(savedState, 'utf8') : '[]'
+      await execute(process.execPath, [join(import.meta.dir, 'post.ts')], {
+        env: { ...process.env, 'STATE_native-services': records, 'STATE_apple-signing-keychain': '' }, timeout: 45_000,
+      })
+    }
+    try {
+      if (!child.pid) throw new Error('Cancellation parent did not spawn')
+      parent = await serviceProcessIdentity(child.pid)
+      const deadline = Date.now() + 90_000
+      while (!existsSync(ready) && Date.now() < deadline) {
+        if (childError) throw childError
+        if (child.exitCode !== null || child.signalCode !== null) throw new Error('Cancellation parent exited before readiness')
+        await new Promise(resolve => setTimeout(resolve, 25))
+      }
+      expect(existsSync(ready)).toBe(true)
+      // Preserve independently captured ownership for teardown when the unfixed
+      // implementation loses its post state. No unverified PID is signalled.
+      await captureFallback()
+      if (!fallback) throw new Error('Fixture did not capture its owned PostgreSQL process')
+      const pid = fallback.pid!
+      if (!parent || !await assertServiceProcess(parent, root)) throw new Error('Cancellation parent identity changed')
+      process.kill(-parent.pid, 'SIGKILL')
+      await childExited
+
+      await runPost()
+      expect(readdirSync(temporary)).toEqual([])
+      expect(await serviceProcessIdentity(pid)).toBeUndefined()
+      expect(await assertServiceProcess(foreign.state.process!, foreign.state.directory)).toBe(true)
+      const query = await execute(join(binDir!, 'psql'), ['-X', '-A', '-t', '-c', 'SELECT 42'], {
+        env: { ...process.env, ...foreign.state.libraries, ...foreign.environment }, timeout: 5000,
+      })
+      expect(query.stdout.trim()).toBe('42')
+    }
+    finally {
+      const failures: unknown[] = []
+      const attempt = async (cleanup: () => Promise<void>) => {
+        try { await cleanup() }
+        catch (error) { failures.push(error) }
+      }
+      // This path also runs when readiness times out or an assertion fails.
+      await attempt(captureFallback)
+      await attempt(async () => {
+        if (parent && await assertServiceProcess(parent, root)) {
+          process.kill(-parent.pid, 'SIGKILL')
+          await childExited
+        }
+      })
+      await attempt(runPost)
+      await attempt(async () => {
+        if (fallback && existsSync(fallback.directory)) await stopNativeService(fallback)
+      })
+      await attempt(() => stopNativeService(foreign.state))
+      if (readdirSync(temporary).length || readdirSync(foreignRoot).length)
+        failures.push(new Error('Cancellation fixture retained owned data for inspection'))
+      if (failures.length) throw new AggregateError(failures, 'Cancellation fixture cleanup did not verify')
+      rmSync(root, { recursive: true, force: true })
+    }
+  }, 180_000)
+
   test('a PostgreSQL readiness failure stops the owned server before removing its data', async () => {
     const root = mkdtempSync(join(tmpdir(), 'pantry postgres startup fault '))
     const owner = claimServiceDirectory(root)
