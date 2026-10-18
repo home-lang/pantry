@@ -1557,7 +1557,7 @@ fn publishSingleToNpm(
                     return CommandResult.err(allocator, "Claimed version is pending public metadata and tarball availability. Do not upload this version again.");
                 }
                 const why: []const u8 = if (conflict_kind == .staged)
-                    "staged on npm and not yet readable"
+                    "already claimed and verified"
                 else
                     "already published";
                 style.print("\n{s}↷{s} {s}@{s} {s} — skipping\n", .{ style.dim, style.reset, metadata.name, metadata.version, why });
