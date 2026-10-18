@@ -79,8 +79,14 @@ export async function serviceProcessIdentity(pid: number): Promise<ServiceProces
 export async function assertServiceProcess(identity: ServiceProcessIdentity, directory: string): Promise<boolean> {
   const live = await serviceProcessIdentity(identity.pid)
   if (!live) return false
-  if (live.uid !== process.getuid?.() || live.uid !== identity.uid || live.group !== identity.group || live.birth !== identity.birth
-    || live.command !== identity.command || !live.command.includes(realpathSync(directory)))
-    throw new Error('Refusing to signal a foreign or reused native service PID')
+  const mismatch = [
+    ...(live.uid !== process.getuid?.() || live.uid !== identity.uid ? ['uid'] : []),
+    ...(live.group !== identity.group ? ['group'] : []),
+    ...(live.birth !== identity.birth ? ['birth'] : []),
+    ...(live.command !== identity.command ? ['command'] : []),
+    ...(!live.command.includes(realpathSync(directory)) ? ['directory'] : []),
+  ]
+  if (mismatch.length)
+    throw new Error(`Refusing to signal a foreign or reused native service PID (${mismatch.join(', ')})`)
   return true
 }
