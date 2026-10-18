@@ -74,7 +74,25 @@ export const recipe: Recipe = {
       // NCURSES_WIDECHAR is selected by the consumer's feature macros, even in
       // narrow headers. Explicitly request the narrow ABI and exercise real
       // WINDOW access against its library using headless terminal streams.
-      'printf "#define NCURSES_WIDECHAR 0\\n#include <curses.h>\\nint main(void) { FILE *input = tmpfile(), *output = tmpfile(); if (!input || !output) return 1; SCREEN *screen = newterm(\"xterm\", output, input); if (!screen) return 2; WINDOW *window = newwin(2, 2, 0, 0); if (!window) return 3; int failed = waddch(window, \'X\') == ERR || (mvwinch(window, 0, 0) & A_CHARTEXT) != \'X\'; delwin(window); endwin(); delscreen(screen); fclose(input); fclose(output); return failed; }\\n" > narrow.c',
+      `cat > narrow.c <<'PANTRY_C'
+#define NCURSES_WIDECHAR 0
+#include <curses.h>
+int main(void) {
+  FILE *input = tmpfile(), *output = tmpfile();
+  if (!input || !output) return 1;
+  SCREEN *screen = newterm("xterm", output, input);
+  if (!screen) return 2;
+  WINDOW *window = newwin(2, 2, 0, 0);
+  if (!window) return 3;
+  int failed = waddch(window, 'X') == ERR || (mvwinch(window, 0, 0) & A_CHARTEXT) != 'X';
+  delwin(window);
+  endwin();
+  delscreen(screen);
+  fclose(input);
+  fclose(output);
+  return failed;
+}
+PANTRY_C`,
       'cc $(pkg-config --cflags ncurses) narrow.c $(pkg-config --libs ncurses) -o narrow',
       'TERMINFO="{{prefix}}/share/terminfo" ./narrow',
       'printf "#include <curses.h>\\n#if !NCURSES_WIDECHAR\\n#error wide_header_missing\\n#endif\\nint main(void) { cchar_t cell; wchar_t input[2] = { L\'X\', 0 }, output[2]; attr_t attributes; short pair; if (setcchar(&cell, input, 0, 0, 0) == ERR) return 1; if (getcchar(&cell, output, &attributes, &pair, 0) == ERR) return 2; return output[0] != L\'X\'; }\\n" > wide.c',
