@@ -4,6 +4,13 @@
 
 const std = @import("std");
 
+/// Major-release boundaries for executable interfaces.
+pub const ProgramVersion = struct {
+    name: []const u8,
+    since: ?u32 = null,
+    before: ?u32 = null,
+};
+
 /// Package information
 pub const PackageInfo = struct {
     name: []const u8,
@@ -11,6 +18,7 @@ pub const PackageInfo = struct {
     description: []const u8,
     homepage_url: ?[]const u8,
     programs: []const []const u8,
+    program_versions: []const ProgramVersion = &.{},
     dependencies: []const []const u8,
     build_dependencies: []const []const u8,
     aliases: []const []const u8,
@@ -13344,6 +13352,7 @@ pub const packages = [_]PackageInfo{ .{
     .description = "Development kit for the Java programming language",
     .homepage_url = "https://openjdk.java.net/",
     .programs = &[_][]const u8{ "jar", "jarsigner", "java", "javac", "javadoc", "javap", "jcmd", "jconsole", "jdb", "jdeprscan", "jdeps", "jfr", "jhsdb", "jimage", "jinfo", "jlink", "jmap", "jmod", "jps", "jrunscript", "jshell", "jstack", "jstat", "jstatd", "keytool", "rmiregistry", "serialver" },
+    .program_versions = &[_]ProgramVersion{.{ .name = "jrunscript", .since = null, .before = 26 }},
     .dependencies = &[_][]const u8{ "linux:giflib.sourceforge.io", "linux:harfbuzz.org^8", "linux:libjpeg-turbo.org", "linux:libpng.org", "linux:littlecms.com", "linux:openprinting.github.io/cups", "linux:info-zip.org/unzip", "linux:zlib.net", "linux:libzip.org", "linux:alsa-project.org/alsa-lib", "linux:freedesktop.org/fontconfig", "linux:freetype.org", "linux:x.org/x11", "linux:x.org/exts", "linux:x.org/xrandr", "linux:x.org/xrender", "linux:x.org/xt", "linux:x.org/xtst", "linux:info-zip.org/zip", "linux:darwinsys.com/file" },
     .build_dependencies = &[_][]const u8{ "curl.se", "gnu.org/coreutils", "gnu.org/tar" },
     .aliases = &[_][]const u8{ "java", "jdk" },

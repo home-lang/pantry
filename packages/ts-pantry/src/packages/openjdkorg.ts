@@ -263,6 +263,11 @@ export const javaPackage = {
     'java',
     'jdk',
   ] as const,
+  programVersions: {
+  jrunscript: {
+  before: 26 as const,
+},
+},
 }
 
 export type JavaPackage = typeof javaPackage
