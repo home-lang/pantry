@@ -3,7 +3,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'android.com/cmdline-tools',
   name: 'cmdline-tools',
-  propsDir: 'props/android.com/cmdline-tools',
+  propsDir: '../props/android.com/cmdline-tools',
   programs: [
     'apkanalyzer',
     'avdmanager',
@@ -58,6 +58,7 @@ export const recipe: Recipe = {
     ],
   },
   test: {
+    required: true,
     script: [
       'sdkmanager --version >/dev/null',
       'apkanalyzer --help >/dev/null',

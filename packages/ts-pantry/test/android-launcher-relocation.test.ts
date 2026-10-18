@@ -3,8 +3,9 @@ import { copyFileSync, mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { recipe } from '../src/recipes/android.com/cmdline-tools'
+import { loadRecipe } from '../scripts/recipe-loader'
 
-test('Android launcher JVM properties retain an installed and relocated SDK path with spaces', () => {
+test('Android launcher JVM properties retain an installed and relocated SDK path with spaces', async () => {
   const root = mkdtempSync(join(tmpdir(), 'pantry-android-launcher-'))
   try {
     const prefix = join(root, 'original SDK')
@@ -13,7 +14,9 @@ test('Android launcher JVM properties retain an installed and relocated SDK path
     mkdirSync(join(root, 'props'))
     const extracted = join(root, 'cmdline-tools')
     mkdirSync(extracted)
-    copyFileSync(new URL('../props/android.com/cmdline-tools/quote-tools-dir.sed', import.meta.url), join(root, 'props/quote-tools-dir.sed'))
+    const loaded = await loadRecipe('android.com/cmdline-tools', 'linux-x86-64', '14742923.0.0')
+    if (!loaded.propsDir) throw new Error('Android recipe has no packaged launcher assets')
+    copyFileSync(join(loaded.propsDir, 'quote-tools-dir.sed'), join(root, 'props/quote-tools-dir.sed'))
     // The exact default property and eval boundary from the official launcher.
     writeFileSync(join(bin, 'apkanalyzer'), String.raw`APP_HOME=$1
 DEFAULT_JVM_OPTS='-Dcom.android.sdklib.toolsdir=$APP_HOME'
