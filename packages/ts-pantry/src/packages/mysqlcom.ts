@@ -8,7 +8,7 @@
  *
  * @install `pantry install mysql.com`
  * @homepage http://www.mysql.com/
- * @dependencies `openssl.org^3`, `perl.org^5`, `invisible-island.net/ncurses^6`, ... (+4 more) (includes platform-specific dependencies)
+ * @dependencies `openssl.org^3`, `perl.org^5`, `invisible-island.net/ncurses^6`, ... (+6 more) (includes platform-specific dependencies)
  *
  * @example
  * ```typescript
@@ -84,10 +84,12 @@ export const mysqlPackage = {
     'openssl.org^3',
     'perl.org^5',
     'invisible-island.net/ncurses^6',
+    'curl.se^8',
     'linux:sourceforge.net/libtirpc',
     'linux:pagure.io/libaio^0.3.113',
     'linux:github.com/numactl/numactl^2',
     'linux:gnu.org/gcc/libstdcxx@14',
+    'linux:systemd.io/libudev',
   ] as const,
   buildDependencies: [] as const,
   /**

@@ -9,7 +9,7 @@
  * @install `pantry install gnu.org/autoconf`
  * @homepage https://www.gnu.org/software/autoconf/
  * @dependencies `gnu.org/m4@1`, `perl.org`
- * @buildDependencies `llvm.org` - required only when building from source
+ * @buildDependencies `llvm.org`, `gnu.org/make`, `gnu.org/sed` - required only when building from source
  *
  * @example
  * ```typescript
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "autoconf"
  * console.log(pkg.description) // "Automatic configure script builder"
  * console.log(pkg.programs)    // ["autoconf", "autoheader", ...]
- * console.log(pkg.versions[0]) // "2.73.0" (latest)
+ * console.log(pkg.versions[0]) // "2.72.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/gnu-org/autoconf.md
@@ -75,16 +75,13 @@ export const gnuorgautoconfPackage = {
   */
   buildDependencies: [
     'llvm.org',
+    'gnu.org/make',
+    'gnu.org/sed',
   ] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
-  // 2.73 is an upstream ALPHA whose autoreconf/autom4te scripts have a different
-  // structure than 2.72; the recipe's >=2.72 perl prefix-injection corrupts them
-  // (autoreconf dies with a perl syntax error), breaking every package that runs
-  // autoreconf against it (SDL2_gfx, ag, librttopo, numactl, pkcs11-helper,
-  // speexdsp, procps, gifsicle, ldns, …). Drop it so the resolver picks stable 2.72.
   versions: [
     '2.72.0',
     '2.71.0',

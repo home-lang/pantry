@@ -1,6 +1,6 @@
 //! Package definitions generated from ts-pantry
 //! DO NOT EDIT MANUALLY - This file is auto-generated
-//! Total packages: 1756
+//! Total packages: 1764
 
 const std = @import("std");
 
@@ -17,7 +17,7 @@ pub const PackageInfo = struct {
     versions: []const []const u8,
 };
 
-/// All known packages (1756 total)
+/// All known packages (1764 total)
 pub const packages = [_]PackageInfo{ .{
     .name = "1Password",
     .domain = "1password.com",
@@ -898,6 +898,16 @@ pub const packages = [_]PackageInfo{ .{
     .build_dependencies = &[_][]const u8{"curl.se"},
     .aliases = &[_][]const u8{ "bun.com", "bun", "bun.sh" },
     .versions = &[_][]const u8{ "1.4.3", "1.4.2", "1.4.1", "1.4.0", "1.3.14", "1.3.13", "1.3.12", "1.3.11", "1.3.10", "1.3.9", "1.3.8", "1.3.7", "1.3.6", "1.3.5", "1.3.4", "1.3.3", "1.3.2", "1.3.1", "1.3.0", "1.2.23", "1.2.22", "1.2.21", "1.2.20", "1.2.19", "1.2.18", "1.2.17", "1.2.16", "1.2.15", "1.2.14", "1.2.13", "1.2.12", "1.2.11", "1.2.10", "1.2.9", "1.2.8", "1.2.7", "1.2.6", "1.2.5", "1.2.4", "1.2.3", "1.2.2", "1.2.1", "1.2.0", "1.1.45", "1.1.44", "1.1.43", "1.1.42", "1.1.41", "1.1.40", "1.1.39", "1.1.38", "1.1.37", "1.1.36", "1.1.35", "1.1.34", "1.1.33", "1.1.32", "1.1.31", "1.1.30", "1.1.29", "1.1.28", "1.1.27", "1.1.26", "1.1.25", "1.1.24", "1.1.23", "1.1.22", "1.1.21", "1.1.20", "1.1.19", "1.1.18", "1.1.17", "1.1.16", "1.1.15", "1.1.14", "1.1.13", "1.1.12", "1.1.11", "1.1.10", "1.1.9", "1.1.8", "1.1.7", "1.1.6", "1.1.5", "1.1.4", "1.1.3", "1.1.2", "1.1.1", "1.1.0", "1.0.36", "1.0.35", "1.0.34", "1.0.33", "1.0.32", "1.0.31", "1.0.30", "1.0.29", "1.0.28", "1.0.27", "1.0.26", "1.0.25", "1.0.24", "1.0.23", "1.0.22", "1.0.21", "1.0.20", "1.0.19", "1.0.18", "1.0.17", "1.0.16", "1.0.14", "1.0.13", "1.0.12", "1.0.11", "1.0.10", "1.0.9", "1.0.8", "1.0.7", "1.0.6", "1.0.5", "1.0.4", "1.0.3", "1.0.2", "1.0.1", "1.0.0", "0.8.1", "0.8.0", "0.7.2", "0.7.1", "0.7.0", "0.6.14", "0.6.13", "0.6.12", "0.6.11", "0.6.10", "0.6.8", "0.6.7", "0.6.6", "0.6.5", "0.6.4", "0.6.3", "0.6.2", "0.6.1", "0.6.0", "0.5.9", "0.5.6" },
+}, .{
+    .name = "bun-profile",
+    .domain = "bun.com/profile",
+    .description = "Official Bun profiling runtime with its native ELF symbols preserved.",
+    .homepage_url = "https://bun.com",
+    .programs = &[_][]const u8{"bun-profile"},
+    .dependencies = &[_][]const u8{},
+    .build_dependencies = &[_][]const u8{ "curl.se", "stedolan.github.io/jq^1", "gnu.org/coreutils", "info-zip.org/unzip", "gnu.org/binutils" },
+    .aliases = &[_][]const u8{},
+    .versions = &[_][]const u8{"1.4.2"},
 }, .{
     .name = "bytebase",
     .domain = "bytebase.com",
@@ -4515,7 +4525,7 @@ pub const packages = [_]PackageInfo{ .{
     .homepage_url = "https://getcomposer.org/",
     .programs = &[_][]const u8{ "composer", "composer.phar" },
     .dependencies = &[_][]const u8{"php.net"},
-    .build_dependencies = &[_][]const u8{"curl.se"},
+    .build_dependencies = &[_][]const u8{ "curl.se", "stedolan.github.io/jq^1", "gnu.org/coreutils" },
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "2.10.3", "2.10.2", "2.10.1", "2.10.0", "2.10.0-RC1", "2.9.8", "2.9.7", "2.9.6", "2.9.5", "2.9.4", "2.9.3", "2.9.2", "2.9.1", "2.9.0", "2.8.12", "2.8.11", "2.8.10", "2.8.9", "2.8.8", "2.8.7", "2.8.6", "2.8.5", "2.8.4", "2.8.3", "2.8.2", "2.8.1", "2.8.0", "2.7.9", "2.7.8", "2.7.7", "2.7.6", "2.7.5", "2.7.4", "2.7.3", "2.7.2", "2.7.1", "2.7.0", "2.6.6", "2.6.5", "2.6.4", "2.6.3", "2.6.2", "2.6.1", "2.6.0", "2.5.8", "2.5.7", "2.5.6", "2.5.5", "2.5.4", "2.5.3", "2.2.30", "2.2.29", "2.2.28", "2.2.27", "2.2.26", "2.2.25", "2.2.24", "2.2.23", "2.2.22", "2.2.21", "1.10.28", "1.10.27" },
 }, .{
@@ -5849,6 +5859,16 @@ pub const packages = [_]PackageInfo{ .{
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "0.19.2", "0.19.1", "0.19.0", "0.18.7", "0.18.6", "0.18.5", "0.18.4", "0.18.3", "0.18.2", "0.18.1", "0.18.0", "0.17.9", "0.17.6", "0.17.4", "0.17.3", "0.17.2", "0.17.1", "0.16.2", "0.16.1", "0.15.4", "0.15.3", "0.15.2", "0.15.1", "0.15.0", "0.14.4", "0.14.3", "0.14.2", "0.14.1", "0.14.0", "0.13.2", "0.13.1", "0.13.0", "0.12.6", "0.12.0", "0.11.4", "0.11.3", "0.11.2", "0.11.0", "0.10.1", "0.10.0", "0.9.1", "0.9.0", "0.8.0" },
 }, .{
+    .name = "firecracker",
+    .domain = "github.com/firecracker-microvm/firecracker",
+    .description = "Native KVM microVM monitor and jailer.",
+    .homepage_url = "https://firecracker-microvm.github.io",
+    .programs = &[_][]const u8{ "firecracker", "jailer" },
+    .dependencies = &[_][]const u8{},
+    .build_dependencies = &[_][]const u8{ "curl.se", "stedolan.github.io/jq^1", "gnu.org/coreutils" },
+    .aliases = &[_][]const u8{},
+    .versions = &[_][]const u8{"1.17.0"},
+}, .{
     .name = "pstree",
     .domain = "github.com/FredHucht/pstree",
     .description = "pstree shows the process listing as a tree",
@@ -6108,6 +6128,16 @@ pub const packages = [_]PackageInfo{ .{
     .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "2.14.0", "2.12.0" },
+}, .{
+    .name = "oha",
+    .domain = "github.com/hatoo/oha",
+    .description = "Native HTTP load generator with paced requests and JSON reports.",
+    .homepage_url = "https://github.com/hatoo/oha",
+    .programs = &[_][]const u8{"oha"},
+    .dependencies = &[_][]const u8{},
+    .build_dependencies = &[_][]const u8{ "curl.se", "stedolan.github.io/jq^1", "gnu.org/coreutils" },
+    .aliases = &[_][]const u8{},
+    .versions = &[_][]const u8{"1.16.0"},
 }, .{
     .name = "helmfile",
     .domain = "github.com/helmfile/helmfile",
@@ -8985,7 +9015,7 @@ pub const packages = [_]PackageInfo{ .{
     .homepage_url = "https://www.gnu.org/software/autoconf/",
     .programs = &[_][]const u8{ "autoconf", "autoheader", "autom4te", "autoreconf", "autoscan", "autoupdate", "ifnames" },
     .dependencies = &[_][]const u8{ "gnu.org/m4@1", "perl.org" },
-    .build_dependencies = &[_][]const u8{"llvm.org"},
+    .build_dependencies = &[_][]const u8{ "llvm.org", "gnu.org/make", "gnu.org/sed" },
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "2.72.0", "2.71.0" },
 }, .{
@@ -10493,9 +10523,9 @@ pub const packages = [_]PackageInfo{ .{
     .domain = "invisible-island.net/ncurses",
     .description = "Text-based UI library",
     .homepage_url = "https://invisible-island.net/ncurses/announce.html",
-    .programs = &[_][]const u8{ "captoinfo", "clear", "infocmp", "infotocap", "ncursesw6-config", "reset", "tabs", "tic", "toe", "tput", "tset" },
+    .programs = &[_][]const u8{ "captoinfo", "clear", "infocmp", "infotocap", "ncurses6-config", "ncursesw6-config", "reset", "tabs", "tic", "toe", "tput", "tset" },
     .dependencies = &[_][]const u8{},
-    .build_dependencies = &[_][]const u8{"github.com/tmux/tmux@^3"},
+    .build_dependencies = &[_][]const u8{ "gnu.org/make", "gnu.org/sed", "freedesktop.org/pkg-config", "linux:gnu.org/binutils" },
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "6.6.0", "6.5.0", "6.4.0", "6.3.0" },
 }, .{
@@ -10958,6 +10988,16 @@ pub const packages = [_]PackageInfo{ .{
     .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "6.19.9", "6.19.8", "6.19.7", "6.19.5", "6.19.4", "6.19.2", "6.19.1", "6.18.19", "6.18.18", "6.18.17", "6.18.15", "6.18.14", "6.18.12", "6.18.9", "6.18.8", "6.18.7", "6.18.6", "6.18.5", "6.18.4", "6.18.3", "6.18.2", "6.18.1", "6.17.13", "6.17.12", "6.17.11", "6.17.10", "6.17.9", "6.12.77", "6.12.76", "6.12.73", "6.12.72", "6.12.71", "6.12.69", "6.12.68", "6.12.67", "6.12.66", "6.12.65", "6.12.64", "6.12.63", "6.12.62", "6.12.61", "6.12.60", "6.6.129", "6.6.123", "6.6.122", "6.6.121", "6.6.118", "6.1.166", "6.1.162", "6.1.161", "6.1.160", "6.1.159", "5.19.17", "5.15.201", "5.15.198", "5.15.197", "5.15.196", "5.15.195", "5.15.194", "5.15.193", "5.15.192", "5.15.191", "5.15.190", "5.15.189", "5.15.188", "5.15.187", "5.15.186", "5.15.185", "5.15.184", "5.15.183", "5.15.182", "5.15.181", "5.15.180", "5.15.179", "5.15.178", "5.15.177", "5.15.176", "5.15.175", "5.15.174", "5.15.172", "5.15.171", "5.15.170", "5.15.169", "5.15.168", "5.15.167", "5.15.166", "5.15.165", "5.15.164", "5.15.163", "5.15.162", "5.15.161", "5.15.160", "5.15.159", "5.15.158", "5.15.157", "5.15.156", "5.15.155", "5.15.154", "5.15.153", "5.15.152", "5.15.151", "5.15.150", "5.15.149", "5.15.148", "5.15.147", "5.15.146", "5.15.145", "5.15.144", "5.15.143", "5.15.142", "5.15.141", "5.15.140", "5.15.139", "5.15.138", "5.15.137", "5.15.136", "5.15.135", "5.15.134", "5.15.133", "5.15.132", "5.15.131", "5.15.130", "5.15.129", "5.15.128", "5.15.127", "5.15.126", "5.15.124", "5.15.123", "5.15.122", "5.15.121", "5.15.120", "5.15.119", "5.15.118", "5.15.117", "5.15.116", "5.15.115", "5.15.114", "5.15.113", "5.15.112", "5.15.111", "5.15.110", "5.15.108", "5.10.251", "5.10.249", "5.10.248", "5.10.247", "5.10.246", "5.10.245", "5.10.244", "5.10.243", "5.10.242", "5.10.241", "5.10.240", "5.10.239", "5.10.238", "5.10.237", "5.10.236", "5.10.235", "5.10.234", "5.10.233", "5.10.232", "5.10.231", "5.10.230", "5.10.229", "5.10.228", "5.10.227", "5.10.226", "5.10.225", "5.10.224", "5.10.223", "5.10.222", "5.10.220", "5.10.219", "5.10.218", "5.10.217", "5.10.216", "5.10.215", "5.10.214", "5.10.213", "5.10.212", "5.10.211", "5.10.210", "5.10.209", "5.10.208", "5.10.207", "5.10.206", "5.10.205", "5.10.204", "5.10.203", "5.10.202", "5.10.201", "5.10.200", "5.10.199", "5.10.198", "5.10.197", "5.10.196", "5.10.195", "5.10.194", "5.10.193", "5.10.192", "5.10.191", "5.10.190", "5.10.188", "5.10.187", "5.10.186", "5.10.185", "5.10.184", "5.10.183", "5.10.182", "5.10.181", "5.10.180", "5.4.302", "5.4.301", "5.4.300", "5.4.299", "5.4.298", "5.4.297", "5.4.296", "5.4.295", "5.4.294", "5.4.293", "5.4.292", "5.4.291", "5.4.290", "5.4.289", "5.4.288", "5.4.287", "5.4.286", "5.4.284", "5.4.283", "5.4.282", "5.4.281", "5.4.280", "5.4.279", "5.4.278", "5.4.277", "5.4.276", "5.4.275", "5.4.274", "5.4.273", "5.4.272", "5.4.271", "5.4.270", "5.4.269", "5.4.268", "5.4.267", "5.4.266", "5.4.265", "5.4.264", "5.4.263", "5.4.262", "5.4.261", "5.4.260", "5.4.259", "5.4.258", "5.4.257", "5.4.256", "5.4.255", "5.4.254", "5.4.253", "5.4.251", "5.4.250", "5.4.249", "5.4.248", "5.4.247", "5.4.246", "5.4.245", "5.4.244", "5.4.243" },
+}, .{
+    .name = "perf",
+    .domain = "kernel.org/perf",
+    .description = "Native Linux performance counters, sampling and ELF/DWARF reports.",
+    .homepage_url = "https://perf.wiki.kernel.org/",
+    .programs = &[_][]const u8{"perf"},
+    .dependencies = &[_][]const u8{ "elfutils.org", "zlib.net^1", "tukaani.org/xz^5", "facebook.com/zstd^1", "gnu.org/gcc/libstdcxx@14" },
+    .build_dependencies = &[_][]const u8{ "freedesktop.org/pkg-config", "gnu.org/bison", "github.com/westes/flex", "python.org^3" },
+    .aliases = &[_][]const u8{},
+    .versions = &[_][]const u8{"7.2.11"},
 }, .{
     .name = "genqlient",
     .domain = "khanacademy.org/genqlient",
@@ -12214,7 +12254,7 @@ pub const packages = [_]PackageInfo{ .{
     .description = "",
     .homepage_url = null,
     .programs = &[_][]const u8{},
-    .dependencies = &[_][]const u8{ "linux:gnome.org/libxml2~2.13", "linux:elfutils.org", "linux:khronos.org/glslang", "linux:info-zip.org/zip", "linux:dri.freedesktop.org^2.4.110", "linux:intel.com/libva", "linux:freedesktop.org/vdpau", "linux:x.org/xfixes", "linux:x.org/xshmfence", "linux:x.org/xv", "linux:x.org/xxf86vm", "linux:llvm.org^22", "linux:github.com/lm-sensors/lm-sensors", "linux:wayland.freedesktop.org", "linux:wayland.freedesktop.org/protocols", "darwin:gnu.org/gettext", "facebook.com/zstd^1", "libexpat.github.io", "x.org/x11", "x.org/xcb", "x.org/xdamage", "x.org/exts", "invisible-island.net/ncurses", "zlib.net", "x.org/xrandr" },
+    .dependencies = &[_][]const u8{ "linux:gnome.org/libxml2~2.13", "linux:elfutils.org", "linux:khronos.org/glslang", "linux:info-zip.org/zip", "linux:dri.freedesktop.org^2.4.110", "linux:intel.com/libva", "linux:freedesktop.org/vdpau", "linux:x.org/xfixes", "linux:x.org/xshmfence", "linux:x.org/xv", "linux:x.org/xxf86vm", "linux:llvm.org^22", "linux:github.com/lm-sensors/lm-sensors", "linux:wayland.freedesktop.org", "linux:wayland.freedesktop.org/protocols", "darwin:gnu.org/gettext", "darwin:llvm.org^22", "facebook.com/zstd^1", "libexpat.github.io", "x.org/x11", "x.org/xcb", "x.org/xdamage", "x.org/exts", "invisible-island.net/ncurses", "zlib.net", "x.org/xrandr" },
     .build_dependencies = &[_][]const u8{ "linux:curl.se", "linux:cmake.org@3", "gnu.org/bison", "mesonbuild.com", "ninja-build.org", "freedesktop.org/pkg-config", "pygments.org", "python.org~3.11", "x.org/protocol", "github.com/westes/flex", "llvm.org^22" },
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "26.0.3", "26.0.2", "26.0.1", "26.0.0", "25.3.6", "25.3.5", "25.3.4", "25.3.3", "25.3.2", "25.3.1", "25.3.0", "25.2.8", "25.2.7", "25.2.6", "25.2.5", "25.2.4", "25.2.3", "25.2.2", "25.2.1", "25.2.0", "25.1.9", "25.1.8", "25.1.7", "25.1.6", "25.1.5", "25.1.4", "25.1.3", "25.1.2", "25.1.1", "25.1.0", "25.0.7", "25.0.6", "25.0.5", "25.0.4", "25.0.3", "25.0.2", "25.0.1", "25.0.0", "24.3.4", "24.3.3", "24.3.2", "24.3.1", "24.3.0", "24.2.8", "24.2.7", "24.2.6", "24.2.5", "24.2.4", "24.2.3", "24.2.2", "24.2.1", "24.2.0", "24.1.7", "24.1.6", "24.1.5", "24.1.4", "24.1.3", "24.1.2", "24.1.1", "24.1.0", "24.0.9", "24.0.8", "24.0.7", "24.0.6", "24.0.5", "24.0.4", "24.0.3", "24.0.2", "24.0.1", "24.0.0", "23.3.6", "23.3.5", "23.3.4", "23.3.3", "23.3.2", "23.3.1", "23.3.0", "23.2.1", "23.1.8", "23.1.7" },
@@ -12684,7 +12724,7 @@ pub const packages = [_]PackageInfo{ .{
     .description = "MySQL Server, the world's most popular open source database, and MySQL Cluster, a real-time, open source transactional database.",
     .homepage_url = "http://www.mysql.com/",
     .programs = &[_][]const u8{ "my_print_defaults", "myisam_ftdump", "myisamchk", "myisamlog", "myisampack", "mysql", "mysql_config", "mysql_config_editor", "mysql_migrate_keyring", "mysql_secure_installation", "mysql_tzinfo_to_sql", "mysqladmin", "mysqlbinlog", "mysqlcheck", "mysqld", "mysqld_multi", "mysqld_safe", "mysqldump", "mysqldumpslow", "mysqlimport", "mysqlshow", "mysqlslap" },
-    .dependencies = &[_][]const u8{ "openssl.org^3", "perl.org^5", "invisible-island.net/ncurses^6", "linux:sourceforge.net/libtirpc", "linux:pagure.io/libaio^0.3.113", "linux:github.com/numactl/numactl^2", "linux:gnu.org/gcc/libstdcxx@14" },
+    .dependencies = &[_][]const u8{ "openssl.org^3", "perl.org^5", "invisible-island.net/ncurses^6", "curl.se^8", "linux:sourceforge.net/libtirpc", "linux:pagure.io/libaio^0.3.113", "linux:github.com/numactl/numactl^2", "linux:gnu.org/gcc/libstdcxx@14", "linux:systemd.io/libudev" },
     .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{"mysql"},
     .versions = &[_][]const u8{ "26.7.0", "8.4.11", "8.0.45", "8.0.44", "8.0.43" },
@@ -12728,6 +12768,36 @@ pub const packages = [_]PackageInfo{ .{
     .build_dependencies = &[_][]const u8{ "cmake.org", "gnu.org/libtool@^2" },
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "0.12.6", "0.12.5", "0.12.4", "0.12.3", "0.12.2", "0.12.1", "0.12.0", "0.11.7", "0.11.6", "0.11.5", "0.11.4", "0.11.3", "0.11.2", "0.11.1", "0.11.0", "0.10.4", "0.10.3", "0.10.2", "0.10.1", "0.10.0", "0.9.5", "0.9.4", "0.9.2", "0.9.1", "0.9.0", "0.8.3", "0.8.2", "0.8.1", "0.8.0", "0.7.2", "0.7.0", "0.6.1", "0.6.0", "0.5.1", "0.5.0", "0.4.4", "0.4.3", "0.4.2", "0.4.0", "0.3.8", "0.3.7", "0.3.6", "0.3.5", "0.3.4", "0.3.3", "0.3.2", "0.3.1", "0.3.0", "0.2.2", "0.2.1", "0.2.0", "0.1.7", "0.1.6" },
+}, .{
+    .name = "libmnl",
+    .domain = "netfilter.org/libmnl",
+    .description = "Minimal userspace library for Netlink communications.",
+    .homepage_url = "https://www.netfilter.org/projects/libmnl/",
+    .programs = &[_][]const u8{},
+    .dependencies = &[_][]const u8{},
+    .build_dependencies = &[_][]const u8{ "kernel.org/linux-headers", "freedesktop.org/pkg-config" },
+    .aliases = &[_][]const u8{},
+    .versions = &[_][]const u8{"1.0.5"},
+}, .{
+    .name = "libnftnl",
+    .domain = "netfilter.org/libnftnl",
+    .description = "Low-level userspace library for nftables Netlink messages.",
+    .homepage_url = "https://www.netfilter.org/projects/libnftnl/",
+    .programs = &[_][]const u8{},
+    .dependencies = &[_][]const u8{"netfilter.org/libmnl^1"},
+    .build_dependencies = &[_][]const u8{ "kernel.org/linux-headers", "freedesktop.org/pkg-config" },
+    .aliases = &[_][]const u8{},
+    .versions = &[_][]const u8{"1.3.2"},
+}, .{
+    .name = "nftables",
+    .domain = "netfilter.org/nftables",
+    .description = "Native nftables ruleset management with JSON and an interactive CLI.",
+    .homepage_url = "https://www.netfilter.org/projects/nftables/",
+    .programs = &[_][]const u8{"nft"},
+    .dependencies = &[_][]const u8{ "netfilter.org/libmnl^1", "netfilter.org/libnftnl^1", "gnu.org/readline^8", "digip.org/jansson^2", "gnu.org/gmp^6" },
+    .build_dependencies = &[_][]const u8{ "kernel.org/linux-headers", "freedesktop.org/pkg-config", "gnu.org/bison", "github.com/westes/flex" },
+    .aliases = &[_][]const u8{},
+    .versions = &[_][]const u8{"1.1.7"},
 }, .{
     .name = "vmaf",
     .domain = "netflix.com/vmaf",
@@ -13703,9 +13773,9 @@ pub const packages = [_]PackageInfo{ .{
     .domain = "php.net",
     .description = "General-purpose scripting language",
     .homepage_url = "https://www.php.net/",
-    .programs = &[_][]const u8{ "pear", "pecl", "phar", "php", "php-cgi", "php-config", "phpdbg", "phpize" },
-    .dependencies = &[_][]const u8{ "gnu.org/bison^3", "re2c.org^3", "apache.org/apr^1", "apache.org/apr-util^1", "bcrypt.sourceforge.net^1", "gnu.org/autoconf^2", "curl.se^8", "nghttp2.org", "gnu.org/gettext^0", "gnu.org/gmp^6", "libsodium.org<1.0.19", "libzip.org^1.9", "github.com/kkos/oniguruma^6", "openssl.org", "pcre.org/v2>=10.30", "sqlite.org^3", "unicode.org^71", "gnu.org/libiconv^1", "kerberos.org^1", "gnome.org/libxml2", "thrysoee.dk/editline^3", "sourceware.org/libffi>=3.4.7", "gnome.org/libxslt>=1.1.0<1.1.43", "libpng.org^1", "google.com/webp^1", "ijg.org^9", "gnu.org/sed^4", "openldap.org^2", "gnu.org/gcc/libstdcxx^14", "darwin:sourceware.org/bzip2^1", "darwin:zlib.net^1", "postgresql.org^17" },
-    .build_dependencies = &[_][]const u8{ "freetype.org", "darwin:tukaani.org/xz", "gnu.org/libtool" },
+    .programs = &[_][]const u8{ "phar", "php", "php-cgi", "php-config", "phpdbg", "phpize", "php-fpm" },
+    .dependencies = &[_][]const u8{ "gnu.org/bison^3", "re2c.org^3", "apache.org/apr^1", "apache.org/apr-util^1", "bcrypt.sourceforge.net^1", "gnu.org/autoconf^2", "curl.se^8", "nghttp2.org", "gnu.org/gettext^0", "gnu.org/gmp^6", "libsodium.org<1.0.19", "libzip.org^1.9", "github.com/kkos/oniguruma^6", "openssl.org^3", "pcre.org/v2>=10.30", "sqlite.org^3", "postgresql.org^17", "unicode.org^71", "gnu.org/libiconv^1", "kerberos.org^1", "gnome.org/libxml2", "thrysoee.dk/editline^3", "sourceware.org/libffi>=3.4.7", "gnome.org/libxslt>=1.1.0<1.1.43", "libpng.org^1", "google.com/webp^1", "ijg.org^9", "gnu.org/sed^4", "openldap.org^2", "gnu.org/gcc/libstdcxx^14", "darwin:sourceware.org/bzip2^1", "darwin:zlib.net^1" },
+    .build_dependencies = &[_][]const u8{ "freetype.org", "gnu.org/libtool", "darwin:tukaani.org/xz" },
     .aliases = &[_][]const u8{"php"},
     .versions = &[_][]const u8{ "8.5.11", "8.5.10", "8.5.9", "8.5.8", "8.5.7", "8.5.7RC2", "8.5.7RC1", "8.5.6", "8.5.6RC3", "8.5.6RC2", "8.5.6RC1", "8.5.5", "8.5.5RC1", "8.5.4", "8.5.4RC1", "8.5.3", "8.5.3RC1", "8.5.2", "8.5.2RC1", "8.5.1", "8.5.1RC2", "8.5.1RC1", "8.5.0", "8.5.0beta3", "8.5.0beta2", "8.5.0beta1", "8.5.0alpha4", "8.5.0alpha3", "8.5.0alpha2", "8.5.0alpha1", "8.5.0RC5", "8.5.0RC4", "8.5.0RC3", "8.5.0RC2", "8.5.0RC1", "8.4.26", "8.4.25", "8.4.24", "8.4.23", "8.4.22", "8.4.22RC1", "8.4.21", "8.4.21RC1", "8.4.20", "8.4.20RC1", "8.4.19", "8.4.19RC1", "8.4.18", "8.4.18RC1", "8.4.17", "8.4.17RC1", "8.4.16", "8.4.16RC1", "8.4.15", "8.4.15RC1", "8.4.14", "8.4.14RC1", "8.4.13", "8.4.12", "8.4.11", "8.4.10", "8.4.9", "8.4.8", "8.4.7", "8.4.6", "8.4.5", "8.4.4", "8.4.3", "8.4.2", "8.4.1", "8.4.0", "8.3.31", "8.3.30", "8.3.29", "8.3.28", "8.3.27", "8.3.26", "8.3.25", "8.3.24", "8.3.23", "8.3.22", "8.3.21", "8.3.20", "8.3.19", "8.3.18", "8.3.17", "8.3.16", "8.3.15", "8.3.14", "8.3.13", "8.3.12", "8.3.11", "8.3.10", "8.3.9", "8.3.8", "8.3.7", "8.3.6", "8.3.5", "8.3.4", "8.3.3", "8.3.2", "8.3.1", "8.3.0", "8.2.31", "8.2.30", "8.2.29", "8.2.28", "8.2.27", "8.2.26", "8.2.25", "8.2.24", "8.2.23", "8.2.22", "8.2.21", "8.2.20", "8.2.19", "8.2.18", "8.2.17", "8.2.16", "8.2.15", "8.2.14", "8.2.13", "8.2.12", "8.2.11", "8.2.10", "8.2.9", "8.2.8", "8.2.7", "8.2.6", "8.2.5", "8.1.34", "8.1.33", "8.1.32", "8.1.31", "8.1.30", "8.1.29", "8.1.28", "8.1.27", "8.1.26", "8.1.25", "8.1.24", "8.1.23", "8.1.22", "8.1.21", "8.1.20", "8.1.18", "8.0.30", "8.0.28", "7.4.33" },
 }, .{
@@ -15353,9 +15423,9 @@ pub const packages = [_]PackageInfo{ .{
     .domain = "sourceforge.net/e2fsprogs",
     .description = "Utilities for the ext2, ext3, and ext4 file systems",
     .homepage_url = "https://e2fsprogs.sourceforge.net/",
-    .programs = &[_][]const u8{ "chattr", "compile_et", "lsattr", "mk_cmds", "uuidgen" },
+    .programs = &[_][]const u8{ "chattr", "compile_et", "lsattr", "mk_cmds", "mke2fs", "debugfs", "dumpe2fs" },
     .dependencies = &[_][]const u8{ "darwin:gnu.org/gettext^0.22", "linux:github.com/util-linux/util-linux^2.39" },
-    .build_dependencies = &[_][]const u8{},
+    .build_dependencies = &[_][]const u8{"gnu.org/coreutils"},
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "1.47.4", "1.47.3", "1.47.2", "1.47.1", "1.47.0" },
 }, .{
@@ -15778,6 +15848,16 @@ pub const packages = [_]PackageInfo{ .{
     .build_dependencies = &[_][]const u8{ "gnu.org/coreutils", "docbook.org", "gnu.org/gettext", "gnu.org/gperf", "gnu.org/libtool", "gnome.org/libxslt", "gnome.org/libxml2@~2.13", "gnu.org/m4", "mesonbuild.com", "python.org@>=3<3.12", "rsync.samba.org" },
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "262.1", "262", "261.4", "261.3", "261.2", "261.1", "261", "260.6", "260.5", "260.4", "260.3", "260.2", "260.1", "260", "259.10", "259.9", "259.8", "259.7", "259.6", "259.5", "259.4", "259.3", "259.2", "259.1", "259", "258.10", "258.9", "258.8", "258.7", "258.6", "258.5", "258.4", "258.3", "258.2", "258.1", "258", "257.13", "257.13.0", "257.12", "257.12.0", "257.11", "257.10", "257.9", "257.8", "257.7", "257.6", "257.5", "257.4", "257.3", "257.2", "257.1", "257", "256.17", "256.16", "256.15", "256.14", "256.13", "256.12", "256.11", "256.10", "256.9" },
+}, .{
+    .name = "libudev",
+    .domain = "systemd.io/libudev",
+    .description = "Native libudev shared library and development interface.",
+    .homepage_url = "https://systemd.io/",
+    .programs = &[_][]const u8{},
+    .dependencies = &[_][]const u8{},
+    .build_dependencies = &[_][]const u8{ "mesonbuild.com", "ninja-build.org", "freedesktop.org/pkg-config", "python.org~3.12", "palletsprojects.com/jinja^3", "gnu.org/gperf", "gnu.org/coreutils", "gnu.org/binutils", "kernel.org/linux-headers" },
+    .aliases = &[_][]const u8{},
+    .versions = &[_][]const u8{"262.1"},
 }, .{
     .name = "TablePlus",
     .domain = "tableplus.com",

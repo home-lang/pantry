@@ -6,7 +6,7 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install mesa3d.org`
- * @dependencies `linux:gnome.org/libxml2~2.13`, `linux:elfutils.org`, `linux:khronos.org/glslang`, ... (+22 more) (includes platform-specific dependencies)
+ * @dependencies `linux:gnome.org/libxml2~2.13`, `linux:elfutils.org`, `linux:khronos.org/glslang`, ... (+23 more) (includes platform-specific dependencies)
  * @buildDependencies `linux:curl.se`, `linux:cmake.org@3`, `gnu.org/bison`, ... (+8 more) (includes platform-specific dependencies) - required only when building from source
  *
  * @example
@@ -67,6 +67,7 @@ export const mesa3dorgPackage = {
     'linux:wayland.freedesktop.org',
     'linux:wayland.freedesktop.org/protocols',
     'darwin:gnu.org/gettext',
+    'darwin:llvm.org^22',
     'facebook.com/zstd^1',
     'libexpat.github.io',
     'x.org/x11',

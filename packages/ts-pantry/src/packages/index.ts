@@ -135,6 +135,7 @@ import { buddyPackage } from './buddysh'
 import { budimanjojogithubiotalhelperPackage } from './budimanjojo.github.io/talhelper'
 import { bufbuildPackage } from './bufbuild'
 import { buildpacksioPackage } from './buildpacksio'
+import { bunprofilePackage } from './bun.com/profile'
 import { bunPackage } from './buncom'
 import { bytebasecomPackage } from './bytebasecom'
 import { bytereeforgmpdecimalPackage } from './bytereef.org/mpdecimal'
@@ -660,6 +661,7 @@ import { fizzPackage } from './github.com/facebookincubator/fizz'
 import { fastfetchPackage } from './github.com/fastfetch-cli/fastfetch'
 import { fast_floatPackage } from './github.com/fastfloat/fast_float'
 import { nakPackage } from './github.com/fiatjaf/nak'
+import { firecrackerPackage } from './github.com/firecracker-microvm/firecracker'
 import { spdlogPackage } from './github.com/gabime/spdlog'
 import { llamacppPackage } from './github.com/ggerganov/llama.cpp'
 import { whispercppPackage } from './github.com/ggerganov/whisper.cpp'
@@ -683,6 +685,7 @@ import { gotestsumPackage } from './github.com/gotestyourself/gotestsum'
 import { goredfishapiidracPackage } from './github.com/greenpau/go-redfish-api-idrac'
 import { pupPackage } from './github.com/gromgit/pup'
 import { hadolintPackage } from './github.com/hadolint/hadolint'
+import { ohaPackage } from './github.com/hatoo/oha'
 import { helmfilePackage } from './github.com/helmfile/helmfile'
 import { valsPackage } from './github.com/helmfile/vals'
 import { libxmlbPackage } from './github.com/hughsie/libxmlb'
@@ -1127,6 +1130,7 @@ import { keephqdevPackage } from './keephqdev'
 import { kerberosorgPackage } from './kerberosorg'
 import { kernelorglibcapPackage } from './kernel.org/libcap'
 import { kernelorglinuxheadersPackage } from './kernel.org/linux-headers'
+import { perfPackage } from './kernel.org/perf'
 import { khanacademyorggenqlientPackage } from './khanacademy.org/genqlient'
 import { khronosorgspirvcrossPackage } from './khronos.org/SPIRV-Cross'
 import { khronosorgspirvtoolsPackage } from './khronos.org/SPIRV-Tools'
@@ -1294,6 +1298,9 @@ import { nanoeditororgPackage } from './nano-editororg'
 import { nasmusPackage } from './nasmus'
 import { neo4jcomPackage } from './neo4jcom'
 import { neovimioPackage } from './neovimio'
+import { libmnlPackage } from './netfilter.org/libmnl'
+import { libnftnlPackage } from './netfilter.org/libnftnl'
+import { nftablesPackage } from './netfilter.org/nftables'
 import { netflixcomvmafPackage } from './netflix.com/vmaf'
 import { netliborglapackPackage } from './netlib.org/lapack'
 import { netpbmsourceforgenetPackage } from './netpbmsourceforgenet'
@@ -1583,6 +1590,7 @@ import { symfonycomcsPackage } from './symfony.com/cs'
 import { symfonycomPackage } from './symfonycom'
 import { sympyorgPackage } from './sympyorg'
 import { syncthingnetPackage } from './syncthingnet'
+import { libudevPackage } from './systemd.io/libudev'
 import { systemdioPackage } from './systemdio'
 import { tagliborgPackage } from './tagliborg'
 import { tailcallrunPackage } from './tailcallrun'
@@ -1939,6 +1947,8 @@ export interface Pantry {
   budimanjojogithubiotalhelper: typeof budimanjojogithubiotalhelperPackage
   bufbuild: typeof bufbuildPackage
   buildpacksio: typeof buildpacksioPackage
+  profile: typeof bunprofilePackage
+  buncomprofile: typeof bunprofilePackage
   buncom: typeof bunPackage
   bytebasecom: typeof bytebasecomPackage
 
@@ -2872,6 +2882,8 @@ export interface Pantry {
 
   githubcomfiatjaf: typeof nakPackage
 
+  githubcomfirecrackermicrovm: typeof firecrackerPackage
+
   githubcomgabime: typeof spdlogPackage
   llama_cpp: typeof llamacppPackage
   githubcomggerganov: typeof llamacppPackage
@@ -2917,6 +2929,8 @@ export interface Pantry {
   githubcomgromgit: typeof pupPackage
 
   githubcomhadolint: typeof hadolintPackage
+
+  githubcomhatoo: typeof ohaPackage
 
   githubcomhelmfile: typeof helmfilePackage
 
@@ -3738,6 +3752,8 @@ export interface Pantry {
   linux_headers: typeof kernelorglinuxheadersPackage
   kernelorglinuxheaders: typeof kernelorglinuxheadersPackage
 
+  kernelorgperf: typeof perfPackage
+
   khanacademyorggenqlient: typeof khanacademyorggenqlientPackage
   SPIRV_Cross: typeof khronosorgspirvcrossPackage
   khronosorgspirvcross: typeof khronosorgspirvcrossPackage
@@ -3973,6 +3989,12 @@ export interface Pantry {
   nasmus: typeof nasmusPackage
   neo4jcom: typeof neo4jcomPackage
   neovimio: typeof neovimioPackage
+
+  netfilterorglibmnl: typeof libmnlPackage
+
+  netfilterorglibnftnl: typeof libnftnlPackage
+
+  netfilterorgnftables: typeof nftablesPackage
 
   netflixcomvmaf: typeof netflixcomvmafPackage
 
@@ -4404,6 +4426,8 @@ export interface Pantry {
   symfonycom: typeof symfonycomPackage
   sympyorg: typeof sympyorgPackage
   syncthingnet: typeof syncthingnetPackage
+
+  systemdiolibudev: typeof libudevPackage
   systemdio: typeof systemdioPackage
   tagliborg: typeof tagliborgPackage
   tailcallrun: typeof tailcallrunPackage
@@ -4804,6 +4828,7 @@ export interface Pantry {
   buildkit: typeof buildkitPackage
   buildx: typeof dockercombuildxPackage
   bun: typeof bunPackage
+  'bun-profile': typeof bunprofilePackage
   'bun.sh': typeof bunPackage
   bytebase: typeof bytebasecomPackage
   bzip2: typeof sourcewareorgbzip2Package
@@ -5070,6 +5095,7 @@ export interface Pantry {
   findutils: typeof gnuorgfindutilsPackage
   'Fira Code': typeof firacodePackage
   firebase: typeof googlecomfirebasetoolsPackage
+  firecracker: typeof firecrackerPackage
   firefox: typeof firefoxorgPackage
   Firefox: typeof firefoxorgPackage
   fish: typeof fishshellcomPackage
@@ -5479,6 +5505,8 @@ export interface Pantry {
   libmd: typeof hadronsorglibmdPackage
   libmicrohttpd: typeof gnuorglibmicrohttpdPackage
   libmng: typeof sourceforgenetlibmngPackage
+  libmnl: typeof libmnlPackage
+  libnftnl: typeof libnftnlPackage
   libnl: typeof libnlPackage
   libnsl: typeof libnslPackage
   libomp: typeof openmpllvmorgPackage
@@ -5520,6 +5548,7 @@ export interface Pantry {
   libtirpc: typeof sourceforgenetlibtirpcPackage
   LibTomMath: typeof libtomnetmathPackage
   libtool: typeof gnuorglibtoolPackage
+  libudev: typeof libudevPackage
   libunibreak: typeof libunibreakPackage
   libunistring: typeof gnuorglibunistringPackage
   liburcu: typeof liburcuorgPackage
@@ -5689,6 +5718,7 @@ export interface Pantry {
   networkx: typeof networkxorgPackage
   nex: typeof nexPackage
   next: typeof vercelcomnextPackage
+  nftables: typeof nftablesPackage
   nghttp2: typeof nghttp2orgPackage
   nginx: typeof nginxorgPackage
   'nim-lang': typeof nimlangorgPackage
@@ -5724,6 +5754,7 @@ export interface Pantry {
   odigos: typeof odigosioPackage
   ogg: typeof xiphorgoggPackage
   'oh-my-posh': typeof ohmyposhdevPackage
+  oha: typeof ohaPackage
   ollama: typeof ollamacomPackage
   Ollama: typeof ollamacomPackage
   omekasy: typeof cratesioomekasyPackage
@@ -5791,6 +5822,7 @@ export interface Pantry {
   'pcsc-lite': typeof pcscliteapdufrPackage
   pdm: typeof pdmfmingdevPackage
   Pearcleaner: typeof pearcleanerappPackage
+  perf: typeof perfPackage
   periphery: typeof peripheryPackage
   perl: typeof perlorgPackage
   pgen: typeof cratesiopgenPackage
@@ -6613,6 +6645,8 @@ export const pantry: Pantry = {
   budimanjojogithubiotalhelper: budimanjojogithubiotalhelperPackage,
   bufbuild: bufbuildPackage,
   buildpacksio: buildpacksioPackage,
+  profile: bunprofilePackage,
+  buncomprofile: bunprofilePackage,
   buncom: bunPackage,
   bytebasecom: bytebasecomPackage,
 
@@ -7546,6 +7580,8 @@ export const pantry: Pantry = {
 
   githubcomfiatjaf: nakPackage,
 
+  githubcomfirecrackermicrovm: firecrackerPackage,
+
   githubcomgabime: spdlogPackage,
   llama_cpp: llamacppPackage,
   githubcomggerganov: llamacppPackage,
@@ -7591,6 +7627,8 @@ export const pantry: Pantry = {
   githubcomgromgit: pupPackage,
 
   githubcomhadolint: hadolintPackage,
+
+  githubcomhatoo: ohaPackage,
 
   githubcomhelmfile: helmfilePackage,
 
@@ -8412,6 +8450,8 @@ export const pantry: Pantry = {
   linux_headers: kernelorglinuxheadersPackage,
   kernelorglinuxheaders: kernelorglinuxheadersPackage,
 
+  kernelorgperf: perfPackage,
+
   khanacademyorggenqlient: khanacademyorggenqlientPackage,
   SPIRV_Cross: khronosorgspirvcrossPackage,
   khronosorgspirvcross: khronosorgspirvcrossPackage,
@@ -8647,6 +8687,12 @@ export const pantry: Pantry = {
   nasmus: nasmusPackage,
   neo4jcom: neo4jcomPackage,
   neovimio: neovimioPackage,
+
+  netfilterorglibmnl: libmnlPackage,
+
+  netfilterorglibnftnl: libnftnlPackage,
+
+  netfilterorgnftables: nftablesPackage,
 
   netflixcomvmaf: netflixcomvmafPackage,
 
@@ -9078,6 +9124,8 @@ export const pantry: Pantry = {
   symfonycom: symfonycomPackage,
   sympyorg: sympyorgPackage,
   syncthingnet: syncthingnetPackage,
+
+  systemdiolibudev: libudevPackage,
   systemdio: systemdioPackage,
   tagliborg: tagliborgPackage,
   tailcallrun: tailcallrunPackage,
@@ -9478,6 +9526,7 @@ export const pantry: Pantry = {
   buildkit: buildkitPackage,
   buildx: dockercombuildxPackage,
   bun: bunPackage,
+  'bun-profile': bunprofilePackage,
   'bun.sh': bunPackage,
   bytebase: bytebasecomPackage,
   bzip2: sourcewareorgbzip2Package,
@@ -9744,6 +9793,7 @@ export const pantry: Pantry = {
   findutils: gnuorgfindutilsPackage,
   'Fira Code': firacodePackage,
   firebase: googlecomfirebasetoolsPackage,
+  firecracker: firecrackerPackage,
   firefox: firefoxorgPackage,
   Firefox: firefoxorgPackage,
   fish: fishshellcomPackage,
@@ -10153,6 +10203,8 @@ export const pantry: Pantry = {
   libmd: hadronsorglibmdPackage,
   libmicrohttpd: gnuorglibmicrohttpdPackage,
   libmng: sourceforgenetlibmngPackage,
+  libmnl: libmnlPackage,
+  libnftnl: libnftnlPackage,
   libnl: libnlPackage,
   libnsl: libnslPackage,
   libomp: openmpllvmorgPackage,
@@ -10194,6 +10246,7 @@ export const pantry: Pantry = {
   libtirpc: sourceforgenetlibtirpcPackage,
   LibTomMath: libtomnetmathPackage,
   libtool: gnuorglibtoolPackage,
+  libudev: libudevPackage,
   libunibreak: libunibreakPackage,
   libunistring: gnuorglibunistringPackage,
   liburcu: liburcuorgPackage,
@@ -10363,6 +10416,7 @@ export const pantry: Pantry = {
   networkx: networkxorgPackage,
   nex: nexPackage,
   next: vercelcomnextPackage,
+  nftables: nftablesPackage,
   nghttp2: nghttp2orgPackage,
   nginx: nginxorgPackage,
   'nim-lang': nimlangorgPackage,
@@ -10398,6 +10452,7 @@ export const pantry: Pantry = {
   odigos: odigosioPackage,
   ogg: xiphorgoggPackage,
   'oh-my-posh': ohmyposhdevPackage,
+  oha: ohaPackage,
   ollama: ollamacomPackage,
   Ollama: ollamacomPackage,
   omekasy: cratesioomekasyPackage,
@@ -10465,6 +10520,7 @@ export const pantry: Pantry = {
   'pcsc-lite': pcscliteapdufrPackage,
   pdm: pdmfmingdevPackage,
   Pearcleaner: pearcleanerappPackage,
+  perf: perfPackage,
   periphery: peripheryPackage,
   perl: perlorgPackage,
   pgen: cratesiopgenPackage,

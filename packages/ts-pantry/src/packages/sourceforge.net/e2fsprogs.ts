@@ -2,13 +2,14 @@
  * **e2fsprogs** - Utilities for the ext2, ext3, and ext4 file systems
  *
  * @domain `sourceforge.net/e2fsprogs`
- * @programs `chattr`, `compile_et`, `lsattr`, `mk_cmds`, `uuidgen`
+ * @programs `chattr`, `compile_et`, `lsattr`, `mk_cmds`, `mke2fs`, ... (+2 more)
  * @version `1.47.4` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install sourceforge.net/e2fsprogs`
  * @homepage https://e2fsprogs.sourceforge.net/
- * @dependencies `darwin:gnu.org/gettext^0.22`, `linux:github.com/util-linux/util-linux^2.39` (includes OS-specific dependencies with `os:package` format)
+ * @dependencies `darwin:gnu.org/gettext^0.22`, `linux:github.com/util-linux/util-linux^2.39` (includes platform-specific dependencies)
+ * @buildDependencies `gnu.org/coreutils` - required only when building from source
  *
  * @example
  * ```typescript
@@ -55,19 +56,27 @@ export const sourceforgenete2fsprogsPackage = {
     'compile_et',
     'lsattr',
     'mk_cmds',
-    'uuidgen',
+    'mke2fs',
+    'debugfs',
+    'dumpe2fs',
   ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.
   * These are required when running the package.
-  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
+  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:freetype.org`).
   */
   dependencies: [
     'darwin:gnu.org/gettext^0.22',
     'linux:github.com/util-linux/util-linux^2.39',
   ] as const,
-  buildDependencies: [] as const,
+  /**
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
+  buildDependencies: [
+    'gnu.org/coreutils',
+  ] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions

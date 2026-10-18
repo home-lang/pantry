@@ -9,7 +9,7 @@
  * @install `pantry install getcomposer.org`
  * @homepage https://getcomposer.org/
  * @dependencies `php.net`
- * @buildDependencies `curl.se` - required only when building from source
+ * @buildDependencies `curl.se`, `stedolan.github.io/jq^1`, `gnu.org/coreutils` - required only when building from source
  *
  * @example
  * ```typescript
@@ -69,6 +69,8 @@ export const getcomposerorgPackage = {
   */
   buildDependencies: [
     'curl.se',
+    'stedolan.github.io/jq^1',
+    'gnu.org/coreutils',
   ] as const,
   /**
   * Available versions from newest to oldest.

@@ -2,13 +2,13 @@
  * **ncurses** - Text-based UI library
  *
  * @domain `invisible-island.net/ncurses`
- * @programs `captoinfo`, `clear`, `infocmp`, `infotocap`, `ncursesw6-config`, ... (+6 more)
+ * @programs `captoinfo`, `clear`, `infocmp`, `infotocap`, `ncurses6-config`, ... (+7 more)
  * @version `6.6.0` (4 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install invisible-island.net/ncurses`
  * @homepage https://invisible-island.net/ncurses/announce.html
- * @buildDependencies `github.com/tmux/tmux@^3` - required only when building from source
+ * @buildDependencies `gnu.org/make`, `gnu.org/sed`, `freedesktop.org/pkg-config`, ... (+1 more) (includes platform-specific dependencies) - required only when building from source
  *
  * @example
  * ```typescript
@@ -55,6 +55,7 @@ export const invisibleislandnetncursesPackage = {
     'clear',
     'infocmp',
     'infotocap',
+    'ncurses6-config',
     'ncursesw6-config',
     'reset',
     'tabs',
@@ -68,9 +69,13 @@ export const invisibleislandnetncursesPackage = {
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
+  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:gnu.org/gcc`).
   */
   buildDependencies: [
-    'github.com/tmux/tmux@^3',
+    'gnu.org/make',
+    'gnu.org/sed',
+    'freedesktop.org/pkg-config',
+    'linux:gnu.org/binutils',
   ] as const,
   /**
   * Available versions from newest to oldest.
