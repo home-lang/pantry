@@ -17,6 +17,7 @@ import { reportBuild } from './report-build.ts'
 import { persistBuildDiagnostics, sanitizeBuildDiagnostic } from './build-diagnostics.ts'
 import { compareInstallerVersionsDesc, parseInstallerConstraint, satisfiesInstallerConstraint } from '../src/installer'
 import { normalizeDependencyArch } from '../src/dependency-spec'
+import { dependencyPythonPaths } from './python-build-environment'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
 type ScriptStep = string | { run: string, 'working-directory'?: string, if?: string }
 const packageOverrides: Record<string, any> = {} // stub — overrides migrated to recipes
@@ -1278,7 +1279,9 @@ export async function installBuildDependencyGraphs(
   for (const [domain, dependency] of declared) {
     if (graph.has(domain)) continue
     const tools = await resolve(new Map([[domain, dependency]]))
-    const paths = await download(tools, join(depsDir, '.build-tools', encodeURIComponent(domain)))
+    if (!/^[a-z0-9][a-z0-9./_-]*$/i.test(domain) || domain.split('/').some(part => !part || part === '.' || part === '..'))
+      throw new BuildDependencyResolutionError(`Invalid build dependency domain: ${domain}`)
+    const paths = await download(tools, join(depsDir, '.build-tools', domain))
     for (const [key, value] of Object.entries(paths)) {
       if (key === domain || key.startsWith(`deps.${domain}.`)) depPaths[key] = value
     }
@@ -1801,6 +1804,7 @@ else {
     buildDir,
     depPaths,
     templateVars['version.tag'],
+    dependencyPythonPaths(Object.entries(depPaths).filter(([key]) => key.endsWith('.prefix')).map(([, prefix]) => prefix)),
   )
 
   const scriptPath = join(buildDir, '_build.sh')

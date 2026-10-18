@@ -10,6 +10,19 @@ test('a native recipe replaces obsolete generated build and runtime dependency e
   expect(graph.has('github.com/tmux/tmux')).toBe(false)
 })
 
+test('slash-domain build tools use canonical filesystem paths, not URL escapes', async () => {
+  const { installBuildDependencyGraphs } = await import('../scripts/build-package')
+  const directories: string[] = []
+  await installBuildDependencyGraphs(new Map(), new Map([['github.com/westes/flex', 'github.com/westes/flex ^2']]), '/managed',
+    async initial => initial,
+    async (graph, directory) => {
+      directories.push(directory)
+      return Object.fromEntries([...graph.keys()].flatMap(domain => [[`deps.${domain}.prefix`, `${directory}/${domain}`], [`deps.${domain}.version`, '2.6.4']]))
+    })
+  expect(directories).toContain('/managed/.build-tools/github.com/westes/flex')
+  expect(directories.join(':')).not.toContain('%')
+})
+
 for (const platform of ['linux-x86-64', 'darwin-arm64']) {
   test(`${platform} uses declared dependency library and pkg-config roots`, async () => {
     const script = generateBuildScript({ build: { script: ['true'] } }, 'fixture', '1.0.0', platform, '/tmp/fixture-prefix', '/tmp/fixture-build', {

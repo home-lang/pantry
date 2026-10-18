@@ -550,6 +550,7 @@ export function generateBuildScript(
   buildDir: string,
   depPaths: Record<string, string>,
   versionTag?: string,
+  pythonModulePaths: readonly string[] = [],
 ): string {
   const tokens = buildTokens(pkg, version, platform, prefix, buildDir, depPaths, versionTag)
   const dashIdx = platform.indexOf('-')
@@ -918,6 +919,11 @@ else if (osName === 'linux') {
   const depBinPaths: string[] = []
   const depLibPaths: string[] = []
   const depIncludePaths: string[] = []
+  if (pythonModulePaths.length) {
+    const quoted = `'${pythonModulePaths.join(':').replaceAll("'", "'\\''")}'`
+    sections.push(`export PYTHONPATH=${quoted}:"\${PYTHONPATH:-}"`)
+    sections.push('export PYTHONNOUSERSITE=1')
+  }
   const depPkgConfigPaths: string[] = []
   const depAclocalPaths: string[] = []
   // The autoconf dep's data dir (share/autoconf). autom4te/autoreconf locate their

@@ -16,7 +16,7 @@ export const recipe: Recipe = {
     script: [
       ...githubAssetSteps('oven-sh/bun', 'bun-v{{version}}', 'bun-linux-x64-profile.zip', 'bun-profile.zip'),
       'unzip -q bun-profile.zip',
-      'install -Dm755 bun-linux-x64-profile/bun "{{prefix}}/bin/bun-profile"',
+      'install -Dm755 bun-linux-x64-profile/bun-profile "{{prefix}}/bin/bun-profile"',
     ],
     // Bun's self-contained ELF carries embedded data; preserve the vendor image
     // and symbol table exactly as with the ordinary Bun distribution.
