@@ -3,7 +3,7 @@
  *
  * @domain `aws.amazon.com/dynamodb-local`
  * @programs `dynamodb-local`
- * @version `3.3.0` (1 versions available)
+ * @version `3.3.2` (6 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install aws.amazon.com/dynamodb-local`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "dynamodb-local"
  * console.log(pkg.description) // "Amazon DynamoDB Local for development and integ..."
  * console.log(pkg.programs)    // ["dynamodb-local"]
- * console.log(pkg.versions[0]) // "3.3.0" (latest)
+ * console.log(pkg.versions[0]) // "3.3.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/aws-amazon-com/dynamodb-local.md
@@ -76,7 +76,12 @@ export const dynamodblocalPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.3.2',
+    '3.3.1',
     '3.3.0',
+    '3.2.0',
+    '3.1.0',
+    '3.0.0',
   ] as const,
   aliases: [] as const,
 }

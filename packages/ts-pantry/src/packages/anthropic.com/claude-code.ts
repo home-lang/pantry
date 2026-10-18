@@ -15,7 +15,7 @@
  * const pkg = pantry.anthropiccomclaudecode
  * console.log(pkg.name)        // "claude-code"
  * console.log(pkg.programs)    // ["claude"]
- * console.log(pkg.versions[0]) // "2.1.302" (latest)
+ * console.log(pkg.versions[0]) // "2.1.303" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/anthropic-com/claude-code.md
@@ -62,6 +62,7 @@ export const anthropiccomclaudecodePackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.1.303',
     '2.1.302',
     '2.1.301',
     '2.1.300',
