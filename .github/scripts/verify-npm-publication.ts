@@ -95,7 +95,15 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
 }
 
 try {
-  for (const mode of ['restricted-package', 'metadata-delay', 'tarball-delay', 'wrong-bytes', 'never-visible', 'stalled-tarball', 'generic-command'] as const) await check(mode)
+  const failures: string[] = []
+  for (const mode of ['restricted-package', 'metadata-delay', 'tarball-delay', 'wrong-bytes', 'never-visible', 'stalled-tarball', 'generic-command'] as const) {
+    try { await check(mode) }
+    catch (error) {
+      console.error(error)
+      failures.push(mode)
+    }
+  }
+  if (failures.length) throw new Error(`Publication contracts failed: ${failures.join(', ')}`)
 }
 finally {
   await rm(root, { recursive: true, force: true })
