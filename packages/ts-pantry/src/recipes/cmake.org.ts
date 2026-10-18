@@ -32,7 +32,7 @@ export const recipe: Recipe = {
     ],
     env: {
       'V': '1',
-      'ARGS': ['--prefix={{prefix}}', '--parallel={{hw.concurrency}}', '--datadir=share/cmake-{{version.marketing}}', '--docdir=share/doc/cmake', '--mandir=share/man', '--system-zlib', '--system-curl', '--', '-DBUILD_CursesDialog=ON', '-DCURSES_NEED_WIDE=ON', '-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON'],
+      'ARGS': ['--prefix={{prefix}}', '--parallel={{hw.concurrency}}', '--datadir=share/cmake-{{version.marketing}}', '--docdir=share/doc/cmake', '--mandir=share/man', '--system-zlib', '--system-curl', '--', '-DBUILD_CursesDialog=ON', '-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON'],
     },
   },
   test: {
