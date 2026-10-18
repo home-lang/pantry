@@ -8,7 +8,7 @@ if (!process.argv[2]) throw new Error('Pass the actual published or normally bui
 const root = await mkdtemp(join(tmpdir(), 'pantry-publication-confirmation-'))
 const name = '@pantry-fixture/confirmation', version = '1.0.0'
 
-async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 'never-visible' | 'stalled-tarball' | 'generic-command') {
+async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 'never-visible' | 'stalled-tarball' | 'generic-command' | 'restricted-package') {
   const cwd = join(root, mode)
   await mkdir(cwd)
   await writeFile(join(cwd, 'index.txt'), 'Immutable publication fixture\n')
@@ -36,12 +36,16 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
       }
       if (request.method === 'GET' && path === `/${name}/${version}`) {
         metadataReads++
+        if (uploads && mode === 'restricted-package' && request.headers.get('authorization') !== 'Bearer disposable-loopback-fixture-only')
+          return new Response('Private package needs its registry credential', { status: 401 })
         if (uploads === 0 || mode === 'never-visible' || (mode === 'metadata-delay' && metadataReads <= 2))
           return Response.json({ error: 'not yet visible' }, { status: 404 })
         return Response.json(metadata)
       }
       if (request.method === 'GET' && path === '/fixture.tgz') {
         tarballReads++
+        if (mode === 'restricted-package' && request.headers.get('authorization') !== 'Bearer disposable-loopback-fixture-only')
+          return new Response('Private tarball needs its registry credential', { status: 401 })
         if (mode === 'tarball-delay' && tarballReads <= 2) return new Response('not yet visible', { status: 404 })
         if (mode === 'stalled-tarball') {
           // A valid response head and partial body must not defeat the CLI's
@@ -64,7 +68,7 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
   }))
   // Both command surfaces must preserve the explicit private registry URL.
   const command = mode === 'generic-command' ? ['publish', '--npm'] : ['npm:publish']
-  const child = Bun.spawn([executable, ...command, '--no-oidc', '--ignore-scripts', '--access', 'public', '--registry', server.url.origin], {
+  const child = Bun.spawn([executable, ...command, '--no-oidc', '--ignore-scripts', '--access', mode === 'restricted-package' ? 'restricted' : 'public', '--registry', server.url.origin], {
     cwd, env: { ...process.env, NPM_TOKEN: 'disposable-loopback-fixture-only' }, stdout: 'pipe', stderr: 'pipe',
   })
   const timeout = setTimeout(() => child.kill(), 145_000)
@@ -73,8 +77,8 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
     const output = stdout + stderr
     if (uploads !== 1) throw new Error(`${mode}: expected exactly one upload, got ${uploads}; requests=${JSON.stringify(requests)}; exit=${code}\n${output}`)
     if (!metadataReads) throw new Error(`${mode}: CLI reported completion without reading public version metadata\n${output}`)
-    if (credentialReads) throw new Error(`${mode}: public verification forwarded publishing credentials`)
-    const success = mode === 'metadata-delay' || mode === 'tarball-delay' || mode === 'generic-command'
+    if (mode !== 'restricted-package' && credentialReads) throw new Error(`${mode}: public verification forwarded publishing credentials`)
+    const success = mode === 'metadata-delay' || mode === 'tarball-delay' || mode === 'generic-command' || mode === 'restricted-package'
     if (success && (code !== 0 || !tarballReads)) throw new Error(`${mode}: publication was not verified\n${output}`)
     if (!success && (code === 0 || /✓ Published/.test(output))) throw new Error(`${mode}: unverified publication was reported successful\n${output}`)
     if (mode === 'metadata-delay' && metadataReads < 3) throw new Error('Metadata delay was not exercised')
@@ -91,7 +95,7 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
 }
 
 try {
-  for (const mode of ['metadata-delay', 'tarball-delay', 'wrong-bytes', 'never-visible', 'stalled-tarball', 'generic-command'] as const) await check(mode)
+  for (const mode of ['restricted-package', 'metadata-delay', 'tarball-delay', 'wrong-bytes', 'never-visible', 'stalled-tarball', 'generic-command'] as const) await check(mode)
 }
 finally {
   await rm(root, { recursive: true, force: true })
