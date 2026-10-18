@@ -52,7 +52,7 @@ export const recipe: Recipe = {
   test: {
     required: true,
     script: [
-      'p11-kit --version | grep -F "{{version}}"',
+      'test "$(pkg-config --modversion p11-kit-1)" = "{{version}}"',
       'pkg-config --exists p11-kit-1',
       'p11-kit list-modules',
       'printf "#include <p11-kit/p11-kit.h>\\nint main(void) { return p11_kit_strerror(CKR_OK) == 0; }\\n" > probe.c',
