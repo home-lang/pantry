@@ -1,0 +1,86 @@
+name: Verify Native Action Source
+
+on:
+  workflow_dispatch:
+    inputs:
+      source-ref:
+        description: 'Exact Pantry source commit to build and verify'
+        required: true
+        type: string
+      pantry-version:
+        description: 'Published Pantry CLI version (never a source CLI override)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  services:
+    name: Native services (${{ matrix.os }}, MySQL ${{ matrix.mysql }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        mysql: ['26.7.0', '8.4.11']
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.source-ref }}
+      - name: Bootstrap the published workspace runtime through Pantry
+        uses: pantry-pm/pantry/packages/action@2b6653b20b830c152f7491847a91d2d9d7cf4cc7 # v0.11.91
+        with:
+          version: 0.11.91
+          install: 'false'
+          packages: bun.com@1.4.2
+      - run: bun install --frozen-lockfile
+      - name: Verify source types, service contracts and ownership guards
+        run: |
+          set -e
+          git rev-parse HEAD
+          bun run typecheck
+          bun test packages/action/src/services.test.ts packages/action/src/service-ownership.test.ts
+      - name: Build this checkout's Action bundles
+        run: bun run --cwd packages/action build
+      - name: Run the built Action with published native service packages
+        id: pantry
+        uses: ./packages/action
+        with:
+          version: ${{ inputs.pantry-version }}
+          install: 'false'
+          packages: bun.com@1.4.2
+          services: postgres@17.11 mysql@${{ matrix.mysql }} redis@8.8.0 typesense@30.2
+      - name: Verify Action outputs and real PostgreSQL authentication
+        env:
+          ACTION_MYSQL_URL: ${{ steps.pantry.outputs.mysql-url }}
+          ACTION_MYSQL_VERSION: ${{ steps.pantry.outputs.mysql-version }}
+        run: |
+          set -e
+          test "$POSTGRES_SERVICE_VERSION" = 17.11
+          test "$(psql -X -A -t -c 'SELECT 42')" = 42
+          test "$MYSQL_SERVICE_VERSION" = '${{ matrix.mysql }}'
+          test "$ACTION_MYSQL_VERSION" = "$MYSQL_SERVICE_VERSION"
+          test "$ACTION_MYSQL_URL" = "$MYSQL_URL"
+          test "$MYSQL_HOST" = 127.0.0.1
+          test "$MYSQL_PORT" -ne 3306
+          test "$REDIS_PORT" -ne 6379
+          test "$TYPESENSE_SERVICE_VERSION" = 30.2
+      - name: Exercise real native isolation, authentication, TLS and cleanup
+        env:
+          PANTRY_NATIVE_SERVICE_TEST_BIN: ${{ github.workspace }}/pantry/.bin
+          PANTRY_NATIVE_MYSQL_TEST_VERSION: ${{ matrix.mysql }}
+        run: bun test packages/action/src/native-services.integration.test.ts
+      - name: Retain the built bundles and source identity
+        if: always()
+        run: |
+          mkdir -p artifacts/native-action-source
+          git rev-parse HEAD > artifacts/native-action-source/source-commit.txt
+          cp packages/action/dist/index.js packages/action/dist/post.js artifacts/native-action-source/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-action-${{ matrix.os }}-mysql-${{ matrix.mysql }}
+          path: artifacts/native-action-source
+          if-no-files-found: error
