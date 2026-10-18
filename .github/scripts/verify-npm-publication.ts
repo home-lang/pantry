@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto'
+import { existsSync } from 'node:fs'
+import { createServer } from 'node:http'
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -108,8 +110,111 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
   }
 }
 
+async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-commit' | 'upload-redirect' | 'stalled-upload-response') {
+  const cwd = join(root, mode)
+  await mkdir(cwd)
+  await writeFile(join(cwd, 'index.txt'), 'Immutable ambiguous-response fixture\n')
+  const marker = join(cwd, 'postpublish-ran')
+  let uploads = 0, metadataReads = 0, tarballReads = 0, foreignRequests = 0, foreignCredentialRequests = 0
+  let prematureHook = false
+  let tarball = Buffer.alloc(0), metadata: Record<string, unknown> = {}
+  const foreign = createServer((request, response) => {
+    foreignRequests++
+    if (request.headers.authorization || request.headers['npm-otp']) foreignCredentialRequests++
+    response.writeHead(200, { 'Content-Type': 'application/json' }).end('{"success":true}')
+  })
+  await new Promise<void>((resolve, reject) => foreign.once('error', reject).listen(0, '127.0.0.1', resolve))
+  const foreignAddress = foreign.address()
+  if (!foreignAddress || typeof foreignAddress === 'string') throw new Error('Missing owned foreign listener')
+  const foreignUrl = `http://127.0.0.1:${foreignAddress.port}/foreign`
+  const server = createServer(async (request, response) => {
+    try {
+      const path = decodeURIComponent(new URL(request.url || '/', origin).pathname)
+      if (request.method === 'PUT' && path === `/${name}`) {
+        uploads++
+        const chunks: Buffer[] = []
+        for await (const chunk of request) chunks.push(Buffer.from(chunk))
+        const body = JSON.parse(Buffer.concat(chunks).toString()) as { versions: Record<string, Record<string, unknown>>, _attachments: Record<string, { data: string }> }
+        const attachment = Object.values(body._attachments)[0]
+        if (!attachment) throw new Error('No immutable upload attachment')
+        tarball = Buffer.from(attachment.data, 'base64')
+        metadata = { ...body.versions[version], name, version, dist: {
+          tarball: `${origin}/fixture.tgz`,
+          integrity: `sha512-${createHash('sha512').update(tarball).digest('base64')}`,
+        } }
+        if (uploads > 1) {
+          response.writeHead(409, { 'Content-Type': 'application/json' }).end('{"error":"EPUBLISHCONFLICT","reason":"Cannot publish over previously staged version"}')
+        }
+        else if (mode === 'lost-response') request.socket.destroy()
+        else if (mode === 'server-error-after-commit') response.writeHead(503).end('Upload committed; response failed')
+        else if (mode === 'upload-redirect') response.writeHead(303, { Location: foreignUrl }).end()
+        else {
+          response.writeHead(202, { 'Content-Type': 'application/json', 'Content-Length': '16' })
+          response.write('{')
+        }
+        return
+      }
+      if (request.method === 'GET' && path === `/${name}/${version}`) {
+        metadataReads++
+        if (!uploads || mode === 'upload-redirect') { response.writeHead(404).end(); return }
+        if (existsSync(marker)) prematureHook = true
+        response.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(metadata))
+        return
+      }
+      if (request.method === 'GET' && path === '/fixture.tgz') {
+        tarballReads++
+        if (existsSync(marker)) prematureHook = true
+        response.writeHead(200, { 'Content-Length': String(tarball.length) }).end(tarball)
+        return
+      }
+      response.writeHead(400).end('Unexpected fixture request')
+    }
+    catch (error) { response.destroy(error instanceof Error ? error : new Error(String(error))) }
+  })
+  await new Promise<void>((resolve, reject) => server.once('error', reject).listen(0, '127.0.0.1', resolve))
+  const address = server.address()
+  if (!address || typeof address === 'string') throw new Error('Missing owned registry listener')
+  const origin = `http://127.0.0.1:${address.port}`
+  await writeFile(join(cwd, 'package.json'), JSON.stringify({
+    name, version, files: ['index.txt'], publishConfig: { registry: origin },
+    scripts: { postpublish: `bun -e 'await Bun.write("postpublish-ran", "yes")'` },
+  }))
+  const child = Bun.spawn([executable, 'npm:publish', '--no-oidc', '--access', 'public', '--otp', '123456', '--registry', origin], {
+    cwd, env: { ...process.env, NPM_TOKEN: 'disposable-loopback-fixture-only' }, stdout: 'pipe', stderr: 'pipe',
+  })
+  const timeout = setTimeout(() => child.kill(), 145_000)
+  try {
+    const [stdout, stderr, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited])
+    const output = stdout + stderr
+    if (foreignRequests || foreignCredentialRequests) throw new Error(`${mode}: sensitive upload followed a foreign redirect; requests=${foreignRequests}, credentialRequests=${foreignCredentialRequests}`)
+    if (uploads !== 1) throw new Error(`${mode}: accepted upload was repeated ${uploads} times; exit=${code}\n${output}`)
+    if (mode === 'upload-redirect') {
+      if (code === 0 || existsSync(marker)) throw new Error('An unverified redirect completed publication or ran its hook')
+    }
+    else if (code !== 0 || !tarballReads || !existsSync(marker) || prematureHook) {
+      throw new Error(`${mode}: exact uploaded bytes must be verified before success and postpublish; code=${code}, metadataReads=${metadataReads}, tarballReads=${tarballReads}, hook=${existsSync(marker)}, prematureHook=${prematureHook}\n${output}`)
+    }
+    console.log(JSON.stringify({ mode, code, uploads, metadataReads, tarballReads, foreignRequests, foreignCredentialRequests, hook: existsSync(marker), prematureHook }))
+  }
+  finally {
+    clearTimeout(timeout)
+    if (child.exitCode === null) child.kill()
+    await child.exited
+    server.closeAllConnections()
+    foreign.closeAllConnections()
+    await Promise.all([
+      new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())),
+      new Promise<void>((resolve, reject) => foreign.close(error => error ? reject(error) : resolve())),
+    ])
+  }
+}
+
 try {
   const failures: string[] = []
+  for (const mode of ['lost-response', 'server-error-after-commit', 'upload-redirect', 'stalled-upload-response'] as const) {
+    try { await checkAmbiguousUpload(mode) }
+    catch (error) { console.error(error); failures.push(mode) }
+  }
   for (const mode of ['restricted-package', 'restricted-redirect', 'metadata-delay', 'tarball-delay', 'wrong-bytes', 'never-visible', 'stalled-tarball', 'generic-command'] as const) {
     try { await check(mode) }
     catch (error) {
