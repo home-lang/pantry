@@ -1028,7 +1028,7 @@ fn isTransientNetworkError(err: anyerror) bool {
     };
 }
 
-test "a bounded publish timeout is retryable" {
+test "a bounded timeout before sending an upload is retryable" {
     try std.testing.expect(isTransientNetworkError(error.Timeout));
 }
 
@@ -1063,6 +1063,24 @@ pub fn npmSkipReason(allocator: std.mem.Allocator, package_dir: []const u8, conf
     defer allocator.free(build_zig);
     io_helper.accessAbsolute(build_zig, .{}) catch return null;
     return "native Zig package — publishes to the Pantry registry, not npm";
+}
+
+fn completeVerifiedNpmPublication(
+    allocator: std.mem.Allocator,
+    name: []const u8,
+    version: []const u8,
+    scripts: ?std.json.ObjectMap,
+    package_dir: []const u8,
+    options: PublishOptions,
+) CommandResult {
+    style.print("\n✓ Published {s}@{s}\n", .{ name, version });
+    if (!options.ignore_scripts) {
+        if (scripts) |configured| {
+            _ = lib.lifecycle.runPostPublishScripts(allocator, configured, package_dir);
+        }
+    }
+    if (options.github_release) createGitHubRelease(allocator, options);
+    return .{ .exit_code = 0 };
 }
 
 fn publishSingleToNpm(
@@ -1416,8 +1434,9 @@ fn publishSingleToNpm(
 
     // Publish with retry-on-rate-limit. Cloudflare in front of registry.npmjs.org
     // returns 429 on burst publishes (a real risk in monorepo mode publishing
-    // hundreds of packages in a row). Retry transient failures with exponential
-    // backoff: 5s → 10s → 20s → 40s → 80s, then give up. 5xx is treated the same.
+    // hundreds of packages in a row). Retry explicit rate-limit rejections and
+    // pre-upload network failures with bounded exponential backoff. Ambiguous
+    // post-upload outcomes require verification and must never resend bytes.
     const max_publish_attempts: u8 = 8;
     var publish_attempt: u8 = 0;
     const response = blk: while (true) {
@@ -1429,6 +1448,15 @@ fn publishSingleToNpm(
             auth_token,
             npm_publish_timeout_ms,
         ) catch |err| {
+            // A request can commit before its response fails. Never send a
+            // second PUT after bytes may have reached the registry.
+            if (registry_client.token_upload_started) {
+                if (try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms)) {
+                    return completeVerifiedNpmPublication(allocator, metadata.name, metadata.version, scripts_obj, package_dir, options);
+                }
+                return CommandResult.err(allocator, "Upload outcome is pending public verification. Do not send another upload while this version may be staged.");
+            }
+            // Transient network errors before any upload can be retried.
             // Transient network errors (WriteFailed, ConnectionResetByPeer,
             // EndOfStream, etc.) — treat like a retryable HTTP failure and
             // back off exponentially before reattempting. Without this we
@@ -1457,6 +1485,16 @@ fn publishSingleToNpm(
                 .retry_after_seconds = 0,
             };
         };
+        // A server error, request timeout, or redirect can follow a committed
+        // write. Read back the exact tarball instead of repeating the PUT.
+        if (r.status_code == 408 or (r.status_code >= 500 and r.status_code < 600) or (r.status_code >= 300 and r.status_code < 400)) {
+            var owned_response = r;
+            defer owned_response.deinit(allocator);
+            if (try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms)) {
+                return completeVerifiedNpmPublication(allocator, metadata.name, metadata.version, scripts_obj, package_dir, options);
+            }
+            return CommandResult.err(allocator, "Upload outcome is pending public verification. Do not send another upload while this version may be staged.");
+        }
         if (r.success or !r.isRetryable() or publish_attempt >= max_publish_attempts) {
             break :blk r;
         }
@@ -1492,17 +1530,7 @@ fn publishSingleToNpm(
         if (!try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms)) {
             return CommandResult.err(allocator, "Upload accepted; publication is pending public metadata and verified tarball availability. Do not upload this version again.");
         }
-        style.print("\n✓ Published {s}@{s}\n", .{ metadata.name, metadata.version });
-        // Run post-publish scripts: publish → postpublish
-        if (!options.ignore_scripts) {
-            if (scripts_obj) |scripts| {
-                _ = lib.lifecycle.runPostPublishScripts(allocator, scripts, package_dir);
-            }
-        }
-        if (options.github_release) {
-            createGitHubRelease(allocator, options);
-        }
-        return .{ .exit_code = 0 };
+        return completeVerifiedNpmPublication(allocator, metadata.name, metadata.version, scripts_obj, package_dir, options);
     } else {
         // Check for version conflict (npm returns 403 with EPUBLISHCONFLICT or conflict text)
         var is_version_conflict = false;

@@ -258,6 +258,7 @@ pub const RegistryClient = struct {
     // Owned only for restricted packages. Anonymous reads remain mandatory
     // for public publications, even when the upload used a credential.
     publication_authorization: ?[]u8 = null,
+    token_upload_started: bool = false,
 
     pub fn init(allocator: std.mem.Allocator, registry_url: []const u8) !RegistryClient {
         return RegistryClient{
@@ -380,6 +381,8 @@ pub const RegistryClient = struct {
         // Make HTTP request
         var req = try self.http_client.request(.PUT, uri, .{
             .extra_headers = &extra_headers,
+            .keep_alive = false,
+            .redirect_behavior = .unhandled,
         });
         defer req.deinit();
 
@@ -462,6 +465,8 @@ pub const RegistryClient = struct {
 
         var req = try self.http_client.request(.POST, uri, .{
             .extra_headers = &extra_headers,
+            .keep_alive = false,
+            .redirect_behavior = .unhandled,
         });
         defer req.deinit();
 
@@ -585,6 +590,8 @@ pub const RegistryClient = struct {
         // Make HTTP request
         var req = try self.http_client.request(.PUT, uri, .{
             .extra_headers = &extra_headers,
+            .keep_alive = false,
+            .redirect_behavior = .unhandled,
         });
         defer req.deinit();
 
@@ -643,6 +650,7 @@ pub const RegistryClient = struct {
         tarball_path: []const u8,
         auth_token: []const u8,
     ) !PublishResponse {
+        self.token_upload_started = false;
         // URL-encode package name for scoped packages
         const encoded_name = try urlEncodePackageName(self.allocator, package_name);
         defer self.allocator.free(encoded_name);
@@ -709,10 +717,14 @@ pub const RegistryClient = struct {
         // Make HTTP request
         var req = try self.http_client.request(.PUT, uri, .{
             .extra_headers = extra_headers.items,
+            .keep_alive = false,
+            .redirect_behavior = .unhandled,
         });
         defer req.deinit();
 
         req.transfer_encoding = .{ .content_length = metadata.len };
+        // Once sending starts, even a write error can mean an accepted upload.
+        self.token_upload_started = true;
         try req.sendBodyComplete(@constCast(metadata));
 
         var redirect_buffer: [4096]u8 = undefined;
@@ -839,44 +851,49 @@ pub const RegistryClient = struct {
     /// pre-check or fail. Designed for monorepo publishes where most
     /// packages are unchanged release-to-release; skipping their re-publish
     /// avoids both wasted requests and Cloudflare 429 rate-limiting.
-    pub fn versionExists(
-        self: *RegistryClient,
-        package_name: []const u8,
-        version: []const u8,
-    ) !bool {
-        const encoded_name = try urlEncodePackageName(self.allocator, package_name);
-        defer self.allocator.free(encoded_name);
+    pub fn versionExists(self: *RegistryClient, package_name: []const u8, version: []const u8) !bool {
+        const Selection = union(enum) {
+            exists: anyerror!bool,
+            timeout: void,
+        };
+        var result_buffer: [2]Selection = undefined;
+        var selection = std.Io.Select(Selection).init(io_helper.getIo(), &result_buffer);
+        defer {
+            while (selection.cancel()) |_| {}
+        }
+        try selection.concurrent(.exists, versionExistsTask, .{ self, package_name, version });
+        try selection.concurrent(.timeout, publishTimeoutTask, .{@as(u64, 120_000)});
+        return switch (try selection.await()) {
+            .exists => |exists| try exists,
+            .timeout => error.Timeout,
+        };
+    }
 
-        const url = try std.fmt.allocPrint(
-            self.allocator,
-            "{s}/{s}/{s}",
-            .{ self.registry_url, encoded_name, version },
-        );
+    fn versionExistsTask(self: *RegistryClient, package_name: []const u8, version: []const u8) anyerror!bool {
+        const encoded = try urlEncodePackageName(self.allocator, package_name);
+        defer self.allocator.free(encoded);
+        const url = try std.fmt.allocPrint(self.allocator, "{s}/{s}/{s}", .{ std.mem.trimEnd(u8, self.registry_url, "/"), encoded, version });
         defer self.allocator.free(url);
+        const body = try self.publicBytes(url, 1024 * 1024) orelse return false;
+        defer self.allocator.free(body);
+        return true;
+    }
 
-        const uri = try std.Uri.parse(url);
-
-        var req = try self.http_client.request(.GET, uri, .{});
-        defer req.deinit();
-
-        try req.sendBodiless();
-
-        var redirect_buffer: [4096]u8 = undefined;
-        var response = try req.receiveHead(&redirect_buffer);
-
-        // Drain body so the underlying connection can be reused for the
-        // next call. We don't care about the contents — only the status.
-        const body_reader = response.reader(&.{});
-        if (body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(64 * 1024))) |raw_body| {
-            self.allocator.free(raw_body);
-        } else |_| {}
-
-        const status = @backingInt(response.head.status);
-        if (status == 200) return true;
-        if (status == 404) return false;
-        // Treat other statuses as "unknown" — caller will fall through to a
-        // real publish attempt rather than incorrectly skipping.
-        return error.RegistryError;
+    // Io.Reader deliberately erases transport errors. Cancellation is
+    // acknowledged once by Threaded: retrying generic ReadFailed after that
+    // acknowledgment swallows it and strands Select.cancel. Recover the real
+    // error while the request and its owned connection are still alive.
+    fn publicationRequestError(req: *http.Client.Request, fallback: anyerror) anyerror {
+        if (req.connection) |connection| {
+            if (fallback == error.ReadFailed) {
+                if (connection.stream_reader.err) |err| return err;
+                if (req.reader.body_err) |err| return err;
+            }
+            if (fallback == error.WriteFailed) {
+                if (connection.stream_writer.err) |err| return err;
+            }
+        }
+        return fallback;
     }
 
     fn samePublicationOrigin(a: std.Uri, b: std.Uri) bool {
@@ -896,48 +913,50 @@ pub const RegistryClient = struct {
         const registry_uri = try std.Uri.parse(self.registry_url);
         var current_url = try self.allocator.dupe(u8, url);
         defer self.allocator.free(current_url);
-        // Handle each redirect explicitly: credentials are scoped to the exact
-        // configured registry origin, including scheme and effective port.
+        // Every hop rechecks the exact origin before attaching a credential.
         for (0..6) |_| {
-            const uri = try std.Uri.parse(current_url);
-            if (uri.user != null or uri.password != null) return error.InvalidPublicationUrl;
-            if (!std.ascii.eqlIgnoreCase(uri.scheme, "http") and !std.ascii.eqlIgnoreCase(uri.scheme, "https")) return error.InvalidPublicationUrl;
-            var headers: [3]http.Header = undefined;
-            headers[0] = .{ .name = "Accept-Encoding", .value = "identity" };
-            headers[1] = .{ .name = "Cache-Control", .value = "no-cache" };
-            var count: usize = 2;
-            if (samePublicationOrigin(registry_uri, uri)) {
-                if (self.publication_authorization) |authorization| {
-                    headers[count] = .{ .name = "Authorization", .value = authorization };
-                    count += 1;
+            var next_url: ?[]u8 = null;
+            {
+                const uri = try std.Uri.parse(current_url);
+                if (uri.user != null or uri.password != null) return error.InvalidPublicationUrl;
+                if (!std.ascii.eqlIgnoreCase(uri.scheme, "http") and !std.ascii.eqlIgnoreCase(uri.scheme, "https")) return error.InvalidPublicationUrl;
+                var headers: [3]http.Header = undefined;
+                headers[0] = .{ .name = "Accept-Encoding", .value = "identity" };
+                headers[1] = .{ .name = "Cache-Control", .value = "no-cache" };
+                var count: usize = 2;
+                if (samePublicationOrigin(registry_uri, uri)) {
+                    if (self.publication_authorization) |authorization| {
+                        headers[count] = .{ .name = "Authorization", .value = authorization };
+                        count += 1;
+                    }
+                }
+                var req = try self.http_client.request(.GET, uri, .{
+                    .extra_headers = headers[0..count],
+                    .keep_alive = false,
+                    .redirect_behavior = .unhandled,
+                });
+                defer req.deinit();
+                req.sendBodiless() catch |err| return publicationRequestError(&req, err);
+                var redirect_buffer: [8192]u8 = undefined;
+                var response = req.receiveHead(&redirect_buffer) catch |err| return publicationRequestError(&req, err);
+                if (response.head.status.class() == .redirect) {
+                    const location = response.head.location orelse return error.InvalidPublicationUrl;
+                    var resolution_buffer: [16384]u8 = undefined;
+                    if (location.len > resolution_buffer.len) return error.InvalidPublicationUrl;
+                    @memcpy(resolution_buffer[0..location.len], location);
+                    var available: []u8 = &resolution_buffer;
+                    const next_uri = try uri.resolveInPlace(location.len, &available);
+                    next_url = try std.fmt.allocPrint(self.allocator, "{f}", .{next_uri});
+                } else {
+                    if (response.head.status == .not_found) return null;
+                    if (response.head.status != .ok) return error.RegistryUnavailable;
+                    return response.reader(&.{}).allocRemaining(self.allocator, std.Io.Limit.limited(limit)) catch |err| publicationRequestError(&req, err);
                 }
             }
-            // A canceled read closes its owned connection. Returning a partial
-            // body to the keep-alive pool makes deinit drain it after cancellation.
-            var req = try self.http_client.request(.GET, uri, .{
-                .extra_headers = headers[0..count],
-                .keep_alive = false,
-                .redirect_behavior = .unhandled,
-            });
-            defer req.deinit();
-            try req.sendBodiless();
-            var redirect_buffer: [8192]u8 = undefined;
-            var response = try req.receiveHead(&redirect_buffer);
-            if (response.head.status.class() == .redirect) {
-                const location = response.head.location orelse return error.InvalidPublicationUrl;
-                var resolution_buffer: [16384]u8 = undefined;
-                if (location.len > resolution_buffer.len) return error.InvalidPublicationUrl;
-                @memcpy(resolution_buffer[0..location.len], location);
-                var available: []u8 = &resolution_buffer;
-                const next_uri = try uri.resolveInPlace(location.len, &available);
-                const next_url = try std.fmt.allocPrint(self.allocator, "{f}", .{next_uri});
-                self.allocator.free(current_url);
-                current_url = next_url;
-                continue;
-            }
-            if (response.head.status == .not_found) return null;
-            if (response.head.status != .ok) return error.RegistryUnavailable;
-            return try response.reader(&.{}).allocRemaining(self.allocator, std.Io.Limit.limited(limit));
+            // Request.deinit has finished before any externally owned URI or
+            // header backing is replaced for the next redirect.
+            self.allocator.free(current_url);
+            current_url = next_url orelse unreachable;
         }
         return error.TooManyHttpRedirects;
     }

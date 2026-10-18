@@ -177,6 +177,9 @@ over a fresh login. Unset it to use the login.
 
 ### When an upload completes
 
+The optional public existing-version precheck also has a 120-second deadline;
+a stalled or incomplete response never counts as an existing version.
+
 HTTP 200, 201, or 202 means the registry accepted the upload. Pantry reports
 `Published` only after public `name@version` metadata matches and the downloaded
 tarball has the SHA-512 integrity of the local upload. Public readback carries no
@@ -217,9 +220,14 @@ verified against that hash; newly uploaded bytes always require local SHA-512.
 - Otherwise pantry falls back to token authentication. In CI with no token, the
   package fails with `No authentication method available in CI`.
 
-Transient network errors, rate limits (429), and 5xx answers are retried with
-exponential backoff, honoring npm's `Retry-After`. Between packages pantry
-pauses briefly, and for at least 60 seconds after a rate-limited failure.
+Network failures before an upload starts and explicit rate-limit rejections
+(429) are retried with exponential backoff, honoring npm's `Retry-After`.
+Once bytes may have been sent, a dropped response, timeout, redirect, or 5xx
+answer triggers exact tarball verification. A verified upload completes once;
+an unresolved upload remains pending and is never sent again automatically.
+Between packages pantry pauses briefly, and for at least 60 seconds after a
+rate-limited failure. Upload and token-exchange requests never automatically
+follow redirects with publishing credentials or one-time passwords.
 
 ### Scope not found
 

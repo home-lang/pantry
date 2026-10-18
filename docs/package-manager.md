@@ -267,6 +267,13 @@ forwards publishing credentials to the metadata or tarball host. Restricted
 packages use authenticated readback at the exact configured registry origin;
 redirects across scheme, host, or effective port strip the credential.
 
+A token upload follows the same verify-or-pending rule after a lost response,
+408, 5xx, or redirect. Only network failures before sending starts and explicit
+429 rejections may repeat an upload attempt. Uploads and token exchanges do not
+automatically follow redirects, so publishing credentials and OTP headers cannot
+be forwarded to another origin. The existing-version precheck uses a bounded
+120-second read and never skips a package after an incomplete body.
+
 Token discovery is deterministic:
 
 1. `NPM_TOKEN`, `NODE_AUTH_TOKEN`, or `BUN_AUTH_TOKEN`;
