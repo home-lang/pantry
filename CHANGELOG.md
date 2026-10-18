@@ -1,3 +1,136 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.93...v0.11.94)
+
+## ✨ Features
+
+- add a native DynamoDB Local recipe with mandatory live health ([385a5fc](https://github.com/pantry-pm/pantry/commit/385a5fc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **action**: manage isolated authenticated native CI services ([de0af09](https://github.com/pantry-pm/pantry/commit/de0af09)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- declare the canonical repository for release notes ([9be6095](https://github.com/pantry-pm/pantry/commit/9be6095)) _(by Chris <chrisbreuer93@gmail.com>)_
+- declare the owned registry fixture storage contract ([89de817](https://github.com/pantry-pm/pantry/commit/89de817)) _(by Chris <chrisbreuer93@gmail.com>)_
+- scope build status hydration to injected registry storage ([3b7e621](https://github.com/pantry-pm/pantry/commit/3b7e621)) _(by Chris <chrisbreuer93@gmail.com>)_
+- synchronize the Pantry workspace lock with managed tools ([3ac2cb4](https://github.com/pantry-pm/pantry/commit/3ac2cb4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- integrate verified compressed publication readback ([fd10393](https://github.com/pantry-pm/pantry/commit/fd10393)) _(by Chris <chrisbreuer93@gmail.com>)_
+- integrate registry readiness before accepted mutations ([df667e8](https://github.com/pantry-pm/pantry/commit/df667e8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- await build status readiness before accepting mutations ([70ebe2f](https://github.com/pantry-pm/pantry/commit/70ebe2f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- decode HTTP representations before publication verification ([8067a8e](https://github.com/pantry-pm/pantry/commit/8067a8e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- install declared workspace inputs before native CI compilation ([a24dfd8](https://github.com/pantry-pm/pantry/commit/a24dfd8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- gate build status snapshots on applied state ([4adf743](https://github.com/pantry-pm/pantry/commit/4adf743)) _(by Chris Breuer <chris@stacksjs.com>)_
+- integrate registry snapshot hydration guards ([ba07192](https://github.com/pantry-pm/pantry/commit/ba07192)) _(by Chris <chrisbreuer93@gmail.com>)_
+- integrate verified publication completion into the release CLI ([7757111](https://github.com/pantry-pm/pantry/commit/7757111)) _(by Chris <chrisbreuer93@gmail.com>)_
+- pin stable compiler in the authoritative Pantry manifest ([132f353](https://github.com/pantry-pm/pantry/commit/132f353)) _(by Chris <chrisbreuer93@gmail.com>)_
+- reject truncated native downloads and adopt verified Action bundle ([a0f406e](https://github.com/pantry-pm/pantry/commit/a0f406e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bound native downloads and require stalled archive contracts ([b940626](https://github.com/pantry-pm/pantry/commit/b940626)) _(by Chris <chrisbreuer93@gmail.com>)_
+- centralize scoped native HTTP reads and cancellation cleanup ([120df02](https://github.com/pantry-pm/pantry/commit/120df02)) _(by Chris <chrisbreuer93@gmail.com>)_
+- require registry snapshot hydration before writes ([e8f731f](https://github.com/pantry-pm/pantry/commit/e8f731f)) _(by Chris Breuer <chris@stacksjs.com>)_
+- retain API error bodies and explicit authorization precedence ([eb03331](https://github.com/pantry-pm/pantry/commit/eb03331)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve native registry failures and redirect ownership ([6907a1f](https://github.com/pantry-pm/pantry/commit/6907a1f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve registry failures and scope installer credentials ([0fe0459](https://github.com/pantry-pm/pantry/commit/0fe0459)) _(by Chris <chrisbreuer93@gmail.com>)_
+- require confirmed absence before binary fallback ([02d0959](https://github.com/pantry-pm/pantry/commit/02d0959)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use published release tooling that aligns declared native versions ([7d8425e](https://github.com/pantry-pm/pantry/commit/7d8425e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- distinguish missing binary objects from adapter failures ([43d54d8](https://github.com/pantry-pm/pantry/commit/43d54d8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve binary storage adapter missing-object contracts ([65f59d6](https://github.com/pantry-pm/pantry/commit/65f59d6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- recover registry downloads after storage outages ([6d46239](https://github.com/pantry-pm/pantry/commit/6d46239)) _(by Chris <chrisbreuer93@gmail.com>)_
+- verify Zig with its supported version command ([9686049](https://github.com/pantry-pm/pantry/commit/9686049)) _(by Chris <chrisbreuer93@gmail.com>)_
+- share installer prerelease rules when selecting locked tools ([94473e4](https://github.com/pantry-pm/pantry/commit/94473e4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- pin Pantry builds to the supported stable Zig compiler ([fdf29cb](https://github.com/pantry-pm/pantry/commit/fdf29cb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve native producer versions from canonical metadata ([cb0e19f](https://github.com/pantry-pm/pantry/commit/cb0e19f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve native DynamoDB launchers through managed utilities ([44dd547](https://github.com/pantry-pm/pantry/commit/44dd547)) _(by Chris <chrisbreuer93@gmail.com>)_
+- generate package examples with real literal aliases and domain keys ([d1e18fe](https://github.com/pantry-pm/pantry/commit/d1e18fe)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use the canonical Bun recipe domain for DynamoDB build health ([de0f662](https://github.com/pantry-pm/pantry/commit/de0f662)) _(by Chris <chrisbreuer93@gmail.com>)_
+- await the owned DynamoDB accepted socket before health requests ([004e808](https://github.com/pantry-pm/pantry/commit/004e808)) _(by Chris <chrisbreuer93@gmail.com>)_
+- validate Maven coordinate segments without nested repetition ([3c29fbd](https://github.com/pantry-pm/pantry/commit/3c29fbd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- install native service test dependencies and retain installer diagnostics ([df8477c](https://github.com/pantry-pm/pantry/commit/df8477c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- name the default Redis ACL user in service URLs ([8f48784](https://github.com/pantry-pm/pantry/commit/8f48784)) _(by Chris <chrisbreuer93@gmail.com>)_
+- own the portable Node bootstrap for Pantry action releases ([d484ca4](https://github.com/pantry-pm/pantry/commit/d484ca4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- keep fetch lifecycle opt-in and reject build-host paths in actions ([ab94397](https://github.com/pantry-pm/pantry/commit/ab94397)) _(by Chris <chrisbreuer93@gmail.com>)_
+- drain registry metadata writes before releasing test storage ([63bb50c](https://github.com/pantry-pm/pantry/commit/63bb50c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- dispose owned registry tier test storage after server shutdown ([9501dd0](https://github.com/pantry-pm/pantry/commit/9501dd0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resample Darwin service identities during kernel exit ([dacbb04](https://github.com/pantry-pm/pantry/commit/dacbb04)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **action**: canonicalize cancellation ownership before capturing the spawned parent ([5493ed9](https://github.com/pantry-pm/pantry/commit/5493ed9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **action**: sample Linux service identity across process exit ([edbbcfc](https://github.com/pantry-pm/pantry/commit/edbbcfc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **action**: checkpoint native ownership before startup ([11ead96](https://github.com/pantry-pm/pantry/commit/11ead96)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📝 Documentation
+
+- distinguish registry outages from missing packages ([80bde29](https://github.com/pantry-pm/pantry/commit/80bde29)) _(by Chris <chrisbreuer93@gmail.com>)_
+- regenerate native package examples from the corrected generator ([7c7f7c3](https://github.com/pantry-pm/pantry/commit/7c7f7c3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- verify HTTP encoded publication metadata and archives ([1f1b616](https://github.com/pantry-pm/pantry/commit/1f1b616)) _(by Chris <chrisbreuer93@gmail.com>)_
+- reproduce partial build status hydration overwrites ([5895391](https://github.com/pantry-pm/pantry/commit/5895391)) _(by Chris Breuer <chris@stacksjs.com>)_
+- reject partial archives without changing downloader ([8522145](https://github.com/pantry-pm/pantry/commit/8522145)) _(by Chris <chrisbreuer93@gmail.com>)_
+- require native archive failures at the requested artifact ([f652c61](https://github.com/pantry-pm/pantry/commit/f652c61)) _(by Chris <chrisbreuer93@gmail.com>)_
+- keep fixture deadlines scoped to each owned child ([1b75ef4](https://github.com/pantry-pm/pantry/commit/1b75ef4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- retain every native registry fixture verdict ([206c570](https://github.com/pantry-pm/pantry/commit/206c570)) _(by Chris <chrisbreuer93@gmail.com>)_
+- exercise native registry lookup and archive failures over HTTP ([c48d06e](https://github.com/pantry-pm/pantry/commit/c48d06e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- protect registry snapshots from unavailable reads ([25f4058](https://github.com/pantry-pm/pantry/commit/25f4058)) _(by Chris Breuer <chris@stacksjs.com>)_
+- reproduce installer registry failures and token scope ([d391d96](https://github.com/pantry-pm/pantry/commit/d391d96)) _(by Chris <chrisbreuer93@gmail.com>)_
+- distinguish storage outages before binary fallback ([38a8063](https://github.com/pantry-pm/pantry/commit/38a8063)) _(by Chris <chrisbreuer93@gmail.com>)_
+- require retryable errors from custom binary storage ([673bc00](https://github.com/pantry-pm/pantry/commit/673bc00)) _(by Chris <chrisbreuer93@gmail.com>)_
+- reproduce registry recovery after storage failures ([0459fc8](https://github.com/pantry-pm/pantry/commit/0459fc8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- require DynamoDB to launch from a Pantry-style bin entry ([77998bc](https://github.com/pantry-pm/pantry/commit/77998bc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- execute generated package documentation against its public index ([f9c7b22](https://github.com/pantry-pm/pantry/commit/f9c7b22)) _(by Chris <chrisbreuer93@gmail.com>)_
+- assert literal DynamoDB dependency domains and preserve early evidence ([307485f](https://github.com/pantry-pm/pantry/commit/307485f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- require a native Pantry provider for DynamoDB Local ([00b6205](https://github.com/pantry-pm/pantry/commit/00b6205)) _(by Chris <chrisbreuer93@gmail.com>)_
+- enable strict Redis CLI error exits for URI checks ([892a771](https://github.com/pantry-pm/pantry/commit/892a771)) _(by Chris <chrisbreuer93@gmail.com>)_
+- require Redis URI authentication failures to exit nonzero ([d19e7ef](https://github.com/pantry-pm/pantry/commit/d19e7ef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- verify action bootstrap with the native Windows Node host ([7df1ca0](https://github.com/pantry-pm/pantry/commit/7df1ca0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- reject retained registry fixture storage in normal CI ([375d7c0](https://github.com/pantry-pm/pantry/commit/375d7c0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **action**: cover cancelled native service startup ([cfa5fff](https://github.com/pantry-pm/pantry/commit/cfa5fff)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 👷 Build System
+
+- refresh the Action native package catalog ([869efc0](https://github.com/pantry-pm/pantry/commit/869efc0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- regenerate Action bundle with current package catalog ([1cb4d23](https://github.com/pantry-pm/pantry/commit/1cb4d23)) _(by Chris <chrisbreuer93@gmail.com>)_
+- regenerate Action bundles with shared lock constraints ([b8d720d](https://github.com/pantry-pm/pantry/commit/b8d720d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ship the verified native provider catalog in portable Action bundles ([79b4162](https://github.com/pantry-pm/pantry/commit/79b4162)) _(by Chris <chrisbreuer93@gmail.com>)_
+- register the verified native DynamoDB provider in both catalogs ([563c196](https://github.com/pantry-pm/pantry/commit/563c196)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ship verified native service URLs in action bundles ([9e2eea9](https://github.com/pantry-pm/pantry/commit/9e2eea9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- regenerate portable native service action bundles ([f838f36](https://github.com/pantry-pm/pantry/commit/f838f36)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 💚 Continuous Integration
+
+- verify registry tests independently of production deployment ([a09b313](https://github.com/pantry-pm/pantry/commit/a09b313)) _(by Chris <chrisbreuer93@gmail.com>)_
+- produce and verify managed compiler selection from Action source ([28603f7](https://github.com/pantry-pm/pantry/commit/28603f7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- build registry packages with recipe-owned Pantry dependencies ([1e78e7c](https://github.com/pantry-pm/pantry/commit/1e78e7c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- cover package documentation generation and fetch regressions ([78af44e](https://github.com/pantry-pm/pantry/commit/78af44e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- provision download recipe publication tools entirely with Pantry ([d0bf2a4](https://github.com/pantry-pm/pantry/commit/d0bf2a4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve native recipe build dependencies through Pantry storage ([7b4a15f](https://github.com/pantry-pm/pantry/commit/7b4a15f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- run the complete Zig suite with its own job budget ([05216ea](https://github.com/pantry-pm/pantry/commit/05216ea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- verify native Action sources with the published Pantry 0.11.93 CLI ([184a2dc](https://github.com/pantry-pm/pantry/commit/184a2dc)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.94 ([a7ad174](https://github.com/pantry-pm/pantry/commit/a7ad174)) _(by Chris <chrisbreuer93@gmail.com>)_
+- merge current native package catalog ([8e8f475](https://github.com/pantry-pm/pantry/commit/8e8f475)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update craft-native.org to 0.0.241 ([7447734](https://github.com/pantry-pm/pantry/commit/7447734)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- synchronize the generated Action package catalog ([9efb062](https://github.com/pantry-pm/pantry/commit/9efb062)) _(by Chris <chrisbreuer93@gmail.com>)_
+- reconcile the current published package catalog ([a4a7929](https://github.com/pantry-pm/pantry/commit/a4a7929)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update casdoor.org, github.com/ggerganov/llama.cpp ([8ff85d0](https://github.com/pantry-pm/pantry/commit/8ff85d0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- normalize registry verification workflow whitespace ([475b4e1](https://github.com/pantry-pm/pantry/commit/475b4e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- integrate current registry catalog updates ([53e3786](https://github.com/pantry-pm/pantry/commit/53e3786)) _(by Chris <chrisbreuer93@gmail.com>)_
+- integrate current native package catalog ([ecc6ca1](https://github.com/pantry-pm/pantry/commit/ecc6ca1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update ccache.dev, github.com/ggerganov/llama.cpp, github.com/router-for-me/CLIProxyAPI, harlequin.sh, ziglang.org ([218a2a6](https://github.com/pantry-pm/pantry/commit/218a2a6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- integrate the current Pantry catalog history ([a0677cc](https://github.com/pantry-pm/pantry/commit/a0677cc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- regenerate DynamoDB catalogs with managed launcher utilities ([3cb644b](https://github.com/pantry-pm/pantry/commit/3cb644b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update craft-native.org to 0.0.238 ([d5776f1](https://github.com/pantry-pm/pantry/commit/d5776f1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update stats.app, tox.wiki, virtualenv.pypa.io ([780472a](https://github.com/pantry-pm/pantry/commit/780472a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.238 ([d0aedec](https://github.com/pantry-pm/pantry/commit/d0aedec)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update stats.app, tox.wiki, virtualenv.pypa.io ([5e23e16](https://github.com/pantry-pm/pantry/commit/5e23e16)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## 🎉 Miscellaneous
+
+- Merge commit '4adf7432d5b86c51c57adfdf26b8bd10cf5e0389' into codex/registry-attestation-availability ([b4cf75d](https://github.com/pantry-pm/pantry/commit/b4cf75d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- Merge commit '475b4e11965ee4d9488a4d5b15a562b425b75ec5' into codex/pantry-native-ci-publication ([30f86a9](https://github.com/pantry-pm/pantry/commit/30f86a9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.92...v0.11.93)
 
 ## 🐛 Bug Fixes
