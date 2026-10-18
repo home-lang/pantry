@@ -237,12 +237,12 @@ if (args.includes('start')) {
         const url = new URL(service.environment.REDIS_URL!)
         expect(url.username).toBe('default')
         expect(url.password).toBe(service.environment.REDIS_PASSWORD!)
-        const uriQuery = await execute(join(binDir!, 'redis-cli'), ['-u', url.href, 'PING'], {
+        const uriQuery = await execute(join(binDir!, 'redis-cli'), ['-e', '-u', url.href, 'PING'], {
           env: { ...process.env, REDISCLI_AUTH: '' }, timeout: 5000,
         })
         expect(uriQuery.stdout.trim()).toBe('PONG')
         url.password = 'wrong'
-        await expect(execute(join(binDir!, 'redis-cli'), ['-u', url.href, 'PING'], {
+        await expect(execute(join(binDir!, 'redis-cli'), ['-e', '-u', url.href, 'PING'], {
           env: { ...process.env, REDISCLI_AUTH: '' }, timeout: 5000,
         })).rejects.toMatchObject({ code: 1, stderr: expect.stringContaining('WRONGPASS') })
       }
