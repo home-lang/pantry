@@ -14,6 +14,8 @@ export const recipe: Recipe = {
   },
   buildDependencies: {
     'gnu.org/patch': '*',
+    'gnu.org/make': '*',
+    'gnu.org/sed': '*',
   },
   distributable: {
     url: 'https://ftp.gnu.org/gnu/automake/automake-{{ version.raw }}.tar.gz',

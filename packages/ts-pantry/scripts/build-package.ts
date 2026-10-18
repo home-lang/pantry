@@ -374,26 +374,6 @@ else if (Array.isArray(recipe.build)) {
     if (normalizedRecipe.build.env.darwin) fixAutotoolsQuotes(normalizedRecipe.build.env.darwin)
   }
 
-  // cmake.org from S3 has broken rpaths on macOS (needs libcurl.4.dylib at build-time path).
-  // Use Homebrew cmake (4.x) instead, which is pre-installed on CI runners.
-  if (os === 'darwin' && normalizedRecipe.build?.dependencies?.['cmake.org']) {
-    delete normalizedRecipe.build.dependencies['cmake.org']
-  }
-
-  // gnu.org/autoconf from S3 has broken $PREFIX literal in the Perl source (line 38:
-  // "$PREFIX'/share/autoconf'"). This causes "syntax error" in autoconf for any package
-  // that uses it as a build dep. Use system autoconf instead (pre-installed on CI runners).
-  // Also remove automake/libtool S3 deps since they depend on the broken autoconf.
-  if (normalizedRecipe.build?.dependencies?.['gnu.org/autoconf']) {
-    delete normalizedRecipe.build.dependencies['gnu.org/autoconf']
-  }
-  if (normalizedRecipe.build?.dependencies?.['gnu.org/automake']) {
-    delete normalizedRecipe.build.dependencies['gnu.org/automake']
-  }
-  if (normalizedRecipe.build?.dependencies?.['gnu.org/libtool']) {
-    delete normalizedRecipe.build.dependencies['gnu.org/libtool']
-  }
-
   // Strip pkgx-specific steps from build scripts. These reference tools/vars that don't
   // exist in our buildkit: fix-shebangs.ts (pkgx shebang fixer), $PKGX_DIR, {{pkgx.prefix}}
   if (Array.isArray(normalizedRecipe.build?.script)) {

@@ -9,6 +9,10 @@ export const recipe: Recipe = {
   ],
   buildDependencies: {
     'gnu.org/autoconf': '^2.65.0',
+    'gnu.org/automake': '^1',
+    'gnu.org/make': '*',
+    'gnu.org/sed': '*',
+    'gnu.org/findutils': '*',
     'gnu.org/m4': '1',
   },
   distributable: {
@@ -26,7 +30,7 @@ export const recipe: Recipe = {
       // (e.g. leonerd.org.uk/libtermkey) dies with "cc: No such file or
       // directory". Replace any recorded wrapper path with a plain "cc".
       'find {{prefix}} -type f \\( -name libtool -o -name ltmain.sh -o -name "*.m4" \\) \\',
-      '  -exec sed -i -E "s#/[^ \\"=]*/_cc_wrapper/cc#cc#g; s#/var/buildkit[^ \\"=]*/cc#cc#g" {} + || true',
+      '  -exec sed -i -E "s#/[^ \\"=]*/_cc_wrapper/cc#cc#g; s#/var/buildkit[^ \\"=]*/cc#cc#g" {} +',
       'cd {{prefix}}/bin',
       'sed -i.bak \\',
       '  -e \'s_prefix={{prefix}}_prefix="$(dirname $(dirname $0))"_\' \\',
@@ -39,9 +43,18 @@ export const recipe: Recipe = {
     ],
   },
   test: {
+    required: true,
     script: [
-      'libtoolize',
-      'test -f ltmain.sh',
+      'libtool --version | grep -F "{{version}}"',
+      'printf "AC_INIT([pantry-libtool-check], [1.0])\\nAC_CONFIG_SRCDIR([probe.c])\\nAC_CONFIG_AUX_DIR([build-aux])\\nAM_INIT_AUTOMAKE([foreign])\\nAC_PROG_CC\\nLT_INIT\\nAC_CONFIG_FILES([Makefile])\\nAC_OUTPUT\\n" > configure.ac',
+      'printf "int pantry_probe(void) { return 42; }\\n" > probe.c',
+      'printf "extern int pantry_probe(void); int main(void) { return pantry_probe() != 42; }\\n" > main.c',
+      'printf "lib_LTLIBRARIES = libprobe.la\\nlibprobe_la_SOURCES = probe.c\\nbin_PROGRAMS = probe\\nprobe_SOURCES = main.c\\nprobe_LDADD = libprobe.la\\n" > Makefile.am',
+      'libtoolize --copy --install',
+      'autoreconf --force --install',
+      './configure',
+      'make',
+      './probe',
     ],
   },
 }
