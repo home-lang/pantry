@@ -1,8 +1,10 @@
 import { expect, test } from 'bun:test'
 import { resolveBuildVersion } from '../scripts/resolve-build-version'
+import { dynamodblocalPackage } from '../src/packages/aws.amazon.com/dynamodb-local'
 
 test('the native producer reads the real nested DynamoDB metadata', async () => {
-  expect(await resolveBuildVersion('aws.amazon.com/dynamodb-local')).toBe('3.3.0')
+  expect(await resolveBuildVersion('aws.amazon.com/dynamodb-local')).toBe(dynamodblocalPackage.versions[0])
+  expect(await resolveBuildVersion('aws.amazon.com/dynamodb-local', '3.3.0')).toBe('3.3.0')
   expect(await resolveBuildVersion('postgresql.org', '17.11')).toBe('17.11')
   expect(await resolveBuildVersion('openjdk.org', '27.0.0.35')).toBe('27.0.0.35')
 })
