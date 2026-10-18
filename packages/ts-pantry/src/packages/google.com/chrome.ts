@@ -76,7 +76,7 @@ export const googlecomchromePackage = {
     'x.org/exts^1',
     'cairographics.org^1',
     'gnome.org/pango^1',
-    'systemd.io^257',
+    'systemd.io/libudev^262',
     'x.org/xcomposite^0',
     'x.org/xdamage^1',
     'x.org/xfixes^6',

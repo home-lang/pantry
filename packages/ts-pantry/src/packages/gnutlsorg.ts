@@ -7,8 +7,8 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install gnutls.org`
- * @dependencies `freedesktop.org/p11-kit`, `gnu.org/libidn2`, `gnu.org/libunistring^1`, ... (+6 more)
- * @buildDependencies `linux:gnu.org/gcc` (includes OS-specific dependencies with `os:package` format) - required only when building from source
+ * @dependencies `freedesktop.org/p11-kit^0.26`, `gnu.org/libidn2`, `gnu.org/libunistring^1`, ... (+6 more)
+ * @buildDependencies `freedesktop.org/pkg-config`, `gnu.org/make`, `gnu.org/sed`, ... (+1 more) (includes platform-specific dependencies) - required only when building from source
  *
  * @example
  * ```typescript
@@ -65,11 +65,11 @@ export const gnutlsorgPackage = {
   * These are required when running the package.
   */
   dependencies: [
-    'freedesktop.org/p11-kit',
+    'freedesktop.org/p11-kit^0.26',
     'gnu.org/libidn2',
     'gnu.org/libunistring^1',
     'gnu.org/libtasn1^4',
-    'gnu.org/nettle^3',
+    'gnu.org/nettle>=3.10<4',
     'gnu.org/gettext',
     'gnu.org/gmp',
     'unbound.net^1',
@@ -78,9 +78,12 @@ export const gnutlsorgPackage = {
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
-  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
+  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:gnu.org/gcc`).
   */
   buildDependencies: [
+    'freedesktop.org/pkg-config',
+    'gnu.org/make',
+    'gnu.org/sed',
     'linux:gnu.org/gcc',
   ] as const,
   /**
