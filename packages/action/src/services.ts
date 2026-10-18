@@ -2,9 +2,35 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 
 export interface ServiceSpec {
-  name: 'redis' | 'postgres' | 'typesense' | 'mysql'
+  name: 'redis' | 'postgres' | 'typesense' | 'mysql' | 'dynamodb'
   packageSpec: string
   expectedVersion?: string
+}
+
+const serviceAliases: Record<string, ServiceSpec['name']> = {
+  redis: 'redis',
+  postgres: 'postgres',
+  postgresql: 'postgres',
+  'postgresql.org': 'postgres',
+  typesense: 'typesense',
+  'typesense.org': 'typesense',
+  mysql: 'mysql',
+  'mysql.com': 'mysql',
+  dynamodb: 'dynamodb',
+  'dynamodb-local': 'dynamodb',
+  'aws.amazon.com/dynamodb-local': 'dynamodb',
+}
+
+const serviceDomains: Record<ServiceSpec['name'], string> = {
+  redis: 'redis',
+  postgres: 'postgresql.org',
+  typesense: 'typesense.org',
+  mysql: 'mysql.com',
+  dynamodb: 'aws.amazon.com/dynamodb-local',
+}
+
+function serviceName(requested: string): ServiceSpec['name'] | undefined {
+  return Object.hasOwn(serviceAliases, requested) ? serviceAliases[requested] : undefined
 }
 
 export function parseServiceSpecs(input: string): ServiceSpec[] {
@@ -13,13 +39,13 @@ export function parseServiceSpecs(input: string): ServiceSpec[] {
   for (const raw of input.split(/[\s,]+/).filter(Boolean)) {
     if (raw.split('@').length > 2) throw new Error(`Invalid Pantry Action service: ${raw}`)
     const [requested, version] = raw.split('@')
-    const name = requested === 'postgresql' || requested === 'postgresql.org' ? 'postgres' : requested === 'typesense.org' ? 'typesense' : requested === 'mysql.com' ? 'mysql' : requested
-    if (name !== 'redis' && name !== 'postgres' && name !== 'typesense' && name !== 'mysql') throw new Error(`Unsupported Pantry Action service: ${name}`)
+    const name = serviceName(requested || '')
+    if (!name) throw new Error(`Unsupported Pantry Action service: ${requested}`)
     if (seen.has(name)) throw new Error(`Duplicate Pantry Action service: ${name}`)
-    if (version !== undefined && !(name === 'redis' || name === 'mysql' ? /^\d+\.\d+\.\d+$/ : /^\d+\.\d+(?:\.\d+)?$/).test(version))
+    if (version !== undefined && !(name === 'redis' || name === 'mysql' || name === 'dynamodb' ? /^\d+\.\d+\.\d+$/ : /^\d+\.\d+(?:\.\d+)?$/).test(version))
       throw new Error(`Service versions must be exact semantic versions: ${raw}`)
     seen.add(name)
-    const domain = name === 'postgres' ? 'postgresql.org' : name === 'typesense' ? 'typesense.org' : name === 'mysql' ? 'mysql.com' : 'redis'
+    const domain = serviceDomains[name]
     services.push({ name, packageSpec: version ? `${domain}@${version}` : domain, expectedVersion: version })
   }
   return services
@@ -28,7 +54,7 @@ export function parseServiceSpecs(input: string): ServiceSpec[] {
 export function mergeServicePackages(packages: string, services: ServiceSpec[]): string {
   const requested = packages.split(/\s+/).filter(Boolean)
   for (const service of services) {
-    const existing = requested.find(spec => [service.name, service.packageSpec.split('@')[0]].includes(spec.split('@')[0]))
+    const existing = requested.find(spec => serviceName(spec.split('@')[0] || '') === service.name)
     if (existing && existing.split('@')[1] !== service.expectedVersion)
       throw new Error(`Conflicting package and service versions for ${service.name}: ${existing} vs ${service.packageSpec}`)
     if (!existing) requested.push(service.packageSpec)

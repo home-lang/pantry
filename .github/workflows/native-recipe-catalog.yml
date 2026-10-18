@@ -38,7 +38,7 @@ jobs:
         run: |
           set -e
           bun .github/scripts/register-native-ci-packages.ts
-          bun packages/ts-pantry/scripts/sync-recipe-dependencies.ts mysql.com mesa3d.org invisible-island.net/ncurses sourceforge.net/e2fsprogs php.net getcomposer.org gnu.org/autoconf gnu.org/automake gnu.org/libtool cmake.org google.com/chrome gnutls.org freedesktop.org/p11-kit tukaani.org/xz openjdk.org
+          bun packages/ts-pantry/scripts/sync-recipe-dependencies.ts mysql.com mesa3d.org invisible-island.net/ncurses sourceforge.net/e2fsprogs php.net getcomposer.org gnu.org/autoconf gnu.org/automake gnu.org/libtool cmake.org google.com/chrome gnutls.org freedesktop.org/p11-kit tukaani.org/xz openjdk.org aws.amazon.com/dynamodb-local
           git add -N packages/ts-pantry/src/packages packages/zig/src/packages/generated.zig
           git diff --check -- packages/ts-pantry/src/packages packages/zig/src/packages/generated.zig
           git diff --binary -- packages/ts-pantry/src/packages packages/zig/src/packages/generated.zig > artifacts/native-catalog/catalogs.patch

@@ -10,7 +10,7 @@ export const recipe: Recipe = {
   // The upstream sqlite4java dependency supplies this native Linux library.
   // Other platforms need their own real native acceptance before registration.
   platforms: ['linux/x86-64'],
-  dependencies: { 'openjdk.org': '>=17' },
+  dependencies: { 'openjdk.org': '>=17', 'gnu.org/coreutils': '^9' },
   buildDependencies: { 'maven.apache.org': '^3', 'bun.com': '>=1.3' },
   versionSource: {
     type: 'custom',
@@ -40,7 +40,8 @@ export const recipe: Recipe = {
         'cat > "{{prefix}}/bin/dynamodb-local" <<\'SH\'',
         '#!/bin/sh',
         'set -eu',
-        'runtime_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../libexec" && pwd)',
+        'launcher=$(readlink -f -- "$0")',
+        'runtime_dir=$(CDPATH= cd -- "$(dirname -- "$launcher")/../libexec" && pwd)',
         'exec java "-Djava.library.path=$runtime_dir" -cp "$runtime_dir/*" software.amazon.dynamodb.services.local.main.ServerRunner "$@"',
         'SH',
         'chmod +x "{{prefix}}/bin/dynamodb-local"',
