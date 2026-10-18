@@ -1795,138 +1795,28 @@ fn mergedHeaders(
 /// Handles HTTPS (native TLS), redirects (up to 10), and content decompression.
 /// Caller owns the returned slice and must free it with `allocator`.
 pub fn httpGet(allocator: std.mem.Allocator, url: []const u8) ![]u8 {
-    var client: std.http.Client = .{
-        .allocator = allocator,
-        .io = io,
-    };
-    defer client.deinit();
-
-    const decoration = decorateRequest(allocator, url);
-    defer decoration.deinit(allocator);
-    var header_buf: [1]std.http.Header = undefined;
-
-    var alloc_writer = std.Io.Writer.Allocating.init(allocator);
-    errdefer alloc_writer.deinit();
-
-    var redirect_buf: [8192]u8 = undefined;
-
-    const result = client.fetch(.{
-        .location = .{ .url = decoration.effectiveUrl(url) },
-        .response_writer = &alloc_writer.writer,
-        .redirect_buffer = &redirect_buf,
-        .redirect_behavior = @fromBackingInt(@intCast(10)),
-        .extra_headers = decoration.headers(&header_buf),
-    }) catch {
-        return error.HttpRequestFailed;
-    };
-
-    if (result.status != .ok) {
+    const response = try httpGetResponseTimeout(allocator, url, &.{}, 30_000);
+    if (!response.ok()) {
+        response.deinit(allocator);
         return error.HttpRequestFailed;
     }
-
-    // Extract the response data — dupe the written portion, then free the internal buffer.
-    // On success, errdefer won't run, so we must deinit explicitly.
-    const data = alloc_writer.writer.buffer[0..alloc_writer.writer.end];
-    const owned = try allocator.dupe(u8, data); // errdefer handles cleanup on OOM
-    alloc_writer.deinit();
-    return owned;
+    return response.body;
 }
 
-/// Download a URL to a file on disk via curl subprocess. Returns on success;
-/// errors if curl is not found or exits non-zero. `-fsSL` fails on HTTP errors,
-/// stays silent, and follows redirects.
-fn curlDownloadFile(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, auth_header: ?[]const u8) !void {
-    const curl_paths = [_][]const u8{ "/usr/bin/curl", "curl" };
-    var tried = false;
-    for (curl_paths) |curl| {
-        // curl drops Authorization when a redirect crosses hosts, so a private
-        // registry can still hand out presigned object-storage URLs without the
-        // token following the download off-site.
-        var args_buf: [13][]const u8 = undefined;
-        var argc: usize = 0;
-        for ([_][]const u8{ curl, "-fsSL", "--connect-timeout", "30", "--retry", "3", "--max-time", "300" }) |a| {
-            args_buf[argc] = a;
-            argc += 1;
-        }
-        if (auth_header) |header| {
-            args_buf[argc] = "-H";
-            argc += 1;
-            args_buf[argc] = header;
-            argc += 1;
-        }
-        args_buf[argc] = "-o";
-        argc += 1;
-        args_buf[argc] = dest_path;
-        argc += 1;
-        args_buf[argc] = url;
-        argc += 1;
-        const args = args_buf[0..argc];
-        const result = childRun(allocator, args) catch continue;
-        defer allocator.free(result.stdout);
-        defer allocator.free(result.stderr);
-        tried = true;
-        switch (result.term) {
-            .exited => |code| if (code == 0) return,
-            else => {},
-        }
-    }
-    return if (tried) error.HttpRequestFailed else error.CurlNotFound;
-}
-
-/// Download a URL to a file on disk (replaces `curl -sfL -o <path> <url>`).
-/// Handles HTTPS (native TLS), redirects (up to 10), and content decompression.
-///
-/// Tries curl first: the native Zig HTTP client mishandles some real-world
-/// download chains — notably S3 presigned-URL redirects served over HTTP/2
-/// (e.g. the Hetzner object storage backing the pantry registry), where it
-/// writes corrupt bytes that then fail checksum verification. curl handles
-/// these correctly and is already relied on for metadata fetches, so prefer it
-/// and fall back to the Zig client only when curl is unavailable.
+/// Stream a download through the same origin-scoped native transport.
 pub fn httpDownloadFile(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8) !void {
-    const decoration = decorateRequest(allocator, url);
-    defer decoration.deinit(allocator);
-    const effective_url = decoration.effectiveUrl(url);
-
-    const curl_header: ?[]const u8 = if (decoration.authorization) |value|
-        std.fmt.allocPrint(allocator, "Authorization: {s}", .{value}) catch null
-    else
-        null;
-    defer if (curl_header) |h| allocator.free(h);
-
-    if (curlDownloadFile(allocator, effective_url, dest_path, curl_header)) {
-        return;
-    } else |_| {
-        // curl missing or failed — fall through to the native client below.
-    }
-
-    var client: std.http.Client = .{
-        .allocator = allocator,
-        .io = io,
-    };
-    defer client.deinit();
-
-    const file = cwd().createFile(io, dest_path, .{}) catch return error.FileWriteFailed;
+    const stream = try httpStreamGet(allocator, url);
+    defer stream.deinit();
+    const file = try cwd().createFile(io, dest_path, .{});
     defer file.close(io);
-
     var write_buf: [65536]u8 = undefined;
-    var file_writer = file.writerStreaming(io, &write_buf);
-
-    var redirect_buf: [8192]u8 = undefined;
-    var header_buf: [1]std.http.Header = undefined;
-
-    const result = client.fetch(.{
-        .location = .{ .url = effective_url },
-        .response_writer = &file_writer.interface,
-        .redirect_buffer = &redirect_buf,
-        .redirect_behavior = @fromBackingInt(@intCast(10)),
-        .extra_headers = decoration.headers(&header_buf),
-    }) catch return error.HttpRequestFailed;
-
-    // Flush any remaining buffered data to disk
-    file_writer.flush() catch return error.FileWriteFailed;
-
-    if (result.status != .ok) {
-        return error.HttpRequestFailed;
+    var writer = file.writerStreaming(io, &write_buf);
+    var transfer_buf: [65536]u8 = undefined;
+    const reader = stream.reader(&transfer_buf);
+    const count = reader.streamRemaining(&writer.interface) catch |err| return requestTransportError(&stream.req, err);
+    try writer.flush();
+    if (stream.contentLength()) |expected| {
+        if (count != expected) return error.IncompleteDownload;
     }
 }
 
@@ -1987,6 +1877,11 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
         const decoration = decorateRequest(allocator, stream.request_url);
         defer decoration.deinit(allocator);
         if (decoration.authorization) |authorization| stream.authorization = try allocator.dupe(u8, authorization);
+        if (decoration.url) |effective_url| {
+            const owned_url = try allocator.dupe(u8, effective_url);
+            allocator.free(stream.request_url);
+            stream.request_url = owned_url;
+        }
         const uri = try std.Uri.parse(stream.request_url);
         if (uri.user != null or uri.password != null) return error.InvalidUrl;
         if (stream.authorization) |authorization| stream.auth_headers[0] = .{ .name = "Authorization", .value = authorization };
@@ -2033,68 +1928,17 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
 /// Like `httpGet`, but reuses an existing `std.http.Client` for connection pooling.
 /// The caller retains ownership of `client` — do NOT deinit it here.
 pub fn httpGetWithClient(client: *std.http.Client, allocator: std.mem.Allocator, url: []const u8) ![]u8 {
-    const decoration = decorateRequest(allocator, url);
-    defer decoration.deinit(allocator);
-    var header_buf: [1]std.http.Header = undefined;
-
-    var alloc_writer = std.Io.Writer.Allocating.init(allocator);
-    errdefer alloc_writer.deinit();
-
-    var redirect_buf: [8192]u8 = undefined;
-
-    const result = client.fetch(.{
-        .location = .{ .url = decoration.effectiveUrl(url) },
-        .response_writer = &alloc_writer.writer,
-        .redirect_buffer = &redirect_buf,
-        .redirect_behavior = @fromBackingInt(@intCast(10)),
-        .extra_headers = decoration.headers(&header_buf),
-    }) catch {
-        return error.HttpRequestFailed;
-    };
-
-    if (result.status != .ok) {
-        return error.HttpRequestFailed;
-    }
-
-    const data = alloc_writer.writer.buffer[0..alloc_writer.writer.end];
-    const owned = try allocator.dupe(u8, data);
-    alloc_writer.deinit();
-    return owned;
+    return httpGetWithClientAndHeaders(client, allocator, url, &.{});
 }
 
-/// HTTP GET with extra headers using a shared client for connection pooling.
-/// Used for npm abbreviated metadata (application/vnd.npm.install-v1+json).
+/// Shared clients retain ownership; every hop uses the canonical scoped GET.
 pub fn httpGetWithClientAndHeaders(client: *std.http.Client, allocator: std.mem.Allocator, url: []const u8, extra_headers: []const std.http.Header) ![]u8 {
-    const decoration = decorateRequest(allocator, url);
-    defer decoration.deinit(allocator);
-    // Caller headers plus at most one Authorization header. Callers pass a
-    // couple of Accept-style headers; anything longer keeps its own list and
-    // simply goes out unauthenticated rather than silently dropping headers.
-    var header_buf: [8]std.http.Header = undefined;
-
-    var alloc_writer = std.Io.Writer.Allocating.init(allocator);
-    errdefer alloc_writer.deinit();
-
-    var redirect_buf: [8192]u8 = undefined;
-
-    const result = client.fetch(.{
-        .location = .{ .url = decoration.effectiveUrl(url) },
-        .response_writer = &alloc_writer.writer,
-        .redirect_buffer = &redirect_buf,
-        .redirect_behavior = @fromBackingInt(@intCast(10)),
-        .extra_headers = mergedHeaders(&header_buf, extra_headers, decoration),
-    }) catch {
-        return error.HttpRequestFailed;
-    };
-
-    if (result.status != .ok) {
+    const response = try httpGetResponseWithClient(client, allocator, url, extra_headers, false);
+    if (!response.ok()) {
+        response.deinit(allocator);
         return error.HttpRequestFailed;
     }
-
-    const data = alloc_writer.writer.buffer[0..alloc_writer.writer.end];
-    const owned = try allocator.dupe(u8, data);
-    alloc_writer.deinit();
-    return owned;
+    return response.body;
 }
 
 const HttpGetResult = anyerror![]u8;
@@ -2133,7 +1977,14 @@ pub fn httpGetWithClientTimeout(
         return err;
     };
 
-    const first = try select.await();
+    const first = select.await() catch |err| {
+        while (select.cancel()) |result| {
+            if (result == .response) {
+                if (result.response) |response| allocator.free(response) else |_| {}
+            }
+        }
+        return err;
+    };
     switch (first) {
         .response => |response| {
             while (select.cancel()) |_| {}
@@ -2256,6 +2107,10 @@ fn sameHttpOrigin(a: std.Uri, b: std.Uri) bool {
 fn httpGetResponseTask(allocator: std.mem.Allocator, url: []const u8, extra_headers: []const std.http.Header, status_only_errors: bool) anyerror!HttpResponse {
     var client: std.http.Client = .{ .allocator = allocator, .io = io };
     defer client.deinit();
+    return httpGetResponseWithClient(&client, allocator, url, extra_headers, status_only_errors);
+}
+
+fn httpGetResponseWithClient(client: *std.http.Client, allocator: std.mem.Allocator, url: []const u8, extra_headers: []const std.http.Header, status_only_errors: bool) anyerror!HttpResponse {
     var current_url = try allocator.dupe(u8, url);
     defer allocator.free(current_url);
     const initial_decoration = decorateRequest(allocator, url);
@@ -2305,7 +2160,17 @@ fn httpGetResponseTask(allocator: std.mem.Allocator, url: []const u8, extra_head
                 // An error's status is decisive; never wait for an untrusted
                 // error body before reporting authentication or availability.
                 if (status_only_errors and (status < 200 or status >= 300)) return .{ .status = status, .body = try allocator.alloc(u8, 0) };
-                const body = response.reader(&.{}).allocRemaining(allocator, std.Io.Limit.limited(32 * 1024 * 1024)) catch |err| return requestTransportError(&req, err);
+                const decompress_buffer: []u8 = switch (response.head.content_encoding) {
+                    .identity => &.{},
+                    .zstd => try allocator.alloc(u8, std.compress.zstd.default_window_len),
+                    .deflate, .gzip => try allocator.alloc(u8, std.compress.flate.max_window_len),
+                    .compress => return error.UnsupportedCompressionMethod,
+                };
+                defer allocator.free(decompress_buffer);
+                var transfer_buffer: [64]u8 = undefined;
+                var decompress: std.http.Decompress = undefined;
+                const reader = response.readerDecompressing(&transfer_buffer, &decompress, decompress_buffer);
+                const body = reader.allocRemaining(allocator, std.Io.Limit.limited(32 * 1024 * 1024)) catch |err| return requestTransportError(&req, err);
                 return .{ .status = status, .body = body };
             }
         }
@@ -2391,7 +2256,7 @@ pub fn httpPostJsonWithClient(client: *std.http.Client, allocator: std.mem.Alloc
         .payload = json_body,
         .response_writer = &alloc_writer.writer,
         .redirect_buffer = &redirect_buf,
-        .redirect_behavior = @fromBackingInt(@intCast(10)),
+        .redirect_behavior = .unhandled,
         .headers = .{
             .content_type = .{ .override = "application/json" },
         },
@@ -2452,7 +2317,14 @@ pub fn httpPostJsonWithClientTimeout(
         return err;
     };
 
-    const first = try select.await();
+    const first = select.await() catch |err| {
+        while (select.cancel()) |result| {
+            if (result == .response) {
+                if (result.response) |response| allocator.free(response) else |_| {}
+            }
+        }
+        return err;
+    };
     switch (first) {
         .response => |response| {
             while (select.cancel()) |_| {}
