@@ -60,7 +60,8 @@ How the run works:
 - **Workspace ranges.** `workspace:` and `catalog:` ranges are rewritten in the
   published manifest. The `package.json` on disk is not changed.
 - **Versions already on npm are skipped.** Before packing, pantry asks npm
-  whether `name@version` exists. If it does, the package is skipped. Re-running
+  whether `name@version` exists and its advertised tarball can be downloaded
+  and verified. Only then is the package skipped. Re-running
   a release publishes only what's missing. `--force-republish` turns the check
   off, but npm still refuses a version it already has.
 - **Held back.** If a package fails to publish, every package that lists it in
@@ -140,7 +141,7 @@ resolved stops that package with an error that names the dependency.
 | `--ignore-scripts` | Don't run `prepublish`, `prepare`, `prepublishOnly`, `prepack`, `postpack`, `publish`, or `postpublish`. Use it when CI builds in a separate step. |
 | `--github-release` | After publishing, create a GitHub release for the current tag. Needs `GITHUB_TOKEN`. |
 | `--files <paths>` | Comma-separated files to attach to that release. |
-| `--registry npm` | Same as `--npm`. Any other `--registry` value is ignored by `pantry publish --npm`. |
+| `--registry <url>` | Select an npm-compatible registry with `--npm`. `--registry npm` selects npm directly. An explicit URL takes precedence over `publishConfig.registry`. |
 | `[paths...]` | Package directories or globs to publish instead of `packages/`. |
 
 `--access` accepts only `public` or `restricted`. An empty tag is rejected.
@@ -174,6 +175,25 @@ environment. Tokens and one-time passwords are never printed.
 Because environment tokens come first, a stale `NPM_TOKEN` in your shell wins
 over a fresh login. Unset it to use the login.
 
+### When an upload completes
+
+HTTP 200, 201, or 202 means the registry accepted the upload. Pantry reports
+`Published` only after public `name@version` metadata matches and the downloaded
+tarball has the SHA-512 integrity of the local upload. Public readback carries no
+publishing credentials, including when the tarball is on a different host.
+
+Metadata or tarball 404s may be temporary. Pantry waits up to 120 seconds,
+including stalled response bodies. If the version is still unavailable, the
+command exits non-zero with a pending result, holds dependent workspace
+packages, and does not run `publish`/`postpublish` hooks or create the GitHub
+release. A tarball or metadata mismatch fails immediately. Preserve the version
+and investigate its registry state; do not bump or reupload merely because an
+accepted version has not propagated yet.
+
+Existing versions are skipped only after their advertised tarball is readable
+and matches its integrity. Historical versions with only a SHA-1 `shasum` are
+verified against that hash; newly uploaded bytes always require local SHA-512.
+
 ### When OIDC fails
 
 - npm **rejected** the publish (403, 409, or 422): the package fails, with
@@ -184,10 +204,10 @@ over a fresh login. Unset it to use the login.
   pantry moves straight on to token authentication.
 - **The upload was made but the answer was unclear** (a 401, 404, or 5xx after
   the upload, a dropped connection, or no answer within 120 seconds): npm
-  commits a publish asynchronously, so pantry asks npm for up to about two
-  minutes whether the version landed. If it did, the package counts as
-  published. After three packages in a row that never showed up, it checks once
-  and moves on.
+  commits a publish asynchronously, so pantry checks public metadata and the
+  exact uploaded tarball for up to 120 seconds. A verified version counts as
+  published. Otherwise the result remains pending and the command fails without
+  sending the same version again through token authentication.
 - Otherwise pantry falls back to token authentication. In CI with no token, the
   package fails with `No authentication method available in CI`.
 
@@ -323,13 +343,14 @@ publish:
 
 ## Other registries
 
-`pantry publish --npm` always publishes to `https://registry.npmjs.org`, unless
-a package sets `publishConfig.registry`. To publish to another npm-compatible
-registry, use `pantry npm:publish`, whose `--registry` takes precedence over
-`publishConfig.registry`:
+Both npm commands accept an explicit registry URL, which takes precedence over
+`publishConfig.registry`. Without either, they use `https://registry.npmjs.org`.
+Use token authentication for another npm-compatible registry:
 
 ```bash
-pantry npm:publish --registry https://npm.pkg.github.com
+pantry publish --npm --no-oidc --registry https://npm.pkg.github.com
+# Equivalent dedicated command:
+pantry npm:publish --no-oidc --registry https://npm.pkg.github.com
 ```
 
 `pantry npm:publish` takes the same options as `pantry publish --npm`, except

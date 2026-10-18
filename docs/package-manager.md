@@ -213,7 +213,8 @@ or upload bytes.
 At a monorepo root, the npm pipeline publishes every non-private package under
 `packages/` in dependency order (`dependencies`, `devDependencies`, and
 required `peerDependencies`, ties broken by name). Before packing, it asks the
-registry whether `name@version` exists and skips the package if it does;
+registry whether `name@version` exists, downloads and verifies its advertised
+tarball, and skips the package only after that succeeds;
 `--force-republish` disables that check. A package whose `dependencies`,
 `peerDependencies`, or `optionalDependencies` include a sibling that did not
 publish in the same run is held back rather than published uninstallable, and
@@ -242,12 +243,27 @@ token authentication directly. A missing trusted-publisher relationship may
 fall back to a token, while immutable-version conflicts and registry validation
 errors (403, 409, 422) fail without retrying through another identity. When an
 OIDC attempt fails after the upload was sent, or times out, Pantry polls the
-registry for up to about two minutes to see whether the version landed before
-reporting failure; when nothing was uploaded (no CI provider, or npm refused
+public metadata and the exact uploaded tarball for up to 120 seconds. An
+unconfirmed upload remains pending and fails without a second upload through a
+different identity. When nothing was uploaded (no CI provider, or npm refused
 the token exchange), it goes straight to token authentication. A token
 publish rejected with npm's `Scope not found` is reported as a missing
 organization or membership, with a pointer to `https://www.npmjs.com/org/create`. `--otp <code>` adds npm's
 `npm-otp` header to token publication; Pantry never writes or prints the code.
+
+An accepted HTTP 200, 201, or 202 upload is not yet a completed publication.
+Pantry verifies the public package name, version, and downloaded tarball against
+the local SHA-512 before reporting success, running `publish`/`postpublish`, or
+creating a GitHub release. Temporary metadata or tarball unavailability is
+polled with a 120-second deadline covering response bodies as well as headers;
+an unresolved version remains pending and holds dependent workspace packages.
+An integrity or metadata mismatch fails immediately. Existing versions require
+a readable tarball matching their advertised SHA-512, or SHA-1 for historical
+metadata that only supplies `shasum`.
+
+Both npm commands honor `--registry <url>` before `publishConfig.registry`;
+`--registry npm` selects the default npm registry. Public verification never
+forwards publishing credentials to the metadata or tarball host.
 
 Token discovery is deterministic:
 
