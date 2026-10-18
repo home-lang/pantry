@@ -46,7 +46,7 @@
     "bun"
   ],
   "devDependencies": {
-    "@stacksjs/bumpx": "^0.2.16",
+    "@stacksjs/bumpx": "^0.2.23",
     "better-dx": "^0.2.23"
   },
   "git-hooks": {
