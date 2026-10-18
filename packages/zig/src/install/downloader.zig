@@ -465,7 +465,10 @@ pub fn lookupS3Registry(
             const info = platform.value_ptr.*;
             if (info != .object) return error.InvalidRegistryMetadata;
             const tarball = info.object.get("tarball") orelse return error.InvalidRegistryMetadata;
-            if (tarball != .string or tarball.string.len == 0) return error.InvalidRegistryMetadata;
+            if (tarball != .string or std.mem.trim(u8, tarball.string, " \t\r\n").len == 0) return error.InvalidRegistryMetadata;
+            if (info.object.get("sha256")) |checksum| {
+                if (checksum != .string) return error.InvalidRegistryMetadata;
+            }
         }
     }
 

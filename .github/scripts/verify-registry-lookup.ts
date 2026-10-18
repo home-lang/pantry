@@ -40,6 +40,12 @@ const registry = createServer((req, res) => {
   requests.push(url)
   if (req.headers.authorization === `Bearer ${token}`) registryCredentials += 1
   if (!url.endsWith('/metadata.json')) {
+    if (mode === 'artifact-partial') {
+      res.writeHead(200, { 'Content-Length': 1000 })
+      res.write('partial archive bytes')
+      setTimeout(() => res.destroy(), 5)
+      return
+    }
     if (mode === 'artifact-stalled-head') return
     if (mode === 'artifact-stalled-body') {
       res.writeHead(200, { 'Content-Length': 1000 })
@@ -71,7 +77,7 @@ const registry = createServer((req, res) => {
 })
 const base = await listen(registry)
 try {
-  const scenarios = segment === 'metadata' ? ['503', '403', 'malformed', 'null', 'array', 'disconnect', 'stalled-head', 'stalled-body', 'artifact503', 'artifact403', 'redirect'] : [segment]
+  const scenarios = segment === 'metadata' ? ['503', '403', 'malformed', 'null', 'array', 'disconnect', 'stalled-head', 'stalled-body', 'artifact503', 'artifact403', 'artifact-partial', 'redirect'] : [segment]
   for (const scenario of scenarios) {
     let timer: ReturnType<typeof setTimeout> | undefined
     try {
@@ -104,7 +110,10 @@ try {
       assert.ok(requests.some(url => url.endsWith('/metadata.json')), 'normal registry setting must reach the owned fixture')
       assert.ok(registryCredentials > 0, 'configured registry must receive its scoped token')
       assert.equal(foreignCredentials, 0, 'credentials must not cross origin')
-      if (scenario.startsWith('artifact')) assert.ok(requests.some(url => url === `/binaries/${domain}/1.0.0/archive.tar.gz`), 'artifact cases must reach the requested archive rather than fail on a dependency')
+      if (scenario.startsWith('artifact')) {
+        const archives = requests.filter(url => url === `/binaries/${domain}/1.0.0/archive.tar.gz`)
+        assert.equal(archives.length, 1, 'artifact failures must be observed at the requested archive, without a second downloader')
+      }
       if (scenario === 'redirect') assert.ok(foreignRequests > 0)
       else {
         assert.doesNotMatch(output, /not found in (?:pantry|registry)/i, 'failures cannot become package absence')
