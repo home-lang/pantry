@@ -3,6 +3,7 @@ import type { Recipe } from '../../../scripts/recipe-types'
 export const recipe: Recipe = {
   domain: 'android.com/cmdline-tools',
   name: 'cmdline-tools',
+  propsDir: 'props/android.com/cmdline-tools',
   programs: [
     'apkanalyzer',
     'avdmanager',
@@ -33,6 +34,12 @@ export const recipe: Recipe = {
         run: 'cp -r * {{prefix}}/libexec/cmdline-tools/latest/',
         'working-directory': 'cmdline-tools',
       },
+      // The official Gradle launchers expand this property through eval.
+      // Quote its value so an installed SDK path with spaces remains one argument.
+      'for launcher in "{{prefix}}"/libexec/cmdline-tools/latest/bin/*; do',
+      '  sed -i.bak -f props/quote-tools-dir.sed "$launcher"',
+      '  rm "$launcher.bak"',
+      'done',
       {
         run: 'ln -s ../libexec/cmdline-tools/latest/bin/apkanalyzer apkanalyzer\nln -s ../libexec/cmdline-tools/latest/bin/avdmanager avdmanager\nln -s ../libexec/cmdline-tools/latest/bin/lint lint\nln -s ../libexec/cmdline-tools/latest/bin/profgen profgen\nln -s ../libexec/cmdline-tools/latest/bin/resourceshrinker resourceshrinker\nln -s ../libexec/cmdline-tools/latest/bin/retrace retrace\nln -s ../libexec/cmdline-tools/latest/bin/screenshot2 screenshot2\nln -s ../libexec/cmdline-tools/latest/bin/sdkmanager sdkmanager\n',
         'working-directory': '${{prefix}}/bin',
