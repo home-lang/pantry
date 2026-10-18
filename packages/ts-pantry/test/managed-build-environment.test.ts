@@ -1,6 +1,16 @@
 import { expect, test } from 'bun:test'
 import { generateBuildScript } from '../scripts/buildkit'
 import { collectBuildDependencies } from '../scripts/build-package'
+import { externalRuntimePackages } from '../scripts/build-package'
+
+test('runtime cycles use the current artifact while retaining different versions and dependencies', () => {
+  const self = { domain: 'tukaani.org/xz', version: '5.8.2', prefix: '/old-self' }
+  const previous = { domain: 'tukaani.org/xz', version: '5.6.0', prefix: '/previous-ABI' }
+  const other = { domain: 'gnu.org/gettext', version: '1.0.0', prefix: '/gettext' }
+  const input = [self, previous, other]
+  expect(externalRuntimePackages(input, { domain: 'tukaani.org/xz', version: '5.8.2' })).toEqual([previous, other])
+  expect(input).toEqual([self, previous, other])
+})
 
 test('a native recipe replaces obsolete generated build and runtime dependency edges', () => {
   const metadata = { dependencies: ['retired.example ^1'], buildDependencies: ['github.com/tmux/tmux@^3'] }

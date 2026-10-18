@@ -28,6 +28,8 @@ export const recipe: Recipe = {
     'xzless',
     'xzmore',
   ],
+  dependencies: { darwin: { 'gnu.org/gettext': '*' } },
+  buildDependencies: { 'gnu.org/make': '*', 'freedesktop.org/pkg-config': '*' },
   distributable: {
     url: 'https://github.com/tukaani-project/xz/releases/download/v{{version}}/xz-{{version}}.tar.xz',
     stripComponents: 1,
@@ -44,5 +46,15 @@ export const recipe: Recipe = {
         '--disable-doc',
       ],
     },
+  },
+  test: {
+    required: true,
+    script: [
+      'xz --version | grep -F "{{version}}"',
+      'printf PantryNativeXZ > payload',
+      'xz --keep payload',
+      'xz --test payload.xz',
+      'test "$(xz --decompress --stdout payload.xz)" = PantryNativeXZ',
+    ],
   },
 }

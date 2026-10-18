@@ -1286,7 +1286,12 @@ export async function downloadRuntimePackages(domain: string, version: string, p
     if (!prefix || !version) throw new Error(`Unresolved declared runtime package: ${child}`)
     return { domain: parseDep(child), version, prefix }
   })
-  return withRuntimeResources(packages, platform)
+  return withRuntimeResources(externalRuntimePackages(packages, { domain, version }), platform)
+}
+
+/** The current artifact provides its own version, including in runtime cycles. */
+export function externalRuntimePackages(packages: readonly RuntimePackage[], provided: { domain: string, version: string }): RuntimePackage[] {
+  return packages.filter(dependency => dependency.domain !== provided.domain || dependency.version !== provided.version)
 }
 
 async function withRuntimeResources(packages: RuntimePackage[], platform: string): Promise<RuntimePackage[]> {
@@ -1389,7 +1394,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
       initial => publishedDependencyGraph(initial, platform, bucket, region),
       (graph, directory) => downloadDependencies([...graph.values()], directory, platform, bucket, region))
     depPaths = installed.depPaths
-    runtimePackages = await withRuntimeResources(installed.runtimePackages, platform)
+    runtimePackages = await withRuntimeResources(externalRuntimePackages(installed.runtimePackages, { domain: pkg.domain, version }), platform)
 
     console.log(`\nDownloaded ${Object.keys(depPaths).filter(k => k.endsWith('.prefix')).length} dependencies (including transitive)`)
   }

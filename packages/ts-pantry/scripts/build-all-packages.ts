@@ -1607,6 +1607,7 @@ let BUILD_IS_FOREIGN = false
 // Domains we build from source even in mirror mode, because our recipe diverges
 // from pkgx's vanilla build (custom configure flags / extensions / patches).
 export const CUSTOM_BUILD_DOMAINS: ReadonlySet<string> = new Set<string>([
+  'tukaani.org/xz', // build against the declared gettext rather than stale bundled copies
   'kernel.org/keyutils', // compile the exact upstream libkeyutils client ABI
   'invisible-island.net/ncurses', // publish real narrow and wide ABI libraries
   'gnu.org/autoconf', // preserve source relocation and real autoreconf health checks
