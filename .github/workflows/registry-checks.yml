@@ -1,0 +1,58 @@
+name: Registry checks
+
+on:
+  push:
+    branches: [codex/registry-attestation-availability]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Registry checks (Bun ${{ matrix.bun }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        bun: ['1.4.2', '1.4.3']
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up the published managed runtime
+        uses: ./packages/action
+        with:
+          version: 0.11.93
+          install: 'false'
+          packages: bun.com@${{ matrix.bun }}
+      - name: Install the locked workspace dependencies
+        id: install
+        run: bun install --frozen-lockfile
+      - name: Record the exact source and runtime
+        run: |
+          mkdir -p artifacts/registry-availability
+          git rev-parse HEAD > artifacts/registry-availability/source.txt
+          bun --version > artifacts/registry-availability/bun-version.txt
+          test "$(bun --version)" = '${{ matrix.bun }}'
+      - name: Run every registry test
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          set -o pipefail
+          bun test packages/registry 2>&1 | tee artifacts/registry-availability/tests.log
+      - name: Lint the normal workspace
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: bun run lint
+      - name: Typecheck the normal workspace
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: bun run typecheck
+      - name: Build the shipped registry and scanner worker
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: bun run --cwd packages/registry build
+      - name: Retain registry verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: registry-availability-bun-${{ matrix.bun }}
+          path: artifacts/registry-availability
+          if-no-files-found: error

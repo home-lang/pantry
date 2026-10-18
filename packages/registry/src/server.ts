@@ -10,6 +10,7 @@ import { handlePhpRoutes, createPhpStorage } from './php-routes'
 import type { PhpPackageStorage } from './php'
 import { getPackagistCount, searchPackagist, fetchFromPackagist } from './packagist-fallback'
 import { createS3Client, resolveStorageProvider } from './storage/provider'
+import { isS3ObjectNotFound } from './storage/aws-client'
 import { augmentMetadataWithPkgx, isPendingMaterialize, materializeFromPkgx } from './pkgx-fallback'
 import { ObjectAnalytics } from './storage/object-analytics'
 import { BuildStatusStore } from './storage/build-status'
@@ -516,6 +517,7 @@ const categorySlugMap: Record<string, AnalyticsCategory> = {
  * Interface for fetching binary data from storage (S3 in prod, mock in tests)
  */
 export interface BinaryStorage {
+  /** Confirm absence with S3RequestError/NoSuchKey; other failures remain retryable. */
   getObject(key: string): Promise<Buffer>
   createDownloadUrl?(key: string): string
 }
@@ -5158,11 +5160,20 @@ async function hasCleanBinaryAttestation(
 ): Promise<boolean> {
   const cached = _binaryAttestationCache.get(tarballKey)
   if (cached !== undefined) return cached === expectedSha256
+  let content: Buffer
+  try {
+    content = await client.getObjectBuffer(bucket, binaryAttestationKey(tarballKey))
+  }
+  catch (error) {
+    // A failed storage request is not evidence that an artifact is unscanned.
+    // Leave it uncached so the next request can recover as soon as storage does.
+    if (!isS3ObjectNotFound(error)) throw error
+    _binaryAttestationCache.set(tarballKey, false)
+    return false
+  }
   let artifactSha256: string | false = false
   try {
-    const parsed = JSON.parse(
-      (await client.getObjectBuffer(bucket, binaryAttestationKey(tarballKey))).toString('utf8'),
-    ) as { scan?: { verdict?: unknown, artifactSha256?: unknown } }
+    const parsed = JSON.parse(content.toString('utf8')) as { scan?: { verdict?: unknown, artifactSha256?: unknown } }
     if (
       parsed.scan?.verdict === 'clean'
       && typeof parsed.scan.artifactSha256 === 'string'
@@ -5242,7 +5253,8 @@ async function findActiveBinaryRecord(
   try {
     metadata = await loadBinaryMetadata(store, parsed.domain, cacheable)
   }
-  catch {
+  catch (error) {
+    if (!isS3ObjectNotFound(error)) throw error
     return null
   }
   // Match the quarantine on any spelling of the version. Comparing the request's
@@ -5280,7 +5292,9 @@ async function ensureBinaryAvailable(
     await client.headObject(process.env.S3_BUCKET || 'pantry-registry', s3Key)
     return true
   }
-  catch { /* missing — try the on-the-fly pkgx fallback below */ }
+  catch (error) {
+    if (!isS3ObjectNotFound(error)) throw error
+  }
   const m = parseBinaryKey(s3Key)
   if (!m)
     return false
@@ -5442,7 +5456,8 @@ async function handleBinaryProxy(
             headers: { ...corsHeaders, 'Content-Type': contentType, 'Cache-Control': cacheControl, 'Content-Length': String(buffer.byteLength) },
           })
         }
-        catch {
+        catch (error) {
+          if (!isS3ObjectNotFound(error)) throw error
           return Response.json({ error: 'Not found' }, { status: 404, headers: corsHeaders })
         }
       }
@@ -5514,7 +5529,11 @@ async function handleBinaryProxy(
         : null
       let stored: Awaited<ReturnType<typeof augmentMetadataWithPkgx>> = null
       try { stored = domain ? await loadBinaryMetadata(binaryStore, domain, true) : null }
-      catch { /* unpublished domain — may still be augmentable from pkgx */ }
+      catch (error) {
+        // Only an absent object is an unpublished domain. Do not advertise an
+        // empty or fallback manifest while its published metadata is unreadable.
+        if (!isS3ObjectNotFound(error)) throw error
+      }
       const augmented = domain
         ? await augmentMetadataWithPkgx(domain, stored, [...(_knownVersions.get(domain) || [])])
         : stored
@@ -5539,6 +5558,7 @@ async function handleBinaryProxy(
       buffer = await binaryStore.getObject(s3Key)
     }
     catch (missErr) {
+      if (!isS3ObjectNotFound(missErr)) throw missErr
       const tarKey = s3Key.replace(/\.sha256$/, '')
       const ck = parseBinaryKey(tarKey)
       if (!isChecksum || storage || !ck || !isPendingMaterialize(ck.domain, ck.version, ck.platform))
@@ -5577,6 +5597,12 @@ async function handleBinaryProxy(
   }
   catch (error) {
     console.error(`Binary proxy error for ${s3Key}:`, error)
+    if (!isS3ObjectNotFound(error)) {
+      return Response.json({
+        error: 'Binary storage is temporarily unavailable',
+        code: 'BINARY_STORAGE_UNAVAILABLE',
+      }, { status: 503, headers: { ...corsHeaders, 'Retry-After': '60', 'Cache-Control': 'no-store' } })
+    }
     return Response.json(
       { error: 'Not found' },
       { status: 404, headers: corsHeaders },

@@ -50,6 +50,34 @@ export interface S3ClientOptions {
   credentials?: AWSCredentials
 }
 
+/** Keep transport status separate from the S3 error code carried on the wire. */
+export class S3RequestError extends Error {
+  constructor(
+    readonly operation: 'GET' | 'HEAD',
+    readonly statusCode: number,
+    readonly code?: string,
+  ) {
+    super(`S3 ${operation} failed: ${statusCode}${code ? ` ${code}` : ''}`)
+    this.name = 'S3RequestError'
+  }
+}
+
+export function isS3ObjectNotFound(error: unknown): boolean {
+  return error instanceof S3RequestError
+    && error.statusCode === 404
+    && (error.code === 'NoSuchKey' || error.code === 'NotFound'
+      // S3 HEAD returns an empty body, even for an absent object.
+      || (error.operation === 'HEAD' && error.code === undefined))
+}
+
+async function objectReadError(response: Response, operation: 'GET' | 'HEAD' = 'GET'): Promise<S3RequestError> {
+  const body = await response.text().catch(() => '')
+  // This is the structured S3 XML response, not an exception message. A 403,
+  // malformed response, timeout, or missing bucket cannot prove object absence.
+  const code = /<(?:[\w.-]+:)?Code>([\w.-]+)<\/(?:[\w.-]+:)?Code>/.exec(body)?.[1]
+  return new S3RequestError(operation, response.status, code)
+}
+
 /**
  * Lightweight S3 client using AWS Signature V4 authentication
  */
@@ -259,8 +287,7 @@ export class S3Client {
     })
 
     if (!response.ok) {
-      const text = await response.text().catch(() => '')
-      throw new Error(`S3 GET failed: ${response.status} ${text}`)
+      throw await objectReadError(response)
     }
 
     const arrayBuffer = await response.arrayBuffer()
@@ -276,8 +303,7 @@ export class S3Client {
     const headers = this.sign('GET', path, host, {}, '')
     const response = await fetch(`https://${host}${path}`, { method: 'GET', headers })
     if (!response.ok || !response.body) {
-      const text = await response.text().catch(() => '')
-      throw new Error(`S3 GET failed: ${response.status} ${text}`)
+      throw await objectReadError(response)
     }
     const rawLength = response.headers.get('content-length')
     const contentLength = rawLength ? Number.parseInt(rawLength, 10) : undefined
@@ -299,8 +325,7 @@ export class S3Client {
     })
 
     if (!response.ok) {
-      const text = await response.text().catch(() => '')
-      throw new Error(`S3 HEAD failed: ${response.status} ${text}`)
+      throw await objectReadError(response, 'HEAD')
     }
 
     const result: Record<string, string> = {}

@@ -3,6 +3,7 @@ import { createServer, type BinaryStorage } from './server'
 import { createLocalRegistry } from './registry'
 import { InMemoryAnalytics } from './analytics'
 import { getAvailablePort } from './test-utils'
+import { S3RequestError } from './storage/aws-client'
 
 // --- Helpers ---
 
@@ -41,7 +42,7 @@ class MockBinaryStorage implements BinaryStorage {
 
   async getObject(key: string): Promise<Buffer> {
     const data = this.files.get(key)
-    if (!data) throw new Error(`Not found: ${key}`)
+    if (!data) throw new S3RequestError('GET', 404, 'NoSuchKey')
     return data
   }
 }

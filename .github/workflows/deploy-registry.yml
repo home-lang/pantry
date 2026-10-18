@@ -17,12 +17,14 @@ on:
       - '!packages/registry/**/*.test.ts'
       - '!packages/registry/**/*.spec.ts'
       - '!packages/registry/**/__tests__/**'
+      - '!packages/registry/**/__fixtures__/**'
       - 'public/install.sh'
       - 'docs/**'
       - 'infrastructure/rpx/**'
       - '.config/bunpress.ts'
       # Re-deploy when the deploy workflow itself changes.
       - '.github/workflows/deploy-registry.yml'
+      - '.github/workflows/registry-checks.yml'
       # Root deps: stx + crosswind transitively render the site, so any
       # dependency bump can change what gets served. Re-deploy on lockfile
       # changes too — see CLAUDE.md "Site CSS pinning" for the v0.2.0 incident.
@@ -44,8 +46,13 @@ permissions:
   contents: read
 
 jobs:
+  verify:
+    uses: ./.github/workflows/registry-checks.yml
+
   deploy:
     name: hetzner
+    needs: verify
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
