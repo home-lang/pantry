@@ -184,8 +184,7 @@ fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []
     // Verify download completeness: if Content-Length was provided, check downloaded bytes match
     if (total_bytes) |expected| {
         if (bytes_downloaded != expected) {
-            // Truncated download — fall back to curl
-            return downloadFileWithCurl(allocator, url, dest_path, quiet);
+            return error.IncompleteDownload;
         }
     }
 
@@ -193,81 +192,6 @@ fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []
     if (!quiet and shown_progress) {
         style.clearLine();
     }
-}
-
-/// Download using curl subprocess — reliable across all platforms and CI environments.
-fn downloadFileWithCurl(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, _: bool) !void {
-    // Try curl with different paths and methods
-    const curl_paths = [_][]const u8{ "/usr/bin/curl", "curl" };
-
-    // Method 1: try std.process.run (captures stdout/stderr via pipes)
-    for (curl_paths) |curl| {
-        const args = [_][]const u8{ curl, "-fsSL", "--connect-timeout", "30", "--retry", "3", "--max-time", "300", "-o", dest_path, url };
-
-        const result = io_helper.childRun(allocator, &args) catch {
-            continue;
-        };
-        defer allocator.free(result.stdout);
-        defer allocator.free(result.stderr);
-
-        const curl_failed = switch (result.term) {
-            .exited => |code| code != 0,
-            else => true,
-        };
-        if (curl_failed) {
-            continue;
-        }
-        return;
-    }
-
-    // Method 2: retry with childRun (piped output, no stdio leak)
-    for (curl_paths) |curl| {
-        const args = [_][]const u8{ curl, "-fsL", "--connect-timeout", "30", "--retry", "3", "--max-time", "300", "-o", dest_path, url };
-        const result = io_helper.childRun(allocator, &args) catch continue;
-        defer allocator.free(result.stdout);
-        defer allocator.free(result.stderr);
-
-        const curl2_ok = switch (result.term) {
-            .exited => |code| code == 0,
-            else => false,
-        };
-        if (curl2_ok) {
-            return;
-        }
-    }
-
-    // curl reports "it failed", not "it costs $9". Ask the registry what it
-    // actually said before reporting a network problem that isn't one —
-    // otherwise a paid package looks like an outage.
-    if (paymentRequired(allocator, url)) return error.PaymentRequired;
-
-    return error.NetworkError;
-}
-
-/// Re-request the URL to see whether the refusal was a price rather than a
-/// failure, and print what the registry said. Only runs after a download has
-/// already failed, so it costs nothing on the happy path.
-fn paymentRequired(allocator: std.mem.Allocator, url: []const u8) bool {
-    const res = io_helper.httpRequest(allocator, .GET, url, null, &.{}) catch return false;
-    defer allocator.free(res.body);
-    if (res.status != 402) return false;
-
-    var parsed = std.json.parseFromSlice(std.json.Value, allocator, res.body, .{ .ignore_unknown_fields = true }) catch {
-        style.print("  This package requires payment.\n", .{});
-        return true;
-    };
-    defer parsed.deinit();
-
-    const message = blk: {
-        if (parsed.value == .object) {
-            if (parsed.value.object.get("message")) |m| {
-                if (m == .string) break :blk m.string;
-            }
-        }
-        break :blk "This package requires payment.";
-    };
-    style.print("  {s}\n", .{message});
-    return true;
 }
 
 /// Check if a version string looks like a Zig dev version

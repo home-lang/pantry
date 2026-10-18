@@ -2232,7 +2232,6 @@ fn httpGetResponseWithPolicy(allocator: std.mem.Allocator, url: []const u8, extr
     }
 }
 
-
 /// A finite owned operation. Cancellation always joins the request and timer
 /// before caller-owned buffers, paths or clients can be released.
 pub fn runWithTimeout(comptime task: anytype, args: anytype, timeout_ms: u64) !void {
