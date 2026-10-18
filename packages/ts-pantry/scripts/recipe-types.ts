@@ -83,6 +83,7 @@ export interface Recipe {
   /** Executable programs provided by this package */
   programs: string[]
   platformPrograms?: import('../src/programs').PlatformPrograms
+  programVersions?: import('../src/programs').ProgramVersions
   /** Shell libraries that callers source; they must keep source semantics in .bin. */
   sourceablePrograms?: string[]
   /** Data needed beside this package's libraries when another artifact bundles them. */
@@ -174,6 +175,7 @@ export interface LoadedRecipe {
     }
     programs?: string[]
     platformPrograms?: import('../src/programs').PlatformPrograms
+    programVersions?: import('../src/programs').ProgramVersions
     platforms?: string[]
     publish?: { include: string[] }
     sourceablePrograms?: string[]

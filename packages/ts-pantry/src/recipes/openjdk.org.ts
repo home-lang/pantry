@@ -49,6 +49,8 @@ export const recipe: Recipe = {
     },
   },
   programs: ['jar', 'jarsigner', 'java', 'javac', 'javadoc', 'javap', 'jcmd', 'jconsole', 'jdb', 'jdeprscan', 'jdeps', 'jfr', 'jhsdb', 'jimage', 'jinfo', 'jlink', 'jmap', 'jmod', 'jps', 'jrunscript', 'jshell', 'jstack', 'jstat', 'jstatd', 'keytool', 'rmiregistry', 'serialver'],
+  // JDK-8367157 removed this tool in JDK 26; earlier releases still supply it.
+  programVersions: { jrunscript: { before: 26 } },
 
   build: {
     script: [

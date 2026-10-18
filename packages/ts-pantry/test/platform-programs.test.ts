@@ -30,3 +30,12 @@ test('the native catalog chooses program declarations for its compile target', (
   expect(other).toContain('"git"')
   expect(() => zigProgramsExpression({ programs: [], platformPrograms: { typo: ['bad'] } } as never)).toThrow('Unsupported program platform')
 })
+
+test('JDK 26 removal of jrunscript changes only the executable contract for newer JDKs', async () => {
+  for (const version of ['17.0.20.8', '25.0.0.36', '26.0.0.35', '27.0.0.35']) {
+    const loaded = (await loadRecipe('openjdk.org', 'linux-x86-64', version)).recipe
+    expect(loaded.programs).toContain('java')
+    expect(loaded.programs).toContain('javac')
+    expect(loaded.programs?.includes('jrunscript')).toBe(Number(version.split('.')[0]) < 26)
+  }
+})
