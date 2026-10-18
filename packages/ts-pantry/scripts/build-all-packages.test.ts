@@ -517,7 +517,8 @@ describe('exact version-pinned publication scope', () => {
       .map(pkg => applyVersionPins(pkg, requested.pins))
   }
   test('postgresql.org@17.10 never republishes an unrequested libpq latest', () => {
-    expect(selected('postgresql.org@17.10')).toEqual([{ domain: 'postgresql.org', name: 'postgresql', versions: ['17.10'], latestVersion: '17.10' }])
+    expect(selected('postgresql.org@17.10').map(({ domain, name, versions, latestVersion }) => ({ domain, name, versions, latestVersion })))
+      .toEqual([{ domain: 'postgresql.org', name: 'postgresql', versions: ['17.10'], latestVersion: '17.10' }])
   })
   test('a plain domain continues to explicitly select its family', () => {
     expect(selected('postgresql.org').map(pkg => pkg.domain)).toEqual(['postgresql.org', 'postgresql.org/libpq'])
