@@ -6,7 +6,6 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install netfilter.org/libnftnl`
- * @name `libnftnl`
  * @homepage https://www.netfilter.org/projects/libnftnl/
  * @dependencies `netfilter.org/libmnl^1`
  * @buildDependencies `kernel.org/linux-headers`, `freedesktop.org/pkg-config` - required only when building from source
@@ -15,11 +14,7 @@
  * ```typescript
  * import { pantry } from 'ts-pantry'
  *
- * // Access the package
- * const pkg = pantry.libnftnl
- * // Or access via domain
- * const samePkg = pantry.netfilterorglibnftnl
- * console.log(pkg === samePkg) // true
+ * const pkg = pantry.netfilterorglibnftnl
  * console.log(pkg.name)        // "libnftnl"
  * console.log(pkg.description) // "Low-level userspace library for nftables Netlin..."
  * console.log(pkg.versions[0]) // "1.3.2" (latest)
@@ -74,10 +69,6 @@ export const libnftnlPackage = {
   versions: [
     '1.3.2',
   ] as const,
-  /**
-  * Alternative names for this package.
-  * You can use any of these names to access the package.
-  */
   aliases: [] as const,
 }
 

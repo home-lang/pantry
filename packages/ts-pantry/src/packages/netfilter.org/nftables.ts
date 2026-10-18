@@ -7,7 +7,6 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install netfilter.org/nftables`
- * @name `nftables`
  * @homepage https://www.netfilter.org/projects/nftables/
  * @dependencies `netfilter.org/libmnl^1`, `netfilter.org/libnftnl^1`, `gnu.org/readline^8`, ... (+2 more)
  * @buildDependencies `kernel.org/linux-headers`, `freedesktop.org/pkg-config`, `gnu.org/bison`, ... (+1 more) - required only when building from source
@@ -16,11 +15,7 @@
  * ```typescript
  * import { pantry } from 'ts-pantry'
  *
- * // Access the package
- * const pkg = pantry.nftables
- * // Or access via domain
- * const samePkg = pantry.netfilterorgnftables
- * console.log(pkg === samePkg) // true
+ * const pkg = pantry.netfilterorgnftables
  * console.log(pkg.name)        // "nftables"
  * console.log(pkg.description) // "Native nftables ruleset management with JSON an..."
  * console.log(pkg.programs)    // ["nft"]
@@ -88,10 +83,6 @@ export const nftablesPackage = {
   versions: [
     '1.1.7',
   ] as const,
-  /**
-  * Alternative names for this package.
-  * You can use any of these names to access the package.
-  */
   aliases: [] as const,
 }
 

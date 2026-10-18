@@ -7,7 +7,6 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install kernel.org/perf`
- * @name `perf`
  * @homepage https://perf.wiki.kernel.org/
  * @dependencies `elfutils.org`, `zlib.net^1`, `tukaani.org/xz^5`, ... (+2 more)
  * @buildDependencies `freedesktop.org/pkg-config`, `gnu.org/bison`, `github.com/westes/flex`, ... (+1 more) - required only when building from source
@@ -16,11 +15,7 @@
  * ```typescript
  * import { pantry } from 'ts-pantry'
  *
- * // Access the package
- * const pkg = pantry.perf
- * // Or access via domain
- * const samePkg = pantry.kernelorgperf
- * console.log(pkg === samePkg) // true
+ * const pkg = pantry.kernelorgperf
  * console.log(pkg.name)        // "perf"
  * console.log(pkg.description) // "Native Linux performance counters, sampling and..."
  * console.log(pkg.programs)    // ["perf"]
@@ -88,10 +83,6 @@ export const perfPackage = {
   versions: [
     '7.2.11',
   ] as const,
-  /**
-  * Alternative names for this package.
-  * You can use any of these names to access the package.
-  */
   aliases: [] as const,
 }
 

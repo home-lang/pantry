@@ -7,19 +7,15 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install cmake.org`
- * @name `cmake`
  * @homepage https://www.cmake.org/
- * @dependencies `curl.se>=5<8.13`, `zlib.net@1`, `sourceware.org/bzip2@1`
+ * @dependencies `zlib.net@1`, `sourceware.org/bzip2@1`, `curl.se^8`, ... (+2 more) (includes platform-specific dependencies)
+ * @buildDependencies `gnu.org/make`, `freedesktop.org/pkg-config` - required only when building from source
  *
  * @example
  * ```typescript
  * import { pantry } from 'ts-pantry'
  *
- * // Access the package
- * const pkg = pantry.cmake
- * // Or access via domain
- * const samePkg = pantry.cmakeorg
- * console.log(pkg === samePkg) // true
+ * const pkg = pantry.cmakeorg
  * console.log(pkg.name)        // "cmake"
  * console.log(pkg.description) // "Mirror of CMake upstream repository"
  * console.log(pkg.programs)    // ["cmake", "ccmake", ...]
@@ -65,13 +61,23 @@ export const cmakePackage = {
   /**
   * Runtime dependencies for this package.
   * These are required when running the package.
+  * Platform-specific dependencies use `os:` or `os/arch:` prefixes (e.g., `linux:freetype.org`).
   */
   dependencies: [
-    'curl.se>=5<8.13',
     'zlib.net@1',
     'sourceware.org/bzip2@1',
+    'curl.se^8',
+    'invisible-island.net/ncurses^6',
+    'linux:gnu.org/gcc/libstdcxx@14',
   ] as const,
-  buildDependencies: [] as const,
+  /**
+  * Build dependencies for this package.
+  * These are only required when building the package from source.
+  */
+  buildDependencies: [
+    'gnu.org/make',
+    'freedesktop.org/pkg-config',
+  ] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
@@ -175,10 +181,6 @@ export const cmakePackage = {
     '3.24.4',
     '3.24.2',
   ] as const,
-  /**
-  * Alternative names for this package.
-  * You can use any of these names to access the package.
-  */
   aliases: [] as const,
 }
 

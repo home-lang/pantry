@@ -7,7 +7,6 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/hatoo/oha`
- * @name `oha`
  * @homepage https://github.com/hatoo/oha
  * @buildDependencies `curl.se`, `stedolan.github.io/jq^1`, `gnu.org/coreutils` - required only when building from source
  *
@@ -15,11 +14,7 @@
  * ```typescript
  * import { pantry } from 'ts-pantry'
  *
- * // Access the package
- * const pkg = pantry.oha
- * // Or access via domain
- * const samePkg = pantry.githubcomhatoooha
- * console.log(pkg === samePkg) // true
+ * const pkg = pantry.githubcomhatoooha
  * console.log(pkg.name)        // "oha"
  * console.log(pkg.description) // "Native HTTP load generator with paced requests ..."
  * console.log(pkg.programs)    // ["oha"]
@@ -76,10 +71,6 @@ export const ohaPackage = {
   versions: [
     '1.16.0',
   ] as const,
-  /**
-  * Alternative names for this package.
-  * You can use any of these names to access the package.
-  */
   aliases: [] as const,
 }
 

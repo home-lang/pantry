@@ -6,7 +6,6 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install netfilter.org/libmnl`
- * @name `libmnl`
  * @homepage https://www.netfilter.org/projects/libmnl/
  * @buildDependencies `kernel.org/linux-headers`, `freedesktop.org/pkg-config` - required only when building from source
  *
@@ -14,11 +13,7 @@
  * ```typescript
  * import { pantry } from 'ts-pantry'
  *
- * // Access the package
- * const pkg = pantry.libmnl
- * // Or access via domain
- * const samePkg = pantry.netfilterorglibmnl
- * console.log(pkg === samePkg) // true
+ * const pkg = pantry.netfilterorglibmnl
  * console.log(pkg.name)        // "libmnl"
  * console.log(pkg.description) // "Minimal userspace library for Netlink communica..."
  * console.log(pkg.versions[0]) // "1.0.5" (latest)
@@ -67,10 +62,6 @@ export const libmnlPackage = {
   versions: [
     '1.0.5',
   ] as const,
-  /**
-  * Alternative names for this package.
-  * You can use any of these names to access the package.
-  */
   aliases: [] as const,
 }
 

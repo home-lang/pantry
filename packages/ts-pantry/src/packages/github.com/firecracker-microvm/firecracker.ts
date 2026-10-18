@@ -7,7 +7,6 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/firecracker-microvm/firecracker`
- * @name `firecracker`
  * @homepage https://firecracker-microvm.github.io
  * @buildDependencies `curl.se`, `stedolan.github.io/jq^1`, `gnu.org/coreutils` - required only when building from source
  *
@@ -15,11 +14,7 @@
  * ```typescript
  * import { pantry } from 'ts-pantry'
  *
- * // Access the package
- * const pkg = pantry.firecracker
- * // Or access via domain
- * const samePkg = pantry.githubcomfirecrackermicrovmfirecracker
- * console.log(pkg === samePkg) // true
+ * const pkg = pantry.githubcomfirecrackermicrovmfirecracker
  * console.log(pkg.name)        // "firecracker"
  * console.log(pkg.description) // "Native KVM microVM monitor and jailer."
  * console.log(pkg.programs)    // ["firecracker", "jailer"]
@@ -77,10 +72,6 @@ export const firecrackerPackage = {
   versions: [
     '1.17.0',
   ] as const,
-  /**
-  * Alternative names for this package.
-  * You can use any of these names to access the package.
-  */
   aliases: [] as const,
 }
 

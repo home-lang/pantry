@@ -7,7 +7,6 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install bun.com/profile`
- * @name `bun-profile`
  * @homepage https://bun.com
  * @buildDependencies `curl.se`, `stedolan.github.io/jq^1`, `gnu.org/coreutils`, ... (+2 more) - required only when building from source
  *
@@ -15,11 +14,7 @@
  * ```typescript
  * import { pantry } from 'ts-pantry'
  *
- * // Access the package
- * const pkg = pantry.bunprofile
- * // Or access via domain
- * const samePkg = pantry.buncomprofile
- * console.log(pkg === samePkg) // true
+ * const pkg = pantry.buncomprofile
  * console.log(pkg.name)        // "bun-profile"
  * console.log(pkg.description) // "Official Bun profiling runtime with its native ..."
  * console.log(pkg.programs)    // ["bun-profile"]
@@ -78,10 +73,6 @@ export const bunprofilePackage = {
   versions: [
     '1.4.2',
   ] as const,
-  /**
-  * Alternative names for this package.
-  * You can use any of these names to access the package.
-  */
   aliases: [] as const,
 }
 

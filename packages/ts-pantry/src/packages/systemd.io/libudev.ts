@@ -6,7 +6,6 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install systemd.io/libudev`
- * @name `libudev`
  * @homepage https://systemd.io/
  * @buildDependencies `mesonbuild.com`, `ninja-build.org`, `freedesktop.org/pkg-config`, ... (+6 more) - required only when building from source
  *
@@ -14,11 +13,7 @@
  * ```typescript
  * import { pantry } from 'ts-pantry'
  *
- * // Access the package
- * const pkg = pantry.libudev
- * // Or access via domain
- * const samePkg = pantry.systemdiolibudev
- * console.log(pkg === samePkg) // true
+ * const pkg = pantry.systemdiolibudev
  * console.log(pkg.name)        // "libudev"
  * console.log(pkg.description) // "Native libudev shared library and development i..."
  * console.log(pkg.versions[0]) // "262.1" (latest)
@@ -74,10 +69,6 @@ export const libudevPackage = {
   versions: [
     '262.1',
   ] as const,
-  /**
-  * Alternative names for this package.
-  * You can use any of these names to access the package.
-  */
   aliases: [] as const,
 }
 
