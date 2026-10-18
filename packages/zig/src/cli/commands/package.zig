@@ -1028,7 +1028,7 @@ fn isTransientNetworkError(err: anyerror) bool {
     };
 }
 
-test "a bounded publish timeout is retryable" {
+test "a bounded timeout before sending an upload is retryable" {
     try std.testing.expect(isTransientNetworkError(error.Timeout));
 }
 
@@ -1063,6 +1063,24 @@ pub fn npmSkipReason(allocator: std.mem.Allocator, package_dir: []const u8, conf
     defer allocator.free(build_zig);
     io_helper.accessAbsolute(build_zig, .{}) catch return null;
     return "native Zig package — publishes to the Pantry registry, not npm";
+}
+
+fn completeVerifiedNpmPublication(
+    allocator: std.mem.Allocator,
+    name: []const u8,
+    version: []const u8,
+    scripts: ?std.json.ObjectMap,
+    package_dir: []const u8,
+    options: PublishOptions,
+) CommandResult {
+    style.print("\n✓ Published {s}@{s}\n", .{ name, version });
+    if (!options.ignore_scripts) {
+        if (scripts) |configured| {
+            _ = lib.lifecycle.runPostPublishScripts(allocator, configured, package_dir);
+        }
+    }
+    if (options.github_release) createGitHubRelease(allocator, options);
+    return .{ .exit_code = 0 };
 }
 
 fn publishSingleToNpm(
@@ -1127,11 +1145,18 @@ fn publishSingleToNpm(
     // semantics — Pantry's own registry uses a different shape). Network
     // failures here fall through to a real publish attempt; we'd rather
     // double-publish-attempt than incorrectly skip.
-    if (options.skip_existing) blk: {
+    // Private metadata requires the credential obtained by the publication
+    // path below. Keep the cheap anonymous precheck for public packages only;
+    // authenticated immutable-version conflicts still verify before skipping.
+    const precheck_access = resolveNpmAccess(options.access, if (metadata.publish_config) |pc| pc.access else null, metadata.name);
+    if (options.skip_existing and std.mem.eql(u8, precheck_access, "public")) blk: {
         var precheck_client = registry.RegistryClient.init(allocator, registry_url) catch break :blk;
         defer precheck_client.deinit();
         const exists = precheck_client.versionExists(metadata.name, metadata.version) catch break :blk;
         if (exists) {
+            if (!try precheck_client.confirmPublication(metadata.name, metadata.version, null, npm_publish_timeout_ms)) {
+                return CommandResult.err(allocator, "Existing version is pending public tarball availability. Do not upload this version again.");
+            }
             style.print("\n{s}↷{s} {s}@{s} already published — skipping\n", .{ style.dim, style.reset, metadata.name, metadata.version });
             return .{ .exit_code = 0, .skipped = true };
         }
@@ -1255,6 +1280,9 @@ fn publishSingleToNpm(
         defer result.deinit(allocator);
 
         if (result.success) {
+            if (!try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms)) {
+                return CommandResult.err(allocator, "Upload accepted; publication is pending public metadata and verified tarball availability. Do not upload this version again.");
+            }
             if (result.provenance) {
                 style.print("\n✓ Sigstore provenance attached\n", .{});
                 style.print("✓ Published {s}@{s} with provenance\n", .{ metadata.name, metadata.version });
@@ -1286,6 +1314,9 @@ fn publishSingleToNpm(
                 // for it contradicts the pre-check and, mid-release, strands
                 // the packages that already went out.
                 if (options.skip_existing) {
+                    if (!try registry_client.confirmPublication(metadata.name, metadata.version, null, npm_publish_timeout_ms)) {
+                        return CommandResult.err(allocator, "Claimed version is pending public metadata and tarball availability. Do not upload this version again.");
+                    }
                     style.print("\n{s}↷{s} {s}@{s} already claimed on npm — skipping\n", .{ style.dim, style.reset, metadata.name, metadata.version });
                     return .{ .exit_code = 0, .skipped = true };
                 }
@@ -1324,7 +1355,7 @@ fn publishSingleToNpm(
             // before the upload — no CI provider, a token npm would not
             // exchange for a package with no trusted publisher — which used to
             // wait two minutes per package for a version that was never sent.
-            if (result.sent and confirmVersionLanded(allocator, registry_url, metadata.name, metadata.version)) {
+            if (result.sent and try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms)) {
                 style.print(
                     "\n{s}✓{s} {s}@{s} is on the registry — the publish landed, the response did not\n",
                     .{ style.green, style.reset, metadata.name, metadata.version },
@@ -1338,6 +1369,9 @@ fn publishSingleToNpm(
                     createGitHubRelease(allocator, options);
                 }
                 return .{ .exit_code = 0 };
+            }
+            if (result.sent) {
+                return CommandResult.err(allocator, "Upload outcome is pending public verification. Do not send another upload while this version may be staged.");
             }
 
             // Genuinely not published. Say what actually went wrong rather than
@@ -1400,8 +1434,9 @@ fn publishSingleToNpm(
 
     // Publish with retry-on-rate-limit. Cloudflare in front of registry.npmjs.org
     // returns 429 on burst publishes (a real risk in monorepo mode publishing
-    // hundreds of packages in a row). Retry transient failures with exponential
-    // backoff: 5s → 10s → 20s → 40s → 80s, then give up. 5xx is treated the same.
+    // hundreds of packages in a row). Retry explicit rate-limit rejections and
+    // pre-upload network failures with bounded exponential backoff. Ambiguous
+    // post-upload outcomes require verification and must never resend bytes.
     const max_publish_attempts: u8 = 8;
     var publish_attempt: u8 = 0;
     const response = blk: while (true) {
@@ -1413,6 +1448,15 @@ fn publishSingleToNpm(
             auth_token,
             npm_publish_timeout_ms,
         ) catch |err| {
+            // A request can commit before its response fails. Never send a
+            // second PUT after bytes may have reached the registry.
+            if (registry_client.token_upload_started) {
+                if (try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms)) {
+                    return completeVerifiedNpmPublication(allocator, metadata.name, metadata.version, scripts_obj, package_dir, options);
+                }
+                return CommandResult.err(allocator, "Upload outcome is pending public verification. Do not send another upload while this version may be staged.");
+            }
+            // Transient network errors before any upload can be retried.
             // Transient network errors (WriteFailed, ConnectionResetByPeer,
             // EndOfStream, etc.) — treat like a retryable HTTP failure and
             // back off exponentially before reattempting. Without this we
@@ -1441,6 +1485,16 @@ fn publishSingleToNpm(
                 .retry_after_seconds = 0,
             };
         };
+        // A server error, request timeout, or redirect can follow a committed
+        // write. Read back the exact tarball instead of repeating the PUT.
+        if (r.status_code == 408 or (r.status_code >= 500 and r.status_code < 600) or (r.status_code >= 300 and r.status_code < 400)) {
+            var owned_response = r;
+            defer owned_response.deinit(allocator);
+            if (try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms)) {
+                return completeVerifiedNpmPublication(allocator, metadata.name, metadata.version, scripts_obj, package_dir, options);
+            }
+            return CommandResult.err(allocator, "Upload outcome is pending public verification. Do not send another upload while this version may be staged.");
+        }
         if (r.success or !r.isRetryable() or publish_attempt >= max_publish_attempts) {
             break :blk r;
         }
@@ -1473,17 +1527,10 @@ fn publishSingleToNpm(
     }
 
     if (response.success) {
-        style.print("\n✓ Published {s}@{s}\n", .{ metadata.name, metadata.version });
-        // Run post-publish scripts: publish → postpublish
-        if (!options.ignore_scripts) {
-            if (scripts_obj) |scripts| {
-                _ = lib.lifecycle.runPostPublishScripts(allocator, scripts, package_dir);
-            }
+        if (!try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms)) {
+            return CommandResult.err(allocator, "Upload accepted; publication is pending public metadata and verified tarball availability. Do not upload this version again.");
         }
-        if (options.github_release) {
-            createGitHubRelease(allocator, options);
-        }
-        return .{ .exit_code = 0 };
+        return completeVerifiedNpmPublication(allocator, metadata.name, metadata.version, scripts_obj, package_dir, options);
     } else {
         // Check for version conflict (npm returns 403 with EPUBLISHCONFLICT or conflict text)
         var is_version_conflict = false;
@@ -1506,8 +1553,11 @@ fn publishSingleToNpm(
             // See the OIDC path above: under `skip_existing` a conflict is the
             // pre-check losing a race, not a mistake worth failing over.
             if (options.skip_existing) {
+                if (!try registry_client.confirmPublication(metadata.name, metadata.version, null, npm_publish_timeout_ms)) {
+                    return CommandResult.err(allocator, "Claimed version is pending public metadata and tarball availability. Do not upload this version again.");
+                }
                 const why: []const u8 = if (conflict_kind == .staged)
-                    "staged on npm and not yet readable"
+                    "already claimed and verified"
                 else
                     "already published";
                 style.print("\n{s}↷{s} {s}@{s} {s} — skipping\n", .{ style.dim, style.reset, metadata.name, metadata.version, why });
@@ -1862,67 +1912,6 @@ pub fn classifyOidcFailure(status_code: u16) OidcFailureKind {
         403, 409, 422 => .definitive,
         else => .inconclusive,
     };
-}
-
-/// Whether `name@version` is on the registry, giving npm time to get there.
-///
-/// npm commits a publish asynchronously: the version can appear well after the
-/// request that uploaded it has returned, or failed to return. A single GET
-/// immediately after a failed publish therefore answers "no" to a question that
-/// becomes "yes" a minute later — which is the whole reason this exists, so it
-/// polls rather than asks once.
-///
-/// The budget is generous because of what it buys. Waiting two minutes on the
-/// failure path of one package costs a slow release; getting the answer wrong
-/// costs a red release for packages that shipped, and sends whoever reads it
-/// looking for a misconfiguration that is not there.
-///
-/// Errors are "not yet", never "no": an unreachable registry is exactly when we
-/// must not claim a package is missing. A genuine failure simply exhausts the
-/// budget and falls through to the token path, which is where it was headed
-/// anyway.
-/// How many times in a row the confirmation below has come back empty.
-///
-/// The patient wait is worth it for a flake or two in a large release. It is
-/// not worth it when the registry is genuinely refusing us: a release where
-/// every package fails would spend the full budget on each one and blow the
-/// job's timeout long before it finished reporting. After a few packages tell
-/// the same story, take the answer at face value and only glance.
-var consecutive_unconfirmed: u8 = 0;
-
-fn confirmVersionLanded(
-    allocator: std.mem.Allocator,
-    registry_url: []const u8,
-    package_name: []const u8,
-    version: []const u8,
-) bool {
-    const registry = @import("../../auth/registry.zig");
-    const patient = [_]u64{ 2_000, 5_000, 10_000, 15_000, 30_000, 30_000, 30_000 };
-    const brief = [_]u64{2_000};
-    const delays_ms: []const u64 = if (consecutive_unconfirmed >= 3) &brief else &patient;
-
-    var client = registry.RegistryClient.init(allocator, registry_url) catch return false;
-    defer client.deinit();
-
-    style.print(
-        "  {s}?{s} publish reported an error — checking whether {s}@{s} landed anyway...\n",
-        .{ style.dim, style.reset, package_name, version },
-    );
-
-    for (delays_ms) |delay_ms| {
-        io_helper.sleepMs(delay_ms);
-        if (client.versionExists(package_name, version)) |exists| {
-            if (exists) {
-                consecutive_unconfirmed = 0;
-                return true;
-            }
-        } else |_| {
-            // Registry unreachable or an unexpected status — keep waiting.
-        }
-    }
-
-    consecutive_unconfirmed +|= 1;
-    return false;
 }
 
 /// Attempt to publish using OIDC authentication with Sigstore provenance

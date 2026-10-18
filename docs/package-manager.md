@@ -225,9 +225,11 @@ or upload bytes.
 
 At a monorepo root, the npm pipeline publishes every non-private package under
 `packages/` in dependency order (`dependencies`, `devDependencies`, and
-required `peerDependencies`, ties broken by name). Before packing, it asks the
-registry whether `name@version` exists and skips the package if it does;
-`--force-republish` disables that check. A package whose `dependencies`,
+required `peerDependencies`, ties broken by name). Public packages receive an
+anonymous existing-version precheck before packing; the advertised tarball must
+be readable and verified before skipping. Restricted packages authenticate
+through the publication path and verify an immutable-version conflict before
+skipping. `--force-republish` disables skipping. A package whose `dependencies`,
 `peerDependencies`, or `optionalDependencies` include a sibling that did not
 publish in the same run is held back rather than published uninstallable, and
 the run exits non-zero. Root `README.md`, `LICENSE`, and `LICENSE.md` are
@@ -255,12 +257,36 @@ token authentication directly. A missing trusted-publisher relationship may
 fall back to a token, while immutable-version conflicts and registry validation
 errors (403, 409, 422) fail without retrying through another identity. When an
 OIDC attempt fails after the upload was sent, or times out, Pantry polls the
-registry for up to about two minutes to see whether the version landed before
-reporting failure; when nothing was uploaded (no CI provider, or npm refused
+public metadata and the exact uploaded tarball for up to 120 seconds. An
+unconfirmed upload remains pending and fails without a second upload through a
+different identity. When nothing was uploaded (no CI provider, or npm refused
 the token exchange), it goes straight to token authentication. A token
 publish rejected with npm's `Scope not found` is reported as a missing
 organization or membership, with a pointer to `https://www.npmjs.com/org/create`. `--otp <code>` adds npm's
 `npm-otp` header to token publication; Pantry never writes or prints the code.
+
+An accepted HTTP 200, 201, or 202 upload is not yet a completed publication.
+Pantry verifies the public package name, version, and downloaded tarball against
+the local SHA-512 before reporting success, running `publish`/`postpublish`, or
+creating a GitHub release. Temporary metadata or tarball unavailability is
+polled with a 120-second deadline covering response bodies as well as headers;
+an unresolved version remains pending and holds dependent workspace packages.
+An integrity or metadata mismatch fails immediately. Existing versions require
+a readable tarball matching their advertised SHA-512, or SHA-1 for historical
+metadata that only supplies `shasum`.
+
+Both npm commands honor `--registry <url>` before `publishConfig.registry`;
+`--registry npm` selects the default npm registry. Public verification never
+forwards publishing credentials to the metadata or tarball host. Restricted
+packages use authenticated readback at the exact configured registry origin;
+redirects across scheme, host, or effective port strip the credential.
+
+A token upload follows the same verify-or-pending rule after a lost response,
+408, 5xx, or redirect. Only network failures before sending starts and explicit
+429 rejections may repeat an upload attempt. Uploads and token exchanges do not
+automatically follow redirects, so publishing credentials and OTP headers cannot
+be forwarded to another origin. The existing-version precheck uses a bounded
+120-second read and never skips a package after an incomplete body.
 
 Token discovery is deterministic:
 

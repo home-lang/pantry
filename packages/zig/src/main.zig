@@ -1355,7 +1355,7 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
         const npm_options = lib.commands.PublishOptions{
             .access = access,
             .tag = tag,
-            .registry = "https://registry.npmjs.org",
+            .registry = if (std.mem.eql(u8, registry, "npm") or std.mem.eql(u8, registry, "https://registry.pantry.dev")) "https://registry.npmjs.org" else registry,
             .dry_run = dry_run,
             .otp = otp,
             .use_oidc = use_oidc,

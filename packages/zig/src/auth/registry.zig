@@ -116,13 +116,13 @@ pub fn urlEncodePackageName(allocator: std.mem.Allocator, package_name: []const 
     return result;
 }
 
-/// Whether a publish request's status means the registry took the package.
+/// Whether a publish request's status means the registry accepted the upload.
 ///
 /// `200 OK`, `201 Created` and **`202 Accepted`**. The third one is the reason
 /// this is a named function rather than an inline comparison: npm answers 202
 /// when it *queues* a publish rather than completing it inline, which it does
 /// routinely for larger packages and for publishes carrying provenance. The
-/// package is published; the response simply says so asynchronously.
+/// upload is accepted; public metadata and immutable bytes still need checking.
 ///
 /// Reading 202 as a failure cost a failed release job on every single release,
 /// in two distinct ways:
@@ -145,10 +145,10 @@ pub fn publishSucceeded(status: std.http.Status) bool {
     };
 }
 
-test "a queued publish is a successful publish" {
+test "a queued publish is an accepted upload" {
     // npm returns 202 when it accepts a publish for asynchronous processing,
-    // which it does for large packages and for provenance. The package is
-    // published.
+    // which it does for large packages and for provenance. Public completion
+    // is verified separately against the metadata and immutable tarball.
     try std.testing.expect(publishSucceeded(.ok));
     try std.testing.expect(publishSucceeded(.created));
     try std.testing.expect(publishSucceeded(.accepted));
@@ -255,6 +255,10 @@ pub const RegistryClient = struct {
     publish_access: []const u8 = "public",
     publish_tag: []const u8 = "latest",
     publish_otp: ?[]const u8 = null,
+    // Owned only for restricted packages. Anonymous reads remain mandatory
+    // for public publications, even when the upload used a credential.
+    publication_authorization: ?[]u8 = null,
+    token_upload_started: bool = false,
 
     pub fn init(allocator: std.mem.Allocator, registry_url: []const u8) !RegistryClient {
         return RegistryClient{
@@ -269,6 +273,15 @@ pub const RegistryClient = struct {
 
     pub fn deinit(self: *RegistryClient) void {
         self.http_client.deinit();
+        if (self.publication_authorization) |authorization| self.allocator.free(authorization);
+    }
+
+    fn rememberPublicationAuthorization(self: *RegistryClient, authorization: []const u8) !void {
+        if (self.publication_authorization) |previous| self.allocator.free(previous);
+        self.publication_authorization = null;
+        if (std.mem.eql(u8, self.publish_access, "restricted")) {
+            self.publication_authorization = try self.allocator.dupe(u8, authorization);
+        }
     }
 
     /// Publish package using OIDC authentication with full token validation
@@ -350,6 +363,8 @@ pub const RegistryClient = struct {
         );
         defer self.allocator.free(auth_header);
 
+        try self.rememberPublicationAuthorization(auth_header);
+
         // Create extra headers (npm requires specific headers)
         // npm-auth-type: oidc tells npm this is OIDC authentication
         // Accept-Encoding: identity prevents gzip responses we can't decode
@@ -366,6 +381,8 @@ pub const RegistryClient = struct {
         // Make HTTP request
         var req = try self.http_client.request(.PUT, uri, .{
             .extra_headers = &extra_headers,
+            .keep_alive = false,
+            .redirect_behavior = .unhandled,
         });
         defer req.deinit();
 
@@ -448,6 +465,8 @@ pub const RegistryClient = struct {
 
         var req = try self.http_client.request(.POST, uri, .{
             .extra_headers = &extra_headers,
+            .keep_alive = false,
+            .redirect_behavior = .unhandled,
         });
         defer req.deinit();
 
@@ -553,6 +572,8 @@ pub const RegistryClient = struct {
         );
         defer self.allocator.free(auth_header);
 
+        try self.rememberPublicationAuthorization(auth_header);
+
         // Create extra headers (npm requires specific headers for OIDC provenance)
         // npm-auth-type: oidc tells npm this is OIDC authentication
         // Accept-Encoding: identity prevents gzip responses we can't decode
@@ -569,6 +590,8 @@ pub const RegistryClient = struct {
         // Make HTTP request
         var req = try self.http_client.request(.PUT, uri, .{
             .extra_headers = &extra_headers,
+            .keep_alive = false,
+            .redirect_behavior = .unhandled,
         });
         defer req.deinit();
 
@@ -627,6 +650,7 @@ pub const RegistryClient = struct {
         tarball_path: []const u8,
         auth_token: []const u8,
     ) !PublishResponse {
+        self.token_upload_started = false;
         // URL-encode package name for scoped packages
         const encoded_name = try urlEncodePackageName(self.allocator, package_name);
         defer self.allocator.free(encoded_name);
@@ -660,6 +684,8 @@ pub const RegistryClient = struct {
         );
         defer self.allocator.free(auth_header);
 
+        try self.rememberPublicationAuthorization(auth_header);
+
         // Extract scope from scoped package name (e.g., "@glenn123/foo" → "@glenn123")
         // npm's CDN uses this header for routing, especially for first-time publishes
         const npm_scope: []const u8 = if (package_name[0] == '@')
@@ -691,10 +717,14 @@ pub const RegistryClient = struct {
         // Make HTTP request
         var req = try self.http_client.request(.PUT, uri, .{
             .extra_headers = extra_headers.items,
+            .keep_alive = false,
+            .redirect_behavior = .unhandled,
         });
         defer req.deinit();
 
         req.transfer_encoding = .{ .content_length = metadata.len };
+        // Once sending starts, even a write error can mean an accepted upload.
+        self.token_upload_started = true;
         try req.sendBodyComplete(@constCast(metadata));
 
         var redirect_buffer: [4096]u8 = undefined;
@@ -821,44 +851,202 @@ pub const RegistryClient = struct {
     /// pre-check or fail. Designed for monorepo publishes where most
     /// packages are unchanged release-to-release; skipping their re-publish
     /// avoids both wasted requests and Cloudflare 429 rate-limiting.
-    pub fn versionExists(
-        self: *RegistryClient,
-        package_name: []const u8,
-        version: []const u8,
-    ) !bool {
-        const encoded_name = try urlEncodePackageName(self.allocator, package_name);
-        defer self.allocator.free(encoded_name);
+    pub fn versionExists(self: *RegistryClient, package_name: []const u8, version: []const u8) !bool {
+        const Selection = union(enum) {
+            exists: anyerror!bool,
+            timeout: void,
+        };
+        var result_buffer: [2]Selection = undefined;
+        var selection = std.Io.Select(Selection).init(io_helper.getIo(), &result_buffer);
+        defer {
+            while (selection.cancel()) |_| {}
+        }
+        try selection.concurrent(.exists, versionExistsTask, .{ self, package_name, version });
+        try selection.concurrent(.timeout, publishTimeoutTask, .{@as(u64, 120_000)});
+        return switch (try selection.await()) {
+            .exists => |exists| try exists,
+            .timeout => error.Timeout,
+        };
+    }
 
-        const url = try std.fmt.allocPrint(
-            self.allocator,
-            "{s}/{s}/{s}",
-            .{ self.registry_url, encoded_name, version },
-        );
+    fn versionExistsTask(self: *RegistryClient, package_name: []const u8, version: []const u8) anyerror!bool {
+        const encoded = try urlEncodePackageName(self.allocator, package_name);
+        defer self.allocator.free(encoded);
+        const url = try std.fmt.allocPrint(self.allocator, "{s}/{s}/{s}", .{ std.mem.trimEnd(u8, self.registry_url, "/"), encoded, version });
         defer self.allocator.free(url);
+        const body = try self.publicBytes(url, 1024 * 1024) orelse return false;
+        defer self.allocator.free(body);
+        return true;
+    }
 
-        const uri = try std.Uri.parse(url);
+    // Io.Reader deliberately erases transport errors. Cancellation is
+    // acknowledged once by Threaded: retrying generic ReadFailed after that
+    // acknowledgment swallows it and strands Select.cancel. Recover the real
+    // error while the request and its owned connection are still alive.
+    fn publicationRequestError(req: *http.Client.Request, fallback: anyerror) anyerror {
+        if (req.connection) |connection| {
+            if (fallback == error.ReadFailed) {
+                if (connection.stream_reader.err) |err| return err;
+                if (req.reader.body_err) |err| return err;
+            }
+            if (fallback == error.WriteFailed) {
+                if (connection.stream_writer.err) |err| return err;
+            }
+        }
+        return fallback;
+    }
 
-        var req = try self.http_client.request(.GET, uri, .{});
-        defer req.deinit();
+    fn samePublicationOrigin(a: std.Uri, b: std.Uri) bool {
+        if (!std.ascii.eqlIgnoreCase(a.scheme, b.scheme)) return false;
+        const a_host = a.host orelse return false;
+        const b_host = b.host orelse return false;
+        var a_buffer: [512]u8 = undefined;
+        var b_buffer: [512]u8 = undefined;
+        const a_name = a_host.toRaw(&a_buffer) catch return false;
+        const b_name = b_host.toRaw(&b_buffer) catch return false;
+        if (!std.ascii.eqlIgnoreCase(a_name, b_name)) return false;
+        const default_port: u16 = if (std.ascii.eqlIgnoreCase(a.scheme, "https")) 443 else 80;
+        return (a.port orelse default_port) == (b.port orelse default_port);
+    }
 
-        try req.sendBodiless();
+    fn publicBytes(self: *RegistryClient, url: []const u8, limit: usize) !?[]u8 {
+        const registry_uri = try std.Uri.parse(self.registry_url);
+        var current_url = try self.allocator.dupe(u8, url);
+        defer self.allocator.free(current_url);
+        // Every hop rechecks the exact origin before attaching a credential.
+        for (0..6) |_| {
+            var next_url: ?[]u8 = null;
+            {
+                const uri = try std.Uri.parse(current_url);
+                if (uri.user != null or uri.password != null) return error.InvalidPublicationUrl;
+                if (!std.ascii.eqlIgnoreCase(uri.scheme, "http") and !std.ascii.eqlIgnoreCase(uri.scheme, "https")) return error.InvalidPublicationUrl;
+                var headers: [3]http.Header = undefined;
+                headers[0] = .{ .name = "Accept-Encoding", .value = "identity" };
+                headers[1] = .{ .name = "Cache-Control", .value = "no-cache" };
+                var count: usize = 2;
+                if (samePublicationOrigin(registry_uri, uri)) {
+                    if (self.publication_authorization) |authorization| {
+                        headers[count] = .{ .name = "Authorization", .value = authorization };
+                        count += 1;
+                    }
+                }
+                var req = try self.http_client.request(.GET, uri, .{
+                    .extra_headers = headers[0..count],
+                    .keep_alive = false,
+                    .redirect_behavior = .unhandled,
+                });
+                defer req.deinit();
+                req.sendBodiless() catch |err| return publicationRequestError(&req, err);
+                var redirect_buffer: [8192]u8 = undefined;
+                var response = req.receiveHead(&redirect_buffer) catch |err| return publicationRequestError(&req, err);
+                if (response.head.status.class() == .redirect) {
+                    const location = response.head.location orelse return error.InvalidPublicationUrl;
+                    var resolution_buffer: [16384]u8 = undefined;
+                    if (location.len > resolution_buffer.len) return error.InvalidPublicationUrl;
+                    @memcpy(resolution_buffer[0..location.len], location);
+                    var available: []u8 = &resolution_buffer;
+                    const next_uri = try uri.resolveInPlace(location.len, &available);
+                    next_url = try std.fmt.allocPrint(self.allocator, "{f}", .{next_uri});
+                } else {
+                    if (response.head.status == .not_found) return null;
+                    if (response.head.status != .ok) return error.RegistryUnavailable;
+                    return response.reader(&.{}).allocRemaining(self.allocator, std.Io.Limit.limited(limit)) catch |err| publicationRequestError(&req, err);
+                }
+            }
+            // Request.deinit has finished before any externally owned URI or
+            // header backing is replaced for the next redirect.
+            self.allocator.free(current_url);
+            current_url = next_url orelse unreachable;
+        }
+        return error.TooManyHttpRedirects;
+    }
 
-        var redirect_buffer: [4096]u8 = undefined;
-        var response = try req.receiveHead(&redirect_buffer);
+    fn publicationString(value: std.json.Value, key: []const u8) ![]const u8 {
+        if (value != .object) return error.InvalidPublicationMetadata;
+        const field = value.object.get(key) orelse return error.InvalidPublicationMetadata;
+        if (field != .string) return error.InvalidPublicationMetadata;
+        return field.string;
+    }
 
-        // Drain body so the underlying connection can be reused for the
-        // next call. We don't care about the contents — only the status.
-        const body_reader = response.reader(&.{});
-        if (body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(64 * 1024))) |raw_body| {
-            self.allocator.free(raw_body);
-        } else |_| {}
+    /// A version endpoint alone does not prove a package can be installed.
+    /// Require its named version and the exact SHA-512 bytes we uploaded.
+    fn publicationReady(self: *RegistryClient, package_name: []const u8, version: []const u8, expected_integrity: ?[]const u8) !bool {
+        const encoded = try urlEncodePackageName(self.allocator, package_name);
+        defer self.allocator.free(encoded);
+        const url = try std.fmt.allocPrint(self.allocator, "{s}/{s}/{s}", .{ std.mem.trimEnd(u8, self.registry_url, "/"), encoded, version });
+        defer self.allocator.free(url);
+        const body = try self.publicBytes(url, 1024 * 1024) orelse return false;
+        defer self.allocator.free(body);
+        const parsed = try std.json.parseFromSlice(std.json.Value, self.allocator, body, .{});
+        defer parsed.deinit();
+        const matching_name = std.mem.eql(u8, try publicationString(parsed.value, "name"), package_name);
+        const matching_version = std.mem.eql(u8, try publicationString(parsed.value, "version"), version);
+        if (!matching_name or !matching_version) return error.PublicationMetadataMismatch;
+        const dist = parsed.value.object.get("dist") orelse return error.InvalidPublicationMetadata;
+        const integrity = publicationString(dist, "integrity") catch null;
+        const shasum = publicationString(dist, "shasum") catch null;
+        if (integrity == null and shasum == null) return error.InvalidPublicationMetadata;
+        if (expected_integrity) |expected| {
+            if (integrity) |advertised| {
+                if (!std.mem.eql(u8, advertised, expected)) return error.PublicationIntegrityMismatch;
+            }
+        }
+        const tarball_url = try publicationString(dist, "tarball");
+        const tarball = try self.publicBytes(tarball_url, 100 * 1024 * 1024) orelse return false;
+        defer self.allocator.free(tarball);
+        var digest: [64]u8 = undefined;
+        std.crypto.hash.sha2.Sha512.hash(tarball, &digest, .{});
+        var actual: [95]u8 = undefined;
+        @memcpy(actual[0..7], "sha512-");
+        _ = std.base64.standard.Encoder.encode(actual[7..], &digest);
+        if (expected_integrity) |expected| {
+            if (!std.mem.eql(u8, &actual, expected)) return error.PublicationIntegrityMismatch;
+        }
+        if (integrity) |advertised| {
+            if (!std.mem.eql(u8, &actual, advertised)) return error.PublicationIntegrityMismatch;
+        } else if (shasum) |advertised| {
+            // Historical npm versions may advertise only SHA-1. This applies
+            // to verified skip-existing, not a weaker check of our new upload.
+            var sha1: [20]u8 = undefined;
+            std.crypto.hash.Sha1.hash(tarball, &sha1, .{});
+            const actual_sha1 = std.fmt.bytesToHex(sha1, .lower);
+            if (!std.ascii.eqlIgnoreCase(&actual_sha1, advertised)) return error.PublicationIntegrityMismatch;
+        }
+        return true;
+    }
 
-        const status = @backingInt(response.head.status);
-        if (status == 200) return true;
-        if (status == 404) return false;
-        // Treat other statuses as "unknown" — caller will fall through to a
-        // real publish attempt rather than incorrectly skipping.
-        return error.RegistryError;
+    fn awaitPublicationTask(self: *RegistryClient, package_name: []const u8, version: []const u8, expected_integrity: ?[]const u8) anyerror!bool {
+        var delay_ms: u64 = 1000;
+        while (true) {
+            const ready = self.publicationReady(package_name, version, expected_integrity) catch |err| switch (err) {
+                error.Canceled, error.PublicationMetadataMismatch, error.PublicationIntegrityMismatch => return err,
+                else => false,
+            };
+            if (ready) return true;
+            try io_helper.getIo().sleep(.{ .nanoseconds = @as(i96, @intCast(delay_ms * std.time.ns_per_ms)) }, .awake);
+            delay_ms = @min(delay_ms * 2, 8000);
+        }
+    }
+
+    /// Bound the entire readback, including a server that stalls mid-body.
+    /// Timing out means pending, never that an accepted upload should be sent
+    /// again. Cancel and reap every outstanding I/O task before returning.
+    pub fn confirmPublication(self: *RegistryClient, package_name: []const u8, version: []const u8, expected_integrity: ?[]const u8, timeout_ms: u64) !bool {
+        const Selection = union(enum) {
+            ready: anyerror!bool,
+            timeout: void,
+        };
+        var result_buffer: [2]Selection = undefined;
+        var selection = std.Io.Select(Selection).init(io_helper.getIo(), &result_buffer);
+        defer {
+            while (selection.cancel()) |_| {}
+        }
+        try selection.concurrent(.ready, awaitPublicationTask, .{ self, package_name, version, expected_integrity });
+        try selection.concurrent(.timeout, publishTimeoutTask, .{timeout_ms});
+        return switch (try selection.await()) {
+            .ready => |ready| try ready,
+            .timeout => false,
+        };
     }
 
     // Private helper methods
@@ -1057,6 +1245,15 @@ test "npm publish metadata applies resolved access and dist-tag" {
     const dist_tags = parsed.value.object.get("dist-tags").?.object;
     try std.testing.expectEqualStrings("1.2.3", dist_tags.get("next").?.string);
     try std.testing.expect(dist_tags.get("latest") == null);
+}
+
+test "restricted publication credentials require the exact registry origin" {
+    const origin = try std.Uri.parse("https://registry.example:443/packages");
+    try std.testing.expect(RegistryClient.samePublicationOrigin(origin, try std.Uri.parse("https://REGISTRY.example/tarball")));
+    try std.testing.expect(!RegistryClient.samePublicationOrigin(origin, try std.Uri.parse("http://registry.example:443/tarball")));
+    try std.testing.expect(!RegistryClient.samePublicationOrigin(origin, try std.Uri.parse("https://registry.example:8443/tarball")));
+    try std.testing.expect(!RegistryClient.samePublicationOrigin(origin, try std.Uri.parse("https://cdn.registry.example/tarball")));
+    try std.testing.expect(!RegistryClient.samePublicationOrigin(origin, try std.Uri.parse("https://elsewhere.example/tarball")));
 }
 
 /// Response from registry publish operation
