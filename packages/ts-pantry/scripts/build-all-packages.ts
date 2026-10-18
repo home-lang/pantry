@@ -64,6 +64,7 @@ interface BuildablePackage {
   name: string
   latestVersion: string
   versions: string[] // All available versions for fallback
+  pinnedVersions?: string[] // Exact requested versions are never truncated by automatic limits
   pantryYamlPath: string
   hasDistributable: boolean
   hasBuildScript: boolean
@@ -1140,7 +1141,8 @@ const POPULAR_PACKAGES = new Set<string>([
   'alacritty.org', 'charm.sh/glow', 'charm.sh/gum', 'restic.net/restic',
 ])
 
-async function selectVersionsForBuild(pkg: BuildablePackage, maxVersions: number): Promise<string[]> {
+export async function selectVersionsForBuild(pkg: BuildablePackage, maxVersions: number): Promise<string[]> {
+  if (pkg.pinnedVersions?.length) return [...pkg.pinnedVersions]
   // Tier the version count: popular packages get POPULAR_MAX_VERSIONS (deeper history),
   // everyone else the standard maxVersions.
   const effectiveMax = POPULAR_PACKAGES.has(pkg.domain) ? Math.max(maxVersions, POPULAR_MAX_VERSIONS) : maxVersions
@@ -1750,7 +1752,7 @@ export function applyVersionPins<T extends { domain: string, name: string, versi
   const pinned = pins.get(pkg.domain) ?? pins.get(pkg.name)
   if (!pinned?.length)
     return pkg
-  return { ...pkg, versions: [...pinned], latestVersion: pinned[0] }
+  return { ...pkg, versions: [...pinned], pinnedVersions: [...pinned], latestVersion: pinned[0] }
 }
 
 /** Keep exact version intent when handing selected packages to another runner. */
@@ -2990,7 +2992,7 @@ Options:
   BUILD_IS_FOREIGN = platform !== detectedPlatform // cross-platform fanout target
   const batchSize = parseInt(values['batch-size'] || '50', 10)
   const force = values.force || false
-  const multiVersion = values['multi-version'] || false
+  let multiVersion = values['multi-version'] || false
   const maxVersions = parseInt(values['max-versions'] || '5', 10)
   POPULAR_MAX_VERSIONS = parseInt(values['popular-max-versions'] || '20', 10)
 
@@ -3023,6 +3025,7 @@ Options:
   // vim.org publish red — and the darwin-native gate uses this same matcher, so
   // it could allocate a Mac for packages nobody asked about.
   const requested = values.package ? parseRequestedPackages(values.package) : null
+  if (requested && [...requested.pins.values()].some(versions => versions.length > 1)) multiVersion = true
   if (requested) {
     allPackages = allPackages
       .filter(p => matchesRequestedPackage(p.domain, p.name, requested.selectors, requested.exactSelectors))

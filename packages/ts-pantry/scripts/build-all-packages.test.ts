@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { classifyTargetedFailures as classify, selectedPackageSelectors, applyVersionPins, assignStripe, selectRecentVersions, isAppRecipePath, isPublishedArtifactRecord, isSourceUnavailableError, scriptCompiles, matchesRequestedPackage, parseRequestedPackages, pkgxHasPrebuilt, relocateMirroredPaths, normalizeMirroredArtifact, summariseTimings, type PackageTiming } from './build-all-packages'
+import { classifyTargetedFailures as classify, selectedPackageSelectors, applyVersionPins, selectVersionsForBuild, assignStripe, selectRecentVersions, isAppRecipePath, isPublishedArtifactRecord, isSourceUnavailableError, scriptCompiles, matchesRequestedPackage, parseRequestedPackages, pkgxHasPrebuilt, relocateMirroredPaths, normalizeMirroredArtifact, summariseTimings, type PackageTiming } from './build-all-packages'
 
 test('an explicitly requested excluded version fails instead of reporting an empty successful publication', () => {
   const child = Bun.spawnSync(['bun', 'scripts/build-all-packages.ts', '--platform', 'linux-arm64', '-p', 'unicode.org@70.1.0', '--source-only', '--print-selected'], { cwd: import.meta.dir + '/..', stdout: 'pipe', stderr: 'pipe' })
@@ -558,4 +558,11 @@ test('selects the ReviewOS MySQL 8.4 LTS contract independently of calendar rele
   const child = Bun.spawnSync([process.execPath, 'scripts/build-all-packages.ts', '--platform', 'linux-x86-64', '-p', 'mysql.com@8.4.11', '--source-only', '--print-selected'], { cwd: import.meta.dir + '/..', stdout: 'pipe', stderr: 'pipe' })
   expect(child.exitCode, child.stderr.toString()).toBe(0)
   expect(child.stdout.toString().trim()).toBe('mysql.com@8.4.11')
+})
+
+
+test('every exact pin survives the automatic version selection limit', async () => {
+  const pkg = { domain: 'mysql.com', name: 'mysql', versions: ['26.7.0', '8.4.11'], latestVersion: '26.7.0', pantryYamlPath: '', hasDistributable: true, hasBuildScript: true, needsProps: false, hasProps: false, depDomains: [], isApp: false, isDownloadRecipe: false }
+  const pinned = applyVersionPins(pkg, new Map([['mysql.com', ['26.7.0', '8.4.11']]]))
+  expect(await selectVersionsForBuild(pinned, 1)).toEqual(['26.7.0', '8.4.11'])
 })
