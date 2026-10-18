@@ -869,7 +869,13 @@ pub const RegistryClient = struct {
         };
         // Public readback never forwards a publish credential to the tarball
         // host, which may differ from the registry host.
-        var req = try self.http_client.request(.GET, uri, .{ .extra_headers = &headers });
+        // A canceled read must close its owned connection. Returning an
+        // incomplete response to the keep-alive pool makes Request.deinit
+        // drain the stalled body after cancellation, defeating our deadline.
+        var req = try self.http_client.request(.GET, uri, .{
+            .extra_headers = &headers,
+            .keep_alive = false,
+        });
         defer req.deinit();
         try req.sendBodiless();
         var redirect_buffer: [4096]u8 = undefined;
