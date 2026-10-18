@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import { createHash, createHmac, randomUUID } from 'node:crypto'
-import { closeSync, mkdtempSync, openSync, readFileSync, readdirSync, readlinkSync, rmSync } from 'node:fs'
+import { closeSync, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, readlinkSync, rmSync, symlinkSync } from 'node:fs'
 import { Agent, request } from 'node:http'
 import { connect, createServer } from 'node:net'
 import { tmpdir } from 'node:os'
@@ -129,7 +129,13 @@ async function api(port: number, operation: string, payload: Record<string, unkn
 }
 
 try {
-  const actualVersion = execFileSync(launcher, ['-version'], { encoding: 'utf8', timeout: 3000 }).trim()
+  // Pantry exposes package programs from .bin. Exercise that entry shape as
+  // well as the package tree, so a launcher cannot pass only when invoked
+  // directly from its original bin directory.
+  mkdirSync(join(root, '.bin'))
+  const executable = join(root, '.bin', 'dynamodb-local')
+  symlinkSync(launcher, executable)
+  const actualVersion = execFileSync(executable, ['-version'], { encoding: 'utf8', timeout: 3000 }).trim()
   if (!actualVersion.includes(version)) throw new Error(`DynamoDB version mismatch: ${actualVersion}`)
   const reservation = createServer()
   await new Promise<void>((resolve, reject) => {
@@ -140,7 +146,7 @@ try {
   if (!address || typeof address === 'string') throw new Error('Missing DynamoDB health port')
   const port = address.port
   await new Promise<void>((resolve, reject) => reservation.close(error => error ? reject(error) : resolve()))
-  child = Bun.spawn([launcher, '-port', String(port), '-dbPath', root, '-sharedDb', '-disableTelemetry'], {
+  child = Bun.spawn([executable, '-port', String(port), '-dbPath', root, '-sharedDb', '-disableTelemetry'], {
     cwd: root,
     stdout: log,
     stderr: log,
