@@ -53,7 +53,7 @@ jobs:
         if: inputs.build-publication-source
         run: |
           set -e
-          test "$(zig --version)" = 0.17.0
+          test "$(zig version)" = 0.17.0
           zig fmt --check packages/zig/src/auth/registry.zig packages/zig/src/cli/commands/package.zig packages/zig/src/main.zig
           (cd packages/zig && zig build -j2 -Doptimize=ReleaseSafe)
           packages/zig/zig-out/bin/pantry --version > artifacts/native-catalog/publication-cli-version.txt
