@@ -17,7 +17,7 @@ jobs:
       - name: Set up published Pantry and managed workspace tools
         uses: ./packages/action
         with:
-          version: 0.11.93
+          version: 0.11.94
           install: 'false'
           packages: bun.com@1.4.3
       - name: Install first-party JavaScript dependencies
@@ -30,7 +30,7 @@ jobs:
       - name: Verify registration invariants
         run: |
           set -o pipefail
-          bun test packages/ts-pantry/test/native-ci-metadata.test.ts packages/ts-pantry/test/native-ci-tools-recipe.test.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts packages/ts-pantry/test/generated-package-docs.test.ts packages/ts-pantry/test/fetch.test.ts packages/action/src/services.test.ts packages/ts-pantry/test/resolve-build-version.test.ts 2>&1 | tee artifacts/native-catalog/recipe-tests.log
+          bun test packages/ts-pantry/test/native-ci-metadata.test.ts packages/ts-pantry/test/native-ci-tools-recipe.test.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts packages/ts-pantry/test/generated-package-docs.test.ts packages/ts-pantry/test/fetch.test.ts packages/action/src/services.test.ts packages/action/src/native-dynamodb.test.ts packages/action/src/native-cache.test.ts packages/ts-pantry/test/resolve-build-version.test.ts 2>&1 | tee artifacts/native-catalog/recipe-tests.log
       - name: Verify locked tool selection against the installer contract
         run: bun test packages/action/src/lock-version.test.ts
       - name: Verify real HTTP registry lookup failures and credential scope
@@ -40,7 +40,7 @@ jobs:
       - name: Typecheck the normal Pantry source
         run: bun run typecheck
       - name: Lint package documentation generation
-        run: bunx --bun pickier run --mode lint packages/ts-pantry/src/fetch.ts packages/ts-pantry/test/generated-package-docs.test.ts packages/ts-pantry/scripts/resolve-build-version.ts packages/ts-pantry/test/resolve-build-version.test.ts packages/action/src/services.ts packages/action/src/services.test.ts
+        run: bunx --bun pickier run --mode lint packages/ts-pantry/src/fetch.ts packages/ts-pantry/test/generated-package-docs.test.ts packages/ts-pantry/scripts/resolve-build-version.ts packages/ts-pantry/test/resolve-build-version.test.ts packages/action/src/index.ts packages/action/src/services.ts packages/action/src/services.test.ts packages/action/src/native-dynamodb.ts packages/action/src/native-dynamodb.test.ts packages/action/src/native-cache.test.ts
       - name: Lint the native DynamoDB provider and build assets
         if: inputs.verify-dynamodb
         run: bunx --bun pickier run --mode lint packages/ts-pantry/scripts/maven-versions.ts packages/ts-pantry/scripts/copy-recipe-props.ts packages/ts-pantry/src/recipes/aws.amazon.com/dynamodb-local.ts packages/ts-pantry/src/recipes/props/aws.amazon.com/dynamodb-local/health.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts
@@ -62,7 +62,7 @@ jobs:
       - name: Verify that a stale development lock cannot replace the stable compiler
         uses: ./packages/action
         with:
-          version: 0.11.93
+          version: 0.11.94
           install: 'false'
           packages: ziglang.org@0.17.0 bun.com@1.4.3
       - name: Verify the actual managed compiler identity
@@ -123,7 +123,7 @@ jobs:
       - name: Set up published Pantry and its managed test runtime
         uses: ./packages/action
         with:
-          version: 0.11.93
+          version: 0.11.94
           install: 'false'
           packages: bun.com@1.4.3
       - uses: actions/download-artifact@v4
@@ -161,7 +161,7 @@ jobs:
       - name: Set up published Pantry and its managed test runtime
         uses: ./packages/action
         with:
-          version: 0.11.93
+          version: 0.11.94
           install: 'false'
           packages: bun.com@1.4.3
       - uses: actions/download-artifact@v4

@@ -9,6 +9,7 @@ import { nativeServiceEnvironment } from './services'
 import type { ServiceProcessIdentity } from './service-ownership'
 import { assertServiceDirectory, assertServiceProcess, claimServiceDirectory, serviceProcessIdentity } from './service-ownership'
 import { startNativeMysql } from './native-mysql'
+import { startNativeDynamodb } from './native-dynamodb'
 
 const execute = promisify(execFile)
 const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -219,6 +220,8 @@ done
 /** Pantry-installed binaries, private data, authenticated readiness, bounded cleanup. */
 export async function startNativeService(service: ServiceSpec, binDir: string, temporaryRoot: string, options: NativeServiceOptions = {}): Promise<{ state: NativeServiceState, environment: Record<string, string>, version: string }> {
   if (process.platform !== 'darwin' && process.platform !== 'linux') throw new Error('Native Pantry services require Linux or macOS')
+  if (service.name === 'dynamodb' && (process.platform !== 'linux' || process.arch !== 'x64'))
+    throw new Error('Native DynamoDB Local currently requires Linux x86-64')
   mkdirSync(temporaryRoot, { recursive: true })
   const directory = realpathSync(mkdtempSync(join(temporaryRoot, `pantry-${service.name}-`)))
   const env = nativeServiceEnvironment(binDir, process.platform)
@@ -234,6 +237,7 @@ export async function startNativeService(service: ServiceSpec, binDir: string, t
   try {
     checkpointNativeService(state, options.onState)
     const port = await freeServicePort()
+    if (service.name === 'dynamodb') return await startNativeDynamodb(service, state, env, port, options.onState)
     if (service.name === 'mysql') return await startNativeMysql(service, state, env, port, secret, options.onState)
     if (service.name === 'postgres') {
       const { stdout } = await execute(join(binDir, 'postgres'), ['--version'], { env, timeout: 10_000 })

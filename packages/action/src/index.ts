@@ -791,10 +791,14 @@ export async function run(): Promise<void> {
     // Avoid hashing the same file twice when lockfile == depsFile
     const depsHash = (depsFileForKey && depsFileForKey !== lockfile) ? hashFile(depsFileForKey) : 'none'
     const systemDeps = selectSystemPackages(inputs.packages, inputs.setupOnly, extractSystemDeps)
+    // The restored prefix also contains every service and its native dependency
+    // graph. A rebuilt server artifact must invalidate it even when the CLI,
+    // explicit runtime packages and requested service versions are unchanged.
+    const cacheDeps = mergeServicePackages(systemDeps.join(' '), requestedServices).split(/\s+/).filter(Boolean)
     const lockedVersions = readLockedVersions()
     let artifactIdentity: string | undefined
     try {
-      artifactIdentity = await nativeArtifactCacheIdentity(systemDeps, platform, undefined, undefined, lockedVersions)
+      artifactIdentity = await nativeArtifactCacheIdentity(cacheDeps, platform, undefined, undefined, lockedVersions)
     }
     catch (error) {
       core.warning(`Native artifact identity unavailable; installing without a dependency cache: ${error}`)

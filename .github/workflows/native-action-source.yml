@@ -30,9 +30,9 @@ jobs:
         with:
           ref: ${{ inputs.source-ref }}
       - name: Bootstrap the published workspace runtime through Pantry
-        uses: pantry-pm/pantry/packages/action@e4b2d439c174c41d3e1c99b5743acb5789e92231 # v0.11.93
+        uses: pantry-pm/pantry/packages/action@da17bb9317e8f8c247618fb176fe97269f15bfe4 # v0.11.94
         with:
-          version: 0.11.93
+          version: 0.11.94
           install: 'false'
           packages: bun.com@1.4.3
       - run: bun install --frozen-lockfile
@@ -41,7 +41,7 @@ jobs:
           set -e
           git rev-parse HEAD
           bun run typecheck
-          bun test packages/action/src/services.test.ts packages/action/src/service-ownership.test.ts packages/action/src/bootstrap.test.ts packages/action/src/build-portability.test.ts packages/action/src/release-download.test.ts
+          bun test packages/action/src/services.test.ts packages/action/src/native-dynamodb.test.ts packages/action/src/native-cache.test.ts packages/action/src/service-ownership.test.ts packages/action/src/bootstrap.test.ts packages/action/src/build-portability.test.ts packages/action/src/release-download.test.ts
       - name: Build this checkout's Action bundles
         run: bun run --cwd packages/action build
       - name: Run the built Action with published native service packages
@@ -51,7 +51,7 @@ jobs:
           version: ${{ inputs.pantry-version }}
           install: 'false'
           packages: bun.com@1.4.3
-          services: postgres@17.11 mysql@${{ matrix.mysql }} redis@8.8.0 typesense@30.2
+          services: postgres@17.11 mysql@${{ matrix.mysql }} redis@8.8.0 typesense@30.2 ${{ runner.os == 'Linux' && 'dynamodb@3.3.0' || '' }}
       - name: Verify Action outputs and real PostgreSQL authentication
         env:
           ACTION_MYSQL_URL: ${{ steps.pantry.outputs.mysql-url }}

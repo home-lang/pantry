@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { mergeServicePackages, nativeServiceEnvironment, pantryLibraryPaths, parseRedisVersion, parseServiceSpecs, readRedisPid, readServiceLog, redisLaunchArgs, waitForRedisPid } from './services'
+import type { ServiceSpec } from './services'
 
 describe('GitHub Actions services', () => {
   test('parses an exact Redis service and rejects ambiguous declarations', () => {
@@ -58,6 +59,8 @@ describe('GitHub Actions services', () => {
       expect(nativeServiceEnvironment(pantryBin, 'darwin', {}).DYLD_LIBRARY_PATH)
         .toBe(`${curl}:${openssl}`)
       const environment = nativeServiceEnvironment(pantryBin, 'linux', { LD_LIBRARY_PATH: '/system/lib' })
+      expect(environment.PATH).toBe(pantryBin)
+      expect(nativeServiceEnvironment(pantryBin, 'linux', { PATH: '/system/bin' }).PATH).toBe(`${pantryBin}:/system/bin`)
       expect(nativeServiceEnvironment(pantryBin, 'linux', environment)).toEqual(environment)
       expect(nativeServiceEnvironment(pantryBin, 'windows', { PATH: 'C:\\Windows' }))
         .toEqual({ PATH: 'C:\\Windows' })
@@ -117,4 +120,16 @@ test('MySQL service versions are exact and install the canonical native package'
   expect(() => parseServiceSpecs('mysql@26.7')).toThrow('exact semantic versions')
   expect(() => parseServiceSpecs('mysql mysql.com')).toThrow('Duplicate')
   expect(() => mergeServicePackages('mysql.com@8.0.43', parseServiceSpecs('mysql@26.7.0'))).toThrow('Conflicting')
+})
+
+test('DynamoDB Local services use the native provider for every supported alias', () => {
+  const expected: ServiceSpec[] = [{ name: 'dynamodb', packageSpec: 'aws.amazon.com/dynamodb-local@3.3.0', expectedVersion: '3.3.0' }]
+  for (const alias of ['dynamodb', 'dynamodb-local', 'aws.amazon.com/dynamodb-local']) {
+    expect(parseServiceSpecs(`${alias}@3.3.0`)).toEqual(expected)
+    expect(mergeServicePackages(`${alias}@3.3.0`, parseServiceSpecs('dynamodb@3.3.0'))).toBe(`${alias}@3.3.0`)
+    expect(() => mergeServicePackages(`${alias}@3.2.0`, parseServiceSpecs('dynamodb@3.3.0'))).toThrow('Conflicting')
+  }
+  expect(() => parseServiceSpecs('dynamodb dynamodb-local')).toThrow('Duplicate')
+  expect(() => parseServiceSpecs('dynamodb@3.3')).toThrow('exact semantic versions')
+  expect(() => parseServiceSpecs('dynamodb@^3.3.0')).toThrow('exact semantic versions')
 })
