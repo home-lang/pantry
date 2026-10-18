@@ -1128,6 +1128,7 @@ import { kagglecomPackage } from './kagglecom'
 import { kamaldeployorgPackage } from './kamal-deployorg'
 import { keephqdevPackage } from './keephqdev'
 import { kerberosorgPackage } from './kerberosorg'
+import { libkeyutilsPackage } from './kernel.org/keyutils'
 import { kernelorglibcapPackage } from './kernel.org/libcap'
 import { kernelorglinuxheadersPackage } from './kernel.org/linux-headers'
 import { perfPackage } from './kernel.org/perf'
@@ -3747,6 +3748,8 @@ export interface Pantry {
   kamaldeployorg: typeof kamaldeployorgPackage
   keephqdev: typeof keephqdevPackage
   kerberosorg: typeof kerberosorgPackage
+  keyutils: typeof libkeyutilsPackage
+  kernelorgkeyutils: typeof libkeyutilsPackage
 
   kernelorglibcap: typeof kernelorglibcapPackage
   linux_headers: typeof kernelorglinuxheadersPackage
@@ -5496,6 +5499,7 @@ export interface Pantry {
   'libimobiledevice-glue': typeof libimobiledeviceorglibimobiledevicegluePackage
   'libisl.sourceforge': typeof libislsourceforgeioPackage
   'libjpeg-turbo': typeof libjpegturboorgPackage
+  libkeyutils: typeof libkeyutilsPackage
   libkml: typeof libkmlPackage
   libksba: typeof gnupgorglibksbaPackage
   liblinear: typeof csientuedutwcjlinliblinearPackage
@@ -8445,6 +8449,8 @@ export const pantry: Pantry = {
   kamaldeployorg: kamaldeployorgPackage,
   keephqdev: keephqdevPackage,
   kerberosorg: kerberosorgPackage,
+  keyutils: libkeyutilsPackage,
+  kernelorgkeyutils: libkeyutilsPackage,
 
   kernelorglibcap: kernelorglibcapPackage,
   linux_headers: kernelorglinuxheadersPackage,
@@ -10194,6 +10200,7 @@ export const pantry: Pantry = {
   'libimobiledevice-glue': libimobiledeviceorglibimobiledevicegluePackage,
   'libisl.sourceforge': libislsourceforgeioPackage,
   'libjpeg-turbo': libjpegturboorgPackage,
+  libkeyutils: libkeyutilsPackage,
   libkml: libkmlPackage,
   libksba: gnupgorglibksbaPackage,
   liblinear: csientuedutwcjlinliblinearPackage,

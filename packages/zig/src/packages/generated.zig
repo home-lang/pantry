@@ -1,6 +1,6 @@
 //! Package definitions generated from ts-pantry
 //! DO NOT EDIT MANUALLY - This file is auto-generated
-//! Total packages: 1764
+//! Total packages: 1765
 
 const std = @import("std");
 
@@ -17,7 +17,7 @@ pub const PackageInfo = struct {
     versions: []const []const u8,
 };
 
-/// All known packages (1764 total)
+/// All known packages (1765 total)
 pub const packages = [_]PackageInfo{ .{
     .name = "1Password",
     .domain = "1password.com",
@@ -4215,7 +4215,7 @@ pub const packages = [_]PackageInfo{ .{
     .homepage_url = "https://p11-glue.freedesktop.org",
     .programs = &[_][]const u8{ "p11-kit", "trust" },
     .dependencies = &[_][]const u8{ "sourceware.org/libffi^3", "curl.se/ca-certs", "gnu.org/libtasn1^4", "gnu.org/gettext" },
-    .build_dependencies = &[_][]const u8{ "python.org@3", "mesonbuild.com" },
+    .build_dependencies = &[_][]const u8{ "python.org@3", "mesonbuild.com", "ninja-build.org", "gnu.org/coreutils", "freedesktop.org/pkg-config" },
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "0.26.2", "0.26.1", "0.26.0", "0.25.10", "0.25.9", "0.25.8", "0.25.7", "0.25.6", "0.25.5", "0.25.4", "0.25.3", "0.25.2", "0.25.1", "0.25.0", "0.24.1" },
 }, .{
@@ -10969,6 +10969,16 @@ pub const packages = [_]PackageInfo{ .{
     .aliases = &[_][]const u8{},
     .versions = &[_][]const u8{ "1.22.2", "1.22.1", "1.22", "1.22.0", "1.21.3", "1.21.2", "1.21.1", "1.21", "1.21.0", "1.20.2", "1.20.1", "1.20", "1.19.4", "1.19.3", "1.19.2", "1.19.1", "1.19", "1.18.5", "1.18.4", "1.18.3", "1.18.2", "1.18.1", "1.18", "1.17.2", "1.17.1", "1.17", "1.16.4", "1.16.3", "1.16.2", "1.16.1", "1.16", "1.15.5", "1.15.4", "1.15.3", "1.15.2", "1.15.1", "1.15", "1.14.6", "1.14.5", "1.14.4", "1.14.3", "1.14.2", "1.14.1", "1.14", "1.13.7", "1.13.6", "1.13.5", "1.13.4", "1.13.3", "1.13.2", "1.13.1", "1.13", "1.12.5", "1.12.4", "1.12.3", "1.12.2", "1.12.1", "1.12", "1.11.6", "1.11.5", "1.11.4", "1.11.3", "1.11.2", "1.11.1", "1.11", "1.10.7", "1.10.6", "1.10.5", "1.10.4", "1.10.3", "1.10.2", "1.10.1", "1.10", "1.9.5" },
 }, .{
+    .name = "libkeyutils",
+    .domain = "kernel.org/keyutils",
+    .description = "Linux key retention client library and development interface.",
+    .homepage_url = "https://kernel.googlesource.com/pub/scm/linux/kernel/git/dhowells/keyutils/",
+    .programs = &[_][]const u8{},
+    .dependencies = &[_][]const u8{},
+    .build_dependencies = &[_][]const u8{ "gnu.org/make", "gnu.org/sed", "gnu.org/coreutils", "gnu.org/binutils", "freedesktop.org/pkg-config", "kernel.org/linux-headers" },
+    .aliases = &[_][]const u8{},
+    .versions = &[_][]const u8{"1.6.3"},
+}, .{
     .name = "libcap",
     .domain = "kernel.org/libcap",
     .description = "",
@@ -12724,7 +12734,7 @@ pub const packages = [_]PackageInfo{ .{
     .description = "MySQL Server, the world's most popular open source database, and MySQL Cluster, a real-time, open source transactional database.",
     .homepage_url = "http://www.mysql.com/",
     .programs = &[_][]const u8{ "my_print_defaults", "myisam_ftdump", "myisamchk", "myisamlog", "myisampack", "mysql", "mysql_config", "mysql_config_editor", "mysql_migrate_keyring", "mysql_secure_installation", "mysql_tzinfo_to_sql", "mysqladmin", "mysqlbinlog", "mysqlcheck", "mysqld", "mysqld_multi", "mysqld_safe", "mysqldump", "mysqldumpslow", "mysqlimport", "mysqlshow", "mysqlslap" },
-    .dependencies = &[_][]const u8{ "openssl.org^3", "perl.org^5", "invisible-island.net/ncurses^6", "curl.se^8", "linux:sourceforge.net/libtirpc", "linux:pagure.io/libaio^0.3.113", "linux:github.com/numactl/numactl^2", "linux:gnu.org/gcc/libstdcxx@14", "linux:systemd.io/libudev", "linux:github.com/besser82/libxcrypt^4" },
+    .dependencies = &[_][]const u8{ "openssl.org^3", "perl.org^5", "invisible-island.net/ncurses^6", "curl.se^8", "linux:sourceforge.net/libtirpc", "linux:pagure.io/libaio^0.3.113", "linux:github.com/numactl/numactl^2", "linux:gnu.org/gcc/libstdcxx@14", "linux:systemd.io/libudev", "linux:github.com/besser82/libxcrypt^4", "linux:kernel.org/keyutils^1" },
     .build_dependencies = &[_][]const u8{},
     .aliases = &[_][]const u8{"mysql"},
     .versions = &[_][]const u8{ "26.7.0", "8.4.11", "8.0.45", "8.0.44", "8.0.43" },

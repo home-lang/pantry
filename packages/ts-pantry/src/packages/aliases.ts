@@ -806,6 +806,7 @@ export const aliases: Record<string, string> = {
   'libimobiledevice-glue': 'libimobiledevice.org/libimobiledevice-glue',
   'libisl.sourceforge': 'libisl.sourceforge.io',
   'libjpeg-turbo': 'libjpeg-turbo.org',
+  'libkeyutils': 'kernel.org/keyutils',
   'libkml': 'github.com/libkml/libkml',
   'libksba': 'gnupg.org/libksba',
   'liblinear': 'csie.ntu.edu.tw/cjlin/liblinear',

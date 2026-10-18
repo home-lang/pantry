@@ -9,7 +9,7 @@
  * @install `pantry install freedesktop.org/p11-kit`
  * @homepage https://p11-glue.freedesktop.org
  * @dependencies `sourceware.org/libffi^3`, `curl.se/ca-certs`, `gnu.org/libtasn1^4`, ... (+1 more)
- * @buildDependencies `python.org@3`, `mesonbuild.com` - required only when building from source
+ * @buildDependencies `python.org@3`, `mesonbuild.com`, `ninja-build.org`, ... (+2 more) - required only when building from source
  *
  * @example
  * ```typescript
@@ -73,6 +73,9 @@ export const freedesktoporgp11kitPackage = {
   buildDependencies: [
     'python.org@3',
     'mesonbuild.com',
+    'ninja-build.org',
+    'gnu.org/coreutils',
+    'freedesktop.org/pkg-config',
   ] as const,
   /**
   * Available versions from newest to oldest.
