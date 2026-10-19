@@ -1,3 +1,28 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.97...v0.11.98)
+
+## ✨ Features
+
+- **publish**: print where each npm OIDC publish spends its time ([c236197](https://github.com/pantry-pm/pantry/commit/c236197)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- **action**: resolve native activation before package resources ([b205b35](https://github.com/pantry-pm/pantry/commit/b205b35)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **release**: verify the original accepted npm publication ([e7a0c16](https://github.com/pantry-pm/pantry/commit/e7a0c16)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.98 ([3bd3c4e](https://github.com/pantry-pm/pantry/commit/3bd3c4e)) _(by Chris Breuer <chris@stacksjs.com>)_
+- update encore.dev, github.com/ggerganov/llama.cpp, github.com/router-for-me/CLIProxyAPI, mise.jdx.dev, odigos.io, vim.org, zed.dev ([d955840](https://github.com/pantry-pm/pantry/commit/d955840)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' into codex/pantry95-native-action-integration ([8e479f0](https://github.com/pantry-pm/pantry/commit/8e479f0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.96...v0.11.97)
 
 ## 🐛 Bug Fixes
