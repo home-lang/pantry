@@ -491,12 +491,12 @@ jobs:
         env:
           JAVA_HOME: ${{ runner.temp }}/unselected-host-jdk
         with:
-          version: 0.11.95
+          version: 0.11.100
           install: 'false'
           packages: openjdk.org@17.0.20.8 android.com/cmdline-tools@14742923.0.0 bun.com@1.4.3
       - name: Verify the Action's real Java-dependent commands before release
         env:
-          PANTRY_EXPECT_VERSION: 0.11.95
+          PANTRY_EXPECT_VERSION: 0.11.100
         run: bun .github/scripts/native-toolchain-pins.ts
       - uses: actions/upload-artifact@v4
         if: always()

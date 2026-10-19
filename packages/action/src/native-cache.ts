@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { resolveTransitiveDependencies } from '../../ts-pantry/src/dependency-resolver'
-import { compareInstallerVersionsDesc, isSupported, resolveInstallerConstraintFromCandidates } from '../../ts-pantry/src/installer'
+import { compareInstallerVersionsDesc, isSupported, registryMetadata, resolveInstallerConstraintFromCandidates } from '../../ts-pantry/src/installer'
 import type { RegistryMetadata } from '../../ts-pantry/src/installer'
 import { resolvePackageDomain } from '../../ts-pantry/src/utils'
 import type { Platform } from './types'
@@ -10,9 +10,9 @@ export async function nativeArtifactCacheIdentity(
   specs: string[],
   platform: Platform,
   readMetadata: (domain: string) => Promise<RegistryMetadata> = async (domain) => {
-    const response = await fetch(`https://registry.pantry.dev/binaries/${encodeURI(domain)}/metadata.json`, { signal: AbortSignal.timeout(15_000) })
-    if (!response.ok) throw new Error(`${domain}: registry returned ${response.status}`)
-    return response.json() as Promise<RegistryMetadata>
+    const metadata = await registryMetadata(domain, { maxAttempts: 3, retryDelayMs: 500 })
+    if (!metadata) throw new Error(`${domain}: registry returned 404`)
+    return metadata
   },
   dependencies: (domain: string) => Promise<string[]> = async domain =>
     (await resolveTransitiveDependencies(domain, { targetOs: platform.os, targetArch: platform.arch })).map(dep => `${dep.name}@${dep.constraint.replace(/^@/, '')}`),

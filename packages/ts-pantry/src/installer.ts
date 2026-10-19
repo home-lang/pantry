@@ -734,7 +734,11 @@ function validateRegistryMetadata(value: unknown, domain: string): RegistryMetad
   return value as RegistryMetadata
 }
 
-async function registryMetadata(domain: string, retryOptions: NetworkRetryOptions = {}): Promise<RegistryMetadata | null> {
+/**
+ * Read and validate registry metadata using the installer's bounded GET retries.
+ * Only a confirmed 404 reports absence; availability and malformed data fail.
+ */
+export async function registryMetadata(domain: string, retryOptions: NetworkRetryOptions = {}): Promise<RegistryMetadata | null> {
   try {
     const metadata = await fetchJSON(`${registryBase()}/binaries/${encodeURI(domain)}/metadata.json`, 5, retryOptions)
     return validateRegistryMetadata(metadata, domain)
