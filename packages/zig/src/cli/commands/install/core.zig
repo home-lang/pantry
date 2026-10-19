@@ -1473,12 +1473,14 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         name: []const u8,
         version: []const u8,
         source: lib.packages.PackageSource,
+        direct: bool,
         integrity: ?[]const u8 = null,
     }).empty;
     defer {
         for (installed_packages.items) |pkg| {
             allocator.free(pkg.name);
             allocator.free(pkg.version);
+            if (pkg.integrity) |integrity| allocator.free(integrity);
         }
         installed_packages.deinit(allocator);
     }
@@ -1674,6 +1676,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             .name = allocator.dupe(u8, name) catch continue,
             .version = allocator.dupe(u8, result.version) catch continue,
             .source = spec.source,
+            .direct = !is_transitive_dep,
             .integrity = tracked_integrity,
         }) catch |err| {
             style.print("Warning: Failed to track installed package {s}: {}\n", .{ name, err });
@@ -1731,6 +1734,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // Add new packages to the lockfile (replace existing versions of same package)
         for (installed_packages.items) |pkg| {
+            try recordNamedSystemConstraint(allocator, &lockfile, pkg.name, pkg.version, pkg.source, pkg.direct);
+
             // First, remove any existing entries for this package (different versions)
             var keys_to_remove = std.ArrayList([]const u8).empty;
             defer keys_to_remove.deinit(allocator);
@@ -1794,6 +1799,68 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     }
 
     return .{ .exit_code = 0 };
+}
+
+/// Named installs write a caret constraint for the resolved version to deps.yaml.
+/// Keep an existing workspace's system constraint in sync with that declaration,
+/// well as the package pin below. Otherwise the next frozen project install
+/// sees the old runtime constraint even though the named install succeeded.
+/// Dependencies pulled in by that runtime must not become direct declarations.
+fn recordNamedSystemConstraint(
+    allocator: std.mem.Allocator,
+    lockfile: *lib.packages.Lockfile,
+    name: []const u8,
+    version: []const u8,
+    source: lib.packages.PackageSource,
+    direct: bool,
+) !void {
+    if (!direct or source != .pantry) return;
+    const root = lockfile.workspaces.getPtr("") orelse return;
+    if (root.system == null)
+        root.system = std.StringHashMap([]const u8).init(allocator);
+
+    const owned_version = try std.fmt.allocPrint(allocator, "^{s}", .{version});
+    errdefer allocator.free(owned_version);
+    if (root.system.?.getPtr(name)) |existing| {
+        allocator.free(existing.*);
+        existing.* = owned_version;
+    } else {
+        const owned_name = try allocator.dupe(u8, name);
+        errdefer allocator.free(owned_name);
+        try root.system.?.put(owned_name, owned_version);
+    }
+}
+
+test "named system installs refresh only successful direct workspace constraints" {
+    const allocator = std.testing.allocator;
+    const t = std.testing;
+    var lockfile = try lib.packages.Lockfile.init(allocator, "1.0.0");
+    defer lockfile.deinit(allocator);
+    var system = std.StringHashMap([]const u8).init(allocator);
+    try system.put(try allocator.dupe(u8, "bun.sh"), try allocator.dupe(u8, "1.3.14"));
+    try system.put(try allocator.dupe(u8, "ziglang.org"), try allocator.dupe(u8, "0.16.0"));
+    try lockfile.addWorkspace(allocator, "", .{
+        .name = try allocator.dupe(u8, "fixture"),
+        .system = system,
+    });
+    try lockfile.addWorkspace(allocator, "packages/ui", .{
+        .name = try allocator.dupe(u8, "@fixture/ui"),
+    });
+    try lockfile.addEntry(allocator, "lit@3.3.1", .{
+        .name = try allocator.dupe(u8, "lit"),
+        .version = try allocator.dupe(u8, "3.3.1"),
+        .source = .npm,
+    });
+
+    try recordNamedSystemConstraint(allocator, &lockfile, "bun.sh", "1.4.3", .pantry, true);
+    try recordNamedSystemConstraint(allocator, &lockfile, "openssl.org", "3.6.0", .pantry, false);
+    try recordNamedSystemConstraint(allocator, &lockfile, "lit", "3.4.0", .npm, true);
+    const root = lockfile.workspaces.get("").?.system.?;
+    try t.expectEqualStrings("^1.4.3", root.get("bun.sh").?);
+    try t.expectEqualStrings("0.16.0", root.get("ziglang.org").?);
+    try t.expectEqual(@as(u32, 2), root.count());
+    try t.expect(lockfile.workspaces.get("packages/ui") != null);
+    try t.expectEqualStrings("3.3.1", lockfile.packages.get("lit@3.3.1").?.version);
 }
 
 test "package.json delegates ordinary JS dependency sources" {

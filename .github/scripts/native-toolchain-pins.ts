@@ -30,6 +30,35 @@ try {
   if (cli && owned) {
     await run('install', [cli, 'install', 'openjdk.org@17.0.20.8', 'android.com/cmdline-tools@14742923.0.0', '--no-save', '--verbose'], 600_000)
     env.PATH = `${join(owned, 'pantry/.bin')}:${process.env.PATH ?? ''}`
+
+    // A cached named install must update both the package pin and the root
+    // runtime declaration. Exercise the real source CLI, preserving unrelated
+    // workspace records without installing that workspace's JS or Zig graph.
+    const root = {
+      name: 'named-runtime-fixture',
+      dependencies: { lit: '^3.3.1' },
+      system: { 'openjdk.org': '17.0.20.7', 'ziglang.org': '0.17.0' },
+    }
+    const member = { name: '@fixture/ui', version: '1.0.0' }
+    const unrelated = { name: 'lit', version: '3.3.1', source: 'npm' }
+    const seed = JSON.stringify({
+      version: '1.0.0', lockfileVersion: 2,
+      workspaces: { '': root, 'packages/ui': member },
+      packages: { 'lit@3.3.1': unrelated },
+    }) + '\n'
+    const lockPath = join(owned, 'pantry.lock')
+    await Bun.write(lockPath, seed)
+    await Bun.write(join(owned, 'deps.yaml'), 'dependencies:\n  openjdk.org: 17.0.20.7\n  ziglang.org: 0.17.0\n')
+    await run('named-runtime-no-save', [cli, 'install', 'openjdk.org@17.0.20.8', '--no-save', '--verbose'])
+    assert.equal(await readFile(lockPath, 'utf8'), seed, '--no-save must preserve the lockfile bytes')
+    await run('named-runtime-save', [cli, 'install', 'openjdk.org@17.0.20.8', '--verbose'])
+    const updated = JSON.parse(await readFile(lockPath, 'utf8'))
+    assert.deepEqual(updated.workspaces[''], { ...root, system: { ...root.system, 'openjdk.org': '^17.0.20.8' } })
+    assert.deepEqual(updated.workspaces['packages/ui'], member)
+    assert.deepEqual(updated.packages['lit@3.3.1'], unrelated)
+    assert.equal(updated.packages['openjdk.org@17.0.20.8'].version, '17.0.20.8')
+    assert.match(await readFile(join(owned, 'deps.yaml'), 'utf8'), /openjdk\.org:\s*\^17\.0\.20\.8/)
+    proof.namedRuntimeLockRefresh = { passed: true, noSavePreserved: true, unrelatedWorkspacesPreserved: true }
   }
   const compiler = await run('javac', ['javac', '-version'])
   proof.compiler = compiler.trim()
