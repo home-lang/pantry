@@ -3,7 +3,7 @@
  *
  * @domain `oras.land`
  * @programs `oras`
- * @version `1.3.4` (35 versions available)
+ * @version `1.3.5` (36 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install oras.land`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "oras"
  * console.log(pkg.description) // "OCI registry client - managing content like art..."
  * console.log(pkg.programs)    // ["oras"]
- * console.log(pkg.versions[0]) // "1.3.4" (latest)
+ * console.log(pkg.versions[0]) // "1.3.5" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/oras-land.md
@@ -68,6 +68,7 @@ export const oraslandPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.3.5',
     '1.3.4',
     '1.3.3',
     '1.3.2',
