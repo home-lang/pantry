@@ -57,16 +57,17 @@ async function installRequestedServicePackages(services: ServiceSpec[], pantryEx
   }
 }
 
-function configureNativeLibraryEnvironment(pantryBinDir: string, platform: Platform): Record<string, string> {
+function configureNativeRuntimeEnvironment(pantryBinDir: string, platform: Platform): Record<string, string> {
   const serviceEnvironment = nativeServiceEnvironment(pantryBinDir, platform.os)
   const libraryVariable = platform.os === 'darwin' ? 'DYLD_LIBRARY_PATH' : 'LD_LIBRARY_PATH'
-  if (serviceEnvironment[libraryVariable])
-    core.exportVariable(libraryVariable, serviceEnvironment[libraryVariable])
+  for (const variable of [libraryVariable, 'JAVA_HOME']) {
+    if (serviceEnvironment[variable]) core.exportVariable(variable, serviceEnvironment[variable])
+  }
   return serviceEnvironment
 }
 
 async function startRequestedServices(services: ServiceSpec[], pantryBinDir: string, platform: Platform): Promise<void> {
-  configureNativeLibraryEnvironment(pantryBinDir, platform)
+  configureNativeRuntimeEnvironment(pantryBinDir, platform)
   if (!services.length) return
   if (platform.os === 'windows') throw new Error('Pantry Action services are not yet supported on Windows runners')
   const nativeStates: NativeServiceState[] = []
@@ -950,7 +951,7 @@ export async function run(): Promise<void> {
 
       // Cache compression may use a Pantry-installed zstd from a dependency.
       // Its matching libraries must be active during this action too.
-      configureNativeLibraryEnvironment(pantryBinDir, platform)
+      configureNativeRuntimeEnvironment(pantryBinDir, platform)
 
       // Save to cache for next run
       try {

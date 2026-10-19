@@ -1,11 +1,45 @@
 import { describe, expect, test } from 'bun:test'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { mergeServicePackages, nativeServiceEnvironment, pantryLibraryPaths, parseRedisVersion, parseServiceSpecs, readRedisPid, readServiceLog, redisLaunchArgs, waitForRedisPid } from './services'
 import type { ServiceSpec } from './services'
 
 describe('GitHub Actions services', () => {
+  test('activates the selected JDK for launchers that honor an inherited JAVA_HOME', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'pantry-action-java-'))
+    const pantryBin = join(directory, 'pantry', '.bin')
+    const homes = [join(directory, 'pantry', 'openjdk.org', 'v17.0.20.8'), join(directory, 'global-cache', 'openjdk.org', 'v27.0.0.35')]
+    try {
+      mkdirSync(pantryBin, { recursive: true })
+      for (const home of homes) {
+        mkdirSync(join(home, 'bin'), { recursive: true })
+        mkdirSync(join(home, 'lib'), { recursive: true })
+        writeFileSync(join(home, 'bin', 'java'), '')
+        writeFileSync(join(home, 'release'), 'JAVA_VERSION="fixture"\n')
+      }
+      for (const home of homes) {
+        const java = join(pantryBin, 'java')
+        rmSync(java, { force: true })
+        symlinkSync(join(home, 'bin', 'java'), java)
+        for (const platform of ['darwin', 'linux'] as const) {
+          const variable = platform === 'darwin' ? 'DYLD_LIBRARY_PATH' : 'LD_LIBRARY_PATH'
+          const base = { JAVA_HOME: '/host/jdk21', [variable]: '/host/jdk21/lib' }
+          const environment = nativeServiceEnvironment(pantryBin, platform, base)
+          expect(environment.JAVA_HOME).toBe(realpathSync(home))
+          expect(environment[variable]?.split(':')[0]).toBe(join(realpathSync(home), 'lib'))
+          expect(nativeServiceEnvironment(pantryBin, platform, environment)).toEqual(environment)
+          expect(base.JAVA_HOME).toBe('/host/jdk21')
+        }
+      }
+      rmSync(join(pantryBin, 'java'))
+      expect(nativeServiceEnvironment(pantryBin, 'darwin', { JAVA_HOME: '/host/jdk21' }).JAVA_HOME).toBe('/host/jdk21')
+    }
+    finally {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
   test('parses an exact Redis service and rejects ambiguous declarations', () => {
     expect(parseServiceSpecs('redis@8.8.0')).toEqual([{ name: 'redis', packageSpec: 'redis@8.8.0', expectedVersion: '8.8.0' }])
     expect(() => parseServiceSpecs('redis@7.4')).toThrow('exact semantic versions')

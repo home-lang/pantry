@@ -50,6 +50,8 @@ This action allows you to easily install dependencies with pantry in your GitHub
 Explicit native system packages enter one dependency plan. For example,
 `openjdk.org@17.0.20.8 android.com/cmdline-tools@14742923.0.0` keeps JDK 17
 selected while satisfying Android's `>=17` runtime dependency.
+Pantry exports `JAVA_HOME` for the selected JDK and puts its matching native
+libraries first. Java-dependent launchers such as `sdkmanager` use that runtime.
 
 The cache identity includes the Pantry version, platform, project manifests,
 lockfile, and registry artifact digests for native packages and their runtime

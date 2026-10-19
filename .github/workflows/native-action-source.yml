@@ -148,11 +148,15 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run --cwd packages/action build
       - uses: ./packages/action
+        env:
+          JAVA_HOME: ${{ runner.temp }}/unselected-host-jdk
         with:
           version: ${{ inputs.pantry-version }}
           install: 'false'
           packages: openjdk.org@17.0.20.8 android.com/cmdline-tools@14742923.0.0 bun.com@1.4.3
       - run: bun .github/scripts/native-toolchain-pins.ts
+        env:
+          PANTRY_EXPECT_VERSION: ${{ inputs.pantry-version }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:

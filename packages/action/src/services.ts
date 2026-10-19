@@ -97,6 +97,19 @@ export function pantryLibraryPaths(pantryBinDir: string): string[] {
   return libraries
 }
 
+/** Follow the selected java executable, including globally cached JDK links. */
+function selectedJavaHome(pantryBinDir: string): string | undefined {
+  try {
+    const java = fs.realpathSync(path.join(pantryBinDir, 'java'))
+    const home = path.dirname(path.dirname(java))
+    if (fs.existsSync(path.join(home, 'release')) && fs.existsSync(path.join(home, 'lib')))
+      return home
+  }
+  catch (error) {
+    if (!['ENOENT', 'ENOTDIR'].includes((error as NodeJS.ErrnoException).code || '')) throw error
+  }
+}
+
 export function nativeServiceEnvironment(
   pantryBinDir: string,
   platform: 'darwin' | 'linux' | 'windows',
@@ -108,8 +121,11 @@ export function nativeServiceEnvironment(
   if (platform === 'windows') return environment
   environment.PATH = [...new Set([pantryBinDir, ...(environment.PATH?.split(path.delimiter) || [])].filter(Boolean))].join(path.delimiter)
 
+  const javaHome = selectedJavaHome(pantryBinDir)
+  if (javaHome) environment.JAVA_HOME = javaHome
+  const javaLibraries = javaHome ? ['lib', 'jre/lib'].map(directory => path.join(javaHome, directory)).filter(directory => fs.existsSync(directory)) : []
   const variable = platform === 'darwin' ? 'DYLD_LIBRARY_PATH' : 'LD_LIBRARY_PATH'
-  const value = [...new Set([...pantryLibraryPaths(pantryBinDir), ...(environment[variable]?.split(path.delimiter) || [])].filter(Boolean))].join(path.delimiter)
+  const value = [...new Set([...javaLibraries, ...pantryLibraryPaths(pantryBinDir), ...(environment[variable]?.split(path.delimiter) || [])].filter(Boolean))].join(path.delimiter)
   if (value) environment[variable] = value
   return environment
 }
