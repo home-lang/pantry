@@ -1,0 +1,121 @@
+name: Prepare Patch Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Generate the normal locked publisher toolchain, or prepare a qualified patch
+        type: choice
+        required: true
+        default: toolchain
+        options:
+          - toolchain
+          - patch
+      expected_source_sha:
+        description: Exact clean Main commit whose complete CI must have succeeded
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pantry-normal-patch-producer
+  cancel-in-progress: false
+
+jobs:
+  toolchain:
+    if: github.repository == 'pantry-pm/pantry' && github.ref == 'refs/heads/main' && inputs.operation == 'toolchain'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PANTRY_RELEASE_EXPECTED_SHA: ${{ inputs.expected_source_sha }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install system dependencies through Pantry
+        uses: pantry-pm/pantry/packages/action@dcf64a9e5922e9d1939bc2b43e0288e5dd03dcf6
+        with:
+          version: 0.11.100
+          install: 'false'
+          packages: bun.com@1.4.3 git-scm.org@2.53.0
+      - name: Verify the exact source and adopt the public fixed publisher normally
+        run: |
+          test "$(git rev-parse HEAD)" = "$PANTRY_RELEASE_EXPECTED_SHA"
+          test -z "$(git status --porcelain)"
+          bun add --dev --exact @stacksjs/bumpx@0.2.25
+          pantry install
+          pantry install --frozen-lockfile
+          bun install --frozen-lockfile
+          bun .github/scripts/prepare-patch-release.ts toolchain
+      - uses: actions/upload-artifact@v4
+        with:
+          name: normal-locked-publisher-toolchain
+          path: |
+            package.json
+            bun.lock
+            pantry.lock
+            ${{ runner.temp }}/pantry-patch-release
+          if-no-files-found: error
+  prepare:
+    if: github.repository == 'pantry-pm/pantry' && github.ref == 'refs/heads/main' && inputs.operation == 'patch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      PANTRY_RELEASE_EXPECTED_SHA: ${{ inputs.expected_source_sha }}
+      BUMPX_EXPECTED_SOURCE: ${{ inputs.expected_source_sha }}
+      NO_COLOR: '1'
+      GIT_AUTHOR_NAME: Chris Breuer
+      GIT_AUTHOR_EMAIL: chrisbreuer93@gmail.com
+      GIT_COMMITTER_NAME: Chris Breuer
+      GIT_COMMITTER_EMAIL: chrisbreuer93@gmail.com
+    outputs:
+      tag: ${{ steps.receipt.outputs.tag }}
+      release_sha: ${{ steps.receipt.outputs.release_sha }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Install the publisher runtime and Git through Pantry
+        uses: pantry-pm/pantry/packages/action@dcf64a9e5922e9d1939bc2b43e0288e5dd03dcf6
+        with:
+          version: 0.11.100
+          install: 'false'
+          packages: bun.com@1.4.3 git-scm.org@2.53.0
+      - name: Set the configured release identity
+        run: |
+          git config user.name 'Chris Breuer'
+          git config user.email chrisbreuer93@gmail.com
+      - name: Install and verify the locked public publisher
+        run: |
+          bun install --frozen-lockfile
+          bun .github/scripts/prepare-patch-release.ts verify-toolchain
+      - name: Check fresh Main, complete CI and unused public version
+        id: preflight
+        run: bun .github/scripts/prepare-patch-release.ts preflight
+      - name: Run the canonical patch producer once
+        id: producer
+        run: bun run release:patch
+      - name: Record and verify the exact pushed commit and tag
+        id: receipt
+        if: always() && steps.preflight.outcome == 'success'
+        env:
+          PANTRY_PATCH_PRODUCER_OUTCOME: ${{ steps.producer.outcome }}
+        run: bun .github/scripts/prepare-patch-release.ts record
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: patch-release-original-receipt
+          path: ${{ runner.temp }}/pantry-patch-release
+          if-no-files-found: error
+
+# This job only creates the ordinary version commit + exact tag. After its
+# receipt is verified, dispatch the existing Releaser on that exact tag and CI
+# on Main using the already-authorized user GitHub client. GITHUB_TOKEN pushes
+# do not trigger push workflows. No actions:write/PAT/SSH/new publisher is added.
