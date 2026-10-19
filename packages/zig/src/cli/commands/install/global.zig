@@ -179,11 +179,13 @@ fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local:
         }
     }
 
-    // Print results
+    // A failed package must fail the command, including activation failures.
+    var failed = false;
     for (results) |result| {
         if (result.success) {
             style.printGlobalInstalled(result.name, result.version, result.from_cache, result.install_time_ms);
         } else {
+            failed = true;
             style.printFailed(result.name, result.version, result.error_msg);
         }
     }
@@ -206,10 +208,10 @@ fn installGlobalDepsCommandWithOptions(allocator: std.mem.Allocator, user_local:
 
     registerSharedLibraries(allocator, global_dir);
 
-    style.printGlobalComplete(global_dir);
+    if (!failed) style.printGlobalComplete(global_dir);
     warnIfBinNotOnPath(allocator, global_dir);
 
-    return .{ .exit_code = 0 };
+    return .{ .exit_code = if (failed) 1 else 0 };
 }
 
 /// Install specific packages globally
@@ -296,21 +298,23 @@ pub fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []
         }
     }
 
-    // Print results
+    // A failed package must fail the command, including activation failures.
+    var failed = false;
     for (results) |result| {
         if (result.success) {
             style.printInstalled(result.name, result.version);
         } else {
+            failed = true;
             style.printFailed(result.name, result.version, result.error_msg);
         }
     }
 
     registerSharedLibraries(allocator, global_dir);
 
-    style.printGlobalComplete(global_dir);
+    if (!failed) style.printGlobalComplete(global_dir);
     warnIfBinNotOnPath(allocator, global_dir);
 
-    return .{ .exit_code = 0 };
+    return .{ .exit_code = if (failed) 1 else 0 };
 }
 
 /// Installed commands are only reachable once `<global_dir>/bin` is on PATH.
