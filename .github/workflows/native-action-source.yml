@@ -118,3 +118,35 @@ jobs:
           pantry --version | grep -F '${{ inputs.pantry-version }}'
           bun --version | grep -Fx '1.4.3'
           bun test packages/action/src/bootstrap.test.ts
+
+  native-toolchain-pins:
+    name: Published CLI and built Action pins (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.source-ref }}
+      - uses: pantry-pm/pantry/packages/action@da17bb9317e8f8c247618fb176fe97269f15bfe4
+        with:
+          version: 0.11.94
+          install: 'false'
+          packages: bun.com@1.4.3
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd packages/action build
+      - uses: ./packages/action
+        with:
+          version: ${{ inputs.pantry-version }}
+          install: 'false'
+          packages: openjdk.org@17.0.20.8 android.com/cmdline-tools@14742923.0.0 bun.com@1.4.3
+      - run: bun .github/scripts/native-toolchain-pins.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: published-native-pins-${{ matrix.os }}
+          path: artifacts/native-toolchain-pins
+          if-no-files-found: error

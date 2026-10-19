@@ -347,6 +347,32 @@ fn appendTransitiveDeps(allocator: std.mem.Allocator, package_args: *std.ArrayLi
     }
 }
 
+/// Recursive installers must see the same explicit pins as the CLI's closure.
+fn explicitNativePlan(allocator: std.mem.Allocator, args: []const []const u8) !std.StringHashMap([]const u8) {
+    var plan = std.StringHashMap([]const u8).init(allocator);
+    errdefer plan.deinit();
+    const registry = @import("../../../packages/generated.zig");
+    for (args) |arg| {
+        const parts = helpers.splitPackageSpec(arg);
+        if (!isExactVersion(parts.version)) continue;
+        const name = helpers.resolvePackageAlias(parts.name);
+        const info = registry.getPackageByName(name) orelse continue;
+        try plan.put(info.domain, parts.version);
+    }
+    return plan;
+}
+
+test "explicit native pins remain available to recursive installs in either root order" {
+    const forward = [_][]const u8{ "openjdk.org@17.0.20.8", "android.com/cmdline-tools@14742923.0.0" };
+    const reverse = [_][]const u8{ forward[1], forward[0] };
+    for ([_][]const []const u8{ &forward, &reverse }) |roots| {
+        var plan = try explicitNativePlan(std.testing.allocator, roots);
+        defer plan.deinit();
+        try std.testing.expectEqualStrings("17.0.20.8", plan.get("openjdk.org").?);
+        try std.testing.expectEqual(@as(usize, 2), plan.count());
+    }
+}
+
 /// Install packages - main entry point
 pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !types.CommandResult {
     return installCommandWithOptions(allocator, args, .{});
@@ -1426,6 +1452,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     // `user_requested_count` entries are what the user asked for; the rest are
     // pulled-in deps whose install failures are non-fatal.
     const user_requested_count = package_args.items.len;
+    var explicit_plan = try explicitNativePlan(allocator, package_args.items);
+    defer explicit_plan.deinit();
+    installer.planned_pantry = &explicit_plan;
+    defer installer.planned_pantry = null;
     appendTransitiveDeps(allocator, &package_args);
 
     style.printInstalling(user_requested_count);

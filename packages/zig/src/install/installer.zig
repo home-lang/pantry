@@ -4281,7 +4281,8 @@ pub const Installer = struct {
         const domain = pkg_info.domain;
 
         // Resolve version
-        const resolved_version = semver.resolveVersion(domain, version) orelse {
+        const planned = if (self.planned_pantry) |plan| plannedVersionFor(plan, domain, version) else null;
+        const resolved_version = planned orelse semver.resolveVersion(domain, version) orelse {
             if (!style.isCI()) style.print("  ! Could not resolve version for {s}{s}\n", .{ name, version });
             return error.VersionNotFound;
         };
@@ -4293,7 +4294,6 @@ pub const Installer = struct {
         var check_dir = io_helper.cwd().openDir(io_helper.io, global_pkg_dir, .{}) catch |err| {
             if (err != error.FileNotFound) return err;
             // Not installed, continue
-            const planned = if (self.planned_pantry) |plan| plannedVersionFor(plan, domain, version) else null;
             const spec = PackageSpec{
                 .name = name,
                 .version = planned orelse dependencyInstallVersion(version, resolved_version),
@@ -4361,6 +4361,8 @@ test "a planned version stands in for a dependency it satisfies" {
     defer plan.deinit();
     try plan.put("php.net", "8.4.22");
     try plan.put("mysql.com", "^8");
+    try plan.put("openjdk.org", "17.0.20.8");
+    try std.testing.expectEqualStrings("17.0.20.8", plannedVersionFor(&plan, "openjdk.org", ">=17").?);
 
     // composer's bare `php.net`, and ranges the declared 8.4.22 is inside.
     try std.testing.expectEqualStrings("8.4.22", plannedVersionFor(&plan, "php.net", "latest").?);

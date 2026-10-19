@@ -358,28 +358,26 @@ jobs:
   native-toolchain-pins:
     name: Explicit native toolchain pins (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v6
-      - name: Bootstrap the published Bun runtime
+      - name: Bootstrap the published compiler and Bun runtime
         uses: pantry-pm/pantry/packages/action@da17bb9317e8f8c247618fb176fe97269f15bfe4
         with:
           version: 0.11.94
           install: 'false'
-          packages: bun.com@1.4.3
+          packages: bun.com@1.4.3 ziglang.org@0.17.0
+      - run: pantry install --frozen-lockfile
       - run: bun install --frozen-lockfile
-      - run: bun run --cwd packages/action build
-      - name: Install explicit JDK and Android roots through this Action
-        uses: ./packages/action
-        with:
-          version: 0.11.94
-          install: 'false'
-          packages: openjdk.org@17.0.20.8 android.com/cmdline-tools@14742923.0.0 bun.com@1.4.3
-      - name: Verify the explicit JVM survives the Android dependency graph
+      - name: Build the source CLI before release
+        run: cd packages/zig && zig build -Doptimize=Debug -j2
+      - name: Verify explicit pins through the recursive native installer
+        env:
+          PANTRY_TEST_CLI: packages/zig/zig-out/bin/pantry
         run: bun .github/scripts/native-toolchain-pins.ts
       - uses: actions/upload-artifact@v4
         if: always()
