@@ -9,14 +9,14 @@ import { pathToFileURL } from 'node:url'
 assert(process.argv[2], 'Supply the normally published or source-built Pantry CLI')
 const cli = resolve(process.argv[2])
 const mode = process.argv[3] || 'workspace'
-assert(['single', 'workspace', 'members-only', 'mixed'].includes(mode))
+assert(['single', 'workspace', 'members-only', 'mixed', 'dot-name'].includes(mode))
 const baseline = process.argv[4] ? resolve(process.argv[4]) : undefined
 const artifacts = resolve('artifacts/nested-js-graph', `${mode}-${baseline ? 'migration' : 'cold'}`)
 await mkdir(artifacts, { recursive: true })
 const root = await mkdtemp(join(tmpdir(), 'pantry nested graph '))
 const project = join(root, 'project')
 await mkdir(project)
-const leaf = '@pantry-fixture/leaf'
+const leaf = mode === 'dot-name' ? 'pantry-fixture.leaf' : '@pantry-fixture/leaf'
 const parent = '@pantry-fixture/parent'
 const proof: Record<string, unknown> = { passed: false, mode, cliSha256: Bun.SHA256.hash(await readFile(cli), 'hex') }
 const env = { ...process.env, XDG_DATA_HOME: join(root, 'data'), XDG_CACHE_HOME: join(root, 'cache'), BUN_INSTALL_CACHE_DIR: join(root, 'bun-cache'), NO_COLOR: '1' }

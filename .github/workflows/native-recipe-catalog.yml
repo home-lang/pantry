@@ -176,6 +176,7 @@ jobs:
           bun .github/scripts/verify-nested-js-graph.ts "$source_cli" workspace '${{ steps.pantry.outputs.pantry-path }}'
           bun .github/scripts/verify-nested-js-graph.ts "$source_cli" members-only
           bun .github/scripts/verify-nested-js-graph.ts "$source_cli" mixed
+          bun .github/scripts/verify-nested-js-graph.ts "$source_cli" dot-name
       - name: Retain actual dependency bindings and original migration locks
         if: always()
         uses: actions/upload-artifact@v4

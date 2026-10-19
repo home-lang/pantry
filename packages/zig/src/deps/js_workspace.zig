@@ -126,7 +126,11 @@ pub const Ownership = struct {
     }
 
     pub fn owns(self: *const Ownership, name: []const u8, source: package_types.PackageSource) bool {
-        return self.enabled and source != .pantry and self.names.contains(name);
+        if (!self.enabled or !self.names.contains(name)) return false;
+        // A dot in an npm name is not enough to make it a system dependency.
+        // Keep legacy known system names and explicit system declarations.
+        if (source == .pantry and (self.retained.contains(name) or @import("../packages/generated.zig").getPackageByName(name) != null)) return false;
+        return true;
     }
 
     /// Called only after the selected JS manager succeeds, while the old
@@ -254,8 +258,10 @@ test "JS workspace ownership recognizes both manifest forms without claiming sys
     owner.enabled = true;
     try owner.add("@scope/parent");
     try owner.add("ziglang.org");
+    try owner.add("valid.npm-name");
     try std.testing.expect(owner.owns("@scope/parent", .npm));
     try std.testing.expect(!owner.owns("ziglang.org", .pantry));
+    try std.testing.expect(owner.owns("valid.npm-name", .pantry));
     try std.testing.expect(!owner.owns("unrelated-user-package", .npm));
 }
 
