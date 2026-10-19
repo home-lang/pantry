@@ -149,7 +149,7 @@ pub fn resolvedLinkTarget(allocator: std.mem.Allocator, link_path: []const u8) ?
 
 /// Recover the target of Pantry's exact generated launcher format or a link.
 /// Recognizing launchers keeps provider ownership identical after activation.
-fn resolvedActivationTarget(allocator: std.mem.Allocator, path: []const u8) ?[]u8 {
+pub fn resolvedActivationTarget(allocator: std.mem.Allocator, path: []const u8) ?[]u8 {
     if (resolvedLinkTarget(allocator, path)) |target| return target;
     const content = io_helper.readFileAlloc(allocator, path, 64 * 1024) catch return null;
     defer allocator.free(content);
@@ -342,12 +342,28 @@ const shim_locate_self =
 /// A relative `target` (from `treeLinkTarget`) is resolved against the shim's
 /// own directory; an absolute one is exec'd as is. Caller owns the result.
 fn shimScript(allocator: std.mem.Allocator, prefix: []const u8, target: []const u8) ![]u8 {
+    return shimScriptWithArguments(allocator, prefix, target, &.{});
+}
+
+fn shimScriptWithArguments(allocator: std.mem.Allocator, prefix: []const u8, target: []const u8, arguments: []const []const u8) ![]u8 {
+    var suffix = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer suffix.deinit(allocator);
+    for (arguments) |argument| {
+        try suffix.appendSlice(allocator, " '");
+        for (argument) |character| {
+            if (character == 39) {
+                try suffix.appendSlice(allocator, "'\"'\"'");
+            } else try suffix.append(allocator, character);
+        }
+        try suffix.append(allocator, 39);
+    }
+    try suffix.appendSlice(allocator, " \"$@\"\n");
     // Concatenated rather than formatted: the prelude's `${s%/*}` would read
     // as a format placeholder.
     if (std.fs.path.isAbsolute(target)) {
-        return std.mem.concat(allocator, u8, &.{ "#!/bin/sh\nexec ", prefix, "\"", target, "\" \"$@\"\n" });
+        return std.mem.concat(allocator, u8, &.{ "#!/bin/sh\nexec ", prefix, "\"", target, "\"", suffix.items });
     }
-    return std.mem.concat(allocator, u8, &.{ "#!/bin/sh\n", shim_locate_self, "exec ", prefix, "\"$d/", target, "\" \"$@\"\n" });
+    return std.mem.concat(allocator, u8, &.{ "#!/bin/sh\n", shim_locate_self, "exec ", prefix, "\"$d/", target, "\"", suffix.items });
 }
 
 /// Write a tiny `#!/bin/sh` shim at `shim_path` that `exec`s `target_path "$@"`.
@@ -371,9 +387,21 @@ pub fn writeShim(
     target_path: []const u8,
     tree_root: ?[]const u8,
 ) bool {
+    return writeShimWithArguments(allocator, shim_path, prefix, target_path, tree_root, &.{});
+}
+
+/// Activate a command alias through the same relocatable executable contract.
+pub fn writeShimWithArguments(
+    allocator: std.mem.Allocator,
+    shim_path: []const u8,
+    prefix: []const u8,
+    target_path: []const u8,
+    tree_root: ?[]const u8,
+    arguments: []const []const u8,
+) bool {
     const target = treeLinkTarget(allocator, tree_root, target_path, shim_path) catch return false;
     defer allocator.free(target);
-    const content = shimScript(allocator, prefix, target) catch return false;
+    const content = shimScriptWithArguments(allocator, prefix, target, arguments) catch return false;
     defer allocator.free(content);
 
     var random: [8]u8 = undefined;

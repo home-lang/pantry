@@ -1232,14 +1232,8 @@ fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package
 
         const source = try std.fs.path.join(allocator, &[_][]const u8{ package_path, bin_val.string });
         defer allocator.free(source);
-        const link = try std.fs.path.join(allocator, &[_][]const u8{ bin_link_dir, pkg_name });
-        defer allocator.free(link);
-
         makeExecutable(source);
-        io_helper.deleteFile(link) catch {};
-        install.symlink.symLinkInTree(allocator, tree_root, source, link) catch |err| {
-            if (verbose) style.print("    Warning: Failed to create symlink {s}: {}\n", .{ link, err });
-        };
+        try install.symlink.createShim(allocator, pkg_name, source, bin_link_dir, tree_root);
     } else if (bin_val == .object) {
         // "bin": { "cmd1": "./path1.js", "cmd2": "./path2.js" }
         var it = bin_val.object.iterator();
@@ -1249,14 +1243,8 @@ fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package
 
             const source = try std.fs.path.join(allocator, &[_][]const u8{ package_path, entry.value_ptr.string });
             defer allocator.free(source);
-            const link = try std.fs.path.join(allocator, &[_][]const u8{ bin_link_dir, bin_name });
-            defer allocator.free(link);
-
             makeExecutable(source);
-            io_helper.deleteFile(link) catch {};
-            install.symlink.symLinkInTree(allocator, tree_root, source, link) catch |err| {
-                if (verbose) style.print("    Warning: Failed to create symlink {s}: {}\n", .{ link, err });
-            };
+            try install.symlink.createShim(allocator, bin_name, source, bin_link_dir, tree_root);
         }
     }
 }
@@ -1298,10 +1286,7 @@ fn scanBinDirectory(allocator: std.mem.Allocator, package_path: []const u8, bin_
             }
 
             makeExecutable(bin_src);
-            io_helper.deleteFile(bin_dst) catch {};
-            install.symlink.symLinkInTree(allocator, tree_root, bin_src, bin_dst) catch |err| {
-                if (verbose) style.print("    Warning: Failed to create symlink {s}: {}\n", .{ bin_dst, err });
-            };
+            try install.symlink.createProgramActivation(allocator, bin_dst, bin_src, tree_root);
         }
     }
 }
@@ -1321,11 +1306,11 @@ fn isHexString(s: []const u8) bool {
 fn symlinkFromDifferentPackage(allocator: std.mem.Allocator, link_path: []const u8, current_package_path: []const u8) bool {
     // Relative targets (how pantry writes links inside its own tree) are
     // resolved against the link's directory before comparing.
-    const existing_target = install.symlink.resolvedLinkTarget(allocator, link_path) orelse return false;
+    const existing_target = install.symlink.resolvedActivationTarget(allocator, link_path) orelse return false;
     defer allocator.free(existing_target);
 
     // A link that no longer resolves belongs to nobody: let it be replaced.
-    io_helper.access(link_path, .{}) catch return false;
+    io_helper.access(existing_target, .{}) catch return false;
 
     // Extract package directory: strip trailing /bin/<name> or /sbin/<name>
     const existing_pkg = extractPkgDir(existing_target) orelse return false;
@@ -1378,13 +1363,14 @@ pub fn ensureBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, mod
 }
 
 /// Create alias symlinks for known multi-name binaries.
-/// e.g. bun → bunx (same binary, different argv[0]).
+/// e.g. bunx invokes `bun x` through the primary executable activation.
 fn createBinAliases(allocator: std.mem.Allocator, bin_link_dir: []const u8) void {
     const aliases = [_]struct {
         primary: []const u8,
         alias: []const u8,
+        arguments: []const []const u8,
     }{
-        .{ .primary = "bun", .alias = "bunx" },
+        .{ .primary = "bun", .alias = "bunx", .arguments = &.{"x"} },
     };
 
     for (aliases) |a| {
@@ -1395,11 +1381,17 @@ fn createBinAliases(allocator: std.mem.Allocator, bin_link_dir: []const u8) void
 
         const alias_path = std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_link_dir, a.alias }) catch continue;
         defer allocator.free(alias_path);
-        // Don't overwrite an existing alias — first-installed wins
-        io_helper.accessAbsolute(alias_path, .{}) catch {
-            io_helper.symLink(a.primary, alias_path) catch {};
+        // Upgrade our former primary-name link; preserve another provider.
+        const legacy = install.symlink.resolvedLinkTarget(allocator, alias_path);
+        defer if (legacy) |target| allocator.free(target);
+        if (legacy == null or !install.symlink.samePath(legacy.?, primary_path)) {
+            io_helper.accessAbsolute(alias_path, .{}) catch {
+                _ = install.symlink.writeShimWithArguments(allocator, alias_path, "", primary_path, std.fs.path.dirname(bin_link_dir), a.arguments);
+                continue;
+            };
             continue;
-        };
+        }
+        _ = install.symlink.writeShimWithArguments(allocator, alias_path, "", primary_path, std.fs.path.dirname(bin_link_dir), a.arguments);
     }
 }
 
@@ -1445,14 +1437,27 @@ fn symlinkBinEntries(allocator: std.mem.Allocator, bin_dir: []const u8, bin_link
         const bin_dst = std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_link_dir, entry.name }) catch continue;
         defer allocator.free(bin_dst);
 
-        // Don't overwrite valid existing links (first-installed wins), but do
-        // replace broken symlinks so fast install paths can repair pantry/.bin.
-        io_helper.accessAbsolute(bin_dst, .{}) catch {
-            io_helper.deleteFile(bin_dst) catch {};
-            makeExecutable(bin_src);
-            install.symlink.symLinkInTree(allocator, tree_root, bin_src, bin_dst) catch {};
+        // Upgrade our legacy activation, preserve another installed provider.
+        if (install.symlink.resolvedActivationTarget(allocator, bin_dst)) |existing| {
+            defer allocator.free(existing);
+            if (!install.symlink.samePath(existing, bin_src)) {
+                io_helper.accessAbsolute(existing, .{}) catch {
+                    makeExecutable(bin_src);
+                    install.symlink.createProgramActivation(allocator, bin_dst, bin_src, tree_root) catch {};
+                    continue;
+                };
+                continue;
+            }
+        } else {
+            io_helper.accessAbsolute(bin_dst, .{}) catch {
+                makeExecutable(bin_src);
+                install.symlink.createProgramActivation(allocator, bin_dst, bin_src, tree_root) catch {};
+                continue;
+            };
             continue;
-        };
+        }
+        makeExecutable(bin_src);
+        install.symlink.createProgramActivation(allocator, bin_dst, bin_src, tree_root) catch {};
     }
 }
 
@@ -1467,8 +1472,7 @@ fn ensureConfiguredZigSymlink(allocator: std.mem.Allocator, proj_dir: []const u8
     defer allocator.free(link_path);
 
     makeExecutable(zig_bin);
-    io_helper.deleteFile(link_path) catch {};
-    install.symlink.symLinkInTree(allocator, pantry_dir, zig_bin, link_path) catch {};
+    install.symlink.createProgramActivation(allocator, link_path, zig_bin, pantry_dir) catch {};
 }
 
 /// Record a system (pantry-source) dependency in deps.yaml.

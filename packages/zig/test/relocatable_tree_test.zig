@@ -54,8 +54,7 @@ const Fixture = struct {
         io_helper.closeFile(file);
         if (executable) chmod755(path);
     }
-    /// An executable with no `#!`, so pantry links it the way it links a
-    /// Mach-O/ELF binary instead of shimming it. (A copied system binary
+    /// An executable with no `#!`, classified like a Mach-O/ELF binary. (A copied system binary
     /// would do, but macOS kills a relocated platform binary.) `sh` runs a
     /// file the kernel rejects with ENOEXEC as a script, so it still runs.
     fn nativeBinary(self: *Fixture, sub_path: []const u8) !void {
@@ -82,6 +81,13 @@ const Fixture = struct {
     /// The raw target stored in a link.
     fn linkTarget(self: *Fixture, sub_path: []const u8) ![]const u8 {
         return io_helper.readLinkAlloc(self.arena(), self.abs(sub_path));
+    }
+
+    fn expectLauncher(self: *Fixture, sub_path: []const u8, target: []const u8) !void {
+        const content = try io_helper.readFileAlloc(self.arena(), self.abs(sub_path), 4096);
+        const quoted = try std.fmt.allocPrint(self.arena(), "\"$d/{s}\"", .{target});
+        try testing.expect(std.mem.indexOf(u8, content, quoted) != null);
+        try testing.expect(std.mem.indexOf(u8, content, self.abs("")) == null);
     }
 
     /// The link at `sub_path` resolves, and to the same file as `want`.
@@ -143,12 +149,12 @@ test "global tree: version alias, bin symlink and shim survive the tree moving" 
 
     // The alias names its sibling, the bin link climbs out of bin/.
     try testing.expectEqualStrings("v2.4.1", try f.linkTarget("base/packages/example.org/v2"));
-    try testing.expectEqualStrings("../packages/example.org/v2.4.1/bin/hello", try f.linkTarget("base/bin/hello"));
+    try f.expectLauncher("base/bin/hello", "../packages/example.org/v2.4.1/bin/hello");
 
     try f.rename("base", "moved");
 
     try f.expectResolves("moved/packages/example.org/v2", "moved/packages/example.org/v2.4.1");
-    try f.expectResolves("moved/bin/hello", "moved/packages/example.org/v2.4.1/bin/hello");
+    try f.expectLauncher("moved/bin/hello", "../packages/example.org/v2.4.1/bin/hello");
     try f.expectRuns("moved/bin/hello relocated", "relocated\n");
     try f.expectRuns("moved/bin/greet", "greet-ok\n");
     try f.expectRuns("moved/packages/example.org/v2/bin/hello via-alias", "via-alias\n");
@@ -179,17 +185,18 @@ test "project tree installed through a worktree's symlinked pantry survives the 
     helpers.ensureBinSymlinks(testing.allocator, f.abs("wt"), "pantry");
 
     // Every link is written relative to the tree, never via the worktree.
-    try testing.expectEqualStrings("../git-scm.org/v2.53.0/bin/git", try f.linkTarget("main/pantry/.bin/git"));
-    try testing.expectEqualStrings("../bun.sh/v1.3.14/bin/bun", try f.linkTarget("main/pantry/.bin/bun"));
-    try testing.expectEqualStrings("bun", try f.linkTarget("main/pantry/.bin/bunx"));
+    try f.expectLauncher("main/pantry/.bin/git", "../git-scm.org/v2.53.0/bin/git");
+    try f.expectLauncher("main/pantry/.bin/bun", "../bun.sh/v1.3.14/bin/bun");
+    try f.expectLauncher("main/pantry/.bin/bunx", "bun");
+    try f.expectRuns("main/pantry/.bin/bunx --version", "x --version\n");
 
     // The worktree goes away.
     try f.remove("wt/pantry");
     try io_helper.deleteTree(f.abs("wt"));
 
-    try f.expectResolves("main/pantry/.bin/git", "main/pantry/git-scm.org/v2.53.0/bin/git");
-    try f.expectResolves("main/pantry/.bin/bun", "main/pantry/bun.sh/v1.3.14/bin/bun");
-    try f.expectResolves("main/pantry/.bin/bunx", "main/pantry/bun.sh/v1.3.14/bin/bun");
+    try f.expectLauncher("main/pantry/.bin/git", "../git-scm.org/v2.53.0/bin/git");
+    try f.expectLauncher("main/pantry/.bin/bun", "../bun.sh/v1.3.14/bin/bun");
+    try f.expectRuns("main/pantry/.bin/bunx after-removal", "x after-removal\n");
     try f.expectRuns("main/pantry/.bin/git still-works", "still-works\n");
     try f.expectRuns("main/pantry/.bin/bun ok", "ok\n");
 
@@ -267,7 +274,8 @@ test "a link whose directory is itself a symlink out of the tree stays absolute"
     try f.symlinkAt(f.abs("dotfiles/bin"), "base/bin");
 
     try symlink.createBinarySymlinkFromPath(testing.allocator, "tool", f.abs("base/packages/example.org/v1.0.0/bin/tool"), f.abs("base"));
-    try testing.expectEqualStrings(f.abs("base/packages/example.org/v1.0.0/bin/tool"), try f.linkTarget("dotfiles/bin/tool"));
+    const shim = try io_helper.readFileAlloc(f.arena(), f.abs("dotfiles/bin/tool"), 4096);
+    try testing.expect(std.mem.indexOf(u8, shim, f.abs("base/packages/example.org/v1.0.0/bin/tool")) != null);
     try f.expectRuns("base/bin/tool fine", "fine\n");
 }
 
@@ -285,15 +293,15 @@ test "first-installed-wins and removal still recognise relative bin links" {
     const base = f.abs("base");
 
     try symlink.createPackageSymlinks(testing.allocator, "first.org", "1.0.0", base);
-    try testing.expectEqualStrings("../packages/first.org/v1.0.0/bin/tool", try f.linkTarget("base/bin/tool"));
+    try f.expectLauncher("base/bin/tool", "../packages/first.org/v1.0.0/bin/tool");
 
     // A second provider of `tool` must not take the name.
     try symlink.createPackageSymlinks(testing.allocator, "second.org", "1.0.0", base);
-    try testing.expectEqualStrings("../packages/first.org/v1.0.0/bin/tool", try f.linkTarget("base/bin/tool"));
+    try f.expectLauncher("base/bin/tool", "../packages/first.org/v1.0.0/bin/tool");
 
     // Removing the second package leaves the first one's link alone...
     try symlink.removePackageSymlinks(testing.allocator, "second.org", "1.0.0", base);
-    try f.expectResolves("base/bin/tool", "base/packages/first.org/v1.0.0/bin/tool");
+    try f.expectRuns("base/bin/tool retained", "retained\n");
 
     // ...and removing the first removes it.
     try symlink.removePackageSymlinks(testing.allocator, "first.org", "1.0.0", base);
@@ -311,7 +319,7 @@ test "a dangling bin link left by a vanished install path is replaced" {
     try f.symlinkAt(f.abs("gone-worktree/pantry/bun.sh/v1.3.14/bin/bun"), "main/pantry/.bin/bun");
 
     try helpers.createBinSymlinksFromInstall(testing.allocator, f.abs("main"), f.abs("main/pantry/bun.sh/v1.3.14"), "pantry");
-    try testing.expectEqualStrings("../bun.sh/v1.3.14/bin/bun", try f.linkTarget("main/pantry/.bin/bun"));
+    try f.expectLauncher("main/pantry/.bin/bun", "../bun.sh/v1.3.14/bin/bun");
     try f.expectRuns("main/pantry/.bin/bun repaired", "repaired\n");
 }
 
@@ -337,10 +345,10 @@ test "invalid source interface metadata preserves the previous binary link" {
     const pkg = "base/packages/example.org/v1.0.0";
     try f.nativeBinary(pkg ++ "/bin/old");
     try symlink.createBinarySymlinkFromPath(testing.allocator, "library.sh", f.abs(pkg ++ "/bin/old"), f.abs("base"));
-    const before = try f.linkTarget("base/bin/library.sh");
+    const before = try io_helper.readFileAlloc(f.arena(), f.abs("base/bin/library.sh"), 4096);
     try f.write(pkg ++ "/bin/library.sh", "#!/bin/sh\nexit 0\n", true);
     try f.write(pkg ++ "/share/pantry/interfaces.json", "{\"version\":2,\"sourceablePrograms\":[\"library.sh\"]}\n", false);
     try testing.expectError(error.InvalidPackageInterface, symlink.createBinarySymlinkFromPath(testing.allocator, "library.sh", f.abs(pkg ++ "/bin/library.sh"), f.abs("base")));
-    try testing.expectEqualStrings(before, try f.linkTarget("base/bin/library.sh"));
+    try testing.expectEqualStrings(before, try io_helper.readFileAlloc(f.arena(), f.abs("base/bin/library.sh"), 4096));
     try f.expectRuns("base/bin/library.sh retained", "retained\n");
 }

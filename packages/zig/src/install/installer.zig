@@ -4914,7 +4914,7 @@ test "project links stay inside pantry/ when it is installed through a worktree'
         // git's wrapper finds its data through $0, which is why it is shimmed.
         .{ .sub = "main/pantry/git-scm.org/v2.53.0/bin/git", .body = "#!/bin/sh\ncat \"$(dirname \"$0\")/../share/msg\"\n" },
         .{ .sub = "main/pantry/git-scm.org/v2.53.0/share/msg", .body = "git-ok\n" },
-        // No `#!`: linked like a native binary; sh still runs it.
+        // No `#!`: activated like a native binary; sh still runs it.
         .{ .sub = "main/pantry/bun.sh/v1.3.14/bin/bun", .body = "echo \"$@\"\n" },
     };
     for (files) |entry| {
@@ -4942,7 +4942,9 @@ test "project links stay inside pantry/ when it is installed through a worktree'
     // Relative, and never through the worktree.
     try std.testing.expectEqualStrings("v1.3.2", try io_helper.readLinkAlloc(arena, at(arena, root, "main/pantry/zlib.net/v1")));
     try std.testing.expectEqualStrings("v1.3.2", try io_helper.readLinkAlloc(arena, at(arena, root, "main/pantry/zlib.net/v1.3")));
-    try std.testing.expectEqualStrings("../bun.sh/v1.3.14/bin/bun", try io_helper.readLinkAlloc(arena, at(arena, root, "main/pantry/.bin/bun")));
+    const bun_shim = try io_helper.readFileAlloc(arena, at(arena, root, "main/pantry/.bin/bun"), 4096);
+    try std.testing.expect(std.mem.indexOf(u8, bun_shim, "\"$d/../bun.sh/v1.3.14/bin/bun\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, bun_shim, root) == null);
     const shim = try io_helper.readFileAlloc(arena, at(arena, root, "main/pantry/.bin/git"), 4096);
     try std.testing.expect(std.mem.indexOf(u8, shim, "\"$d/../git-scm.org/v2.53.0/bin/git\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, shim, root) == null);
