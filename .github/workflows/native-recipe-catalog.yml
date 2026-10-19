@@ -78,8 +78,8 @@ jobs:
       - name: Check native transport formatting and build the source CLI
         run: |
           cd packages/zig
-          zig fmt src/http_retry.zig src/io_helper.zig src/install/downloader.zig src/install/installer.zig src/install/native_apps.zig src/install/pipeline.zig src/install/runtime.zig src/auth/registry.zig src/cli/commands/package.zig src/main.zig
-          git diff --binary -- src/http_retry.zig src/io_helper.zig src/install > ../../artifacts/native-catalog/native-format.patch
+          zig fmt src/http_retry.zig src/io_helper.zig src/deps/js_workspace.zig src/deps/js_delegate.zig src/cli/commands/install/workspace.zig src/install/downloader.zig src/install/installer.zig src/install/native_apps.zig src/install/pipeline.zig src/install/runtime.zig src/auth/registry.zig src/cli/commands/package.zig src/main.zig
+          git diff --binary -- src/http_retry.zig src/io_helper.zig src/deps/js_workspace.zig src/deps/js_delegate.zig src/cli/commands/install/workspace.zig src/install > ../../artifacts/native-catalog/native-format.patch
           zig test src/http_retry.zig
           # This artifact runs on other hosts. Use the normal portable target,
           # rather than inheriting the producer host's optional CPU features.
@@ -147,6 +147,41 @@ jobs:
         with:
           name: registry-lookup-${{ matrix.segment }}
           path: artifacts/native-catalog/native-registry-lookup.json
+          if-no-files-found: error
+  workspace-graph:
+    needs: catalog
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install the immutable migration baseline and managed fixture tools
+        id: pantry
+        uses: pantry-pm/pantry/packages/action@ae59a7b7fc5f4e6f7b8041a75e6b5772680bebdf
+        with:
+          version: 0.11.101
+          install: 'false'
+          packages: bun.com@1.4.3 gnu.org/tar@1.35
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-recipe-catalog
+          path: artifacts/native-catalog
+      - name: Verify the built source and actual cold, warm, frozen, and 101 migration bindings
+        run: |
+          test "$(cat artifacts/native-catalog/source-commit.txt)" = "$(git rev-parse HEAD)"
+          sha256sum -c artifacts/native-catalog/lookup-cli-sha256.txt
+          chmod +x artifacts/native-catalog/lookup-cli
+          source_cli="$GITHUB_WORKSPACE/artifacts/native-catalog/lookup-cli"
+          bun .github/scripts/verify-nested-js-graph.ts "$source_cli" single
+          bun .github/scripts/verify-nested-js-graph.ts "$source_cli" workspace
+          bun .github/scripts/verify-nested-js-graph.ts "$source_cli" workspace '${{ steps.pantry.outputs.pantry-path }}'
+          bun .github/scripts/verify-nested-js-graph.ts "$source_cli" members-only
+          bun .github/scripts/verify-nested-js-graph.ts "$source_cli" mixed
+      - name: Retain actual dependency bindings and original migration locks
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-workspace-graph
+          path: artifacts/nested-js-graph
           if-no-files-found: error
   publication-contract:
     name: Native publication contract (${{ matrix.segment }})

@@ -69,4 +69,5 @@ test {
     _ = @import("install/tree_repair.zig");
     _ = @import("cli/commands/px.zig");
     _ = @import("http_retry.zig");
+    _ = @import("deps/js_workspace.zig");
 }
