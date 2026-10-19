@@ -2299,7 +2299,7 @@ const HttpGetAttempt = union(enum) {
 
 /// Own all buffers and the request within one attempt, closing the connection
 /// before returning an error or a retryable status to the bounded outer loop.
-fn httpGetAttemptWithClient(client: *std.http.Client, allocator: std.mem.Allocator, current_url: []const u8, initial_uri: std.Uri, extra_headers: []const std.http.Header, status_only_errors: bool, can_retry: bool) !HttpGetAttempt {
+fn httpGetAttemptWithClient(client: *std.http.Client, allocator: std.mem.Allocator, current_url: []const u8, initial_uri: std.Uri, extra_headers: []const std.http.Header, status_only_errors: bool, retries: u8) !HttpGetAttempt {
     const decoration = decorateRequest(allocator, current_url);
     defer decoration.deinit(allocator);
     const uri = try std.Uri.parse(decoration.effectiveUrl(current_url));
@@ -2339,8 +2339,11 @@ fn httpGetAttemptWithClient(client: *std.http.Client, allocator: std.mem.Allocat
     }
     const status = @backingInt(response.head.status);
     if (transientGetStatus(status)) {
-        const delay = responseRetryDelay(&response, 1);
-        if (can_retry and delay != null) return .{ .retry_status = .{ .status = status, .delay = delay.? } };
+        const delay = responseRetryDelay(&response, retries + 1);
+        if (retries < 2 and delay != null) {
+            printGetStatus(uri, status, retries + 1, delay);
+            return .{ .retry_status = .{ .status = status, .delay = delay.? } };
+        }
         printGetStatus(uri, status, null, delay);
     }
     if (status_only_errors and (status < 200 or status >= 300)) return .{ .response = .{ .status = status, .body = try allocator.alloc(u8, 0) } };
@@ -2367,7 +2370,7 @@ fn httpGetResponseWithClient(client: *std.http.Client, allocator: std.mem.Alloca
     var redirects: u8 = 0;
     var retries: u8 = 0;
     while (true) {
-        const result = httpGetAttemptWithClient(client, allocator, current_url, initial_uri, extra_headers, status_only_errors, retries < 2) catch |err| {
+        const result = httpGetAttemptWithClient(client, allocator, current_url, initial_uri, extra_headers, status_only_errors, retries) catch |err| {
             if (try retryGetTransport(err, &retries)) continue;
             return err;
         };
@@ -2376,7 +2379,6 @@ fn httpGetResponseWithClient(client: *std.http.Client, allocator: std.mem.Alloca
             .retry_status => |retry| {
                 retries += 1;
                 const delay = @max(@as(u64, retries), retry.delay);
-                printGetStatus(try std.Uri.parse(current_url), retry.status, retries, delay);
                 try waitGetRetrySeconds(delay);
             },
             .redirect => |next_url| {

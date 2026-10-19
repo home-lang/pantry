@@ -29,11 +29,12 @@ const archives = new Map<string, Buffer>()
 const metadata = new Map<string, Record<string, unknown>>()
 const requests: Array<{ method: string, path: string }> = []
 
-async function run(name: string, args: string[], cwd = project): Promise<string> {
+async function run(name: string, args: string[], cwd = project, success = true): Promise<string> {
   const child = Bun.spawn(args, { cwd, env, stdout: 'pipe', stderr: 'pipe', signal: AbortSignal.timeout(120_000) })
   const [stdout, stderr, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited])
   await writeFile(join(artifacts, `${name}.log`), stdout + stderr)
-  assert.equal(code, 0, `${name}: ${stdout}${stderr}`)
+  if (success) assert.equal(code, 0, `${name}: ${stdout}${stderr}`)
+  else assert.notEqual(code, 0, `${name} must reject stale frozen state`)
   return stdout.trim()
 }
 
@@ -91,6 +92,11 @@ try {
     proof.baselineParentBinding = await evaluate('pantry', parent, 'baseline-parent-binding')
     assert.equal(proof.baselineParentBinding, '1.0.0', 'The published 101 baseline must exercise the actual wrong shadow graph')
     await writeFile(join(artifacts, 'baseline-pantry.lock'), await readFile(join(project, 'pantry.lock')))
+    const oldPantryLock = await readFile(join(project, 'pantry.lock'))
+    const oldBunLock = await readFile(join(project, 'bun.lock'))
+    await run('migration-frozen-rejected', [cli, 'install', '--frozen-lockfile'], project, false)
+    assert.deepEqual(await readFile(join(project, 'pantry.lock')), oldPantryLock)
+    assert.deepEqual(await readFile(join(project, 'bun.lock')), oldBunLock)
   }
   // A member-only workspace still needs its JS manager after a clean checkout.
   if (mode === 'members-only') await rm(join(project, 'node_modules'), { recursive: true, force: true })
