@@ -1,0 +1,29 @@
+name: Verify Nested JavaScript Graph
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  graph:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install the qualified published Pantry CLI and managed fixture tools
+        id: pantry
+        uses: pantry-pm/pantry/packages/action@ae59a7b7fc5f4e6f7b8041a75e6b5772680bebdf
+        with:
+          version: 0.11.101
+          install: 'false'
+          packages: bun.com@1.4.3 gnu.org/tar@1.35
+      - name: Compare actual parent dependency bindings with the normal Bun graph
+        run: bun .github/scripts/verify-nested-js-graph.ts '${{ steps.pantry.outputs.pantry-path }}'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nested-js-graph-original-proof
+          path: artifacts/nested-js-graph
+          if-no-files-found: error
