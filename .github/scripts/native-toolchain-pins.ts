@@ -28,7 +28,7 @@ try {
   proof.cliVersion = (await run('cli-version', [executable, '--version'])).trim()
   if (process.env.PANTRY_EXPECT_VERSION) assert.equal(String(proof.cliVersion).split(/\s+/)[1], process.env.PANTRY_EXPECT_VERSION)
   if (cli && owned) {
-    await run('install', [cli, 'install', 'openjdk.org@17.0.20.8', 'android.com/cmdline-tools@14742923.0.0', '--no-save'], 600_000)
+    await run('install', [cli, 'install', 'openjdk.org@17.0.20.8', 'android.com/cmdline-tools@14742923.0.0', '--no-save', '--verbose'], 600_000)
     env.PATH = `${join(owned, 'pantry/.bin')}:${process.env.PATH ?? ''}`
   }
   const compiler = await run('javac', ['javac', '-version'])

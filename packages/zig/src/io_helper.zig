@@ -1891,15 +1891,19 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
         const uri = try std.Uri.parse(stream.request_url);
         if (uri.user != null or uri.password != null) return error.InvalidUrl;
         if (stream.authorization) |authorization| stream.auth_headers[0] = .{ .name = "Authorization", .value = authorization };
-        stream.req = try stream.client.request(.GET, uri, .{
-            .redirect_behavior = .unhandled,
-            .keep_alive = false,
-            .headers = .{ .accept_encoding = .{ .override = "identity" } },
-            .extra_headers = if (stream.authorization != null) &stream.auth_headers else &.{},
-        });
-        errdefer stream.req.deinit();
-        stream.req.sendBodiless() catch |err| return requestTransportError(&stream.req, err);
-        stream.response = stream.req.receiveHead(&stream.redirect_buf) catch |err| return requestTransportError(&stream.req, err);
+        beginStreamGetRequest(stream, uri) catch |err| {
+            // The failed attempt has already closed its request. Rebuild the
+            // same origin-scoped headers before the next connection attempt.
+            if (transientGetTransport(err) and retries < 2) {
+                if (stream.authorization) |authorization| allocator.free(authorization);
+                stream.authorization = null;
+                _ = try retryGetTransport(err, &retries);
+                continue;
+            }
+            return err;
+        };
+        var request_open = true;
+        errdefer if (request_open) stream.req.deinit();
         if (stream.response.head.status.class() == .redirect) {
             if (redirects == 10) return error.TooManyHttpRedirects;
             redirects += 1;
@@ -1911,6 +1915,7 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
             const next_uri = try uri.resolveInPlace(location.len, &available);
             const next_url = try std.fmt.allocPrint(allocator, "{f}", .{next_uri});
             stream.req.deinit();
+            request_open = false;
             allocator.free(stream.request_url);
             stream.request_url = next_url;
             if (stream.authorization) |authorization| allocator.free(authorization);
@@ -1921,10 +1926,11 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
         if (transientGetStatus(status) and retries < 2) {
             retries += 1;
             stream.req.deinit();
+            request_open = false;
             if (stream.authorization) |authorization| allocator.free(authorization);
             stream.authorization = null;
             @import("cli/style.zig").print("  Registry GET HTTP {d}; retry {d}/2\n", .{ status, retries });
-            sleepMs(@as(u64, retries) * 1000);
+            try waitGetRetry(retries);
             continue;
         }
         if (status != 200) {
@@ -1939,6 +1945,19 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
         }
         return stream;
     }
+}
+
+/// A failed head attempt owns and closes its request before any retry delay.
+fn beginStreamGetRequest(stream: *HttpStream, uri: std.Uri) !void {
+    stream.req = try stream.client.request(.GET, uri, .{
+        .redirect_behavior = .unhandled,
+        .keep_alive = false,
+        .headers = .{ .accept_encoding = .{ .override = "identity" } },
+        .extra_headers = if (stream.authorization != null) &stream.auth_headers else &.{},
+    });
+    errdefer stream.req.deinit();
+    stream.req.sendBodiless() catch |err| return requestTransportError(&stream.req, err);
+    stream.response = stream.req.receiveHead(&stream.redirect_buf) catch |err| return requestTransportError(&stream.req, err);
 }
 
 /// Like `httpGet`, but reuses an existing `std.http.Client` for connection pooling.
@@ -2126,10 +2145,106 @@ fn httpGetResponseTask(allocator: std.mem.Allocator, url: []const u8, extra_head
     return httpGetResponseWithClient(&client, allocator, url, extra_headers, status_only_errors);
 }
 
-/// A GET can recover from a transient gateway failure without changing its
-/// origin, credentials or outer deadline. Authentication and absence stay final.
+/// Safe GETs share a fixed retry budget across gateway and connection failures.
+/// Authentication, absence, invalid input and cancellation remain terminal.
 fn transientGetStatus(status: u16) bool {
     return status == 502 or status == 503 or status == 504;
+}
+
+fn transientGetTransport(err: anyerror) bool {
+    return switch (err) {
+        error.NetworkUnreachable,
+        error.HostUnreachable,
+        error.ConnectionRefused,
+        error.ConnectionResetByPeer,
+        error.ConnectionTimedOut,
+        error.ConnectionAborted,
+        error.HttpConnectionClosing,
+        error.EndOfStream,
+        error.UnexpectedEndOfStream,
+        error.TemporaryNameServerFailure,
+        error.TlsInitializationFailed,
+        => true,
+        else => false,
+    };
+}
+
+fn waitGetRetry(retries: u8) !void {
+    const ns: i96 = @as(i96, retries) * std.time.ns_per_s;
+    // Unlike best-effort sleeps, this must propagate cancellation so the
+    // original end-to-end request deadline also bounds retry backoff.
+    try getIo().sleep(.{ .nanoseconds = ns }, .awake);
+}
+
+fn retryGetTransport(err: anyerror, retries: *u8) !bool {
+    if (!transientGetTransport(err) or retries.* >= 2) return false;
+    retries.* += 1;
+    @import("cli/style.zig").print("  Registry GET transport {s}; retry {d}/2\n", .{ @errorName(err), retries.* });
+    try waitGetRetry(retries.*);
+    return true;
+}
+
+const HttpGetAttempt = union(enum) {
+    response: HttpResponse,
+    redirect: []u8,
+    retry_status: u16,
+};
+
+/// Own all buffers and the request within one attempt, closing the connection
+/// before returning an error or a retryable status to the bounded outer loop.
+fn httpGetAttemptWithClient(client: *std.http.Client, allocator: std.mem.Allocator, current_url: []const u8, initial_uri: std.Uri, extra_headers: []const std.http.Header, status_only_errors: bool, can_retry: bool) !HttpGetAttempt {
+    const decoration = decorateRequest(allocator, current_url);
+    defer decoration.deinit(allocator);
+    const uri = try std.Uri.parse(decoration.effectiveUrl(current_url));
+    if (uri.user != null or uri.password != null) return error.InvalidUrl;
+    if (!std.ascii.eqlIgnoreCase(uri.scheme, "http") and !std.ascii.eqlIgnoreCase(uri.scheme, "https")) return error.InvalidUrl;
+    var headers = std.ArrayList(std.http.Header).empty;
+    defer headers.deinit(allocator);
+    for (extra_headers) |header| {
+        const sensitive = std.ascii.eqlIgnoreCase(header.name, "Authorization") or std.ascii.eqlIgnoreCase(header.name, "Cookie") or std.ascii.eqlIgnoreCase(header.name, "Proxy-Authorization");
+        if (!sensitive or sameHttpOrigin(initial_uri, uri)) try headers.append(allocator, header);
+    }
+    var has_authorization = false;
+    for (headers.items) |header| {
+        if (std.ascii.eqlIgnoreCase(header.name, "Authorization")) has_authorization = true;
+    }
+    if (!has_authorization) {
+        if (decoration.authorization) |authorization| try headers.append(allocator, .{ .name = "Authorization", .value = authorization });
+    }
+    var req = try client.request(.GET, uri, .{
+        .extra_headers = headers.items,
+        .keep_alive = false,
+        .redirect_behavior = .unhandled,
+        .headers = .{ .accept_encoding = .{ .override = "identity" } },
+    });
+    defer req.deinit();
+    req.sendBodiless() catch |err| return requestTransportError(&req, err);
+    var redirect_buffer: [8192]u8 = undefined;
+    var response = req.receiveHead(&redirect_buffer) catch |err| return requestTransportError(&req, err);
+    if (response.head.status.class() == .redirect) {
+        const location = response.head.location orelse return error.InvalidUrl;
+        var resolution_buffer: [16384]u8 = undefined;
+        if (location.len > resolution_buffer.len) return error.InvalidUrl;
+        @memcpy(resolution_buffer[0..location.len], location);
+        var available: []u8 = &resolution_buffer;
+        const next_uri = try uri.resolveInPlace(location.len, &available);
+        return .{ .redirect = try std.fmt.allocPrint(allocator, "{f}", .{next_uri}) };
+    }
+    const status = @backingInt(response.head.status);
+    if (can_retry and transientGetStatus(status)) return .{ .retry_status = status };
+    if (status_only_errors and (status < 200 or status >= 300)) return .{ .response = .{ .status = status, .body = try allocator.alloc(u8, 0) } };
+    const decompress_buffer: []u8 = switch (response.head.content_encoding) {
+        .identity => &.{},
+        .zstd => try allocator.alloc(u8, std.compress.zstd.default_window_len),
+        .deflate, .gzip => try allocator.alloc(u8, std.compress.flate.max_window_len),
+        .compress => return error.UnsupportedCompressionMethod,
+    };
+    defer allocator.free(decompress_buffer);
+    var transfer_buffer: [64]u8 = undefined;
+    var decompress: std.http.Decompress = undefined;
+    const reader = response.readerDecompressing(&transfer_buffer, &decompress, decompress_buffer);
+    const body = reader.allocRemaining(allocator, std.Io.Limit.limited(32 * 1024 * 1024)) catch |err| return requestTransportError(&req, err);
+    return .{ .response = .{ .status = status, .body = body } };
 }
 
 fn httpGetResponseWithClient(client: *std.http.Client, allocator: std.mem.Allocator, url: []const u8, extra_headers: []const std.http.Header, status_only_errors: bool) anyerror!HttpResponse {
@@ -2141,74 +2256,38 @@ fn httpGetResponseWithClient(client: *std.http.Client, allocator: std.mem.Alloca
     var redirects: u8 = 0;
     var retries: u8 = 0;
     while (true) {
-        var next_url: ?[]u8 = null;
-        {
-            const decoration = decorateRequest(allocator, current_url);
-            defer decoration.deinit(allocator);
-            const uri = try std.Uri.parse(decoration.effectiveUrl(current_url));
-            if (uri.user != null or uri.password != null) return error.InvalidUrl;
-            if (!std.ascii.eqlIgnoreCase(uri.scheme, "http") and !std.ascii.eqlIgnoreCase(uri.scheme, "https")) return error.InvalidUrl;
-            var headers = std.ArrayList(std.http.Header).empty;
-            defer headers.deinit(allocator);
-            for (extra_headers) |header| {
-                const sensitive = std.ascii.eqlIgnoreCase(header.name, "Authorization") or std.ascii.eqlIgnoreCase(header.name, "Cookie") or std.ascii.eqlIgnoreCase(header.name, "Proxy-Authorization");
-                if (!sensitive or sameHttpOrigin(initial_uri, uri)) try headers.append(allocator, header);
-            }
-            var has_authorization = false;
-            for (headers.items) |header| {
-                if (std.ascii.eqlIgnoreCase(header.name, "Authorization")) has_authorization = true;
-            }
-            if (!has_authorization) {
-                if (decoration.authorization) |authorization| try headers.append(allocator, .{ .name = "Authorization", .value = authorization });
-            }
-            var req = try client.request(.GET, uri, .{
-                .extra_headers = headers.items,
-                .keep_alive = false,
-                .redirect_behavior = .unhandled,
-                .headers = .{ .accept_encoding = .{ .override = "identity" } },
-            });
-            defer req.deinit();
-            req.sendBodiless() catch |err| return requestTransportError(&req, err);
-            var redirect_buffer: [8192]u8 = undefined;
-            var response = req.receiveHead(&redirect_buffer) catch |err| return requestTransportError(&req, err);
-            if (response.head.status.class() == .redirect) {
-                if (redirects == 10) return error.TooManyHttpRedirects;
-                redirects += 1;
-                const location = response.head.location orelse return error.InvalidUrl;
-                var resolution_buffer: [16384]u8 = undefined;
-                if (location.len > resolution_buffer.len) return error.InvalidUrl;
-                @memcpy(resolution_buffer[0..location.len], location);
-                var available: []u8 = &resolution_buffer;
-                const next_uri = try uri.resolveInPlace(location.len, &available);
-                next_url = try std.fmt.allocPrint(allocator, "{f}", .{next_uri});
-            } else {
-                const status = @backingInt(response.head.status);
-                if (transientGetStatus(status) and retries < 2) {
-                    retries += 1;
-                    @import("cli/style.zig").print("  Registry GET HTTP {d}; retry {d}/2\n", .{ status, retries });
-                    sleepMs(@as(u64, retries) * 1000);
-                    continue;
+        const result = httpGetAttemptWithClient(client, allocator, current_url, initial_uri, extra_headers, status_only_errors, retries < 2) catch |err| {
+            if (try retryGetTransport(err, &retries)) continue;
+            return err;
+        };
+        switch (result) {
+            .response => |response| return response,
+            .retry_status => |status| {
+                retries += 1;
+                @import("cli/style.zig").print("  Registry GET HTTP {d}; retry {d}/2\n", .{ status, retries });
+                try waitGetRetry(retries);
+            },
+            .redirect => |next_url| {
+                if (redirects == 10) {
+                    allocator.free(next_url);
+                    return error.TooManyHttpRedirects;
                 }
-                // An error's status is decisive; never wait for an untrusted
-                // error body before reporting authentication or availability.
-                if (status_only_errors and (status < 200 or status >= 300)) return .{ .status = status, .body = try allocator.alloc(u8, 0) };
-                const decompress_buffer: []u8 = switch (response.head.content_encoding) {
-                    .identity => &.{},
-                    .zstd => try allocator.alloc(u8, std.compress.zstd.default_window_len),
-                    .deflate, .gzip => try allocator.alloc(u8, std.compress.flate.max_window_len),
-                    .compress => return error.UnsupportedCompressionMethod,
-                };
-                defer allocator.free(decompress_buffer);
-                var transfer_buffer: [64]u8 = undefined;
-                var decompress: std.http.Decompress = undefined;
-                const reader = response.readerDecompressing(&transfer_buffer, &decompress, decompress_buffer);
-                const body = reader.allocRemaining(allocator, std.Io.Limit.limited(32 * 1024 * 1024)) catch |err| return requestTransportError(&req, err);
-                return .{ .status = status, .body = body };
-            }
+                redirects += 1;
+                allocator.free(current_url);
+                current_url = next_url;
+            },
         }
-        allocator.free(current_url);
-        current_url = next_url orelse unreachable;
     }
+}
+
+test "safe GET transport recovery leaves cancellation and permanent failures terminal" {
+    try std.testing.expect(transientGetTransport(error.NetworkUnreachable));
+    try std.testing.expect(transientGetTransport(error.ConnectionRefused));
+    try std.testing.expect(transientGetTransport(error.ConnectionResetByPeer));
+    try std.testing.expect(!transientGetTransport(error.Canceled));
+    try std.testing.expect(!transientGetTransport(error.InvalidUrl));
+    try std.testing.expect(!transientGetTransport(error.OutOfMemory));
+    try std.testing.expect(!transientGetTransport(error.CertificateHostMismatch));
 }
 
 /// Status-preserving GET with one deadline for headers, redirects and body.
