@@ -36,6 +36,13 @@ async function listen(server: Server): Promise<string> {
 const foreign = createServer((req, res) => {
   foreignRequests += 1
   if (req.headers.authorization) foreignCredentials += 1
+  if (mode === 'artifact429-redirect-recover') {
+    const status = foreignRequests === 1 ? 429 : 403
+    rateResponses.push({ status, at: performance.now(), wallAt: Date.now(), retryAfter: status === 429 ? '2' : undefined })
+    res.writeHead(status, status === 429 ? { 'Retry-After': '2' } : {})
+    res.end('foreign fixture status')
+    return
+  }
   res.end(JSON.stringify(metadata))
 })
 const foreignBase = await listen(foreign)
@@ -43,6 +50,11 @@ const handleRegistry = (req: IncomingMessage, res: ServerResponse) => {
   const url = req.url || ''
   requests.push(url)
   if (req.headers.authorization === `Bearer ${token}`) registryCredentials += 1
+  if (mode === 'artifact429-redirect-recover' && !url.endsWith('/metadata.json')) {
+    res.writeHead(302, { Location: `${foreignBase}/archive?fixture-secret-query=secret` })
+    res.end()
+    return
+  }
   const rateTarget = mode.startsWith('artifact429') ? !url.endsWith('/metadata.json') : url.endsWith('/metadata.json')
   if (mode.includes('429') && rateTarget) {
     const attempt = rateResponses.length
@@ -118,7 +130,7 @@ const registry = createServer(handleRegistry)
 const base = await listen(registry)
 try {
   const scenarios = segment === 'rate-limit'
-    ? ['metadata429-recover', 'metadata429-date-recover', 'metadata429-invalid-recover', 'metadata429-missing-recover', 'metadata429', 'metadata429-mixed', 'metadata429-long', 'metadata429-deadline', 'artifact429-recover', 'artifact429', 'artifact429-long']
+    ? ['metadata429-recover', 'metadata429-date-recover', 'metadata429-invalid-recover', 'metadata429-missing-recover', 'metadata429', 'metadata429-mixed', 'metadata429-long', 'metadata429-deadline', 'artifact429-recover', 'artifact429', 'artifact429-long', 'artifact429-redirect-recover']
     : segment === 'gateway-recovery'
     ? ['503', '403', 'metadata502-recover', 'artifact503', 'artifact403', 'artifact502-recover', 'redirect', 'disconnect', 'metadata-connect-recover', 'metadata-disconnect-recover', 'artifact-disconnect-recover']
     : segment === 'metadata' ? ['503', '403', 'malformed', 'null', 'array', 'disconnect', 'stalled-head', 'stalled-body', 'artifact503', 'artifact403', 'artifact-partial', 'redirect', 'metadata502-recover', 'artifact502-recover'] : [segment]
@@ -197,7 +209,12 @@ try {
       }
       if (scenario.includes('429')) {
         assert.match(output, /HTTP 429 from http:\/\/127\.0\.0\.1:/, 'diagnostics identify the responding origin')
-        assert.doesNotMatch(output, /fixture-secret-query/, 'diagnostics must not expose signed queries')
+        const statusDiagnostics = output.split('\n').filter(line => line.includes('Registry GET HTTP')).join('\n')
+        assert.doesNotMatch(statusDiagnostics, /fixture-secret-query/, 'status diagnostics must not expose signed queries')
+        if (scenario.includes('redirect')) {
+          assert.equal(foreignRequests, 2)
+          assert.ok(output.includes(`HTTP 429 from ${foreignBase}`), 'redirected throttling identifies the actual responding origin')
+        }
         if (scenario.includes('long')) {
           assert.equal(rateResponses.length, 1, 'excessive server delay must stop without an early retry')
           assert.ok(elapsed < 10_000)
