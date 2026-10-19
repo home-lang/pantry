@@ -311,8 +311,34 @@ jobs:
           PANTRY_NATIVE_OPENSSH_TEST_BIN: ${{ github.workspace }}/pantry/.bin
         run: bun test packages/action/src/native-openssh.integration.test.ts
 
+  native-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - name: Bootstrap the published compiler and Bun runtime
+        uses: pantry-pm/pantry/packages/action@b205b3527a03a053f4fade96e1cdc4c1fdf626a9 # v0.11.97
+        with:
+          version: 0.11.97
+          install: 'false'
+          packages: bun.com@1.4.3 ziglang.org@0.17.0
+      - run: bun install --frozen-lockfile
+      - name: Build this checkout's native CLI
+        run: cd packages/zig && zig build -Doptimize=Debug -j2
+      - name: Verify the real Linux browser package through the source installer
+        env:
+          PANTRY_TEST_CLI: packages/zig/zig-out/bin/pantry
+        run: bun .github/scripts/linux-native-browser.ts
+      - name: Preserve native browser installation diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-linux-native-browser
+          path: artifacts/linux-native-browser
+          if-no-files-found: error
+
   continuous-release:
-    needs: [lint, typecheck, test, action-redis-service, action-native-services, action-native-tools]
+    needs: [lint, typecheck, test, action-redis-service, action-native-services, action-native-tools, native-browser]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # Best-effort commit-preview publishing. Don't fail the whole workflow
