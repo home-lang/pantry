@@ -5080,11 +5080,11 @@ test "verified legacy execute-only helper installs and runs without a privileged
     try std.testing.expect(result.term == .exited and result.term.exited == 0);
     try std.testing.expectEqualStrings("legacy-helper-ok\n", result.stdout);
     const helper_stat = try io_helper.cwd().statFile(io_helper.io, helper, .{});
-    try std.testing.expectEqual(@as(u32, 0o510), helper_stat.permissions.toMode());
+    try std.testing.expectEqual(@as(u32, 0o510), helper_stat.permissions.toMode() & 0o7777);
     const data = try std.fs.path.join(allocator, &.{ dest, "share/data" });
     defer allocator.free(data);
     const data_stat = try io_helper.cwd().statFile(io_helper.io, data, .{});
-    try std.testing.expectEqual(@as(u32, 0o644), data_stat.permissions.toMode());
+    try std.testing.expectEqual(@as(u32, 0o644), data_stat.permissions.toMode() & 0o7777);
     const after = try extractor.computeChecksum(allocator, archive);
     defer allocator.free(after);
     try std.testing.expectEqualStrings(before, after);

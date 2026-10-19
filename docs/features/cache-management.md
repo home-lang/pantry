@@ -6,6 +6,20 @@ pantry provides powerful cache management and cleanup capabilities to help you m
 
 pantry caches downloaded packages to improve performance when switching between versions or reinstalling packages. Over time, this cache can grow large, and you may want to clean it up or perform a complete system reset.
 
+## Archive installation
+
+Binary packages are verified and extracted into a unique private directory
+under `~/.pantry/.tmp/` before they are copied into their destination.
+Extracted regular files become readable by their owner so execute-only
+helpers can be copied during an unprivileged installation. Ordinary file
+and executable permissions are retained, and privilege bits are removed.
+Permission preparation never follows symbolic links or changes an inode
+shared outside the extraction.
+
+An existing cached tree that cannot be read for copying is left intact.
+Pantry obtains the original verified archive and prepares a fresh private
+extraction instead. The archive bytes and checksum remain unchanged.
+
 ## Cache Structure
 
 pantry stores cached data in the following locations:

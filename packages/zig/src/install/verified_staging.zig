@@ -64,7 +64,7 @@ fn prepareTree(allocator: std.mem.Allocator, path: []const u8) !void {
     const metadata = try io_helper.cwd().statFile(io_helper.io, path, .{ .follow_symlinks = false });
     switch (metadata.kind) {
         .directory, .file => {
-            const mode = metadata.permissions.toMode();
+            const mode = metadata.permissions.toMode() & 0o7777;
             const prepared = (mode & 0o777) | @as(u32, if (metadata.kind == .directory) 0o700 else 0o400);
             if (prepared != mode) {
                 if (metadata.kind == .file and metadata.nlink != 1) return error.UnsafeArchiveHardLink;
@@ -129,7 +129,7 @@ test "verified execute-only archive becomes copyable without changing its bytes 
     var extraction = try Extraction.init(allocator, root);
     defer extraction.deinit();
     const private = try io_helper.cwd().statFile(io_helper.io, extraction.root, .{});
-    try std.testing.expectEqual(@as(u32, 0o700), private.permissions.toMode());
+    try std.testing.expectEqual(@as(u32, 0o700), private.permissions.toMode() & 0o7777);
     try extraction.extractVerified(archive, "tar.gz", null, false);
     try std.testing.expect(canMaterializeTree(allocator, extraction.payload));
     for ([_]struct { name: []const u8, mode: u32 }{
@@ -140,7 +140,7 @@ test "verified execute-only archive becomes copyable without changing its bytes 
         const file = try std.fs.path.join(allocator, &.{ extraction.payload, expected.name });
         defer allocator.free(file);
         const metadata = try io_helper.cwd().statFile(io_helper.io, file, .{ .follow_symlinks = false });
-        try std.testing.expectEqual(expected.mode, metadata.permissions.toMode());
+        try std.testing.expectEqual(expected.mode, metadata.permissions.toMode() & 0o7777);
     }
     const link = try std.fs.path.join(allocator, &.{ extraction.payload, "bin/helper" });
     defer allocator.free(link);
@@ -181,7 +181,7 @@ test "legacy cache refusal and private preparation never change outside link tar
     try io_helper.symLink(outside, link);
     try prepareTree(allocator, extraction.payload);
     const metadata = try io_helper.cwd().statFile(io_helper.io, outside, .{ .follow_symlinks = false });
-    try std.testing.expectEqual(@as(u32, 0o110), metadata.permissions.toMode());
+    try std.testing.expectEqual(@as(u32, 0o110), metadata.permissions.toMode() & 0o7777);
     const target = try io_helper.readLinkAlloc(allocator, link);
     defer allocator.free(target);
     try std.testing.expectEqualStrings(outside, target);
@@ -194,5 +194,5 @@ test "legacy cache refusal and private preparation never change outside link tar
     if (std.c.link(outside_z, hard_link_z) != 0) return error.HardLinkFixtureFailed;
     try std.testing.expectError(error.UnsafeArchiveHardLink, prepareTree(allocator, extraction.payload));
     const unchanged = try io_helper.cwd().statFile(io_helper.io, outside, .{ .follow_symlinks = false });
-    try std.testing.expectEqual(@as(u32, 0o110), unchanged.permissions.toMode());
+    try std.testing.expectEqual(@as(u32, 0o110), unchanged.permissions.toMode() & 0o7777);
 }
