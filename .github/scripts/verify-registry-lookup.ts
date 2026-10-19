@@ -13,6 +13,7 @@ const observations: object[] = []
 const segment = process.env.PANTRY_LOOKUP_SEGMENT || 'metadata'
 let mode = ''
 let requests: string[] = []
+let metadataResponses: number[] = []
 let registryCredentials = 0
 let foreignCredentials = 0
 let foreignRequests = 0
@@ -58,10 +59,14 @@ const registry = createServer((req, res) => {
     res.end('fixture archive unavailable')
     return
   }
-  if (mode === 'metadata502-recover' && requests.filter(path => path.endsWith('/metadata.json')).length === 1) {
-    res.writeHead(502)
-    res.end('temporary gateway failure')
-    return
+  if (mode === 'metadata502-recover') {
+    const status = metadataResponses.length === 0 ? 502 : 200
+    metadataResponses.push(status)
+    if (status === 502) {
+      res.writeHead(status)
+      res.end('temporary gateway failure')
+      return
+    }
   }
   if (mode === 'redirect') {
     res.writeHead(302, { Location: `${foreignBase}/metadata.json` })
@@ -92,6 +97,7 @@ try {
     try {
       mode = scenario
       requests = []
+      metadataResponses = []
       registryCredentials = 0
       foreignCredentials = 0
       foreignRequests = 0
@@ -112,7 +118,7 @@ try {
       child = undefined
       const output = stdout + stderr
       const elapsed = performance.now() - started
-      console.log(JSON.stringify({ scenario, exit, elapsed, requests, registryCredentials, foreignCredentials, foreignRequests, killed }))
+      console.log(JSON.stringify({ scenario, exit, elapsed, requests, metadataResponses, registryCredentials, foreignCredentials, foreignRequests, killed }))
       console.log(output)
       assert.equal(killed, false, 'product must finish within its own deadline')
       assert.notEqual(exit, 0, 'an unavailable artifact must not install')
@@ -125,7 +131,10 @@ try {
         assert.equal(archives.length, expected, 'only bounded retries of the same primary archive transport are allowed')
       }
       if (scenario === 'metadata502-recover') {
-        assert.equal(requests.filter(url => url.endsWith('/metadata.json')).length, 2)
+        // Resolution and installation may each read metadata. Observe recovery
+        // of the failed GET separately from subsequent successful lookups.
+        assert.deepEqual(metadataResponses.slice(0, 2), [502, 200])
+        assert.ok(metadataResponses.slice(2).every(status => status === 200))
         assert.equal(requests.filter(url => !url.endsWith('/metadata.json')).length, 1)
         assert.match(output, /HTTP 403/, 'recovered metadata must reach the terminal artifact response')
       }
@@ -143,7 +152,7 @@ try {
         if (scenario === '503') assert.equal(requests.length, 3, 'metadata retries have a fixed request limit')
         if (scenario === '403') assert.equal(requests.length, 1, 'authentication failures never retry')
       }
-      observations.push({ scenario, exit, elapsed, requests, registryCredentials, foreignCredentials, foreignRequests, killed })
+      observations.push({ scenario, exit, elapsed, requests, metadataResponses, registryCredentials, foreignCredentials, foreignRequests, killed })
     }
     catch (error) {
       failures.push(`${scenario}: ${error instanceof Error ? error.message : String(error)}`)

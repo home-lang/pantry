@@ -421,12 +421,13 @@ jobs:
           version: 0.11.97
           install: 'false'
           packages: bun.com@1.4.3 ziglang.org@0.17.0
-      - run: pantry install --frozen-lockfile
       - run: bun install --frozen-lockfile
       - name: Verify native service admission and shutdown on this platform
         run: bun test packages/action/src/service-ownership.test.ts packages/action/src/native-dynamodb.test.ts packages/action/src/native-cache.test.ts
       - name: Build the source CLI before release
         run: cd packages/zig && zig build -Doptimize=Debug -j2
+      - name: Verify the frozen workspace install with this checkout's native CLI
+        run: packages/zig/zig-out/bin/pantry install --frozen-lockfile
       - name: Verify explicit pins through the recursive native installer
         env:
           PANTRY_TEST_CLI: packages/zig/zig-out/bin/pantry
