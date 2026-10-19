@@ -1,5 +1,5 @@
 import { mkdirSync, realpathSync } from 'node:fs'
-import { dirname, join, relative, resolve, sep } from 'node:path'
+import { basename, dirname, join, relative, resolve, sep } from 'node:path'
 
 interface BuildTool {
   package: string
@@ -50,7 +50,11 @@ function version(program: string): string {
 export function reportedVersionMatches(program: string, identity: string, expected: string): boolean {
   // GNU tools can print their absolute argv[0], including the installation's
   // version directory. That path is provenance, not the reported tool version.
-  const report = identity.startsWith(program) ? identity.slice(program.length).trim() : identity
+  // Forwarding launchers preserve the real executable's argv[0], which may
+  // differ from the selected .bin entry. Match the executable basename at a
+  // path boundary and remove the complete printed path before reading digits.
+  const name = basename(program).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const report = identity.replace(new RegExp(`^(?:.*[/\\\\])?${name}(?=\\s|$)`), '').trim()
   const reported = report.match(/\b\d+(?:\.\d+){0,3}(?:[-+][A-Za-z0-9.-]+)?/)?.[0]
   const normalized = (value: string): string => value.replace(/(?:\.0)+$/, '')
   return !!reported && normalized(reported) === normalized(expected)

@@ -14,6 +14,12 @@ describe('native publisher tool ownership', () => {
     expect(reportedVersionMatches(executable, `${executable} (GNU sed) 4.10`, '4.10')).toBe(true)
     expect(reportedVersionMatches(executable, `${executable} (GNU sed) 4.9`, '4.10')).toBe(false)
     expect(reportedVersionMatches('/managed/make', 'GNU Make 4.3', '4.3.0')).toBe(true)
+    const launcher = '/Users/runner/work/pantry/pantry/pantry/.bin/sed'
+    const forwarded = '/Users/runner/work/pantry/pantry/pantry/.bin/../gnu.org/sed/v4.10/bin/sed'
+    expect(reportedVersionMatches(launcher, `${forwarded} (GNU sed) 4.10`, '4.10')).toBe(true)
+    expect(reportedVersionMatches(launcher, `${forwarded} (GNU sed) 4.9`, '4.10')).toBe(false)
+    expect(reportedVersionMatches(launcher, `${forwarded} (GNU sed) 4.100`, '4.10')).toBe(false)
+    expect(reportedVersionMatches(launcher, '/managed path/2026/sed/v99.0/bin/sed (GNU sed) 4.9', '4.10')).toBe(false)
   })
   test('executes its managed runtime and rejects host tools and escaping links', () => {
     const root = mkdtempSync(join(tmpdir(), 'pantry-toolchain-'))
