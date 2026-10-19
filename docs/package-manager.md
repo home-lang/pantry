@@ -122,6 +122,16 @@ This includes a delegated Bun, pnpm, Yarn, or npm install: an unavailable
 package-manager executable, spawn failure, signal termination, or non-zero exit
 keeps `pantry install` non-zero and does not write the JS-install marker.
 
+Safe native GETs share at most two retries across connection failures, HTTP 429,
+and gateway errors (502, 503, and 504). `Retry-After` delta seconds and IMF-fixdate
+HTTP dates set a minimum wait. An excessive delay is never shortened into an
+early retry. The existing 30-second metadata and five-minute archive deadlines
+include retry waits, redirects, and response bodies. Cancellation closes the
+request before returning; partial archives and publication writes are not
+replayed. Status diagnostics identify the responding origin without including
+signed query strings or credentials. A quota that outlasts the deadline remains
+a failed installation.
+
 ### Version-constraint semantics
 
 Exact versions remain exact. Caret ranges keep the first non-zero component
