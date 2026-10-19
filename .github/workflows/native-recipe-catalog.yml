@@ -6,6 +6,10 @@ on:
         description: Build the immutable DynamoDB Local recipe and require its live database health check
         type: boolean
         default: false
+      verify-native-unit-tests:
+        description: Run the complete native suite against this same source and compiler
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -89,6 +93,20 @@ jobs:
         run: |
           cp packages/zig/zig-out/bin/pantry artifacts/native-catalog/lookup-cli
           sha256sum artifacts/native-catalog/lookup-cli > artifacts/native-catalog/lookup-cli-sha256.txt
+      - name: Install the declared native unit-test fixture tools through Pantry
+        if: inputs.verify-native-unit-tests
+        uses: ./packages/action
+        with:
+          version: 0.11.101
+          install: 'false'
+          packages: nixos.org/patchelf@0.18.0 llvm.org@23.1.3 gnu.org/binutils@2.46.0
+      - name: Verify the managed fixture compiler and complete native suite
+        if: inputs.verify-native-unit-tests
+        run: |
+          case "$(command -v clang)" in "$GITHUB_WORKSPACE"/pantry/*) ;; *) exit 1 ;; esac
+          clang --version | head -1 | grep -F '23.1.3'
+          cd packages/zig
+          zig build test -j2 --summary all
       - name: Build the native DynamoDB distribution and require its live health check
         if: inputs.verify-dynamodb
         env:
