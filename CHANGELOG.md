@@ -1,3 +1,34 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.98...v0.11.99)
+
+## 🐛 Bug Fixes
+
+- **ci**: bootstrap declared Zig dependencies before source compilation ([39adc56](https://github.com/pantry-pm/pantry/commit/39adc56)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **http**: recover transient registry gateways within request deadlines ([628cddb](https://github.com/pantry-pm/pantry/commit/628cddb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **action**: check cache service availability before archiving dependencies ([d722973](https://github.com/pantry-pm/pantry/commit/d722973)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **cli**: retain verbose diagnostics for named native installs ([3bfa92e](https://github.com/pantry-pm/pantry/commit/3bfa92e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- near-instant repeat installs, --no-readback, and safe publish retries ([4cfd709](https://github.com/pantry-pm/pantry/commit/4cfd709)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- **ci**: verify native gateway recovery before frozen toolchain installs ([7de5752](https://github.com/pantry-pm/pantry/commit/7de5752)) _(by Chris <chrisbreuer93@gmail.com>)_
+- gate releases on native Linux Chrome installation ([27b4ed3](https://github.com/pantry-pm/pantry/commit/27b4ed3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.99 ([c270220](https://github.com/pantry-pm/pantry/commit/c270220)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' into codex/pantry95-native-action-integration ([5db8514](https://github.com/pantry-pm/pantry/commit/5db8514)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.97...v0.11.98)
 
 ## ✨ Features
