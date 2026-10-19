@@ -2313,9 +2313,12 @@ fn createTarball(
     const tmp_dir = io_helper.getTempDir();
     const tarball_path = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, tarball_name });
 
-    // npm requires all files to be inside a "package/" directory in the tarball
-    // Create staging directory structure: /tmp/pantry-staging/package/
-    const staging_base = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "pantry-staging" });
+    // npm requires all files to be inside a "package/" directory in the tarball.
+    // One staging directory per publish. A fixed /tmp/pantry-staging was
+    // shared by every publish on the machine: a monorepo publishing a
+    // dependency layer in parallel had each publish delete the others'
+    // staged files mid-copy, and packages went up without their dist.
+    const staging_base = try io_helper.uniqueTempPath(allocator, "pantry-staging");
     defer allocator.free(staging_base);
     const staging_pkg = try std.fs.path.join(allocator, &[_][]const u8{ staging_base, "package" });
     defer allocator.free(staging_pkg);
@@ -2324,6 +2327,7 @@ fn createTarball(
     io_helper.deleteTree(staging_base) catch {};
 
     try io_helper.makePath(staging_pkg);
+    errdefer io_helper.deleteTree(staging_base) catch {};
 
     // Read package.json to check for `files` array
     const pkg_json_path = try std.fs.path.join(allocator, &[_][]const u8{ package_dir, "package.json" });
@@ -2397,7 +2401,10 @@ fn createTarball(
 
             // Create parent directory if needed
             if (std.fs.path.dirname(dst)) |parent| {
-                io_helper.makePath(parent) catch continue;
+                io_helper.makePath(parent) catch |err| {
+                    style.print("  Error: cannot stage '{s}': {}\n", .{ file_entry, err });
+                    return error.TarballCreationFailed;
+                };
             }
 
             // Use cp -rp which works correctly for both files and directories.
@@ -2406,9 +2413,11 @@ fn createTarball(
             // statFile to return kind=.file for dirs. cp -p then silently
             // skips directories ("omitting directory"), so only package.json
             // ended up in the tarball.
+            // A `files` entry that exists and cannot be copied fails the
+            // publish: skipping it uploads a package without that entry.
             const cp = io_helper.childRun(allocator, &[_][]const u8{ "cp", "-rp", src, dst }) catch |err| {
-                style.print("  Warning: Failed to copy '{s}': {}\n", .{ file_entry, err });
-                continue;
+                style.print("  Error: failed to copy '{s}': {}\n", .{ file_entry, err });
+                return error.TarballCreationFailed;
             };
             defer allocator.free(cp.stdout);
             defer allocator.free(cp.stderr);
@@ -2418,7 +2427,8 @@ fn createTarball(
                 else => false,
             };
             if (!cp_ok) {
-                style.print("  Warning: cp failed for '{s}': {s}\n", .{ file_entry, cp.stderr });
+                style.print("  Error: cp failed for '{s}': {s}\n", .{ file_entry, cp.stderr });
+                return error.TarballCreationFailed;
             }
         }
 

@@ -1,3 +1,20 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.99...v0.11.100)
+
+## 🐛 Bug Fixes
+
+- **publish**: stage each publish in its own directory ([f996199](https://github.com/pantry-pm/pantry/commit/f996199)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **release**: confirm unresolved uploads against original archive receipts ([35439a0](https://github.com/pantry-pm/pantry/commit/35439a0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **publish**: never repeat an upload with an unknown outcome ([f5980f3](https://github.com/pantry-pm/pantry/commit/f5980f3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.100 ([0fdd7c0](https://github.com/pantry-pm/pantry/commit/0fdd7c0)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.98...v0.11.99)
 
 ## 🐛 Bug Fixes

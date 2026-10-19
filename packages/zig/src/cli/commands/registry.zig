@@ -1091,8 +1091,11 @@ pub fn createTarball(
     const tmp_dir = io_helper.getTempDir();
     const tarball_path = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, tarball_name });
 
-    // Create staging directory: /tmp/pantry-staging/package/
-    const staging_base = try std.fs.path.join(allocator, &[_][]const u8{ tmp_dir, "pantry-staging" });
+    // One staging directory per publish. A fixed /tmp/pantry-staging was
+    // shared by every publish on the machine: a monorepo publishing a
+    // dependency layer in parallel had each publish delete the others'
+    // staged files mid-copy, and packages went up without their dist.
+    const staging_base = try io_helper.uniqueTempPath(allocator, "pantry-staging");
     defer allocator.free(staging_base);
     const staging_pkg = try std.fs.path.join(allocator, &[_][]const u8{ staging_base, "package" });
     defer allocator.free(staging_pkg);
@@ -1100,6 +1103,7 @@ pub fn createTarball(
     // Clean and create staging directory
     io_helper.deleteTree(staging_base) catch {};
     try io_helper.makePath(staging_pkg);
+    errdefer io_helper.deleteTree(staging_base) catch {};
 
     // Parse package.json to get "files" array and "bin" field
     const parsed = std.json.parseFromSlice(std.json.Value, allocator, config_content, .{}) catch {
