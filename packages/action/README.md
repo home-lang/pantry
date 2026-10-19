@@ -73,6 +73,11 @@ lookups, restore requests and archive creation. Packages still install through
 the same native resolver. A successful cache save is reported only when the
 cache service returns an accepted cache ID.
 
+Native registry GETs retry gateway responses (502, 503 and 504) at most twice,
+using the same endpoint and credential scope within the original request
+deadline. Authentication failures and missing packages remain terminal. A
+failed install still fails the job after recovery is exhausted.
+
 ### Linux browser installation checks
 
 The `native-browser` CI job builds the CLI from the checkout and installs

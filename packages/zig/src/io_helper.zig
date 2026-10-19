@@ -1877,7 +1877,9 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
         allocator.free(stream.request_url);
         if (stream.authorization) |authorization| allocator.free(authorization);
     }
-    for (0..11) |_| {
+    var redirects: u8 = 0;
+    var retries: u8 = 0;
+    while (true) {
         const decoration = decorateRequest(allocator, stream.request_url);
         defer decoration.deinit(allocator);
         if (decoration.authorization) |authorization| stream.authorization = try allocator.dupe(u8, authorization);
@@ -1899,6 +1901,8 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
         stream.req.sendBodiless() catch |err| return requestTransportError(&stream.req, err);
         stream.response = stream.req.receiveHead(&stream.redirect_buf) catch |err| return requestTransportError(&stream.req, err);
         if (stream.response.head.status.class() == .redirect) {
+            if (redirects == 10) return error.TooManyHttpRedirects;
+            redirects += 1;
             const location = stream.response.head.location orelse return error.InvalidUrl;
             var resolution_buffer: [16384]u8 = undefined;
             if (location.len > resolution_buffer.len) return error.InvalidUrl;
@@ -1914,6 +1918,15 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
             continue;
         }
         const status = @backingInt(stream.response.head.status);
+        if (transientGetStatus(status) and retries < 2) {
+            retries += 1;
+            stream.req.deinit();
+            if (stream.authorization) |authorization| allocator.free(authorization);
+            stream.authorization = null;
+            @import("cli/style.zig").print("  Registry GET HTTP {d}; retry {d}/2\n", .{ status, retries });
+            sleepMs(@as(u64, retries) * 1000);
+            continue;
+        }
         if (status != 200) {
             const style = @import("cli/style.zig");
             style.print("  Download HTTP {d}\n", .{status});
@@ -1926,7 +1939,6 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
         }
         return stream;
     }
-    return error.TooManyHttpRedirects;
 }
 
 /// Like `httpGet`, but reuses an existing `std.http.Client` for connection pooling.
@@ -2114,13 +2126,21 @@ fn httpGetResponseTask(allocator: std.mem.Allocator, url: []const u8, extra_head
     return httpGetResponseWithClient(&client, allocator, url, extra_headers, status_only_errors);
 }
 
+/// A GET can recover from a transient gateway failure without changing its
+/// origin, credentials or outer deadline. Authentication and absence stay final.
+fn transientGetStatus(status: u16) bool {
+    return status == 502 or status == 503 or status == 504;
+}
+
 fn httpGetResponseWithClient(client: *std.http.Client, allocator: std.mem.Allocator, url: []const u8, extra_headers: []const std.http.Header, status_only_errors: bool) anyerror!HttpResponse {
     var current_url = try allocator.dupe(u8, url);
     defer allocator.free(current_url);
     const initial_decoration = decorateRequest(allocator, url);
     defer initial_decoration.deinit(allocator);
     const initial_uri = try std.Uri.parse(initial_decoration.effectiveUrl(url));
-    for (0..11) |_| {
+    var redirects: u8 = 0;
+    var retries: u8 = 0;
+    while (true) {
         var next_url: ?[]u8 = null;
         {
             const decoration = decorateRequest(allocator, current_url);
@@ -2152,6 +2172,8 @@ fn httpGetResponseWithClient(client: *std.http.Client, allocator: std.mem.Alloca
             var redirect_buffer: [8192]u8 = undefined;
             var response = req.receiveHead(&redirect_buffer) catch |err| return requestTransportError(&req, err);
             if (response.head.status.class() == .redirect) {
+                if (redirects == 10) return error.TooManyHttpRedirects;
+                redirects += 1;
                 const location = response.head.location orelse return error.InvalidUrl;
                 var resolution_buffer: [16384]u8 = undefined;
                 if (location.len > resolution_buffer.len) return error.InvalidUrl;
@@ -2161,6 +2183,12 @@ fn httpGetResponseWithClient(client: *std.http.Client, allocator: std.mem.Alloca
                 next_url = try std.fmt.allocPrint(allocator, "{f}", .{next_uri});
             } else {
                 const status = @backingInt(response.head.status);
+                if (transientGetStatus(status) and retries < 2) {
+                    retries += 1;
+                    @import("cli/style.zig").print("  Registry GET HTTP {d}; retry {d}/2\n", .{ status, retries });
+                    sleepMs(@as(u64, retries) * 1000);
+                    continue;
+                }
                 // An error's status is decisive; never wait for an untrusted
                 // error body before reporting authentication or availability.
                 if (status_only_errors and (status < 200 or status >= 300)) return .{ .status = status, .body = try allocator.alloc(u8, 0) };
@@ -2181,7 +2209,6 @@ fn httpGetResponseWithClient(client: *std.http.Client, allocator: std.mem.Alloca
         allocator.free(current_url);
         current_url = next_url orelse unreachable;
     }
-    return error.TooManyHttpRedirects;
 }
 
 /// Status-preserving GET with one deadline for headers, redirects and body.

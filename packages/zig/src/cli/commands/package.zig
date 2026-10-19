@@ -1932,12 +1932,12 @@ const PublishPhases = struct {
 
     fn mark(self: *PublishPhases, phase: Phase) void {
         const now = io_helper.getMilliTimestamp();
-        self.spent_ms[@intFromEnum(phase)] = now - self.last_ms;
+        self.spent_ms[@backingInt(phase)] = now - self.last_ms;
         self.last_ms = now;
     }
 
     fn print(self: *const PublishPhases) void {
-        if (self.spent_ms[@intFromEnum(Phase.token)] < 0) return;
+        if (self.spent_ms[@backingInt(Phase.token)] < 0) return;
         const names = [_][]const u8{ "oidc token", "jwks verify", "provenance (fulcio+rekor)", "npm exchange+upload" };
         style.print("  {s}timings:{s}", .{ style.dim, style.reset });
         for (self.spent_ms, 0..) |ms, i| {

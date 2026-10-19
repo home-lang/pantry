@@ -8,6 +8,7 @@ const cli = resolve(process.env.PANTRY_SOURCE_CLI || 'packages/zig/zig-out/bin/p
 const domain = 'registry-lookup.test'
 const token = 'disposable-registry-fixture-token'
 const root = await mkdtemp(join(tmpdir(), 'pantry-native-lookup-'))
+await mkdir('artifacts/native-catalog', { recursive: true })
 const observations: object[] = []
 const segment = process.env.PANTRY_LOOKUP_SEGMENT || 'metadata'
 let mode = ''
@@ -52,8 +53,14 @@ const registry = createServer((req, res) => {
       res.write('partial archive bytes')
       return
     }
-    res.writeHead(mode === 'artifact503' ? 503 : mode === 'artifact403' ? 403 : 404)
+    const archiveAttempts = requests.filter(path => path === url).length
+    res.writeHead(mode === 'artifact502-recover' ? (archiveAttempts === 1 ? 502 : 403) : mode === 'metadata502-recover' ? 403 : mode === 'artifact503' ? 503 : mode === 'artifact403' ? 403 : 404)
     res.end('fixture archive unavailable')
+    return
+  }
+  if (mode === 'metadata502-recover' && requests.filter(path => path.endsWith('/metadata.json')).length === 1) {
+    res.writeHead(502)
+    res.end('temporary gateway failure')
     return
   }
   if (mode === 'redirect') {
@@ -77,7 +84,9 @@ const registry = createServer((req, res) => {
 })
 const base = await listen(registry)
 try {
-  const scenarios = segment === 'metadata' ? ['503', '403', 'malformed', 'null', 'array', 'disconnect', 'stalled-head', 'stalled-body', 'artifact503', 'artifact403', 'artifact-partial', 'redirect'] : [segment]
+  const scenarios = segment === 'gateway-recovery'
+    ? ['503', '403', 'metadata502-recover', 'artifact503', 'artifact403', 'artifact502-recover', 'redirect']
+    : segment === 'metadata' ? ['503', '403', 'malformed', 'null', 'array', 'disconnect', 'stalled-head', 'stalled-body', 'artifact503', 'artifact403', 'artifact-partial', 'redirect', 'metadata502-recover', 'artifact502-recover'] : [segment]
   for (const scenario of scenarios) {
     let timer: ReturnType<typeof setTimeout> | undefined
     try {
@@ -112,9 +121,18 @@ try {
       assert.equal(foreignCredentials, 0, 'credentials must not cross origin')
       if (scenario.startsWith('artifact')) {
         const archives = requests.filter(url => url === `/binaries/${domain}/1.0.0/archive.tar.gz`)
-        assert.equal(archives.length, 1, 'artifact failures must be observed at the requested archive, without a second downloader')
+        const expected = scenario === 'artifact503' ? 3 : scenario === 'artifact502-recover' ? 2 : 1
+        assert.equal(archives.length, expected, 'only bounded retries of the same primary archive transport are allowed')
       }
-      if (scenario === 'redirect') assert.ok(foreignRequests > 0)
+      if (scenario === 'metadata502-recover') {
+        assert.equal(requests.filter(url => url.endsWith('/metadata.json')).length, 2)
+        assert.equal(requests.filter(url => !url.endsWith('/metadata.json')).length, 1)
+        assert.match(output, /HTTP 403/, 'recovered metadata must reach the terminal artifact response')
+      }
+      else if (scenario === 'artifact502-recover') {
+        assert.match(output, /HTTP 403/, 'recovery must preserve the final authentication failure')
+      }
+      else if (scenario === 'redirect') assert.ok(foreignRequests > 0)
       else {
         assert.doesNotMatch(output, /not found in (?:pantry|registry)/i, 'failures cannot become package absence')
         if (scenario.includes('503')) assert.match(output, /HTTP 503/)
@@ -122,6 +140,8 @@ try {
         else if (scenario.includes('stalled')) assert.match(output, /timeout|timed out/i)
         else if (['malformed', 'null', 'array'].includes(scenario)) assert.match(output, /invalid.?registry.?metadata/i)
         if (!scenario.startsWith('artifact')) assert.equal(requests.filter(url => !url.endsWith('/metadata.json')).length, 0, 'metadata errors must stop fallback and archive downloads')
+        if (scenario === '503') assert.equal(requests.length, 3, 'metadata retries have a fixed request limit')
+        if (scenario === '403') assert.equal(requests.length, 1, 'authentication failures never retry')
       }
       observations.push({ scenario, exit, elapsed, requests, registryCredentials, foreignCredentials, foreignRequests, killed })
     }

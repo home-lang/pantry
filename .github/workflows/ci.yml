@@ -325,6 +325,11 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Build this checkout's native CLI
         run: cd packages/zig && zig build -Doptimize=Debug -j2
+      - name: Verify gateway recovery and terminal authentication through the native transport
+        env:
+          PANTRY_SOURCE_CLI: packages/zig/zig-out/bin/pantry
+          PANTRY_LOOKUP_SEGMENT: gateway-recovery
+        run: bun .github/scripts/verify-registry-lookup.ts
       - name: Verify the real Linux browser package through the source installer
         env:
           PANTRY_TEST_CLI: packages/zig/zig-out/bin/pantry
@@ -334,7 +339,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: source-linux-native-browser
-          path: artifacts/linux-native-browser
+          path: |
+            artifacts/linux-native-browser
+            artifacts/native-catalog/native-registry-lookup.json
           if-no-files-found: error
 
   continuous-release:
