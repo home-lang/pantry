@@ -48,8 +48,8 @@ pub const Ownership = struct {
         if (root) self.enabled = hasWorkspacePatterns(parsed.value.object);
         if (parsed.value.object.get("system")) |system| {
             if (system == .object) {
-                var names = system.object.keyIterator();
-                while (names.next()) |name| try self.retain(name.*);
+                var names = system.object.iterator();
+                while (names.next()) |entry| try self.retain(entry.key_ptr.*);
             }
         }
         if (!root) {
@@ -64,8 +64,8 @@ pub const Ownership = struct {
         inline for (.{ "dependencies", "devDependencies", "optionalDependencies", "peerDependencies" }) |section| {
             const deps = parsed.value.object.get(section) orelse continue;
             if (deps != .object) continue;
-            var it = deps.object.keyIterator();
-            while (it.next()) |name| try self.add(name.*);
+            var it = deps.object.iterator();
+            while (it.next()) |entry| try self.add(entry.key_ptr.*);
         }
     }
 
