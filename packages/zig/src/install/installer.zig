@@ -2825,15 +2825,12 @@ pub const Installer = struct {
         else
             try Paths.globalDir(self.allocator);
         defer self.allocator.free(symlink_base);
-        symlink_mod.createPackageSymlinks(
+        try symlink_mod.createPackageSymlinks(
             self.allocator,
             domain,
             spec.version,
             symlink_base,
-        ) catch |err| {
-            // Log error but don't fail the install
-            if (!style.isCI()) style.print("Warning: Failed to create symlinks: {}\n", .{err});
-        };
+        );
 
         return install_path;
     }
@@ -3234,21 +3231,7 @@ pub const Installer = struct {
                 return err;
             };
 
-            const symlink_module = @import("symlink.zig");
-            const use_shim = try symlink_module.requiresForwardingShim(self.allocator, source);
-
-            // Remove existing symlink if it exists
-            io_helper.deleteFile(link) catch {};
-
-            // Script wrappers (e.g. git's libexec resolver) must be shimmed, not
-            // symlinked, so the wrapper's `$0` resolves to its real path. See
-            // symlink.zig for why a flat symlink breaks them.
-            if (use_shim and symlink_module.writeForwardingShim(self.allocator, link, source, null)) continue;
-
-            // Create symlink
-            io_helper.symLink(source, link) catch |err| {
-                if (!style.isCI()) style.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
-            };
+            try @import("symlink.zig").createProgramActivation(self.allocator, link, source, null);
         }
 
         _ = version; // not used in current implementation
@@ -3377,14 +3360,7 @@ pub const Installer = struct {
                             return err;
                         };
 
-                        // Remove existing symlink if it exists
-                        io_helper.deleteFile(link) catch {};
-
-                        // Create symlink
-                        @import("symlink.zig").symLinkInTree(self.allocator, tree_root, source, link) catch |err| {
-                            if (!style.isCI()) style.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_name, err });
-                            continue;
-                        };
+                        try @import("symlink.zig").createProgramActivation(self.allocator, link, source, tree_root);
 
                         custom_bins_created = true;
                     }
@@ -3420,27 +3396,7 @@ pub const Installer = struct {
             );
             defer self.allocator.free(link);
 
-            const use_shim = try symlink.requiresForwardingShim(self.allocator, bin_info.path);
-
-            // Remove existing link/shim if it exists
-            io_helper.deleteFile(link) catch {};
-
-            // Script wrappers (e.g. the pkgx-style `git` wrapper) compute their
-            // own libexec dir from $0. A bare symlink leaves $0 = this .bin path,
-            // so the wrapper looks for libexec next to .bin, never finds it, and
-            // recurses (`git config` → itself) into a fork bomb that freezes the
-            // shell on every prompt render. Give scripts a forwarding shim that
-            // execs the real path (so $0 is correct); real binaries keep the
-            // cheaper symlink.
-            if (use_shim) {
-                if (!symlink.writeForwardingShim(self.allocator, link, bin_info.path, tree_root)) {
-                    symlink.symLinkInTree(self.allocator, tree_root, bin_info.path, link) catch {};
-                }
-            } else {
-                symlink.symLinkInTree(self.allocator, tree_root, bin_info.path, link) catch |err| {
-                    if (!style.isCI()) style.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_info.name, err });
-                };
-            }
+            try symlink.createProgramActivation(self.allocator, link, bin_info.path, tree_root);
         }
 
         _ = domain; // not used with new discovery method

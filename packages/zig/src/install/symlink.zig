@@ -147,6 +147,28 @@ pub fn resolvedLinkTarget(allocator: std.mem.Allocator, link_path: []const u8) ?
     return std.fs.path.resolve(allocator, &.{ dir, raw }) catch null;
 }
 
+/// Recover the target of Pantry's exact generated launcher format or a link.
+/// Recognizing launchers keeps provider ownership identical after activation.
+fn resolvedActivationTarget(allocator: std.mem.Allocator, path: []const u8) ?[]u8 {
+    if (resolvedLinkTarget(allocator, path)) |target| return target;
+    const content = io_helper.readFileAlloc(allocator, path, 64 * 1024) catch return null;
+    defer allocator.free(content);
+    const suffix = "\" \"$@\"\n";
+    if (!std.mem.endsWith(u8, content, suffix)) return null;
+    const relative_prefix = "#!/bin/sh\n" ++ shim_locate_self ++ "exec \"$d/";
+    const absolute_prefix = "#!/bin/sh\nexec \"";
+    if (std.mem.startsWith(u8, content, relative_prefix)) {
+        const target = content[relative_prefix.len .. content.len - suffix.len];
+        const directory = std.fs.path.dirname(path) orelse ".";
+        return std.fs.path.resolve(allocator, &.{ directory, target }) catch null;
+    }
+    if (std.mem.startsWith(u8, content, absolute_prefix)) {
+        const target = content[absolute_prefix.len .. content.len - suffix.len];
+        if (std.fs.path.isAbsolute(target)) return allocator.dupe(u8, target) catch null;
+    }
+    return null;
+}
+
 /// True when `a` and `b` name the same location: the same normalized path,
 /// or the same physical path once symlinks are followed (one may have been
 /// written through a symlinked parent the other was not).
@@ -201,39 +223,39 @@ pub fn createBinarySymlinkFromPath(
     // can surface symlink collisions.
     if (symlinkOwnedByExistingPackage(allocator, symlink_path)) |existing_owner| {
         defer allocator.free(existing_owner);
-        if (style.isCI()) {
-            // Machine-parseable line for CI log scraping
-            style.print(
-                "pantry:symlink:skip bin={s} link={s} owner={s}\n",
-                .{ bin_name, symlink_path, existing_owner },
-            );
-        } else {
-            style.print(
-                "  ~ Skipped {s} (already provided by {s})\n",
-                .{ bin_name, existing_owner },
-            );
+        const existing_target = resolvedActivationTarget(allocator, symlink_path);
+        defer if (existing_target) |target| allocator.free(target);
+        // Re-activating this exact program must upgrade a legacy link to its
+        // current invocation contract. Preserve another installed provider.
+        if (existing_target == null or !samePath(existing_target.?, bin_path)) {
+            if (style.isCI()) {
+                // Machine-parseable line for CI log scraping
+                style.print(
+                    "pantry:symlink:skip bin={s} link={s} owner={s}\n",
+                    .{ bin_name, symlink_path, existing_owner },
+                );
+            } else {
+                style.print(
+                    "  ~ Skipped {s} (already provided by {s})\n",
+                    .{ bin_name, existing_owner },
+                );
+            }
+            return;
         }
-        return;
     }
 
-    // Remove existing symlink if present (same package or stale)
-    io_helper.deleteFile(symlink_path) catch {};
-
-    // Shell-script wrappers (e.g. git's, which resolves its libexec via
-    // `$(dirname "$0")/../libexec`) break when symlinked into a flat bin dir:
-    // `$0` becomes the symlink path, so the relative lookup points at a
-    // nonexistent sibling. Emit a tiny forwarding shim that `exec`s the real
-    // path, so the wrapper sees its true location. Real Mach-O/ELF binaries are
-    // still plain symlinks.
+    // Both scripts and native programs can locate resources through argv[0].
+    // Exec the package path so activation preserves that resource root.
     if (use_shim) {
         if (writeForwardingShim(allocator, symlink_path, bin_path, install_base)) {
             if (!style.isCI()) style.print("  ✓ Created shim: {s} -> {s}\n", .{ bin_name, bin_path });
             return;
         }
-        // Fall through to a plain symlink if the shim couldn't be written.
+        return error.ProgramActivationFailed;
     }
 
     // Create symlink (cross-platform); relative when it stays in the tree.
+    io_helper.deleteFile(symlink_path) catch {};
     const link_target = try treeLinkTarget(allocator, install_base, bin_path, symlink_path);
     defer allocator.free(link_target);
     createSymlinkCrossPlatform(link_target, symlink_path) catch |err| {
@@ -257,10 +279,10 @@ pub fn isShebangScript(path: []const u8) bool {
     return magic[0] == '#' and magic[1] == '!';
 }
 
-/// Sourceable shell libraries must be linked, never exec'd by a forwarding shim.
-/// Their interface is declared in the package's checksummed publication metadata.
+/// POSIX executables keep their package argv[0], including native binaries
+/// with sibling resources. Declared sourceable libraries remain links.
 pub fn requiresForwardingShim(allocator: std.mem.Allocator, path: []const u8) !bool {
-    if (!isShebangScript(path)) return false;
+    if (builtin.os.tag == .windows) return false;
     const bin_dir = std.fs.path.dirname(path) orelse return true;
     const prefix = std.fs.path.dirname(bin_dir) orelse return true;
     const manifest = try std.fs.path.join(allocator, &.{ prefix, "share", "pantry", "interfaces.json" });
@@ -284,6 +306,18 @@ pub fn requiresForwardingShim(allocator: std.mem.Allocator, path: []const u8) !b
         if (std.mem.eql(u8, name, std.fs.path.basename(path))) sourceable = true;
     }
     return !sourceable;
+}
+
+/// Activate one program without substituting a resource-breaking symlink
+/// when its forwarding launcher cannot be written.
+pub fn createProgramActivation(allocator: std.mem.Allocator, link: []const u8, source: []const u8, tree_root: ?[]const u8) !void {
+    const use_shim = try requiresForwardingShim(allocator, source);
+    if (use_shim) {
+        if (!writeForwardingShim(allocator, link, source, tree_root)) return error.ProgramActivationFailed;
+    } else {
+        io_helper.deleteFile(link) catch {};
+        try symLinkInTree(allocator, tree_root, source, link);
+    }
 }
 
 /// Shell that sets `d` to the directory a shim really lives in: `$0`, after
@@ -317,9 +351,9 @@ fn shimScript(allocator: std.mem.Allocator, prefix: []const u8, target: []const 
 }
 
 /// Write a tiny `#!/bin/sh` shim at `shim_path` that `exec`s `target_path "$@"`.
-/// Used instead of a symlink for script wrappers so the wrapped script sees its
-/// real location via `$0`. Inside `tree_root` the target is written relative to
-/// the shim (see `treeLinkTarget`). Returns true on success.
+/// Keeps the executable's resource root through argv[0]. Inside `tree_root`
+/// the target is written relative to the shim (see `treeLinkTarget`).
+/// Returns true on success.
 pub fn writeForwardingShim(
     allocator: std.mem.Allocator,
     shim_path: []const u8,
@@ -342,18 +376,24 @@ pub fn writeShim(
     const content = shimScript(allocator, prefix, target) catch return false;
     defer allocator.free(content);
 
-    const file = io_helper.createFileAbsolute(shim_path, .{ .truncate = true }) catch return false;
+    var random: [8]u8 = undefined;
+    io_helper.randomBytes(&random);
+    const temporary = std.fmt.allocPrint(allocator, "{s}.pantry-{x}.tmp", .{ shim_path, std.mem.readInt(u64, &random, .little) }) catch return false;
+    defer allocator.free(temporary);
+    defer io_helper.deleteFile(temporary) catch {};
+    // Rename replaces an old activation link itself, never its package target.
+    const file = io_helper.createFileAbsolute(temporary, .{ .exclusive = true }) catch return false;
     io_helper.writeAllToFile(file, content) catch {
         io_helper.closeFile(file);
         return false;
     };
+    if (builtin.os.tag != .windows) file.setPermissions(io_helper.io, io_helper.File.Permissions.fromMode(0o755)) catch {
+        io_helper.closeFile(file);
+        return false;
+    };
     io_helper.closeFile(file);
-
-    var pbuf: [std.fs.max_path_bytes:0]u8 = undefined;
-    if (shim_path.len >= pbuf.len) return false;
-    @memcpy(pbuf[0..shim_path.len], shim_path);
-    pbuf[shim_path.len] = 0;
-    _ = std.c.chmod(&pbuf, 0o755);
+    if (builtin.os.tag == .windows) io_helper.deleteFile(shim_path) catch {};
+    io_helper.rename(temporary, shim_path) catch return false;
     return true;
 }
 
@@ -366,7 +406,7 @@ fn symlinkOwnedByDifferentPackage(
 ) bool {
     // Read the existing symlink target (a relative one is resolved against
     // the link's directory, so pantry-written relative links compare too)
-    const existing_target = resolvedLinkTarget(allocator, symlink_path) orelse return false;
+    const existing_target = resolvedActivationTarget(allocator, symlink_path) orelse return false;
     defer allocator.free(existing_target);
     const new_resolved = std.fs.path.resolve(allocator, &.{new_target}) catch return false;
     defer allocator.free(new_resolved);
@@ -386,12 +426,12 @@ fn symlinkOwnedByExistingPackage(
     allocator: std.mem.Allocator,
     symlink_path: []const u8,
 ) ?[]u8 {
-    const existing_target = resolvedLinkTarget(allocator, symlink_path) orelse return null;
+    const existing_target = resolvedActivationTarget(allocator, symlink_path) orelse return null;
     defer allocator.free(existing_target);
 
     // A link that no longer resolves (its tree moved, or it was written
     // through a path that is gone) belongs to nobody: let it be replaced.
-    io_helper.cwd().access(io_helper.io, symlink_path, .{}) catch return null;
+    io_helper.cwd().access(io_helper.io, existing_target, .{}) catch return null;
 
     const pkg_dir = extractPackageDir(existing_target) orelse return null;
     // pkg_dir looks like ".../packages/redis.io/v8.6.1" — take the parent segment as owner
@@ -712,9 +752,7 @@ pub fn createPackageSymlinks(
     } else {
         // Create symlinks for each binary using the discovered paths
         for (binaries) |bin_info| {
-            createBinarySymlinkFromPath(allocator, bin_info.name, bin_info.path, install_base) catch |err| {
-                if (!style.isCI()) style.print("  ! Failed to create symlink for {s}: {}\n", .{ bin_info.name, err });
-            };
+            try createBinarySymlinkFromPath(allocator, bin_info.name, bin_info.path, install_base);
         }
     }
 
@@ -788,7 +826,7 @@ pub fn removePackageSymlinks(
 
 /// Shim type based on the target file extension
 pub const ShimType = enum {
-    /// Shell script for native executables (symlink on Unix, copy on Windows)
+    /// Native executable (forwarding launcher on POSIX, copy on Windows)
     native,
     /// Node.js script (.js, .mjs, .cjs files)
     node,
@@ -813,7 +851,7 @@ pub fn detectShimType(file_path: []const u8) ShimType {
 
 /// Create a cross-platform shim for a binary
 /// For JS/TS files: creates shell/cmd scripts that invoke bun
-/// For native files: creates symlink (Unix) or copy (Windows)
+/// Native programs retain their package resource root through activation.
 /// A target inside `tree_root` (normally the pantry dir holding `shim_dir`)
 /// is referenced relative to the shim, so the tree stays relocatable.
 pub fn createShim(
@@ -835,16 +873,11 @@ pub fn createShim(
 
     switch (shim_type) {
         .native => {
-            // For native binaries, use symlink (or copy on Windows)
+            // Preserve the native program's package resource root.
             const shim_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ shim_dir, bin_name });
             defer allocator.free(shim_path);
 
-            // Remove existing shim if present
-            io_helper.deleteFile(shim_path) catch {};
-
-            const link_target = try treeLinkTarget(allocator, tree_root, target_path, shim_path);
-            defer allocator.free(link_target);
-            try createSymlinkCrossPlatform(link_target, shim_path);
+            try createProgramActivation(allocator, shim_path, target_path, tree_root);
         },
         .node, .shell => {
             // For JS/shell files, create wrapper scripts
@@ -1065,6 +1098,156 @@ test "createShimsFromBinConfig normalizes scoped bin object keys" {
     );
 
     try io_helper.cwd().access(io_helper.io, test_dir ++ "/.bin/tool", .{});
+}
+
+test "native activation preserves argv0 resources, upgrades its own legacy link and survives relocation" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    var root_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const root_len = try tmp.dir.realPathFile(io_helper.io, ".", &root_buf);
+    const root = root_buf[0..root_len];
+    try tmp.dir.createDirPath(io_helper.io, "tree with spaces/packages/resource.invalid/v1.0.0/bin");
+    try tmp.dir.createDirPath(io_helper.io, "tree with spaces/packages/resource.invalid/v1.0.0/share");
+    try tmp.dir.createDirPath(io_helper.io, "tree with spaces/bin");
+    try tmp.dir.writeFile(io_helper.io, .{ .sub_path = "tree with spaces/packages/resource.invalid/v1.0.0/share/preset", .data = "native-resource-ok\n" });
+    try tmp.dir.writeFile(io_helper.io, .{ .sub_path = "probe.c", .data =
+        \\#include <stdio.h>
+        \\#include <string.h>
+        \\int main(int argc, char **argv) {
+        \\  char path[4096];
+        \\  if (strlen(argv[0]) + 20 >= sizeof(path)) return 3;
+        \\  strcpy(path, argv[0]);
+        \\  char *slash = strrchr(path, '/');
+        \\  if (!slash) return 3;
+        \\  strcpy(slash, "/../share/preset");
+        \\  FILE *file = fopen(path, "r");
+        \\  if (!file) return 2;
+        \\  char value[128];
+        \\  if (!fgets(value, sizeof(value), file)) return 4;
+        \\  fclose(file);
+        \\  fputs(value, stdout);
+        \\  if (argc > 1) puts(argv[1]);
+        \\  return 0;
+        \\}
+        \\
+    });
+    const tree = try std.fs.path.join(allocator, &.{ root, "tree with spaces" });
+    defer allocator.free(tree);
+    const source = try std.fs.path.join(allocator, &.{ root, "probe.c" });
+    defer allocator.free(source);
+    const binary = try std.fs.path.join(allocator, &.{ tree, "packages/resource.invalid/v1.0.0/bin/probe" });
+    defer allocator.free(binary);
+    const compile = try io_helper.childRun(allocator, &.{ "clang", source, "-o", binary });
+    defer allocator.free(compile.stdout);
+    defer allocator.free(compile.stderr);
+    try std.testing.expect(compile.term == .exited and compile.term.exited == 0);
+    const before = try @import("extractor.zig").computeChecksum(allocator, binary);
+    defer allocator.free(before);
+    const activated = try std.fs.path.join(allocator, &.{ tree, "bin/probe" });
+    defer allocator.free(activated);
+    try io_helper.symLink("../packages/resource.invalid/v1.0.0/bin/probe", activated);
+    const legacy = try io_helper.childRun(allocator, &.{activated});
+    defer allocator.free(legacy.stdout);
+    defer allocator.free(legacy.stderr);
+    try std.testing.expect(legacy.term == .exited and legacy.term.exited == 2);
+    try createBinarySymlink(allocator, "resource.invalid", "1.0.0", "probe", tree);
+    const result = try io_helper.childRun(allocator, &.{ activated, "argument with spaces" });
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+    try std.testing.expect(result.term == .exited and result.term.exited == 0);
+    try std.testing.expectEqualStrings("native-resource-ok\nargument with spaces\n", result.stdout);
+    const after = try @import("extractor.zig").computeChecksum(allocator, binary);
+    defer allocator.free(after);
+    try std.testing.expectEqualStrings(before, after);
+    const relocated = try std.fs.path.join(allocator, &.{ root, "relocated tree" });
+    defer allocator.free(relocated);
+    try io_helper.rename(tree, relocated);
+    const moved = try std.fs.path.join(allocator, &.{ relocated, "bin/probe" });
+    defer allocator.free(moved);
+    const again = try io_helper.childRun(allocator, &.{moved});
+    defer allocator.free(again.stdout);
+    defer allocator.free(again.stderr);
+    try std.testing.expect(again.term == .exited and again.term.exited == 0);
+    try std.testing.expectEqualStrings("native-resource-ok\n", again.stdout);
+}
+
+test "native launchers preserve the first provider during collision and removal" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    try tmp.dir.createDirPath(io_helper.io, "packages/first.invalid/v1.0.0/bin");
+    try tmp.dir.createDirPath(io_helper.io, "packages/second.invalid/v1.0.0/bin");
+    // Non-shebang payloads exercise the native activation classification.
+    for ([_][]const u8{ "first.invalid", "second.invalid" }) |provider| {
+        const relative = try std.fmt.allocPrint(allocator, "packages/{s}/v1.0.0/bin/probe", .{provider});
+        defer allocator.free(relative);
+        const file = try tmp.dir.createFile(io_helper.io, relative, .{ .permissions = .executable_file });
+        defer file.close(io_helper.io);
+        try io_helper.writeAllToFile(file, provider);
+    }
+    var root_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const root_len = try tmp.dir.realPathFile(io_helper.io, ".", &root_buf);
+    const root = root_buf[0..root_len];
+    const activation = try std.fs.path.join(allocator, &.{ root, "bin/probe" });
+    defer allocator.free(activation);
+    const second = try std.fs.path.join(allocator, &.{ root, "packages/second.invalid/v1.0.0/bin/probe" });
+    defer allocator.free(second);
+    try createBinarySymlink(allocator, "first.invalid", "1.0.0", "probe", root);
+    const original = try io_helper.readFileAlloc(allocator, activation, 64 * 1024);
+    defer allocator.free(original);
+    try createBinarySymlink(allocator, "second.invalid", "1.0.0", "probe", root);
+    const collided = try io_helper.readFileAlloc(allocator, activation, 64 * 1024);
+    defer allocator.free(collided);
+    try std.testing.expectEqualStrings(original, collided);
+    try std.testing.expect(symlinkOwnedByDifferentPackage(allocator, activation, second));
+    try removePackageSymlinks(allocator, "second.invalid", "1.0.0", root);
+    const remaining = try io_helper.readFileAlloc(allocator, activation, 64 * 1024);
+    defer allocator.free(remaining);
+    try std.testing.expectEqualStrings(original, remaining);
+    // Re-activating the same launcher is supported, and removing its owner
+    // removes the activation rather than retaining an orphan command.
+    try createBinarySymlink(allocator, "first.invalid", "1.0.0", "probe", root);
+    try removePackageSymlinks(allocator, "first.invalid", "1.0.0", root);
+    try std.testing.expectError(error.FileNotFound, io_helper.cwd().access(io_helper.io, activation, .{}));
+}
+
+test "forwarding launcher replacement never truncates its cached package target" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    try tmp.dir.writeFile(io_helper.io, .{ .sub_path = "cached-program", .data = "original-cached-program" });
+    var root_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const root_len = try tmp.dir.realPathFile(io_helper.io, ".", &root_buf);
+    const root = root_buf[0..root_len];
+    const target = try std.fs.path.join(allocator, &.{ root, "cached-program" });
+    defer allocator.free(target);
+    const activation = try std.fs.path.join(allocator, &.{ root, "activation" });
+    defer allocator.free(activation);
+    try io_helper.symLink("cached-program", activation);
+    try std.testing.expect(writeForwardingShim(allocator, activation, target, root));
+    const preserved = try io_helper.readFileAlloc(allocator, target, 1024);
+    defer allocator.free(preserved);
+    try std.testing.expectEqualStrings("original-cached-program", preserved);
+}
+
+test "declared sourceable libraries without a shebang remain links" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    try tmp.dir.createDirPath(io_helper.io, "package/bin");
+    try tmp.dir.createDirPath(io_helper.io, "package/share/pantry");
+    try tmp.dir.writeFile(io_helper.io, .{ .sub_path = "package/bin/library.sh", .data = "PANTRY_LIBRARY_VALUE=loaded\n" });
+    try tmp.dir.writeFile(io_helper.io, .{ .sub_path = "package/share/pantry/interfaces.json", .data = "{\"version\":1,\"sourceablePrograms\":[\"library.sh\"]}" });
+    var root_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const root_len = try tmp.dir.realPathFile(io_helper.io, ".", &root_buf);
+    const source = try std.fs.path.join(allocator, &.{ root_buf[0..root_len], "package/bin/library.sh" });
+    defer allocator.free(source);
+    try std.testing.expect(!try requiresForwardingShim(allocator, source));
 }
 
 test "createBinarySymlink" {

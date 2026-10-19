@@ -307,3 +307,19 @@ pantry dev
 - [`pantry list`](/features/package-management#listing-packages) - See what's installed
 - [`pantry install`](/features/package-management#installation) - Reinstall packages after cleaning
 - [`pantry dev`](/features/environment-management) - Recreate project environments
+
+### Executable activation and package resources
+
+On POSIX systems, Pantry activates executables through forwarding launchers that
+execute the program at its package path. Native programs and shell scripts can
+therefore resolve resources beside their own executable rather than beside the
+shared `bin` directory. Launchers within a Pantry tree use relative targets, so
+moving that tree preserves activation. A normal reinstall upgrades an existing
+link to the same program without changing the cached executable's bytes.
+
+Packages can declare shell libraries in `share/pantry/interfaces.json` using
+`{"version":1,"sourceablePrograms":["library.sh"]}`. These remain links so a shell
+can source them, including libraries without a shebang. Another installed
+provider of the same command keeps ownership; uninstalling a colliding package
+does not remove its command. Launcher creation failures fail installation rather
+than silently substituting a link that changes resource lookup.
