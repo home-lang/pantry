@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
+import { existsSync } from 'node:fs'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -7,6 +8,8 @@ import { pathToFileURL } from 'node:url'
 
 assert(process.argv[2], 'Supply the normally published or source-built Pantry CLI')
 const cli = resolve(process.argv[2])
+const mode = process.argv[3] || 'workspace'
+assert(['single', 'workspace'].includes(mode))
 const artifacts = resolve('artifacts/nested-js-graph')
 await mkdir(artifacts, { recursive: true })
 const root = await mkdtemp(join(tmpdir(), 'pantry nested graph '))
@@ -14,7 +17,7 @@ const project = join(root, 'project')
 await mkdir(project)
 const leaf = '@pantry-fixture/leaf'
 const parent = '@pantry-fixture/parent'
-const proof: Record<string, unknown> = { passed: false, cliSha256: Bun.SHA256.hash(await readFile(cli), 'hex') }
+const proof: Record<string, unknown> = { passed: false, mode, cliSha256: Bun.SHA256.hash(await readFile(cli), 'hex') }
 const env = { ...process.env, XDG_DATA_HOME: join(root, 'data'), XDG_CACHE_HOME: join(root, 'cache'), BUN_INSTALL_CACHE_DIR: join(root, 'bun-cache'), NO_COLOR: '1' }
 const packages = [
   { name: leaf, version: '1.0.0', code: 'module.exports = "1.0.0"\n', dependencies: {} },
@@ -69,24 +72,41 @@ try {
     metadata.set(pkg.name, data)
   }
   await writeFile(join(project, '.npmrc'), `registry=${server.url.origin}\n`)
-  await writeFile(join(project, 'package.json'), JSON.stringify({ name: 'nested-graph-fixture', private: true, dependencies: { [leaf]: '1.0.0', [parent]: '1.0.0' } }))
+  if (mode === 'workspace') {
+    await mkdir(join(project, 'packages/member'), { recursive: true })
+    await writeFile(join(project, 'packages/member/package.json'), JSON.stringify({ name: '@pantry-fixture/member', version: '1.0.0', private: true }))
+  }
+  await writeFile(join(project, 'package.json'), JSON.stringify({ name: 'nested-graph-fixture', version: '1.0.0', private: true, ...(mode === 'workspace' ? { workspaces: ['packages/*'] } : {}), dependencies: { [leaf]: '1.0.0', [parent]: '1.0.0' } }))
   await run('bun-install', ['bun', 'install'])
   const evaluate = async (tree: string, pkg: string, label: string): Promise<string> => run(label, ['bun', '-e', `console.log((await import(${JSON.stringify(pathToFileURL(join(project, tree, pkg, 'index.js')).href)})).default)`])
   assert.equal(await evaluate('node_modules', parent, 'bun-parent-binding'), '2.0.0')
   assert.equal(await evaluate('node_modules', leaf, 'bun-root-binding'), '1.0.0')
   await run('pantry-install', [cli, 'install'])
-  const actualRoot = await evaluate('pantry', leaf, 'pantry-root-binding')
-  const actualParent = await evaluate('pantry', parent, 'pantry-parent-binding')
-  proof.actualRootBinding = actualRoot
-  proof.actualParentBinding = actualParent
-  proof.expectedRootBinding = '1.0.0'
-  proof.expectedParentBinding = '2.0.0'
-  await writeFile(join(artifacts, 'pantry.lock'), await readFile(join(project, 'pantry.lock')))
-  await writeFile(join(artifacts, 'bun.lock'), await readFile(join(project, 'bun.lock')))
-  assert.equal(actualRoot, '1.0.0', 'Keep the direct root dependency at its declared version')
-  assert.equal(actualParent, '2.0.0', 'Resolve the conflicting dependency from its parent, not the root hoist')
+  const checkBindings = async (label: string): Promise<void> => {
+    assert.equal(await evaluate('node_modules', leaf, `${label}-bun-root`), '1.0.0')
+    assert.equal(await evaluate('node_modules', parent, `${label}-bun-parent`), '2.0.0')
+    const duplicated = existsSync(join(project, 'pantry', parent, 'package.json'))
+    proof.nativeNpmTreePresent = duplicated
+    if (duplicated) {
+      const actualRoot = await evaluate('pantry', leaf, `${label}-pantry-root`)
+      const actualParent = await evaluate('pantry', parent, `${label}-pantry-parent`)
+      proof.actualRootBinding = actualRoot
+      proof.actualParentBinding = actualParent
+      proof.expectedRootBinding = '1.0.0'
+      proof.expectedParentBinding = '2.0.0'
+      assert.equal(actualRoot, '1.0.0', 'Keep the direct root dependency at its declared version')
+      assert.equal(actualParent, '2.0.0', 'Resolve the conflicting dependency from its parent, not the root hoist')
+    }
+  }
+  if (existsSync(join(project, 'pantry.lock'))) await writeFile(join(artifacts, 'pantry.lock'), await readFile(join(project, 'pantry.lock')))
+  const bunLock = await readFile(join(project, 'bun.lock'))
+  await writeFile(join(artifacts, 'bun.lock'), bunLock)
+  await checkBindings('cold')
+  await run('pantry-warm', [cli, 'install'])
+  await checkBindings('warm')
   await run('pantry-frozen', [cli, 'install', '--frozen-lockfile'])
-  assert.equal(await evaluate('pantry', parent, 'pantry-frozen-parent-binding'), '2.0.0')
+  await checkBindings('frozen')
+  assert.deepEqual(await readFile(join(project, 'bun.lock')), bunLock, 'The normal frozen install keeps the authoritative JS lock unchanged')
   proof.passed = true
 }
 finally {

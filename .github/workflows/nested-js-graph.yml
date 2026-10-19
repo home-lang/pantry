@@ -10,6 +10,10 @@ jobs:
   graph:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [single, workspace]
     steps:
       - uses: actions/checkout@v6
       - name: Install the qualified published Pantry CLI and managed fixture tools
@@ -20,10 +24,10 @@ jobs:
           install: 'false'
           packages: bun.com@1.4.3 gnu.org/tar@1.35
       - name: Compare actual parent dependency bindings with the normal Bun graph
-        run: bun .github/scripts/verify-nested-js-graph.ts '${{ steps.pantry.outputs.pantry-path }}'
+        run: bun .github/scripts/verify-nested-js-graph.ts '${{ steps.pantry.outputs.pantry-path }}' '${{ matrix.project }}'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: nested-js-graph-original-proof
+          name: nested-js-graph-original-proof-${{ matrix.project }}
           path: artifacts/nested-js-graph
           if-no-files-found: error
