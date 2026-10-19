@@ -192,9 +192,9 @@ test "legacy cache refusal and private preparation never change outside link tar
     try std.testing.expectEqualStrings(outside, target);
     const hard_link = try std.fs.path.join(allocator, &.{ extraction.payload, "outside-hard-link" });
     defer allocator.free(hard_link);
-    const outside_z = try allocator.dupeZ(u8, outside);
+    const outside_z = try io_helper.dupeZ(allocator, u8, outside);
     defer allocator.free(outside_z);
-    const hard_link_z = try allocator.dupeZ(u8, hard_link);
+    const hard_link_z = try io_helper.dupeZ(allocator, u8, hard_link);
     defer allocator.free(hard_link_z);
     if (std.c.link(outside_z, hard_link_z) != 0) return error.HardLinkFixtureFailed;
     try std.testing.expectError(error.UnsafeArchiveHardLink, prepareTree(allocator, extraction.payload));
