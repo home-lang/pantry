@@ -18,7 +18,8 @@ const project = join(root, 'project')
 await mkdir(project)
 const leaf = mode === 'dot-name' ? 'pantry-fixture.leaf' : '@pantry-fixture/leaf'
 const parent = '@pantry-fixture/parent'
-const proof: Record<string, unknown> = { passed: false, mode, cliSha256: Bun.SHA256.hash(await readFile(cli), 'hex') }
+const bindings: Array<{ phase: string, root: string, parent: string }> = []
+const proof: Record<string, unknown> = { passed: false, mode, bindings, cliSha256: Bun.SHA256.hash(await readFile(cli), 'hex') }
 const env = { ...process.env, XDG_DATA_HOME: join(root, 'data'), XDG_CACHE_HOME: join(root, 'cache'), BUN_INSTALL_CACHE_DIR: join(root, 'bun-cache'), NO_COLOR: '1' }
 const packages = [
   { name: leaf, version: '1.0.0', code: 'module.exports = "1.0.0"\n', dependencies: {} },
@@ -80,7 +81,13 @@ try {
   }
   await writeFile(join(project, 'package.json'), JSON.stringify({ name: 'nested-graph-fixture', version: '1.0.0', private: true, ...(mode !== 'single' ? { workspaces: ['packages/*'] } : {}), ...(mode === 'mixed' ? { system: { 'gnu.org/tar': '1.35' } } : {}), ...(mode !== 'members-only' ? { dependencies: { [leaf]: '1.0.0', [parent]: '1.0.0' } } : {}) }))
   await run('bun-install', ['bun', 'install'])
-  const evaluate = async (tree: string, pkg: string, label: string): Promise<string> => run(label, ['bun', '-e', `console.log((await import(${JSON.stringify(pathToFileURL(join(project, tree, pkg, 'index.js')).href)})).default)`])
+  const evaluate = async (tree: string, pkg: string, label: string): Promise<string> => {
+    const specifier = tree === 'node_modules' ? pkg : pathToFileURL(join(project, tree, pkg, 'index.js')).href
+    // Resolve through the declaring member's normal manager-owned graph. A
+    // member-only workspace need not hoist its private dependencies to root.
+    const cwd = tree === 'node_modules' && mode === 'members-only' ? join(project, 'packages/member') : project
+    return run(label, ['bun', '-e', `console.log((await import(${JSON.stringify(specifier)})).default)`], cwd)
+  }
   assert.equal(await evaluate('node_modules', parent, 'bun-parent-binding'), '2.0.0')
   assert.equal(await evaluate('node_modules', leaf, 'bun-root-binding'), '1.0.0')
   const untouched = join(project, 'user-data.txt')
@@ -102,21 +109,14 @@ try {
   if (mode === 'members-only') await rm(join(project, 'node_modules'), { recursive: true, force: true })
   await run('pantry-install', [cli, 'install'])
   const checkBindings = async (label: string): Promise<void> => {
-    assert.equal(await evaluate('node_modules', leaf, `${label}-bun-root`), '1.0.0')
-    assert.equal(await evaluate('node_modules', parent, `${label}-bun-parent`), '2.0.0')
+    const actualRoot = await evaluate('node_modules', leaf, `${label}-bun-root`)
+    const actualParent = await evaluate('node_modules', parent, `${label}-bun-parent`)
+    bindings.push({ phase: label, root: actualRoot, parent: actualParent })
+    assert.equal(actualRoot, '1.0.0')
+    assert.equal(actualParent, '2.0.0')
     const duplicated = existsSync(join(project, 'pantry', parent, 'package.json'))
     proof.nativeNpmTreePresent = duplicated
     assert.equal(duplicated, false, 'The JS manager must be the only owner of the JS dependency graph')
-    if (duplicated) {
-      const actualRoot = await evaluate('pantry', leaf, `${label}-pantry-root`)
-      const actualParent = await evaluate('pantry', parent, `${label}-pantry-parent`)
-      proof.actualRootBinding = actualRoot
-      proof.actualParentBinding = actualParent
-      proof.expectedRootBinding = '1.0.0'
-      proof.expectedParentBinding = '2.0.0'
-      assert.equal(actualRoot, '1.0.0', 'Keep the direct root dependency at its declared version')
-      assert.equal(actualParent, '2.0.0', 'Resolve the conflicting dependency from its parent, not the root hoist')
-    }
   }
   if (existsSync(join(project, 'pantry.lock'))) await writeFile(join(artifacts, 'pantry.lock'), await readFile(join(project, 'pantry.lock')))
   const bunLock = await readFile(join(project, 'bun.lock'))
