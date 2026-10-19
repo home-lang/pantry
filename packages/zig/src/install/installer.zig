@@ -6,6 +6,7 @@ const packages = @import("../packages.zig");
 const errors = @import("../core/error.zig");
 const downloader = @import("downloader.zig");
 const extractor = @import("extractor.zig");
+const verified_staging = @import("verified_staging.zig");
 const libfixer = @import("libfixer.zig");
 const ca_certs = @import("ca_certs.zig");
 const pkgx_shebang = @import("pkgx_shebang.zig");
@@ -2878,7 +2879,8 @@ pub const Installer = struct {
         defer self.allocator.free(global_pkg_dir);
 
         const has_global = self.hasPackageStructure(global_pkg_dir) and
-            validator.hasUsableDeclaredPrograms(self.allocator, domain, global_pkg_dir);
+            validator.hasUsableDeclaredPrograms(self.allocator, domain, global_pkg_dir) and
+            verified_staging.canMaterializeTree(self.allocator, global_pkg_dir);
 
         if (has_global) {
             // Copy from global cache - free unused S3 URL
@@ -2930,15 +2932,11 @@ pub const Installer = struct {
         const home = try Paths.home(self.allocator);
         defer self.allocator.free(home);
 
-        const temp_dir = try std.fmt.allocPrint(
-            self.allocator,
-            "{s}/.pantry/.tmp/{s}-{s}",
-            .{ home, spec.name, spec.version },
-        );
-        defer self.allocator.free(temp_dir);
-
-        try io_helper.makePath(temp_dir);
-        defer io_helper.deleteTree(temp_dir) catch {};
+        const staging_parent = try std.fmt.allocPrint(self.allocator, "{s}/.pantry/.tmp", .{home});
+        defer self.allocator.free(staging_parent);
+        var staging = try verified_staging.Extraction.init(self.allocator, staging_parent);
+        defer staging.deinit();
+        const temp_dir = staging.root;
 
         var downloaded = false;
         var archive_path: []const u8 = undefined;
@@ -3071,16 +3069,9 @@ pub const Installer = struct {
         }
 
         // Extract archive to temp directory with verification
-        const extract_dir = try std.fmt.allocPrint(
-            self.allocator,
-            "{s}/extracted",
-            .{temp_dir},
-        );
-        defer self.allocator.free(extract_dir);
-
-        try io_helper.makePath(extract_dir);
+        const extract_dir = staging.payload;
         defer if (cached_archive_path) |p| self.allocator.free(p);
-        extractor.extractArchiveWithVerification(self.allocator, archive_path, extract_dir, used_format, used_url, options.verbose) catch |err| {
+        staging.extractVerified(archive_path, used_format, used_url, options.verbose) catch |err| {
             // A poisoned cache entry (bad bytes stored before checksum verification)
             // would fail every install forever. If the archive came from cache and
             // failed to verify/extract (corrupt or checksum mismatch), evict it and
@@ -3095,7 +3086,7 @@ pub const Installer = struct {
                 } else {
                     try downloader.downloadFileQuiet(self.allocator, used_url, archive_path, options.quiet);
                 }
-                try extractor.extractArchiveWithVerification(self.allocator, archive_path, extract_dir, used_format, used_url, options.verbose);
+                try staging.extractVerified(archive_path, used_format, used_url, options.verbose);
             } else {
                 return err;
             }
@@ -3561,15 +3552,11 @@ pub const Installer = struct {
         const home = try Paths.home(self.allocator);
         defer self.allocator.free(home);
 
-        const temp_dir = try std.fmt.allocPrint(
-            self.allocator,
-            "{s}/.pantry/.tmp/{s}-{s}",
-            .{ home, spec.name, spec.version },
-        );
-        defer self.allocator.free(temp_dir);
-
-        try io_helper.makePath(temp_dir);
-        defer io_helper.deleteTree(temp_dir) catch {};
+        const staging_parent = try std.fmt.allocPrint(self.allocator, "{s}/.pantry/.tmp", .{home});
+        defer self.allocator.free(staging_parent);
+        var staging = try verified_staging.Extraction.init(self.allocator, staging_parent);
+        defer staging.deinit();
+        const temp_dir = staging.root;
 
         var downloaded = false;
         var archive_path: []const u8 = undefined;
@@ -3677,15 +3664,8 @@ pub const Installer = struct {
         }
 
         // Extract archive to temp directory with verification
-        const extract_dir = try std.fmt.allocPrint(
-            self.allocator,
-            "{s}/extracted",
-            .{temp_dir},
-        );
-        defer self.allocator.free(extract_dir);
-
-        try io_helper.makePath(extract_dir);
-        try extractor.extractArchiveWithVerification(self.allocator, archive_path, extract_dir, used_format, used_url, options.verbose);
+        const extract_dir = staging.payload;
+        try staging.extractVerified(archive_path, used_format, used_url, options.verbose);
 
         // Find the actual package root (might be nested like domain/v{version}/)
         const package_source = try self.findPackageRoot(extract_dir, domain, spec.version);
@@ -5067,6 +5047,47 @@ test "verified materialization preserves executables beneath lib without making 
     const data = try std.fs.path.join(allocator, &.{ dest, "lib/application/data" });
     defer allocator.free(data);
     try std.testing.expect(!io_helper.isExecutable(data));
+}
+
+test "verified legacy execute-only helper installs and runs without a privileged copy" {
+    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var pkg_cache = try PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+    var installer = try Installer.init(allocator, &pkg_cache);
+    defer installer.deinit();
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    var root_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const root_len = try tmp.dir.realPathFile(io_helper.io, ".", &root_buf);
+    const root = root_buf[0..root_len];
+    try tmp.dir.writeFile(io_helper.io, .{ .sub_path = "original.tar.gz", .data = @embedFile("fixtures/execute-only-package.tar.gz") });
+    const archive = try std.fs.path.join(allocator, &.{ root, "original.tar.gz" });
+    defer allocator.free(archive);
+    const before = try extractor.computeChecksum(allocator, archive);
+    defer allocator.free(before);
+    var staging = try verified_staging.Extraction.init(allocator, root);
+    defer staging.deinit();
+    try staging.extractVerified(archive, "tar.gz", null, false);
+    const dest = try std.fs.path.join(allocator, &.{ root, "installed" });
+    defer allocator.free(dest);
+    try installer.materializeVerifiedProjectPackage(staging.payload, dest, "example.invalid");
+    const helper = try std.fs.path.join(allocator, &.{ dest, "bin/helper" });
+    defer allocator.free(helper);
+    const result = try io_helper.childRun(allocator, &.{helper});
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+    try std.testing.expect(result.term == .exited and result.term.exited == 0);
+    try std.testing.expectEqualStrings("legacy-helper-ok\n", result.stdout);
+    const helper_stat = try io_helper.cwd().statFile(io_helper.io, helper, .{});
+    try std.testing.expectEqual(@as(u32, 0o510), helper_stat.permissions.toMode());
+    const data = try std.fs.path.join(allocator, &.{ dest, "share/data" });
+    defer allocator.free(data);
+    const data_stat = try io_helper.cwd().statFile(io_helper.io, data, .{});
+    try std.testing.expectEqual(@as(u32, 0o644), data_stat.permissions.toMode());
+    const after = try extractor.computeChecksum(allocator, archive);
+    defer allocator.free(after);
+    try std.testing.expectEqualStrings(before, after);
 }
 
 test "verified materialization accepts the published data-only CA package without executable permissions" {

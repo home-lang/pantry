@@ -65,6 +65,7 @@ test {
     _ = @import("install/pkgx_shebang.zig");
     _ = @import("install/npm_platform.zig");
     _ = @import("install/installer.zig");
+    _ = @import("install/verified_staging.zig");
     _ = @import("install/tree_repair.zig");
     _ = @import("cli/commands/px.zig");
 }
