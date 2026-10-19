@@ -61,7 +61,7 @@ pub const Ownership = struct {
                 }
             }
         }
-        inline for (.{ "dependencies", "devDependencies", "optionalDependencies", "peerDependencies" }) |section| {
+        for ([_][]const u8{ "dependencies", "devDependencies", "optionalDependencies", "peerDependencies" }) |section| {
             const deps = parsed.value.object.get(section) orelse continue;
             if (deps != .object) continue;
             var it = deps.object.iterator();
