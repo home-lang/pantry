@@ -46,6 +46,10 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: bun run docs:contracts:check
 
+      - name: Verify the committed Action distribution before any rebuild
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: bun test packages/action/src/build-portability.test.ts
+
       # Zig is a hard dependency of this repo, so a missing toolchain is a
       # failure rather than a reason to quietly pass. The old `if command -v
       # zig` guard turned "pantry could not install zig" into a silent skip.

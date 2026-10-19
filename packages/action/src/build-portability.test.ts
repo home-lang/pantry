@@ -39,6 +39,11 @@ describe('GitHub Action build portability', () => {
     expect(bundle).toContain('release-manifest.json')
   })
 
+  test('the committed Action does not downgrade required workspace failures', () => {
+    const bundle = readFileSync(new URL('../dist/index.js', import.meta.url), 'utf8')
+    expect(bundle).not.toContain('pantry workspace install failed')
+  })
+
   test('does not reinstall action-managed Zig dependencies in workflows', () => {
     for (const path of [
       '../../../.github/workflows/build-zig.yml',
