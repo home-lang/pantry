@@ -222,18 +222,6 @@ explicit native dependencies, and removes bin links only when they target a
 removed package. A frozen install rejects an obsolete Pantry JS lock instead of
 migrating it; run an ordinary install and commit the resulting lock first.
 
-### Registry throttling and safe downloads
-
-Safe native GETs share at most two retries across connection failures, HTTP 429,
-and gateway errors (502, 503, and 504). `Retry-After` delta seconds and HTTP dates
-set a minimum wait; an excessive delay is never shortened into an early retry.
-The existing 30-second metadata and five-minute archive deadlines include retry
-waits, redirects, and response bodies. Cancellation closes the request before
-returning. Partial archive bodies and publication writes are not replayed.
-Status diagnostics identify the responding origin without including signed query
-strings or credentials. A quota that outlasts the deadline remains a failed
-installation.
-
 ## Publication channels
 
 | Command | Destination and contract |
