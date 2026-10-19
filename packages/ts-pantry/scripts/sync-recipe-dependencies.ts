@@ -23,6 +23,7 @@ export async function syncRecipeDependencies(domains: string[]): Promise<void> {
       ...current,
       programs: recipe.programs ?? current.programs,
       ...(recipe.platformPrograms ? { platformPrograms: recipe.platformPrograms } : {}),
+      ...(recipe.platformProgramOverrides ? { platformProgramOverrides: recipe.platformProgramOverrides } : {}),
       ...(recipe.programVersions ? { programVersions: recipe.programVersions } : {}),
       dependencies: recipeDepsToSpecs(recipe.dependencies),
       buildDependencies: recipeDepsToSpecs(recipe.build?.dependencies),

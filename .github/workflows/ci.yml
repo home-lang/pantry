@@ -112,6 +112,18 @@ jobs:
           PANTRY_TEST_CLI: packages/zig/zig-out/bin/pantry
         run: bun .github/scripts/linux-native-tools.ts
 
+      - name: Cross-compile the source CLI for native Windows qualification
+        run: cd packages/zig && zig build -Dtarget=x86_64-windows-gnu -Doptimize=Debug -j2 --prefix ../../artifacts/windows-source-cli
+
+      - name: Retain the source Windows CLI and Action
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-source-runtime
+          path: |
+            artifacts/windows-source-cli/bin/pantry.exe
+            packages/action/dist/index.js
+          if-no-files-found: error
+
       - name: Verify Android tools installation with the source Linux CLI
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
@@ -347,7 +359,7 @@ jobs:
           if-no-files-found: error
 
   continuous-release:
-    needs: [lint, typecheck, test, action-redis-service, action-native-services, action-native-tools, native-browser]
+    needs: [lint, typecheck, test, action-redis-service, action-native-services, action-native-tools, native-browser, windows-native-runtime]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # Best-effort commit-preview publishing. Don't fail the whole workflow
@@ -406,6 +418,35 @@ jobs:
               {"name": "Author", "value": "${{ github.actor }}", "inline": true}
             ]
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+  windows-native-runtime:
+    needs: test
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install the declared Windows Bun runtime through Pantry
+        id: pantry
+        uses: pantry-pm/pantry/packages/action@3436eff9cc46cad165a564f30d458963e148294c # v0.11.99
+        with:
+          version: 0.11.99
+          install: 'false'
+          packages: bun.com@1.4.3
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-source-runtime
+          path: artifacts/windows-source-runtime
+      - name: Verify the actual source installer and required workspace failures
+        env:
+          PANTRY_TEST_CLI: artifacts/windows-source-runtime/artifacts/windows-source-cli/bin/pantry.exe
+          PANTRY_TEST_ACTION: artifacts/windows-source-runtime/packages/action/dist/index.js
+        run: bun .github/scripts/windows-native-runtime.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-native-runtime-proof
+          path: artifacts/windows-native-runtime
+          if-no-files-found: error
 
   native-toolchain-pins:
     name: Explicit native toolchain pins (${{ matrix.os }})

@@ -60,6 +60,7 @@ export const bunPackage = {
     'bun',
     'bunx',
   ] as const,
+  platformProgramOverrides: { windows: ['bun.exe'] } as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

@@ -911,7 +911,7 @@ pub const packages = [_]PackageInfo{ .{
     .domain = "bun.com",
     .description = "Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one",
     .homepage_url = "https://bun.com",
-    .programs = &[_][]const u8{ "bun", "bunx" },
+    .programs = if (@import("builtin").os.tag == .windows) &[_][]const u8{"bun.exe"} else &[_][]const u8{ "bun", "bunx" },
     .dependencies = &[_][]const u8{},
     .build_dependencies = &[_][]const u8{"curl.se"},
     .aliases = &[_][]const u8{ "bun.com", "bun", "bun.sh" },

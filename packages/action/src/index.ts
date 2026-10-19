@@ -921,8 +921,6 @@ export async function run(): Promise<void> {
             ranPantryInstall = true
             await exec.exec('pantry', ['install', '--no-save'], {
               env: installEnv as { [key: string]: string },
-            }).catch(() => {
-              core.warning('pantry workspace install failed')
             })
           }
         }
@@ -933,8 +931,6 @@ export async function run(): Promise<void> {
             : 'Cache hit — installing JS deps into node_modules')
           await exec.exec('pantry', ['install', '--no-save'], {
             env: installEnv as { [key: string]: string },
-          }).catch(() => {
-            core.warning('pantry workspace install failed')
           })
         }
       }
@@ -949,8 +945,6 @@ export async function run(): Promise<void> {
         core.startGroup('Installing workspace dependencies')
         await exec.exec('pantry', ['install', '--no-save'], {
           env: installEnv as { [key: string]: string },
-        }).catch(() => {
-          core.warning('pantry workspace install failed')
         })
         core.endGroup()
       }

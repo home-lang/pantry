@@ -15,6 +15,7 @@ export const recipe: Recipe = {
   homepage: 'https://bun.sh',
   github: 'https://github.com/oven-sh/bun',
   programs: ['bun', 'bunx'],
+  platformProgramOverrides: { windows: ['bun.exe'] },
   versionSource: {
     type: 'github-releases',
     repo: 'oven-sh/bun',

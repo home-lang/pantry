@@ -581,7 +581,7 @@ const WindowsFsDir = struct {
         inner: Dir.Iterator,
 
         pub fn next(self: *Iterator) !?DirEntry {
-            const entry = self.inner.next(io) catch return null;
+            const entry = try self.inner.next(io);
             if (entry) |e| {
                 const kind: DirEntry.Kind = switch (e.kind) {
                     .file => .file,
@@ -711,7 +711,7 @@ const PosixFsDir = struct {
 /// Open a directory for iteration
 pub fn openDirForIteration(path: []const u8) !FsDir {
     if (comptime is_windows) {
-        const dir = cwd().openDir(io, path, .{}) catch return error.FileNotFound;
+        const dir = try cwd().openDir(io, path, .{ .iterate = true });
         return .{ .dir = dir };
     }
     const flags: std.posix.O = .{ .DIRECTORY = true, .CLOEXEC = true };

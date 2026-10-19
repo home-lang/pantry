@@ -4007,13 +4007,22 @@ pub const Installer = struct {
 
     /// Check if a directory has package structure (bin, lib, include, share, etc.)
     fn hasPackageStructure(self: *Installer, dir_path: []const u8) bool {
-        _ = self;
         // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
         var dir = io_helper.openDirAbsoluteForIteration(dir_path) catch return false;
         defer dir.close();
 
         var it = dir.iterate();
         while (it.next() catch null) |entry| {
+            // Flat Windows archives are still checked against the complete
+            // target-native executable contract before the tree is accepted.
+            if (@import("builtin").os.tag == .windows and entry.kind == .file and
+                std.ascii.endsWithIgnoreCase(entry.name, ".exe"))
+            {
+                const executable = std.fs.path.join(self.allocator, &.{ dir_path, entry.name }) catch return false;
+                defer self.allocator.free(executable);
+                const metadata = io_helper.statFile(executable) catch continue;
+                if (metadata.size > 0) return true;
+            }
             if (entry.kind != .directory) continue;
 
             // Check for common package directories

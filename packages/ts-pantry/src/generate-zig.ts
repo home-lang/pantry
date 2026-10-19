@@ -17,6 +17,7 @@ interface ZigPackageDefinition {
   homepageUrl?: string
   programs: string[]
   platformPrograms?: PlatformPrograms
+  platformProgramOverrides?: PlatformPrograms
   programVersions?: ProgramVersions
   dependencies: string[]
   buildDependencies: string[]
@@ -148,12 +149,13 @@ function escapeZigString(str: string): string {
 /**
  * Convert a package to Zig struct format
  */
-export function zigProgramsExpression(pkg: { programs: readonly string[], platformPrograms?: PlatformPrograms }): string {
+export function zigProgramsExpression(pkg: { programs: readonly string[], platformPrograms?: PlatformPrograms, platformProgramOverrides?: PlatformPrograms }): string {
   const array = (platform: string): string => `&[_][]const u8{ ${programsForPlatform(pkg, platform).map(p => `"${escapeZigString(p)}"`).join(', ')} }`
   let expression = array('')
-  for (const [platform, programs] of Object.entries(pkg.platformPrograms || {})) {
+  const platforms = new Set([...Object.keys(pkg.platformPrograms || {}), ...Object.keys(pkg.platformProgramOverrides || {})])
+  for (const platform of platforms) {
     if (!['darwin', 'linux', 'windows'].includes(platform)) throw new Error(`Unsupported program platform: ${platform}`)
-    if (programs.length) expression = `if (@import("builtin").os.tag == .${platform === 'darwin' ? 'macos' : platform}) ${array(platform)} else ${expression}`
+    expression = `if (@import("builtin").os.tag == .${platform === 'darwin' ? 'macos' : platform}) ${array(platform)} else ${expression}`
   }
   return expression
 }
@@ -306,6 +308,7 @@ export async function generateZigDefinitions(packagesDir: string, outputFile: st
         homepageUrl: pkgData.homepageUrl,
         programs: Array.isArray(pkgData.programs) ? pkgData.programs : [],
         platformPrograms: pkgData.platformPrograms,
+        platformProgramOverrides: pkgData.platformProgramOverrides,
         programVersions: pkgData.programVersions,
         // Merge the build recipe's runtime deps into the metadata deps so the
         // catalog reflects what we actually compiled against (e.g. php links

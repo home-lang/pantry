@@ -46,6 +46,8 @@ export interface PkgxPackage {
   pantryInstallCommand: string
   programs: string[]
   platformPrograms?: import('./programs').PlatformPrograms
+  /** Replace the common executable interface on platforms with a different archive layout. */
+  platformProgramOverrides?: import('./programs').PlatformPrograms
   programVersions?: import('./programs').ProgramVersions
   companions: string[]
   /**

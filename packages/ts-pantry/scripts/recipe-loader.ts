@@ -191,6 +191,7 @@ function recipeDefToNormalized(def: Recipe, platform = '', version?: string): Re
     },
     programs: programsForPlatform(def, platform, version),
     platformPrograms: def.platformPrograms,
+    platformProgramOverrides: def.platformProgramOverrides,
     programVersions: def.programVersions,
     platforms: def.platforms,
     publish: def.publish,

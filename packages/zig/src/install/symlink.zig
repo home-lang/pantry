@@ -736,7 +736,11 @@ pub fn discoverBinaries(
                 continue;
             };
             // Only pick up files that are actually executable (strict check — no mode=0 fallback)
-            if (stat.mode != 0 and (stat.mode & 0o111) != 0) {
+            const windows_program = builtin.os.tag == .windows and
+                (std.ascii.endsWithIgnoreCase(entry.name, ".exe") or
+                    std.ascii.endsWithIgnoreCase(entry.name, ".cmd") or
+                    std.ascii.endsWithIgnoreCase(entry.name, ".bat"));
+            if (windows_program or (stat.mode != 0 and (stat.mode & 0o111) != 0)) {
                 try binaries.append(allocator, .{
                     .name = try allocator.dupe(u8, entry.name),
                     .path = full_path,

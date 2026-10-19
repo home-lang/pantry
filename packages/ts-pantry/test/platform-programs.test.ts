@@ -3,6 +3,8 @@ import { programsForPlatform } from '../src/programs'
 import { zigProgramsExpression } from '../src/generate-zig'
 import { loadRecipe } from '../scripts/recipe-loader'
 import { recipe } from '../src/recipes/git-scm.org'
+import { recipe as bunRecipe } from '../src/recipes/bun.com'
+import { bunPackage } from '../src/packages/buncom'
 
 test('Git keeps its keychain helper on macOS without requiring it on Linux', async () => {
   for (const platform of ['linux-x86-64', 'linux-arm64', 'darwin-arm64', 'darwin-x86-64']) {
@@ -29,6 +31,15 @@ test('the native catalog chooses program declarations for its compile target', (
   expect(other).not.toContain('git-credential-osxkeychain')
   expect(other).toContain('"git"')
   expect(() => zigProgramsExpression({ programs: [], platformPrograms: { typo: ['bad'] } } as never)).toThrow('Unsupported program platform')
+})
+
+test('Bun declares the executable its Windows archive actually supplies', async () => {
+  expect(programsForPlatform(bunPackage, 'windows-x86-64')).toEqual(['bun.exe'])
+  expect(programsForPlatform(bunRecipe, 'windows-x86-64')).toEqual(['bun.exe'])
+  expect(programsForPlatform(bunRecipe, 'linux-x86-64')).toEqual(['bun', 'bunx'])
+  const loaded = (await loadRecipe('bun.com', 'windows-x86-64', '1.4.3')).recipe
+  expect(loaded.programs).toEqual(['bun.exe'])
+  expect(zigProgramsExpression(bunPackage)).toContain('if (@import("builtin").os.tag == .windows) &[_][]const u8{ "bun.exe" }')
 })
 
 test('JDK 26 removal of jrunscript changes only the executable contract for newer JDKs', async () => {

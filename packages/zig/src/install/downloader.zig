@@ -477,7 +477,9 @@ pub fn lookupS3Registry(
         const os_str = switch (@import("builtin").os.tag) {
             .macos => "darwin",
             .linux => "linux",
-            else => "linux",
+            .windows => "windows",
+            .freebsd => "freebsd",
+            else => @compileError("Unsupported binary registry operating system"),
         };
         const arch_str = switch (@import("builtin").cpu.arch) {
             .aarch64 => "arm64",
