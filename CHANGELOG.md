@@ -1,3 +1,46 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.100...v0.11.101)
+
+## ✨ Features
+
+- **release**: prepare source-qualified patches with locked public tooling ([99e4fb9](https://github.com/pantry-pm/pantry/commit/99e4fb9)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **publish**: stop before upload when version availability is unknown ([893819a](https://github.com/pantry-pm/pantry/commit/893819a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **action**: share validated registry metadata retries with the SDK ([61be3c0](https://github.com/pantry-pm/pantry/commit/61be3c0)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **publisher**: parse versions behind managed forwarding launchers ([dc6716b](https://github.com/pantry-pm/pantry/commit/dc6716b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **windows**: resolve real executables with native PATH and PATHEXT ([3ef08bd](https://github.com/pantry-pm/pantry/commit/3ef08bd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **windows**: reconcile native runtimes and require workspace installation ([3cc295e](https://github.com/pantry-pm/pantry/commit/3cc295e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **install**: synchronize named runtime workspace constraints ([5e1ce5b](https://github.com/pantry-pm/pantry/commit/5e1ce5b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **http**: recover interrupted native GET connections within request deadlines ([2a541ff](https://github.com/pantry-pm/pantry/commit/2a541ff)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📝 Documentation
+
+- **release**: explain locked runner preparation and exact-tag publication ([af13127](https://github.com/pantry-pm/pantry/commit/af13127)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 👷 Build System
+
+- **release**: adopt the qualified public publisher and generated Action ([7d2e247](https://github.com/pantry-pm/pantry/commit/7d2e247)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **action**: retain normal bundles with the locked publisher toolchain ([641fb2b](https://github.com/pantry-pm/pantry/commit/641fb2b)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **action**: ship the qualified required-install failure handling ([dcf64a9](https://github.com/pantry-pm/pantry/commit/dcf64a9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.101 ([c82cdf4](https://github.com/pantry-pm/pantry/commit/c82cdf4)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- update craft-native.org to 0.0.248 ([40203a9](https://github.com/pantry-pm/pantry/commit/40203a9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor.org, crates.io/qsv, discord.com, fly.io, github.com/ggerganov/llama.cpp, github.com/router-for-me/CLIProxyAPI, planetscale.com, vim.org ([9483626](https://github.com/pantry-pm/pantry/commit/9483626)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- integrate the normal Pantry 0.11.100 release ([02a4a76](https://github.com/pantry-pm/pantry/commit/02a4a76)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' into codex/pantry95-native-action-integration ([c8d4b6a](https://github.com/pantry-pm/pantry/commit/c8d4b6a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- Merge remote-tracking branch 'origin/main' into codex/pantry95-native-action-integration ([2c59ec7](https://github.com/pantry-pm/pantry/commit/2c59ec7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.99...v0.11.100)
 
 ## 🐛 Bug Fixes
