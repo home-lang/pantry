@@ -70,7 +70,7 @@ async function main(): Promise<void> {
     await verifyToolchain()
     if (process.argv[2] === 'toolchain') {
       const changedFiles = git('diff', '--name-only').split('\n').filter(Boolean)
-      assert(changedFiles.every(file => ['package.json', 'bun.lock', 'pantry.lock'].includes(file)), 'Normal dependency adoption changed unexpected source files')
+      assert(changedFiles.every(file => ['package.json', 'bun.lock', 'pantry.lock', 'packages/action/dist/index.js', 'packages/action/dist/post.js'].includes(file)), 'Normal dependency adoption changed unexpected source files')
       await Bun.write(receipt, JSON.stringify({ phase: 'normal-public-toolchain-and-frozen-locks-verified', expectedSource: expected, bumpxVersion: '0.2.25', changedFiles, producerInvoked: false, publicationInvoked: false }, null, 2) + '\n')
     }
   }

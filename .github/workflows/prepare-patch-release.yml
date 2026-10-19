@@ -50,6 +50,7 @@ jobs:
           pantry install
           pantry install --frozen-lockfile
           bun install --frozen-lockfile
+          bun run --cwd packages/action build
           bun .github/scripts/prepare-patch-release.ts toolchain
       - uses: actions/upload-artifact@v4
         with:
@@ -58,6 +59,8 @@ jobs:
             package.json
             bun.lock
             pantry.lock
+            packages/action/dist/index.js
+            packages/action/dist/post.js
             ${{ runner.temp }}/pantry-patch-release
           if-no-files-found: error
   prepare:

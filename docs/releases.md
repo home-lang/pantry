@@ -37,9 +37,11 @@ version again can produce a staged-version conflict.
 The **Prepare Patch Release** workflow runs on Main with an exact
 `expected_source_sha`. Its default `toolchain` operation generates the normal
 manifest and lockfile update for public Bumpx 0.2.25, verifies both frozen
-installs and tests the installed publisher's expected-source guard. It uploads
-`normal-locked-publisher-toolchain` and does not create a release commit or tag.
-Adopt the generated manifest and both lockfiles as a reviewed source commit.
+installs and tests the installed publisher's expected-source guard. It builds
+the Action with that same normal dependency graph and uploads the manifest,
+lockfiles and both Action bundles in `normal-locked-publisher-toolchain`. It does
+not create a release commit or tag. Adopt those normal generated outputs as a
+reviewed source commit.
 
 After all thirteen source CI gates succeed on that commit, run the workflow's
 `patch` operation with that exact commit hash. It uses the installed locked
