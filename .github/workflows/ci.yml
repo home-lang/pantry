@@ -122,6 +122,7 @@ jobs:
           path: |
             artifacts/windows-source-cli/bin/pantry.exe
             packages/action/dist/index.js
+            packages/action/dist/post.js
           if-no-files-found: error
 
       - name: Verify Android tools installation with the source Linux CLI

@@ -10,7 +10,7 @@ const artifacts = resolve('artifacts/windows-native-runtime')
 await mkdir(artifacts, { recursive: true })
 const owned = await mkdtemp(join(tmpdir(), 'pantry-windows-runtime-'))
 const proof: Record<string, unknown> = { passed: false, sourceCliSha256: Bun.SHA256.hash(await readFile(cli), 'hex') }
-const env = { ...process.env, HOME: join(owned, 'home'), USERPROFILE: join(owned, 'home'), XDG_DATA_HOME: join(owned, 'data'), XDG_CACHE_HOME: join(owned, 'cache'), NO_COLOR: '1' }
+const env = { ...process.env, HOME: join(owned, 'home'), USERPROFILE: join(owned, 'home'), XDG_DATA_HOME: join(owned, 'data'), XDG_CACHE_HOME: join(owned, 'cache'), PATH: `${join(owned, 'missing-bin')};${join(owned, 'pantry/.bin')};${process.env.PATH ?? process.env.Path ?? ''}`, NO_COLOR: '1' }
 
 async function run(name: string, args: string[], cwd: string, extra: Record<string, string> = {}, expected = 0): Promise<string> {
   const child = Bun.spawn(args, { cwd, env: { ...env, ...extra }, stdout: 'pipe', stderr: 'pipe', signal: AbortSignal.timeout(180_000) })
@@ -36,10 +36,14 @@ try {
   await run('native-named-install', [cli, 'install', 'bun.sh@1.4.3', '--no-save', '--verbose'], owned)
   await run('native-repeat-install', [cli, 'install', 'bun.sh@1.4.3', '--no-save', '--verbose'], owned)
   await Bun.write(join(owned, 'pantry.jsonc'), JSON.stringify({ dependencies: { 'bun.sh': '1.4.3' } }))
-  await Bun.write(join(owned, 'package.json'), JSON.stringify({ name: 'windows-runtime-fixture', private: true }))
+  await mkdir(join(owned, 'local-dependency'))
+  await Bun.write(join(owned, 'local-dependency/package.json'), JSON.stringify({ name: '@fixture/local', version: '1.0.0', main: 'index.cjs' }))
+  await Bun.write(join(owned, 'local-dependency/index.cjs'), 'module.exports = 143\n')
+  await Bun.write(join(owned, 'package.json'), JSON.stringify({ name: 'windows-runtime-fixture', private: true, dependencies: { '@fixture/local': 'file:./local-dependency' } }))
   await run('native-workspace-install', [cli, 'install', '--no-save', '--verbose'], owned)
   const activated = join(owned, 'pantry/.bin/bun.exe')
   assert.equal((await run('native-activated-bun', [activated, '--version'], owned)).trim(), '1.4.3')
+  assert.equal((await run('native-delegated-local-dependency', [activated, '-e', 'console.log(require("@fixture/local"))'], owned)).trim(), '143')
   assert.equal(Bun.SHA256.hash(await readFile(runtime), 'hex'), originalHash)
   proof.sdkRuntimeSha256 = originalHash
   proof.nativeRuntimeReusedAndActivated = true

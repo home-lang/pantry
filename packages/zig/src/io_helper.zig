@@ -803,27 +803,77 @@ pub fn createFileAbsolute(path: []const u8, flags: CreateFileFlags) !File {
 /// and lets us pass an absolute path to spawn so the runtime never has to
 /// search itself.
 pub fn findExecutable(allocator: std.mem.Allocator, name: []const u8) !?[]const u8 {
-    // Already absolute? Just verify it's executable.
-    if (name.len > 0 and name[0] == '/') {
-        if (isExecutable(name)) return try allocator.dupe(u8, name);
-        return null;
+    if (std.fs.path.isAbsolute(name)) {
+        return executableCandidate(allocator, name);
     }
 
     const path_env = getenv("PATH") orelse return null;
-    var it = std.mem.splitScalar(u8, path_env, ':');
+    return findExecutableInPath(allocator, name, path_env);
+}
+
+fn findExecutableInPath(allocator: std.mem.Allocator, name: []const u8, path_env: []const u8) !?[]const u8 {
+    var it = std.mem.splitScalar(u8, path_env, if (is_windows) ';' else ':');
     while (it.next()) |dir| {
         if (dir.len == 0) continue;
-        const candidate = try std.fs.path.join(allocator, &[_][]const u8{ dir, name });
-        if (isExecutable(candidate)) return candidate;
-        allocator.free(candidate);
+        const directory = if (is_windows) std.mem.trim(u8, dir, "\"") else dir;
+        const candidate = try std.fs.path.join(allocator, &.{ directory, name });
+        defer allocator.free(candidate);
+        if (try executableCandidate(allocator, candidate)) |found| return found;
     }
     return null;
+}
+
+fn executableCandidate(allocator: std.mem.Allocator, path: []const u8) !?[]const u8 {
+    if (isExecutable(path)) return try allocator.dupe(u8, path);
+    if (comptime is_windows) {
+        if (std.fs.path.extension(path).len != 0) return null;
+        var extensions = std.mem.splitScalar(u8, getenv("PATHEXT") orelse ".COM;.EXE;.BAT;.CMD", ';');
+        while (extensions.next()) |extension| {
+            if (extension.len == 0) continue;
+            const candidate = try std.fmt.allocPrint(allocator, "{s}{s}", .{ path, extension });
+            if (isExecutable(candidate)) return candidate;
+            allocator.free(candidate);
+        }
+    }
+    return null;
+}
+
+test "PATH lookup skips missing entries and resolves native executable names" {
+    const allocator = std.testing.allocator;
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+    var buffer: [std.fs.max_path_bytes]u8 = undefined;
+    const length = try temp.dir.realPath(io, &buffer);
+    const directory = buffer[0..length];
+    const filename = if (is_windows) "runtime.exe" else "runtime";
+    const file = try temp.dir.createFile(io, filename, .{ .permissions = .executable_file });
+    try writeAllToFile(file, "runtime fixture\n");
+    file.close(io);
+    const path = try std.fmt.allocPrint(allocator, "{s}/missing{s}{s}", .{ directory, if (is_windows) ";" else ":", directory });
+    defer allocator.free(path);
+    const found = (try findExecutableInPath(allocator, "runtime", path)) orelse return error.ExecutableNotFound;
+    defer allocator.free(found);
+    const expected = try std.fs.path.join(allocator, &.{ directory, filename });
+    defer allocator.free(expected);
+    if (is_windows) {
+        try std.testing.expect(std.ascii.eqlIgnoreCase(expected, found));
+        try std.testing.expect(!isExecutable("C:\\pantry-missing-runtime-fixture.exe"));
+    } else {
+        try std.testing.expectEqualStrings(expected, found);
+    }
+    try std.testing.expect((try findExecutableInPath(allocator, "absent-runtime", path)) == null);
 }
 
 /// Check if `path` exists and is regular-or-symlink with at least one
 /// execute bit set. Uses libc `access(path, X_OK)` for portability.
 pub fn isExecutable(path: []const u8) bool {
-    if (comptime is_windows) return true; // On Windows, lookup is by extension; defer to spawn.
+    if (comptime is_windows) {
+        const metadata = statFile(path) catch return false;
+        if (metadata.kind != .file or metadata.size == 0) return false;
+        const extension = std.fs.path.extension(path);
+        return std.ascii.eqlIgnoreCase(extension, ".exe") or std.ascii.eqlIgnoreCase(extension, ".com") or
+            std.ascii.eqlIgnoreCase(extension, ".cmd") or std.ascii.eqlIgnoreCase(extension, ".bat");
+    }
     var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
     if (path.len >= path_buf.len) return false;
     @memcpy(path_buf[0..path.len], path);
