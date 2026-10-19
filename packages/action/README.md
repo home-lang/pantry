@@ -68,6 +68,11 @@ reports the reason and installs normally without restoring or saving a native
 dependency cache. It does not treat an uncertain cache as a valid installation.
 Pin the action to a release commit in production workflows.
 
+On runners without an Actions cache service, Pantry skips cache metadata
+lookups, restore requests and archive creation. Packages still install through
+the same native resolver. A successful cache save is reported only when the
+cache service returns an accepted cache ID.
+
 ### Linux browser installation checks
 
 The `native-browser` CI job builds the CLI from the checkout and installs

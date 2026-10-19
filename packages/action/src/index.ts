@@ -16,6 +16,7 @@ import { ensurePackageExecutorAliases } from './executor-aliases'
 import { installRequiredSystemPackages, jsPackageManager, needsJsInstall, pantryConfigMaySetLinker, selectSystemPackages, shouldInstallWorkspace } from './install-mode'
 import { installResolvedSystemPackages } from './system-packages'
 import { nativeArtifactCacheIdentity } from './native-cache'
+import { dependencyCache } from './cache-service'
 import type { ServiceSpec } from './services'
 import { mergeServicePackages, nativeServiceEnvironment, parseServiceSpecs } from './services'
 import type { NativeServiceState } from './native-services'
@@ -807,12 +808,17 @@ export async function run(): Promise<void> {
     // explicit runtime packages and requested service versions are unchanged.
     const cacheDeps = mergeServicePackages(systemDeps.join(' '), requestedServices).split(/\s+/).filter(Boolean)
     const lockedVersions = readLockedVersions()
+    const dependencyCacheService = dependencyCache(cache)
+    if (!dependencyCacheService.available)
+      core.info('Dependency cache service unavailable; installing without cache restore or archive creation')
     let artifactIdentity: string | undefined
-    try {
-      artifactIdentity = await nativeArtifactCacheIdentity(cacheDeps, platform, undefined, undefined, lockedVersions)
-    }
-    catch (error) {
-      core.warning(`Native artifact identity unavailable; installing without a dependency cache: ${error}`)
+    if (dependencyCacheService.available) {
+      try {
+        artifactIdentity = await nativeArtifactCacheIdentity(cacheDeps, platform, undefined, undefined, lockedVersions)
+      }
+      catch (error) {
+        core.warning(`Native artifact identity unavailable; installing without a dependency cache: ${error}`)
+      }
     }
     const cachePrefix = `pantry-v4-${resolvedVer}-${platform.os}-${platform.arch}-${artifactIdentity}-`
     const cacheKey = `${cachePrefix}${lockHash}-${depsHash}-${cachePackages || 'all'}`
@@ -827,7 +833,7 @@ export async function run(): Promise<void> {
 
     // Try restoring from cache
     try {
-      const hit = artifactIdentity ? await cache.restoreCache([pantryDir], cacheKey, restoreKeys) : undefined
+      const hit = artifactIdentity ? await dependencyCacheService.restore([pantryDir], cacheKey, restoreKeys) : undefined
       if (hit) {
         // Verify cache is valid — .bin dir should exist with actual binaries
         const binDirExists = fs.existsSync(pantryBinDir)
@@ -956,8 +962,11 @@ export async function run(): Promise<void> {
       // Save to cache for next run
       try {
         if (artifactIdentity) {
-          await cache.saveCache([pantryDir], cacheKey)
-          core.info('Dependencies cached')
+          const cacheId = await dependencyCacheService.save([pantryDir], cacheKey)
+          if (cacheId !== undefined)
+            core.info('Dependencies cached')
+          else
+            core.info('Dependency cache was not saved')
         }
       }
       catch {
