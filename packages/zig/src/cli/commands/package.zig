@@ -1280,7 +1280,11 @@ fn publishSingleToNpm(
         defer result.deinit(allocator);
 
         if (result.success) {
-            if (!try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms)) {
+            const confirm_started = io_helper.getMilliTimestamp();
+            const confirmed = try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms);
+            const confirm_ms = io_helper.getMilliTimestamp() - confirm_started;
+            style.print("  {s}timings:{s} public readback {d}.{d}s\n", .{ style.dim, style.reset, @divFloor(confirm_ms, 1000), @divFloor(@mod(confirm_ms, 1000), 100) });
+            if (!confirmed) {
                 return CommandResult.err(allocator, "Upload accepted; publication is pending public metadata and verified tarball availability. Do not upload this version again.");
             }
             if (result.provenance) {
@@ -1914,6 +1918,38 @@ pub fn classifyOidcFailure(status_code: u16) OidcFailureKind {
     };
 }
 
+/// Wall time per phase of one OIDC publish, so a slow one shows in the log.
+const PublishPhases = struct {
+    const Phase = enum { token, verify, provenance, upload };
+    started_ms: i64,
+    last_ms: i64,
+    spent_ms: [4]i64 = .{ -1, -1, -1, -1 },
+
+    fn start() PublishPhases {
+        const now = io_helper.getMilliTimestamp();
+        return .{ .started_ms = now, .last_ms = now };
+    }
+
+    fn mark(self: *PublishPhases, phase: Phase) void {
+        const now = io_helper.getMilliTimestamp();
+        self.spent_ms[@intFromEnum(phase)] = now - self.last_ms;
+        self.last_ms = now;
+    }
+
+    fn print(self: *const PublishPhases) void {
+        if (self.spent_ms[@intFromEnum(Phase.token)] < 0) return;
+        const names = [_][]const u8{ "oidc token", "jwks verify", "provenance (fulcio+rekor)", "npm exchange+upload" };
+        style.print("  {s}timings:{s}", .{ style.dim, style.reset });
+        for (self.spent_ms, 0..) |ms, i| {
+            if (ms < 0) continue;
+            style.print(" {s} {d}.{d}s", .{ names[i], @divFloor(ms, 1000), @divFloor(@mod(ms, 1000), 100) });
+            if (i + 1 < self.spent_ms.len and self.spent_ms[i + 1] >= 0) style.print(" ·", .{});
+        }
+        const total = io_helper.getMilliTimestamp() - self.started_ms;
+        style.print(" (total {d}.{d}s)\n", .{ @divFloor(total, 1000), @divFloor(@mod(total, 1000), 100) });
+    }
+};
+
 /// Attempt to publish using OIDC authentication with Sigstore provenance
 fn attemptOIDCPublish(
     allocator: std.mem.Allocator,
@@ -1925,6 +1961,10 @@ fn attemptOIDCPublish(
 ) !OIDCPublishResult {
     const oidc = @import("../../auth/oidc.zig");
     const sigstore = @import("../../auth/sigstore.zig");
+    // Each phase's wall time, printed once the upload is answered: a package
+    // spent a minute or more between "Registry:" and "Published" with nothing
+    // in the log to say where (stacks v0.75.232/233).
+    var phases = PublishPhases.start();
 
     // Detect OIDC provider
     var provider = try oidc.detectProvider(allocator) orelse return .{
@@ -1939,6 +1979,7 @@ fn attemptOIDCPublish(
         .error_message = try allocator.dupe(u8, "Could not get OIDC token from environment. Ensure 'id-token: write' permission is set in your workflow."),
     };
     defer allocator.free(raw_token);
+    phases.mark(.token);
 
     // Verify token signature against provider's JWKS
     const sig_valid = oidc.verifyTokenSignature(allocator, raw_token, &provider) catch {
@@ -1961,10 +2002,12 @@ fn attemptOIDCPublish(
         };
     };
     defer token.deinit(allocator);
+    phases.mark(.verify);
 
     // Generate Sigstore provenance bundle if requested
     var sigstore_bundle: ?[]const u8 = null;
     defer if (sigstore_bundle) |bundle| allocator.free(bundle);
+    defer phases.print();
 
     if (generate_provenance) {
         // Read tarball for hashing
@@ -1985,6 +2028,7 @@ fn attemptOIDCPublish(
             tarball_data,
         ) catch null;
     }
+    phases.mark(.provenance);
 
     // Publish package with provenance bundle, retrying on rate-limit / 5xx.
     const max_oidc_attempts: u8 = 8;
@@ -2012,6 +2056,7 @@ fn attemptOIDCPublish(
         mut_r.deinit(allocator);
         io_helper.sleepMs(wait_ms);
     };
+    phases.mark(.upload);
     defer {
         var mut_response = response;
         mut_response.deinit(allocator);
