@@ -1,3 +1,19 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.95...v0.11.96)
+
+## 🐛 Bug Fixes
+
+- **action**: activate the selected Java runtime ([e310036](https://github.com/pantry-pm/pantry/commit/e310036)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.96 ([f0a6810](https://github.com/pantry-pm/pantry/commit/f0a6810)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update github.com/chainguard-dev/apko, oras.land ([b8f4547](https://github.com/pantry-pm/pantry/commit/b8f4547)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.94...v0.11.95)
 
 ## ✨ Features
