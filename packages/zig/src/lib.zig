@@ -68,4 +68,5 @@ test {
     _ = @import("install/verified_staging.zig");
     _ = @import("install/tree_repair.zig");
     _ = @import("cli/commands/px.zig");
+    _ = @import("http_retry.zig");
 }

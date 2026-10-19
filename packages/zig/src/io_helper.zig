@@ -11,6 +11,7 @@ const std = @import("std");
 const builtin = @import("builtin");
 const c = std.c;
 const owned_spawn = @import("process_spawn.zig");
+const http_retry = @import("http_retry.zig");
 pub const Io = std.Io;
 pub const Threaded = std.Io.Threaded;
 pub const Dir = std.Io.Dir;
@@ -1998,23 +1999,24 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
             continue;
         }
         const status = @backingInt(stream.response.head.status);
-        if (transientGetStatus(status) and retries < 2) {
+        const retry_delay = responseRetryDelay(&stream.response, retries + 1);
+        if (transientGetStatus(status) and retries < 2 and retry_delay != null) {
             retries += 1;
             stream.req.deinit();
             request_open = false;
             if (stream.authorization) |authorization| allocator.free(authorization);
             stream.authorization = null;
-            @import("cli/style.zig").print("  Registry GET HTTP {d}; retry {d}/2\n", .{ status, retries });
-            try waitGetRetry(retries);
+            printGetStatus(uri, status, retries, retry_delay);
+            try waitGetRetrySeconds(retry_delay.?);
             continue;
         }
         if (status != 200) {
-            const style = @import("cli/style.zig");
-            style.print("  Download HTTP {d}\n", .{status});
+            printGetStatus(uri, status, null, retry_delay);
             return switch (status) {
                 401, 403 => error.RegistryAuthenticationRequired,
                 404 => error.RegistryArtifactNotFound,
                 402 => error.PaymentRequired,
+                429 => error.RegistryRateLimited,
                 else => error.RegistryUnavailable,
             };
         }
@@ -2223,7 +2225,33 @@ fn httpGetResponseTask(allocator: std.mem.Allocator, url: []const u8, extra_head
 /// Safe GETs share a fixed retry budget across gateway and connection failures.
 /// Authentication, absence, invalid input and cancellation remain terminal.
 fn transientGetStatus(status: u16) bool {
-    return status == 502 or status == 503 or status == 504;
+    return status == 429 or status == 502 or status == 503 or status == 504;
+}
+
+// A valid server delay is a lower bound, never clamped into an early retry.
+// The existing caller-owned deadline cancels this sleep and the whole request.
+fn responseRetryDelay(response: *std.http.Client.Response, retries: u8) ?u64 {
+    var headers = response.head.iterateHeaders();
+    while (headers.next()) |header| {
+        if (!std.ascii.eqlIgnoreCase(header.name, "Retry-After")) continue;
+        const seconds = http_retry.retryAfterSeconds(header.value, @divFloor(getMilliTimestamp(), 1000)) orelse continue;
+        if (seconds > http_retry.max_delay_seconds) return null;
+        return @max(@as(u64, retries), seconds);
+    }
+    return retries;
+}
+
+// Log the responding origin, including after redirects, without exposing a
+// signed path, query, user information, or authorization header.
+fn printGetStatus(uri: std.Uri, status: u16, retry: ?u8, delay: ?u64) void {
+    var buffer: [512]u8 = undefined;
+    const host = if (uri.host) |value| value.toRaw(&buffer) catch "<invalid host>" else "<missing host>";
+    const style = @import("cli/style.zig");
+    style.print("  Registry GET HTTP {d} from {s}://{s}", .{ status, uri.scheme, host });
+    if (uri.port) |port| style.print(":{d}", .{port});
+    if (retry) |attempt| style.print("; retry {d}/2 after {d}s", .{ attempt, delay.? });
+    if (delay == null) style.print("; Retry-After exceeds request budget", .{});
+    style.print("\n", .{});
 }
 
 fn transientGetTransport(err: anyerror) bool {
@@ -2245,7 +2273,11 @@ fn transientGetTransport(err: anyerror) bool {
 }
 
 fn waitGetRetry(retries: u8) !void {
-    const ns: i96 = @as(i96, retries) * std.time.ns_per_s;
+    try waitGetRetrySeconds(retries);
+}
+
+fn waitGetRetrySeconds(seconds: u64) !void {
+    const ns: i96 = @as(i96, seconds) * std.time.ns_per_s;
     // Unlike best-effort sleeps, this must propagate cancellation so the
     // original end-to-end request deadline also bounds retry backoff.
     try getIo().sleep(.{ .nanoseconds = ns }, .awake);
@@ -2262,7 +2294,7 @@ fn retryGetTransport(err: anyerror, retries: *u8) !bool {
 const HttpGetAttempt = union(enum) {
     response: HttpResponse,
     redirect: []u8,
-    retry_status: u16,
+    retry_status: struct { status: u16, delay: u64 },
 };
 
 /// Own all buffers and the request within one attempt, closing the connection
@@ -2306,7 +2338,11 @@ fn httpGetAttemptWithClient(client: *std.http.Client, allocator: std.mem.Allocat
         return .{ .redirect = try std.fmt.allocPrint(allocator, "{f}", .{next_uri}) };
     }
     const status = @backingInt(response.head.status);
-    if (can_retry and transientGetStatus(status)) return .{ .retry_status = status };
+    if (transientGetStatus(status)) {
+        const delay = responseRetryDelay(&response, 1);
+        if (can_retry and delay != null) return .{ .retry_status = .{ .status = status, .delay = delay.? } };
+        printGetStatus(uri, status, null, delay);
+    }
     if (status_only_errors and (status < 200 or status >= 300)) return .{ .response = .{ .status = status, .body = try allocator.alloc(u8, 0) } };
     const decompress_buffer: []u8 = switch (response.head.content_encoding) {
         .identity => &.{},
@@ -2337,10 +2373,11 @@ fn httpGetResponseWithClient(client: *std.http.Client, allocator: std.mem.Alloca
         };
         switch (result) {
             .response => |response| return response,
-            .retry_status => |status| {
+            .retry_status => |retry| {
                 retries += 1;
-                @import("cli/style.zig").print("  Registry GET HTTP {d}; retry {d}/2\n", .{ status, retries });
-                try waitGetRetry(retries);
+                const delay = @max(@as(u64, retries), retry.delay);
+                printGetStatus(try std.Uri.parse(current_url), retry.status, retries, delay);
+                try waitGetRetrySeconds(delay);
             },
             .redirect => |next_url| {
                 if (redirects == 10) {

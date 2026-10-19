@@ -18,6 +18,7 @@ let registryCredentials = 0
 let foreignCredentials = 0
 let foreignRequests = 0
 let transportDrops = 0
+let rateResponses: Array<{ status: number, at: number, wallAt: number, retryAfter?: string }> = []
 let child: ReturnType<typeof Bun.spawn> | undefined
 const failures: string[] = []
 const metadata = { versions: { '1.0.0': { platforms: { 'linux-x86-64': { tarball: `binaries/${domain}/1.0.0/archive.tar.gz` } } } } }
@@ -42,6 +43,19 @@ const handleRegistry = (req: IncomingMessage, res: ServerResponse) => {
   const url = req.url || ''
   requests.push(url)
   if (req.headers.authorization === `Bearer ${token}`) registryCredentials += 1
+  const rateTarget = mode.startsWith('artifact429') ? !url.endsWith('/metadata.json') : url.endsWith('/metadata.json')
+  if (mode.includes('429') && rateTarget) {
+    const attempt = rateResponses.length
+    const recover = mode.includes('recover')
+    const status = recover && attempt > 0 ? (mode.startsWith('artifact') ? 403 : 200) : mode.includes('mixed') && attempt === 0 ? 502 : 429
+    const retryAfter = mode.includes('long') ? '9999999999999999999999999' : mode.includes('deadline') ? '60' : mode.includes('invalid') ? 'invalid' : mode.includes('date') ? new Date(Date.now() + 2000).toUTCString() : '2'
+    rateResponses.push({ status, at: performance.now(), wallAt: Date.now(), retryAfter: status === 429 ? retryAfter : undefined })
+    if (status !== 200) {
+      res.writeHead(status, status === 429 && !mode.includes('missing') ? { 'Retry-After': retryAfter } : {})
+      res.end('fixture status')
+      return
+    }
+  }
   if (!url.endsWith('/metadata.json')) {
     if (mode === 'artifact-partial') {
       res.writeHead(200, { 'Content-Length': 1000 })
@@ -61,7 +75,7 @@ const handleRegistry = (req: IncomingMessage, res: ServerResponse) => {
       req.socket.destroy()
       return
     }
-    const recoveredTransport = ['metadata-connect-recover', 'metadata-disconnect-recover', 'artifact-disconnect-recover'].includes(mode)
+    const recoveredTransport = ['metadata-connect-recover', 'metadata-disconnect-recover', 'artifact-disconnect-recover'].includes(mode) || (mode.startsWith('metadata429') && mode.includes('recover'))
     res.writeHead(mode === 'artifact502-recover' ? (archiveAttempts === 1 ? 502 : 403) : mode === 'metadata502-recover' || recoveredTransport ? 403 : mode === 'artifact503' ? 503 : mode === 'artifact403' ? 403 : 404)
     res.end('fixture archive unavailable')
     return
@@ -97,12 +111,15 @@ const handleRegistry = (req: IncomingMessage, res: ServerResponse) => {
     res.write('{"versions":')
     return
   }
-  res.end(mode === 'malformed' ? '{' : mode === 'null' ? 'null' : mode === 'array' ? '{"versions":[]}' : mode === 'empty' ? '{"versions":{}}' : JSON.stringify(metadata))
+  const selectedMetadata = mode.startsWith('artifact429') ? { versions: { '1.0.0': { platforms: { 'linux-x86-64': { tarball: `${metadata.versions['1.0.0'].platforms['linux-x86-64'].tarball}?fixture-secret-query=secret` } } } } } : metadata
+  res.end(mode === 'malformed' ? '{' : mode === 'null' ? 'null' : mode === 'array' ? '{"versions":[]}' : mode === 'empty' ? '{"versions":{}}' : JSON.stringify(selectedMetadata))
 }
 const registry = createServer(handleRegistry)
 const base = await listen(registry)
 try {
-  const scenarios = segment === 'gateway-recovery'
+  const scenarios = segment === 'rate-limit'
+    ? ['metadata429-recover', 'metadata429-date-recover', 'metadata429-invalid-recover', 'metadata429-missing-recover', 'metadata429', 'metadata429-mixed', 'metadata429-long', 'metadata429-deadline', 'artifact429-recover', 'artifact429', 'artifact429-long']
+    : segment === 'gateway-recovery'
     ? ['503', '403', 'metadata502-recover', 'artifact503', 'artifact403', 'artifact502-recover', 'redirect', 'disconnect', 'metadata-connect-recover', 'metadata-disconnect-recover', 'artifact-disconnect-recover']
     : segment === 'metadata' ? ['503', '403', 'malformed', 'null', 'array', 'disconnect', 'stalled-head', 'stalled-body', 'artifact503', 'artifact403', 'artifact-partial', 'redirect', 'metadata502-recover', 'artifact502-recover'] : [segment]
   for (const scenario of scenarios) {
@@ -119,6 +136,7 @@ try {
       foreignCredentials = 0
       foreignRequests = 0
       transportDrops = 0
+      rateResponses = []
       const cwd = join(root, scenario)
       await mkdir(cwd)
       await writeFile(join(cwd, 'deps.yaml'), `dependencies:\n  ${domain}: 1.0.0\n`)
@@ -173,11 +191,36 @@ try {
       assert.ok(registryCredentials > 0, 'configured registry must receive its scoped token')
       assert.equal(foreignCredentials, 0, 'credentials must not cross origin')
       if (scenario.startsWith('artifact')) {
-        const archives = requests.filter(url => url === `/binaries/${domain}/1.0.0/archive.tar.gz`)
-        const expected = scenario === 'artifact503' ? 3 : ['artifact502-recover', 'artifact-disconnect-recover'].includes(scenario) ? 2 : 1
+        const archives = requests.filter(url => url.split('?')[0] === `/binaries/${domain}/1.0.0/archive.tar.gz`)
+        const expected = scenario === 'artifact503' || scenario === 'artifact429' ? 3 : ['artifact502-recover', 'artifact-disconnect-recover', 'artifact429-recover'].includes(scenario) ? 2 : 1
         assert.equal(archives.length, expected, 'only bounded retries of the same primary archive transport are allowed')
       }
-      if (scenario === 'metadata-connect-recover' || scenario === 'metadata-disconnect-recover' || scenario === 'artifact-disconnect-recover') {
+      if (scenario.includes('429')) {
+        assert.match(output, /HTTP 429 from http:\/\/127\.0\.0\.1:/, 'diagnostics identify the responding origin')
+        assert.doesNotMatch(output, /fixture-secret-query/, 'diagnostics must not expose signed queries')
+        if (scenario.includes('long')) {
+          assert.equal(rateResponses.length, 1, 'excessive server delay must stop without an early retry')
+          assert.ok(elapsed < 10_000)
+        }
+        else if (scenario.includes('deadline')) {
+          assert.equal(rateResponses.length, 1, 'overall metadata deadline must cancel Retry-After wait')
+          assert.ok(elapsed >= 29_000 && elapsed < 40_000, 'original 30-second deadline includes backoff')
+          assert.match(output, /timeout|timed out/i)
+        }
+        else {
+          const expected = scenario.includes('recover') ? (scenario.startsWith('artifact') ? 2 : undefined) : 3
+          if (expected) assert.equal(rateResponses.length, expected, 'gateway and rate-limit statuses share one two-retry budget')
+          assert.ok(rateResponses.length >= 2)
+          const minimumWait = scenario.includes('invalid') || scenario.includes('missing') || scenario.includes('mixed') || scenario.includes('date') ? 900 : 1900
+          assert.ok(rateResponses[1]!.at - rateResponses[0]!.at >= minimumWait, 'server delay must not be shortened')
+          if (scenario.includes('date')) {
+            const notBefore = Date.parse(rateResponses[0]!.retryAfter!)
+            assert.ok(rateResponses[1]!.wallAt >= notBefore, 'HTTP-date wait must reach the server timestamp')
+          }
+          if (scenario.includes('recover')) assert.match(output, /HTTP 403/, 'recovered rate limit must reach the actual terminal artifact')
+        }
+      }
+      else if (scenario === 'metadata-connect-recover' || scenario === 'metadata-disconnect-recover' || scenario === 'artifact-disconnect-recover') {
         assert.match(output, /HTTP 403/, 'connection recovery must reach the actual terminal artifact response')
         assert.match(output, /Registry GET transport .*retry/, 'the native transport must exercise its own bounded retry')
         if (scenario === 'metadata-connect-recover') assert.equal(restoredConnection, true, 'the listener starts only after the actual refused connection diagnostic')
@@ -206,7 +249,7 @@ try {
         if (scenario === '503' || scenario === 'disconnect') assert.equal(requests.length, 3, 'metadata retries have a fixed request limit')
         if (scenario === '403') assert.equal(requests.length, 1, 'authentication failures never retry')
       }
-      observations.push({ scenario, exit, elapsed, requests, metadataResponses, registryCredentials, foreignCredentials, foreignRequests, transportDrops, restoredConnection, killed })
+      observations.push({ scenario, exit, elapsed, requests, metadataResponses, rateResponses, registryCredentials, foreignCredentials, foreignRequests, transportDrops, restoredConnection, killed })
     }
     catch (error) {
       failures.push(`${scenario}: ${error instanceof Error ? error.message : String(error)}`)
