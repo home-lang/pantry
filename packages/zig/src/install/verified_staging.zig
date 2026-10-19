@@ -89,6 +89,10 @@ fn prepareTree(allocator: std.mem.Allocator, path: []const u8) !void {
 /// copied by its unprivileged owner. Reject it without chmod or deletion;
 /// the installer can obtain the original verified archive into private staging.
 pub fn canMaterializeTree(allocator: std.mem.Allocator, path: []const u8) bool {
+    return canMaterializeEntry(allocator, path, false);
+}
+
+fn canMaterializeEntry(allocator: std.mem.Allocator, path: []const u8, allow_link: bool) bool {
     const metadata = io_helper.cwd().statFile(io_helper.io, path, .{ .follow_symlinks = false }) catch return false;
     switch (metadata.kind) {
         .file => {
@@ -103,11 +107,11 @@ pub fn canMaterializeTree(allocator: std.mem.Allocator, path: []const u8) bool {
             while (entries.next() catch return false) |entry| {
                 const child = std.fs.path.join(allocator, &.{ path, entry.name }) catch return false;
                 defer allocator.free(child);
-                if (!canMaterializeTree(allocator, child)) return false;
+                if (!canMaterializeEntry(allocator, child, true)) return false;
             }
             return true;
         },
-        .sym_link => return true,
+        .sym_link => return allow_link,
         else => return false,
     }
 }
@@ -179,6 +183,7 @@ test "legacy cache refusal and private preparation never change outside link tar
     const link = try std.fs.path.join(allocator, &.{ extraction.payload, "outside-link" });
     defer allocator.free(link);
     try io_helper.symLink(outside, link);
+    try std.testing.expect(!canMaterializeTree(allocator, link));
     try prepareTree(allocator, extraction.payload);
     const metadata = try io_helper.cwd().statFile(io_helper.io, outside, .{ .follow_symlinks = false });
     try std.testing.expectEqual(@as(u32, 0o110), metadata.permissions.toMode() & 0o7777);
