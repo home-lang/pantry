@@ -298,6 +298,10 @@ pub const Installer = struct {
     /// of these satisfies installs at that version rather than its own newest
     /// (see `plannedVersionFor`). Read-only while workers run.
     planned_pantry: ?*const std.StringHashMap([]const u8) = null,
+    /// Packages this run downloaded or materialized (not already in place),
+    /// across threads. A package whose dependency tree gained nothing new
+    /// keeps the library paths it was fixed with (see `libraryPathsCurrent`).
+    fresh_installs: std.atomic.Value(usize) = .init(0),
 
     /// Thread-safe cache tracking which packages are installed at the hoisted level.
     /// Eliminates redundant filesystem checks when the same transitive dep is encountered
@@ -762,7 +766,24 @@ pub const Installer = struct {
 
         if (options.verbose) std.debug.print("[verbose:installer] looking up S3 registry for domain={s}, version={s} (skip_s3={})\n", .{ domain, spec.version, skip_s3_lookup });
 
-        if (!skip_s3_lookup) {
+        // Already in this project at a version the request accepts: use it, as
+        // npm and bun keep an installed version that satisfies its range. The
+        // registry lookup this skips cost a second or more per package, every
+        // time, for packages that were already there (a cached CI service
+        // tree spent three minutes re-resolving what it had restored).
+        var resolved_locally = false;
+        if (!options.force) {
+            if (options.project_root) |project_root| {
+                if (self.installedProjectVersion(project_root, domain, spec.version)) |local| {
+                    s3_version_alloc = local;
+                    resolved_spec = PackageSpec{ .name = spec.name, .version = local };
+                    resolved_locally = true;
+                    if (options.verbose) std.debug.print("[verbose:installer] already in project: {s} @ {s} satisfies {s}\n", .{ domain, local, spec.version });
+                }
+            }
+        }
+
+        if (!skip_s3_lookup and !resolved_locally) {
             if (try downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| {
                 if (options.verbose) std.debug.print("[verbose:installer] S3 registry hit: {s} @ {s} url={s}\n", .{ domain, s3_result.version, s3_result.tarball_url });
                 s3_version_alloc = s3_result.version;
@@ -784,7 +805,7 @@ pub const Installer = struct {
             }
         }
 
-        if (!from_s3) {
+        if (!from_s3 and !resolved_locally) {
             if (pkg_info) |_| {
                 // Fall back to generated.zig version list
                 if (semver.resolveVersion(domain, spec.version)) |resolved_version| {
@@ -833,6 +854,7 @@ pub const Installer = struct {
 
         // Track whether we used cache
         var used_cache = false;
+        const fresh_before = self.fresh_installs.load(.monotonic);
 
         // Determine install location based on whether we have a project root
         // Transfer ownership of s3_tarball_url to the download function (it will free it)
@@ -855,6 +877,7 @@ pub const Installer = struct {
         };
 
         if (options.verbose) std.debug.print("[verbose:installer] installed {s} @ {s} -> {s} (cached={})\n", .{ resolved_spec.name, resolved_spec.version, install_path, used_cache });
+        if (!used_cache) _ = self.fresh_installs.fetchAdd(1, .monotonic);
 
         // Install dependencies after the main package is installed. This must
         // run for S3-sourced packages too: registry tarballs are NOT
@@ -876,7 +899,15 @@ pub const Installer = struct {
             if (install_path.len > 0) {
                 const tree_root = self.projectTreeRoot(options);
                 defer if (tree_root) |root| self.allocator.free(root);
-                libfixer.fixDirectoryLibraryPathsInTree(self.allocator, install_path, tree_root) catch {};
+                // Already in place, nothing new beneath it this run, and fixed
+                // for this same tree before: its paths are as this would leave
+                // them. Rewriting every library again took 0.1 to 10 seconds a
+                // package (postgresql.org: 9.8s) on an install with nothing to do.
+                const unchanged = used_cache and self.fresh_installs.load(.monotonic) == fresh_before;
+                if (!(unchanged and libraryPathsCurrent(self.allocator, install_path, tree_root))) {
+                    libfixer.fixDirectoryLibraryPathsInTree(self.allocator, install_path, tree_root) catch {};
+                    markLibraryPathsCurrent(self.allocator, install_path, tree_root);
+                }
             }
         }
 
@@ -3172,6 +3203,53 @@ pub const Installer = struct {
     }
 
     /// Get project-local package directory (pantry)
+    /// The newest version of `domain` installed in this project that
+    /// `constraint` accepts ("latest", "*" or empty: any), and whose package is
+    /// complete and usable; null when there is none. Only real version
+    /// directories count: `v3` and `v3.6` are links to `v3.6.5`.
+    fn installedProjectVersion(self: *Installer, project_root: []const u8, domain: []const u8, constraint: []const u8) ?[]const u8 {
+        const domain_dir = std.fmt.allocPrint(self.allocator, "{s}/{s}/{s}", .{ project_root, self.modules_dir, domain }) catch return null;
+        defer self.allocator.free(domain_dir);
+        var dir = io_helper.openDirAbsoluteForIteration(domain_dir) catch return null;
+        defer dir.close();
+        const any = constraint.len == 0 or std.mem.eql(u8, constraint, "latest") or std.mem.eql(u8, constraint, "*");
+        const parsed: ?semver.Constraint = if (any) null else semver.parseConstraint(constraint) catch return null;
+        var best: ?[]u8 = null;
+        var it = dir.iterate();
+        while (it.next() catch null) |entry| {
+            if (entry.kind != .directory) continue;
+            if (entry.name.len < 2 or entry.name[0] != 'v' or !std.ascii.isDigit(entry.name[1])) continue;
+            const version = entry.name[1..];
+            if (parsed) |c| if (!semver.satisfiesConstraint(version, c)) continue;
+            if (best) |current| if (semver.compareVersions(version, current) != .gt) continue;
+            const package_dir = std.fs.path.join(self.allocator, &.{ domain_dir, entry.name }) catch continue;
+            defer self.allocator.free(package_dir);
+            if (!self.hasPackageStructure(package_dir) or !validator.hasUsableDeclaredPrograms(self.allocator, domain, package_dir)) continue;
+            if (best) |current| self.allocator.free(current);
+            best = self.allocator.dupe(u8, version) catch null;
+        }
+        return best;
+    }
+
+    const library_paths_marker = ".pantry-library-paths";
+
+    /// Whether `install_path`'s libraries were last fixed for `tree_root`.
+    fn libraryPathsCurrent(allocator: std.mem.Allocator, install_path: []const u8, tree_root: ?[]const u8) bool {
+        const marker = std.fs.path.join(allocator, &.{ install_path, library_paths_marker }) catch return false;
+        defer allocator.free(marker);
+        const recorded = io_helper.readFileAlloc(allocator, marker, 64 * 1024) catch return false;
+        defer allocator.free(recorded);
+        return std.mem.eql(u8, recorded, tree_root orelse "");
+    }
+
+    fn markLibraryPathsCurrent(allocator: std.mem.Allocator, install_path: []const u8, tree_root: ?[]const u8) void {
+        const marker = std.fs.path.join(allocator, &.{ install_path, library_paths_marker }) catch return;
+        defer allocator.free(marker);
+        const file = io_helper.createFileAbsolute(marker, .{ .truncate = true }) catch return;
+        defer io_helper.closeFile(file);
+        io_helper.writeAllToFile(file, tree_root orelse "") catch {};
+    }
+
     fn getProjectPackageDir(self: *Installer, project_root: []const u8, domain: []const u8, version: []const u8) ![]const u8 {
         return std.fmt.allocPrint(
             self.allocator,

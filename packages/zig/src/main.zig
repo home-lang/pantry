@@ -868,6 +868,7 @@ fn publishAction(ctx: *cli.BaseCommand.ParseContext) !void {
         .release_files = release_files,
         .skip_existing = !force_republish,
         .ignore_scripts = ignore_scripts,
+        .readback = !ctx.hasOption("no-readback"),
     };
 
     const result = try lib.commands.publishCommand(allocator, &[_][]const u8{}, options);
@@ -1365,6 +1366,7 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
             .release_files = release_files,
             .skip_existing = !force_republish,
             .ignore_scripts = ignore_scripts,
+            .readback = !ctx.hasOption("no-readback"),
         };
 
         const result = try lib.commands.publishCommand(allocator, paths.items, npm_options);
@@ -3549,6 +3551,8 @@ pub fn main() !void {
 
     const npm_force_republish_opt = cli.Option.init("force-republish", "force-republish", "Re-publish even if (name@version) is already on the registry (default: skip)", .bool);
     _ = try npm_publish_cmd.addOption(npm_force_republish_opt);
+    const npm_no_readback_opt = cli.Option.init("no-readback", "no-readback", "Report an accepted upload without reading it back from the public registry (for a caller that verifies every package itself)", .bool);
+    _ = try npm_publish_cmd.addOption(npm_no_readback_opt);
 
     const npm_ignore_scripts_opt = cli.Option.init("ignore-scripts", "ignore-scripts", "Don't run package lifecycle scripts (prepublishOnly/prepack/etc.); use with a separate build step", .bool);
     _ = try npm_publish_cmd.addOption(npm_ignore_scripts_opt);
@@ -4627,6 +4631,8 @@ pub fn main() !void {
 
     const pub_ignore_scripts_opt = cli.Option.init("ignore-scripts", "ignore-scripts", "Don't run package lifecycle scripts (prepublishOnly/prepack/etc.); use with a separate build step", .bool);
     _ = try publish_cmd.addOption(pub_ignore_scripts_opt);
+    const pub_no_readback_opt = cli.Option.init("no-readback", "no-readback", "Report an accepted npm upload without reading it back from the public registry (for a caller that verifies every package itself)", .bool);
+    _ = try publish_cmd.addOption(pub_no_readback_opt);
 
     const pub_paths_arg = cli.Argument.init("paths", "Package directories or globs to publish (e.g., './packages/*'); defaults to auto-detecting packages/", .string)
         .withRequired(false)

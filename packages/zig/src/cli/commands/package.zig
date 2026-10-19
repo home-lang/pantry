@@ -762,6 +762,15 @@ pub const PublishOptions = struct {
     /// separate step and the packages' prepublishOnly (e.g. `tsc`) would fail
     /// or is redundant. npm path only.
     ignore_scripts: bool = false,
+    /// Read a package back from the public registry after npm accepts it
+    /// (metadata, then the whole tarball against its integrity) before
+    /// reporting it published. `--no-readback` skips that on an accepted
+    /// upload only, for a caller that checks every package itself afterwards
+    /// (stacks' release confirms all 85 before promoting them): the readback
+    /// took 40 to 80 seconds a package while the upload took about 8. An
+    /// upload whose outcome is unknown (a dropped response, a 5xx, a
+    /// conflict) is still read back, since that is how its outcome is learned.
+    readback: bool = true,
 };
 
 fn resolveNpmAccess(explicit: ?[]const u8, configured: ?[]const u8, package_name: []const u8) []const u8 {
@@ -1005,6 +1014,21 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
 /// transient — caller should back off and retry rather than failing the
 /// publish. Covers the socket-level write failures we've observed when
 /// publishing 200+ packages back-to-back to registry.npmjs.org.
+/// Errors raised before a connection exists, when nothing can have been sent.
+fn isConnectionSetupError(err: anyerror) bool {
+    return switch (err) {
+        error.TlsInitializationFailed,
+        error.ConnectionRefused,
+        error.UnknownHostName,
+        error.NameServerFailure,
+        error.TemporaryNameServerFailure,
+        error.NetworkUnreachable,
+        error.HostUnreachable,
+        => true,
+        else => false,
+    };
+}
+
 fn isTransientNetworkError(err: anyerror) bool {
     return switch (err) {
         error.WriteFailed,
@@ -1281,9 +1305,12 @@ fn publishSingleToNpm(
 
         if (result.success) {
             const confirm_started = io_helper.getMilliTimestamp();
-            const confirmed = try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms);
+            const confirmed = !options.readback or try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms);
             const confirm_ms = io_helper.getMilliTimestamp() - confirm_started;
-            style.print("  {s}timings:{s} public readback {d}.{d}s\n", .{ style.dim, style.reset, @divFloor(confirm_ms, 1000), @divFloor(@mod(confirm_ms, 1000), 100) });
+            if (options.readback)
+                style.print("  {s}timings:{s} public readback {d}.{d}s\n", .{ style.dim, style.reset, @divFloor(confirm_ms, 1000), @divFloor(@mod(confirm_ms, 1000), 100) })
+            else
+                style.print("  {s}accepted by npm; public readback left to the caller (--no-readback){s}\n", .{ style.dim, style.reset });
             if (!confirmed) {
                 return CommandResult.err(allocator, "Upload accepted; publication is pending public metadata and verified tarball availability. Do not upload this version again.");
             }
@@ -1531,7 +1558,7 @@ fn publishSingleToNpm(
     }
 
     if (response.success) {
-        if (!try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms)) {
+        if (options.readback and !try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms)) {
             return CommandResult.err(allocator, "Upload accepted; publication is pending public metadata and verified tarball availability. Do not upload this version again.");
         }
         return completeVerifiedNpmPublication(allocator, metadata.name, metadata.version, scripts_obj, package_dir, options);
@@ -2035,13 +2062,26 @@ fn attemptOIDCPublish(
     var oidc_attempt: u8 = 0;
     const response = blk: while (true) {
         oidc_attempt += 1;
-        const r = try registry_client.publishWithOIDCAndProvenance(
+        const r = registry_client.publishWithOIDCAndProvenance(
             package_name,
             version,
             tarball_path,
             &token,
             sigstore_bundle,
-        );
+        ) catch |err| {
+            // A connection that never opened sent nothing, so trying again
+            // cannot publish twice. Seen mid-release as TlsInitializationFailed,
+            // which failed @stacksjs/datetime and stopped v0.75.234. Anything
+            // that may have reached npm (a reset, a timeout) is not retried:
+            // its outcome is unknown and a second upload would conflict.
+            if (oidc_attempt < max_oidc_attempts and isConnectionSetupError(err)) {
+                const wait_ms: u64 = @as(u64, 2_000) << @as(u6, @intCast(oidc_attempt - 1));
+                style.print("  {s}⚠{s} Could not connect to the registry ({any}, attempt {d}/{d}); retrying in {d}s...\n", .{ style.yellow, style.reset, err, oidc_attempt, max_oidc_attempts, wait_ms / 1000 });
+                io_helper.sleepMs(wait_ms);
+                continue;
+            }
+            return err;
+        };
         if (r.success or !r.isRetryable() or oidc_attempt >= max_oidc_attempts) {
             break :blk r;
         }
