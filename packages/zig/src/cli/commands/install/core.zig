@@ -1441,6 +1441,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
     var installer = try install.Installer.init(allocator, &pkg_cache);
     installer.modules_dir = options.modules_dir;
+    installer.verbose = options.verbose;
     defer installer.deinit();
 
     // Start timing (millisecond precision)
@@ -1637,6 +1638,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         var result = installer.install(spec, .{
             .project_root = project_root,
             .quiet = false, // Show download progress
+            .verbose = options.verbose,
         }) catch |err| {
             style.clearLine();
             // Provide friendly error messages

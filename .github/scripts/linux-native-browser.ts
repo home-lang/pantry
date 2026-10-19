@@ -20,6 +20,8 @@ async function run(name: string, args: string[], timeout = 30_000): Promise<stri
   const child = Bun.spawn(args, { cwd: root, env, stdout: Bun.file(stdout), stderr: Bun.file(stderr), signal: AbortSignal.timeout(timeout) })
   const code = await child.exited
   const output = await Bun.file(stdout).text() + await Bun.file(stderr).text()
+  if (name === 'install')
+    assert.match(output, /\[verbose:installer\]/, 'Named native installs must preserve --verbose diagnostics')
   assert.equal(code, 0, `${name}: ${output}`)
   return output
 }

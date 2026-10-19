@@ -68,6 +68,25 @@ reports the reason and installs normally without restoring or saving a native
 dependency cache. It does not treat an uncertain cache as a valid installation.
 Pin the action to a release commit in production workflows.
 
+### Linux browser installation checks
+
+The `native-browser` CI job builds the CLI from the checkout and installs
+`git-scm.org@2.53.0 google.com/chrome@155.0.8059.84` through the ordinary
+native dependency resolver. It runs as an unprivileged user with private XDG
+data and cache directories, then checks the installed Chrome executable and
+version. The release gate requires this job to pass.
+
+To run the same check on Linux after building the CLI:
+
+```bash
+PANTRY_TEST_CLI=packages/zig/zig-out/bin/pantry bun .github/scripts/linux-native-browser.ts
+```
+
+The check retains verbose installation logs and a CLI/executable identity
+receipt under `artifacts/linux-native-browser/`, including on failure, and
+removes its private installation. It verifies installation and activation;
+applications still need their own browser startup and page tests.
+
 ### Health-checked Redis
 
 Use the service input when tests need Redis. Pantry installs the exact requested
