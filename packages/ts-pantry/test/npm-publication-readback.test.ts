@@ -70,10 +70,38 @@ test('an accepted pending exit proceeds only with the complete original package 
   const pending = 'Error: Upload accepted; publication is pending public metadata and verified tarball availability. Do not upload this version again.'
   expect(originalPublication(printed, receipt.name, receipt.version)).toEqual(receipt)
   expect(publicationReadbackReceipt(1, printed + pending, receipt.name, receipt.version)).toEqual(receipt)
-  expect(() => publicationReadbackReceipt(1, printed + 'Error: access denied', receipt.name, receipt.version)).toThrow('without a complete accepted archive receipt')
-  expect(() => publicationReadbackReceipt(1, pending, receipt.name, receipt.version)).toThrow('without a complete accepted archive receipt')
-  expect(() => publicationReadbackReceipt(1, printed + pending, 'other-package', receipt.version)).toThrow('without a complete accepted archive receipt')
+  expect(() => publicationReadbackReceipt(1, printed + 'Error: access denied', receipt.name, receipt.version)).toThrow('without a complete original archive receipt')
+  expect(() => publicationReadbackReceipt(1, pending, receipt.name, receipt.version)).toThrow('without a complete original archive receipt')
+  expect(() => publicationReadbackReceipt(1, printed + pending, 'other-package', receipt.version)).toThrow('without a complete original archive receipt')
   expect(publicationReadbackReceipt(0, 'Version already published; skipped.', receipt.name, receipt.version)).toBeUndefined()
+})
+
+test('an unresolved upload proceeds only to bounded original-byte readback, never another upload', async () => {
+  const archive = fixture()
+  const original = { name: 'ts-pantry', version: '1.2.3', integrity: archive.integrity, shasum: createHash('sha1').update(archive.bytes).digest('hex') }
+  const pending = 'Upload outcome is pending public verification. Do not send another upload while this version may be staged.'
+  const log = `Publishing ts-pantry@1.2.3...\nShasum: ${original.shasum}\nIntegrity: ${original.integrity}\nError: ${pending}`
+  const receipt = publicationReadbackReceipt(1, log, original.name, original.version)
+  expect(receipt).toEqual(original)
+  expect(() => publicationReadbackReceipt(1, pending, original.name, original.version)).toThrow('complete original archive receipt')
+  expect(() => publicationReadbackReceipt(2, log, original.name, original.version)).toThrow('complete original archive receipt')
+  let clock = 0
+  let reads = 0
+  const result = await waitForNpmPublication(original.name, original.version, {
+    expectedOriginal: receipt,
+    now: () => clock, wait: async ms => { clock += ms }, timeoutMs: 20_000,
+    fetcher: async (url, init) => {
+      expect(init?.method || 'GET').toBe('GET')
+      reads++
+      if (reads === 1 || reads === 3) return new Response(null, { status: 404 })
+      return String(url).endsWith('.tgz')
+        ? new Response(archive.bytes)
+        : Response.json({ ...original, dist: { tarball: 'https://registry.npmjs.org/ts-pantry/-/ts-pantry-1.2.3.tgz', integrity: original.integrity, shasum: original.shasum } })
+    },
+  })
+  expect(clock).toBe(10_000)
+  expect(reads).toBe(5)
+  expect(result.integrity).toBe(original.integrity)
 })
 
 test('a second original identity for one version refuses readback rather than choosing one', () => {

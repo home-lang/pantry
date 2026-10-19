@@ -60,11 +60,14 @@ export function originalPublication(log: string, name: string, version: string):
   return original
 }
 
-/** A rejected publish must fail; an accepted upload can proceed to readback once. */
+/** Accepted and unresolved uploads may be read back; neither may be uploaded again. */
 export function publicationReadbackReceipt(exitCode: number, log: string, name: string, version: string): OriginalNpmPublication | undefined {
   const original = originalPublication(log, name, version)
-  if (exitCode !== 0 && (exitCode !== 1 || !stripVTControlCharacters(log).includes('Upload accepted; publication is pending public metadata') || !original))
-    throw new Error(`npm publish exited ${exitCode} without a complete accepted archive receipt; no upload will be retried`)
+  const output = stripVTControlCharacters(log)
+  const pending = output.includes('Upload accepted; publication is pending public metadata')
+    || output.includes('Upload outcome is pending public verification. Do not send another upload while this version may be staged.')
+  if (exitCode !== 0 && (exitCode !== 1 || !pending || !original))
+    throw new Error(`npm publish exited ${exitCode} without a complete original archive receipt and a pending upload outcome; no upload will be retried`)
   return original
 }
 
