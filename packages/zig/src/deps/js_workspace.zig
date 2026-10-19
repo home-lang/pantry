@@ -349,3 +349,28 @@ test "explicit Pantry dependencies retain their npm dependency closure" {
     // No file access or frozen-lock migration is permitted for retained names.
     try owner.removeLegacyShadows("/does-not-exist", "pantry", &old, true);
 }
+
+test "migration validates every installed identity before removing any candidate" {
+    const allocator = std.testing.allocator;
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+    try temp.dir.createDirPath(io_helper.io, "pantry/owned");
+    try temp.dir.createDirPath(io_helper.io, "pantry/changed");
+    try temp.dir.writeFile(io_helper.io, .{ .sub_path = "pantry/owned/package.json", .data = "{\"name\":\"owned\",\"version\":\"1.0.0\"}" });
+    try temp.dir.writeFile(io_helper.io, .{ .sub_path = "pantry/changed/package.json", .data = "{\"name\":\"user-data\",\"version\":\"1.0.0\"}" });
+    var buffer: [std.fs.max_path_bytes]u8 = undefined;
+    const length = try temp.dir.realPath(io_helper.io, &buffer);
+    var owner = Ownership.init(allocator);
+    defer owner.deinit();
+    owner.enabled = true;
+    var old = try package_types.Lockfile.init(allocator, "1.0.0");
+    defer old.deinit(allocator);
+    for ([_][]const u8{ "owned", "changed" }) |name| {
+        try owner.add(name);
+        try old.addEntry(allocator, name, .{ .name = try allocator.dupe(u8, name), .version = try allocator.dupe(u8, "1.0.0"), .source = .npm });
+    }
+    try std.testing.expectError(error.UnownedJavaScriptShadow, owner.removeLegacyShadows(buffer[0..length], "pantry", &old, false));
+    const owned = try temp.dir.readFileAlloc(io_helper.io, "pantry/owned/package.json", allocator, .limited(100));
+    defer allocator.free(owned);
+    try std.testing.expectEqualStrings("{\"name\":\"owned\",\"version\":\"1.0.0\"}", owned);
+}
