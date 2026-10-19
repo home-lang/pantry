@@ -584,6 +584,9 @@ Please see our [releases](https://github.com/pantry-pm/pantry/releases) page for
 
 ## Contributing
 
+See [release publication and recovery](docs/releases.md) for native artifact
+verification and accepted npm upload readback.
+
 Please see [CONTRIBUTING](https://github.com/pantry-pm/pantry/blob/main/.github/CONTRIBUTING.md) for details.
 
 ## Community

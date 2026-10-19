@@ -129,21 +129,29 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      - name: Publish
-        run: pantry publish --npm --access public
+      - name: Publish once and verify the original public npm archive
+        id: npm-readback
+        run: |
+          mkdir -p artifacts/npm-publication
+          set +e
+          pantry publish --npm --access public 2>&1 | tee artifacts/npm-publication/publish.log
+          publication_statuses=("${PIPESTATUS[@]}")
+          set -e
+          if [ "${publication_statuses[1]}" -ne 0 ]; then
+            exit "${publication_statuses[1]}"
+          fi
+          PANTRY_NPM_PUBLISH_EXIT_CODE="${publication_statuses[0]}" bun .github/scripts/npm-publication-readback.ts
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Verify public npm availability and archive integrity
-        id: npm-readback
-        run: bun .github/scripts/npm-publication-readback.ts
 
       - name: Retain public npm publication evidence
         if: always() && steps.npm-readback.outcome != 'skipped'
         uses: actions/upload-artifact@v4
         with:
           name: npm-publication-proof
-          path: artifacts/npm-publication/proof.json
+          path: |
+            artifacts/npm-publication/proof.json
+            artifacts/npm-publication/publish.log
           if-no-files-found: error
 
   notify:

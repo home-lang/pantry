@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { mkdir } from 'node:fs/promises'
 import { dirname } from 'node:path'
+import { stripVTControlCharacters } from 'node:util'
 import { gunzipSync } from 'node:zlib'
 
 /** Verify actual registry bytes, including the manifest inside the npm archive. */
@@ -29,11 +30,50 @@ export function verifyPublishedTarball(bytes: Uint8Array, integrity: string, nam
   throw new Error('Published npm archive has no package/package.json')
 }
 
+export interface OriginalNpmPublication {
+  name: string
+  version: string
+  integrity: string
+  shasum: string
+}
+
+/** Associate the CLI's original archive identity with its actual package. */
+export function originalPublication(log: string, name: string, version: string): OriginalNpmPublication | undefined {
+  let current: Partial<OriginalNpmPublication> | undefined
+  let original: OriginalNpmPublication | undefined
+  for (const raw of log.split('\n')) {
+    const line = stripVTControlCharacters(raw).trim()
+    if (line.startsWith('Publishing ')) {
+      const match = /^Publishing (.+)@([^ ]+)\.\.\.$/.exec(line)
+      current = match ? { name: match[1], version: match[2] } : undefined
+    }
+    else if (current && line.startsWith('Shasum: ')) current.shasum = line.slice(8)
+    else if (current && line.startsWith('Integrity: ')) current.integrity = line.slice(11)
+    if (current?.name !== name || current.version !== version || !current.integrity || !current.shasum) continue
+    if (!/^sha512-[A-Za-z0-9+/]{86}==$/.test(current.integrity) || !/^[a-f0-9]{40}$/.test(current.shasum))
+      throw new Error('Invalid original accepted archive receipt')
+    const receipt = current as OriginalNpmPublication
+    if (original && (original.integrity !== receipt.integrity || original.shasum !== receipt.shasum))
+      throw new Error('Conflicting original accepted archive receipts')
+    original = { ...receipt }
+  }
+  return original
+}
+
+/** A rejected publish must fail; an accepted upload can proceed to readback once. */
+export function publicationReadbackReceipt(exitCode: number, log: string, name: string, version: string): OriginalNpmPublication | undefined {
+  const original = originalPublication(log, name, version)
+  if (exitCode !== 0 && (exitCode !== 1 || !stripVTControlCharacters(log).includes('Upload accepted; publication is pending public metadata') || !original))
+    throw new Error(`npm publish exited ${exitCode} without a complete accepted archive receipt; no upload will be retried`)
+  return original
+}
+
 interface ReadbackOptions {
   fetcher?: (url: string, init?: RequestInit) => Promise<Response>
   now?: () => number
   wait?: (ms: number) => Promise<void>
   timeoutMs?: number
+  expectedOriginal?: OriginalNpmPublication
 }
 
 /** npm's 202 acknowledgement can precede public metadata and tarball visibility. */
@@ -42,10 +82,13 @@ export async function waitForNpmPublication(name: string, version: string, optio
   const now = options.now || Date.now
   const wait = options.wait || (ms => new Promise(resolve => setTimeout(resolve, ms)))
   const deadline = now() + (options.timeoutMs ?? 15 * 60_000)
+  const original = options.expectedOriginal
+  if (original && (original.name !== name || original.version !== version))
+    throw new Error('Readback does not identify the original accepted archive')
   const metadataUrl = `https://registry.npmjs.org/${encodeURIComponent(name)}/${encodeURIComponent(version)}`
   let pending = 'metadata'
   while (now() < deadline) {
-    const metadataResponse = await fetcher(metadataUrl, { signal: AbortSignal.timeout(Math.max(1, Math.min(15_000, deadline - now()))) })
+    const metadataResponse = await fetcher(metadataUrl, { headers: { 'Cache-Control': 'no-cache' }, signal: AbortSignal.timeout(Math.max(1, Math.min(15_000, deadline - now()))) })
     if (!metadataResponse.ok) {
       if (metadataResponse.status !== 404 && metadataResponse.status !== 429 && metadataResponse.status < 500)
         throw new Error(`Public npm metadata returned HTTP ${metadataResponse.status}`)
@@ -53,18 +96,23 @@ export async function waitForNpmPublication(name: string, version: string, optio
       await metadataResponse.body?.cancel()
     }
     else {
-      const metadata = await metadataResponse.json() as { name: string, version: string, dist: { tarball: string, integrity: string } }
+      const metadata = await metadataResponse.json() as { name: string, version: string, dist: { tarball: string, integrity: string, shasum?: string } }
       if (metadata.name !== name || metadata.version !== version || !metadata.dist?.integrity)
         throw new Error('Public npm metadata does not match the release')
+      if (original && (metadata.dist.shasum !== original.shasum || !metadata.dist.integrity.split(/\s+/).includes(original.integrity)))
+        throw new Error('Public npm metadata does not match the original accepted archive')
       const url = new URL(metadata.dist.tarball)
       if (url.origin !== 'https://registry.npmjs.org' || url.username || url.password)
         throw new Error('Unexpected npm tarball origin')
       if (now() >= deadline) break
-      const archive = await fetcher(url.href, { signal: AbortSignal.timeout(Math.max(1, Math.min(30_000, deadline - now()))) })
+      const archive = await fetcher(url.href, { headers: { 'Cache-Control': 'no-cache' }, signal: AbortSignal.timeout(Math.max(1, Math.min(30_000, deadline - now()))) })
       if (archive.ok) {
         if (Number(archive.headers.get('Content-Length') || 0) > 64 * 1024 * 1024) throw new Error('Published npm archive exceeds the readback size limit')
         const bytes = new Uint8Array(await archive.arrayBuffer())
         if (bytes.length > 64 * 1024 * 1024) throw new Error('Published npm archive exceeds the readback size limit')
+        if (original && (createHash('sha1').update(bytes).digest('hex') !== original.shasum
+          || `sha512-${createHash('sha512').update(bytes).digest('base64')}` !== original.integrity))
+          throw new Error('Public npm bytes do not match the original accepted archive')
         const integrity = verifyPublishedTarball(bytes, metadata.dist.integrity, name, version)
         return { name, version, tarball: url.href, integrity, bytes: bytes.length }
       }
@@ -82,13 +130,20 @@ if (import.meta.main) {
   const output = 'artifacts/npm-publication/proof.json'
   await mkdir(dirname(output), { recursive: true })
   const manifest = await Bun.file('packages/ts-pantry/package.json').json()
+  const publishExit = process.env.PANTRY_NPM_PUBLISH_EXIT_CODE
+  let original: OriginalNpmPublication | undefined
   try {
-    const result = await waitForNpmPublication(manifest.name, manifest.version)
-    await Bun.write(output, JSON.stringify({ at: new Date().toISOString(), passed: true, ...result }, null, 2) + '\n')
+    if (publishExit !== undefined) {
+      if (!/^\d+$/.test(publishExit)) throw new Error('Invalid npm publication exit code')
+      const log = await Bun.file('artifacts/npm-publication/publish.log').text()
+      original = publicationReadbackReceipt(Number(publishExit), log, manifest.name, manifest.version)
+    }
+    const result = await waitForNpmPublication(manifest.name, manifest.version, { expectedOriginal: original })
+    await Bun.write(output, JSON.stringify({ at: new Date().toISOString(), passed: true, publishExitCode: publishExit === undefined ? null : Number(publishExit), original, ...result }, null, 2) + '\n')
     console.log(`Verified public ${result.name}@${result.version}, ${result.bytes} archive bytes and SHA512 integrity`)
   }
   catch (error) {
-    await Bun.write(output, JSON.stringify({ at: new Date().toISOString(), passed: false, name: manifest.name, version: manifest.version, error: error instanceof Error ? error.message : String(error) }, null, 2) + '\n')
+    await Bun.write(output, JSON.stringify({ at: new Date().toISOString(), passed: false, name: manifest.name, version: manifest.version, publishExitCode: publishExit ?? null, original, error: error instanceof Error ? error.message : String(error) }, null, 2) + '\n')
     throw error
   }
 }

@@ -1,0 +1,30 @@
+# Release publication
+
+Run the normal `bun run release:patch` from a reviewed checkout with the intended
+Git identity and upstream. The resulting commit and tag start the Releaser.
+Check its required jobs and public artifacts before updating consumers.
+
+Verify the native CLI assets and the `ts-pantry` npm package separately. Native
+ZIPs can already be public while npm is still processing its upload. The native
+`release-manifest.json` names the source commit and every platform archive's
+size and SHA256. Compare those with the complete downloaded archives and the
+release API's asset digests.
+
+## npm acceptance and public availability
+
+An npm upload can be accepted before its metadata and tarball become readable.
+The CLI prints the package name, version, original SHA1 and SHA512, then reports
+that public availability is pending if its initial wait expires.
+
+The Releaser invokes publishing once and retains its exit code and output. A
+pending accepted upload proceeds to the existing bounded public readback. That
+readback requires the original package identity, metadata checksums, complete
+archive bytes, and the manifest inside the archive to agree. A rejected upload,
+missing receipt, conflicting receipt or mismatching archive fails the job.
+
+The workflow retains `artifacts/npm-publication/publish.log` and `proof.json`,
+including the original receipt and publisher exit code. If public availability
+exceeds the readback deadline, preserve that evidence and verify the original
+archive when it becomes readable. Check the workflow's recovery behavior before
+resuming its failed job. Keep the accepted version and its tag; uploading that
+version again can produce a staged-version conflict.
