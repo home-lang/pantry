@@ -205,7 +205,7 @@ pub const Ownership = struct {
                 }
             }
             try io_helper.cwd().deleteTree(io_helper.io, directory);
-            if (io_helper.statFile(directory)) |_| {
+            if (io_helper.cwd().statFile(io_helper.io, directory, .{ .follow_symlinks = false })) |_| {
                 return error.LegacyJavaScriptShadowRemovalFailed;
             } else |err| switch (err) {
                 error.FileNotFound => {},
