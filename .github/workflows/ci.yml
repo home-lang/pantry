@@ -389,6 +389,8 @@ jobs:
           packages: bun.com@1.4.3 ziglang.org@0.17.0
       - run: pantry install --frozen-lockfile
       - run: bun install --frozen-lockfile
+      - name: Verify native service admission and shutdown on this platform
+        run: bun test packages/action/src/service-ownership.test.ts packages/action/src/native-dynamodb.test.ts packages/action/src/native-cache.test.ts
       - name: Build the source CLI before release
         run: cd packages/zig && zig build -Doptimize=Debug -j2
       - name: Verify explicit pins through the recursive native installer
