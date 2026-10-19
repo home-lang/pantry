@@ -620,6 +620,7 @@ pub fn installWorkspaceCommandWithOptions(
     defer js_ownership.deinit();
     try js_ownership.readManifest(workspace_root, true);
     for (workspace_config.members) |member| try js_ownership.readManifest(member.abs_path, false);
+    try js_ownership.validateModulesDirectory(workspace_root, options.modules_dir);
 
     if (io_helper.readFileAlloc(allocator, root_package_json_path, 1024 * 1024)) |package_json_content| {
         defer allocator.free(package_json_content);

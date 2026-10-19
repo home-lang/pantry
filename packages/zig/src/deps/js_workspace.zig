@@ -133,10 +133,26 @@ pub const Ownership = struct {
         return true;
     }
 
+    pub fn validateModulesDirectory(self: *const Ownership, project_root: []const u8, modules_dir: []const u8) !void {
+        if (!self.enabled) return;
+        const managed = try std.fs.path.resolve(self.allocator, &.{ project_root, modules_dir });
+        defer self.allocator.free(managed);
+        const javascript = try std.fs.path.resolve(self.allocator, &.{ project_root, "node_modules" });
+        defer self.allocator.free(javascript);
+        if (managed.len < javascript.len) return;
+        const same_prefix = if (@import("builtin").os.tag == .windows)
+            std.ascii.eqlIgnoreCase(managed[0..javascript.len], javascript)
+        else
+            std.mem.eql(u8, managed[0..javascript.len], javascript);
+        if (same_prefix and (managed.len == javascript.len or managed[javascript.len] == '/' or managed[javascript.len] == '\\'))
+            return error.JavaScriptAndNativeModulesDirectoriesOverlap;
+    }
+
     /// Called only after the selected JS manager succeeds, while the old
     /// committed Pantry lock still establishes the provenance of legacy files.
     pub fn removeLegacyShadows(self: *Ownership, project_root: []const u8, modules_dir: []const u8, old: *const package_types.Lockfile, frozen: bool) !void {
         if (!self.enabled) return;
+        try self.validateModulesDirectory(project_root, modules_dir);
         try self.includeLegacyDependencies(old);
         var candidates = std.ArrayList(*const package_types.LockfileEntry).empty;
         defer candidates.deinit(self.allocator);
@@ -270,6 +286,15 @@ test "legacy JS migration cannot claim paths outside its managed namespace" {
         try std.testing.expect(!validManagedName(name));
     try std.testing.expect(validManagedName("@scope/package"));
     try std.testing.expect(validManagedName("package"));
+}
+
+test "native workspace content cannot overlap the JavaScript manager's directory" {
+    var owner = Ownership.init(std.testing.allocator);
+    defer owner.deinit();
+    owner.enabled = true;
+    try owner.validateModulesDirectory("/project", "pantry");
+    for ([_][]const u8{ "node_modules", "./node_modules", "pantry/../node_modules", "node_modules/native" }) |directory|
+        try std.testing.expectError(error.JavaScriptAndNativeModulesDirectoriesOverlap, owner.validateModulesDirectory("/project", directory));
 }
 
 test "legacy migration preserves unrelated files and refuses frozen lock changes" {
