@@ -115,11 +115,13 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
   }
 }
 
-async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-commit' | 'upload-redirect' | 'stalled-upload-response' | 'precheck-stalled-head' | 'precheck-stalled-body') {
+async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-commit' | 'upload-redirect' | 'stalled-upload-response' | 'precheck-stalled-head' | 'precheck-stalled-body' | 'precheck-unavailable' | 'precheck-disconnected' | 'precheck-unauthorized' | 'precheck-forbidden') {
   const cwd = join(root, mode)
   await mkdir(cwd)
   await writeFile(join(cwd, 'index.txt'), 'Immutable ambiguous-response fixture\n')
   const marker = join(cwd, 'postpublish-ran')
+  const prepublishMarker = join(cwd, 'prepublish-ran')
+  const precheckFailure = mode.startsWith('precheck-')
   let uploads = 0, metadataReads = 0, tarballReads = 0, foreignRequests = 0, foreignCredentialRequests = 0
   let prematureHook = false
   let tarball = Buffer.alloc(0), metadata: Record<string, unknown> = {}
@@ -162,6 +164,10 @@ async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-
       }
       if (request.method === 'GET' && path === `/${name}/${version}`) {
         metadataReads++
+        if (!uploads && mode === 'precheck-unavailable') { response.writeHead(502).end(); return }
+        if (!uploads && mode === 'precheck-unauthorized') { response.writeHead(401).end(); return }
+        if (!uploads && mode === 'precheck-forbidden') { response.writeHead(403).end(); return }
+        if (!uploads && mode === 'precheck-disconnected') { request.socket.destroy(); return }
         if (!uploads && mode === 'precheck-stalled-head') return
         if (!uploads && mode === 'precheck-stalled-body') {
           response.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': '16' })
@@ -189,7 +195,10 @@ async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-
   const origin = `http://127.0.0.1:${address.port}`
   await writeFile(join(cwd, 'package.json'), JSON.stringify({
     name, version, files: ['index.txt'], publishConfig: { registry: origin },
-    scripts: { postpublish: `bun -e 'await Bun.write("postpublish-ran", "yes")'` },
+    scripts: {
+      prepublishOnly: `bun -e 'await Bun.write("prepublish-ran", "yes")'`,
+      postpublish: `bun -e 'await Bun.write("postpublish-ran", "yes")'`,
+    },
   }))
   const child = Bun.spawn([executable, 'npm:publish', '--no-oidc', '--access', 'public', '--otp', '123456', '--registry', origin], {
     cwd, env: { ...process.env, NPM_TOKEN: 'disposable-loopback-fixture-only' }, stdout: 'pipe', stderr: 'pipe',
@@ -199,6 +208,12 @@ async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-
     const [stdout, stderr, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited])
     const output = stdout + stderr
     if (foreignRequests || foreignCredentialRequests) throw new Error(`${mode}: sensitive upload followed a foreign redirect; requests=${foreignRequests}, credentialRequests=${foreignCredentialRequests}`)
+    if (precheckFailure) {
+      if (code === 0 || uploads !== 0 || !metadataReads || existsSync(marker) || existsSync(prepublishMarker) || !output.includes('Upload was not started'))
+        throw new Error(`${mode}: a failed availability lookup must stop before hooks or upload; code=${code}, uploads=${uploads}, metadataReads=${metadataReads}\n${output}`)
+      console.log(JSON.stringify({ mode, code, uploads, metadataReads, prepublishHook: false, postpublishHook: false, verifiedNoUpload: true }))
+      return
+    }
     if (uploads !== 1) throw new Error(`${mode}: accepted upload was repeated ${uploads} times; exit=${code}\n${output}`)
     if (mode === 'upload-redirect') {
       if (code === 0 || existsSync(marker)) throw new Error('An unverified redirect completed publication or ran its hook')
@@ -227,7 +242,7 @@ try {
     try { await checkAmbiguousUpload(mode) }
     catch (error) { console.error(error); failures.push(mode) }
   }
-  if (segment === 'all' || segment === 'lookup') for (const mode of ['precheck-stalled-head', 'precheck-stalled-body'] as const) {
+  if (segment === 'all' || segment === 'lookup') for (const mode of ['precheck-unavailable', 'precheck-disconnected', 'precheck-unauthorized', 'precheck-forbidden', 'precheck-stalled-head', 'precheck-stalled-body'] as const) {
     try { await checkAmbiguousUpload(mode) }
     catch (error) { console.error(error); failures.push(mode) }
   }

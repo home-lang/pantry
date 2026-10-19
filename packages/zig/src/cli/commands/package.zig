@@ -1166,17 +1166,23 @@ fn publishSingleToNpm(
     // version is already on the registry.
     //
     // Off by default for non-npm registries (we only know the npm response
-    // semantics — Pantry's own registry uses a different shape). Network
-    // failures here fall through to a real publish attempt; we'd rather
-    // double-publish-attempt than incorrectly skip.
+    // semantics — Pantry's own registry uses a different shape). Only a
+    // confirmed missing version permits a new upload. A failed availability
+    // lookup must not turn an accepted version into a duplicate PUT.
     // Private metadata requires the credential obtained by the publication
     // path below. Keep the cheap anonymous precheck for public packages only;
     // authenticated immutable-version conflicts still verify before skipping.
     const precheck_access = resolveNpmAccess(options.access, if (metadata.publish_config) |pc| pc.access else null, metadata.name);
-    if (options.skip_existing and std.mem.eql(u8, precheck_access, "public")) blk: {
-        var precheck_client = registry.RegistryClient.init(allocator, registry_url) catch break :blk;
+    if (options.skip_existing and std.mem.eql(u8, precheck_access, "public")) {
+        var precheck_client = registry.RegistryClient.init(allocator, registry_url) catch |err| return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Public version availability could not be verified: {s}. Upload was not started.", .{@errorName(err)}),
+        };
         defer precheck_client.deinit();
-        const exists = precheck_client.versionExists(metadata.name, metadata.version) catch break :blk;
+        const exists = precheck_client.versionExists(metadata.name, metadata.version) catch |err| return .{
+            .exit_code = 1,
+            .message = try std.fmt.allocPrint(allocator, "Public version availability could not be verified: {s}. Upload was not started.", .{@errorName(err)}),
+        };
         if (exists) {
             if (!try precheck_client.confirmPublication(metadata.name, metadata.version, null, npm_publish_timeout_ms)) {
                 return CommandResult.err(allocator, "Existing version is pending public tarball availability. Do not upload this version again.");

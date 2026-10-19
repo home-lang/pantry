@@ -54,3 +54,13 @@ on Main, using the maintainer's normal GitHub access. The preparer creates no
 registry upload and has no registry token. Verify the original native and npm
 publication as described above before updating consumers. Do not rerun the
 producer or replace an accepted version to recover a later job failure.
+
+
+## Availability checks before an upload
+
+For a public npm package with the default existing-version check enabled, only
+a confirmed missing version permits a fresh upload. A registry outage,
+authorization error, disconnected response or timeout stops before lifecycle
+hooks and upload. An existing version is skipped only after its public tarball
+is verified. Restore registry availability and inspect the original outcome
+before continuing; an inconclusive check does not authorize another upload.
