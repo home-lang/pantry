@@ -1,3 +1,32 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.96...v0.11.97)
+
+## 🐛 Bug Fixes
+
+- **install**: report failed global package activation to callers ([f3daff9](https://github.com/pantry-pm/pantry/commit/f3daff9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **install**: retain activation contracts during tree repair and aliases ([45888d4](https://github.com/pantry-pm/pantry/commit/45888d4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **install**: preserve native resource roots through managed activation ([8e84ccf](https://github.com/pantry-pm/pantry/commit/8e84ccf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **install**: reject a symlink as the materialization cache root ([ce1ebec](https://github.com/pantry-pm/pantry/commit/ce1ebec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **install**: compare portable payload permission bits and document staging ([2ec0d70](https://github.com/pantry-pm/pantry/commit/2ec0d70)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **install**: prepare verified payload permissions in private staging ([615dafc](https://github.com/pantry-pm/pantry/commit/615dafc)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **install**: use the managed Zig sentinel allocation API ([d68c02b](https://github.com/pantry-pm/pantry/commit/d68c02b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.97 ([b488419](https://github.com/pantry-pm/pantry/commit/b488419)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update cnquery.io, github.com/ggerganov/llama.cpp, pdm.fming.dev, rabbitmq.com ([5310bf8](https://github.com/pantry-pm/pantry/commit/5310bf8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- integrate the current Craft package catalog ([9b0e5d9](https://github.com/pantry-pm/pantry/commit/9b0e5d9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update craft-native.org to 0.0.247 ([8ee88cc](https://github.com/pantry-pm/pantry/commit/8ee88cc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.246 ([980758c](https://github.com/pantry-pm/pantry/commit/980758c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- integrate current main with verified extraction staging ([9b3be95](https://github.com/pantry-pm/pantry/commit/9b3be95)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update craft-native.org to 0.0.245 ([3cf3b34](https://github.com/pantry-pm/pantry/commit/3cf3b34)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.95...v0.11.96)
 
 ## 🐛 Bug Fixes
