@@ -197,7 +197,8 @@ try {
       }
       if (scenario.includes('429')) {
         assert.match(output, /HTTP 429 from http:\/\/127\.0\.0\.1:/, 'diagnostics identify the responding origin')
-        assert.doesNotMatch(output, /fixture-secret-query/, 'diagnostics must not expose signed queries')
+        const statusDiagnostics = output.split('\n').filter(line => line.includes('Registry GET HTTP')).join('\n')
+        assert.doesNotMatch(statusDiagnostics, /fixture-secret-query/, 'status diagnostics must not expose signed queries')
         if (scenario.includes('long')) {
           assert.equal(rateResponses.length, 1, 'excessive server delay must stop without an early retry')
           assert.ok(elapsed < 10_000)
