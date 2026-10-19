@@ -190,6 +190,9 @@ fn writeMarker(allocator: std.mem.Allocator, project_dir: []const u8) void {
 }
 
 fn hasJsDeps(obj: std.json.ObjectMap) bool {
+    // A JS workspace can declare every external dependency in its members.
+    // The manager still owns member links and the complete locked graph.
+    if (@import("js_workspace.zig").hasWorkspacePatterns(obj)) return true;
     const sections = [_][]const u8{ "dependencies", "devDependencies", "optionalDependencies" };
     for (sections) |section| {
         if (obj.get(section)) |val| {

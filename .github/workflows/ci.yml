@@ -110,6 +110,31 @@ jobs:
           zig build -Doptimize=Debug -j2
           PANTRY_SOURCE_CLI="$PWD/zig-out/bin/pantry" bun test test/workspace-companion-e2e.test.ts
 
+      - name: Install the native graph fixture archiver through Pantry
+        uses: ./packages/action
+        with:
+          version: 0.11.101
+          install: 'false'
+          packages: gnu.org/tar@1.35
+
+      - name: Verify the source JavaScript workspace graph and published-version migration
+        run: |
+          source_cli="$GITHUB_WORKSPACE/packages/zig/zig-out/bin/pantry"
+          published_cli="$(command -v pantry)"
+          bun .github/scripts/verify-nested-js-graph.ts "$source_cli" single
+          bun .github/scripts/verify-nested-js-graph.ts "$source_cli" workspace
+          bun .github/scripts/verify-nested-js-graph.ts "$source_cli" workspace "$published_cli"
+          bun .github/scripts/verify-nested-js-graph.ts "$source_cli" members-only
+          bun .github/scripts/verify-nested-js-graph.ts "$source_cli" mixed
+
+      - name: Retain JavaScript graph and migration evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-nested-js-graph
+          path: artifacts/nested-js-graph
+          if-no-files-found: error
+
       - name: Verify Git installation with the source Linux CLI
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:

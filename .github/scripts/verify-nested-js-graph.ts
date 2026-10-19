@@ -9,8 +9,9 @@ import { pathToFileURL } from 'node:url'
 assert(process.argv[2], 'Supply the normally published or source-built Pantry CLI')
 const cli = resolve(process.argv[2])
 const mode = process.argv[3] || 'workspace'
-assert(['single', 'workspace'].includes(mode))
-const artifacts = resolve('artifacts/nested-js-graph')
+assert(['single', 'workspace', 'members-only', 'mixed'].includes(mode))
+const baseline = process.argv[4] ? resolve(process.argv[4]) : undefined
+const artifacts = resolve('artifacts/nested-js-graph', `${mode}-${baseline ? 'migration' : 'cold'}`)
 await mkdir(artifacts, { recursive: true })
 const root = await mkdtemp(join(tmpdir(), 'pantry nested graph '))
 const project = join(root, 'project')
@@ -72,15 +73,25 @@ try {
     metadata.set(pkg.name, data)
   }
   await writeFile(join(project, '.npmrc'), `registry=${server.url.origin}\n`)
-  if (mode === 'workspace') {
+  if (mode !== 'single') {
     await mkdir(join(project, 'packages/member'), { recursive: true })
-    await writeFile(join(project, 'packages/member/package.json'), JSON.stringify({ name: '@pantry-fixture/member', version: '1.0.0', private: true }))
+    await writeFile(join(project, 'packages/member/package.json'), JSON.stringify({ name: '@pantry-fixture/member', version: '1.0.0', private: true, ...(mode === 'members-only' ? { dependencies: { [leaf]: '1.0.0', [parent]: '1.0.0' } } : {}) }))
   }
-  await writeFile(join(project, 'package.json'), JSON.stringify({ name: 'nested-graph-fixture', version: '1.0.0', private: true, ...(mode === 'workspace' ? { workspaces: ['packages/*'] } : {}), dependencies: { [leaf]: '1.0.0', [parent]: '1.0.0' } }))
+  await writeFile(join(project, 'package.json'), JSON.stringify({ name: 'nested-graph-fixture', version: '1.0.0', private: true, ...(mode !== 'single' ? { workspaces: ['packages/*'] } : {}), ...(mode === 'mixed' ? { system: { 'gnu.org/tar': '1.35' } } : {}), ...(mode !== 'members-only' ? { dependencies: { [leaf]: '1.0.0', [parent]: '1.0.0' } } : {}) }))
   await run('bun-install', ['bun', 'install'])
   const evaluate = async (tree: string, pkg: string, label: string): Promise<string> => run(label, ['bun', '-e', `console.log((await import(${JSON.stringify(pathToFileURL(join(project, tree, pkg, 'index.js')).href)})).default)`])
   assert.equal(await evaluate('node_modules', parent, 'bun-parent-binding'), '2.0.0')
   assert.equal(await evaluate('node_modules', leaf, 'bun-root-binding'), '1.0.0')
+  const untouched = join(project, 'user-data.txt')
+  await writeFile(untouched, 'Unrelated user data\n')
+  if (baseline) {
+    await run('baseline-install', [baseline, 'install'])
+    proof.baselineParentBinding = await evaluate('pantry', parent, 'baseline-parent-binding')
+    assert.equal(proof.baselineParentBinding, '1.0.0', 'The published 101 baseline must exercise the actual wrong shadow graph')
+    await writeFile(join(artifacts, 'baseline-pantry.lock'), await readFile(join(project, 'pantry.lock')))
+  }
+  // A member-only workspace still needs its JS manager after a clean checkout.
+  if (mode === 'members-only') await rm(join(project, 'node_modules'), { recursive: true, force: true })
   await run('pantry-install', [cli, 'install'])
   const checkBindings = async (label: string): Promise<void> => {
     assert.equal(await evaluate('node_modules', leaf, `${label}-bun-root`), '1.0.0')
@@ -107,6 +118,12 @@ try {
   await run('pantry-frozen', [cli, 'install', '--frozen-lockfile'])
   await checkBindings('frozen')
   assert.deepEqual(await readFile(join(project, 'bun.lock')), bunLock, 'The normal frozen install keeps the authoritative JS lock unchanged')
+  assert.equal(await readFile(untouched, 'utf8'), 'Unrelated user data\n')
+  if (mode === 'mixed') {
+    const tar = join(project, 'pantry/.bin/tar')
+    assert.match(await run('managed-system-tar', [tar, '--version']), /\b1\.35\b/)
+    proof.managedSystemDependencyPreserved = true
+  }
   proof.passed = true
 }
 finally {

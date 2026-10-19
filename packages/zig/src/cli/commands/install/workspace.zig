@@ -6,6 +6,7 @@ const std = @import("std");
 const io_helper = @import("../../../io_helper.zig");
 const lib = @import("../../../lib.zig");
 const types = @import("types.zig");
+const js_workspace = @import("../../../deps/js_workspace.zig");
 
 const cache = lib.cache;
 const install = lib.install;
@@ -525,7 +526,27 @@ fn delegateEcosystemInstalls(
 /// The combined installer calls this after the system-dependency phase; a
 /// standalone workspace completes it immediately after linking its packages.
 pub fn completeEcosystemInstall(allocator: std.mem.Allocator, workspace_root: []const u8, options: types.InstallOptions) !?types.CommandResult {
+    var js_ownership = js_workspace.Ownership.init(allocator);
+    defer js_ownership.deinit();
+    try js_ownership.readManifest(workspace_root, true);
+    if (js_ownership.enabled) {
+        const workspace_module = @import("../../../packages/workspace.zig");
+        const package_json = try std.fs.path.join(allocator, &.{ workspace_root, "package.json" });
+        defer allocator.free(package_json);
+        var config = try workspace_module.loadWorkspaceConfig(allocator, package_json, workspace_root);
+        defer config.deinit(allocator);
+        for (config.members) |member| try js_ownership.readManifest(member.abs_path, false);
+    }
+    const old_path = try std.fs.path.join(allocator, &.{ workspace_root, "pantry.lock" });
+    defer allocator.free(old_path);
+    const reader = @import("../../../packages/lockfile.zig");
+    var old_lock = reader.readLockfile(allocator, old_path) catch null;
+    defer if (old_lock) |*old| old.deinit(allocator);
+    if (options.frozen_lockfile) {
+        if (old_lock) |*old| try js_ownership.removeLegacyShadows(workspace_root, options.modules_dir, old, true);
+    }
     if (try delegateEcosystemInstalls(allocator, workspace_root, options)) |failure| return failure;
+    if (old_lock) |*old| try js_ownership.removeLegacyShadows(workspace_root, options.modules_dir, old, false);
 
     install.flushAnalytics(allocator);
     const lf_hooks = @import("lockfile_hooks.zig");
@@ -590,6 +611,11 @@ pub fn installWorkspaceCommandWithOptions(
 
     const root_package_json_path = try std.fs.path.join(allocator, &[_][]const u8{ workspace_root, "package.json" });
     defer allocator.free(root_package_json_path);
+
+    var js_ownership = js_workspace.Ownership.init(allocator);
+    defer js_ownership.deinit();
+    try js_ownership.readManifest(workspace_root, true);
+    for (workspace_config.members) |member| try js_ownership.readManifest(member.abs_path, false);
 
     if (io_helper.readFileAlloc(allocator, root_package_json_path, 1024 * 1024)) |package_json_content| {
         defer allocator.free(package_json_content);
@@ -705,6 +731,7 @@ pub fn installWorkspaceCommandWithOptions(
         if (root_deps) |deps| {
             defer allocator.free(deps);
             for (deps) |dep| {
+                if (js_ownership.owns(workspaceDependencyName(dep.name), workspaceDependencySource(dep))) continue;
                 if (workspaceDependencyIsLocal(&workspace_package_versions, dep.name, dep.version)) continue;
 
                 const clean_dep_name = workspaceDependencyName(dep.name);
@@ -764,6 +791,7 @@ pub fn installWorkspaceCommandWithOptions(
 
         if (member_deps) |deps| {
             for (deps) |dep| {
+                if (js_ownership.owns(workspaceDependencyName(dep.name), workspaceDependencySource(dep))) continue;
                 // Skip workspace:* references — these are resolved via symlinks, not installed
                 if (std.mem.startsWith(u8, dep.version, "workspace:")) {
                     continue;
@@ -926,7 +954,7 @@ pub fn installWorkspaceCommandWithOptions(
     // ── FAST PATH: batch install from lockfile ──
     // If lockfile has packages resolved but they're missing from disk (e.g. after
     // clean checkout), extract them all in parallel without any resolution/registry queries.
-    if (!options.force) {
+    if (!options.force and !js_ownership.enabled) {
         if (shared_installer.installAllFromLockfile(workspace_root)) |batch_count_opt| {
             if (batch_count_opt) |batch_count| {
                 if (batch_count > 0) {
@@ -1594,10 +1622,7 @@ pub fn installWorkspaceCommandWithOptions(
     // A workspace with a separate companion deps file stages its workspace
     // lock first so the caller can merge system packages and validate the
     // complete result atomically against the committed lockfile.
-    if (options.lockfile_output_path) |output_path| {
-        const lockfile_writer = @import("../../../packages/lockfile.zig");
-        try lockfile_writer.writeLockfile(allocator, &lockfile, output_path);
-    } else if (options.frozen_lockfile) {
+    if (options.lockfile_output_path == null and options.frozen_lockfile) {
         // In frozen lockfile mode, check if lockfile would change
         const lockfile_writer = @import("../../../packages/lockfile.zig");
         if (existing_lockfile) |*existing| {
@@ -1614,13 +1639,6 @@ pub fn installWorkspaceCommandWithOptions(
                 .message = try allocator.dupe(u8, "Error: no lockfile found (--frozen-lockfile)"),
             };
         }
-    } else if (!options.no_save) {
-        const lockfile_writer = @import("../../../packages/lockfile.zig");
-        style.printLockfileSaving();
-        lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
-            style.printWarn("Failed to write lockfile: {}\n", .{err});
-        };
-        style.printLockfileSaved();
     }
 
     // Link workspace members into root pantry/ so they can reference each other
@@ -1695,6 +1713,16 @@ pub fn installWorkspaceCommandWithOptions(
 
     if (!options.defer_ecosystem_install) {
         if (try completeEcosystemInstall(allocator, workspace_root, options)) |failure| return failure;
+    }
+
+    // Keep the old committed lock available until ecosystem installation and
+    // positively-owned legacy JS migration have both succeeded.
+    if (options.lockfile_output_path) |output_path| {
+        try lockfile_reader.writeLockfile(allocator, &lockfile, output_path);
+    } else if (!options.frozen_lockfile and !options.no_save) {
+        style.printLockfileSaving();
+        try lockfile_reader.writeLockfile(allocator, &lockfile, lockfile_path);
+        style.printLockfileSaved();
     }
 
     // Update env cache so shell:lookup finds this env on next cd (no binary re-scan needed)
