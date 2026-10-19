@@ -1,3 +1,99 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.94...v0.11.95)
+
+## ✨ Features
+
+- integrate native services with explicit runtime cohort installation ([c15bd42](https://github.com/pantry-pm/pantry/commit/c15bd42)) _(by Chris <chrisbreuer93@gmail.com>)_
+- integrate native DynamoDB Action services with current Pantry ([516be62](https://github.com/pantry-pm/pantry/commit/516be62)) _(by Chris <chrisbreuer93@gmail.com>)_
+- manage native DynamoDB services with owned readiness and cleanup ([0efe629](https://github.com/pantry-pm/pantry/commit/0efe629)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add a native DynamoDB Local recipe with mandatory live health ([017d61d](https://github.com/pantry-pm/pantry/commit/017d61d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- integrate explicit native solver plans with publication contracts ([6fc2043](https://github.com/pantry-pm/pantry/commit/6fc2043)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **install**: retain explicit pins across recursive dependencies ([4a79ab8](https://github.com/pantry-pm/pantry/commit/4a79ab8)) _(by Chris Breuer <chris@stacksjs.com>)_
+- honor temporary installs and retain shutdown during native admission ([3203603](https://github.com/pantry-pm/pantry/commit/3203603)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **action**: preserve explicit native package pins ([d453648](https://github.com/pantry-pm/pantry/commit/d453648)) _(by Chris Breuer <chris@stacksjs.com>)_
+- report verified immutable versions accurately ([f87c177](https://github.com/pantry-pm/pantry/commit/f87c177)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve cancellation and verify ambiguous publication outcomes ([d4cecd5](https://github.com/pantry-pm/pantry/commit/d4cecd5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- verify restricted publications with origin-scoped credentials ([0d175cf](https://github.com/pantry-pm/pantry/commit/0d175cf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- close bounded publication readback connections on cancellation ([429e878](https://github.com/pantry-pm/pantry/commit/429e878)) _(by Chris <chrisbreuer93@gmail.com>)_
+- document and verify native publication completion ([111f76f](https://github.com/pantry-pm/pantry/commit/111f76f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- verify Zig with its supported version command ([3e881b0](https://github.com/pantry-pm/pantry/commit/3e881b0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- share installer prerelease rules when selecting locked tools ([2aa4d2a](https://github.com/pantry-pm/pantry/commit/2aa4d2a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- verify public package bytes before completing native publication ([fc0043e](https://github.com/pantry-pm/pantry/commit/fc0043e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- invalidate cached prefixes when native service artifacts change ([6023a52](https://github.com/pantry-pm/pantry/commit/6023a52)) _(by Chris <chrisbreuer93@gmail.com>)_
+- declare native DynamoDB contracts and reject ambient JVMs ([250d90b](https://github.com/pantry-pm/pantry/commit/250d90b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- require managed JVM and prioritize Pantry service programs ([72ab030](https://github.com/pantry-pm/pantry/commit/72ab030)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve native producer versions from canonical package metadata ([d0b7bb7](https://github.com/pantry-pm/pantry/commit/d0b7bb7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve native DynamoDB launchers and canonical service aliases ([af6eb43](https://github.com/pantry-pm/pantry/commit/af6eb43)) _(by Chris <chrisbreuer93@gmail.com>)_
+- generate package examples with real literal aliases and domain keys ([f3918bf](https://github.com/pantry-pm/pantry/commit/f3918bf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use the canonical Bun recipe domain for DynamoDB build health ([8ff4958](https://github.com/pantry-pm/pantry/commit/8ff4958)) _(by Chris <chrisbreuer93@gmail.com>)_
+- await the owned DynamoDB accepted socket before health requests ([c59dcde](https://github.com/pantry-pm/pantry/commit/c59dcde)) _(by Chris <chrisbreuer93@gmail.com>)_
+- validate Maven coordinate segments without nested repetition ([b9e0eb7](https://github.com/pantry-pm/pantry/commit/b9e0eb7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 📝 Documentation
+
+- distinguish public prechecks from authenticated conflict verification ([c413be4](https://github.com/pantry-pm/pantry/commit/c413be4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- explain native DynamoDB ownership and local credential scope ([35265ed](https://github.com/pantry-pm/pantry/commit/35265ed)) _(by Chris <chrisbreuer93@gmail.com>)_
+- regenerate native package examples from the corrected generator ([68747ad](https://github.com/pantry-pm/pantry/commit/68747ad)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- distinguish native admission from ready foreground shutdown ([4818dd2](https://github.com/pantry-pm/pantry/commit/4818dd2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve workspace declarations during temporary native installs ([63034d9](https://github.com/pantry-pm/pantry/commit/63034d9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- follow current native catalog while preserving exact build pins ([f4ba5db](https://github.com/pantry-pm/pantry/commit/f4ba5db)) _(by Chris <chrisbreuer93@gmail.com>)_
+- verify restricted immutable conflicts before skipping ([8876c29](https://github.com/pantry-pm/pantry/commit/8876c29)) _(by Chris <chrisbreuer93@gmail.com>)_
+- require independent transport lookup and availability contracts ([6502f74](https://github.com/pantry-pm/pantry/commit/6502f74)) _(by Chris <chrisbreuer93@gmail.com>)_
+- verify ambiguous uploads and sensitive redirect boundaries ([81ac32b](https://github.com/pantry-pm/pantry/commit/81ac32b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- report every publication contract before failing the suite ([c240c87](https://github.com/pantry-pm/pantry/commit/c240c87)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve authenticated restricted npm publications ([c0e16da](https://github.com/pantry-pm/pantry/commit/c0e16da)) _(by Chris <chrisbreuer93@gmail.com>)_
+- exercise registry precedence and client-owned deadlines ([54cde74](https://github.com/pantry-pm/pantry/commit/54cde74)) _(by Chris <chrisbreuer93@gmail.com>)_
+- keep unpublished registry fixture versions absent ([c92c5a9](https://github.com/pantry-pm/pantry/commit/c92c5a9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- isolate native npm confirmation from generic registry routing ([4137af0](https://github.com/pantry-pm/pantry/commit/4137af0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- retain native publication fixture request diagnostics ([0502ce3](https://github.com/pantry-pm/pantry/commit/0502ce3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- require public artifact verification after registry acceptance ([2a6c368](https://github.com/pantry-pm/pantry/commit/2a6c368)) _(by Chris <chrisbreuer93@gmail.com>)_
+- count every foreign service byte and always clean owned processes ([f04af4b](https://github.com/pantry-pm/pantry/commit/f04af4b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- require native DynamoDB service declarations in the Action ([b43dea4](https://github.com/pantry-pm/pantry/commit/b43dea4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- require DynamoDB to launch from a Pantry-style bin entry ([4ae79d2](https://github.com/pantry-pm/pantry/commit/4ae79d2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- execute generated package documentation against its public index ([a5110dc](https://github.com/pantry-pm/pantry/commit/a5110dc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- assert literal DynamoDB dependency domains and preserve early evidence ([dbd2029](https://github.com/pantry-pm/pantry/commit/dbd2029)) _(by Chris <chrisbreuer93@gmail.com>)_
+- require a native Pantry provider for DynamoDB Local ([8008463](https://github.com/pantry-pm/pantry/commit/8008463)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 👷 Build System
+
+- refresh the Action native package catalog ([cd0325b](https://github.com/pantry-pm/pantry/commit/cd0325b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- refresh native Action bundles from qualified source ([d6e7e38](https://github.com/pantry-pm/pantry/commit/d6e7e38)) _(by Chris <chrisbreuer93@gmail.com>)_
+- refresh native Action bundles from qualified source ([ed85b4e](https://github.com/pantry-pm/pantry/commit/ed85b4e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- synchronize the Action catalog after the normal merge ([084d70e](https://github.com/pantry-pm/pantry/commit/084d70e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- register the verified native DynamoDB provider in both catalogs ([062a18c](https://github.com/pantry-pm/pantry/commit/062a18c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 💚 Continuous Integration
+
+- verify owned native service shutdown across runner platforms ([99ce670](https://github.com/pantry-pm/pantry/commit/99ce670)) _(by Chris <chrisbreuer93@gmail.com>)_
+- build and exercise every native service through the Pantry Action ([f2a1c74](https://github.com/pantry-pm/pantry/commit/f2a1c74)) _(by Chris <chrisbreuer93@gmail.com>)_
+- verify source tool selection before native publication compilation ([e7a7870](https://github.com/pantry-pm/pantry/commit/e7a7870)) _(by Chris <chrisbreuer93@gmail.com>)_
+- provision the catalog producer runtime explicitly ([45eb7c5](https://github.com/pantry-pm/pantry/commit/45eb7c5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- build registry packages with recipe-owned Pantry dependencies ([43fbed0](https://github.com/pantry-pm/pantry/commit/43fbed0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- cover package documentation generation and fetch regressions ([eec4092](https://github.com/pantry-pm/pantry/commit/eec4092)) _(by Chris <chrisbreuer93@gmail.com>)_
+- provision download recipe publication tools entirely with Pantry ([36fa326](https://github.com/pantry-pm/pantry/commit/36fa326)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve native recipe build dependencies through Pantry storage ([a70c034](https://github.com/pantry-pm/pantry/commit/a70c034)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.95 ([b510248](https://github.com/pantry-pm/pantry/commit/b510248)) _(by Chris <chrisbreuer93@gmail.com>)_
+- integrate the current Craft native catalog ([05a37eb](https://github.com/pantry-pm/pantry/commit/05a37eb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update craft-native.org to 0.0.244 ([ec54c99](https://github.com/pantry-pm/pantry/commit/ec54c99)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update anthropic.com/claude-code, aws.amazon.com/dynamodb-local, craft-native.org, dprint.dev ([cbc1c50](https://github.com/pantry-pm/pantry/commit/cbc1c50)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.242 ([ce7944b](https://github.com/pantry-pm/pantry/commit/ce7944b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- integrate current catalogs with the prepared release ([81026e6](https://github.com/pantry-pm/pantry/commit/81026e6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update cursor.com, github.com/ggerganov/llama.cpp, mise.jdx.dev ([94de949](https://github.com/pantry-pm/pantry/commit/94de949)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- regenerate DynamoDB catalogs with managed launcher utilities ([0e0c160](https://github.com/pantry-pm/pantry/commit/0e0c160)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.93...v0.11.94)
 
 ## ✨ Features
