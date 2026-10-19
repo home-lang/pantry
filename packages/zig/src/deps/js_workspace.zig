@@ -9,9 +9,10 @@ pub const Ownership = struct {
     enabled: bool = false,
     names: std.StringHashMap(void),
     members: std.StringHashMap(void),
+    retained: std.StringHashMap(void),
 
     pub fn init(allocator: std.mem.Allocator) Ownership {
-        return .{ .allocator = allocator, .names = std.StringHashMap(void).init(allocator), .members = std.StringHashMap(void).init(allocator) };
+        return .{ .allocator = allocator, .names = std.StringHashMap(void).init(allocator), .members = std.StringHashMap(void).init(allocator), .retained = std.StringHashMap(void).init(allocator) };
     }
 
     pub fn deinit(self: *Ownership) void {
@@ -21,6 +22,9 @@ pub const Ownership = struct {
         var members = self.members.keyIterator();
         while (members.next()) |name| self.allocator.free(name.*);
         self.members.deinit();
+        var retained = self.retained.keyIterator();
+        while (retained.next()) |name| self.allocator.free(name.*);
+        self.retained.deinit();
     }
 
     fn add(self: *Ownership, name: []const u8) !void {
@@ -42,6 +46,12 @@ pub const Ownership = struct {
         defer parsed.deinit();
         if (parsed.value != .object) return error.InvalidJavaScriptManifest;
         if (root) self.enabled = hasWorkspacePatterns(parsed.value.object);
+        if (parsed.value.object.get("system")) |system| {
+            if (system == .object) {
+                var names = system.object.keyIterator();
+                while (names.next()) |name| try self.retain(name.*);
+            }
+        }
         if (!root) {
             if (parsed.value.object.get("name")) |name| {
                 if (name == .string and !self.members.contains(name.string)) {
@@ -57,6 +67,27 @@ pub const Ownership = struct {
             var it = deps.object.keyIterator();
             while (it.next()) |name| try self.add(name.*);
         }
+    }
+
+    fn retain(self: *Ownership, raw_name: []const u8) !void {
+        const name = if (std.mem.startsWith(u8, raw_name, "npm:")) raw_name[4..] else if (std.mem.startsWith(u8, raw_name, "auto:")) raw_name[5..] else raw_name;
+        if (self.retained.contains(name)) return;
+        const owned = try self.allocator.dupe(u8, name);
+        errdefer self.allocator.free(owned);
+        try self.retained.put(owned, {});
+    }
+
+    pub fn readCompanion(self: *Ownership, project_root: []const u8) !void {
+        const detector = @import("detector.zig");
+        const file = try detector.findDepsFile(self.allocator, project_root) orelse return;
+        defer self.allocator.free(file.path);
+        if (file.format == .package_json) return;
+        const dependencies = try @import("parser.zig").inferDependencies(self.allocator, file);
+        defer {
+            for (dependencies) |*dependency| dependency.deinit(self.allocator);
+            self.allocator.free(dependencies);
+        }
+        for (dependencies) |dependency| try self.retain(dependency.name);
     }
 
     /// Include only the dependency closure of lock entries reached from the
@@ -77,6 +108,21 @@ pub const Ownership = struct {
             }
             changed = self.names.count() != before;
         }
+        // Explicit native declarations and their dependency closure keep their
+        // Pantry tree, even if the same name also appears in the JS graph.
+        changed = true;
+        while (changed) {
+            const before = self.retained.count();
+            var it = lockfile.packages.valueIterator();
+            while (it.next()) |entry| {
+                if (!self.retained.contains(entry.name)) continue;
+                if (entry.dependencies) |dependencies| {
+                    var deps = dependencies.keyIterator();
+                    while (deps.next()) |name| try self.retain(name.*);
+                }
+            }
+            changed = self.retained.count() != before;
+        }
     }
 
     pub fn owns(self: *const Ownership, name: []const u8, source: package_types.PackageSource) bool {
@@ -88,9 +134,11 @@ pub const Ownership = struct {
     pub fn removeLegacyShadows(self: *Ownership, project_root: []const u8, modules_dir: []const u8, old: *const package_types.Lockfile, frozen: bool) !void {
         if (!self.enabled) return;
         try self.includeLegacyDependencies(old);
+        var candidates = std.ArrayList(*const package_types.LockfileEntry).empty;
+        defer candidates.deinit(self.allocator);
         var it = old.packages.valueIterator();
         while (it.next()) |entry| {
-            if (entry.source != .npm or !self.names.contains(entry.name)) continue;
+            if (entry.source != .npm or !self.names.contains(entry.name) or self.retained.contains(entry.name)) continue;
             if (frozen) return error.JavaScriptWorkspaceLockNeedsMigration;
             // Workspace member links have already been refreshed by the
             // workspace installer; they are not legacy external npm caches.
@@ -113,6 +161,26 @@ pub const Ownership = struct {
             if (name != .string or version != .string or !std.mem.eql(u8, name.string, entry.name) or !std.mem.eql(u8, version.string, entry.version))
                 return error.UnownedJavaScriptShadow;
 
+            // Resolve the parent through the OS: a user-created scope symlink
+            // must not redirect deletion outside the managed modules root.
+            const managed = try std.fs.path.join(self.allocator, &.{ project_root, modules_dir });
+            defer self.allocator.free(managed);
+            var root_buffer: [std.fs.max_path_bytes]u8 = undefined;
+            const root_length = try io_helper.cwd().realPathFile(io_helper.io, managed, &root_buffer);
+            var parent_buffer: [std.fs.max_path_bytes]u8 = undefined;
+            const parent_length = try io_helper.cwd().realPathFile(io_helper.io, std.fs.path.dirname(directory).?, &parent_buffer);
+            const canonical_root = root_buffer[0..root_length];
+            const canonical_parent = parent_buffer[0..parent_length];
+            if (!std.mem.eql(u8, canonical_root, canonical_parent) and !(std.mem.startsWith(u8, canonical_parent, canonical_root) and canonical_parent.len > canonical_root.len and (canonical_parent[canonical_root.len] == '/' or canonical_parent[canonical_root.len] == '\\')))
+                return error.UnownedJavaScriptShadow;
+            try candidates.append(self.allocator, entry);
+        }
+
+        // Validate every candidate before deleting any legacy installation.
+        for (candidates.items) |entry| {
+            const directory = try std.fs.path.join(self.allocator, &.{ project_root, modules_dir, entry.name });
+            defer self.allocator.free(directory);
+
             // Delete only bin links whose actual target is inside this owned
             // installation. Ordinary files and other providers are preserved.
             if (entry.bin) |bins| {
@@ -123,15 +191,16 @@ pub const Ownership = struct {
                     defer self.allocator.free(bin_dir);
                     const link = try std.fs.path.join(self.allocator, &.{ bin_dir, bin.* });
                     defer self.allocator.free(link);
-                    const target = io_helper.readLinkAlloc(self.allocator, link) catch continue;
-                    defer self.allocator.free(target);
+                    var target_buffer: [std.fs.max_path_bytes]u8 = undefined;
+                    const target_length = io_helper.cwd().readLink(io_helper.io, link, &target_buffer) catch continue;
+                    const target = target_buffer[0..target_length];
                     const absolute = try std.fs.path.resolve(self.allocator, &.{ bin_dir, target });
                     defer self.allocator.free(absolute);
                     if (std.mem.startsWith(u8, absolute, directory) and absolute.len > directory.len and (absolute[directory.len] == '/' or absolute[directory.len] == '\\'))
                         try io_helper.deleteFile(link);
                 }
             }
-            try io_helper.deleteTree(directory);
+            try io_helper.cwd().deleteTree(io_helper.io, directory);
             if (io_helper.statFile(directory)) |_| {
                 return error.LegacyJavaScriptShadowRemovalFailed;
             } else |err| switch (err) {
@@ -255,4 +324,28 @@ test "a changed installed identity cannot be deleted by a legacy lock entry" {
     const path = try std.fs.path.join(allocator, &.{ buffer[0..length], "pantry/owned/package.json" });
     defer allocator.free(path);
     try io_helper.accessAbsolute(path, .{});
+}
+
+test "explicit Pantry dependencies retain their npm dependency closure" {
+    const allocator = std.testing.allocator;
+    var owner = Ownership.init(allocator);
+    defer owner.deinit();
+    owner.enabled = true;
+    try owner.add("native-tool");
+    try owner.retain("npm:native-tool");
+    var old = try package_types.Lockfile.init(allocator, "1.0.0");
+    defer old.deinit(allocator);
+    var dependencies = std.StringHashMap([]const u8).init(allocator);
+    try dependencies.put(try allocator.dupe(u8, "native-child"), try allocator.dupe(u8, "1.0.0"));
+    try old.addEntry(allocator, "native-tool@1.0.0", .{
+        .name = try allocator.dupe(u8, "native-tool"),
+        .version = try allocator.dupe(u8, "1.0.0"),
+        .source = .npm,
+        .dependencies = dependencies,
+    });
+    try owner.includeLegacyDependencies(&old);
+    try std.testing.expect(owner.names.contains("native-child"));
+    try std.testing.expect(owner.retained.contains("native-child"));
+    // No file access or frozen-lock migration is permitted for retained names.
+    try owner.removeLegacyShadows("/does-not-exist", "pantry", &old, true);
 }

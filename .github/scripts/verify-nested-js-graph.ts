@@ -84,6 +84,8 @@ try {
   assert.equal(await evaluate('node_modules', leaf, 'bun-root-binding'), '1.0.0')
   const untouched = join(project, 'user-data.txt')
   await writeFile(untouched, 'Unrelated user data\n')
+  const untouchedModule = join(project, 'node_modules/.user-file')
+  await writeFile(untouchedModule, 'Unrelated module data\n')
   if (baseline) {
     await run('baseline-install', [baseline, 'install'])
     proof.baselineParentBinding = await evaluate('pantry', parent, 'baseline-parent-binding')
@@ -98,6 +100,7 @@ try {
     assert.equal(await evaluate('node_modules', parent, `${label}-bun-parent`), '2.0.0')
     const duplicated = existsSync(join(project, 'pantry', parent, 'package.json'))
     proof.nativeNpmTreePresent = duplicated
+    assert.equal(duplicated, false, 'The JS manager must be the only owner of the JS dependency graph')
     if (duplicated) {
       const actualRoot = await evaluate('pantry', leaf, `${label}-pantry-root`)
       const actualParent = await evaluate('pantry', parent, `${label}-pantry-parent`)
@@ -119,6 +122,13 @@ try {
   await checkBindings('frozen')
   assert.deepEqual(await readFile(join(project, 'bun.lock')), bunLock, 'The normal frozen install keeps the authoritative JS lock unchanged')
   assert.equal(await readFile(untouched, 'utf8'), 'Unrelated user data\n')
+  if (mode !== 'members-only') assert.equal(await readFile(untouchedModule, 'utf8'), 'Unrelated module data\n')
+  // A frozen cold JS tree exercises the delegated manager's own enforcement,
+  // rather than merely trusting an existing Pantry install marker.
+  await rm(join(project, 'node_modules'), { recursive: true, force: true })
+  await run('pantry-frozen-cold-js', [cli, 'install', '--frozen-lockfile'])
+  await checkBindings('frozen-cold-js')
+  assert.deepEqual(await readFile(join(project, 'bun.lock')), bunLock)
   if (mode === 'mixed') {
     const tar = join(project, 'pantry/.bin/tar')
     assert.match(await run('managed-system-tar', [tar, '--version']), /\b1\.35\b/)

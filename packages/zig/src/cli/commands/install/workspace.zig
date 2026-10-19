@@ -512,7 +512,7 @@ fn delegateEcosystemInstalls(
     };
 
     const js_delegate = @import("../../../deps/js_delegate.zig");
-    _ = js_delegate.installJsDeps(allocator, workspace_root, options.verbose, options.linker) catch |err| {
+    _ = js_delegate.installJsDepsWithPolicy(allocator, workspace_root, options.verbose, options.linker, options.frozen_lockfile) catch |err| {
         return .{
             .exit_code = 1,
             .message = try std.fmt.allocPrint(allocator, "JavaScript dependency installation failed: {s}", .{@errorName(err)}),
@@ -537,10 +537,14 @@ pub fn completeEcosystemInstall(allocator: std.mem.Allocator, workspace_root: []
         defer config.deinit(allocator);
         for (config.members) |member| try js_ownership.readManifest(member.abs_path, false);
     }
+    try js_ownership.readCompanion(workspace_root);
     const old_path = try std.fs.path.join(allocator, &.{ workspace_root, "pantry.lock" });
     defer allocator.free(old_path);
     const reader = @import("../../../packages/lockfile.zig");
-    var old_lock = reader.readLockfile(allocator, old_path) catch null;
+    var old_lock: ?lib.packages.Lockfile = reader.readLockfile(allocator, old_path) catch |err| switch (err) {
+        error.FileNotFound => null,
+        else => return err,
+    };
     defer if (old_lock) |*old| old.deinit(allocator);
     if (options.frozen_lockfile) {
         if (old_lock) |*old| try js_ownership.removeLegacyShadows(workspace_root, options.modules_dir, old, true);
