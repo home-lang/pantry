@@ -139,6 +139,21 @@ pub const Ownership = struct {
         defer self.allocator.free(managed);
         const javascript = try std.fs.path.resolve(self.allocator, &.{ project_root, "node_modules" });
         defer self.allocator.free(javascript);
+        try rejectJavaScriptDirectory(managed, javascript);
+        var managed_buffer: [std.fs.max_path_bytes]u8 = undefined;
+        const managed_length = io_helper.cwd().realPathFile(io_helper.io, managed, &managed_buffer) catch |err| switch (err) {
+            error.FileNotFound => return,
+            else => return err,
+        };
+        var javascript_buffer: [std.fs.max_path_bytes]u8 = undefined;
+        const javascript_length = io_helper.cwd().realPathFile(io_helper.io, javascript, &javascript_buffer) catch |err| switch (err) {
+            error.FileNotFound => return,
+            else => return err,
+        };
+        try rejectJavaScriptDirectory(managed_buffer[0..managed_length], javascript_buffer[0..javascript_length]);
+    }
+
+    fn rejectJavaScriptDirectory(managed: []const u8, javascript: []const u8) !void {
         if (managed.len < javascript.len) return;
         const same_prefix = if (@import("builtin").os.tag == .windows)
             std.ascii.eqlIgnoreCase(managed[0..javascript.len], javascript)
@@ -295,6 +310,19 @@ test "native workspace content cannot overlap the JavaScript manager's directory
     try owner.validateModulesDirectory("/project", "pantry");
     for ([_][]const u8{ "node_modules", "./node_modules", "pantry/../node_modules", "node_modules/native" }) |directory|
         try std.testing.expectError(error.JavaScriptAndNativeModulesDirectoriesOverlap, owner.validateModulesDirectory("/project", directory));
+}
+
+test "a native directory symlink cannot redirect migration into node_modules" {
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+    try temp.dir.createDirPath(io_helper.io, "node_modules");
+    try temp.dir.symLink(io_helper.io, "node_modules", "pantry", .{ .is_directory = true });
+    var buffer: [std.fs.max_path_bytes]u8 = undefined;
+    const length = try temp.dir.realPath(io_helper.io, &buffer);
+    var owner = Ownership.init(std.testing.allocator);
+    defer owner.deinit();
+    owner.enabled = true;
+    try std.testing.expectError(error.JavaScriptAndNativeModulesDirectoriesOverlap, owner.validateModulesDirectory(buffer[0..length], "pantry"));
 }
 
 test "legacy migration preserves unrelated files and refuses frozen lock changes" {
