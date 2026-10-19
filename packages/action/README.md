@@ -52,6 +52,10 @@ Explicit native system packages enter one dependency plan. For example,
 selected while satisfying Android's `>=17` runtime dependency.
 Pantry exports `JAVA_HOME` for the selected JDK and puts its matching native
 libraries first. Java-dependent launchers such as `sdkmanager` use that runtime.
+Activated commands can be native forwarding launchers or links. The Action
+resolves the package executable through Pantry's activation contract before
+deriving a JDK home or MySQL base directory. Executable activation preserves the
+package's own resource paths when commands run through `.bin`.
 
 The cache identity includes the Pantry version, platform, project manifests,
 lockfile, and registry artifact digests for native packages and their runtime

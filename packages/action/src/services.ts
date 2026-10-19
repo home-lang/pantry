@@ -1,5 +1,6 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { resolveNativeExecutable } from './native-executable'
 
 export interface ServiceSpec {
   name: 'redis' | 'postgres' | 'typesense' | 'mysql' | 'dynamodb'
@@ -100,7 +101,7 @@ export function pantryLibraryPaths(pantryBinDir: string): string[] {
 /** Follow the selected java executable, including globally cached JDK links. */
 function selectedJavaHome(pantryBinDir: string): string | undefined {
   try {
-    const java = fs.realpathSync(path.join(pantryBinDir, 'java'))
+    const java = resolveNativeExecutable(path.join(pantryBinDir, 'java'))
     const home = path.dirname(path.dirname(java))
     if (fs.existsSync(path.join(home, 'release')) && fs.existsSync(path.join(home, 'lib')))
       return home

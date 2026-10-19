@@ -240,10 +240,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Bootstrap the published workspace runtime through Pantry
-        uses: pantry-pm/pantry/packages/action@da17bb9317e8f8c247618fb176fe97269f15bfe4 # v0.11.94
+        uses: pantry-pm/pantry/packages/action@368bc91e4bc5bb1c42b7c4abc7f910b79743733c # v0.11.97
         with:
           install: 'false'
-          version: 0.11.94
+          version: 0.11.97
           packages: bun.com@1.4.2
       - name: Build the current Action from frozen first-party dependencies
         run: |
@@ -254,7 +254,7 @@ jobs:
         uses: ./packages/action
         with:
           install: 'false'
-          version: 0.11.94
+          version: 0.11.97
           packages: bun.com@1.4.2
           services: postgres@17.11 mysql@${{ matrix.mysql }} typesense@30.2 redis@8.8.0 dynamodb@3.3.0
       - name: Verify authenticated PostgreSQL and action exports
@@ -295,6 +295,7 @@ jobs:
         uses: ./packages/action
         with:
           install: 'false'
+          version: 0.11.97
           packages: bun.sh@1.4.2 git-scm.org@2.53.0 openssh.com@10.2.0
       - name: Exercise executable wrappers and native compression libraries
         run: |
@@ -382,9 +383,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Bootstrap the published compiler and Bun runtime
-        uses: pantry-pm/pantry/packages/action@da17bb9317e8f8c247618fb176fe97269f15bfe4
+        uses: pantry-pm/pantry/packages/action@368bc91e4bc5bb1c42b7c4abc7f910b79743733c # v0.11.97
         with:
-          version: 0.11.94
+          version: 0.11.97
           install: 'false'
           packages: bun.com@1.4.3 ziglang.org@0.17.0
       - run: pantry install --frozen-lockfile

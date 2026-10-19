@@ -5,6 +5,7 @@ import { Agent, request } from 'node:http'
 import { connect } from 'node:net'
 import { dirname, isAbsolute, join, relative } from 'node:path'
 import { promisify } from 'node:util'
+import { resolveNativeExecutable } from './native-executable'
 import type { NativeServiceOptions, NativeServiceState } from './native-services'
 import { spawnNativeService } from './native-services'
 import { assertServiceDirectory, assertServiceProcess, serviceProcessIdentity } from './service-ownership'
@@ -135,7 +136,7 @@ export async function startNativeDynamodb(service: ServiceSpec, state: NativeSer
   // A new registry-only provider must not appear healthy by borrowing the
   // runner image's JVM when an old installer omitted its dependency graph.
   for (const program of ['java', 'readlink', 'dirname']) {
-    const executable = realpathSync(join(state.binDir, program))
+    const executable = resolveNativeExecutable(join(state.binDir, program))
     const local = relative(realpathSync(dirname(state.binDir)), executable)
     if (isAbsolute(local) || local === '..' || local.startsWith('../'))
       throw new Error(`DynamoDB requires Pantry-managed ${program}`)

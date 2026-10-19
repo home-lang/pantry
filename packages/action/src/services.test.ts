@@ -6,6 +6,24 @@ import { mergeServicePackages, nativeServiceEnvironment, pantryLibraryPaths, par
 import type { ServiceSpec } from './services'
 
 describe('GitHub Actions services', () => {
+  test('finds the selected JDK through native executable forwarding activation', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'pantry-action-forwarded-java-'))
+    const pantryBin = join(directory, 'pantry', '.bin')
+    const home = join(directory, 'pantry', 'openjdk.org', 'v17.0.20.8')
+    try {
+      mkdirSync(pantryBin, { recursive: true })
+      mkdirSync(join(home, 'bin'), { recursive: true })
+      mkdirSync(join(home, 'lib'), { recursive: true })
+      writeFileSync(join(home, 'release'), 'JAVA_VERSION="fixture"\n')
+      writeFileSync(join(home, 'bin/java'), '')
+      writeFileSync(join(pantryBin, 'java'), `#!/bin/sh\nexec "${join(home, 'bin/java')}" "$@"\n`, { mode: 0o755 })
+      const environment = nativeServiceEnvironment(pantryBin, 'linux', { JAVA_HOME: '/host/jdk21' })
+      expect(environment.JAVA_HOME).toBe(realpathSync(home))
+      expect(environment.LD_LIBRARY_PATH?.split(':')[0]).toBe(join(realpathSync(home), 'lib'))
+    }
+    finally { rmSync(directory, { recursive: true, force: true }) }
+  })
+
   test('activates the selected JDK for launchers that honor an inherited JAVA_HOME', () => {
     const directory = mkdtempSync(join(tmpdir(), 'pantry-action-java-'))
     const pantryBin = join(directory, 'pantry', '.bin')

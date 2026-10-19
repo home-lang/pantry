@@ -1,12 +1,12 @@
 import { expect, test } from 'bun:test'
-import { realpathSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { recipe } from '../../ts-pantry/src/recipes/openssh.com'
+import { resolveNativeExecutable } from './native-executable'
 
 const bin = process.env.PANTRY_NATIVE_OPENSSH_TEST_BIN
 
 test.skipIf(!bin)('the Pantry-installed scp and sftp select managed SSH after relocation', async () => {
-  const scp = realpathSync(join(bin!, 'scp'))
+  const scp = resolveNativeExecutable(join(bin!, 'scp'))
   const prefix = dirname(dirname(scp))
   expect(prefix).toContain('/openssh.com/')
   const child = Bun.spawn(['bash', '-ec', recipe.test!.script.join('\n').replaceAll('{{prefix}}', prefix)], {
