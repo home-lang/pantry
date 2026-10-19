@@ -1023,6 +1023,20 @@ pub fn symLink(target: []const u8, link_path: []const u8) !void {
     }
 }
 
+test "uniqueTempPath gives each caller its own path in the temporary directory" {
+    const allocator = std.testing.allocator;
+    const first = try uniqueTempPath(allocator, "pantry-staging");
+    defer allocator.free(first);
+    const second = try uniqueTempPath(allocator, "pantry-staging");
+    defer allocator.free(second);
+
+    try std.testing.expect(!std.mem.eql(u8, first, second));
+    try std.testing.expect(std.mem.startsWith(u8, first, getTempDir()));
+    const name = std.fs.path.basename(first);
+    try std.testing.expect(std.mem.startsWith(u8, name, "pantry-staging-"));
+    try std.testing.expectEqual(@as(usize, "pantry-staging-".len + 16), name.len);
+}
+
 test "symLink creates a relative executable alias at an absolute path" {
     if (comptime is_windows) return;
 
@@ -1617,6 +1631,17 @@ pub fn randomBytes(buf: []u8) void {
 /// Falls back to /tmp on POSIX systems
 pub fn getTempDir() []const u8 {
     return getenv("TMPDIR") orelse getenv("TMP") orelse getenv("TEMP") orelse "/tmp";
+}
+
+/// A path in the temporary directory that no other process will pick:
+/// `<tmp>/<prefix>-<16 hex>`. Not created. The caller owns the memory.
+pub fn uniqueTempPath(allocator: std.mem.Allocator, prefix: []const u8) ![]u8 {
+    var bytes: [8]u8 = undefined;
+    randomBytes(&bytes);
+    const hex = std.fmt.bytesToHex(bytes, .lower);
+    const name = try std.fmt.allocPrint(allocator, "{s}-{s}", .{ prefix, hex });
+    defer allocator.free(name);
+    return std.fs.path.join(allocator, &[_][]const u8{ getTempDir(), name });
 }
 
 /// Sleep for the given number of nanoseconds
