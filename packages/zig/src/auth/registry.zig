@@ -1330,14 +1330,33 @@ pub const PublishResponse = struct {
         };
     }
 
-    /// Check if the error is retryable
+    /// Retry only a refused rate limit or a request that was never uploaded.
+    /// A timeout or gateway error after sending bytes has an unknown outcome:
+    /// its original immutable publication must be read back before proceeding.
     pub fn isRetryable(self: *const PublishResponse) bool {
+        if (!self.not_sent and self.status_code != 429) return false;
         return switch (self.status_code) {
             408, 429, 500, 502, 503, 504 => true,
             else => false,
         };
     }
 };
+
+test "an ambiguous uploaded npm response never permits a second upload" {
+    for ([_]u16{ 408, 500, 502, 503, 504 }) |status| {
+        const response = PublishResponse{ .success = false, .status_code = status };
+        try std.testing.expect(!response.isRetryable());
+    }
+}
+
+test "npm retries preserve refused rate limits and failures before upload" {
+    const refused = PublishResponse{ .success = false, .status_code = 429, .retry_after_seconds = 2 };
+    try std.testing.expect(refused.isRetryable());
+    const not_uploaded = PublishResponse{ .success = false, .status_code = 503, .not_sent = true };
+    try std.testing.expect(not_uploaded.isRetryable());
+    const accepted = PublishResponse{ .success = true, .status_code = 202 };
+    try std.testing.expect(!accepted.isRetryable());
+}
 
 /// Registry operation errors with detailed information
 pub const RegistryError = error{
