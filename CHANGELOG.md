@@ -1,3 +1,17 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.107...v0.11.108)
+
+## 🐛 Bug Fixes
+
+- **publish**: report a failed deferred readback the way releases read it ([f57f4bb](https://github.com/pantry-pm/pantry/commit/f57f4bb)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.108 ([6a84bac](https://github.com/pantry-pm/pantry/commit/6a84bac)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.106...v0.11.107)
 
 ## ⚡ Performance Improvements
