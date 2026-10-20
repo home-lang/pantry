@@ -206,7 +206,10 @@ try {
       assert.equal(foreignCredentials, 0, 'credentials must not cross origin')
       if (segment === 'diagnostics') {
         assert.match(output, /\[verbose:installer\]/, 'PANTRY_VERBOSE enables the actual native installer without an argv workaround')
-        if (scenario === 'artifact-partial') assert.match(output, /\[pantry:download\] (?:response-body|archive-length) failed from http:\/\/127\.0\.0\.1:/, 'partial network input must retain its transfer stage')
+        if (scenario === 'artifact-partial') {
+          assert.match(output, /\[pantry:download\] (?:response-body|archive-length) failed from http:\/\/127\.0\.0\.1:/, 'partial network input must retain its transfer stage')
+          assert.match(output, /durable bytes=0 expected=1000/, 'unflushed input cannot be counted as persisted archive bytes')
+        }
       }
       if (scenario.startsWith('artifact')) {
         const archives = requests.filter(url => url.split('?')[0] === `/binaries/${domain}/1.0.0/archive.tar.gz`)

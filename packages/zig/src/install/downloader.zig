@@ -74,6 +74,19 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     return io_helper.runWithTimeout(downloadFileTask, .{ allocator, url, dest_path, quiet, inline_progress }, 300_000);
 }
 
+fn reportArchiveFailure(stream: *io_helper.HttpStream, file: std.Io.File, stage: []const u8, cause: anyerror, expected: ?u64) void {
+    if (cause == error.Canceled) return;
+    io_helper.printGetFailure(stream.request_url, stage, cause);
+    // Only persisted bytes are counted. A writer's unflushed buffer is not
+    // evidence that the filesystem accepted those bytes.
+    const metadata = file.stat(io_helper.io) catch return;
+    if (expected) |length| {
+        style.printForced("  [pantry:download] durable bytes={d} expected={d}\n", .{ metadata.size, length });
+    } else {
+        style.printForced("  [pantry:download] durable bytes={d} expected=unknown\n", .{metadata.size});
+    }
+}
+
 fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool, inline_progress: ?InlineProgressOptions) anyerror!void {
     // Validate URL format
     if (!std.mem.startsWith(u8, url, "http://") and !std.mem.startsWith(u8, url, "https://")) {
@@ -115,7 +128,7 @@ fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []
             error.EndOfStream => break,
             else => {
                 const cause = if (err == error.WriteFailed) file_writer.err orelse err else stream.readError(err);
-                io_helper.printGetFailure(stream.request_url, if (err == error.WriteFailed) "archive-write" else "response-body", cause);
+                reportArchiveFailure(stream, file, if (err == error.WriteFailed) "archive-write" else "response-body", cause, total_bytes);
                 return cause;
             },
         };
@@ -187,14 +200,14 @@ fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []
 
     // Flush remaining buffered data to disk
     file_writer.flush() catch |err| {
-        io_helper.printGetFailure(stream.request_url, "archive-flush", err);
+        reportArchiveFailure(stream, file, "archive-flush", err, total_bytes);
         return err;
     };
 
     // Verify download completeness: if Content-Length was provided, check downloaded bytes match
     if (total_bytes) |expected| {
         if (bytes_downloaded != expected) {
-            io_helper.printGetFailure(stream.request_url, "archive-length", error.IncompleteDownload);
+            reportArchiveFailure(stream, file, "archive-length", error.IncompleteDownload, total_bytes);
             return error.IncompleteDownload;
         }
     }
