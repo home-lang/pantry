@@ -16,6 +16,10 @@ const LinkerMode = @import("../config/pantry_config.zig").LinkerMode;
 /// exits unsuccessfully is an install error; callers must not report success
 /// with an incomplete node_modules tree.
 pub fn installJsDeps(allocator: std.mem.Allocator, project_dir: []const u8, verbose: bool, linker: ?LinkerMode) !bool {
+    return installJsDepsWithPolicy(allocator, project_dir, verbose, linker, false);
+}
+
+pub fn installJsDepsWithPolicy(allocator: std.mem.Allocator, project_dir: []const u8, verbose: bool, linker: ?LinkerMode, frozen: bool) !bool {
     const package_json_path = try std.fs.path.join(allocator, &.{ project_dir, "package.json" });
     defer allocator.free(package_json_path);
 
@@ -50,7 +54,7 @@ pub fn installJsDeps(allocator: std.mem.Allocator, project_dir: []const u8, verb
     // JS PM can find node and its own helper bins even when the user invoked
     // `pantry install` from a shell where PATH doesn't include pantry/.bin yet.
     // Mirrors the lifecycle.zig PATH-wrapping pattern.
-    const wrapped_cmd = try buildWrappedCommand(allocator, project_dir, bin, pm, linker);
+    const wrapped_cmd = try buildWrappedCommandWithPolicy(allocator, project_dir, bin, pm, linker, frozen);
     defer allocator.free(wrapped_cmd);
 
     style.print("{s}  Installing JS deps via {s}{s}\n", .{ style.dim, pm, style.reset });
@@ -190,6 +194,9 @@ fn writeMarker(allocator: std.mem.Allocator, project_dir: []const u8) void {
 }
 
 fn hasJsDeps(obj: std.json.ObjectMap) bool {
+    // A JS workspace can declare every external dependency in its members.
+    // The manager still owns member links and the complete locked graph.
+    if (@import("js_workspace.zig").hasWorkspacePatterns(obj)) return true;
     const sections = [_][]const u8{ "dependencies", "devDependencies", "optionalDependencies" };
     for (sections) |section| {
         if (obj.get(section)) |val| {
@@ -270,6 +277,10 @@ fn resolveBin(allocator: std.mem.Allocator, project_dir: []const u8, name: []con
 /// is configured here, bun reads its own config, which is the correct owner
 /// of that decision.
 fn buildWrappedCommand(allocator: std.mem.Allocator, project_dir: []const u8, bin: []const u8, pm: []const u8, linker: ?LinkerMode) ![]u8 {
+    return buildWrappedCommandWithPolicy(allocator, project_dir, bin, pm, linker, false);
+}
+
+fn buildWrappedCommandWithPolicy(allocator: std.mem.Allocator, project_dir: []const u8, bin: []const u8, pm: []const u8, linker: ?LinkerMode, frozen: bool) ![]u8 {
     const current_path = io_helper.getenv("PATH") orelse "/usr/local/bin:/usr/bin:/bin";
 
     const path_val = try std.fmt.allocPrint(allocator, "{s}/pantry/.bin:{s}", .{ project_dir, current_path });
@@ -285,13 +296,24 @@ fn buildWrappedCommand(allocator: std.mem.Allocator, project_dir: []const u8, bi
         }
     }
 
+    const command = if (frozen and std.mem.eql(u8, pm, "npm")) "ci" else "install";
+    const freeze_flag = if (frozen and !std.mem.eql(u8, pm, "npm")) " --frozen-lockfile" else "";
     if (std.mem.eql(u8, pm, "bun")) {
         if (linker) |mode| {
-            return try std.fmt.allocPrint(allocator, "export PATH='{s}' && '{s}' install --linker {s}", .{ escaped_path.items, bin, @tagName(mode) });
+            return try std.fmt.allocPrint(allocator, "export PATH='{s}' && '{s}' {s} --linker {s}{s}", .{ escaped_path.items, bin, command, @tagName(mode), freeze_flag });
         }
     }
 
-    return try std.fmt.allocPrint(allocator, "export PATH='{s}' && '{s}' install", .{ escaped_path.items, bin });
+    return try std.fmt.allocPrint(allocator, "export PATH='{s}' && '{s}' {s}{s}", .{ escaped_path.items, bin, command, freeze_flag });
+}
+
+test "frozen delegation uses each selected manager's lock enforcement" {
+    const allocator = std.testing.allocator;
+    for ([_][]const u8{ "bun", "pnpm", "yarn", "npm" }) |pm| {
+        const command = try buildWrappedCommandWithPolicy(allocator, "/tmp/project", "/usr/bin/manager", pm, null, true);
+        defer allocator.free(command);
+        try std.testing.expect(std.mem.endsWith(u8, command, if (std.mem.eql(u8, pm, "npm")) " ci" else " install --frozen-lockfile"));
+    }
 }
 
 test "JS delegate forwards Pantry's linker mode to Bun when one is configured" {

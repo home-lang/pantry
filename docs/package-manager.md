@@ -8,12 +8,13 @@ documentation drifts.
 
 ## Scope and source of truth
 
-Pantry manages three related dependency classes:
+Pantry manages these related dependency classes:
 
 | Class | Resolution source | Installation shape | Primary implementation |
 | --- | --- | --- | --- |
 | System tools and runtimes | Pantry's generated recipe catalog and binary metadata at `registry.pantry.dev` | Versioned native archives, binaries, shims, and environment links | `packages/zig/src/packages`, `packages/zig/src/install` |
-| JavaScript packages | npm-compatible metadata, with the resolved URL and integrity claim retained in `pantry.lock` | Extracted package tree under the configured modules directory | `packages/zig/src/install/installer.zig`, `packages/zig/src/install/pipeline.zig` |
+| JavaScript project dependencies | The selected Bun, pnpm, Yarn, or npm manager and its lockfile | One complete graph in `node_modules`, including parent-specific versions | `packages/zig/src/deps/js_delegate.zig`, `packages/zig/src/deps/js_workspace.zig` |
+| Explicit native npm packages | npm-compatible metadata, with resolved URLs and integrity retained in `pantry.lock` | Managed packages under the configured Pantry modules directory | `packages/zig/src/install/installer.zig`, `packages/zig/src/install/pipeline.zig` |
 | Workspace and local packages | Workspace manifests, `workspace:` ranges, and Pantry's local-link registry | Linked or copied workspace package with resolved external dependencies | `packages/zig/src/cli/commands/install/workspace.zig`, `packages/zig/src/cli/commands/link.zig` |
 
 The generated system catalog is local to the CLI, so normal search and package
@@ -151,7 +152,7 @@ metadata for ordering, but the exact registry key is preserved for download.
 
 ## Lockfile contract
 
-`pantry.lock` is the reproducibility boundary. It records exact package versions,
+`pantry.lock` is the reproducibility boundary for Pantry-owned dependencies. It records exact package versions,
 resolved locations, integrity when available, dependency relationships, and
 workspace constraint state. It supports lockfile-first restore, which avoids
 redundant registry resolution, and frozen validation, which compares the computed
@@ -205,6 +206,21 @@ and retain per-workspace declared constraints. `--filter` limits the selected
 workspace set. Local links are recorded in Pantry's link registry and avoid a
 publish round trip; they are mutable development inputs and do not carry normal
 immutable-registry guarantees.
+
+For a `package.json` workspace, the selected JavaScript package manager owns the
+whole JS graph in `node_modules`, just as it does for a single project. Pantry
+does not flatten a second copy of those packages into `pantry/`. Its lock retains
+workspace declarations, member links, and explicitly managed native dependencies;
+the selected manager's lock records parent-specific JS versions. Member-only
+workspaces also run their JS manager. Frozen installs use `npm ci` or the selected
+manager's `--frozen-lockfile` option.
+
+After an ordinary install succeeds, migration removes only legacy npm shadows
+identified by the previous Pantry lock and matching installed package identities.
+It checks all candidates before deleting any, preserves unrelated files and
+explicit native dependencies, and removes bin links only when they target a
+removed package. A frozen install rejects an obsolete Pantry JS lock instead of
+migrating it; run an ordinary install and commit the resulting lock first.
 
 ## Publication channels
 
