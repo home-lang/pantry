@@ -65,6 +65,7 @@ async function main(): Promise<void> {
   const directory = join(process.env.RUNNER_TEMP!, 'pantry-patch-release')
   await mkdir(directory, { recursive: true })
   const receipt = join(directory, 'receipt.json')
+  await Bun.write(receipt, JSON.stringify({ phase: 'started', operation: process.argv[2], expectedSource: expected, producerInvoked: false, publicationInvoked: false }, null, 2) + '\n')
   if (['toolchain', 'verify-toolchain'].includes(process.argv[2]!)) {
     assert.equal(git('rev-parse', 'HEAD'), expected)
     await verifyToolchain()
@@ -103,6 +104,7 @@ async function main(): Promise<void> {
   else if (process.argv[2] === 'record') {
     const proof = JSON.parse(await readFile(receipt, 'utf8'))
     proof.producerStepOutcome = process.env.PANTRY_PATCH_PRODUCER_OUTCOME ?? 'unknown'
+    proof.producerInvoked = ['success', 'failure', 'cancelled'].includes(proof.producerStepOutcome)
     proof.recordedAt = new Date().toISOString()
     await Bun.write(receipt, JSON.stringify(proof, null, 2) + '\n')
     assert.equal(proof.producerStepOutcome, 'success', 'Preserve the original producer step failure; never start a second producer')
