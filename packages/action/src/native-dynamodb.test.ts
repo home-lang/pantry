@@ -44,7 +44,13 @@ test('DynamoDB sends no HTTP bytes to a listener outside its owned service group
     const address = foreign.address()
     if (!address || typeof address === 'string') throw new Error('Foreign test listener has no port')
     if (process.platform === 'linux') {
-      await spawnNativeService(state, process.execPath, ['-e', 'setInterval(() => {}, 1000)', directory], process.env)
+      const ready = join(directory, 'child-ready')
+      await spawnNativeService(state, process.execPath, [
+        '-e', 'process.on("SIGTERM", () => process.exit(143)); require("node:fs").writeFileSync(process.argv[1], "ready"); setInterval(() => {}, 1000)', ready, directory,
+      ], process.env)
+      const deadline = Date.now() + 3000
+      while (!existsSync(ready) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 10))
+      expect(existsSync(ready)).toBe(true)
       await expect(requestNativeDynamodb(state, address.port, 'CreateTable', { TableName: 'Foreign' }, 200)).rejects.toThrow('not owned')
       expect(await serviceProcessIdentity(state.pid!)).toEqual(state.process)
     }
@@ -63,4 +69,6 @@ test('DynamoDB sends no HTTP bytes to a listener outside its owned service group
     }
   }
   expect(existsSync(directory)).toBe(false)
-})
+// Admission, foreground readiness and owned shutdown have independent budgets;
+// the foreign-listener request itself still has its original 200ms deadline.
+}, 25_000)
