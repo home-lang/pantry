@@ -88,7 +88,8 @@ try {
   // own Chrome) answers NSS's dlopen fallback for a provider the package left
   // out, and the page renders anyway. Require the loader to have initialised
   // softokn and its crypto provider from the installed package itself.
-  const initialised = [...rendered.stderr.matchAll(/calling init: (\S+)/g)].map(match => match[1]!)
+  // Whole lines: the gate's root path has spaces in it, on purpose.
+  const initialised = [...rendered.stderr.matchAll(/calling init: (.+)$/gm)].map(match => match[1]!.trim())
   const nss = initialised.filter(path => /\/lib(?:softokn3|freeblpriv3)\.so$/.test(path))
   proof.nssModules = [...new Set(nss)]
   for (const module of ['libsoftokn3.so', 'libfreeblpriv3.so']) {
