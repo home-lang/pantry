@@ -3,7 +3,7 @@
  *
  * @domain `dart.dev`
  * @programs `dart`, `dartaotruntime`
- * @version `3.13.5` (180 versions available)
+ * @version `3.13.6` (181 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install dart.dev`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "dart"
  * console.log(pkg.description) // "The Dart SDK, including the VM, JS and Wasm com..."
  * console.log(pkg.programs)    // ["dart", "dartaotruntime"]
- * console.log(pkg.versions[0]) // "3.13.5" (latest)
+ * console.log(pkg.versions[0]) // "3.13.6" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/dart-dev.md
@@ -70,6 +70,7 @@ export const dartdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.13.6',
     '3.13.5',
     '3.13.4',
     '3.13.3',

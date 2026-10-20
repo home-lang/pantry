@@ -3,7 +3,7 @@
  *
  * @domain `slack.com`
  * @programs `slack`
- * @version `4.52.178` (11 versions available)
+ * @version `4.52.182` (12 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install slack.com`
@@ -22,6 +22,7 @@ export const slackcomPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   versions: [
+    '4.52.182',
     '4.52.178',
     '4.52.171',
     '4.52.162',
