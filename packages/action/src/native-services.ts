@@ -188,6 +188,7 @@ export function waitForNativeLauncherReady(channel: Readable, exited: Promise<vo
     channel.once('end', ended)
     channel.once('close', ended)
     channel.once('error', failed)
+    channel.resume()
     void exited.then(ended)
   })
 }

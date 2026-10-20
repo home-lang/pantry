@@ -45,13 +45,17 @@ test('DynamoDB sends no HTTP bytes to a listener outside its owned service group
     if (!address || typeof address === 'string') throw new Error('Foreign test listener has no port')
     if (process.platform === 'linux') {
       const ready = join(directory, 'child-ready')
+      console.log('foreign-listener fixture: admitting owned launcher')
       await spawnNativeService(state, process.execPath, [
         '-e', 'process.on("SIGTERM", () => process.exit(143)); require("node:fs").writeFileSync(process.argv[1], "ready"); setInterval(() => {}, 1000)', ready, directory,
       ], process.env)
+      console.log('foreign-listener fixture: launcher admitted')
       const deadline = Date.now() + 3000
       while (!existsSync(ready) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 10))
       expect(existsSync(ready)).toBe(true)
+      console.log('foreign-listener fixture: foreground ready; checking foreign listener')
       await expect(requestNativeDynamodb(state, address.port, 'CreateTable', { TableName: 'Foreign' }, 200)).rejects.toThrow('not owned')
+      console.log('foreign-listener fixture: foreign listener rejected')
       expect(await serviceProcessIdentity(state.pid!)).toEqual(state.process)
     }
     else {
@@ -61,11 +65,15 @@ test('DynamoDB sends no HTTP bytes to a listener outside its owned service group
   }
   finally {
     try {
+      console.log('foreign-listener fixture: closing foreign listener')
       for (const socket of connections) socket.destroy()
       if (listening) await new Promise<void>((resolve, reject) => foreign.close(error => error ? reject(error) : resolve()))
+      console.log('foreign-listener fixture: foreign listener closed')
     }
     finally {
+      console.log('foreign-listener fixture: stopping owned launcher')
       if (existsSync(directory)) await stopNativeService(state)
+      console.log('foreign-listener fixture: owned launcher stopped')
     }
   }
   expect(existsSync(directory)).toBe(false)
