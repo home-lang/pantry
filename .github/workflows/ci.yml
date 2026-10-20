@@ -136,6 +136,7 @@ jobs:
           bun .github/scripts/verify-nested-js-graph.ts "$source_cli" members-only
           bun .github/scripts/verify-nested-js-graph.ts "$source_cli" mixed
           bun .github/scripts/verify-nested-js-graph.ts "$source_cli" dot-name
+          bun .github/scripts/verify-js-lifecycle.ts "$source_cli"
 
       - name: Retain JavaScript graph and migration evidence
         if: always()

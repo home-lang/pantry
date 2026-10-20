@@ -512,7 +512,7 @@ fn delegateEcosystemInstalls(
     };
 
     const js_delegate = @import("../../../deps/js_delegate.zig");
-    _ = js_delegate.installJsDepsWithPolicy(allocator, workspace_root, options.verbose, options.linker, options.frozen_lockfile) catch |err| {
+    _ = js_delegate.installJsDepsWithPolicy(allocator, workspace_root, options.verbose, options.linker, options.frozen_lockfile, options.ignore_scripts) catch |err| {
         return .{
             .exit_code = 1,
             .message = try std.fmt.allocPrint(allocator, "JavaScript dependency installation failed: {s}", .{@errorName(err)}),

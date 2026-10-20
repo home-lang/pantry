@@ -215,6 +215,18 @@ the selected manager's lock records parent-specific JS versions. Member-only
 workspaces also run their JS manager. Frozen installs use `npm ci` or the selected
 manager's `--frozen-lockfile` option.
 
+`--ignore-scripts` also reaches the selected JavaScript manager, including
+standalone projects, workspaces, and `pantry ci`. Bun, npm, pnpm, and Yarn
+Classic receive `--ignore-scripts`; modern Yarn uses its `--mode=skip-build`
+install policy. A later ordinary install is handed back to that manager even
+when a previous ignored install left an otherwise current graph.
+
+The native CLI does not currently provide a metadata-only `--lockfile-only`
+operation. `pantry install` performs the normal native and JavaScript migration;
+it can download and install dependencies. `--ignore-scripts` suppresses hooks
+but does not turn that command into lockfile-only work. `--dry-run` previews
+the install and does not regenerate locks.
+
 After an ordinary install succeeds, migration removes only legacy npm shadows
 identified by the previous Pantry lock and matching installed package identities.
 It checks all candidates before deleting any, preserves unrelated files and

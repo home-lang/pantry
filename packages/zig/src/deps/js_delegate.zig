@@ -16,10 +16,10 @@ const LinkerMode = @import("../config/pantry_config.zig").LinkerMode;
 /// exits unsuccessfully is an install error; callers must not report success
 /// with an incomplete node_modules tree.
 pub fn installJsDeps(allocator: std.mem.Allocator, project_dir: []const u8, verbose: bool, linker: ?LinkerMode) !bool {
-    return installJsDepsWithPolicy(allocator, project_dir, verbose, linker, false);
+    return installJsDepsWithPolicy(allocator, project_dir, verbose, linker, false, false);
 }
 
-pub fn installJsDepsWithPolicy(allocator: std.mem.Allocator, project_dir: []const u8, verbose: bool, linker: ?LinkerMode, frozen: bool) !bool {
+pub fn installJsDepsWithPolicy(allocator: std.mem.Allocator, project_dir: []const u8, verbose: bool, linker: ?LinkerMode, frozen: bool, ignore_scripts: bool) !bool {
     const package_json_path = try std.fs.path.join(allocator, &.{ project_dir, "package.json" });
     defer allocator.free(package_json_path);
 
@@ -36,7 +36,7 @@ pub fn installJsDepsWithPolicy(allocator: std.mem.Allocator, project_dir: []cons
     // Fast no-op: if node_modules/ exists and is newer than package.json and
     // any lockfile, JS deps are already in sync and we can skip without ever
     // spawning the PM. Matches composer_delegate's "vendor + lock" check.
-    if (try isUpToDate(allocator, project_dir, package_json_path, parsed.value.object)) {
+    if ((ignore_scripts or !markerSkippedScripts(allocator, project_dir)) and try isUpToDate(allocator, project_dir, package_json_path, parsed.value.object)) {
         if (verbose) style.print("{s}  JS deps up to date{s}\n", .{ style.dim, style.reset });
         return false;
     }
@@ -54,7 +54,7 @@ pub fn installJsDepsWithPolicy(allocator: std.mem.Allocator, project_dir: []cons
     // JS PM can find node and its own helper bins even when the user invoked
     // `pantry install` from a shell where PATH doesn't include pantry/.bin yet.
     // Mirrors the lifecycle.zig PATH-wrapping pattern.
-    const wrapped_cmd = try buildWrappedCommandWithPolicy(allocator, project_dir, bin, pm, linker, frozen);
+    const wrapped_cmd = try buildWrappedCommandWithPolicy(allocator, project_dir, bin, pm, linker, frozen, ignore_scripts);
     defer allocator.free(wrapped_cmd);
 
     style.print("{s}  Installing JS deps via {s}{s}\n", .{ style.dim, pm, style.reset });
@@ -90,7 +90,7 @@ pub fn installJsDepsWithPolicy(allocator: std.mem.Allocator, project_dir: []cons
         },
     }
 
-    writeMarker(allocator, project_dir);
+    writeMarkerWithPolicy(allocator, project_dir, ignore_scripts);
     return true;
 }
 
@@ -99,6 +99,14 @@ pub fn installJsDepsWithPolicy(allocator: std.mem.Allocator, project_dir: []cons
 /// touch the lockfile on a no-op install — that would cause every subsequent
 /// `pantry install` after a `touch package.json` to needlessly re-spawn bun.
 const marker_relpath = "node_modules/.pantry-js-installed";
+
+fn markerSkippedScripts(allocator: std.mem.Allocator, project_dir: []const u8) bool {
+    const path = std.fs.path.join(allocator, &.{ project_dir, marker_relpath }) catch return true;
+    defer allocator.free(path);
+    const contents = io_helper.readFileAlloc(allocator, path, 64) catch return false;
+    defer allocator.free(contents);
+    return std.mem.eql(u8, contents, "ignore-scripts\n");
+}
 
 /// JS lockfiles the delegated package manager reads. Any of them changing -
 /// typically through `git pull` - means node_modules may no longer match.
@@ -186,11 +194,12 @@ fn collectWorkspacePatterns(allocator: std.mem.Allocator, package_json: std.json
     }
 }
 
-fn writeMarker(allocator: std.mem.Allocator, project_dir: []const u8) void {
+fn writeMarkerWithPolicy(allocator: std.mem.Allocator, project_dir: []const u8, ignore_scripts: bool) void {
     const marker = std.fs.path.join(allocator, &.{ project_dir, marker_relpath }) catch return;
     defer allocator.free(marker);
-    const file = io_helper.createFile(marker, .{}) catch return;
-    defer file.close(io_helper.io);
+    io_helper.cwd().writeFile(io_helper.io, .{ .sub_path = marker, .data = if (ignore_scripts) "ignore-scripts\n" else "" }) catch {
+        io_helper.deleteFile(marker) catch {};
+    };
 }
 
 fn hasJsDeps(obj: std.json.ObjectMap) bool {
@@ -277,40 +286,98 @@ fn resolveBin(allocator: std.mem.Allocator, project_dir: []const u8, name: []con
 /// is configured here, bun reads its own config, which is the correct owner
 /// of that decision.
 fn buildWrappedCommand(allocator: std.mem.Allocator, project_dir: []const u8, bin: []const u8, pm: []const u8, linker: ?LinkerMode) ![]u8 {
-    return buildWrappedCommandWithPolicy(allocator, project_dir, bin, pm, linker, false);
+    return buildWrappedCommandWithPolicy(allocator, project_dir, bin, pm, linker, false, false);
 }
 
-fn buildWrappedCommandWithPolicy(allocator: std.mem.Allocator, project_dir: []const u8, bin: []const u8, pm: []const u8, linker: ?LinkerMode, frozen: bool) ![]u8 {
+fn shellQuoted(allocator: std.mem.Allocator, value: []const u8) ![]u8 {
+    var quoted = std.ArrayList(u8).empty;
+    errdefer quoted.deinit(allocator);
+    try quoted.append(allocator, '\'');
+    for (value) |ch| {
+        if (ch == '\'') {
+            try quoted.appendSlice(allocator, "'\\''");
+        } else {
+            try quoted.append(allocator, ch);
+        }
+    }
+    try quoted.append(allocator, '\'');
+    return quoted.toOwnedSlice(allocator);
+}
+
+fn buildWrappedCommandWithPolicy(allocator: std.mem.Allocator, project_dir: []const u8, bin: []const u8, pm: []const u8, linker: ?LinkerMode, frozen: bool, ignore_scripts: bool) ![]u8 {
     const current_path = io_helper.getenv("PATH") orelse "/usr/local/bin:/usr/bin:/bin";
 
     const path_val = try std.fmt.allocPrint(allocator, "{s}/pantry/.bin:{s}", .{ project_dir, current_path });
     defer allocator.free(path_val);
 
-    var escaped_path = std.ArrayList(u8).empty;
-    defer escaped_path.deinit(allocator);
-    for (path_val) |ch| {
-        if (ch == '\'') {
-            try escaped_path.appendSlice(allocator, "'\\''");
-        } else {
-            try escaped_path.append(allocator, ch);
-        }
-    }
+    const quoted_path = try shellQuoted(allocator, path_val);
+    defer allocator.free(quoted_path);
+    const quoted_bin = try shellQuoted(allocator, bin);
+    defer allocator.free(quoted_bin);
 
     const command = if (frozen and std.mem.eql(u8, pm, "npm")) "ci" else "install";
     const freeze_flag = if (frozen and !std.mem.eql(u8, pm, "npm")) " --frozen-lockfile" else "";
+    const script_flag = if (ignore_scripts) " --ignore-scripts" else "";
+    if (ignore_scripts and std.mem.eql(u8, pm, "yarn")) {
+        // Classic and modern Yarn expose different public script policies.
+        // Probe the selected executable; package.json may not pin its version.
+        // Modern skip-build also suppresses workspace hooks, unlike enableScripts.
+        return try std.fmt.allocPrint(
+            allocator,
+            "export PATH={s} && case \"$({s} --version)\" in 1.*) {s} {s}{s} --ignore-scripts ;; [2-9].*|[1-9][0-9].*) {s} {s}{s} --mode=skip-build ;; *) printf '%s\\n' 'Cannot determine Yarn script policy' >&2; exit 1 ;; esac",
+            .{ quoted_path, quoted_bin, quoted_bin, command, freeze_flag, quoted_bin, command, freeze_flag },
+        );
+    }
     if (std.mem.eql(u8, pm, "bun")) {
         if (linker) |mode| {
-            return try std.fmt.allocPrint(allocator, "export PATH='{s}' && '{s}' {s} --linker {s}{s}", .{ escaped_path.items, bin, command, @tagName(mode), freeze_flag });
+            return try std.fmt.allocPrint(allocator, "export PATH={s} && {s} {s} --linker {s}{s}{s}", .{ quoted_path, quoted_bin, command, @tagName(mode), freeze_flag, script_flag });
         }
     }
 
-    return try std.fmt.allocPrint(allocator, "export PATH='{s}' && '{s}' {s}{s}", .{ escaped_path.items, bin, command, freeze_flag });
+    return try std.fmt.allocPrint(allocator, "export PATH={s} && {s} {s}{s}{s}", .{ quoted_path, quoted_bin, command, freeze_flag, script_flag });
+}
+
+test "script suppression preserves every selected manager's frozen policy" {
+    const allocator = std.testing.allocator;
+    for ([_][]const u8{ "bun", "pnpm", "npm" }) |pm| {
+        const command = try buildWrappedCommandWithPolicy(allocator, "/tmp/project", "/usr/bin/manager", pm, null, true, true);
+        defer allocator.free(command);
+        try std.testing.expect(std.mem.endsWith(u8, command, if (std.mem.eql(u8, pm, "npm")) " ci --ignore-scripts" else " install --frozen-lockfile --ignore-scripts"));
+    }
+}
+
+test "Yarn script policy uses the selected executable generation and quotes its path" {
+    if (comptime @import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const path_len = try tmp.dir.realPath(io_helper.io, &path_buf);
+    const project = path_buf[0..path_len];
+    const bin = try std.fs.path.join(allocator, &.{ project, "yarn' executable" });
+    defer allocator.free(bin);
+    for ([_][]const u8{ "1.22.22", "4.13.0" }) |version| {
+        const script = try std.fmt.allocPrint(allocator, "#!/bin/sh\nif [ \"$1\" = --version ]; then printf '%s\\n' '{s}'; else printf '%s\\n' \"$@\" > arguments; fi\n", .{version});
+        defer allocator.free(script);
+        try tmp.dir.writeFile(io_helper.io, .{ .sub_path = "yarn' executable", .data = script });
+        var chmod_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+        @memcpy(chmod_buf[0..bin.len], bin);
+        chmod_buf[bin.len] = 0;
+        try std.testing.expect(std.c.chmod(&chmod_buf, 0o755) == 0);
+        const command = try buildWrappedCommandWithPolicy(allocator, project, bin, "yarn", null, true, true);
+        defer allocator.free(command);
+        const term = try io_helper.spawnAndWait(.{ .argv = &.{ "sh", "-c", command }, .cwd = io_helper.toCwd(project) });
+        try std.testing.expect(term == .exited and term.exited == 0);
+        const arguments = try tmp.dir.readFileAlloc(io_helper.io, "arguments", allocator, .limited(1024));
+        defer allocator.free(arguments);
+        try std.testing.expectEqualStrings(if (version[0] == '1') "install\n--frozen-lockfile\n--ignore-scripts\n" else "install\n--frozen-lockfile\n--mode=skip-build\n", arguments);
+    }
 }
 
 test "frozen delegation uses each selected manager's lock enforcement" {
     const allocator = std.testing.allocator;
     for ([_][]const u8{ "bun", "pnpm", "yarn", "npm" }) |pm| {
-        const command = try buildWrappedCommandWithPolicy(allocator, "/tmp/project", "/usr/bin/manager", pm, null, true);
+        const command = try buildWrappedCommandWithPolicy(allocator, "/tmp/project", "/usr/bin/manager", pm, null, true, false);
         defer allocator.free(command);
         try std.testing.expect(std.mem.endsWith(u8, command, if (std.mem.eql(u8, pm, "npm")) " ci" else " install --frozen-lockfile"));
     }

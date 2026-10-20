@@ -44,7 +44,7 @@ jobs:
       - name: Verify real HTTP registry lookup failures and credential scope
         run: bun test packages/ts-pantry/test/installer-registry-availability.test.ts
       - name: Lint installer availability source and real HTTP fixtures
-        run: bunx --bun pickier run --mode lint packages/ts-pantry/src/installer.ts packages/ts-pantry/test/installer-registry-availability.test.ts .github/scripts/verify-registry-lookup.ts .github/scripts/verify-npm-publication.ts
+        run: bunx --bun pickier run --mode lint packages/ts-pantry/src/installer.ts packages/ts-pantry/test/installer-registry-availability.test.ts .github/scripts/verify-registry-lookup.ts .github/scripts/verify-npm-publication.ts .github/scripts/verify-js-lifecycle.ts
       - name: Typecheck the normal Pantry source
         run: bun run typecheck
       - name: Lint package documentation generation
@@ -208,6 +208,7 @@ jobs:
           bun .github/scripts/verify-nested-js-graph.ts "$source_cli" members-only
           bun .github/scripts/verify-nested-js-graph.ts "$source_cli" mixed
           bun .github/scripts/verify-nested-js-graph.ts "$source_cli" dot-name
+          bun .github/scripts/verify-js-lifecycle.ts "$source_cli"
       - name: Retain actual dependency bindings and original migration locks
         if: always()
         uses: actions/upload-artifact@v4

@@ -18,6 +18,8 @@ test('directory cleanup requires this invocation owner marker', () => {
   finally { rmSync(directory, { recursive: true, force: true }) }
 })
 
+// Five sequential kernel identity reads each retain their existing two-second
+// Darwin deadline. The default test budget truncated valid reads on a busy host.
 test('a different process birth or command is rejected without signalling it', async () => {
   const directory = mkdtempSync(join(tmpdir(), 'pantry-foreign-test-'))
   try {
@@ -29,8 +31,6 @@ test('a different process birth or command is rejected without signalling it', a
     expect(await serviceProcessIdentity(process.pid)).toEqual(identity)
   }
   finally { rmSync(directory, { recursive: true, force: true }) }
-// Five sequential kernel identity reads each retain their existing two-second
-// Darwin deadline. The test's default five seconds truncated those valid reads.
 }, 12_000)
 
 test('captures and stops only its owned foreground process, then removes private data', async () => {

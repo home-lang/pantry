@@ -65,7 +65,7 @@ fn repairProjectTree(allocator: std.mem.Allocator, cwd: []const u8, modules_dir:
     }
 }
 
-fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i64, modules_dir: []const u8, linker: ?types.LinkerMode, frozen: bool) !?types.CommandResult {
+fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i64, modules_dir: []const u8, linker: ?types.LinkerMode, frozen: bool, ignore_scripts: bool) !?types.CommandResult {
     const detector = @import("../../../deps/detector.zig");
     const parser = @import("../../../deps/parser.zig");
     const lockfile_reader = @import("../../../packages/lockfile.zig");
@@ -202,7 +202,7 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
     // (nothing changed) stays cheap.
     {
         const js_delegate = @import("../../../deps/js_delegate.zig");
-        _ = js_delegate.installJsDepsWithPolicy(allocator, effective_dir, false, linker, frozen) catch |err| {
+        _ = js_delegate.installJsDepsWithPolicy(allocator, effective_dir, false, linker, frozen, ignore_scripts) catch |err| {
             return .{
                 .exit_code = 1,
                 .message = try std.fmt.allocPrint(allocator, "JavaScript dependency installation failed: {s}", .{@errorName(err)}),
@@ -505,7 +505,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // This avoids expensive workspace detection, config loading, hooks, etc.
         // Skipped when --force is set (user wants to re-download everything)
         if (!options.force) {
-            if (try tryFastUpToDate(allocator, cwd, start_time, options.modules_dir, options.linker, options.frozen_lockfile)) |result| {
+            if (try tryFastUpToDate(allocator, cwd, start_time, options.modules_dir, options.linker, options.frozen_lockfile, options.ignore_scripts)) |result| {
                 return result;
             }
         }
@@ -765,7 +765,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             // Run JS delegate for package.json deps
             {
                 const js_delegate = @import("../../../deps/js_delegate.zig");
-                const js_installed = js_delegate.installJsDepsWithPolicy(allocator, proj_dir_early, options.verbose, options.linker, options.frozen_lockfile) catch |err| {
+                const js_installed = js_delegate.installJsDepsWithPolicy(allocator, proj_dir_early, options.verbose, options.linker, options.frozen_lockfile, options.ignore_scripts) catch |err| {
                     return .{
                         .exit_code = 1,
                         .message = try std.fmt.allocPrint(allocator, "JavaScript dependency installation failed: {s}", .{@errorName(err)}),
@@ -1300,7 +1300,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // Delegate to bun/pnpm/yarn/npm for JS deps if package.json is present
         {
             const js_delegate = @import("../../../deps/js_delegate.zig");
-            _ = js_delegate.installJsDepsWithPolicy(allocator, proj_dir, options.verbose, options.linker, options.frozen_lockfile) catch |err| {
+            _ = js_delegate.installJsDepsWithPolicy(allocator, proj_dir, options.verbose, options.linker, options.frozen_lockfile, options.ignore_scripts) catch |err| {
                 return .{
                     .exit_code = 1,
                     .message = try std.fmt.allocPrint(allocator, "JavaScript dependency installation failed: {s}", .{@errorName(err)}),
