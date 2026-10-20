@@ -1,3 +1,65 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.101...v0.11.102)
+
+## 🐛 Bug Fixes
+
+- **catalog**: commit Action bundles with their generating metadata ([3cccb44](https://github.com/pantry-pm/pantry/commit/3cccb44)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **bootstrap**: generate and freeze the native source workspace with its owning installer ([a2ae3a4](https://github.com/pantry-pm/pantry/commit/a2ae3a4)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **release**: preserve the original preflight receipt during recording ([8715353](https://github.com/pantry-pm/pantry/commit/8715353)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **release**: commit Action bundles built after the version bump ([1d196a5](https://github.com/pantry-pm/pantry/commit/1d196a5)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **workspace**: reject directory aliases into the delegated JavaScript tree ([9e2b3f3](https://github.com/pantry-pm/pantry/commit/9e2b3f3)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **workspace**: keep native content outside the JavaScript manager namespace ([2a835c6](https://github.com/pantry-pm/pantry/commit/2a835c6)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **workspace**: verify deletion with native filesystem errors ([555623c](https://github.com/pantry-pm/pantry/commit/555623c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **http**: qualify throttled origins and redirected retry safety ([9260e12](https://github.com/pantry-pm/pantry/commit/9260e12)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **workspace**: parse optional dependency sections at runtime ([9e52981](https://github.com/pantry-pm/pantry/commit/9e52981)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **workspace**: keep valid dotted npm names in the JavaScript graph ([1e5567f](https://github.com/pantry-pm/pantry/commit/1e5567f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **workspace**: iterate JSON declarations with the supported compiler API ([6a648b2](https://github.com/pantry-pm/pantry/commit/6a648b2)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **http**: report the actual decorated origin before retrying ([3bfa06e](https://github.com/pantry-pm/pantry/commit/3bfa06e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **install**: preserve frozen policy across all JS delegation paths ([4f3af36](https://github.com/pantry-pm/pantry/commit/4f3af36)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **workspace**: validate shadow ownership and enforce frozen delegation ([5c12e02](https://github.com/pantry-pm/pantry/commit/5c12e02)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **http**: honor rate-limit delays within bounded GET retries ([6a0feb1](https://github.com/pantry-pm/pantry/commit/6a0feb1)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **workspace**: delegate JavaScript graph ownership consistently ([39dd2ea](https://github.com/pantry-pm/pantry/commit/39dd2ea)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 📝 Documentation
+
+- retain one canonical safe-download contract ([876f113](https://github.com/pantry-pm/pantry/commit/876f113)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **native**: retain source-bound CLI bytes with platform qualification ([c37a4b7](https://github.com/pantry-pm/pantry/commit/c37a4b7)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **release**: check generated artifacts and remote tags before native builds ([44f3117](https://github.com/pantry-pm/pantry/commit/44f3117)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **workspace**: resolve dependencies from their declaring member ([ab7013d](https://github.com/pantry-pm/pantry/commit/ab7013d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **native**: qualify workspace migration with the complete native suite ([f86afd2](https://github.com/pantry-pm/pantry/commit/f86afd2)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **http**: verify redirected throttling without credential forwarding ([480f6e1](https://github.com/pantry-pm/pantry/commit/480f6e1)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **workspace**: preserve all candidates on ownership validation failure ([6099925](https://github.com/pantry-pm/pantry/commit/6099925)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **install**: qualify shared ownership and rate limits against one source CLI ([89e14f8](https://github.com/pantry-pm/pantry/commit/89e14f8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **install**: distinguish workspace and delegated dependency graphs ([2a3db25](https://github.com/pantry-pm/pantry/commit/2a3db25)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **install**: reproduce nested graph conflicts with the public CLI ([21e7cf3](https://github.com/pantry-pm/pantry/commit/21e7cf3)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 👷 Build System
+
+- **action**: adopt the bundle generated from current package metadata ([894d20a](https://github.com/pantry-pm/pantry/commit/894d20a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **lock**: adopt the source-generated native workspace lock ([5b337b8](https://github.com/pantry-pm/pantry/commit/5b337b8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **action**: adopt the normal generated bundle for qualified releases ([dd34743](https://github.com/pantry-pm/pantry/commit/dd34743)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 💚 Continuous Integration
+
+- bootstrap with the verified published registry recovery fixes ([c0d02e8](https://github.com/pantry-pm/pantry/commit/c0d02e8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.102 ([749b8b8](https://github.com/pantry-pm/pantry/commit/749b8b8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- retain current package registry source updates ([2e51bb2](https://github.com/pantry-pm/pantry/commit/2e51bb2)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- update anthropic.com/claude-code, dozzle.dev, github.com/ggerganov/llama.cpp, openpolicyagent.org, ordinals.com, railway.app, stripe.com ([0f0dad4](https://github.com/pantry-pm/pantry/commit/0f0dad4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- integrate qualified JavaScript ownership and release source fixes ([8cfc24a](https://github.com/pantry-pm/pantry/commit/8cfc24a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- retain the published installer source fix ([61eb3c1](https://github.com/pantry-pm/pantry/commit/61eb3c1)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- combine qualified installer source work for integration checks ([6544d90](https://github.com/pantry-pm/pantry/commit/6544d90)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- retain current native package catalog ([eda4f6c](https://github.com/pantry-pm/pantry/commit/eda4f6c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- update craft-native.org to 0.0.249 ([13d10c4](https://github.com/pantry-pm/pantry/commit/13d10c4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.100...v0.11.101)
 
 ## ✨ Features
