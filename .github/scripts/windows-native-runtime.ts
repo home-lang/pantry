@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { cp, mkdir, mkdtemp, readFile, realpath, rm } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, readFile, realpath, rm, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -47,6 +47,32 @@ try {
   assert.equal(Bun.SHA256.hash(await readFile(runtime), 'hex'), originalHash)
   proof.sdkRuntimeSha256 = originalHash
   proof.nativeRuntimeReusedAndActivated = true
+
+  // Cached workspace links point back into the source checkout. Reconciliation
+  // must replace the directory link itself, never walk and empty its target.
+  const workspace = join(owned, 'linked-workspaces')
+  const member = join(workspace, 'packages/zig')
+  await mkdir(member, { recursive: true })
+  await mkdir(join(workspace, 'pantry'))
+  await Bun.write(join(workspace, 'pantry.jsonc'), JSON.stringify({ dependencies: {} }))
+  await Bun.write(join(workspace, 'package.json'), JSON.stringify({ name: 'linked-workspace-fixture', private: true, workspaces: ['packages/*'] }))
+  await Bun.write(join(member, 'pantry.json'), JSON.stringify({ name: 'zig', version: '1.0.0' }))
+  const source = join(member, 'build.zig')
+  await Bun.write(source, 'tracked workspace source\n')
+  const sourceHash = Bun.SHA256.hash(await readFile(source), 'hex')
+  for (const type of ['dir', 'junction'] as const) {
+    const link = join(workspace, 'pantry/zig')
+    await rm(link, { recursive: true, force: true })
+    await symlink(member, link, type)
+    for (const attempt of [1, 2]) {
+      const result = await run(`workspace-relink-${type}-${attempt}`, [cli, 'install', '--no-save', '--verbose'], workspace)
+      assert.match(result, /Linked 1 workspace package/)
+      assert.equal(Bun.SHA256.hash(await readFile(source), 'hex'), sourceHash)
+      assert.equal(await realpath(link), await realpath(member))
+    }
+  }
+  proof.workspaceSourcePreservedThroughRepeatedRelinking = true
+  proof.workspaceSourceSha256 = sourceHash
 
   // Exercise the bundled Action itself. A missing local dependency must fail
   // inside workspace installation, before the Action can say setup completed.

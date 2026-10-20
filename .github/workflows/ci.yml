@@ -405,7 +405,7 @@ jobs:
           if-no-files-found: error
 
   continuous-release:
-    needs: [lint, typecheck, test, action-redis-service, action-native-services, action-native-tools, native-browser, windows-native-runtime]
+    needs: [lint, typecheck, test, action-redis-service, action-native-services, action-native-tools, native-browser, windows-native-runtime, windows-file-tree]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # Best-effort commit-preview publishing. Don't fail the whole workflow
@@ -464,6 +464,23 @@ jobs:
               {"name": "Author", "value": "${{ github.actor }}", "inline": true}
             ]
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+  windows-file-tree:
+    name: Windows linked workspace cleanup
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install the pinned compiler and runtime
+        uses: pantry-pm/pantry/packages/action@ae59a7b7fc5f4e6f7b8041a75e6b5772680bebdf # v0.11.101
+        with:
+          version: '0.11.101'
+          install: 'false'
+          packages: bun.com@1.4.3 ziglang.org@0.17.0
+      - name: Test source preservation through directory and nested links
+        # Keep the compiler's own adjacent standard library when invoking a
+        # managed binary through the package's executable link.
+        run: bun -e 'const zig = require("node:fs").realpathSync(Bun.which("zig")); process.exit(Bun.spawnSync([zig, "test", "packages/zig/src/io_helper.zig", "-lc", "--test-filter", "deleteTree"], { stdout: "inherit", stderr: "inherit" }).exitCode)'
 
   windows-native-runtime:
     needs: test
