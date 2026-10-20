@@ -506,49 +506,58 @@ export async function installPackage(
       }
     }
 
-    // Copy to install directory
-    fs.mkdirSync(pkgDir, { recursive: true })
-    copyDirRecursive(sourceDir, pkgDir)
+    // Publish only a complete candidate. A stale/dangling installed tree is
+    // retained until the verified archive has been fully materialized.
+    fs.mkdirSync(path.dirname(pkgDir), { recursive: true })
+    const candidate = fs.mkdtempSync(path.join(path.dirname(pkgDir), '.pantry-install-'))
+    try {
+      copyDirRecursive(sourceDir, candidate)
+      fs.chmodSync(candidate, fs.statSync(sourceDir).mode & 0o777)
 
-    // A registry package's binaries are known only now, from what it shipped.
-    const binaries = declared ?? installedRegistryBinaries(pkgDir)
-    if (binaries.length === 0) {
-      throw new Error(`${domain}@${version} unpacked with no executables in bin/`)
-    }
+      // A registry package's binaries are known only now, from what it shipped.
+      const binaries = declared ?? installedRegistryBinaries(candidate)
+      if (binaries.length === 0) {
+        throw new Error(`${domain}@${version} unpacked with no executables in bin/`)
+      }
 
-    // Make binaries executable (non-Windows)
-    if (platform.os !== 'windows') {
-      for (const bin of binaries) {
-        const binPath = path.join(pkgDir, bin)
-        if (fs.existsSync(binPath)) {
-          fs.chmodSync(binPath, 0o755)
+      // Make binaries executable (non-Windows)
+      if (platform.os !== 'windows') {
+        for (const bin of binaries) {
+          const binPath = path.join(candidate, bin)
+          if (fs.existsSync(binPath)) {
+            fs.chmodSync(binPath, 0o755)
+          }
+          // Also check bin/ subdirectory
+          const binSubPath = path.join(candidate, 'bin', bin)
+          if (fs.existsSync(binSubPath)) {
+            fs.chmodSync(binSubPath, 0o755)
+          }
         }
-        // Also check bin/ subdirectory
-        const binSubPath = path.join(pkgDir, 'bin', bin)
-        if (fs.existsSync(binSubPath)) {
-          fs.chmodSync(binSubPath, 0o755)
+
+        // Restoring the bit only on the DECLARED binaries leaves a package that
+        // shells out to its own helpers broken in a way that looks like the
+        // wrapper working: git's `bin/git` ran fine and then died on
+        // `exec .../libexec/git: Permission denied`, which reads as "not a git
+        // repository" to everything downstream. Anything living in a directory
+        // that exists to hold executables needs the bit too.
+        for (const dir of ['bin', 'sbin', 'libexec']) {
+          makeTreeExecutable(path.join(candidate, dir))
         }
       }
 
-      // Restoring the bit only on the DECLARED binaries leaves a package that
-      // shells out to its own helpers broken in a way that looks like the
-      // wrapper working: git's `bin/git` ran fine and then died on
-      // `exec .../libexec/git: Permission denied`, which reads as "not a git
-      // repository" to everything downstream. Anything living in a directory
-      // that exists to hold executables needs the bit too.
-      for (const dir of ['bin', 'sbin', 'libexec']) {
-        makeTreeExecutable(path.join(pkgDir, dir))
+      fs.rmSync(pkgDir, { recursive: true, force: true })
+      fs.renameSync(candidate, pkgDir)
+
+      // Create .bin/ links
+      if (options.createBinLinks !== false) {
+        linkBinaries(pkgDir, binaries, binDir, platform)
       }
-    }
 
-    // Create .bin/ links
-    if (options.createBinLinks !== false) {
-      linkBinaries(pkgDir, binaries, binDir, platform)
+      if (!options.quiet) console.log(`  ✓ ${domain}@${version}`)
+      const globalLinks = maybeLinkToGlobalBin(pkgDir, binaries, platform, options)
+      return { name: domain, version, installPath: pkgDir, binaries, globalLinks }
     }
-
-    if (!options.quiet) console.log(`  ✓ ${domain}@${version}`)
-    const globalLinks = maybeLinkToGlobalBin(pkgDir, binaries, platform, options)
-    return { name: domain, version, installPath: pkgDir, binaries, globalLinks }
+    finally { fs.rmSync(candidate, { recursive: true, force: true }) }
   }
   finally {
     // Clean up temp directory
@@ -797,9 +806,15 @@ export function registryDownloadSource(
  */
 export function installedRegistryBinaries(pkgDir: string): string[] {
   try {
-    return fs.readdirSync(path.join(pkgDir, 'bin'))
-      .filter(name => !name.startsWith('.'))
-      .sort()
+    const directory = path.join(pkgDir, 'bin')
+    const programs: string[] = []
+    for (const name of fs.readdirSync(directory).filter(name => !name.startsWith('.')).sort()) {
+      // One dangling archive link invalidates the cached installation; a
+      // surviving sibling must not turn a partial tree into a successful hit.
+      const stat = fs.statSync(path.join(directory, name))
+      if (stat.isFile()) programs.push(name)
+    }
+    return programs
   }
   catch {
     return []
@@ -1267,7 +1282,10 @@ async function extractArchive(archivePath: string, destDir: string, format: stri
 }
 
 function copyDirRecursive(src: string, dest: string): void {
-  fs.cpSync(src, dest, { recursive: true })
+  // Relative archive links belong to the installed prefix. Node's default
+  // rewrites them through the temporary extraction tree, which is removed
+  // when installation completes and leaves program/library links dangling.
+  fs.cpSync(src, dest, { recursive: true, verbatimSymlinks: true })
 }
 
 /**

@@ -1,12 +1,16 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { lstat, mkdir, mkdtemp, readFile, readdir, rm, statfs } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { resolveNativeExecutable } from '../../packages/action/src/native-executable'
 import { verifyChromeRuntime } from '../../packages/ts-pantry/src/recipes/props/google.com/chrome/health'
 
-const pantryVersion = '0.11.103'
-const source = '986749281fbc27190192d6349eee633dbdc054ff'
+const pantryVersion = process.env.PANTRY_PUBLIC_VERSION ?? ''
+const source = process.env.PANTRY_PUBLIC_SOURCE ?? ''
+assert.match(pantryVersion, /^\d+\.\d+\.\d+$/)
+assert.match(source, /^[a-f0-9]{40}$/)
+assert.equal(process.env.GITHUB_REF, `refs/tags/v${pantryVersion}`, 'Public compatibility must use the original immutable release tag')
+assert.equal(process.env.GITHUB_SHA, source)
 const chromeVersion = '155.0.8059.84.1'
 const domain = 'google.com/chrome'
 const artifacts = resolve(import.meta.dir, '../../artifacts/public-chrome-revision')
@@ -16,18 +20,51 @@ assert(!process.env.PANTRY_REGISTRY_URL, 'Use the actual public registry')
 const cli = resolve(process.env.PANTRY_PUBLIC_CHROME_CLI)
 const root = await mkdtemp(join(tmpdir(), 'pantry public Chrome revision '))
 const proof: Record<string, unknown> = { passed: false, pantryVersion, source, chromeVersion, originalPublicCliAndSdk: true }
+proof.originalActionIndexSha256 = Bun.SHA256.hash(await readFile(resolve(import.meta.dir, '../../packages/action/dist/index.js')), 'hex')
+const diskPhases: Record<string, { beforeFreeBytes: number, minimumFreeBytes: number, afterFreeBytes: number, sampleIntervalMs: number }> = {}
+proof.observedDiskPhases = diskPhases
+
+async function regularFileBytes(directory: string): Promise<number> {
+  const seen = new Set<string>()
+  async function walk(path: string): Promise<number> {
+    const stat = await lstat(path)
+    if (stat.isSymbolicLink()) return 0
+    if (stat.isDirectory()) {
+      let bytes = 0
+      for (const entry of await readdir(path)) bytes += await walk(join(path, entry))
+      return bytes
+    }
+    const key = `${stat.dev}:${stat.ino}`
+    if (!stat.isFile() || seen.has(key)) return 0
+    seen.add(key)
+    return stat.size
+  }
+  return walk(directory)
+}
 
 async function run(name: string, args: string[], cwd: string, environment: Record<string, string | undefined> = {}): Promise<string> {
   const stdout = join(artifacts, `${name}.stdout.log`)
   const stderr = join(artifacts, `${name}.stderr.log`)
-  const child = Bun.spawn(args, {
-    cwd, env: { ...process.env, ...environment },
-    stdout: Bun.file(stdout), stderr: Bun.file(stderr), signal: AbortSignal.timeout(600_000),
-  })
-  const code = await child.exited
-  const output = await readFile(stdout, 'utf8') + await readFile(stderr, 'utf8')
-  assert.equal(code, 0, `${name}: ${output.slice(-8000)}`)
-  return output
+  const free = async (): Promise<number> => { const fs = await statfs(root); return fs.bavail * fs.bsize }
+  const before = await free()
+  const phase = { beforeFreeBytes: before, minimumFreeBytes: before, afterFreeBytes: before, sampleIntervalMs: 500 }
+  diskPhases[name] = phase
+  const timer = setInterval(() => { void free().then(bytes => { phase.minimumFreeBytes = Math.min(bytes, phase.minimumFreeBytes) }).catch(() => {}) }, phase.sampleIntervalMs)
+  try {
+    const child = Bun.spawn(args, {
+      cwd, env: { ...process.env, ...environment },
+      stdout: Bun.file(stdout), stderr: Bun.file(stderr), signal: AbortSignal.timeout(600_000),
+    })
+    const code = await child.exited
+    const output = await readFile(stdout, 'utf8') + await readFile(stderr, 'utf8')
+    assert.equal(code, 0, `${name}: ${output.slice(-8000)}`)
+    return output
+  }
+  finally {
+    clearInterval(timer)
+    phase.afterFreeBytes = await free()
+    phase.minimumFreeBytes = Math.min(phase.minimumFreeBytes, phase.afterFreeBytes)
+  }
 }
 
 try {
@@ -70,6 +107,12 @@ try {
   })
   const cliEntry = join(cliRoot, 'pantry/.bin/google-chrome-stable')
   proof.cliHealth = await verifyChromeRuntime(cliEntry, join(cliRoot, 'pantry'), resolveNativeExecutable(cliEntry))
+  proof.installedFootprint = {
+    chromeRegularBytes: await regularFileBytes(join(cliRoot, 'pantry', domain, `v${chromeVersion}`)),
+    wholeNativeTreeRegularBytes: await regularFileBytes(join(cliRoot, 'pantry')),
+    llvmRegularBytes: await regularFileBytes(join(cliRoot, 'pantry/llvm.org')).catch(() => 0),
+    scope: 'post-install regular-file bytes; filesystem-free samples observe staging pressure, not a guaranteed peak bound',
+  }
 
   const sdkRoot = join(root, 'sdk-consumer')
   await mkdir(sdkRoot)
