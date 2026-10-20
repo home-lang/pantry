@@ -2,6 +2,10 @@ name: Generate Native Recipe Catalogs
 on:
   workflow_dispatch:
     inputs:
+      verify-action-chrome-environment:
+        description: Compare original public 105 Chrome with the inherited Action environment and the clean producer environment
+        type: boolean
+        default: false
       verify-public-chrome:
         description: Verify the revised public Chrome archive with an original published release tag's Action, CLI and SDK
         type: boolean
@@ -38,7 +42,7 @@ permissions:
   contents: read
 jobs:
   catalog:
-    if: ${{ !inputs.verify-public-chrome }}
+    if: ${{ !inputs.verify-public-chrome && !inputs.verify-action-chrome-environment }}
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.verify-chrome && 45 || 15 }}
     steps:
@@ -212,7 +216,7 @@ jobs:
           path: artifacts/native-catalog
           if-no-files-found: error
   public-chrome:
-    if: inputs.verify-public-chrome
+    if: ${{ inputs.verify-public-chrome && !inputs.verify-action-chrome-environment }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -243,6 +247,36 @@ jobs:
         with:
           name: public-chrome-original-release-compatibility
           path: artifacts/public-chrome-revision
+          if-no-files-found: error
+  action-chrome-environment:
+    if: ${{ inputs.verify-action-chrome-environment && !inputs.verify-public-chrome }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install the original public Action, native closure, and real services
+        id: original-pantry
+        uses: pantry-pm/pantry/packages/action@8bb811bc8e1d241e8c21adf5c8d961cd498a8dcd
+        with:
+          version: 0.11.105
+          install: 'false'
+          packages: bun.sh@1.4.3 git-scm.org@2.53.0 google.com/chrome@155.0.8059.84.1
+          services: postgres@17.10 typesense@30.2
+      - name: Verify diagnostic environment separation and static ELF evidence
+        run: |
+          set -o pipefail
+          mkdir -p artifacts/action-chrome-environment
+          bun test packages/action/src/chrome-environment-fixture.test.ts 2>&1 | tee artifacts/action-chrome-environment/unit-tests.log
+      - name: Compare the same sandboxed installed Chrome under all four environments
+        env:
+          PANTRY_CHROME_ENVIRONMENT_CLI: ${{ steps.original-pantry.outputs.pantry-path }}
+        run: bun .github/scripts/verify-action-chrome-environment.ts
+      - name: Preserve all outcomes, original loader logs, and executable identity
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original105-action-chrome-environment
+          path: artifacts/action-chrome-environment
           if-no-files-found: error
   registry-lookup:
     needs: catalog
