@@ -2,6 +2,10 @@ name: Generate Native Recipe Catalogs
 on:
   workflow_dispatch:
     inputs:
+      verify-public-chrome:
+        description: Verify the revised public Chrome archive with the original published 103 CLI and SDK; no source compiler or publisher
+        type: boolean
+        default: false
       generate-native-catalogs:
         description: Generate catalog patches; leave disabled to qualify the exact committed source
         type: boolean
@@ -26,6 +30,7 @@ permissions:
   contents: read
 jobs:
   catalog:
+    if: ${{ !inputs.verify-public-chrome }}
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.verify-chrome && 45 || 15 }}
     steps:
@@ -191,6 +196,30 @@ jobs:
         with:
           name: native-recipe-catalog
           path: artifacts/native-catalog
+          if-no-files-found: error
+  public-chrome:
+    if: inputs.verify-public-chrome
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install the immutable original published Action, CLI and managed Bun
+        id: public-pantry
+        uses: pantry-pm/pantry/packages/action@986749281fbc27190192d6349eee633dbdc054ff
+        with:
+          version: 0.11.103
+          install: 'false'
+          packages: bun.com@1.4.3
+      - name: Verify actual public archive bytes and ordinary CLI and SDK installs
+        env:
+          PANTRY_PUBLIC_CHROME_CLI: ${{ steps.public-pantry.outputs.pantry-path }}
+        run: bun .github/scripts/verify-public-chrome-revision.ts
+      - name: Preserve original public compatibility and clean-environment rendering evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-chrome-original103-compatibility
+          path: artifacts/public-chrome-revision
           if-no-files-found: error
   registry-lookup:
     needs: catalog
