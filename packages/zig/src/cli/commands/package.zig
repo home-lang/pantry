@@ -792,7 +792,7 @@ fn confirmDeferredReadback(allocator: std.mem.Allocator, item: *const DeferredRe
     var client = registry.RegistryClient.init(allocator, item.registry_url) catch return false;
     defer client.deinit();
     const started = io_helper.getMilliTimestamp();
-    const confirmed = client.confirmPublication(item.name, item.version, &item.integrity, npm_publish_timeout_ms) catch false;
+    const confirmed = client.confirmPublication(item.name, item.version, &item.integrity, deferred_readback_timeout_ms) catch false;
     const elapsed = io_helper.getMilliTimestamp() - started;
     style.print("  {s}timings:{s} public readback of {s}@{s} {d}.{d}s\n", .{ style.dim, style.reset, item.name, item.version, @divFloor(elapsed, 1000), @divFloor(@mod(elapsed, 1000), 100) });
     if (confirmed) {
@@ -1891,6 +1891,15 @@ const OIDCPublishResult = struct {
 /// ample room for a large tarball while bounding a socket whose peer accepted
 /// bytes and then stopped responding.
 const npm_publish_timeout_ms: u64 = 120_000;
+
+/// How long a batch waits for a queued upload to become public. Longer than
+/// the immediate readback's deadline: a package that waits for one has to
+/// wait for it however long npm takes, and giving up at two minutes - which
+/// npm took longer than for two of stx 0.2.612's four runtime packages -
+/// only held its dependents back and sent the caller round its slower retry
+/// loop to wait for the same thing. Timing out still means pending, never
+/// that the upload should be sent again.
+const deferred_readback_timeout_ms: u64 = 600_000;
 
 const OIDCPublishTaskResult = anyerror!OIDCPublishResult;
 
