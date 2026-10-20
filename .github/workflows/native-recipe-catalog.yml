@@ -78,8 +78,8 @@ jobs:
       - name: Check native transport formatting and build the source CLI
         run: |
           cd packages/zig
-          zig fmt src/http_retry.zig src/io_helper.zig src/install/downloader.zig src/install/installer.zig src/install/native_apps.zig src/install/pipeline.zig src/install/runtime.zig src/auth/registry.zig src/cli/commands/package.zig src/main.zig
-          git diff --binary -- src/http_retry.zig src/io_helper.zig src/install > ../../artifacts/native-catalog/native-format.patch
+          zig fmt src/cli/diagnostics.zig src/http_retry.zig src/io_helper.zig src/install/downloader.zig src/install/installer.zig src/install/native_apps.zig src/install/pipeline.zig src/install/runtime.zig src/auth/registry.zig src/cli/commands/package.zig src/main.zig
+          git diff --binary -- src/cli/diagnostics.zig src/http_retry.zig src/io_helper.zig src/install > ../../artifacts/native-catalog/native-format.patch
           zig test src/http_retry.zig
           # This artifact runs on other hosts. Use the normal portable target,
           # rather than inheriting the producer host's optional CPU features.
@@ -116,7 +116,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        segment: [metadata, rate-limit, artifact-stalled-head, artifact-stalled-body]
+        segment: [metadata, rate-limit, diagnostics, artifact-stalled-head, artifact-stalled-body]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

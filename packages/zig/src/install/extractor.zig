@@ -13,8 +13,7 @@ pub const ExtractError = error{
 /// Verbose diagnostics gate — mirrors `PANTRY_VERBOSE=1`/`PANTRY_DEBUG=1`.
 /// Kept inline (not @import of lib) to avoid a dependency cycle through lib.zig.
 fn verboseExtract() bool {
-    const v = io_helper.getenv("PANTRY_VERBOSE") orelse io_helper.getenv("PANTRY_DEBUG") orelse return false;
-    return v.len > 0 and !std.mem.eql(u8, v, "0") and !std.mem.eql(u8, v, "false");
+    return @import("../cli/diagnostics.zig").enabled(false);
 }
 
 /// Extract a tar archive to a destination directory

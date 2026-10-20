@@ -74,21 +74,6 @@ pub fn platformRead(handle: std.posix.fd_t, buf: []u8) !usize {
     return std.posix.read(handle, buf);
 }
 
-/// Cross-platform write to a file descriptor/handle
-fn platformWrite(handle: std.posix.fd_t, buf: []const u8) !usize {
-    if (comptime is_windows) {
-        var bytes_written: win32.DWORD = 0;
-        const len: win32.DWORD = @intCast(@min(buf.len, std.math.maxInt(win32.DWORD)));
-        if (win32.WriteFile(handle, buf.ptr, len, &bytes_written, null) == win32.FALSE) {
-            return error.InputOutput;
-        }
-        return @intCast(bytes_written);
-    }
-    const result = c.write(handle, buf.ptr, buf.len);
-    if (result < 0) return error.InputOutput;
-    return @intCast(result);
-}
-
 /// Global Threaded I/O backend for production I/O.
 ///
 /// The static value only provides a stable address for `io`. `initializeIo`
@@ -488,13 +473,9 @@ pub fn realpathAlloc(allocator: std.mem.Allocator, path: []const u8) ![]u8 {
 
 /// Write all bytes to a file
 pub fn writeAllToFile(file: File, bytes: []const u8) !void {
-    const handle = file.handle;
-    var remaining = bytes;
-    while (remaining.len > 0) {
-        const written = platformWrite(handle, remaining) catch return error.InputOutput;
-        if (written == 0) return error.UnexpectedEndOfStream;
-        remaining = remaining[written..];
-    }
+    var writer = file.writerStreaming(io, &.{});
+    writer.interface.writeAll(bytes) catch |err| return writer.err orelse err;
+    try writer.flush();
 }
 
 /// Append content to a file
@@ -546,12 +527,28 @@ pub fn seekFromStart(file: File, offset: u64) !void {
 pub fn truncateFile(path: []const u8, len: u64) !void {
     const file = try openFile(path, .{ .mode = .write_only });
     defer closeFile(file);
-    if (comptime is_windows) {
-        try seekFromStart(file, len);
-        if (win32.SetEndOfFile(file.handle) == win32.FALSE) return error.InputOutput;
-    } else {
-        if (c.ftruncate(file.handle, @intCast(len)) != 0) return error.InputOutput;
-    }
+    try file.setLength(io, len);
+}
+
+test "file writes preserve a real disk-full failure" {
+    if (builtin.os.tag != .linux) return error.SkipZigTest;
+    const file = try openFile("/dev/full", .{ .mode = .write_only });
+    defer closeFile(file);
+    try std.testing.expectError(error.NoSpaceLeft, writeAllToFile(file, "must fail"));
+}
+
+test "truncation preserves the file observed through an existing descriptor" {
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+    try temp.dir.writeFile(io, .{ .sub_path = "active-log", .data = "abcdefgh" });
+    const observer = try temp.dir.openFile(io, "active-log", .{});
+    defer observer.close(io);
+    var path_buffer: [std.fs.max_path_bytes]u8 = undefined;
+    const length = try temp.dir.realPathFile(io, "active-log", &path_buffer);
+    try truncateFile(path_buffer[0..length], 3);
+    const data = try readFileAllocFromFile(std.testing.allocator, observer, 100);
+    defer std.testing.allocator.free(data);
+    try std.testing.expectEqualStrings("abc", data);
 }
 
 /// Close a file
@@ -1924,6 +1921,10 @@ pub const HttpStream = struct {
         return self.response.reader(transfer_buffer);
     }
 
+    pub fn readError(self: *HttpStream, fallback: anyerror) anyerror {
+        return requestTransportError(&self.req, fallback);
+    }
+
     pub fn deinit(self: *HttpStream) void {
         const alloc = self.client.allocator;
         self.req.deinit();
@@ -1976,6 +1977,7 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
                 _ = try retryGetTransport(err, &retries);
                 continue;
             }
+            printGetFailure(stream.request_url, "response-headers", err);
             return err;
         };
         var request_open = true;
@@ -2252,6 +2254,17 @@ fn printGetStatus(uri: std.Uri, status: u16, retry: ?u8, delay: ?u64) void {
     if (retry) |attempt| style.print("; retry {d}/2 after {d}s", .{ attempt, delay.? });
     if (delay == null) style.print("; Retry-After exceeds request budget", .{});
     style.print("\n", .{});
+}
+
+/// Preserve the stage and typed cause without logging signed paths or queries.
+pub fn printGetFailure(url: []const u8, stage: []const u8, err: anyerror) void {
+    if (err == error.Canceled) return;
+    const uri = std.Uri.parse(url) catch return;
+    var buffer: [512]u8 = undefined;
+    const host = if (uri.host) |value| value.toRaw(&buffer) catch "<invalid host>" else "<missing host>";
+    var port_buffer: [8]u8 = undefined;
+    const port = if (uri.port) |number| std.fmt.bufPrint(&port_buffer, ":{d}", .{number}) catch "" else "";
+    @import("cli/style.zig").printForced("  [pantry:download] {s} failed from {s}://{s}{s}: {s}\n", .{ stage, uri.scheme, host, port, @errorName(err) });
 }
 
 fn transientGetTransport(err: anyerror) bool {
