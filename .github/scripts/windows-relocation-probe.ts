@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { cp, mkdir, mkdtemp, rename, rm, symlink } from 'node:fs/promises'
+import { chmodSync, cpSync, mkdtempSync, renameSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join, relative } from 'node:path'
 
 assert.equal(process.platform, 'win32')
 const root = await mkdtemp(join(tmpdir(), 'pantry relocation probe '))
@@ -18,17 +19,34 @@ async function launch(command: string[], dispose = false) {
 }
 
 try {
-  for (const phase of ['unlaunched', 'async-real', 'async-link', 'disposed-link', 'sync-link', 'worker-link']) {
+  for (const phase of ['unlaunched', 'async-real', 'async-link', 'disposed-link', 'sync-link', 'worker-link', 'copy-sync', 'copy-sync-launched', 'copy-readonly']) {
     const tree = join(root, phase, 'pantry')
-    await mkdir(join(tree, 'package'), { recursive: true })
-    await mkdir(join(tree, '.bin'))
-    const binary = join(tree, 'package/bun.exe')
+    await mkdir(join(tree, '.bin'), { recursive: true })
+    let binary = join(tree, 'package/bun.exe')
+    if (phase.startsWith('copy-')) {
+      const source = join(root, `${phase}-source`)
+      await mkdir(join(source, 'lib/include'), { recursive: true })
+      await cp(process.execPath, join(source, 'bun.exe'))
+      for (let index = 0; index < 64; index++) writeFileSync(join(source, 'lib/include', `source-${index}.h`), 'fixture source bytes\n'.repeat(512))
+      const domain = join(tree, 'ziglang.org')
+      await mkdir(domain)
+      const candidate = mkdtempSync(join(domain, '.pantry-install-'))
+      cpSync(source, candidate, { recursive: true, verbatimSymlinks: true })
+      chmodSync(candidate, phase === 'copy-readonly' ? 0o555 : statSync(source).mode & 0o777)
+      const installed = join(domain, 'v0.17.0')
+      renameSync(candidate, installed)
+      binary = join(installed, 'bun.exe')
+    }
+    else {
+      await mkdir(dirname(binary), { recursive: true })
+      await cp(process.execPath, binary)
+    }
     const alias = join(tree, '.bin/bun.exe')
-    await cp(process.execPath, binary)
-    await symlink('../package/bun.exe', alias, 'file')
+    await symlink(relative(dirname(alias), binary), alias, 'file')
     if (phase === 'async-real') await launch([binary, '--version'])
     if (phase === 'async-link') await launch([alias, '--version'])
     if (phase === 'disposed-link') await launch([alias, '--version'], true)
+    if (phase === 'copy-sync-launched') await launch([alias, '--version'])
     if (phase === 'sync-link') {
       const result = Bun.spawnSync([alias, '--version'], { cwd: root, stdout: 'pipe', stderr: 'pipe', timeout: 180_000 })
       assert.equal(result.exitCode, 0, result.stderr.toString())
