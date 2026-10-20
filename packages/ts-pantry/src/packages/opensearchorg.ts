@@ -3,7 +3,7 @@
  *
  * @domain `opensearch.org`
  * @programs `opensearch`, `opensearch-keystore`, `opensearch-plugin`, `opensearch-shard`
- * @version `3.9.0` (56 versions available)
+ * @version `3.9.0` (57 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install opensearch.org`
@@ -96,6 +96,7 @@ export const opensearchorgPackage = {
     '3.0.0',
     '3.0.0-beta1',
     '3.0.0-alpha1',
+    '2.19.7',
     '2.19.6',
     '2.19.5',
     '2.19.4',

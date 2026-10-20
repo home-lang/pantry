@@ -3,7 +3,7 @@
  *
  * @domain `granted.dev`
  * @programs `granted`
- * @version `0.38.0` (38 versions available)
+ * @version `0.40.0` (52 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install granted.dev`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "granted"
  * console.log(pkg.description) // "The easiest way to access your cloud."
  * console.log(pkg.programs)    // ["granted"]
- * console.log(pkg.versions[0]) // "0.38.0" (latest)
+ * console.log(pkg.versions[0]) // "0.40.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/granted-dev.md
@@ -67,6 +67,7 @@ export const granteddevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.40.0',
     '0.39.0',
     '0.38.0',
     '0.37.0',
