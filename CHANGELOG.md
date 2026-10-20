@@ -1,3 +1,30 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.103...v0.11.104)
+
+## 🐛 Bug Fixes
+
+- **installer**: validate cached program links for builtin toolchains ([d1b0aa1](https://github.com/pantry-pm/pantry/commit/d1b0aa1)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **installer**: preserve archive links and repair incomplete SDK trees ([e6d9e17](https://github.com/pantry-pm/pantry/commit/e6d9e17)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **recipes**: preserve packaging repairs across vendor updates ([830d633](https://github.com/pantry-pm/pantry/commit/830d633)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **publisher**: keep accepted package versions immutable by default ([dda3570](https://github.com/pantry-pm/pantry/commit/dda3570)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **publisher**: require recipe builds for package revisions ([bddb2c8](https://github.com/pantry-pm/pantry/commit/bddb2c8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **chrome**: qualify immutable package revisions with owned NSS rendering ([a09d273](https://github.com/pantry-pm/pantry/commit/a09d273)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **chrome**: verify revisions with original public CLI and SDK ([4a93751](https://github.com/pantry-pm/pantry/commit/4a93751)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 👷 Build System
+
+- **action**: adopt qualified archive-link installer bundle ([e871f5c](https://github.com/pantry-pm/pantry/commit/e871f5c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.104 ([b5b90a1](https://github.com/pantry-pm/pantry/commit/b5b90a1)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.102...v0.11.103)
 
 ## 🐛 Bug Fixes
