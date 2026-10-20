@@ -480,7 +480,8 @@ jobs:
       - name: Test source preservation through directory and nested links
         # Keep the compiler's own adjacent standard library when invoking a
         # managed binary through the package's executable link.
-        run: bun -e 'const zig = require("node:fs").realpathSync(Bun.which("zig")); process.exit(Bun.spawnSync([zig, "test", "packages/zig/src/io_helper.zig", "-lc", "--test-filter", "deleteTree"], { stdout: "inherit", stderr: "inherit" }).exitCode)'
+        run: |
+          bun -e 'const zig = require("node:fs").realpathSync(Bun.which("zig")); process.exit(Bun.spawnSync([zig, "test", "packages/zig/src/io_helper.zig", "-lc", "--test-filter", "deleteTree"], { stdout: "inherit", stderr: "inherit" }).exitCode)'
 
   windows-native-runtime:
     needs: test
