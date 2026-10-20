@@ -40,9 +40,9 @@ on:
         default: false
         type: boolean
       rebuild-existing:
-        description: 'Re-upload versions already in S3 (--force). Needed after a recipe change; wasteful for a pure version bump.'
+        description: 'Explicitly rebuild accepted versions to validate reproduction. Packaging repairs must publish new recipe revisions.'
         required: false
-        default: true
+        default: false
         type: boolean
 
 concurrency:
@@ -51,8 +51,8 @@ concurrency:
   # group collapses them all into ONE queue slot, and each new dispatch cancels
   # the previously-pending one, so intermediate updates get silently dropped and
   # never publish. Giving every run its own group lets each version bump publish
-  # independently (each targets a specific, small package set). Re-uploads are
-  # idempotent (--force, last-write-wins), so concurrent runs are safe.
+  # independently (each targets a specific, small package set). Accepted versions
+  # are skipped by default; recipe repairs publish distinct package revisions.
   group: publish-changed-${{ github.run_id }}
   cancel-in-progress: false
 
@@ -81,8 +81,7 @@ jobs:
     outputs:
       domains: ${{ steps.detect.outputs.domains }}
       darwin_native: ${{ steps.darwin.outputs.domains }}
-      # 'true' unless we positively established that this push touched no
-      # recipe file. Drives whether the publish legs pass --force.
+      # Forced rebuilding requires an explicit manual input, never a recipe diff.
       rebuild_existing: ${{ steps.detect.outputs.rebuild_existing }}
     steps:
       - uses: actions/checkout@v6
@@ -121,38 +120,14 @@ jobs:
           echo "Detected changed packages: ${DOMAINS:-<none>}"
           echo "domains=$DOMAINS" >> "$GITHUB_OUTPUT"
 
-          # Should the legs re-upload versions that are ALREADY in S3?
-          #
-          # For a plain version bump: no. The new version is missing from S3 and
-          # gets built either way; --force only re-does the whole back catalogue.
-          # A single cmake.org bump had each of the three legs upload 20 versions
-          # when 3 were missing, turning a few minutes of work into 21-29.
-          #
-          # For a RECIPE change: yes, and this is why the flag exists. When
-          # curl.se moved from OpenSSL ^1.1 to ^3, every already-published curl
-          # needed rebuilding against the new recipe; skipping them would leave
-          # the registry serving artifacts built from a recipe that no longer
-          # exists.
-          #
-          # Fail-safe: default to forcing. We only drop --force when the diff
-          # positively shows no recipe file was touched — an unknown base, a
-          # manual dispatch, or any git failure keeps the rebuild. Guessing
-          # "no rebuild" wrongly is a silent staleness bug; guessing "rebuild"
-          # wrongly just costs runner minutes.
-          REBUILD=true
-          if [ "${{ github.event.inputs.rebuild-existing }}" = "false" ]; then
-            # A caller that knows it only bumped versions says so outright.
-            # update-packages.yml does exactly that: it commits src/packages/
-            # and nothing else, then dispatches this workflow.
-            REBUILD=false
-          elif [ -z "$MANUAL" ] && [ -n "${BEFORE:-}" ]; then
-            if RECIPE_DIFF=$(git diff --name-only "$BEFORE" "${{ github.sha }}" -- packages/ts-pantry/src/recipes/ 2>/dev/null); then
-              if [ -z "$RECIPE_DIFF" ]; then
-                REBUILD=false
-              fi
-            fi
+          # A changed recipe describes new packaging, not permission to replace
+          # an accepted artifact. Revision-aware discovery selects the new
+          # identity; already-published identities remain no-op skips.
+          REBUILD=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.rebuild-existing }}" = "true" ]; then
+            REBUILD=true
           fi
-          echo "Re-upload versions already in S3 (--force): $REBUILD"
+          echo "Explicitly rebuild accepted versions: $REBUILD"
           echo "rebuild_existing=$REBUILD" >> "$GITHUB_OUTPUT"
 
       # Darwin artifacts require native Mach-O inspection, loader normalization,
