@@ -401,19 +401,21 @@ export async function installPackage(
   const pkgDir = path.join(installDir, domain, `v${version}`)
 
   // Check if already installed. A built-in resolver names its binaries up
-  // front; a registry package's are whatever landed in `bin/`, so the presence
-  // of that directory is what "installed" means for it.
+  // front; registry packages must have actual usable programs in bin/. A
+  // dangling archive link must not turn an incomplete tree into a cache hit.
   const declared = resolver?.getBinaries(platform)
   if (resolver && (!declared || declared.length === 0)) {
     throw new Error(`No binaries defined for ${domain} on ${platform.os}-${platform.arch}`)
   }
 
-  const cached = declared
-    ? fs.existsSync(path.join(pkgDir, declared[0])) || fs.existsSync(path.join(pkgDir, 'bin', declared[0]))
-    : installedRegistryBinaries(pkgDir).length > 0
+  const binaryLayout = installedBinaryLayout(pkgDir)
+  const regular = (file: string): boolean => { try { return fs.statSync(file).isFile() } catch { return false } }
+  const cached = binaryLayout.valid && (declared
+    ? regular(path.join(pkgDir, declared[0])) || regular(path.join(pkgDir, 'bin', declared[0]))
+    : binaryLayout.programs.length > 0)
 
   if (cached) {
-    const binaries = declared ?? installedRegistryBinaries(pkgDir)
+    const binaries = declared ?? binaryLayout.programs
     if (!options.quiet) console.log(`  ✓ ${domain}@${version} (cached)`)
     // Re-assert the .bin links even when already installed, so the genuine
     // binary keeps ownership of `.bin/<name>` if another installer clobbered it.
@@ -805,8 +807,18 @@ export function registryDownloadSource(
  * is both simpler and incapable of drifting from what was actually shipped.
  */
 export function installedRegistryBinaries(pkgDir: string): string[] {
+  const layout = installedBinaryLayout(pkgDir)
+  return layout.valid ? layout.programs : []
+}
+
+function installedBinaryLayout(pkgDir: string): { valid: boolean, programs: string[] } {
+  const directory = path.join(pkgDir, 'bin')
+  try { fs.lstatSync(directory) }
+  catch (error) {
+    // Root-level builtin programs (for example Bun) need no bin/ directory.
+    return { valid: (error as NodeJS.ErrnoException).code === 'ENOENT', programs: [] }
+  }
   try {
-    const directory = path.join(pkgDir, 'bin')
     const programs: string[] = []
     for (const name of fs.readdirSync(directory).filter(name => !name.startsWith('.')).sort()) {
       // One dangling archive link invalidates the cached installation; a
@@ -814,10 +826,10 @@ export function installedRegistryBinaries(pkgDir: string): string[] {
       const stat = fs.statSync(path.join(directory, name))
       if (stat.isFile()) programs.push(name)
     }
-    return programs
+    return { valid: true, programs }
   }
   catch {
-    return []
+    return { valid: false, programs: [] }
   }
 }
 
