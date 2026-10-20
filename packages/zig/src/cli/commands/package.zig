@@ -771,7 +771,37 @@ pub const PublishOptions = struct {
     /// upload whose outcome is unknown (a dropped response, a 5xx, a
     /// conflict) is still read back, since that is how its outcome is learned.
     readback: bool = true,
+    /// Set by a batch publish: an accepted upload is queued here instead of
+    /// being read back at once, and the batch reads it back right before
+    /// uploading a package that installs it, or after its last upload. The
+    /// readback is npm's propagation delay, wall-clock rather than work - a
+    /// stx release spent 100 to 120 seconds on each of its packages in turn,
+    /// three stages of ten minutes - and queued, those delays overlap.
+    deferred_readbacks: ?*ReadbackQueue = null,
 };
+
+pub const DeferredReadback = publish_plan.DeferredReadback;
+pub const ReadbackQueue = publish_plan.ReadbackQueue;
+const deferReadback = publish_plan.deferReadback;
+const queuedDependency = publish_plan.queuedDependency;
+
+/// Read one queued upload back from the public registry, as an immediate
+/// readback would have: metadata, then the whole tarball against its integrity.
+fn confirmDeferredReadback(allocator: std.mem.Allocator, item: *const DeferredReadback) bool {
+    const registry = @import("../../auth/registry.zig");
+    var client = registry.RegistryClient.init(allocator, item.registry_url) catch return false;
+    defer client.deinit();
+    const started = io_helper.getMilliTimestamp();
+    const confirmed = client.confirmPublication(item.name, item.version, &item.integrity, npm_publish_timeout_ms) catch false;
+    const elapsed = io_helper.getMilliTimestamp() - started;
+    style.print("  {s}timings:{s} public readback of {s}@{s} {d}.{d}s\n", .{ style.dim, style.reset, item.name, item.version, @divFloor(elapsed, 1000), @divFloor(@mod(elapsed, 1000), 100) });
+    if (confirmed) {
+        style.print("✓ Published {s}@{s}\n", .{ item.name, item.version });
+    } else {
+        style.print("  Error: {s}@{s}: upload accepted; publication is pending public metadata and verified tarball availability. Do not upload this version again.\n", .{ item.name, item.version });
+    }
+    return confirmed;
+}
 
 fn resolveNpmAccess(explicit: ?[]const u8, configured: ?[]const u8, package_name: []const u8) []const u8 {
     return explicit orelse configured orelse if (package_name.len > 0 and package_name[0] == '@') "restricted" else "public";
@@ -850,6 +880,16 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
             if (p.*) |path| allocator.free(path);
         };
 
+        // Accepted uploads waiting for their public readback (see
+        // PublishOptions.deferred_readbacks).
+        var readbacks: ReadbackQueue = .empty;
+        defer {
+            for (readbacks.items) |item| item.deinit(allocator);
+            readbacks.deinit(allocator);
+        }
+        var batch_options = options;
+        if (options.readback) batch_options.deferred_readbacks = &readbacks;
+
         var failed: usize = 0;
         var succeeded: usize = 0;
         var skipped: usize = 0;
@@ -863,6 +903,19 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
 
             if (io_helper.readFileAlloc(allocator, pkg.config_path, 10 * 1024 * 1024)) |manifest| {
                 defer allocator.free(manifest);
+                // A package that installs a queued upload waits for that
+                // readback first, so it never goes up before what it
+                // installs is public.
+                while (queuedDependency(allocator, manifest, readbacks.items)) |index| {
+                    const item = readbacks.orderedRemove(index);
+                    defer item.deinit(allocator);
+                    if (confirmDeferredReadback(allocator, &item)) continue;
+                    failed += 1;
+                    succeeded -|= 1;
+                    for (pkgs) |other| {
+                        if (std.mem.eql(u8, other.name, item.name)) failed_names.append(allocator, other.name) catch {};
+                    }
+                }
                 if (publish_plan.heldBackBy(allocator, manifest, failed_names.items)) |dependency| {
                     style.print(
                         "  {s}↷{s} held back: it installs {s}, which didn't publish. Fix that and run again; what's already on npm is skipped.\n",
@@ -899,7 +952,7 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
                 allocator.free(pkg_file_path);
             }
 
-            const result = publishSingleToNpm(allocator, pkg.path, pkg.config_path, options);
+            const result = publishSingleToNpm(allocator, pkg.path, pkg.config_path, batch_options);
 
             // Cleanup: remove propagated files after publish
             for (&copied_files) |*cf| {
@@ -972,6 +1025,14 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
             } else {
                 io_helper.sleepMs(750);
             }
+        }
+
+        // The rest have been propagating while later packages uploaded.
+        if (readbacks.items.len > 0) style.print("\nReading back {d} accepted upload(s)\n", .{readbacks.items.len});
+        for (readbacks.items) |*item| {
+            if (confirmDeferredReadback(allocator, item)) continue;
+            failed += 1;
+            succeeded -|= 1;
         }
 
         style.print("\nPublished {d}/{d} packages", .{ succeeded, pkgs.len });
@@ -1097,7 +1158,8 @@ fn completeVerifiedNpmPublication(
     package_dir: []const u8,
     options: PublishOptions,
 ) CommandResult {
-    style.print("\n✓ Published {s}@{s}\n", .{ name, version });
+    const queued = if (options.deferred_readbacks) |queue| queue.items.len > 0 and std.mem.eql(u8, queue.items[queue.items.len - 1].name, name) and std.mem.eql(u8, queue.items[queue.items.len - 1].version, version) else false;
+    style.print("\n✓ {s} {s}@{s}\n", .{ if (queued) "Uploaded" else "Published", name, version });
     if (!options.ignore_scripts) {
         if (scripts) |configured| {
             _ = lib.lifecycle.runPostPublishScripts(allocator, configured, package_dir);
@@ -1310,24 +1372,30 @@ fn publishSingleToNpm(
         defer result.deinit(allocator);
 
         if (result.success) {
+            const deferred = options.readback and options.deferred_readbacks != null;
+            if (deferred) try deferReadback(allocator, options.deferred_readbacks.?, metadata.name, metadata.version, tarball_info.integrity, registry_url);
             const confirm_started = io_helper.getMilliTimestamp();
-            const confirmed = !options.readback or try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms);
+            const confirmed = !options.readback or deferred or try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms);
             const confirm_ms = io_helper.getMilliTimestamp() - confirm_started;
-            if (options.readback)
+            if (deferred)
+                style.print("  {s}accepted by npm; read back once a package needs it or the batch is uploaded{s}\n", .{ style.dim, style.reset })
+            else if (options.readback)
                 style.print("  {s}timings:{s} public readback {d}.{d}s\n", .{ style.dim, style.reset, @divFloor(confirm_ms, 1000), @divFloor(@mod(confirm_ms, 1000), 100) })
             else
                 style.print("  {s}accepted by npm; public readback left to the caller (--no-readback){s}\n", .{ style.dim, style.reset });
             if (!confirmed) {
                 return CommandResult.err(allocator, "Upload accepted; publication is pending public metadata and verified tarball availability. Do not upload this version again.");
             }
+            // A queued readback reports "Published" when it confirms.
+            const done = if (deferred) "Uploaded" else "Published";
             if (result.provenance) {
                 style.print("\n✓ Sigstore provenance attached\n", .{});
-                style.print("✓ Published {s}@{s} with provenance\n", .{ metadata.name, metadata.version });
+                style.print("✓ {s} {s}@{s} with provenance\n", .{ done, metadata.name, metadata.version });
             } else if (options.provenance) {
-                style.print("\n✓ Published {s}@{s}\n", .{ metadata.name, metadata.version });
+                style.print("\n✓ {s} {s}@{s}\n", .{ done, metadata.name, metadata.version });
                 style.print("  {s}⚠{s} without provenance: signing it failed\n", .{ style.yellow, style.reset });
             } else {
-                style.print("\n✓ Published {s}@{s}\n", .{ metadata.name, metadata.version });
+                style.print("\n✓ {s} {s}@{s}\n", .{ done, metadata.name, metadata.version });
             }
             // Run post-publish scripts: publish → postpublish
             if (!options.ignore_scripts) {
@@ -1564,7 +1632,10 @@ fn publishSingleToNpm(
     }
 
     if (response.success) {
-        if (options.readback and !try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms)) {
+        if (options.readback and options.deferred_readbacks != null) {
+            try deferReadback(allocator, options.deferred_readbacks.?, metadata.name, metadata.version, tarball_info.integrity, registry_url);
+            style.print("  {s}accepted by npm; read back once a package needs it or the batch is uploaded{s}\n", .{ style.dim, style.reset });
+        } else if (options.readback and !try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms)) {
             return CommandResult.err(allocator, "Upload accepted; publication is pending public metadata and verified tarball availability. Do not upload this version again.");
         }
         return completeVerifiedNpmPublication(allocator, metadata.name, metadata.version, scripts_obj, package_dir, options);

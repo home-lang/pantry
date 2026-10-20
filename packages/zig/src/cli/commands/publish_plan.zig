@@ -41,6 +41,45 @@ pub fn heldBackBy(allocator: std.mem.Allocator, content: []const u8, failed: []c
     return null;
 }
 
+/// An accepted upload whose public readback waits for the rest of its batch.
+pub const DeferredReadback = struct {
+    name: []const u8,
+    version: []const u8,
+    integrity: [95]u8,
+    registry_url: []const u8,
+
+    pub fn deinit(self: DeferredReadback, allocator: std.mem.Allocator) void {
+        allocator.free(self.name);
+        allocator.free(self.version);
+        allocator.free(self.registry_url);
+    }
+};
+
+pub const ReadbackQueue = std.ArrayList(DeferredReadback);
+
+pub fn deferReadback(allocator: std.mem.Allocator, queue: *ReadbackQueue, name: []const u8, version: []const u8, integrity: [95]u8, registry_url: []const u8) !void {
+    const owned_name = try allocator.dupe(u8, name);
+    errdefer allocator.free(owned_name);
+    const owned_version = try allocator.dupe(u8, version);
+    errdefer allocator.free(owned_version);
+    const owned_url = try allocator.dupe(u8, registry_url);
+    errdefer allocator.free(owned_url);
+    try queue.append(allocator, .{ .name = owned_name, .version = owned_version, .integrity = integrity, .registry_url = owned_url });
+}
+
+/// The queued upload `manifest` installs, if any, by its index in `queue`.
+pub fn queuedDependency(allocator: std.mem.Allocator, manifest: []const u8, queue: []const DeferredReadback) ?usize {
+    if (queue.len == 0) return null;
+    var names: std.ArrayList([]const u8) = .empty;
+    defer names.deinit(allocator);
+    for (queue) |item| names.append(allocator, item.name) catch return null;
+    const name = heldBackBy(allocator, manifest, names.items) orelse return null;
+    for (queue, 0..) |item, index| {
+        if (std.mem.eql(u8, item.name, name)) return index;
+    }
+    return null;
+}
+
 /// The scope npm says does not exist, for a scoped package rejected with
 /// "Scope not found": `@ts-maps` for `@ts-maps/react`.
 ///
@@ -89,4 +128,27 @@ test "a missing scope is named from npm's message" {
     try std.testing.expect(missingScope("ts-maps", "Scope not found") == null);
     try std.testing.expect(missingScope("@ts-maps/react", "Not found") == null);
     try std.testing.expect(missingScope("@ts-maps/react", null) == null);
+}
+
+test "a queued upload is read back before a package that installs it, and only then" {
+    const allocator = std.testing.allocator;
+    var queue: ReadbackQueue = .empty;
+    defer {
+        for (queue.items) |item| item.deinit(allocator);
+        queue.deinit(allocator);
+    }
+    const integrity: [95]u8 = @splat('a');
+    try deferReadback(allocator, &queue, "@stacksjs/sanitizer", "0.2.603", integrity, "https://registry.npmjs.org");
+    try deferReadback(allocator, &queue, "stx-router", "0.2.603", integrity, "https://registry.npmjs.org");
+
+    // bun-plugin-stx installs stx-router, which is still propagating.
+    const plugin = "{\"name\":\"bun-plugin-stx\",\"dependencies\":{\"stx-router\":\"0.2.603\"}}";
+    try std.testing.expectEqual(@as(?usize, 1), queuedDependency(allocator, plugin, queue.items));
+    // A package that installs nothing queued uploads without waiting.
+    const unrelated = "{\"name\":\"@stacksjs/desktop\",\"dependencies\":{\"craft-native\":\">=0.0.111\"}}";
+    try std.testing.expectEqual(@as(?usize, null), queuedDependency(allocator, unrelated, queue.items));
+    try std.testing.expectEqual(@as(?usize, null), queuedDependency(allocator, plugin, &.{}));
+    // The queue owns copies, not the caller's strings.
+    try std.testing.expectEqualStrings("stx-router", queue.items[1].name);
+    try std.testing.expectEqualStrings("https://registry.npmjs.org", queue.items[1].registry_url);
 }
