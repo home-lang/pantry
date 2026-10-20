@@ -3,7 +3,7 @@
  *
  * @domain `ordinals.com`
  * @programs `ord`
- * @version `0.29.0` (52 versions available)
+ * @version `0.29.1` (53 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install ordinals.com`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "ord"
  * console.log(pkg.description) // "Index, block explorer, and command-line wallet"
  * console.log(pkg.programs)    // ["ord"]
- * console.log(pkg.versions[0]) // "0.29.0" (latest)
+ * console.log(pkg.versions[0]) // "0.29.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/ordinals-com.md
@@ -60,6 +60,7 @@ export const ordinalscomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.29.1',
     '0.29.0',
     '0.28.0',
     '0.27.1',
