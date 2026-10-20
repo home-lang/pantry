@@ -115,7 +115,9 @@ fn prepareOwnedDirectories(buffer: []u8, length: usize) !void {
         return err;
     };
     if (metadata.kind != .directory) return;
-    try chmodDirectory(path, (metadata.permissions.toMode() & 0o777) | 0o700);
+    if (comptime builtin.os.tag != .windows) {
+        try chmodDirectory(path, (metadata.permissions.toMode() & 0o777) | 0o700);
+    }
     var directory = try io_helper.openDirAbsoluteForIteration(path);
     defer directory.close();
     var iterator = directory.iterate();

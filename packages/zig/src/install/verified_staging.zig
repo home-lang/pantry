@@ -61,8 +61,10 @@ pub const Extraction = struct {
         const private_metadata = try io_helper.cwd().statFile(io_helper.io, self.root, .{ .follow_symlinks = false });
         if (private_metadata.kind != .directory or self.root_inode == null or private_metadata.inode != self.root_inode.?)
             return error.UnownedPackageSource;
-        if (builtin.os.tag != .windows and private_metadata.permissions.toMode() & 0o777 != 0o700)
-            return error.UnownedPackageSource;
+        if (comptime builtin.os.tag != .windows) {
+            if (private_metadata.permissions.toMode() & 0o777 != 0o700)
+                return error.UnownedPackageSource;
+        }
         const payload_metadata = try io_helper.cwd().statFile(io_helper.io, self.payload, .{ .follow_symlinks = false });
         if (payload_metadata.kind != .directory) return error.UnownedPackageSource;
         const metadata = try io_helper.cwd().statFile(io_helper.io, source, .{ .follow_symlinks = false });
