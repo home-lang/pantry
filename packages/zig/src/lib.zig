@@ -12,6 +12,7 @@ pub const shell = @import("shell.zig");
 pub const install = @import("install.zig");
 pub const config = @import("config.zig");
 pub const commands = @import("cli/commands.zig");
+pub const diagnostics = @import("cli/diagnostics.zig");
 pub const deps = @import("deps.zig");
 pub const benchmark = @import("benchmark.zig");
 pub const services = @import("services.zig");
@@ -70,4 +71,5 @@ test {
     _ = @import("cli/commands/px.zig");
     _ = @import("http_retry.zig");
     _ = @import("deps/js_workspace.zig");
+    _ = @import("cli/diagnostics.zig");
 }

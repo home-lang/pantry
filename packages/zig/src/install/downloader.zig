@@ -90,7 +90,10 @@ fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []
     const total_bytes = stream.contentLength();
 
     // Create output file
-    const file = io_helper.cwd().createFile(io_helper.io, dest_path, .{}) catch return error.FileWriteFailed;
+    const file = io_helper.cwd().createFile(io_helper.io, dest_path, .{}) catch |err| {
+        io_helper.printGetFailure(stream.request_url, "archive-create", err);
+        return err;
+    };
     defer file.close(io_helper.io);
 
     // Perf: 128KB file write buffer + 64KB transfer buffer for better throughput
@@ -110,7 +113,11 @@ fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []
     while (true) {
         const n = body_reader.stream(&file_writer.interface, .unlimited) catch |err| switch (err) {
             error.EndOfStream => break,
-            else => return err,
+            else => {
+                const cause = if (err == error.WriteFailed) file_writer.err orelse err else stream.readError(err);
+                io_helper.printGetFailure(stream.request_url, if (err == error.WriteFailed) "archive-write" else "response-body", cause);
+                return cause;
+            },
         };
         bytes_downloaded += n;
 
@@ -179,11 +186,15 @@ fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []
     }
 
     // Flush remaining buffered data to disk
-    file_writer.flush() catch return error.FileWriteFailed;
+    file_writer.flush() catch |err| {
+        io_helper.printGetFailure(stream.request_url, "archive-flush", err);
+        return err;
+    };
 
     // Verify download completeness: if Content-Length was provided, check downloaded bytes match
     if (total_bytes) |expected| {
         if (bytes_downloaded != expected) {
+            io_helper.printGetFailure(stream.request_url, "archive-length", error.IncompleteDownload);
             return error.IncompleteDownload;
         }
     }

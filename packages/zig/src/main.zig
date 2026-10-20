@@ -25,7 +25,7 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const global = ctx.hasOption("global");
     const user = ctx.hasOption("user");
     const force = ctx.hasOption("force");
-    const verbose = ctx.hasOption("verbose");
+    const verbose = lib.diagnostics.enabled(ctx.hasOption("verbose"));
     const quiet = ctx.hasOption("quiet");
     const production = ctx.hasOption("production");
     const dev_only = ctx.hasOption("dev");
@@ -166,7 +166,7 @@ fn ciAction(ctx: *cli.BaseCommand.ParseContext) !void {
         .production = ctx.hasOption("production"),
         .frozen_lockfile = true,
         .ignore_scripts = ctx.hasOption("ignore-scripts"),
-        .verbose = ctx.hasOption("verbose"),
+        .verbose = lib.diagnostics.enabled(ctx.hasOption("verbose")),
         .quiet = ctx.hasOption("quiet") or pantry_config.install.quiet,
         .linker = pantry_config.install.linker,
         .modules_dir = pantry_config.install.modules_dir,

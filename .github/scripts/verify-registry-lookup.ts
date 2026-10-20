@@ -129,7 +129,9 @@ const handleRegistry = (req: IncomingMessage, res: ServerResponse) => {
 const registry = createServer(handleRegistry)
 const base = await listen(registry)
 try {
-  const scenarios = segment === 'rate-limit'
+  const scenarios = segment === 'diagnostics'
+    ? ['artifact403', 'artifact-partial']
+    : segment === 'rate-limit'
     ? ['metadata429-recover', 'metadata429-date-recover', 'metadata429-invalid-recover', 'metadata429-missing-recover', 'metadata429', 'metadata429-mixed', 'metadata429-long', 'metadata429-deadline', 'artifact429-recover', 'artifact429', 'artifact429-long', 'artifact429-redirect-recover']
     : segment === 'gateway-recovery'
     ? ['503', '403', 'metadata502-recover', 'artifact503', 'artifact403', 'artifact502-recover', 'redirect', 'disconnect', 'metadata-connect-recover', 'metadata-disconnect-recover', 'artifact-disconnect-recover']
@@ -171,9 +173,9 @@ try {
         }
       }
       const started = performance.now()
-      child = Bun.spawn([cli, 'install', '--verbose'], {
+      child = Bun.spawn([cli, 'install', ...(segment === 'diagnostics' ? [] : ['--verbose'])], {
         cwd,
-        env: { ...process.env, HOME: join(cwd, 'home'), XDG_DATA_HOME: join(cwd, 'data'), XDG_CACHE_HOME: join(cwd, 'cache'), PANTRY_REGISTRY_URL: scenarioBase, PANTRY_REGISTRY_TOKEN: token, PANTRY_TOKEN: token, CI: 'true' },
+        env: { ...process.env, ...(segment === 'diagnostics' ? { PANTRY_VERBOSE: '1' } : {}), HOME: join(cwd, 'home'), XDG_DATA_HOME: join(cwd, 'data'), XDG_CACHE_HOME: join(cwd, 'cache'), PANTRY_REGISTRY_URL: scenarioBase, PANTRY_REGISTRY_TOKEN: token, PANTRY_TOKEN: token, CI: 'true' },
         stdout: 'pipe', stderr: 'pipe',
       })
       let killed = false
@@ -202,6 +204,10 @@ try {
       assert.ok(requests.some(url => url.endsWith('/metadata.json')), 'normal registry setting must reach the owned fixture')
       assert.ok(registryCredentials > 0, 'configured registry must receive its scoped token')
       assert.equal(foreignCredentials, 0, 'credentials must not cross origin')
+      if (segment === 'diagnostics') {
+        assert.match(output, /\[verbose:installer\]/, 'PANTRY_VERBOSE enables the actual native installer without an argv workaround')
+        if (scenario === 'artifact-partial') assert.match(output, /\[pantry:download\] (?:response-body|archive-length) failed from http:\/\/127\.0\.0\.1:/, 'partial network input must retain its transfer stage')
+      }
       if (scenario.startsWith('artifact')) {
         const archives = requests.filter(url => url.split('?')[0] === `/binaries/${domain}/1.0.0/archive.tar.gz`)
         const expected = scenario === 'artifact503' || scenario === 'artifact429' ? 3 : ['artifact502-recover', 'artifact-disconnect-recover', 'artifact429-recover'].includes(scenario) ? 2 : 1
