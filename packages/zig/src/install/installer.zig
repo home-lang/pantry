@@ -5189,10 +5189,10 @@ const MaterializationFixture = struct {
         try io_helper.symLink("../libexec/chrome", link);
         const archive = try std.fs.path.join(allocator, &.{ root, "original.tar.gz" });
         defer allocator.free(archive);
-        const packed = try io_helper.childRun(allocator, &.{ "/usr/bin/tar", "-czf", archive, "-C", seed, "." });
-        defer allocator.free(packed.stdout);
-        defer allocator.free(packed.stderr);
-        if (packed.term != .exited or packed.term.exited != 0) return error.MaterializationFixtureArchiveFailed;
+        const tar_result = try io_helper.childRun(allocator, &.{ "/usr/bin/tar", "-czf", archive, "-C", seed, "." });
+        defer allocator.free(tar_result.stdout);
+        defer allocator.free(tar_result.stderr);
+        if (tar_result.term != .exited or tar_result.term.exited != 0) return error.MaterializationFixtureArchiveFailed;
         var extraction = try verified_staging.Extraction.init(allocator, root);
         errdefer extraction.deinit();
         try extraction.extractVerified(archive, "tar.gz", null, false);
