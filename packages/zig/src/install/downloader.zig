@@ -81,9 +81,9 @@ fn reportArchiveFailure(stream: *io_helper.HttpStream, file: std.Io.File, stage:
     // evidence that the filesystem accepted those bytes.
     const metadata = file.stat(io_helper.io) catch return;
     if (expected) |length| {
-        style.printForced("  [pantry:download] durable bytes={d} expected={d}\n", .{ metadata.size, length });
+        style.printForced("  [pantry:download] persisted bytes={d} expected={d}\n", .{ metadata.size, length });
     } else {
-        style.printForced("  [pantry:download] durable bytes={d} expected=unknown\n", .{metadata.size});
+        style.printForced("  [pantry:download] persisted bytes={d} expected=unknown\n", .{metadata.size});
     }
 }
 
@@ -200,8 +200,9 @@ fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []
 
     // Flush remaining buffered data to disk
     file_writer.flush() catch |err| {
-        reportArchiveFailure(stream, file, "archive-flush", err, total_bytes);
-        return err;
+        const cause = file_writer.err orelse err;
+        reportArchiveFailure(stream, file, "archive-flush", cause, total_bytes);
+        return cause;
     };
 
     // Verify download completeness: if Content-Length was provided, check downloaded bytes match

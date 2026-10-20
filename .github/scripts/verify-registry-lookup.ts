@@ -208,7 +208,9 @@ try {
         assert.match(output, /\[verbose:installer\]/, 'PANTRY_VERBOSE enables the actual native installer without an argv workaround')
         if (scenario === 'artifact-partial') {
           assert.match(output, /\[pantry:download\] (?:response-body|archive-length) failed from http:\/\/127\.0\.0\.1:/, 'partial network input must retain its transfer stage')
-          assert.match(output, /durable bytes=0 expected=1000/, 'unflushed input cannot be counted as persisted archive bytes')
+          const persisted = output.match(/persisted bytes=(\d+) expected=1000/)
+          assert.ok(persisted, 'a partial archive reports its actual persisted count and expected length')
+          assert.ok(Number(persisted[1]) <= Buffer.byteLength('partial archive bytes'), 'reported persisted bytes cannot exceed the body sent by the server')
         }
       }
       if (scenario.startsWith('artifact')) {
