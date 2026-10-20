@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
+import type { ChildProcess } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { lstat, mkdir, mkdtemp, open, readFile, readdir, readlink, realpath, rm, writeFile } from 'node:fs/promises'
 import { arch, release, tmpdir } from 'node:os'
@@ -112,7 +113,7 @@ try {
     outcomes.push(result)
     const started = performance.now()
     try {
-      const child = spawn(entry, args, { cwd: root, env: environment, detached: true, stdio: ['ignore', 'pipe', 'pipe'] })
+      const child: ChildProcess = spawn(entry, args, { cwd: root, env: environment, detached: true, stdio: ['ignore', 'pipe', 'pipe'] })
       const killGroup = (): void => {
         if (!child.pid) return
         try { process.kill(-child.pid, 'SIGKILL') }
