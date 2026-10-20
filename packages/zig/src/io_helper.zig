@@ -375,48 +375,12 @@ pub fn deleteFile(path: []const u8) !void {
     }
 }
 
-/// Delete a directory using platform-specific syscalls
-fn deleteDir(path: []const u8) !void {
-    var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
-    if (path.len >= path_buf.len) return error.NameTooLong;
-    @memcpy(path_buf[0..path.len], path);
-    path_buf[path.len] = 0;
-
-    switch (builtin.os.tag) {
-        .windows => {
-            cwd().deleteDir(io, path) catch return error.DirNotEmpty;
-        },
-        .linux => {
-            const AT_REMOVEDIR = 0x200;
-            const rc = std.os.linux.unlinkat(std.os.linux.AT.FDCWD, &path_buf, AT_REMOVEDIR);
-            if (rc != 0) return error.DirNotEmpty;
-        },
-        else => {
-            // macOS and others - use libc
-            const result = c.rmdir(&path_buf);
-            if (result != 0) return error.DirNotEmpty;
-        },
-    }
-}
-
 /// Delete a directory tree recursively
 pub fn deleteTree(path: []const u8) !void {
-    // Try to delete as file first
-    deleteFile(path) catch {
-        // If that fails, try as directory
-        var dir = openDirForIteration(path) catch return;
-
-        var iter = dir.iterate();
-        while (iter.next() catch null) |entry| {
-            var child_path_buf: [std.fs.max_path_bytes]u8 = undefined;
-            const child_path = std.fmt.bufPrint(&child_path_buf, "{s}/{s}", .{ path, entry.name }) catch continue;
-            deleteTree(child_path) catch {};
-        }
-        dir.close();
-
-        // Now remove the empty directory
-        deleteDir(path) catch {};
-    };
+    // The standard implementation removes links themselves, including Windows
+    // directory reparse points. Opening a directory after deleteFile fails can
+    // follow a workspace link and recursively delete its source checkout.
+    try cwd().deleteTree(io, path);
 }
 
 /// Get the current working directory as a path string
@@ -1110,6 +1074,50 @@ test "symLink creates a relative executable alias at an absolute path" {
     var target_buf: [std.fs.max_path_bytes]u8 = undefined;
     const target = try readLink(alias_path, &target_buf);
     try std.testing.expectEqualStrings("pantry", target);
+}
+
+test "deleteTree removes a workspace directory link without deleting its sources" {
+    const allocator = std.testing.allocator;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    try tmp.dir.createDir(io, "sources", .default_dir);
+    try tmp.dir.writeFile(io, .{ .sub_path = "sources/build.zig", .data = "tracked workspace source" });
+    const working_directory = try getCwdAlloc(allocator);
+    defer allocator.free(working_directory);
+    const link_path = try std.fs.path.join(allocator, &.{ working_directory, ".zig-cache", "tmp", tmp.sub_path[0..], "workspace" });
+    defer allocator.free(link_path);
+    try symLink("sources", link_path);
+
+    // Workspace relinking removes an existing link before recreating it.
+    // Windows directory symlinks cannot be removed with deleteFile; following
+    // them here empties the tracked source checkout instead of just the link.
+    try deleteTree(link_path);
+    const source = try tmp.dir.readFileAlloc(io, "sources/build.zig", allocator, .limited(1024));
+    defer allocator.free(source);
+    try std.testing.expectEqualStrings("tracked workspace source", source);
+    try std.testing.expectError(error.FileNotFound, tmp.dir.statFile(io, "workspace", .{ .follow_symlinks = false }));
+}
+
+test "deleteTree does not follow directory links inside a removed tree" {
+    const allocator = std.testing.allocator;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    try tmp.dir.createDir(io, "sources", .default_dir);
+    try tmp.dir.createDir(io, "cache", .default_dir);
+    try tmp.dir.writeFile(io, .{ .sub_path = "sources/build.zig", .data = "keep source bytes" });
+    try tmp.dir.writeFile(io, .{ .sub_path = "cache/owned.txt", .data = "remove cache bytes" });
+    const working_directory = try getCwdAlloc(allocator);
+    defer allocator.free(working_directory);
+    const cache_path = try std.fs.path.join(allocator, &.{ working_directory, ".zig-cache", "tmp", tmp.sub_path[0..], "cache" });
+    defer allocator.free(cache_path);
+    const link_path = try std.fs.path.join(allocator, &.{ cache_path, "workspace" });
+    defer allocator.free(link_path);
+    try symLink("../sources", link_path);
+    try deleteTree(cache_path);
+    const source = try tmp.dir.readFileAlloc(io, "sources/build.zig", allocator, .limited(1024));
+    defer allocator.free(source);
+    try std.testing.expectEqualStrings("keep source bytes", source);
+    try std.testing.expectError(error.FileNotFound, tmp.dir.statFile(io, "cache", .{}));
 }
 
 /// Read a symbolic link target

@@ -153,7 +153,10 @@ jobs:
         run: bun .github/scripts/linux-native-tools.ts
 
       - name: Cross-compile the source CLI for native Windows qualification
-        run: cd packages/zig && zig build -Dtarget=x86_64-windows-gnu -Doptimize=Debug -j2 --prefix ../../artifacts/windows-source-cli
+        run: |
+          cd packages/zig
+          zig build -Dtarget=x86_64-windows-gnu -Doptimize=Debug -j2 --prefix ../../artifacts/windows-source-cli
+          zig test src/io_helper.zig -lc -target x86_64-windows-gnu --test-no-exec --test-filter deleteTree -femit-bin=../../artifacts/windows-source-cli/bin/file-tree-tests.exe
 
       - name: Retain the source Windows CLI and Action
         uses: actions/upload-artifact@v4
@@ -161,6 +164,7 @@ jobs:
           name: windows-source-runtime
           path: |
             artifacts/windows-source-cli/bin/pantry.exe
+            artifacts/windows-source-cli/bin/file-tree-tests.exe
             packages/action/dist/index.js
             packages/action/dist/post.js
           if-no-files-found: error
@@ -482,6 +486,8 @@ jobs:
         with:
           name: windows-source-runtime
           path: artifacts/windows-source-runtime
+      - name: Test source preservation through directory and nested links
+        run: '& ./artifacts/windows-source-runtime/artifacts/windows-source-cli/bin/file-tree-tests.exe'
       - name: Verify the actual source installer and required workspace failures
         env:
           PANTRY_TEST_CLI: artifacts/windows-source-runtime/artifacts/windows-source-cli/bin/pantry.exe
