@@ -3,7 +3,6 @@ import { randomBytes } from 'node:crypto'
 import { closeSync, existsSync, lstatSync, mkdirSync, mkdtempSync, openSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { join } from 'node:path'
-import type { Readable } from 'node:stream'
 import { promisify } from 'node:util'
 import type { ServiceSpec } from './services'
 import { nativeServiceEnvironment } from './services'
@@ -159,38 +158,30 @@ export async function stopNativeService(state: NativeServiceState): Promise<void
   rmSync(state.directory, { recursive: true, force: true })
 }
 
-/** The private pipe acknowledges script execution, rather than just a fork. */
-export function waitForNativeLauncherReady(channel: Readable, exited: Promise<void>): Promise<void> {
-  return new Promise((resolve, reject) => {
-    let received = ''
-    let settled = false
-    const finish = (error?: Error) => {
-      if (settled) return
-      settled = true
-      clearTimeout(timeout)
-      channel.off('data', data)
-      channel.off('end', ended)
-      channel.off('close', ended)
-      channel.off('error', failed)
-      channel.destroy()
-      if (error) reject(error)
-      else resolve()
+/** Bind script execution to this PID and private invocation before admission. */
+export async function waitForNativeLauncherReady(path: string, pid: number, owner: string, exited: Promise<void>): Promise<void> {
+  let ended = false
+  void exited.then(() => { ended = true })
+  const deadline = Date.now() + 2000
+  while (Date.now() < deadline) {
+    if (ended) throw new Error('Native launcher exited before acknowledging execution')
+    try {
+      const metadata = lstatSync(path)
+      if (!metadata.isFile() || metadata.nlink !== 1 || metadata.uid !== process.getuid?.() || metadata.size > 128)
+        throw new Error('Invalid native launcher acknowledgement')
+      const received = readFileSync(path, 'utf8')
+      // Creation can be observed before printf completes its short record.
+      if (received.endsWith('\n')) {
+        if (received !== `${pid}:${owner}\n`) throw new Error('Invalid native launcher acknowledgement')
+        return
+      }
     }
-    const data = (chunk: Buffer | string) => {
-      received += chunk.toString()
-      if (!'ready\n'.startsWith(received)) finish(new Error('Invalid native launcher acknowledgement'))
-      else if (received === 'ready\n') finish()
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
     }
-    const ended = () => finish(new Error('Native launcher closed before acknowledging execution'))
-    const failed = (error: Error) => finish(error)
-    const timeout = setTimeout(() => finish(new Error('Native launcher did not acknowledge execution')), 2000)
-    channel.on('data', data)
-    channel.once('end', ended)
-    channel.once('close', ended)
-    channel.once('error', failed)
-    channel.resume()
-    void exited.then(ended)
-  })
+    await pause(5)
+  }
+  throw new Error('Native launcher did not acknowledge execution')
 }
 
 /** Keep the unique private directory in argv, then capture the live process. */
@@ -204,8 +195,9 @@ stop_signal=
 trap 'stop_signal=INT' INT
 trap 'stop_signal=TERM' TERM
 trap 'stop_signal=HUP' HUP
-printf 'ready\\n' >&3
-exec 3>&-
+owner=$1
+shift
+(umask 077; set -C; printf '%s:%s\\n' "$$" "$owner" > "$0.ready") || exit 127
 IFS= read -r permission || exit 125
 [ "$permission" = start ] || exit 126
 [ -z "$stop_signal" ] || exit 125
@@ -225,7 +217,7 @@ done
 `, { mode: 0o700, flag: 'wx' })
   const log = openSync(join(state.directory, 'server.log'), 'a', 0o600)
   try {
-    const child = spawn('/bin/sh', [launcher, executable, ...args], { env, stdio: ['pipe', log, log, 'pipe'], detached: true })
+    const child = spawn('/bin/sh', [launcher, state.owner, executable, ...args], { env, stdio: ['pipe', log, log], detached: true })
     const exited = new Promise<void>(resolve => {
       child.once('exit', () => resolve())
       child.once('error', () => resolve())
@@ -236,9 +228,9 @@ done
         child.once('error', reject)
       })
       // Bun's spawn event can precede exec: /proc then still exposes the
-      // parent's argv. Only the executed private script can send this ACK.
+      // parent's argv. Only the executed private script writes this PID/owner.
       // Ownership validation and permission to start remain separate gates.
-      await waitForNativeLauncherReady(child.stdio[3] as Readable, exited)
+      await waitForNativeLauncherReady(`${launcher}.ready`, child.pid!, state.owner, exited)
       const identity = child.pid ? await serviceProcessIdentity(child.pid) : undefined
       if (!identity || identity.group !== identity.pid || !await assertServiceProcess(identity, state.directory))
         throw new Error('Native launcher ownership could not be captured')

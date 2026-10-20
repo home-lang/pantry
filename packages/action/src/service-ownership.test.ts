@@ -1,41 +1,49 @@
 import { expect, test } from 'bun:test'
-import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { PassThrough } from 'node:stream'
 import { spawnNativeService, stopNativeService, waitForNativeLauncherReady } from './native-services'
 import type { NativeServiceState } from './native-services'
 import { assertServiceDirectory, assertServiceProcess, claimServiceDirectory, serviceProcessIdentity } from './service-ownership'
 
 test('launcher admission waits for its complete execution acknowledgement', async () => {
-  const channel = new PassThrough()
-  let admitted = false
-  const ready = waitForNativeLauncherReady(channel, new Promise<void>(() => {})).then(() => { admitted = true })
-  channel.write('rea')
-  await Promise.resolve()
-  expect(admitted).toBe(false)
-  channel.write('dy\n')
-  await ready
-  expect(admitted).toBe(true)
-  expect(channel.destroyed).toBe(true)
+  const directory = mkdtempSync(join(tmpdir(), 'pantry-launch-ready-'))
+  try {
+    const path = join(directory, 'ready')
+    const owner = claimServiceDirectory(directory)
+    let admitted = false
+    const ready = waitForNativeLauncherReady(path, process.pid, owner, new Promise<void>(() => {})).then(() => { admitted = true })
+    writeFileSync(path, `${process.pid}:`, { flag: 'wx', mode: 0o600 })
+    await new Promise(resolve => setTimeout(resolve, 10))
+    expect(admitted).toBe(false)
+    writeFileSync(path, `${process.pid}:${owner}\n`)
+    await ready
+    expect(admitted).toBe(true)
+  }
+  finally { rmSync(directory, { recursive: true, force: true }) }
 })
 
-test('a launcher EOF or invalid acknowledgement authorizes no service', async () => {
-  const ended = new PassThrough()
-  const eof = expect(waitForNativeLauncherReady(ended, new Promise<void>(() => {}))).rejects.toThrow('closed before')
-  ended.end()
-  await eof
-  const invalid = new PassThrough()
-  const rejected = expect(waitForNativeLauncherReady(invalid, new Promise<void>(() => {}))).rejects.toThrow('Invalid native launcher')
-  invalid.write('start\n')
-  await rejected
-  expect(invalid.destroyed).toBe(true)
+test('a foreign PID, invocation, or linked acknowledgement authorizes no service', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'pantry-launch-foreign-'))
+  try {
+    const owner = claimServiceDirectory(directory)
+    const path = join(directory, 'ready')
+    for (const record of [`${process.pid + 1}:${owner}\n`, `${process.pid}:other-invocation\n`]) {
+      writeFileSync(path, record, { mode: 0o600 })
+      await expect(waitForNativeLauncherReady(path, process.pid, owner, new Promise<void>(() => {}))).rejects.toThrow('Invalid native launcher')
+    }
+    symlinkSync(path, join(directory, 'linked'))
+    await expect(waitForNativeLauncherReady(join(directory, 'linked'), process.pid, owner, new Promise<void>(() => {}))).rejects.toThrow('Invalid native launcher')
+  }
+  finally { rmSync(directory, { recursive: true, force: true }) }
 })
 
 test('an exited unadmitted launcher cannot leave readiness pending', async () => {
-  const channel = new PassThrough()
-  await expect(waitForNativeLauncherReady(channel, Promise.resolve())).rejects.toThrow('closed before')
-  expect(channel.destroyed).toBe(true)
+  const directory = mkdtempSync(join(tmpdir(), 'pantry-launch-exit-'))
+  try {
+    await expect(waitForNativeLauncherReady(join(directory, 'absent'), process.pid, claimServiceDirectory(directory), Promise.resolve())).rejects.toThrow('exited before')
+  }
+  finally { rmSync(directory, { recursive: true, force: true }) }
 })
 
 test('directory cleanup requires this invocation owner marker', () => {
