@@ -13,8 +13,8 @@ await mkdir(artifacts, { recursive: true })
 const root = await mkdtemp(join(tmpdir(), 'pantry native Linux '))
 const proof: Record<string, unknown> = { cliSha256: Bun.SHA256.hash(await readFile(cli), 'hex') }
 
-async function run(name: string, command: string[]): Promise<string> {
-  const child = Bun.spawn(command, { cwd: root, env: { ...process.env, NO_COLOR: '1' }, stdout: 'pipe', stderr: 'pipe' })
+async function run(name: string, command: string[], cwd = root): Promise<string> {
+  const child = Bun.spawn(command, { cwd, env: { ...process.env, NO_COLOR: '1' }, stdout: 'pipe', stderr: 'pipe' })
   const timeout = setTimeout(() => child.kill(), 180_000)
   try {
     const [code, stdout, stderr] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()])
@@ -37,6 +37,27 @@ try {
   assert.equal((await run('git-version', [git, '--version'])).trim(), 'git version 2.53.0')
   await run('git-init', [git, 'init', 'repository'])
   assert.equal((await run('git-status', [git, '-C', 'repository', 'status', '--porcelain'])).trim(), '')
+  // Re-enter an existing version after the same archive restore semantics as
+  // the Action cache. Keep the original tree intact and restore into a moved
+  // private project so neither absolute activations nor inherited state hide it.
+  const archive = join(root, 'owned-native-cache.tar.gz')
+  await run('cache-pack', ['tar', '-czpf', archive, '-C', root, 'pantry'])
+  const restored = join(root, 'restored project')
+  await mkdir(restored)
+  await run('cache-restore', ['tar', '-xzpf', archive, '-C', restored])
+  const restoredGit = join(restored, 'pantry/.bin/git')
+  const originalGit = Bun.SHA256.hash(await readFile(git), 'hex')
+  assert.equal(Bun.SHA256.hash(await readFile(restoredGit), 'hex'), originalGit)
+  assert.equal((await run('restored-git-version', [restoredGit, '--version'], restored)).trim(), 'git version 2.53.0')
+  for (const phase of ['cached-repeat', 'cached-repeat-again']) {
+    // Required tools may name an older Curl than the service/native closure.
+    // Reusing Git must still be idempotent without deleting its cache or bins.
+    await run(phase, [cli, 'install', 'git-scm.org@2.53.0', 'curl.se@8.22.0', '--no-save', '--verbose'], restored)
+    assert.equal((await run(`${phase}-git-version`, [restoredGit, '--version'], restored)).trim(), 'git version 2.53.0')
+    assert.equal(Bun.SHA256.hash(await readFile(restoredGit), 'hex'), originalGit)
+    for (const name of programs) assert((await stat(join(restored, 'pantry/.bin', name))).isFile(), `Restored Git program missing: ${name}`)
+  }
+  proof.cacheReplay = { archiveSha256: Bun.SHA256.hash(await readFile(archive), 'hex'), restoredGitSha256: originalGit, repeatedInstalls: 2, passed: true }
   proof.gitPrograms = programs
   proof.passed = true
 }
