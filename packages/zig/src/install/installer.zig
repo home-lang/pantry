@@ -5286,7 +5286,8 @@ const MaterializationTestOperations = struct {
             defer self.fixture.allocator.free(path);
             const file = try io_helper.createFileAbsolute(path, .{});
             defer file.close(io_helper.io);
-            const bytes = [_]u8{0xab} ** (65536 + 1);
+            var bytes: [65536 + 1]u8 = undefined;
+            @memset(&bytes, 0xab);
             try io_helper.writeAllToFile(file, &bytes);
             self.partial_bytes_written = @intCast((try file.stat(io_helper.io)).size);
             return error.NoSpaceLeft;

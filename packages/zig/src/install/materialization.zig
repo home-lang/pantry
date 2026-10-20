@@ -102,7 +102,7 @@ fn chmodDirectory(path: []const u8, mode: u32) !void {
 /// them after copying children so read-only directories can be materialized.
 pub fn preserveDirectoryPermissions(source: []const u8, destination: []const u8) !void {
     if (comptime builtin.os.tag == .windows) return;
-    const metadata = try io_helper.cwd().statFile(io_helper.io, source, .{ .follow_symlinks = false });
+    const metadata = try io_helper.cwd().statFile(io_helper.io, source, .{});
     try chmodDirectory(destination, metadata.permissions.toMode() & 0o777);
 }
 
