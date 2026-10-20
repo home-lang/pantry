@@ -493,6 +493,9 @@ pub fn build(b: *std.Build) void {
         },
     });
     const run_install_tests = b.addRunArtifact(b.addTest(.{ .root_module = install_test_mod }));
+    const materialization_test_step = b.step("test:materialization", "Run native install ownership and publication failure regressions");
+    const focused_materialization_tests = b.addTest(.{ .root_module = install_test_mod, .filters = &.{"native materialization:"} });
+    materialization_test_step.dependOn(&b.addRunArtifact(focused_materialization_tests).step);
 
     // Registry endpoint tests (which registry a request goes to, and whether it
     // carries a credential). Rooted inside src/ for the same reason.

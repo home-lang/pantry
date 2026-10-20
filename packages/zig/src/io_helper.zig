@@ -919,6 +919,12 @@ pub fn rename(old_path: []const u8, new_path: []const u8) !void {
     }
 }
 
+/// Preserve the filesystem's typed failure. In particular, only CrossDevice
+/// permits a verified extraction move to fall back to copying its bytes.
+pub fn renameClassified(old_path: []const u8, new_path: []const u8) !void {
+    return cwd().rename(old_path, cwd(), new_path, io);
+}
+
 /// Copy a file using the fastest platform-specific method:
 /// - macOS APFS: clonefile() for instant copy-on-write clones (zero I/O, zero extra disk space)
 /// - Linux: copy_file_range() for zero-copy kernel-space transfer

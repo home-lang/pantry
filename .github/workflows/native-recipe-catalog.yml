@@ -122,13 +122,18 @@ jobs:
       - name: Check native transport formatting and build the source CLI
         run: |
           cd packages/zig
-          zig fmt src/cli/diagnostics.zig src/http_retry.zig src/io_helper.zig src/deps/js_workspace.zig src/deps/js_delegate.zig src/cli/commands/install/workspace.zig src/install/downloader.zig src/install/installer.zig src/install/native_apps.zig src/install/pipeline.zig src/install/runtime.zig src/auth/registry.zig src/cli/commands/package.zig src/main.zig
-          git diff --binary -- src/cli/diagnostics.zig src/http_retry.zig src/io_helper.zig src/deps/js_workspace.zig src/deps/js_delegate.zig src/cli/commands/install/workspace.zig src/install > ../../artifacts/native-catalog/native-format.patch
+          zig fmt build.zig src/cli/diagnostics.zig src/http_retry.zig src/io_helper.zig src/deps/js_workspace.zig src/deps/js_delegate.zig src/cli/commands/install/workspace.zig src/install/downloader.zig src/install/installer.zig src/install/materialization.zig src/install/verified_staging.zig src/install/native_apps.zig src/install/pipeline.zig src/install/runtime.zig src/auth/registry.zig src/cli/commands/package.zig src/main.zig
+          git diff --binary -- build.zig src/cli/diagnostics.zig src/http_retry.zig src/io_helper.zig src/deps/js_workspace.zig src/deps/js_delegate.zig src/cli/commands/install/workspace.zig src/install > ../../artifacts/native-catalog/native-format.patch
           zig test src/http_retry.zig
           # This artifact runs on other hosts. Use the normal portable target,
           # rather than inheriting the producer host's optional CPU features.
           zig build -Dtarget=x86_64-linux-gnu -Dcpu=baseline -Doptimize=Debug -j2
           printf '%s\n' 'x86_64-linux-gnu baseline' > ../../artifacts/native-catalog/native-build-target.txt
+      - name: Verify exclusive extraction moves, cross-device copies and failed commits
+        run: |
+          set -o pipefail
+          cd packages/zig
+          zig build test:materialization -j2 --summary all 2>&1 | tee ../../artifacts/native-catalog/native-materialization-tests.log
       - name: Retain the exact built native CLI for isolated HTTP contracts
         run: |
           cp packages/zig/zig-out/bin/pantry artifacts/native-catalog/lookup-cli

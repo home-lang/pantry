@@ -7,6 +7,7 @@ const errors = @import("../core/error.zig");
 const downloader = @import("downloader.zig");
 const extractor = @import("extractor.zig");
 const verified_staging = @import("verified_staging.zig");
+const materialization = @import("materialization.zig");
 const libfixer = @import("libfixer.zig");
 const ca_certs = @import("ca_certs.zig");
 const pkgx_shebang = @import("pkgx_shebang.zig");
@@ -3125,7 +3126,7 @@ pub const Installer = struct {
         defer self.allocator.free(package_source);
 
         // Downloads and cache repairs use the same verified, atomic copy.
-        try self.materializeVerifiedProjectPackage(package_source, project_pkg_dir, domain);
+        try self.materializeVerifiedExtraction(&staging, package_source, project_pkg_dir, domain);
 
         // Fix library paths for macOS; references to other packages in this
         // project's pantry/ are written relative to the referencing binary.
@@ -3706,7 +3707,7 @@ pub const Installer = struct {
         defer self.allocator.free(package_source);
 
         // Copy/move package contents to global cache location
-        try self.materializeVerifiedProjectPackage(package_source, global_pkg_dir, domain);
+        try self.materializeVerifiedExtraction(&staging, package_source, global_pkg_dir, domain);
 
         // Fix library paths for macOS (especially for Node.js OpenSSL issue)
         try libfixer.fixDirectoryLibraryPaths(self.allocator, global_pkg_dir);
@@ -4040,88 +4041,75 @@ pub const Installer = struct {
         return false;
     }
 
-    /// Copy directory structure from source to destination
+    /// Copy a shared package without consuming or modifying its source.
     fn copyDirectoryStructure(self: *Installer, source: []const u8, dest: []const u8) !void {
-        return self.copyDirectoryStructureInner(source, dest);
-    }
-
-    /// Preserve the archive's file modes, including executables under lib/.
-    fn copyDirectoryStructureInner(
-        self: *Installer,
-        source: []const u8,
-        dest: []const u8,
-    ) !void {
-        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
         var src_dir = try io_helper.openDirAbsoluteForIteration(source);
         defer src_dir.close();
-
-        // Ensure destination exists
         try io_helper.makePath(dest);
-
         var it = src_dir.iterate();
-        while (it.next() catch null) |entry| {
-            const src_path = try std.fs.path.join(
-                self.allocator,
-                &[_][]const u8{ source, entry.name },
-            );
+        while (try it.next()) |entry| {
+            const src_path = try std.fs.path.join(self.allocator, &.{ source, entry.name });
             defer self.allocator.free(src_path);
-
-            const dst_path = try std.fs.path.join(
-                self.allocator,
-                &[_][]const u8{ dest, entry.name },
-            );
+            const dst_path = try std.fs.path.join(self.allocator, &.{ dest, entry.name });
             defer self.allocator.free(dst_path);
-
             if (entry.kind == .directory) {
-                try self.copyDirectoryStructureInner(src_path, dst_path);
+                try self.copyDirectoryStructure(src_path, dst_path);
             } else if (entry.kind == .sym_link) {
-                // Recreate symlink — read the target and create a new symlink at dest
-                const link_target = io_helper.readLinkAlloc(self.allocator, src_path) catch continue;
-                defer self.allocator.free(link_target);
-                io_helper.symLink(link_target, dst_path) catch |err| switch (err) {
-                    error.PathAlreadyExists => {
-                        io_helper.deleteFile(dst_path) catch {};
-                        io_helper.symLink(link_target, dst_path) catch {};
-                    },
-                    else => {},
-                };
+                const target = try io_helper.readLinkAlloc(self.allocator, src_path);
+                defer self.allocator.free(target);
+                try io_helper.symLink(target, dst_path);
             } else {
-                // Copy file using io_helper wrapper
                 try io_helper.copyFile(src_path, dst_path);
             }
         }
+        try materialization.preserveDirectoryPermissions(source, dest);
     }
 
-    /// Materialize a project package from a verified global package without
-    /// allowing an interrupted copy to masquerade as an installed package.
+    const MaterializationOperations = struct {
+        installer: *Installer,
+
+        pub fn copy(self: *const @This(), source: []const u8, destination: []const u8) !void {
+            return self.installer.copyDirectoryStructure(source, destination);
+        }
+
+        pub fn rename(_: *const @This(), source: []const u8, destination: []const u8) !void {
+            return io_helper.renameClassified(source, destination);
+        }
+    };
+
+    const MaterializationValidation = struct {
+        installer: *Installer,
+        domain: []const u8,
+        version: ?[]const u8,
+
+        pub fn check(self: *const @This(), directory: []const u8) bool {
+            return self.installer.hasPackageStructure(directory) and
+                validator.hasUsableDeclaredProgramsAtVersion(self.installer.allocator, self.domain, directory, self.version);
+        }
+    };
+
+    /// Shared global/cache packages are always copied, never renamed away.
     fn materializeVerifiedProjectPackage(self: *Installer, source: []const u8, dest: []const u8, domain: []const u8) !void {
+        return self.materializePackage(.{ .shared = source }, dest, domain);
+    }
+
+    /// Only these two cold-download paths hold a fresh verified extraction.
+    fn materializeVerifiedExtraction(self: *Installer, extraction: *const verified_staging.Extraction, source: []const u8, dest: []const u8, domain: []const u8) !void {
+        return self.materializePackage(.{ .exclusive = .{ .extraction = extraction, .path = source } }, dest, domain);
+    }
+
+    fn materializePackage(self: *Installer, source: materialization.Source, dest: []const u8, domain: []const u8) !void {
         const directory = std.fs.path.basename(dest);
         const version: ?[]const u8 = if (directory.len > 1 and directory[0] == 'v' and std.ascii.isDigit(directory[1])) directory[1..] else null;
-        if (!self.hasPackageStructure(source) or
-            !validator.hasUsableDeclaredProgramsAtVersion(self.allocator, domain, source, version))
-        {
-            std.debug.print("[pantry:validate] Invalid package source for {s}: {s} (package structure={})\n", .{ domain, source, self.hasPackageStructure(source) });
-            validator.reportUnusableDeclaredPrograms(self.allocator, domain, source, version);
-            return error.InvalidPackageSource;
-        }
-
-        const partial = try std.fmt.allocPrint(self.allocator, "{s}.partial", .{dest});
-        defer self.allocator.free(partial);
-        io_helper.deleteTree(partial) catch {};
-        errdefer io_helper.deleteTree(partial) catch {};
-
-        try self.copyDirectoryStructure(source, partial);
-        if (!self.hasPackageStructure(partial) or
-            !validator.hasUsableDeclaredProgramsAtVersion(self.allocator, domain, partial, version))
-        {
-            return error.InvalidPackageMaterialization;
-        }
-
-        // The destination is removed only after the replacement has been fully
-        // copied and validated. A failed copy leaves the old destination in place;
-        // a failed rename leaves no path that can pass the installed checks.
-        io_helper.deleteTree(dest) catch {};
-        try io_helper.rename(partial, dest);
+        const validation = MaterializationValidation{ .installer = self, .domain = domain, .version = version };
+        const operations = MaterializationOperations{ .installer = self };
+        _ = materialization.publish(self.allocator, source, dest, &validation, &operations) catch |err| {
+            if (err == error.InvalidPackageSource) {
+                std.debug.print("[pantry:validate] Invalid package source for {s}: {s} (package structure={})\n", .{ domain, source.path(), self.hasPackageStructure(source.path()) });
+                validator.reportUnusableDeclaredPrograms(self.allocator, domain, source.path(), version);
+            }
+            return err;
+        };
     }
 
     /// Make a file executable (chmod +x) using native syscall
@@ -5158,4 +5146,457 @@ test "verified materialization accepts the published data-only CA package withou
     defer allocator.free(bytes);
     try std.testing.expect(std.mem.indexOf(u8, bytes, "BEGIN CERTIFICATE") != null);
     if (@import("builtin").os.tag != .windows) try std.testing.expect(!io_helper.isExecutable(bundle));
+}
+
+// Real filesystem fixtures for publication, with failures injected only at the
+// operation boundary. Production has no environment switches for these cases.
+const MaterializationFixture = struct {
+    allocator: std.mem.Allocator,
+    temporary: std.testing.TmpDir,
+    root: []const u8,
+    destination: []const u8,
+    extraction: verified_staging.Extraction,
+    payload_bytes: u64,
+
+    fn init(allocator: std.mem.Allocator) !@This() {
+        var temporary = std.testing.tmpDir(.{});
+        errdefer temporary.cleanup();
+        var buffer: [std.fs.max_path_bytes]u8 = undefined;
+        const length = try temporary.dir.realPathFile(io_helper.io, ".", &buffer);
+        const root = try allocator.dupe(u8, buffer[0..length]);
+        errdefer allocator.free(root);
+        try temporary.dir.createDirPath(io_helper.io, "seed/bin");
+        try temporary.dir.createDirPath(io_helper.io, "seed/libexec");
+        try temporary.dir.createDirPath(io_helper.io, "seed/share");
+        try temporary.dir.writeFile(io_helper.io, .{
+            .sub_path = "seed/libexec/chrome",
+            .data = "#!/bin/sh\ncat \"$(dirname \"$0\")/../share/marker\"\n",
+        });
+        try temporary.dir.writeFile(io_helper.io, .{ .sub_path = "seed/share/marker", .data = "owned-resource\n" });
+        const blob = try allocator.alloc(u8, 8 * 1024 * 1024 + 137);
+        defer allocator.free(blob);
+        @memset(blob, 0x5a);
+        try temporary.dir.writeFile(io_helper.io, .{ .sub_path = "seed/share/blob", .data = blob });
+        const seed = try std.fs.path.join(allocator, &.{ root, "seed" });
+        defer allocator.free(seed);
+        const program = try std.fs.path.join(allocator, &.{ seed, "libexec/chrome" });
+        defer allocator.free(program);
+        const program_file = try io_helper.openFileAbsolute(program, .{});
+        defer program_file.close(io_helper.io);
+        try program_file.setPermissions(io_helper.io, io_helper.File.Permissions.fromMode(0o751));
+        const link = try std.fs.path.join(allocator, &.{ seed, "bin/google-chrome-stable" });
+        defer allocator.free(link);
+        try io_helper.symLink("../libexec/chrome", link);
+        const archive = try std.fs.path.join(allocator, &.{ root, "original.tar.gz" });
+        defer allocator.free(archive);
+        const packed = try io_helper.childRun(allocator, &.{ "/usr/bin/tar", "-czf", archive, "-C", seed, "." });
+        defer allocator.free(packed.stdout);
+        defer allocator.free(packed.stderr);
+        if (packed.term != .exited or packed.term.exited != 0) return error.MaterializationFixtureArchiveFailed;
+        var extraction = try verified_staging.Extraction.init(allocator, root);
+        errdefer extraction.deinit();
+        try extraction.extractVerified(archive, "tar.gz", null, false);
+        const destination = try std.fs.path.join(allocator, &.{ root, "installed/v1" });
+        errdefer allocator.free(destination);
+        return .{
+            .allocator = allocator,
+            .temporary = temporary,
+            .root = root,
+            .destination = destination,
+            .payload_bytes = try materializationRegularBytes(allocator, extraction.payload),
+            .extraction = extraction,
+        };
+    }
+
+    fn deinit(self: *@This()) void {
+        self.extraction.deinit();
+        materialization.removeOwnedTree(self.allocator, self.root) catch {};
+        self.temporary.cleanup();
+        self.allocator.free(self.destination);
+        self.allocator.free(self.root);
+    }
+
+    fn owned(self: *const @This()) materialization.Source {
+        return .{ .exclusive = .{ .extraction = &self.extraction, .path = self.extraction.payload } };
+    }
+
+    fn installOld(self: *const @This()) !void {
+        try io_helper.makePath(self.destination);
+        const marker = try std.fs.path.join(self.allocator, &.{ self.destination, "old" });
+        defer self.allocator.free(marker);
+        const file = try io_helper.createFileAbsolute(marker, .{});
+        defer file.close(io_helper.io);
+        try io_helper.writeAllToFile(file, "previous-installation");
+    }
+
+    fn expectOld(self: *const @This()) !void {
+        const marker = try std.fs.path.join(self.allocator, &.{ self.destination, "old" });
+        defer self.allocator.free(marker);
+        const bytes = try io_helper.readFileAlloc(self.allocator, marker, 128);
+        defer self.allocator.free(bytes);
+        try std.testing.expectEqualStrings("previous-installation", bytes);
+    }
+
+    fn expectNoTransaction(self: *const @This()) !void {
+        var directory = try io_helper.openDirAbsoluteForIteration(std.fs.path.dirname(self.destination).?);
+        defer directory.close();
+        var entries = directory.iterate();
+        while (try entries.next()) |entry|
+            try std.testing.expectEqualStrings("v1", entry.name);
+    }
+};
+
+fn materializationRegularBytes(allocator: std.mem.Allocator, path: []const u8) !u64 {
+    const metadata = io_helper.cwd().statFile(io_helper.io, path, .{ .follow_symlinks = false }) catch |err| {
+        if (err == error.FileNotFound) return 0;
+        return err;
+    };
+    if (metadata.kind == .file) return metadata.size;
+    if (metadata.kind != .directory) return 0;
+    var directory = try io_helper.openDirAbsoluteForIteration(path);
+    defer directory.close();
+    var entries = directory.iterate();
+    var total: u64 = 0;
+    while (try entries.next()) |entry| {
+        const child = try std.fs.path.join(allocator, &.{ path, entry.name });
+        defer allocator.free(child);
+        total += try materializationRegularBytes(allocator, child);
+    }
+    return total;
+}
+
+const MaterializationTestOperations = struct {
+    fixture: *const MaterializationFixture,
+    installer: *Installer,
+    source_rename_error: ?anyerror = null,
+    fail_copy: bool = false,
+    fail_retire: bool = false,
+    fail_commit: bool = false,
+    fail_rollback: bool = false,
+    copy_calls: usize = 0,
+    cross_device_errors: usize = 0,
+    partial_bytes_written: usize = 0,
+    staged_regular_bytes: u64 = 0,
+
+    pub fn copy(self: *@This(), source: []const u8, destination: []const u8) !void {
+        self.copy_calls += 1;
+        if (self.fail_copy) {
+            try io_helper.makePath(destination);
+            const path = try std.fs.path.join(self.fixture.allocator, &.{ destination, "partial" });
+            defer self.fixture.allocator.free(path);
+            const file = try io_helper.createFileAbsolute(path, .{});
+            defer file.close(io_helper.io);
+            const bytes = [_]u8{0xab} ** (65536 + 1);
+            try io_helper.writeAllToFile(file, &bytes);
+            self.partial_bytes_written = @intCast((try file.stat(io_helper.io)).size);
+            return error.NoSpaceLeft;
+        }
+        try self.installer.copyDirectoryStructure(source, destination);
+        self.staged_regular_bytes = try materializationRegularBytes(self.fixture.allocator, source) +
+            try materializationRegularBytes(self.fixture.allocator, destination);
+    }
+
+    pub fn rename(self: *@This(), source: []const u8, destination: []const u8) !void {
+        const source_move = std.mem.eql(u8, source, self.fixture.extraction.payload);
+        if (source_move) {
+            if (self.source_rename_error) |err| return err;
+        } else if (std.mem.eql(u8, source, self.fixture.destination)) {
+            if (self.fail_retire) return error.AccessDenied;
+        } else if (std.mem.eql(u8, destination, self.fixture.destination)) {
+            if (std.mem.eql(u8, std.fs.path.basename(source), "previous")) {
+                if (self.fail_rollback) return error.AccessDenied;
+            } else if (self.fail_commit) return error.AccessDenied;
+        }
+        io_helper.renameClassified(source, destination) catch |err| {
+            if (err == error.CrossDevice) self.cross_device_errors += 1;
+            return err;
+        };
+        if (source_move) {
+            self.staged_regular_bytes = try materializationRegularBytes(self.fixture.allocator, source) +
+                try materializationRegularBytes(self.fixture.allocator, destination);
+        }
+    }
+};
+
+test "native materialization: exclusive verified extraction moves without a second expanded payload and keeps executable resources" {
+    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var pkg_cache = try PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+    var installer = try Installer.init(allocator, &pkg_cache);
+    defer installer.deinit();
+    var fixture = try MaterializationFixture.init(allocator);
+    defer fixture.deinit();
+    const blob = try std.fs.path.join(allocator, &.{ fixture.extraction.payload, "share/blob" });
+    defer allocator.free(blob);
+    const before = try io_helper.cwd().statFile(io_helper.io, blob, .{});
+    const original_hash = try extractor.computeChecksum(allocator, blob);
+    defer allocator.free(original_hash);
+    const validation = Installer.MaterializationValidation{ .installer = &installer, .domain = "google.com/chrome", .version = null };
+    var operations = MaterializationTestOperations{ .fixture = &fixture, .installer = &installer };
+    try std.testing.expectEqual(materialization.Outcome.moved, try materialization.publish(allocator, fixture.owned(), fixture.destination, &validation, &operations));
+    try std.testing.expectEqual(@as(usize, 0), operations.copy_calls);
+    try std.testing.expectEqual(fixture.payload_bytes, operations.staged_regular_bytes);
+    try std.testing.expectError(error.FileNotFound, io_helper.cwd().statFile(io_helper.io, fixture.extraction.payload, .{}));
+    const installed_blob = try std.fs.path.join(allocator, &.{ fixture.destination, "share/blob" });
+    defer allocator.free(installed_blob);
+    const after = try io_helper.cwd().statFile(io_helper.io, installed_blob, .{});
+    try std.testing.expectEqual(before.inode, after.inode);
+    try std.testing.expectEqual(before.size, after.size);
+    const installed_hash = try extractor.computeChecksum(allocator, installed_blob);
+    defer allocator.free(installed_hash);
+    try std.testing.expectEqualStrings(original_hash, installed_hash);
+    const entry = try std.fs.path.join(allocator, &.{ fixture.destination, "bin/google-chrome-stable" });
+    defer allocator.free(entry);
+    const link = try io_helper.readLinkAlloc(allocator, entry);
+    defer allocator.free(link);
+    try std.testing.expectEqualStrings("../libexec/chrome", link);
+    const result = try io_helper.childRun(allocator, &.{entry});
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+    try std.testing.expect(result.term == .exited and result.term.exited == 0);
+    try std.testing.expectEqualStrings("owned-resource\n", result.stdout);
+    const program = try std.fs.path.join(allocator, &.{ fixture.destination, "libexec/chrome" });
+    defer allocator.free(program);
+    try std.testing.expectEqual(@as(u32, 0o751), (try io_helper.cwd().statFile(io_helper.io, program, .{})).permissions.toMode() & 0o7777);
+    try fixture.expectNoTransaction();
+    std.debug.print("[pantry:materialize:test] exclusive payload={d}B stage-snapshot={d}B copies={d}; inode preserved (logical bytes, not filesystem peak)\n", .{ fixture.payload_bytes, operations.staged_regular_bytes, operations.copy_calls });
+}
+
+test "native materialization: shared cache publication copies and preserves the original immutable tree" {
+    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var pkg_cache = try PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+    var installer = try Installer.init(allocator, &pkg_cache);
+    defer installer.deinit();
+    var fixture = try MaterializationFixture.init(allocator);
+    defer fixture.deinit();
+    const shared_directory = try std.fs.path.join(allocator, &.{ fixture.extraction.payload, "share" });
+    defer allocator.free(shared_directory);
+    const shared_directory_z = try io_helper.dupeZ(allocator, u8, shared_directory);
+    defer allocator.free(shared_directory_z);
+    if (std.c.chmod(shared_directory_z, 0o555) != 0) return error.SharedFixtureModeFailed;
+    const shared_blob = try std.fs.path.join(allocator, &.{ shared_directory, "blob" });
+    defer allocator.free(shared_blob);
+    const before = try io_helper.cwd().statFile(io_helper.io, shared_blob, .{});
+    const before_hash = try extractor.computeChecksum(allocator, shared_blob);
+    defer allocator.free(before_hash);
+    const validation = Installer.MaterializationValidation{ .installer = &installer, .domain = "google.com/chrome", .version = null };
+    var operations = MaterializationTestOperations{ .fixture = &fixture, .installer = &installer };
+    try std.testing.expectEqual(materialization.Outcome.copied, try materialization.publish(allocator, .{ .shared = fixture.extraction.payload }, fixture.destination, &validation, &operations));
+    try std.testing.expectEqual(@as(usize, 1), operations.copy_calls);
+    try std.testing.expectEqual(2 * fixture.payload_bytes, operations.staged_regular_bytes);
+    try std.testing.expectEqual(fixture.payload_bytes, try materializationRegularBytes(allocator, fixture.extraction.payload));
+    try std.testing.expectEqual(fixture.payload_bytes, try materializationRegularBytes(allocator, fixture.destination));
+    try std.testing.expectEqual(before.inode, (try io_helper.cwd().statFile(io_helper.io, shared_blob, .{})).inode);
+    const after_hash = try extractor.computeChecksum(allocator, shared_blob);
+    defer allocator.free(after_hash);
+    try std.testing.expectEqualStrings(before_hash, after_hash);
+    try std.testing.expectEqual(@as(u32, 0o555), (try io_helper.cwd().statFile(io_helper.io, shared_directory, .{})).permissions.toMode() & 0o7777);
+    const installed_directory = try std.fs.path.join(allocator, &.{ fixture.destination, "share" });
+    defer allocator.free(installed_directory);
+    try std.testing.expectEqual(@as(u32, 0o555), (try io_helper.cwd().statFile(io_helper.io, installed_directory, .{})).permissions.toMode() & 0o7777);
+    try fixture.expectNoTransaction();
+}
+
+test "native materialization: exclusive ownership rejects unverified and outside directories before changing a destination" {
+    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var pkg_cache = try PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+    var installer = try Installer.init(allocator, &pkg_cache);
+    defer installer.deinit();
+    var fixture = try MaterializationFixture.init(allocator);
+    defer fixture.deinit();
+    try fixture.installOld();
+    var unverified = try verified_staging.Extraction.init(allocator, fixture.root);
+    defer unverified.deinit();
+    const validation = Installer.MaterializationValidation{ .installer = &installer, .domain = "google.com/chrome", .version = null };
+    var operations = MaterializationTestOperations{ .fixture = &fixture, .installer = &installer };
+    try std.testing.expectError(error.UnverifiedExtraction, materialization.publish(allocator, .{ .exclusive = .{ .extraction = &unverified, .path = fixture.extraction.payload } }, fixture.destination, &validation, &operations));
+    try std.testing.expectError(error.UnownedPackageSource, materialization.publish(allocator, .{ .exclusive = .{ .extraction = &fixture.extraction, .path = fixture.root } }, fixture.destination, &validation, &operations));
+    try std.testing.expectEqual(@as(usize, 0), operations.copy_calls);
+    try fixture.expectOld();
+    try fixture.expectNoTransaction();
+}
+
+test "native materialization: an ordinary rename failure never falls back to copying and preserves the old package" {
+    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var pkg_cache = try PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+    var installer = try Installer.init(allocator, &pkg_cache);
+    defer installer.deinit();
+    var fixture = try MaterializationFixture.init(allocator);
+    defer fixture.deinit();
+    try fixture.installOld();
+    const validation = Installer.MaterializationValidation{ .installer = &installer, .domain = "google.com/chrome", .version = null };
+    for ([_]anyerror{ error.AccessDenied, error.NoSpaceLeft, error.RenameError, error.Canceled }) |failure| {
+        var operations = MaterializationTestOperations{ .fixture = &fixture, .installer = &installer, .source_rename_error = failure };
+        try std.testing.expectError(failure, materialization.publish(allocator, fixture.owned(), fixture.destination, &validation, &operations));
+        try std.testing.expectEqual(@as(usize, 0), operations.copy_calls);
+        try fixture.expectOld();
+        try fixture.expectNoTransaction();
+    }
+}
+
+test "native materialization: a copy failing beyond 64KiB removes its candidate and leaves shared source and destination intact" {
+    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var pkg_cache = try PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+    var installer = try Installer.init(allocator, &pkg_cache);
+    defer installer.deinit();
+    var fixture = try MaterializationFixture.init(allocator);
+    defer fixture.deinit();
+    try fixture.installOld();
+    const validation = Installer.MaterializationValidation{ .installer = &installer, .domain = "google.com/chrome", .version = null };
+    var operations = MaterializationTestOperations{ .fixture = &fixture, .installer = &installer, .fail_copy = true };
+    try std.testing.expectError(error.NoSpaceLeft, materialization.publish(allocator, .{ .shared = fixture.extraction.payload }, fixture.destination, &validation, &operations));
+    try std.testing.expect(operations.partial_bytes_written > 65536);
+    try std.testing.expectEqual(fixture.payload_bytes, try materializationRegularBytes(allocator, fixture.extraction.payload));
+    try fixture.expectOld();
+    try fixture.expectNoTransaction();
+}
+
+test "native materialization: failed commit rolls back the old destination and cleans the consumed candidate" {
+    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var pkg_cache = try PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+    var installer = try Installer.init(allocator, &pkg_cache);
+    defer installer.deinit();
+    var fixture = try MaterializationFixture.init(allocator);
+    defer fixture.deinit();
+    try fixture.installOld();
+    const validation = Installer.MaterializationValidation{ .installer = &installer, .domain = "google.com/chrome", .version = null };
+    var operations = MaterializationTestOperations{ .fixture = &fixture, .installer = &installer, .fail_commit = true };
+    try std.testing.expectError(error.AccessDenied, materialization.publish(allocator, fixture.owned(), fixture.destination, &validation, &operations));
+    try fixture.expectOld();
+    try fixture.expectNoTransaction();
+}
+
+test "native materialization: real cross-device extraction move falls back only on the filesystem's CrossDevice error" {
+    if (@import("builtin").os.tag != .linux) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var pkg_cache = try PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+    var installer = try Installer.init(allocator, &pkg_cache);
+    defer installer.deinit();
+    var fixture = try MaterializationFixture.init(allocator);
+    defer fixture.deinit();
+    var other_filesystem = try verified_staging.Extraction.init(allocator, "/dev/shm");
+    defer other_filesystem.deinit();
+    const destination = try std.fs.path.join(allocator, &.{ other_filesystem.root, "installed/v1" });
+    allocator.free(fixture.destination);
+    fixture.destination = destination;
+    const validation = Installer.MaterializationValidation{ .installer = &installer, .domain = "google.com/chrome", .version = null };
+    var operations = MaterializationTestOperations{ .fixture = &fixture, .installer = &installer };
+    try std.testing.expectEqual(materialization.Outcome.cross_device_copy, try materialization.publish(allocator, fixture.owned(), fixture.destination, &validation, &operations));
+    try std.testing.expectEqual(@as(usize, 1), operations.cross_device_errors);
+    try std.testing.expectEqual(@as(usize, 1), operations.copy_calls);
+    try std.testing.expectEqual(fixture.payload_bytes, try materializationRegularBytes(allocator, fixture.extraction.payload));
+    try std.testing.expectEqual(fixture.payload_bytes, try materializationRegularBytes(allocator, fixture.destination));
+    try fixture.expectNoTransaction();
+}
+
+test "native materialization: failure to retire an old destination leaves it untouched and removes the new candidate" {
+    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var pkg_cache = try PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+    var installer = try Installer.init(allocator, &pkg_cache);
+    defer installer.deinit();
+    var fixture = try MaterializationFixture.init(allocator);
+    defer fixture.deinit();
+    try fixture.installOld();
+    const validation = Installer.MaterializationValidation{ .installer = &installer, .domain = "google.com/chrome", .version = null };
+    var operations = MaterializationTestOperations{ .fixture = &fixture, .installer = &installer, .fail_retire = true };
+    try std.testing.expectError(error.AccessDenied, materialization.publish(allocator, fixture.owned(), fixture.destination, &validation, &operations));
+    try fixture.expectOld();
+    try fixture.expectNoTransaction();
+}
+
+test "native materialization: candidate validation failure cannot displace the previous installation" {
+    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var pkg_cache = try PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+    var installer = try Installer.init(allocator, &pkg_cache);
+    defer installer.deinit();
+    var fixture = try MaterializationFixture.init(allocator);
+    defer fixture.deinit();
+    try fixture.installOld();
+    const Validation = struct {
+        original: []const u8,
+        base: Installer.MaterializationValidation,
+        pub fn check(self: *const @This(), path: []const u8) bool {
+            return std.mem.eql(u8, self.original, path) and self.base.check(path);
+        }
+    };
+    const validation = Validation{ .original = fixture.extraction.payload, .base = .{ .installer = &installer, .domain = "google.com/chrome", .version = null } };
+    var operations = MaterializationTestOperations{ .fixture = &fixture, .installer = &installer };
+    try std.testing.expectError(error.InvalidPackageMaterialization, materialization.publish(allocator, fixture.owned(), fixture.destination, &validation, &operations));
+    try fixture.expectOld();
+    try fixture.expectNoTransaction();
+}
+
+test "native materialization: a failed rollback retains the old package for recovery instead of deleting the backup" {
+    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var pkg_cache = try PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+    var installer = try Installer.init(allocator, &pkg_cache);
+    defer installer.deinit();
+    var fixture = try MaterializationFixture.init(allocator);
+    defer fixture.deinit();
+    try fixture.installOld();
+    const validation = Installer.MaterializationValidation{ .installer = &installer, .domain = "google.com/chrome", .version = null };
+    var operations = MaterializationTestOperations{ .fixture = &fixture, .installer = &installer, .fail_commit = true, .fail_rollback = true };
+    try std.testing.expectError(error.PackageRollbackFailed, materialization.publish(allocator, fixture.owned(), fixture.destination, &validation, &operations));
+    try std.testing.expectError(error.FileNotFound, io_helper.cwd().statFile(io_helper.io, fixture.destination, .{}));
+    var parent = try io_helper.openDirAbsoluteForIteration(std.fs.path.dirname(fixture.destination).?);
+    defer parent.close();
+    var iterator = parent.iterate();
+    const entry = (try iterator.next()) orelse return error.PreviousPackageLost;
+    const retained = try std.fs.path.join(allocator, &.{ std.fs.path.dirname(fixture.destination).?, entry.name });
+    defer allocator.free(retained);
+    const previous = try std.fs.path.join(allocator, &.{ retained, "previous" });
+    defer allocator.free(previous);
+    const marker = try std.fs.path.join(allocator, &.{ previous, "old" });
+    defer allocator.free(marker);
+    const bytes = try io_helper.readFileAlloc(allocator, marker, 128);
+    defer allocator.free(bytes);
+    try std.testing.expectEqualStrings("previous-installation", bytes);
+    // Recovery is possible from the exact retained directory reported by the
+    // failed transaction. No second install or upload is needed.
+    try io_helper.renameClassified(previous, fixture.destination);
+    try materialization.removeOwnedTree(allocator, retained);
+    try fixture.expectOld();
+    try fixture.expectNoTransaction();
+}
+
+fn materializationAllocationFailure(failing: std.mem.Allocator) !void {
+    const allocator = std.testing.allocator;
+    var pkg_cache = try PackageCache.init(allocator);
+    defer pkg_cache.deinit();
+    var installer = try Installer.init(allocator, &pkg_cache);
+    defer installer.deinit();
+    var fixture = try MaterializationFixture.init(allocator);
+    defer fixture.deinit();
+    try fixture.installOld();
+    const validation = Installer.MaterializationValidation{ .installer = &installer, .domain = "google.com/chrome", .version = null };
+    var operations = MaterializationTestOperations{ .fixture = &fixture, .installer = &installer };
+    _ = materialization.publish(failing, fixture.owned(), fixture.destination, &validation, &operations) catch |err| {
+        try fixture.expectOld();
+        try fixture.expectNoTransaction();
+        return err;
+    };
+    try fixture.expectNoTransaction();
+}
+
+test "native materialization: every transaction allocation failure removes its owned directory" {
+    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    try std.testing.checkAllAllocationFailures(std.testing.allocator, materializationAllocationFailure, .{});
 }

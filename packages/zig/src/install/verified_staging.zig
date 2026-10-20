@@ -9,6 +9,8 @@ pub const Extraction = struct {
     allocator: std.mem.Allocator,
     root: []const u8,
     payload: []const u8,
+    verified: bool = false,
+    root_inode: ?std.Io.File.INode = null,
 
     pub fn init(allocator: std.mem.Allocator, parent: []const u8) !Extraction {
         try io_helper.makePath(parent);
@@ -27,8 +29,9 @@ pub const Extraction = struct {
                 io_helper.deleteTree(root) catch {};
                 allocator.free(root);
             }
+            const private_metadata = try io_helper.cwd().statFile(io_helper.io, root, .{ .follow_symlinks = false });
             const payload = try std.fs.path.join(allocator, &.{ root, "extracted" });
-            return .{ .allocator = allocator, .root = root, .payload = payload };
+            return .{ .allocator = allocator, .root = root, .payload = payload, .root_inode = private_metadata.inode };
         }
         return error.ExtractionDirectoryCollision;
     }
@@ -40,14 +43,50 @@ pub const Extraction = struct {
     }
 
     pub fn extractVerified(self: *Extraction, archive: []const u8, format: []const u8, url: ?[]const u8, verbose: bool) !void {
+        self.verified = false;
         // A poisoned archive retry starts with a fresh payload in this same
         // exclusively created directory, not another install's temporary path.
         io_helper.deleteTree(self.payload) catch {};
         try io_helper.makePath(self.payload);
         try extractor.extractArchiveWithVerification(self.allocator, archive, self.payload, format, url, verbose);
         if (builtin.os.tag != .windows) try prepareTree(self.allocator, self.payload);
+        self.verified = true;
+    }
+
+    /// A move is permitted only for a real directory physically contained in
+    /// this fresh, exclusively created and successfully verified extraction.
+    /// Shared installed/cache prefixes never receive this ownership capability.
+    pub fn validateOwnedPackage(self: *const Extraction, source: []const u8) !void {
+        if (!self.verified) return error.UnverifiedExtraction;
+        const private_metadata = try io_helper.cwd().statFile(io_helper.io, self.root, .{ .follow_symlinks = false });
+        if (private_metadata.kind != .directory or self.root_inode == null or private_metadata.inode != self.root_inode.?)
+            return error.UnownedPackageSource;
+        if (builtin.os.tag != .windows and private_metadata.permissions.toMode() & 0o777 != 0o700)
+            return error.UnownedPackageSource;
+        const payload_metadata = try io_helper.cwd().statFile(io_helper.io, self.payload, .{ .follow_symlinks = false });
+        if (payload_metadata.kind != .directory) return error.UnownedPackageSource;
+        const metadata = try io_helper.cwd().statFile(io_helper.io, source, .{ .follow_symlinks = false });
+        if (metadata.kind != .directory) return error.UnownedPackageSource;
+        var root_buffer: [std.fs.max_path_bytes]u8 = undefined;
+        var source_buffer: [std.fs.max_path_bytes]u8 = undefined;
+        var private_buffer: [std.fs.max_path_bytes]u8 = undefined;
+        const private_len = try io_helper.cwd().realPathFile(io_helper.io, self.root, &private_buffer);
+        const root_len = try io_helper.cwd().realPathFile(io_helper.io, self.payload, &root_buffer);
+        const source_len = try io_helper.cwd().realPathFile(io_helper.io, source, &source_buffer);
+        const root = root_buffer[0..root_len];
+        if (!physicallyWithin(private_buffer[0..private_len], root) or private_len == root_len)
+            return error.UnownedPackageSource;
+        const physical_source = source_buffer[0..source_len];
+        if (!physicallyWithin(root, physical_source))
+            return error.UnownedPackageSource;
     }
 };
+
+fn physicallyWithin(root: []const u8, path: []const u8) bool {
+    if (std.mem.eql(u8, root, path)) return true;
+    if (path.len <= root.len or !std.mem.startsWith(u8, path, root)) return false;
+    return path[root.len] == '/' or (builtin.os.tag == .windows and path[root.len] == '\\');
+}
 
 fn chmod(path: []const u8, mode: u32) !void {
     var buffer: [std.fs.max_path_bytes:0]u8 = undefined;
