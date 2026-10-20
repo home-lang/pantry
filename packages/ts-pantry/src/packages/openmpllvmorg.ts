@@ -2,7 +2,7 @@
  * **libomp** - The LLVM Project is a collection of modular and reusable compiler and toolchain technologies.
  *
  * @domain `openmp.llvm.org`
- * @version `23.1.3` (56 versions available)
+ * @version `23.1.4` (57 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install openmp.llvm.org`
@@ -16,7 +16,7 @@
  * const pkg = pantry.openmpllvmorg
  * console.log(pkg.name)        // "libomp"
  * console.log(pkg.description) // "The LLVM Project is a collection of modular and..."
- * console.log(pkg.versions[0]) // "23.1.3" (latest)
+ * console.log(pkg.versions[0]) // "23.1.4" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/openmp-llvm-org.md
@@ -64,6 +64,7 @@ export const openmpllvmorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '23.1.4',
     '23.1.3',
     '23.1.2',
     '23.1.1',

@@ -3,7 +3,7 @@
  *
  * @domain `pip.pypa.io`
  * @programs `pip`, `pip3.8`, `pip3.9`, `pip3.10`, `pip3.11`
- * @version `26.2.1` (115 versions available)
+ * @version `26.2.2` (116 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install pip.pypa.io`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "pip"
  * console.log(pkg.description) // "The Python package installer"
  * console.log(pkg.programs)    // ["pip", "pip3.8", ...]
- * console.log(pkg.versions[0]) // "26.2.1" (latest)
+ * console.log(pkg.versions[0]) // "26.2.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/pip-pypa-io.md
@@ -79,6 +79,7 @@ export const pippypaioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '26.2.2',
     '26.2.1',
     '26.2',
     '26.1.2',

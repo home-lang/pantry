@@ -2,7 +2,7 @@
  * **libcxx.llvm** - The LLVM Project is a collection of modular and reusable compiler and toolchain technologies.
  *
  * @domain `libcxx.llvm.org`
- * @version `23.1.3` (65 versions available)
+ * @version `23.1.4` (66 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install libcxx.llvm.org`
@@ -16,7 +16,7 @@
  * const pkg = pantry.libcxxllvmorg
  * console.log(pkg.name)        // "libcxx.llvm"
  * console.log(pkg.description) // "The LLVM Project is a collection of modular and..."
- * console.log(pkg.versions[0]) // "23.1.3" (latest)
+ * console.log(pkg.versions[0]) // "23.1.4" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/libcxx-llvm-org.md
@@ -61,6 +61,7 @@ export const libcxxllvmorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '23.1.4',
     '23.1.3',
     '23.1.2',
     '23.1.1',

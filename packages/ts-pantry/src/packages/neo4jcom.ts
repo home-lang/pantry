@@ -28,6 +28,7 @@ export const neo4jcomPackage = {
   ] as const,
   buildDependencies: [] as const,
   versions: [
+    '2026.10.0',
     '2026.09.0',
     '2026.08.1',
     '2026.08.0',
