@@ -134,6 +134,7 @@ jobs:
           set -o pipefail
           cd packages/zig
           zig build test:materialization -j2 --summary all 2>&1 | tee ../../artifacts/native-catalog/native-materialization-tests.log
+          bun -e 'const log = await Bun.file("../../artifacts/native-catalog/native-materialization-tests.log").text(); const counts = log.match(/(\d+)\/(\d+) tests passed/); if (!counts || Number(counts[1]) < 12 || !log.includes("[pantry:materialize:test] exclusive payload=")) throw new Error("The native materialization filesystem regressions did not run")'
       - name: Retain the exact built native CLI for isolated HTTP contracts
         run: |
           cp packages/zig/zig-out/bin/pantry artifacts/native-catalog/lookup-cli

@@ -5417,6 +5417,12 @@ test "native materialization: exclusive ownership rejects unverified and outside
     var operations = MaterializationTestOperations{ .fixture = &fixture, .installer = &installer };
     try std.testing.expectError(error.UnverifiedExtraction, materialization.publish(allocator, .{ .exclusive = .{ .extraction = &unverified, .path = fixture.extraction.payload } }, fixture.destination, &validation, &operations));
     try std.testing.expectError(error.UnownedPackageSource, materialization.publish(allocator, .{ .exclusive = .{ .extraction = &fixture.extraction, .path = fixture.root } }, fixture.destination, &validation, &operations));
+    const escape = try std.fs.path.join(allocator, &.{ fixture.extraction.payload, "escape" });
+    defer allocator.free(escape);
+    try io_helper.symLink(fixture.root, escape);
+    const outside_through_link = try std.fs.path.join(allocator, &.{ escape, "seed" });
+    defer allocator.free(outside_through_link);
+    try std.testing.expectError(error.UnownedPackageSource, materialization.publish(allocator, .{ .exclusive = .{ .extraction = &fixture.extraction, .path = outside_through_link } }, fixture.destination, &validation, &operations));
     try std.testing.expectEqual(@as(usize, 0), operations.copy_calls);
     try fixture.expectOld();
     try fixture.expectNoTransaction();
