@@ -1,3 +1,18 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.108...v0.11.109)
+
+## ⚡ Performance Improvements
+
+- **publish**: let a batch wait out npm for a queued upload ([78862a1](https://github.com/pantry-pm/pantry/commit/78862a1)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.109 ([87379c5](https://github.com/pantry-pm/pantry/commit/87379c5)) _(by Chris Breuer <chris@stacksjs.com>)_
+- update chezmoi.io, fly.io, github.com/ggerganov/llama.cpp, kafka.apache.org, libcxx.llvm.org, llvm.org, materialize.com, mercure.rocks, neo4j.com, openmp.llvm.org, pip.pypa.io, traefik.io, vim.org, werf.io, ziglang.org ([ceb088f](https://github.com/pantry-pm/pantry/commit/ceb088f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.107...v0.11.108)
 
 ## 🐛 Bug Fixes
