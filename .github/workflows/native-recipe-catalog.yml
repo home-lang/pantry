@@ -2,6 +2,10 @@ name: Generate Native Recipe Catalogs
 on:
   workflow_dispatch:
     inputs:
+      generate-native-catalogs:
+        description: Generate catalog patches; leave disabled to qualify the exact committed source
+        type: boolean
+        default: false
       verify-dynamodb:
         description: Build the immutable DynamoDB Local recipe and require its live database health check
         type: boolean
@@ -30,6 +34,14 @@ jobs:
           packages: bun.com@1.4.3
       - name: Install first-party JavaScript dependencies
         run: bun install --frozen-lockfile
+      - name: Retain the Action generated from the exact committed source
+        run: |
+          git diff --exit-code -- packages/action/src packages/ts-pantry/src/packages
+          bun run --cwd packages/action build
+          mkdir -p artifacts/native-catalog/source-action
+          cp packages/action/dist/index.js packages/action/dist/post.js artifacts/native-catalog/source-action/
+          git rev-parse HEAD > artifacts/native-catalog/source-action/source-commit.txt
+          sha256sum packages/action/dist/index.js packages/action/dist/post.js > artifacts/native-catalog/source-action/sha256.txt
       - name: Record the exact source and runtime before recipe validation
         run: |
           mkdir -p artifacts/native-catalog
@@ -53,6 +65,7 @@ jobs:
         if: inputs.verify-dynamodb
         run: bunx --bun pickier run --mode lint packages/ts-pantry/scripts/maven-versions.ts packages/ts-pantry/scripts/copy-recipe-props.ts packages/ts-pantry/src/recipes/aws.amazon.com/dynamodb-local.ts packages/ts-pantry/src/recipes/props/aws.amazon.com/dynamodb-local/health.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts
       - name: Generate native package metadata and both installer catalogs
+        if: inputs.generate-native-catalogs
         run: |
           set -e
           bun .github/scripts/register-native-ci-packages.ts
@@ -61,6 +74,11 @@ jobs:
           git diff --check -- packages/ts-pantry/src/packages packages/zig/src/packages/generated.zig
           git diff --binary -- packages/ts-pantry/src/packages packages/zig/src/packages/generated.zig > artifacts/native-catalog/catalogs.patch
           git rev-parse HEAD > artifacts/native-catalog/source-commit.txt
+      - name: Record exact committed catalog inputs for source qualification
+        if: ${{ !inputs.generate-native-catalogs }}
+        run: |
+          git diff --exit-code -- packages/ts-pantry/src/packages packages/zig/src/packages/generated.zig
+          : > artifacts/native-catalog/catalogs.patch
       - name: Produce the normal Action bundles from verified source
         run: |
           bun run --cwd packages/action build

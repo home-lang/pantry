@@ -24,6 +24,8 @@ test('DynamoDB rejects an ambient JVM before launching a service', async () => {
   finally { rmSync(root, { recursive: true, force: true }) }
 })
 
+// Admission, foreground readiness and owned shutdown have independent budgets;
+// the foreign-listener request itself retains its 200ms deadline.
 test('DynamoDB sends no HTTP bytes to a listener outside its owned service group', async () => {
   const directory = realpathSync(mkdtempSync(join(tmpdir(), 'pantry-dynamo-foreign-')))
   const state: NativeServiceState = { name: 'dynamodb', directory, owner: claimServiceDirectory(directory), binDir: directory, libraries: {} }
@@ -77,6 +79,4 @@ test('DynamoDB sends no HTTP bytes to a listener outside its owned service group
     }
   }
   expect(existsSync(directory)).toBe(false)
-// Admission, foreground readiness and owned shutdown have independent budgets;
-// the foreign-listener request itself still has its original 200ms deadline.
 }, 25_000)
