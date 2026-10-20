@@ -526,7 +526,12 @@ jobs:
           PANTRY_TEST_CLI: packages/zig/zig-out/bin/pantry
         run: bun .github/scripts/native-toolchain-pins.ts
       - name: Preserve the source CLI proof
-        run: mv artifacts/native-toolchain-pins artifacts/source-native-toolchain-pins
+        run: |
+          mv artifacts/native-toolchain-pins artifacts/source-native-toolchain-pins
+          cp packages/zig/zig-out/bin/pantry artifacts/source-native-toolchain-pins/pantry
+          git rev-parse HEAD > artifacts/source-native-toolchain-pins/source-commit.txt
+          zig version > artifacts/source-native-toolchain-pins/compiler-version.txt
+          bun -p 'process.platform + " " + process.arch' > artifacts/source-native-toolchain-pins/build-platform.txt
       - name: Build this checkout's Action
         run: bun run --cwd packages/action build
       - name: Activate the declared Java toolchain over an inherited host setting
