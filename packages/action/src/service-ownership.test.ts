@@ -2,9 +2,41 @@ import { expect, test } from 'bun:test'
 import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { spawnNativeService, stopNativeService } from './native-services'
+import { PassThrough } from 'node:stream'
+import { spawnNativeService, stopNativeService, waitForNativeLauncherReady } from './native-services'
 import type { NativeServiceState } from './native-services'
 import { assertServiceDirectory, assertServiceProcess, claimServiceDirectory, serviceProcessIdentity } from './service-ownership'
+
+test('launcher admission waits for its complete execution acknowledgement', async () => {
+  const channel = new PassThrough()
+  let admitted = false
+  const ready = waitForNativeLauncherReady(channel, new Promise<void>(() => {})).then(() => { admitted = true })
+  channel.write('rea')
+  await Promise.resolve()
+  expect(admitted).toBe(false)
+  channel.write('dy\n')
+  await ready
+  expect(admitted).toBe(true)
+  expect(channel.destroyed).toBe(true)
+})
+
+test('a launcher EOF or invalid acknowledgement authorizes no service', async () => {
+  const ended = new PassThrough()
+  const eof = expect(waitForNativeLauncherReady(ended, new Promise<void>(() => {}))).rejects.toThrow('closed before')
+  ended.end()
+  await eof
+  const invalid = new PassThrough()
+  const rejected = expect(waitForNativeLauncherReady(invalid, new Promise<void>(() => {}))).rejects.toThrow('Invalid native launcher')
+  invalid.write('start\n')
+  await rejected
+  expect(invalid.destroyed).toBe(true)
+})
+
+test('an exited unadmitted launcher cannot leave readiness pending', async () => {
+  const channel = new PassThrough()
+  await expect(waitForNativeLauncherReady(channel, Promise.resolve())).rejects.toThrow('closed before')
+  expect(channel.destroyed).toBe(true)
+})
 
 test('directory cleanup requires this invocation owner marker', () => {
   const directory = mkdtempSync(join(tmpdir(), 'pantry-owner-test-'))
