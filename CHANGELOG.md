@@ -1,3 +1,17 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.106...v0.11.107)
+
+## ⚡ Performance Improvements
+
+- **publish**: read a batch's uploads back together, not one by one ([b3ae52d](https://github.com/pantry-pm/pantry/commit/b3ae52d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.107 ([523fee9](https://github.com/pantry-pm/pantry/commit/523fee9)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.105...v0.11.106)
 
 ## 🐛 Bug Fixes
