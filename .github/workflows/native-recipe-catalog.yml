@@ -6,6 +6,10 @@ on:
         description: Compare original public 105 Chrome with the inherited Action environment and the clean producer environment
         type: boolean
         default: false
+      verify-action-chrome-address-space:
+        description: Compare normal, 8 GiB, and finite 2 TiB virtual address limits with the original public Chrome
+        type: boolean
+        default: false
       verify-public-chrome:
         description: Verify the revised public Chrome archive with an original published release tag's Action, CLI and SDK
         type: boolean
@@ -42,7 +46,7 @@ permissions:
   contents: read
 jobs:
   catalog:
-    if: ${{ !inputs.verify-public-chrome && !inputs.verify-action-chrome-environment }}
+    if: ${{ !inputs.verify-public-chrome && !inputs.verify-action-chrome-environment && !inputs.verify-action-chrome-address-space }}
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.verify-chrome && 45 || 15 }}
     steps:
@@ -216,7 +220,7 @@ jobs:
           path: artifacts/native-catalog
           if-no-files-found: error
   public-chrome:
-    if: ${{ inputs.verify-public-chrome && !inputs.verify-action-chrome-environment }}
+    if: ${{ inputs.verify-public-chrome && !inputs.verify-action-chrome-environment && !inputs.verify-action-chrome-address-space }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -249,7 +253,7 @@ jobs:
           path: artifacts/public-chrome-revision
           if-no-files-found: error
   action-chrome-environment:
-    if: ${{ inputs.verify-action-chrome-environment && !inputs.verify-public-chrome }}
+    if: ${{ (inputs.verify-action-chrome-environment != inputs.verify-action-chrome-address-space) && !inputs.verify-public-chrome }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -267,15 +271,16 @@ jobs:
           set -o pipefail
           mkdir -p artifacts/action-chrome-environment
           bun test packages/action/src/chrome-environment-fixture.test.ts 2>&1 | tee artifacts/action-chrome-environment/unit-tests.log
-      - name: Compare the same sandboxed installed Chrome under all four environments
+      - name: Compare the same sandboxed installed Chrome under the selected diagnostic
         env:
           PANTRY_CHROME_ENVIRONMENT_CLI: ${{ steps.original-pantry.outputs.pantry-path }}
+          PANTRY_CHROME_COMPARISON: ${{ inputs.verify-action-chrome-address-space && 'address-space' || 'environment' }}
         run: bun .github/scripts/verify-action-chrome-environment.ts
       - name: Preserve all outcomes, original loader logs, and executable identity
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: original105-action-chrome-environment
+          name: original105-action-chrome-${{ inputs.verify-action-chrome-address-space && 'address-space' || 'environment' }}
           path: artifacts/action-chrome-environment
           if-no-files-found: error
   registry-lookup:

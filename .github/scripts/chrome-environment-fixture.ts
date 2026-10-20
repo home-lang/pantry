@@ -3,7 +3,85 @@ import { createHash } from 'node:crypto'
 import { createReadStream, writeSync } from 'node:fs'
 import { open } from 'node:fs/promises'
 
-export function chromeEnvironments(inherited: NodeJS.ProcessEnv, home: string): { mode: string, environment: NodeJS.ProcessEnv }[] {
+export interface ChromeComparisonCase {
+  mode: string
+  environment: NodeJS.ProcessEnv
+  addressSpaceKiB?: number | null
+  enforcement?: boolean
+}
+
+export function chromeAddressSpaceCases(inherited: NodeJS.ProcessEnv): ChromeComparisonCase[] {
+  return [
+    { mode: 'normal-address-space', addressSpaceKiB: null },
+    { mode: 'eight-gib-address-space', addressSpaceKiB: 8388608 },
+    { mode: 'two-tib-address-space', addressSpaceKiB: 2147483648 },
+    { mode: 'two-tib-enforcement', addressSpaceKiB: 2147483648, enforcement: true },
+  ].map(entry => ({ ...entry, environment: { ...inherited, LD_DEBUG: 'files' } }))
+}
+
+export function addressSpaceArgv(capKiB: number | null, limitsPath: string, program: string[]): string[] {
+  assert(capKiB === null || (Number.isSafeInteger(capKiB) && capKiB > 0))
+  assert(program.length > 0)
+  // All three Chrome arms execute the identical shell. Paths and browser
+  // arguments are positional parameters, never interpolated shell source.
+  return ['/bin/sh', '-c', 'set -eu\ncap=$1\nlimits=$2\nshift 2\nulimit -c 0\nif [ "$cap" != normal ]; then ulimit -v "$cap"; fi\nwhile IFS= read -r line; do printf "%s\\n" "$line"; done < /proc/self/limits > "$limits"\nexec "$@"', 'pantry-address-space', capKiB === null ? 'normal' : String(capKiB), limitsPath, ...program]
+}
+
+export function addressSpaceLimit(limits: string): { soft: string, hard: string } {
+  const match = /^Max address space\s+(\S+)\s+(\S+)\s+bytes\s*$/m.exec(limits)
+  assert(match, 'Missing actual /proc/self/limits address-space row')
+  return { soft: match[1]!, hard: match[2]! }
+}
+
+// Invoked only as a separate Linux child after the finite candidate rendered.
+// mmap(PROT_NONE, MAP_NORESERVE) reserves address names, never touches their pages.
+// No compilation, native toolchain, or physical-memory stress is involved.
+async function probeAddressSpaceEnforcement(): Promise<void> {
+  assert.equal(process.platform, 'linux')
+  assert.equal(process.arch, 'x64')
+  assert.notEqual(process.getuid?.(), 0)
+  const { dlopen, read } = await import('bun:ffi')
+  const libc = dlopen('libc.so.6', {
+    getrlimit: { args: ['i32', 'ptr'], returns: 'i32' },
+    setrlimit: { args: ['i32', 'ptr'], returns: 'i32' },
+    mmap: { args: ['ptr', 'u64', 'i32', 'i32', 'i32', 'i64'], returns: 'u64' },
+    munmap: { args: ['u64', 'u64'], returns: 'i32' },
+    __errno_location: { args: [], returns: 'u64' },
+  })
+  try {
+    const limit = 2199023255552n
+    const limits = (): { soft: string, hard: string } => {
+      const buffer = Buffer.alloc(16)
+      assert.equal(libc.symbols.getrlimit(9, buffer), 0)
+      return { soft: buffer.readBigUInt64LE(0).toString(), hard: buffer.readBigUInt64LE(8).toString() }
+    }
+    const errno = (): number => read.i32(libc.symbols.__errno_location())
+    const before = limits()
+    assert.deepEqual(before, { soft: '2199023255552', hard: '2199023255552' })
+    const mapFailed = 18446744073709551615n
+    const small = libc.symbols.mmap(null, 67108864n, 0, 0x4022, -1, 0)
+    assert.notEqual(small, mapFailed, 'A small PROT_NONE reservation must succeed')
+    assert.equal(libc.symbols.munmap(small, 67108864n), 0)
+    const oversized = libc.symbols.mmap(null, 3298534883328n, 0, 0x4022, -1, 0)
+    const oversizedErrno = errno()
+    if (oversized !== mapFailed) assert.equal(libc.symbols.munmap(oversized, 3298534883328n), 0)
+    assert.equal(oversized, mapFailed, 'A 3 TiB reservation must fail under the finite 2 TiB cap')
+    assert.equal(oversizedErrno, 12, 'Oversize reservation must fail with ENOMEM')
+    const raised = Buffer.alloc(16)
+    raised.writeBigUInt64LE(limit + 4096n, 0)
+    raised.writeBigUInt64LE(limit + 4096n, 8)
+    const raiseResult = libc.symbols.setrlimit(9, raised)
+    const raiseErrno = errno()
+    assert.equal(raiseResult, -1, 'An unprivileged child must not raise its inherited hard cap')
+    assert.equal(raiseErrno, 1, 'Raising the hard cap must fail with EPERM')
+    const after = limits()
+    assert.deepEqual(after, before)
+    console.log(JSON.stringify({ passed: true, before, after, smallReservationBytes: '67108864', smallReservationReleased: true, oversizedReservationBytes: '3298534883328', oversizedRejected: true, oversizedErrno, hardCapRaiseRejected: true, raiseErrno, protection: 'PROT_NONE', mapping: 'MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE', reservedPagesTouched: false }))
+  }
+  finally { libc.close() }
+}
+
+export function chromeEnvironments(inherited: NodeJS.ProcessEnv, home: string): ChromeComparisonCase[] {
   const withoutLibraryPath: NodeJS.ProcessEnv = { ...inherited, LD_DEBUG: 'files' }
   delete withoutLibraryPath.LD_LIBRARY_PATH
   const clean = { HOME: home, PATH: '/usr/bin:/bin', LD_DEBUG: 'files' }
@@ -13,6 +91,11 @@ export function chromeEnvironments(inherited: NodeJS.ProcessEnv, home: string): 
     { mode: 'clean-health', environment: clean },
     { mode: 'clean-with-action-library-path', environment: { ...clean, LD_LIBRARY_PATH: inherited.LD_LIBRARY_PATH } },
   ]
+}
+
+if (import.meta.main) {
+  assert.equal(process.argv[2], '--probe-address-space-enforcement')
+  await probeAddressSpaceEnforcement()
 }
 
 export function boundedLogWriter(fd: number, limitBytes: number): { consume: (chunk: Buffer) => void, writtenBytes: () => number, exceeded: () => boolean } {

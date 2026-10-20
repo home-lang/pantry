@@ -2,7 +2,33 @@ import { expect, test } from 'bun:test'
 import { mkdtemp, open, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { boundedLogWriter, chromeEnvironments, elfIdentity, nssLibraryOrigins, visibleBrowserEnvironment } from '../../../.github/scripts/chrome-environment-fixture'
+import { addressSpaceArgv, addressSpaceLimit, boundedLogWriter, chromeAddressSpaceCases, chromeEnvironments, elfIdentity, nssLibraryOrigins, visibleBrowserEnvironment } from '../../../.github/scripts/chrome-environment-fixture'
+
+test('virtual limits use the same positional shell wrapper without interpreting paths or altering inherited environment', () => {
+  const environment = { HOME: '/runner', LD_LIBRARY_PATH: '/native/lib', TYPESENSE_API_KEY: 'private' }
+  const cases = chromeAddressSpaceCases(environment)
+  expect(cases.map(entry => entry.addressSpaceKiB)).toEqual([null, 8388608, 2147483648, 2147483648])
+  expect(cases.map(entry => entry.enforcement ?? false)).toEqual([false, false, false, true])
+  for (const entry of cases) expect(entry.environment).toEqual({ ...environment, LD_DEBUG: 'files' })
+  expect(environment).toEqual({ HOME: '/runner', LD_LIBRARY_PATH: '/native/lib', TYPESENSE_API_KEY: 'private' })
+  const program = ['/native path/Chrome;$(untrusted)', '--user-data-dir=/profile path/"quoted"']
+  const commands = cases.slice(0, 3).map(entry => addressSpaceArgv(entry.addressSpaceKiB!, '/limits path/$(literal)', program))
+  expect(commands.map(command => command[2])).toEqual([commands[0]![2], commands[0]![2], commands[0]![2]])
+  expect(commands.map(command => command[4])).toEqual(['normal', '8388608', '2147483648'])
+  for (const command of commands) {
+    expect(command.slice(5)).toEqual(['/limits path/$(literal)', ...program])
+    expect(command[2]).not.toContain('untrusted')
+    expect(command[2]).toContain('exec "$@"')
+    expect(command[2]).toContain('ulimit -v "$cap"')
+    expect(command[2]).not.toContain('|| true')
+  }
+  expect(() => addressSpaceArgv(-1, '/limits', program)).toThrow()
+  expect(() => addressSpaceArgv(Number.POSITIVE_INFINITY, '/limits', program)).toThrow()
+  expect(() => addressSpaceArgv(0.5, '/limits', program)).toThrow()
+  expect(addressSpaceLimit('Max address space         8589934592         8589934592         bytes\n')).toEqual({ soft: '8589934592', hard: '8589934592' })
+  expect(addressSpaceLimit('Max address space         unlimited          unlimited          bytes\n')).toEqual({ soft: 'unlimited', hard: 'unlimited' })
+  expect(() => addressSpaceLimit('Max data size unlimited unlimited bytes')).toThrow('Missing actual')
+})
 
 test('diagnostic files stop at their byte cap across chunks and surface write failures', async () => {
   const root = await mkdtemp(join(tmpdir(), 'pantry log cap '))

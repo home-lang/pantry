@@ -7,13 +7,15 @@ import { arch, release, tmpdir } from 'node:os'
 import { isAbsolute, join, relative, resolve } from 'node:path'
 import { resolveNativeExecutable } from '../../packages/action/src/native-executable'
 import { ownedNssModules } from '../../packages/ts-pantry/src/recipes/props/google.com/chrome/health'
-import { boundedLogWriter, chromeEnvironments, elfIdentity, nssLibraryOrigins, sha256, visibleBrowserEnvironment } from './chrome-environment-fixture'
+import { addressSpaceArgv, addressSpaceLimit, boundedLogWriter, chromeAddressSpaceCases, chromeEnvironments, elfIdentity, nssLibraryOrigins, sha256, visibleBrowserEnvironment } from './chrome-environment-fixture'
 
 // Diagnostic only: no installer, Action behavior, or existing health oracle changes.
 // Each pair changes only LD_LIBRARY_PATH; no process-wide environment is changed.
 const artifacts = resolve('artifacts/action-chrome-environment')
 await mkdir(artifacts, { recursive: true })
-const proof: Record<string, unknown> = { passed: false, action: 'pantry-pm/pantry/packages/action@8bb811bc8e1d241e8c21adf5c8d961cd498a8dcd', version: '0.11.105', outcomes: [] }
+const comparison = process.env.PANTRY_CHROME_COMPARISON ?? 'environment'
+assert(comparison === 'environment' || comparison === 'address-space')
+const proof: Record<string, unknown> = { passed: false, comparison, action: 'pantry-pm/pantry/packages/action@8bb811bc8e1d241e8c21adf5c8d961cd498a8dcd', version: '0.11.105', outcomes: [] }
 const outcomes = proof.outcomes as Record<string, unknown>[]
 let root: string | undefined
 let loadedProfile: string | undefined
@@ -65,6 +67,7 @@ try {
   assert.equal(version.exitCode, 0)
   assert.match(version.stdout.toString(), /pantry 0\.11\.105 \(8bb811bc8\)/)
   proof.host = { osRelease: await readFile('/etc/os-release', 'utf8'), kernel: release(), architecture: arch(), uid: process.getuid?.(), gid: process.getgid?.(), bun: Bun.version, bunExecutable: process.execPath }
+  proof.parentAddressSpace = addressSpaceLimit(await readFile('/proc/self/limits', 'utf8'))
   proof.cli = { path: cli, version: version.stdout.toString().trim(), sha256: await sha256(cli) }
   const packages = await installedPackages(resolve('pantry'))
   proof.packages = packages
@@ -96,24 +99,32 @@ try {
 
   // Complete all four arms before asserting. Reset the identical disposable browser
   // profile path between arms; no package file or global environment is changed.
-  for (const { mode, environment } of chromeEnvironments(process.env, root)) {
+  const cases = comparison === 'address-space' ? chromeAddressSpaceCases(process.env) : chromeEnvironments(process.env, root)
+  for (const { mode, environment, addressSpaceKiB, enforcement } of cases) {
     if (proof.ownedProcessUncertain) {
-      outcomes.push({ mode, notAttempted: true, reason: 'Earlier owned process cleanup is unconfirmed', rendered: false, ownedNssPassed: false })
+      outcomes.push({ mode, enforcement: enforcement ?? false, notAttempted: true, reason: 'Earlier owned process cleanup is unconfirmed', rendered: false, ownedNssPassed: false })
+      continue
+    }
+    if (enforcement && !outcomes.some(outcome => outcome.mode === 'two-tib-address-space' && outcome.rendered && outcome.ownedNssPassed)) {
+      outcomes.push({ mode, enforcement: true, notAttempted: true, reason: 'Finite candidate did not pass rendering and NSS checks', enforcementPassed: false })
       continue
     }
     const browserProfile = join(root, 'browser-profile')
     await rm(browserProfile, { recursive: true, force: true })
     await mkdir(browserProfile)
     const args = ['--headless=new', '--disable-gpu', '--no-first-run', `--user-data-dir=${browserProfile}`, '--dump-dom', 'data:text/html,<h1 id="pantry">rendered by the installed package</h1>']
+    const program = enforcement ? [process.execPath, resolve(import.meta.dir, 'chrome-environment-fixture.ts'), '--probe-address-space-enforcement'] : [entry, ...args]
+    const limitsPath = join(artifacts, `${mode}.limits.log`)
+    const command = comparison === 'address-space' ? addressSpaceArgv(addressSpaceKiB ?? null, limitsPath, program) : program
     const stdoutPath = join(artifacts, `${mode}.stdout.log`)
     const stderrPath = join(artifacts, `${mode}.stderr.log`)
     const stdout = await open(stdoutPath, 'w')
     const stderr = await open(stderrPath, 'w')
-    const result: Record<string, unknown> = { mode, args, cwd: root, environment: visibleBrowserEnvironment(environment), timeoutMs: 60_000, closeGraceMs: 5_000, logLimitBytesPerStream: 8 * 1024 * 1024, rendered: false, ownedNssPassed: false, cleanupConfirmed: false }
+    const result: Record<string, unknown> = { mode, enforcement: enforcement ?? false, args, command, cwd: root, environment: visibleBrowserEnvironment(environment), timeoutMs: 60_000, closeGraceMs: 5_000, logLimitBytesPerStream: 8 * 1024 * 1024, rendered: false, ownedNssPassed: false, cleanupConfirmed: false }
     outcomes.push(result)
     const started = performance.now()
     try {
-      const child: ChildProcess = spawn(entry, args, { cwd: root, env: environment, detached: true, stdio: ['ignore', 'pipe', 'pipe'] })
+      const child: ChildProcess = spawn(command[0]!, command.slice(1), { cwd: root, env: environment, detached: true, stdio: ['ignore', 'pipe', 'pipe'] })
       const killGroup = (): void => {
         if (!child.pid) return
         try { process.kill(-child.pid, 'SIGKILL') }
@@ -181,9 +192,34 @@ try {
     result.nssLibraryOrigins = nssLibraryOrigins(diagnostics)
     result.stdoutSha256 = await sha256(stdoutPath)
     result.stderrSha256 = await sha256(stderrPath)
+    if (comparison === 'address-space') {
+      try {
+        const effective = addressSpaceLimit(await readFile(limitsPath, 'utf8'))
+        result.addressSpace = effective
+        const expected = addressSpaceKiB === null ? proof.parentAddressSpace : { soft: (BigInt(addressSpaceKiB!) * 1024n).toString(), hard: (BigInt(addressSpaceKiB!) * 1024n).toString() }
+        assert.deepEqual(effective, expected, 'The shell must enforce the requested actual soft AND hard limits')
+        result.addressSpaceVerified = true
+      }
+      catch (error) { result.addressSpaceError = String(error) }
+    }
+    if (enforcement) {
+      try {
+        assert.equal(result.exitCode, 0)
+        assert(result.cleanupConfirmed && result.addressSpaceVerified && !result.error && !result.timedOut && !result.captureError && !result.killError && !result.logLimitExceeded)
+        const oracle = JSON.parse(output)
+        assert(oracle.passed && oracle.oversizedRejected && oracle.hardCapRaiseRejected && oracle.smallReservationReleased && oracle.reservedPagesTouched === false)
+        assert.equal(oracle.oversizedErrno, 12)
+        assert.equal(oracle.raiseErrno, 1)
+        result.oracle = oracle
+        result.enforcementPassed = true
+      }
+      catch (error) { result.enforcementError = String(error) }
+      continue
+    }
     try {
       assert.equal(result.exitCode, 0)
       assert(result.cleanupConfirmed && !result.error && !result.timedOut && !result.captureError && !result.killError && !result.logLimitExceeded)
+      if (comparison === 'address-space') assert(result.addressSpaceVerified)
       assert.match(output, /<h1 id="pantry">rendered by the installed package<\/h1>/)
       result.rendered = true
     }
@@ -201,9 +237,22 @@ try {
   proof.executableAfter = await elfIdentity(executable)
   assert.deepEqual(proof.executableAfter, identity, 'Both arms must use unchanged installed ELF bytes')
   assert.equal(outcomes.length, 4)
-  proof.allRendered = outcomes.every(outcome => outcome.rendered)
-  proof.allOwnedNss = outcomes.every(outcome => outcome.ownedNssPassed)
-  assert(proof.allRendered && proof.allOwnedNss, 'Inspect all four separate render/NSS outcomes before any source fix')
+  const browsers = outcomes.filter(outcome => !outcome.enforcement)
+  proof.allRendered = browsers.every(outcome => outcome.rendered)
+  proof.allOwnedNss = browsers.every(outcome => outcome.ownedNssPassed)
+  if (comparison === 'address-space') {
+    const baseline = outcomes.find(outcome => outcome.mode === 'normal-address-space')!
+    const eight = outcomes.find(outcome => outcome.mode === 'eight-gib-address-space')!
+    const candidate = outcomes.find(outcome => outcome.mode === 'two-tib-address-space')!
+    const oracle = outcomes.find(outcome => outcome.mode === 'two-tib-enforcement')!
+    proof.eightGiBSigtrapReproduced = eight.signal === 'SIGTRAP' && !eight.rendered && eight.addressSpaceVerified && eight.cleanupConfirmed
+    proof.finiteCandidateRendered = candidate.rendered && candidate.ownedNssPassed && candidate.addressSpaceVerified
+    proof.finiteCapEnforced = oracle.enforcementPassed
+    assert(baseline.rendered && baseline.ownedNssPassed && baseline.addressSpaceVerified, 'Normal baseline must remain healthy')
+    assert(proof.eightGiBSigtrapReproduced, 'Capture the actual 8 GiB SIGTRAP before attributing the HQ failure to this limit')
+    assert(proof.finiteCandidateRendered && proof.finiteCapEnforced, 'Finite virtual-space candidate must render AND enforce its hard cap')
+  }
+  else assert(proof.allRendered && proof.allOwnedNss, 'Inspect all four separate render/NSS outcomes before any source fix')
   proof.passed = true
 }
 catch (error) { proof.error = String(error); throw error }
