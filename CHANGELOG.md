@@ -1,3 +1,43 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.102...v0.11.103)
+
+## 🐛 Bug Fixes
+
+- **services**: bind execution readiness to the private launcher PID ([69071e0](https://github.com/pantry-pm/pantry/commit/69071e0)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **services**: acknowledge launcher execution before capturing ownership ([961cf10](https://github.com/pantry-pm/pantry/commit/961cf10)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **install**: parse script suppression in the native command API ([3fa712f](https://github.com/pantry-pm/pantry/commit/3fa712f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **install**: preserve script policy across the JavaScript graph owner ([17b19fe](https://github.com/pantry-pm/pantry/commit/17b19fe)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **download**: preserve flush causes and verify actual partial bytes ([8a4ec8d](https://github.com/pantry-pm/pantry/commit/8a4ec8d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **download**: retain persisted byte counts with typed failure stages ([3b7c1d0](https://github.com/pantry-pm/pantry/commit/3b7c1d0)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **io**: preserve filesystem causes and native transfer diagnostics ([11ab119](https://github.com/pantry-pm/pantry/commit/11ab119)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **services**: locate launcher and foreign socket lifecycle failures ([b459b7c](https://github.com/pantry-pm/pantry/commit/b459b7c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **dynamodb**: exercise foreign sockets after owned foreground readiness ([f992723](https://github.com/pantry-pm/pantry/commit/f992723)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **native**: replay restored Git with repeated required tool installs ([97a784b](https://github.com/pantry-pm/pantry/commit/97a784b)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **action**: honor the existing process identity read budgets ([b95307b](https://github.com/pantry-pm/pantry/commit/b95307b)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 👷 Build System
+
+- **action**: adopt the qualified private launcher implementation ([7d76a3c](https://github.com/pantry-pm/pantry/commit/7d76a3c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 💚 Continuous Integration
+
+- qualify committed catalogs and retain their matching Action bundle ([3875172](https://github.com/pantry-pm/pantry/commit/3875172)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.103 ([4ebad4d](https://github.com/pantry-pm/pantry/commit/4ebad4d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- integrate qualified native I/O diagnostics with shared workspace ownership ([9f3f0c4](https://github.com/pantry-pm/pantry/commit/9f3f0c4)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' into codex/pantry-next-io-integration ([bfce315](https://github.com/pantry-pm/pantry/commit/bfce315)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.101...v0.11.102)
 
 ## 🐛 Bug Fixes
