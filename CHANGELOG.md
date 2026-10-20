@@ -1,3 +1,28 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.104...v0.11.105)
+
+## 🐛 Bug Fixes
+
+- **installer**: guard POSIX permission access on Windows ([faa8edb](https://github.com/pantry-pm/pantry/commit/faa8edb)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **installer**: move exclusive verified native payloads transactionally ([6195b58](https://github.com/pantry-pm/pantry/commit/6195b58)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **installer**: require execution of owned materialization regressions ([0d78120](https://github.com/pantry-pm/pantry/commit/0d78120)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **installer**: use portable large-buffer fixture syntax ([dd57a65](https://github.com/pantry-pm/pantry/commit/dd57a65)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **installer**: avoid reserved name in native archive fixture ([781839c](https://github.com/pantry-pm/pantry/commit/781839c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.11.105 ([50a32e4](https://github.com/pantry-pm/pantry/commit/50a32e4)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- integrate current native package catalogs ([155d624](https://github.com/pantry-pm/pantry/commit/155d624)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- update discord.com, github.com/ggerganov/llama.cpp, go.dev, gqlgen.com, postgrest.org ([cc92931](https://github.com/pantry-pm/pantry/commit/cc92931)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- integrate current native package catalogs ([595e9ba](https://github.com/pantry-pm/pantry/commit/595e9ba)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- update craft-native.org to 0.0.250 ([801bbdd](https://github.com/pantry-pm/pantry/commit/801bbdd)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.103...v0.11.104)
 
 ## 🐛 Bug Fixes
