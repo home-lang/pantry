@@ -43,6 +43,14 @@ lockfiles and both Action bundles in `normal-locked-publisher-toolchain`. It doe
 not create a release commit or tag. Adopt those normal generated outputs as a
 reviewed source commit.
 
+The canonical release scripts use Bumpx's post-version `--execute` command to
+run the normal Action builder and stage its two tracked outputs before Bumpx
+creates the release commit. This keeps the bundles consistent with the newly
+bumped workspace versions, so the next frozen install does not dirty them.
+Build failure stops before release commit, tag, or push. The hook creates no
+version or publication itself. Release preflight retains its initial receipt
+even when a clean-tree or qualification check fails.
+
 After all thirteen source CI gates succeed on that commit, run the workflow's
 `patch` operation with that exact commit hash. It uses the installed locked
 publisher and the canonical `release:patch` script. Bumpx checks the expected
