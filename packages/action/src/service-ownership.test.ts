@@ -29,7 +29,9 @@ test('a different process birth or command is rejected without signalling it', a
     expect(await serviceProcessIdentity(process.pid)).toEqual(identity)
   }
   finally { rmSync(directory, { recursive: true, force: true }) }
-})
+// Five sequential kernel identity reads each retain their existing two-second
+// Darwin deadline. The test's default five seconds truncated those valid reads.
+}, 12_000)
 
 test('captures and stops only its owned foreground process, then removes private data', async () => {
   const directory = realpathSync(mkdtempSync(join(tmpdir(), 'pantry-owned-process-')))
