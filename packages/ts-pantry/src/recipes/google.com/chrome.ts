@@ -1,5 +1,15 @@
 import type { Recipe } from '../../../scripts/recipe-types'
 
+/** NSS modules loaded with dlopen at runtime, so no dependency walk finds them. */
+export const NSS_RUNTIME_PROVIDERS: readonly string[] = [
+  'libsoftokn3.so',
+  'libsoftokn3.chk',
+  'libfreebl3.so',
+  'libfreeblpriv3.so',
+  'libfreeblpriv3.chk',
+  'libnssckbi.so',
+]
+
 export const recipe: Recipe = {
   domain: 'google.com/chrome',
   name: 'chrome-for-testing',
@@ -49,8 +59,13 @@ export const recipe: Recipe = {
       'mkdir -p {{prefix}}/lib {{prefix}}/bin',
       'cp -a chrome-linux64 {{prefix}}/lib/chrome-for-testing',
       'ln -s ../lib/chrome-for-testing/chrome {{prefix}}/bin/google-chrome-stable',
-      // NSS opens these providers dynamically, outside the ELF DT_NEEDED graph.
-      'cp {{deps.mozilla.org/nss.prefix}}/lib/libsoftokn3.so {{deps.mozilla.org/nss.prefix}}/lib/libfreebl3.so {{prefix}}/lib/',
+      // NSS opens these providers dynamically, outside the ELF DT_NEEDED graph,
+      // from the directory of the libnss3 Chrome loads ($ORIGIN/.. here):
+      // softokn loads libfreeblpriv3 (freebl3 is only its stub), and the
+      // built-in root module is libnssckbi. Without libfreeblpriv3 the browser
+      // aborts at startup with nss_error=-8023, which --version never reaches.
+      // The .chk files are their FIPS integrity signatures.
+      `cp ${NSS_RUNTIME_PROVIDERS.map(file => `{{deps.mozilla.org/nss.prefix}}/lib/${file}`).join(' ')} {{prefix}}/lib/`,
     ],
   },
   test: {

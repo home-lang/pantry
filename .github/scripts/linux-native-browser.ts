@@ -26,6 +26,40 @@ async function run(name: string, args: string[], timeout = 30_000): Promise<stri
   return output
 }
 
+/**
+ * Run with nothing inherited but HOME and a PATH without the package, so only
+ * its own layout resolves libraries. LD_DEBUG=files makes the dynamic loader
+ * report each library it initialises (on stderr) without changing a lookup.
+ */
+async function runClean(name: string, args: string[], timeout = 60_000): Promise<{ stdout: string, stderr: string }> {
+  const stdout = join(artifacts, `${name}.stdout.log`)
+  const stderr = join(artifacts, `${name}.stderr.log`)
+  const child = Bun.spawn(args, { cwd: root, env: { HOME: root, PATH: '/usr/bin:/bin', LD_DEBUG: 'files' }, stdout: Bun.file(stdout), stderr: Bun.file(stderr), signal: AbortSignal.timeout(timeout) })
+  const code = await child.exited
+  const output = { stdout: await Bun.file(stdout).text(), stderr: await Bun.file(stderr).text() }
+  assert.equal(code, 0, `${name}: ${output.stdout}${output.stderr.slice(-4000)}`)
+  return output
+}
+
+/**
+ * Ubuntu 23.10+ lets an unprivileged program create user namespaces - which
+ * Chrome's sandbox needs - only under an AppArmor profile that allows it.
+ * Ubuntu ships one for /opt/google/chrome/chrome; this grants the same, and
+ * only that, to the installed binary. The browser keeps its sandbox: no
+ * --no-sandbox, and the restriction stays on for everything else.
+ */
+async function allowSandbox(binary: string): Promise<string> {
+  const restricted = await readFile('/proc/sys/kernel/apparmor_restrict_unprivileged_userns', 'utf8').then(value => value.trim() === '1').catch(() => false)
+  if (!restricted) return 'not restricted'
+  const profile = join(root, 'pantry-chrome-userns')
+  await Bun.write(profile, `abi <abi/4.0>,\ninclude <tunables/global>\nprofile pantry-chrome-userns "${binary}" flags=(unconfined) {\n  userns,\n}\n`)
+  const load = Bun.spawnSync(['sudo', '-n', 'apparmor_parser', '-r', profile], { stdout: 'pipe', stderr: 'pipe' })
+  assert.equal(load.exitCode, 0, `Could not load the sandbox profile: ${load.stderr.toString()}`)
+  loadedProfile = profile
+  return 'pantry-chrome-userns'
+}
+let loadedProfile: string | undefined
+
 try {
   proof.cliVersion = (await run('cli-version', [cli, '--version'])).trim()
   // The exact published package and ordinary install path used by HQ's CI.
@@ -37,9 +71,37 @@ try {
   proof.executableSha256 = Bun.SHA256.hash(await readFile(executable), 'hex')
   proof.version = (await run('chrome-version', [entry, '--version'])).trim()
   assert.match(String(proof.version), /\b155\.0\.8059\.84\b/)
+
+  // --version starts no browser: NSS, the sandbox and the renderer never load.
+  // Render a page with the sandbox on, from a clean environment - no
+  // LD_LIBRARY_PATH, nothing inherited - so every library has to come from the
+  // package's own layout. This is what failed with nss_error=-8023 when the
+  // package left out libfreeblpriv3, a provider NSS loads with dlopen.
+  proof.sandboxProfile = await allowSandbox(executable)
+  const page = join(root, 'render-profile')
+  await mkdir(page)
+  const rendered = await runClean('chrome-render', [entry, '--headless=new', '--disable-gpu', '--no-first-run', `--user-data-dir=${page}`, '--dump-dom', 'data:text/html,<h1 id="pantry">rendered by the installed package</h1>'])
+  assert.match(rendered.stdout, /<h1 id="pantry">rendered by the installed package<\/h1>/, 'Chrome must render with its own libraries and its sandbox')
+  proof.rendered = true
+
+  // A render alone is not proof: a host NSS (GitHub's image ships one with its
+  // own Chrome) answers NSS's dlopen fallback for a provider the package left
+  // out, and the page renders anyway. Require the loader to have initialised
+  // softokn and its crypto provider from the installed package itself.
+  // Whole lines: the gate's root path has spaces in it, on purpose.
+  const initialised = [...rendered.stderr.matchAll(/calling init: (.+)$/gm)].map(match => match[1]!.trim())
+  const nss = initialised.filter(path => /\/lib(?:softokn3|freeblpriv3)\.so$/.test(path))
+  proof.nssModules = [...new Set(nss)]
+  for (const module of ['libsoftokn3.so', 'libfreeblpriv3.so']) {
+    const loaded = nss.filter(path => path.endsWith(`/${module}`))
+    assert(loaded.length > 0, `Chrome never initialised ${module}`)
+    for (const path of loaded)
+      assert(path.startsWith(`${root}/pantry/`), `${module} came from ${path}, not the installed package`)
+  }
   proof.passed = true
 }
 finally {
+  if (loadedProfile) Bun.spawnSync(['sudo', '-n', 'apparmor_parser', '-R', loadedProfile])
   await rm(root, { recursive: true, force: true })
   proof.cleaned = true
   await Bun.write(join(artifacts, 'proof.json'), JSON.stringify(proof, null, 2) + '\n')
