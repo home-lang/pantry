@@ -50,3 +50,9 @@ export function requireCurrentRecipeBuild(packageVersion: string, currentVersion
   if (packageVersion !== currentVersion)
     throw new Error(`Recipe requires package build ${currentVersion}; refusing to replace ${packageVersion}`)
 }
+
+/** Vendor prebuilts cannot contain a Pantry packaging repair. */
+export function recipeAllowsMirror(packageVersion: string, identity: { upstream: string, current: string }): boolean {
+  requireCurrentRecipeBuild(packageVersion, identity.current)
+  return identity.upstream === packageVersion
+}

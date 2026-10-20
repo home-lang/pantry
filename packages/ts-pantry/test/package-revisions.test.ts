@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { recipeBuildVersion, requireCurrentRecipeBuild, revisedPackageVersions } from '../scripts/package-revisions'
+import { recipeAllowsMirror, recipeBuildVersion, requireCurrentRecipeBuild, revisedPackageVersions } from '../scripts/package-revisions'
 import { loadRecipe } from '../scripts/recipe-loader'
 import { buildTokens, applyTokens } from '../scripts/buildkit'
 import { compareVersions } from '../src/generate-zig'
@@ -22,6 +22,13 @@ test('historical revisions remain readable but cannot replace accepted package i
   }
   expect(() => requireCurrentRecipeBuild('1.2.3.2', '1.2.3.2')).not.toThrow()
   expect(() => recipeBuildVersion('1.2.3.3', { '1.2.3': 2 })).toThrow('Undeclared')
+})
+
+test('native mirrors cannot bypass a packaging repair or replace its accepted predecessor', () => {
+  const revisions = { '1.2.3': 1 }
+  expect(recipeAllowsMirror('1.2.3.1', recipeBuildVersion('1.2.3.1', revisions))).toBe(false)
+  expect(() => recipeAllowsMirror('1.2.3', recipeBuildVersion('1.2.3', revisions))).toThrow('refusing to replace')
+  expect(recipeAllowsMirror('1.2.4', recipeBuildVersion('1.2.4', revisions))).toBe(true)
 })
 
 test('ambiguous tuples and invalid revisions fail before catalog generation or a build', () => {

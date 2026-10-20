@@ -3,13 +3,13 @@
  *
  * @domain `google.com/chrome`
  * @programs `google-chrome-stable`
- * @version `155.0.8059.84` (1 versions available)
+ * @version `155.0.8059.84.1` (2 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install google.com/chrome`
  * @homepage https://developer.chrome.com/docs/chromedriver/downloads
  * @dependencies `gnome.org/glib^2`, `mozilla.org/nspr^4`, `mozilla.org/nss^3`, ... (+20 more)
- * @buildDependencies `info-zip.org/unzip` - required only when building from source
+ * @buildDependencies `info-zip.org/unzip`, `bun.com>=1.3` - required only when building from source
  *
  * @example
  * ```typescript
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "chrome-for-testing"
  * console.log(pkg.description) // "Versioned Chrome for server browser automation"
  * console.log(pkg.programs)    // ["google-chrome-stable"]
- * console.log(pkg.versions[0]) // "155.0.8059.84" (latest)
+ * console.log(pkg.versions[0]) // "155.0.8059.84.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/google-com/chrome.md
@@ -88,12 +88,14 @@ export const googlecomchromePackage = {
   */
   buildDependencies: [
     'info-zip.org/unzip',
+    'bun.com>=1.3',
   ] as const,
   /**
   * Available versions from newest to oldest.
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '155.0.8059.84.1',
     '155.0.8059.84',
   ] as const,
   aliases: [] as const,

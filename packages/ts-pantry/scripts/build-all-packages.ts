@@ -38,6 +38,8 @@ import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
 import { BINARY_SYNC_DOMAIN_SET } from './binary-sync-packages.ts'
 import { parseDep, versionSatisfies } from './build-package'
 import { publicationOrder } from './publication-order'
+import { recipeAllowsMirror } from './package-revisions'
+import { loadRecipe } from './recipe-loader'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
 const packageOverrides: Record<string, any> = {}
 
@@ -2089,13 +2091,20 @@ else {
         const exists = await timePhase(phases, 'exists', () => checkExistsInS3(domain, candidateVersion, platform, bucket, region))
         if (exists) { console.log(`   ✓ Already in S3 for ${platform}, skipping`); return { status: 'skipped' } }
       }
+      // eslint-disable-next-line no-await-in-loop
+      const loaded = await loadRecipe(domain, platform, candidateVersion)
+      // Revised packages must execute their recipe and required health check;
+      // a vendor prebuilt cannot supply Pantry's repair, including under --force.
+      if (!recipeAllowsMirror(candidateVersion, {
+        upstream: loaded.upstreamVersion ?? candidateVersion,
+        current: loaded.publicationVersion ?? candidateVersion,
+      })) break
       // tryPkgxMirror reports the "mirroring from pkgx" event ITSELF, but only once
       // the download confirms pkgx actually ships this artifact — so packages pkgx
       // doesn't host (our apps/deps, source builds) are never mislabeled as mirrored.
       // eslint-disable-next-line no-await-in-loop
       if (await timePhase(phases, 'mirror', () => tryPkgxMirror(domain, candidateVersion, platform, installDir, buildkitRoot))) {
         const { downloadRuntimePackages } = await import('./build-package')
-        const { loadRecipe } = await import('./recipe-loader')
         const recipe = (await loadRecipe(domain, platform, candidateVersion)).recipe
         selectPublishedFiles(installDir, recipe.publish?.include)
         writeProgramInterfaces(installDir, recipe.sourceablePrograms)
