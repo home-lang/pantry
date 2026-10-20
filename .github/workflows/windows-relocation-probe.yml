@@ -2,7 +2,7 @@ name: Windows executable relocation diagnostic
 on:
   push:
     branches: [codex/windows-compiler-relocation-probe]
-    paths: ['.github/workflows/windows-relocation-probe.yml', '.github/scripts/windows-relocation-probe.ts']
+    paths: ['.github/workflows/windows-relocation-probe.yml', '.github/scripts/windows-relocation-probe.ts', '.github/scripts/windows-sdk-relocation-probe.ts']
 permissions:
   contents: read
 jobs:
@@ -22,4 +22,21 @@ jobs:
         with:
           name: windows-relocation-diagnostic
           path: artifacts/windows-relocation-diagnostic.json
+          if-no-files-found: error
+  sdk-probe:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pantry-pm/pantry/packages/action@ae59a7b7fc5f4e6f7b8041a75e6b5772680bebdf
+        with:
+          version: '0.11.101'
+          install: 'false'
+          packages: bun.com@1.4.3
+      - run: bun .github/scripts/windows-sdk-relocation-probe.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-sdk-relocation-diagnostic
+          path: artifacts/windows-sdk-relocation-diagnostic
           if-no-files-found: error
