@@ -65,25 +65,16 @@ jobs:
           token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      # Before `bun install`, never between it and the steps that need
-      # node_modules. This action installs the released pantry binary and runs
-      # `pantry install`, which lays out node_modules itself — when it ran in
-      # the middle of the job it relaid an already-hoisted tree as isolated and
-      # every `bun ...` step after it failed to resolve its imports. Every
-      # other workflow here already sets pantry up first; this one didn't, and
-      # it is the only one that broke.
-      - name: Setup Pantry & Zig (zig is needed to format generated.zig)
+      - name: Install the declared catalog runtime, compiler and Git through Pantry
         uses: ./packages/action
+        with:
+          install: 'false'
+          packages: bun.com@1.4.3 ziglang.org@0.17.0 git-scm.org@2.53.0
 
       # Last word on node_modules. Any step below can rely on the hoisted
       # layout that bunfig.toml (and pantry.toml) ask for.
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       # Take what publishers reported since the last run. This is the only
       # thing that consumes those notifications, so a release sits in the queue
@@ -191,10 +182,13 @@ jobs:
           # generate-zig runs `zig fmt` itself when zig is on PATH (set up above).
         timeout-minutes: 5
 
+      - name: Build the Action from the updated package catalog
+        run: bun run --cwd packages/action build
+
       - name: Check for changes
         id: git-check
         run: |
-          CHANGES=$(git status --porcelain packages/ts-pantry/src/packages/ packages/ts-pantry/src/generated-package-names.ts packages/zig/src/packages/generated.zig 2>/dev/null || echo "")
+          CHANGES=$(git status --porcelain packages/ts-pantry/src/packages/ packages/ts-pantry/src/generated-package-names.ts packages/zig/src/packages/generated.zig packages/action/dist/index.js packages/action/dist/post.js 2>/dev/null || echo "")
           if [[ -z "$CHANGES" ]]; then
             echo "changes=false" >> $GITHUB_OUTPUT
             echo "No version changes detected"
@@ -234,19 +228,12 @@ jobs:
           # Use github-actions[bot] for automated commits regardless of token source
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
-            git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git
-          fi
-
-          git add packages/ts-pantry/src/packages/ packages/zig/src/packages/generated.zig
+          # Generated bundles belong to the exact source whose metadata was
+          # refreshed. A changed Main requires fresh generation and checking.
+          git fetch origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+          git add packages/ts-pantry/src/packages/ packages/ts-pantry/src/generated-package-names.ts packages/zig/src/packages/generated.zig packages/action/dist/index.js packages/action/dist/post.js
           git commit -F /tmp/pantry-update-commit-message.txt
-          git stash --include-untracked
-          if ! git pull --rebase origin refs/heads/main; then
-            echo "::warning::Rebase failed, aborting rebase and retrying with merge"
-            git rebase --abort
-            git pull origin refs/heads/main
-          fi
-          git stash pop || true
           git push origin HEAD:refs/heads/main
 
           echo "committed=true" >> $GITHUB_OUTPUT
