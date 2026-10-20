@@ -10,6 +10,10 @@ on:
         description: Run the complete native suite against this same source and compiler
         type: boolean
         default: false
+      generate-workspace-lock:
+        description: Generate and freeze the normal source-owned workspace lock for source adoption
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -93,6 +97,15 @@ jobs:
         run: |
           cp packages/zig/zig-out/bin/pantry artifacts/native-catalog/lookup-cli
           sha256sum artifacts/native-catalog/lookup-cli > artifacts/native-catalog/lookup-cli-sha256.txt
+      - name: Migrate and freeze the native workspace with the built source installer
+        run: |
+          packages/zig/zig-out/bin/pantry install
+          packages/zig/zig-out/bin/pantry install --frozen-lockfile
+          cp pantry.lock artifacts/native-catalog/source-workspace-pantry.lock
+          sha256sum pantry.lock > artifacts/native-catalog/source-workspace-lock-sha256.txt
+          if [ '${{ inputs.generate-workspace-lock }}' != 'true' ]; then
+            git diff --exit-code -- pantry.lock bun.lock
+          fi
       - name: Install the declared native unit-test fixture tools through Pantry
         if: inputs.verify-native-unit-tests
         uses: ./packages/action

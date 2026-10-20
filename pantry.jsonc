@@ -10,9 +10,6 @@
     "bun.sh": "1.4.3",
     "ziglang.org": "0.17.0"
   },
-  "devDependencies": {
-    "better-dx": "^0.2.0"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/stacksjs/pantry"

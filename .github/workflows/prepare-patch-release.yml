@@ -47,8 +47,6 @@ jobs:
           test "$(git rev-parse HEAD)" = "$PANTRY_RELEASE_EXPECTED_SHA"
           test -z "$(git status --porcelain)"
           bun add --dev --exact @stacksjs/bumpx@0.2.25
-          pantry install
-          pantry install --frozen-lockfile
           bun install --frozen-lockfile
           bun run --cwd packages/action build
           bun .github/scripts/prepare-patch-release.ts toolchain

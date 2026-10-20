@@ -113,6 +113,12 @@ jobs:
           zig build -Doptimize=Debug -j2
           PANTRY_SOURCE_CLI="$PWD/zig-out/bin/pantry" bun test test/workspace-companion-e2e.test.ts
 
+      - name: Verify this source migrates its published bootstrap to the committed workspace lock
+        run: |
+          packages/zig/zig-out/bin/pantry install
+          packages/zig/zig-out/bin/pantry install --frozen-lockfile
+          git diff --exit-code -- pantry.lock bun.lock
+
       - name: Install the native graph fixture archiver through Pantry
         uses: ./packages/action
         with:
@@ -368,11 +374,16 @@ jobs:
           version: 0.11.97
           install: 'false'
           packages: bun.com@1.4.3 ziglang.org@0.17.0
-      - name: Bootstrap the frozen workspace dependencies required by the compiler
-        run: pantry install --frozen-lockfile
+      - name: Bootstrap the compiler dependencies with the previous published installer
+        run: pantry install
       - run: bun install --frozen-lockfile
       - name: Build this checkout's native CLI
         run: cd packages/zig && zig build -Doptimize=Debug -j2
+      - name: Require the source installer to restore the committed canonical workspace lock
+        run: |
+          packages/zig/zig-out/bin/pantry install
+          packages/zig/zig-out/bin/pantry install --frozen-lockfile
+          git diff --exit-code -- pantry.lock bun.lock
       - name: Verify gateway recovery and terminal authentication through the native transport
         env:
           PANTRY_SOURCE_CLI: packages/zig/zig-out/bin/pantry
@@ -498,15 +509,18 @@ jobs:
           version: 0.11.97
           install: 'false'
           packages: bun.com@1.4.3 ziglang.org@0.17.0
-      - name: Bootstrap the frozen workspace dependencies required by the compiler
-        run: pantry install --frozen-lockfile
+      - name: Bootstrap the compiler dependencies with the previous published installer
+        run: pantry install
       - run: bun install --frozen-lockfile
       - name: Verify native service admission and shutdown on this platform
         run: bun test packages/action/src/service-ownership.test.ts packages/action/src/native-dynamodb.test.ts packages/action/src/native-cache.test.ts
       - name: Build the source CLI before release
         run: cd packages/zig && zig build -Doptimize=Debug -j2
-      - name: Verify the frozen workspace install with this checkout's native CLI
-        run: packages/zig/zig-out/bin/pantry install --frozen-lockfile
+      - name: Verify source migration and the committed frozen workspace with this checkout's native CLI
+        run: |
+          packages/zig/zig-out/bin/pantry install
+          packages/zig/zig-out/bin/pantry install --frozen-lockfile
+          git diff --exit-code -- pantry.lock bun.lock
       - name: Verify explicit pins through the recursive native installer
         env:
           PANTRY_TEST_CLI: packages/zig/zig-out/bin/pantry
