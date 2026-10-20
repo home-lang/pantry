@@ -467,10 +467,13 @@ export function parseVersion(version: string): ParsedVersion {
 export function compareVersionsDesc(a: string, b: string): number {
   const va = parseVersion(a)
   const vb = parseVersion(b)
-
-  if (va.major !== vb.major) return vb.major - va.major
-  if (va.minor !== vb.minor) return vb.minor - va.minor
-  if (va.patch !== vb.patch) return vb.patch - va.patch
+  const numeric = (version: string): number[] => version.replace(/^v/, '').split(/[+-]/, 1)[0]!.split('.').map(part => Number.parseInt(part, 10) || 0)
+  const left = numeric(a)
+  const right = numeric(b)
+  for (let index = 0; index < Math.max(left.length, right.length); index++) {
+    const difference = (right[index] ?? 0) - (left[index] ?? 0)
+    if (difference) return difference
+  }
 
   const aPre = va.prerelease.length > 0
   const bPre = vb.prerelease.length > 0
@@ -580,6 +583,8 @@ export function resolveVersionFromMetadata(constraint: string, availableVersions
   // A partial version (`0.16`) means the latest release under it. Compare parsed
   // components rather than the raw string, so `0.1` cannot match `0.16.0`.
   const parts = constraintCore.split('.').filter(Boolean).map(n => Number.parseInt(n, 10))
+  // Three or more components name an exact package, including Pantry build revisions.
+  if (parts.length >= 3 && parts.every(n => !Number.isNaN(n))) return null
   if (parts.length > 0 && parts.every(n => !Number.isNaN(n))) {
     const prefixMatch = pick((candidate) => {
       if (parts[0] !== undefined && candidate.major !== parts[0]) return false

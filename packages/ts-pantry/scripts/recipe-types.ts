@@ -115,6 +115,9 @@ export interface Recipe {
   /** How to discover new versions */
   versionSource?: VersionSource
 
+  /** Pantry packaging revisions by exact upstream numeric version; published identities are never overwritten. */
+  revisions?: import('./package-revisions').PackageRevisions
+
   /** Source archive to download (null for pre-built binaries) */
   distributable?: RecipeDistributable | null
 
@@ -163,6 +166,10 @@ export interface Recipe {
 
 /** Result from loading a recipe — either native TS or converted from YAML */
 export interface LoadedRecipe {
+  /** Vendor version used by source URLs, scripts, conditions and health checks. */
+  upstreamVersion?: string
+  /** Current publishable package identity; older identities remain readable but cannot be rebuilt. */
+  publicationVersion?: string
   /** The normalized recipe in buildkit-compatible format */
   recipe: {
     distributable?: { url: string, 'strip-components'?: number } | null

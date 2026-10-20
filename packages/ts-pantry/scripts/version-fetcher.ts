@@ -13,6 +13,7 @@
 import { appendFileSync, existsSync, readdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs'
 import { join } from 'node:path'
 import type { VersionSource, Recipe } from './recipe-types'
+import { revisedPackageVersions } from './package-revisions'
 
 const recipesDir = join(import.meta.dir, '..', 'src', 'recipes')
 const packagesDir = join(import.meta.dir, '..', 'src', 'packages')
@@ -447,7 +448,7 @@ async function main() {
 
       if (targetDomain && recipe.domain !== targetDomain) return { checked: 0, updated: 0, errors: 0, unavailable: 0 }
 
-      const versions = await fetchVersions(recipe.versionSource)
+      const versions = revisedPackageVersions(await fetchVersions(recipe.versionSource), recipe.revisions)
       if (versions.length === 0) {
         console.log(`  ${recipe.domain}: no versions found`)
         noVersionDomains.push(recipe.domain)

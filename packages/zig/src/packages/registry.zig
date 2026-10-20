@@ -111,11 +111,13 @@ pub fn compareVersions(a: []const u8, b: []const u8) !std.math.Order {
     var a_parts = std.mem.splitScalar(u8, a, '.');
     var b_parts = std.mem.splitScalar(u8, b, '.');
 
-    // Compare major, minor, patch
-    var i: usize = 0;
-    while (i < 3) : (i += 1) {
-        const a_part = a_parts.next() orelse "0";
-        const b_part = b_parts.next() orelse "0";
+    // Pantry versions can include upstream fourth components and build revisions.
+    while (true) {
+        const a_next = a_parts.next();
+        const b_next = b_parts.next();
+        if (a_next == null and b_next == null) break;
+        const a_part = a_next orelse "0";
+        const b_part = b_next orelse "0";
 
         const a_num = try std.fmt.parseInt(u32, a_part, 10);
         const b_num = try std.fmt.parseInt(u32, b_part, 10);
@@ -240,6 +242,8 @@ test "compareVersions" {
     try std.testing.expect(try compareVersions("1.0.0", "1.0.1") == .lt);
     try std.testing.expect(try compareVersions("1.0.1", "1.0.0") == .gt);
     try std.testing.expect(try compareVersions("2.0.0", "1.9.9") == .gt);
+    try std.testing.expect(try compareVersions("155.0.8059.84.1", "155.0.8059.84") == .gt);
+    try std.testing.expect(try compareVersions("155.0.8059.84.2", "155.0.8059.85") == .lt);
 }
 
 test "satisfiesConstraint caret" {

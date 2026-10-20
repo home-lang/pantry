@@ -1302,12 +1302,12 @@ async function withRuntimeResources(packages: RuntimePackage[], platform: string
 }
 
 async function buildPackage(options: BuildOptions): Promise<void> {
-  const { package: pkgName, version, platform, buildDir, prefix, depsDir, bucket, region } = options
+  const { package: pkgName, version: packageVersion, platform, buildDir, prefix, depsDir, bucket, region } = options
   const [os, arch] = platform.split('-')
   const osName = os === 'darwin' ? 'darwin' : 'linux'
 
   console.log(`\n${'='.repeat(60)}`)
-  console.log(`Building ${pkgName} ${version} for ${platform}`)
+  console.log(`Building ${pkgName} ${packageVersion} for ${platform}`)
   console.log(`${'='.repeat(60)}`)
 
   // Get package metadata from src/packages/*.ts (uses reverse domain lookup for collision-resolved keys)
@@ -1322,9 +1322,9 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   console.log(`Available versions: ${pkg.versions.length}`)
 
   // Validate version is available (warn but allow unknown versions for dev builds)
-  if (!pkg.versions.includes(version)) {
+  if (!pkg.versions.includes(packageVersion)) {
     console.log(`\nAvailable versions: ${pkg.versions.slice(0, 10).join(', ')}...`)
-    console.log(`⚠️  Version ${version} not in TS definition — proceeding anyway (may be a dev/pre-release version)`)
+    console.log(`⚠️  Version ${packageVersion} not in TS definition — proceeding anyway (may be a dev/pre-release version)`)
   }
 
   // Show dependencies
@@ -1341,7 +1341,10 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
   // Load recipe: tries src/recipes/*.ts first, then YAML + overrides
   const { loadRecipe } = await import('./recipe-loader')
-  const loaded = await loadRecipe(pkgName, platform, version)
+  const loaded = await loadRecipe(pkgName, platform, packageVersion)
+  const { requireCurrentRecipeBuild } = await import('./package-revisions')
+  requireCurrentRecipeBuild(packageVersion, loaded.publicationVersion ?? packageVersion)
+  const version = loaded.upstreamVersion ?? packageVersion
   console.log(`Build recipe: ${loaded.yamlPath || 'native TS recipe'} (source: ${loaded.source})`)
 
   const recipe = loaded.recipe as PackageRecipe
@@ -1393,7 +1396,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
       initial => publishedDependencyGraph(initial, platform, bucket, region),
       (graph, directory) => downloadDependencies([...graph.values()], directory, platform, bucket, region))
     depPaths = installed.depPaths
-    runtimePackages = await withRuntimeResources(externalRuntimePackages(installed.runtimePackages, { domain: pkg.domain, version }), platform)
+    runtimePackages = await withRuntimeResources(externalRuntimePackages(installed.runtimePackages, { domain: pkg.domain, version: packageVersion }), platform)
 
     console.log(`\nDownloaded ${Object.keys(depPaths).filter(k => k.endsWith('.prefix')).length} dependencies (including transitive)`)
   }

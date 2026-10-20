@@ -352,6 +352,7 @@ fn prereleaseNumber(version_str: []const u8) ?u64 {
 }
 
 fn versionOrderAgainstConstraint(version_str: []const u8, version: Version, constraint: Constraint) std.math.Order {
+    if (constraint.raw_version) |raw| return compareVersions(version_str, raw);
     if (version.major != constraint.major) return std.math.order(version.major, constraint.major);
     if (version.minor != constraint.minor) return std.math.order(version.minor, constraint.minor);
     if (version.patch != constraint.patch) return std.math.order(version.patch, constraint.patch);
@@ -359,6 +360,14 @@ fn versionOrderAgainstConstraint(version_str: []const u8, version: Version, cons
     if (!constraint.allows_prerelease) return if (isPrerelease(version_str)) .lt else .eq;
     if (!isPrerelease(version_str)) return .gt;
     return std.math.order(prereleaseNumber(version_str) orelse 0, constraint.prerelease_number orelse 0);
+}
+
+test "package build revisions retain exact identity and every numeric range bound" {
+    const versions = [_][]const u8{ "155.0.8059.84", "155.0.8059.84.1", "155.0.8059.84.2", "155.0.8059.85" };
+    try std.testing.expectEqualStrings("155.0.8059.84.2", findBestMatch(&versions, ">155.0.8059.84.1 <155.0.8059.85").?);
+    try std.testing.expectEqualStrings("155.0.8059.84.1", findBestMatch(&versions, "155.0.8059.84.1").?);
+    try std.testing.expect(!satisfiesConstraint("155.0.8059.84", try parseConstraint(">=155.0.8059.84.1")));
+    try std.testing.expect(!satisfiesConstraint("155.0.8059.84.2", try parseConstraint("<=155.0.8059.84.1")));
 }
 
 fn sameRegistryVersion(a: []const u8, b: []const u8) bool {

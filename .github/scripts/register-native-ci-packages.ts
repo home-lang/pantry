@@ -11,7 +11,7 @@ import type { PkgxPackage } from '../../packages/ts-pantry/src/types'
 
 /** Retain previously catalogued releases when registering a new native recipe. */
 export function mergeRecipeVersions(previous: readonly string[], requested: readonly string[]): string[] {
-  if (!requested.length || requested.some(version => !/^\d+(?:\.\d+){0,3}$/.test(version)))
+  if (!requested.length || requested.some(version => !/^\d+(?:\.\d+){0,10}$/.test(version)))
     throw new Error('Native package registration requires exact stable versions')
   return [...new Set([...previous, ...requested])].sort(compareInstallerVersionsDesc)
 }

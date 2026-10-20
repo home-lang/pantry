@@ -3,6 +3,9 @@ import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { resolveNativeExecutable } from '../../packages/action/src/native-executable'
+import { recipeBuildVersion } from '../../packages/ts-pantry/scripts/package-revisions'
+import { recipe as chrome } from '../../packages/ts-pantry/src/recipes/google.com/chrome'
+import { verifyChromeRuntime } from '../../packages/ts-pantry/src/recipes/props/google.com/chrome/health'
 
 assert.equal(process.platform, 'linux')
 assert.notEqual(process.getuid?.(), 0, 'Exercise installation as an unprivileged user')
@@ -26,17 +29,20 @@ async function run(name: string, args: string[], timeout = 30_000): Promise<stri
   return output
 }
 
+
 try {
   proof.cliVersion = (await run('cli-version', [cli, '--version'])).trim()
   // The exact published package and ordinary install path used by HQ's CI.
   // A private XDG tree prevents an inherited installation from hiding failure.
-  await run('install', [cli, 'install', 'git-scm.org@2.53.0', 'google.com/chrome@155.0.8059.84', '--no-save', '--verbose'], 600_000)
+  await run('install', [cli, 'install', 'git-scm.org@2.53.0', `google.com/chrome@${recipeBuildVersion('155.0.8059.84', chrome.revisions).current}`, '--no-save', '--verbose'], 600_000)
   const entry = join(root, 'pantry/.bin/google-chrome-stable')
   const executable = resolveNativeExecutable(entry)
   assert(executable.startsWith(`${root}/pantry/`), 'Use the installed package, not a host browser')
   proof.executableSha256 = Bun.SHA256.hash(await readFile(executable), 'hex')
   proof.version = (await run('chrome-version', [entry, '--version'])).trim()
   assert.match(String(proof.version), /\b155\.0\.8059\.84\b/)
+
+  Object.assign(proof, await verifyChromeRuntime(entry, join(root, 'pantry'), executable))
   proof.passed = true
 }
 finally {

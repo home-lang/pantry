@@ -1,5 +1,15 @@
 import type { Recipe } from '../../../scripts/recipe-types'
 
+/** NSS modules loaded with dlopen at runtime, so no dependency walk finds them. */
+export const NSS_RUNTIME_PROVIDERS: readonly string[] = [
+  'libsoftokn3.so',
+  'libsoftokn3.chk',
+  'libfreebl3.so',
+  'libfreeblpriv3.so',
+  'libfreeblpriv3.chk',
+  'libnssckbi.so',
+]
+
 export const recipe: Recipe = {
   domain: 'google.com/chrome',
   name: 'chrome-for-testing',
@@ -7,6 +17,7 @@ export const recipe: Recipe = {
   homepage: 'https://developer.chrome.com/docs/chromedriver/downloads',
   programs: ['google-chrome-stable'],
   platforms: ['linux/x86-64'],
+  revisions: { '155.0.8059.84': 1 },
   versionSource: {
     type: 'custom',
     async fetch() {
@@ -41,7 +52,8 @@ export const recipe: Recipe = {
     'x.org/xfixes': '^6',
     'x.org/xrandr': '^1',
   },
-  buildDependencies: { 'info-zip.org/unzip': '*' },
+  buildDependencies: { 'info-zip.org/unzip': '*', 'bun.com': '>=1.3' },
+  propsDir: '../props/google.com/chrome',
   build: {
     script: [
       'curl -fSL "https://storage.googleapis.com/chrome-for-testing-public/{{version}}/linux64/chrome-linux64.zip" -o chrome.zip',
@@ -49,12 +61,17 @@ export const recipe: Recipe = {
       'mkdir -p {{prefix}}/lib {{prefix}}/bin',
       'cp -a chrome-linux64 {{prefix}}/lib/chrome-for-testing',
       'ln -s ../lib/chrome-for-testing/chrome {{prefix}}/bin/google-chrome-stable',
-      // NSS opens these providers dynamically, outside the ELF DT_NEEDED graph.
-      'cp {{deps.mozilla.org/nss.prefix}}/lib/libsoftokn3.so {{deps.mozilla.org/nss.prefix}}/lib/libfreebl3.so {{prefix}}/lib/',
+      // NSS opens these providers dynamically, outside the ELF DT_NEEDED graph,
+      // from the directory of the libnss3 Chrome loads ($ORIGIN/.. here):
+      // softokn loads libfreeblpriv3 (freebl3 is only its stub), and the
+      // built-in root module is libnssckbi. Without libfreeblpriv3 the browser
+      // aborts at startup with nss_error=-8023, which --version never reaches.
+      // The .chk files are their FIPS integrity signatures.
+      `cp ${NSS_RUNTIME_PROVIDERS.map(file => `{{deps.mozilla.org/nss.prefix}}/lib/${file}`).join(' ')} {{prefix}}/lib/`,
     ],
   },
   test: {
-    script: ['google-chrome-stable --version'],
+    script: ['google-chrome-stable --version', 'bun "{{srcroot}}/props/health.ts" "{{prefix}}/bin/google-chrome-stable" "{{prefix}}"'],
     required: true,
   },
 }

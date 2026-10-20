@@ -10,6 +10,10 @@ on:
         description: Build the immutable DynamoDB Local recipe and require its live database health check
         type: boolean
         default: false
+      verify-chrome:
+        description: Build the revised Chrome package normally and require its sandboxed rendering/NSS origin health check before publication
+        type: boolean
+        default: false
       verify-native-unit-tests:
         description: Run the complete native suite against this same source and compiler
         type: boolean
@@ -23,7 +27,7 @@ permissions:
 jobs:
   catalog:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: ${{ inputs.verify-chrome && 45 || 15 }}
     steps:
       - uses: actions/checkout@v6
       - name: Set up published Pantry and managed workspace tools
@@ -50,7 +54,7 @@ jobs:
       - name: Verify registration invariants
         run: |
           set -o pipefail
-          bun test packages/ts-pantry/test/native-ci-metadata.test.ts packages/ts-pantry/test/native-ci-tools-recipe.test.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts packages/ts-pantry/test/generated-package-docs.test.ts packages/ts-pantry/test/fetch.test.ts packages/action/src/services.test.ts packages/action/src/native-dynamodb.test.ts packages/action/src/native-cache.test.ts packages/ts-pantry/test/resolve-build-version.test.ts 2>&1 | tee artifacts/native-catalog/recipe-tests.log
+          bun test packages/ts-pantry/test/package-revisions.test.ts packages/ts-pantry/test/chrome-nss-runtime.test.ts packages/ts-pantry/test/native-ci-metadata.test.ts packages/ts-pantry/test/native-ci-tools-recipe.test.ts packages/ts-pantry/test/dynamodb-local-recipe.test.ts packages/ts-pantry/test/generated-package-docs.test.ts packages/ts-pantry/test/fetch.test.ts packages/action/src/services.test.ts packages/action/src/native-dynamodb.test.ts packages/action/src/native-cache.test.ts packages/ts-pantry/test/resolve-build-version.test.ts 2>&1 | tee artifacts/native-catalog/recipe-tests.log
       - name: Verify locked tool selection against the installer contract
         run: bun test packages/action/src/lock-version.test.ts
       - name: Verify real HTTP registry lookup failures and credential scope
@@ -69,6 +73,7 @@ jobs:
         run: |
           set -e
           bun .github/scripts/register-native-ci-packages.ts
+          bun packages/ts-pantry/scripts/version-fetcher.ts --domain google.com/chrome
           bun packages/ts-pantry/scripts/sync-recipe-dependencies.ts mysql.com mesa3d.org invisible-island.net/ncurses sourceforge.net/e2fsprogs php.net getcomposer.org gnu.org/autoconf gnu.org/automake gnu.org/libtool cmake.org google.com/chrome gnutls.org freedesktop.org/p11-kit tukaani.org/xz openjdk.org aws.amazon.com/dynamodb-local
           git add -N packages/ts-pantry/src/packages packages/zig/src/packages/generated.zig
           git diff --check -- packages/ts-pantry/src/packages packages/zig/src/packages/generated.zig
@@ -153,6 +158,33 @@ jobs:
         run: |
           set -o pipefail
           bun packages/ts-pantry/scripts/build-package.ts --package aws.amazon.com/dynamodb-local --version 3.3.0 --platform linux-x86-64 --build-dir "$RUNNER_TEMP/dynamodb-build" --prefix "$RUNNER_TEMP/dynamodb-install" --deps-dir "$RUNNER_TEMP/dynamodb-deps" --bucket "$S3_BUCKET" --region "$S3_REGION" 2>&1 | tee artifacts/native-catalog/native-build.log
+      - name: Select the declared Chrome producer tools
+        if: inputs.verify-chrome
+        id: chrome-tools
+        run: bun packages/ts-pantry/scripts/native-publisher-toolchain.ts --packages >> "$GITHUB_OUTPUT"
+      - name: Install the native producer tools through Pantry
+        if: inputs.verify-chrome
+        uses: ./packages/action
+        with:
+          version: 0.11.101
+          install: 'false'
+          packages: ${{ steps.chrome-tools.outputs.packages }}
+      - name: Build Chrome with its required clean-environment sandbox and owned NSS checks
+        if: inputs.verify-chrome
+        env:
+          PANTRY_REPORTED_BY_PARENT: '1'
+          STORAGE_PROVIDER: ${{ vars.STORAGE_PROVIDER || 'aws' }}
+          S3_BUCKET: ${{ vars.S3_BUCKET || 'pantry-registry' }}
+          S3_REGION: ${{ vars.S3_REGION || 'us-east-1' }}
+          S3_ENDPOINT: ${{ vars.S3_ENDPOINT }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          set -o pipefail
+          bun packages/ts-pantry/scripts/native-publisher-toolchain.ts
+          bun packages/ts-pantry/scripts/build-package.ts --package google.com/chrome --version 155.0.8059.84.1 --platform linux-x86-64 --build-dir "$RUNNER_TEMP/chrome-build" --prefix "$RUNNER_TEMP/chrome-install" --deps-dir "$RUNNER_TEMP/chrome-deps" --bucket "$S3_BUCKET" --region "$S3_REGION" 2>&1 | tee artifacts/native-catalog/chrome-native-build.log
       - name: Retain the generated source patch and registration evidence
         if: always()
         uses: actions/upload-artifact@v4

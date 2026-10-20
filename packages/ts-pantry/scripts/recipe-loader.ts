@@ -15,6 +15,7 @@ import type { Recipe, LoadedRecipe } from './recipe-types'
 import type { NormalizedRecipe } from './buildkit'
 import { evaluateCondition } from './buildkit'
 import { programsForPlatform } from '../src/programs'
+import { recipeBuildVersion } from './package-revisions'
 
 // package-overrides.ts removed — overrides migrated to src/recipes/*.ts
 const packageOverrides: Record<string, any> = {}
@@ -42,8 +43,11 @@ export async function loadRecipe(
       const mod = await import(recipePath)
       const def: Recipe = mod.recipe || mod.default
       if (def) {
+        const identity = version ? recipeBuildVersion(version, def.revisions) : undefined
         return {
-          recipe: recipeDefToNormalized(def, _platform, version),
+          recipe: recipeDefToNormalized(def, _platform, identity?.upstream),
+          upstreamVersion: identity?.upstream,
+          publicationVersion: identity?.current,
           source: 'recipe',
           propsDir: def.propsDir ? join(recipePath, '..', def.propsDir) : undefined,
         }

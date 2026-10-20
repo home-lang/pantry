@@ -152,6 +152,17 @@ metadata for ordering, but the exact registry key is preserved for download.
 
 ## Lockfile contract
 
+Recipes can declare packaging repairs with `revisions`, keyed by the exact
+upstream numeric version. For example, `revisions: { '155.0.8059.84': 1 }`
+publishes the distinct Pantry package `155.0.8059.84.1`. Its vendor download URL,
+build script and health checks still use upstream `155.0.8059.84`; the added
+component identifies Pantry's packaging revision, not another vendor release.
+Revision-enabled recipes require upstream versions with a fixed numeric tuple
+length, so vendor versions and package revisions cannot collide. Discovery and
+catalog generation retain accepted older versions. The producer refuses to
+rebuild a superseded identity with the revised recipe. Pin the full revised
+package version to select its separate archive, installation and cache entry.
+
 `pantry.lock` is the reproducibility boundary for Pantry-owned dependencies. It records exact package versions,
 resolved locations, integrity when available, dependency relationships, and
 workspace constraint state. It supports lockfile-first restore, which avoids
