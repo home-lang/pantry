@@ -3,7 +3,7 @@
  *
  * @domain `cli.github.com`
  * @programs `gh`
- * @version `2.102.0` (115 versions available)
+ * @version `2.102.1` (116 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install cli.github.com`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "gh"
  * console.log(pkg.description) // "GitHub’s official command line tool"
  * console.log(pkg.programs)    // ["gh"]
- * console.log(pkg.versions[0]) // "2.102.0" (latest)
+ * console.log(pkg.versions[0]) // "2.102.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/cli-github-com.md
@@ -67,6 +67,7 @@ export const cligithubcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.102.1',
     '2.102.0',
     '2.101.0',
     '2.100.0',

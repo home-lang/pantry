@@ -3,7 +3,7 @@
  *
  * @domain `encore.dev`
  * @programs `encore`, `git-remote-encore`
- * @version `1.58.7` (79 versions available)
+ * @version `1.58.8` (80 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install encore.dev`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "encore"
  * console.log(pkg.description) // "Open Source Development Platform for building r..."
  * console.log(pkg.programs)    // ["encore", "git-remote-encore"]
- * console.log(pkg.versions[0]) // "1.58.7" (latest)
+ * console.log(pkg.versions[0]) // "1.58.8" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/encore-dev.md
@@ -75,6 +75,7 @@ export const encoredevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.58.8',
     '1.58.7',
     '1.58.6',
     '1.58.4',
