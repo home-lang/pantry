@@ -37,9 +37,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Install system dependencies through Pantry
-        uses: pantry-pm/pantry/packages/action@dcf64a9e5922e9d1939bc2b43e0288e5dd03dcf6
+        uses: pantry-pm/pantry/packages/action@ae59a7b7fc5f4e6f7b8041a75e6b5772680bebdf
         with:
-          version: 0.11.100
+          version: 0.11.101
           install: 'false'
           packages: bun.com@1.4.3 git-scm.org@2.53.0
       - name: Verify the exact source and adopt the public fixed publisher normally
@@ -84,9 +84,9 @@ jobs:
           ref: main
           fetch-depth: 0
       - name: Install the publisher runtime and Git through Pantry
-        uses: pantry-pm/pantry/packages/action@dcf64a9e5922e9d1939bc2b43e0288e5dd03dcf6
+        uses: pantry-pm/pantry/packages/action@ae59a7b7fc5f4e6f7b8041a75e6b5772680bebdf
         with:
-          version: 0.11.100
+          version: 0.11.101
           install: 'false'
           packages: bun.com@1.4.3 git-scm.org@2.53.0
       - name: Set the configured release identity

@@ -25,7 +25,7 @@ jobs:
       - name: Set up published Pantry and managed workspace tools
         uses: ./packages/action
         with:
-          version: 0.11.94
+          version: 0.11.101
           install: 'false'
           packages: bun.com@1.4.3
       - name: Install first-party JavaScript dependencies
@@ -70,7 +70,7 @@ jobs:
       - name: Verify that a stale development lock cannot replace the stable compiler
         uses: ./packages/action
         with:
-          version: 0.11.94
+          version: 0.11.101
           install: 'false'
           packages: ziglang.org@0.17.0 bun.com@1.4.3
       - name: Verify the actual managed compiler identity
@@ -155,7 +155,7 @@ jobs:
       - name: Set up published Pantry and its managed test runtime
         uses: ./packages/action
         with:
-          version: 0.11.94
+          version: 0.11.101
           install: 'false'
           packages: bun.com@1.4.3
       - uses: actions/download-artifact@v4
@@ -229,7 +229,7 @@ jobs:
       - name: Set up published Pantry and its managed test runtime
         uses: ./packages/action
         with:
-          version: 0.11.94
+          version: 0.11.101
           install: 'false'
           packages: bun.com@1.4.3
       - uses: actions/download-artifact@v4
