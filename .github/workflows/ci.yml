@@ -153,7 +153,10 @@ jobs:
         run: bun .github/scripts/linux-native-tools.ts
 
       - name: Cross-compile the source CLI for native Windows qualification
-        run: cd packages/zig && zig build -Dtarget=x86_64-windows-gnu -Doptimize=Debug -j2 --prefix ../../artifacts/windows-source-cli
+        run: |
+          cd packages/zig
+          zig build -Dtarget=x86_64-windows-gnu -Doptimize=Debug -j2 --prefix ../../artifacts/windows-source-cli
+          zig test src/io_helper.zig -lc -target x86_64-windows-gnu --test-no-exec --test-filter deleteTree -femit-bin=../../artifacts/windows-source-cli/bin/file-tree-tests.exe
 
       - name: Retain the source Windows CLI and Action
         uses: actions/upload-artifact@v4
@@ -161,6 +164,7 @@ jobs:
           name: windows-source-runtime
           path: |
             artifacts/windows-source-cli/bin/pantry.exe
+            artifacts/windows-source-cli/bin/file-tree-tests.exe
             packages/action/dist/index.js
             packages/action/dist/post.js
           if-no-files-found: error
@@ -405,7 +409,7 @@ jobs:
           if-no-files-found: error
 
   continuous-release:
-    needs: [lint, typecheck, test, action-redis-service, action-native-services, action-native-tools, native-browser, windows-native-runtime, windows-file-tree]
+    needs: [lint, typecheck, test, action-redis-service, action-native-services, action-native-tools, native-browser, windows-native-runtime]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # Best-effort commit-preview publishing. Don't fail the whole workflow
@@ -465,24 +469,6 @@ jobs:
             ]
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
-  windows-file-tree:
-    name: Windows linked workspace cleanup
-    runs-on: windows-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v6
-      - name: Install the pinned compiler and runtime
-        uses: pantry-pm/pantry/packages/action@ae59a7b7fc5f4e6f7b8041a75e6b5772680bebdf # v0.11.101
-        with:
-          version: '0.11.101'
-          install: 'false'
-          packages: bun.com@1.4.3 ziglang.org@0.17.0
-      - name: Test source preservation through directory and nested links
-        # Keep the compiler's own adjacent standard library when invoking a
-        # managed binary through the package's executable link.
-        run: |
-          bun -e 'const zig = require("node:fs").realpathSync(Bun.which("zig")); process.exit(Bun.spawnSync([zig, "test", "packages/zig/src/io_helper.zig", "-lc", "--test-filter", "deleteTree"], { stdout: "inherit", stderr: "inherit" }).exitCode)'
-
   windows-native-runtime:
     needs: test
     runs-on: windows-latest
@@ -500,6 +486,8 @@ jobs:
         with:
           name: windows-source-runtime
           path: artifacts/windows-source-runtime
+      - name: Test source preservation through directory and nested links
+        run: '& ./artifacts/windows-source-runtime/artifacts/windows-source-cli/bin/file-tree-tests.exe'
       - name: Verify the actual source installer and required workspace failures
         env:
           PANTRY_TEST_CLI: artifacts/windows-source-runtime/artifacts/windows-source-cli/bin/pantry.exe
