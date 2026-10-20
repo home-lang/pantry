@@ -798,7 +798,8 @@ fn confirmDeferredReadback(allocator: std.mem.Allocator, item: *const DeferredRe
     if (confirmed) {
         style.print("✓ Published {s}@{s}\n", .{ item.name, item.version });
     } else {
-        style.print("  Error: {s}@{s}: upload accepted; publication is pending public metadata and verified tarball availability. Do not upload this version again.\n", .{ item.name, item.version });
+        var buffer: [1024]u8 = undefined;
+        if (publish_plan.pendingReport(&buffer, item.*)) |report| style.print("{s}", .{report}) else |_| style.print("  Error: {s}\n", .{publish_plan.pending_publication});
     }
     return confirmed;
 }
@@ -1373,7 +1374,7 @@ fn publishSingleToNpm(
 
         if (result.success) {
             const deferred = options.readback and options.deferred_readbacks != null;
-            if (deferred) try deferReadback(allocator, options.deferred_readbacks.?, metadata.name, metadata.version, tarball_info.integrity, registry_url);
+            if (deferred) try deferReadback(allocator, options.deferred_readbacks.?, metadata.name, metadata.version, tarball_info.shasum, tarball_info.integrity, registry_url);
             const confirm_started = io_helper.getMilliTimestamp();
             const confirmed = !options.readback or deferred or try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms);
             const confirm_ms = io_helper.getMilliTimestamp() - confirm_started;
@@ -1384,7 +1385,7 @@ fn publishSingleToNpm(
             else
                 style.print("  {s}accepted by npm; public readback left to the caller (--no-readback){s}\n", .{ style.dim, style.reset });
             if (!confirmed) {
-                return CommandResult.err(allocator, "Upload accepted; publication is pending public metadata and verified tarball availability. Do not upload this version again.");
+                return CommandResult.err(allocator, publish_plan.pending_publication);
             }
             // A queued readback reports "Published" when it confirms.
             const done = if (deferred) "Uploaded" else "Published";
@@ -1633,10 +1634,10 @@ fn publishSingleToNpm(
 
     if (response.success) {
         if (options.readback and options.deferred_readbacks != null) {
-            try deferReadback(allocator, options.deferred_readbacks.?, metadata.name, metadata.version, tarball_info.integrity, registry_url);
+            try deferReadback(allocator, options.deferred_readbacks.?, metadata.name, metadata.version, tarball_info.shasum, tarball_info.integrity, registry_url);
             style.print("  {s}accepted by npm; read back once a package needs it or the batch is uploaded{s}\n", .{ style.dim, style.reset });
         } else if (options.readback and !try registry_client.confirmPublication(metadata.name, metadata.version, &tarball_info.integrity, npm_publish_timeout_ms)) {
-            return CommandResult.err(allocator, "Upload accepted; publication is pending public metadata and verified tarball availability. Do not upload this version again.");
+            return CommandResult.err(allocator, publish_plan.pending_publication);
         }
         return completeVerifiedNpmPublication(allocator, metadata.name, metadata.version, scripts_obj, package_dir, options);
     } else {

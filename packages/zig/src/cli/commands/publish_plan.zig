@@ -42,9 +42,16 @@ pub fn heldBackBy(allocator: std.mem.Allocator, content: []const u8, failed: []c
 }
 
 /// An accepted upload whose public readback waits for the rest of its batch.
+/// What a pending upload is reported as. Release tooling (Pantry's own npm
+/// readback, stx's publish retry) recognises a pending upload by this exact
+/// text, read against the `Publishing <name>@<version>...` receipt printed
+/// just above it.
+pub const pending_publication = "Upload accepted; publication is pending public metadata and verified tarball availability. Do not upload this version again.";
+
 pub const DeferredReadback = struct {
     name: []const u8,
     version: []const u8,
+    shasum: [40]u8,
     integrity: [95]u8,
     registry_url: []const u8,
 
@@ -57,17 +64,24 @@ pub const DeferredReadback = struct {
 
 pub const ReadbackQueue = std.ArrayList(DeferredReadback);
 
-pub fn deferReadback(allocator: std.mem.Allocator, queue: *ReadbackQueue, name: []const u8, version: []const u8, integrity: [95]u8, registry_url: []const u8) !void {
+pub fn deferReadback(allocator: std.mem.Allocator, queue: *ReadbackQueue, name: []const u8, version: []const u8, shasum: [40]u8, integrity: [95]u8, registry_url: []const u8) !void {
     const owned_name = try allocator.dupe(u8, name);
     errdefer allocator.free(owned_name);
     const owned_version = try allocator.dupe(u8, version);
     errdefer allocator.free(owned_version);
     const owned_url = try allocator.dupe(u8, registry_url);
     errdefer allocator.free(owned_url);
-    try queue.append(allocator, .{ .name = owned_name, .version = owned_version, .integrity = integrity, .registry_url = owned_url });
+    try queue.append(allocator, .{ .name = owned_name, .version = owned_version, .shasum = shasum, .integrity = integrity, .registry_url = owned_url });
 }
 
 /// The queued upload `manifest` installs, if any, by its index in `queue`.
+/// A failed deferred readback, re-announced with its own receipt. The pending
+/// line has to follow the receipt it belongs to, and by the time a deferred
+/// readback fails, later packages' receipts have been printed after it.
+pub fn pendingReport(buffer: []u8, item: DeferredReadback) ![]const u8 {
+    return std.fmt.bufPrint(buffer, "Publishing {s}@{s}...\nShasum: {s}\nIntegrity: {s}\n  Error: {s}\n", .{ item.name, item.version, &item.shasum, &item.integrity, pending_publication });
+}
+
 pub fn queuedDependency(allocator: std.mem.Allocator, manifest: []const u8, queue: []const DeferredReadback) ?usize {
     if (queue.len == 0) return null;
     var names: std.ArrayList([]const u8) = .empty;
@@ -137,9 +151,10 @@ test "a queued upload is read back before a package that installs it, and only t
         for (queue.items) |item| item.deinit(allocator);
         queue.deinit(allocator);
     }
+    const shasum: [40]u8 = @splat('b');
     const integrity: [95]u8 = @splat('a');
-    try deferReadback(allocator, &queue, "@stacksjs/sanitizer", "0.2.603", integrity, "https://registry.npmjs.org");
-    try deferReadback(allocator, &queue, "stx-router", "0.2.603", integrity, "https://registry.npmjs.org");
+    try deferReadback(allocator, &queue, "@stacksjs/sanitizer", "0.2.603", shasum, integrity, "https://registry.npmjs.org");
+    try deferReadback(allocator, &queue, "stx-router", "0.2.603", shasum, integrity, "https://registry.npmjs.org");
 
     // bun-plugin-stx installs stx-router, which is still propagating.
     const plugin = "{\"name\":\"bun-plugin-stx\",\"dependencies\":{\"stx-router\":\"0.2.603\"}}";
@@ -151,4 +166,18 @@ test "a queued upload is read back before a package that installs it, and only t
     // The queue owns copies, not the caller's strings.
     try std.testing.expectEqualStrings("stx-router", queue.items[1].name);
     try std.testing.expectEqualStrings("https://registry.npmjs.org", queue.items[1].registry_url);
+}
+
+test "a deferred readback that fails is reported the way release tooling reads a pending upload" {
+    // Both readers match this text, and pair it with the receipt above it.
+    try std.testing.expect(std.mem.startsWith(u8, pending_publication, "Upload accepted; publication is pending public metadata"));
+    var buffer: [512]u8 = undefined;
+    const shasum: [40]u8 = @splat('b');
+    const integrity: [95]u8 = @splat('a');
+    const report = try pendingReport(&buffer, .{ .name = "stx-router", .version = "0.2.603", .shasum = shasum, .integrity = integrity, .registry_url = "" });
+    var lines = std.mem.splitScalar(u8, report, '\n');
+    try std.testing.expectEqualStrings("Publishing stx-router@0.2.603...", lines.next().?);
+    try std.testing.expectEqualStrings("Shasum: " ++ shasum, lines.next().?);
+    try std.testing.expectEqualStrings("Integrity: " ++ integrity, lines.next().?);
+    try std.testing.expectEqualStrings("  Error: " ++ pending_publication, lines.next().?);
 }
