@@ -29,6 +29,7 @@ test('native mirrors cannot bypass a packaging repair or replace its accepted pr
   expect(recipeAllowsMirror('1.2.3.1', recipeBuildVersion('1.2.3.1', revisions))).toBe(false)
   expect(() => recipeAllowsMirror('1.2.3', recipeBuildVersion('1.2.3', revisions))).toThrow('refusing to replace')
   expect(recipeAllowsMirror('1.2.4', recipeBuildVersion('1.2.4', revisions))).toBe(true)
+  expect(recipeAllowsMirror('1.2.4', recipeBuildVersion('1.2.4', revisions), true)).toBe(false)
 })
 
 test('ambiguous tuples and invalid revisions fail before catalog generation or a build', () => {
@@ -43,6 +44,8 @@ test('the normal recipe loader and build tokens download the vendor version for 
   const loaded = await loadRecipe('google.com/chrome', 'linux-x86-64', '155.0.8059.84.1')
   expect(loaded.upstreamVersion).toBe('155.0.8059.84')
   expect(loaded.publicationVersion).toBe('155.0.8059.84.1')
+  expect(loaded.requiresRecipeBuild).toBe(true)
+  expect((await loadRecipe('google.com/chrome', 'linux-x86-64', '155.0.8059.85')).requiresRecipeBuild).toBe(true)
   const tokens = buildTokens('google.com/chrome', loaded.upstreamVersion!, 'linux-x86-64', '/package/v155.0.8059.84.1', '/source', {})
   const script = applyTokens((loaded.recipe.build!.script as string[]).join('\n'), tokens)
   expect(script).toContain('chrome-for-testing-public/155.0.8059.84/linux64/')

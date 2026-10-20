@@ -52,7 +52,7 @@ export function requireCurrentRecipeBuild(packageVersion: string, currentVersion
 }
 
 /** Vendor prebuilts cannot contain a Pantry packaging repair. */
-export function recipeAllowsMirror(packageVersion: string, identity: { upstream: string, current: string }): boolean {
+export function recipeAllowsMirror(packageVersion: string, identity: { upstream: string, current: string }, requiresRecipeBuild = false): boolean {
   requireCurrentRecipeBuild(packageVersion, identity.current)
-  return identity.upstream === packageVersion
+  return !requiresRecipeBuild && identity.upstream === packageVersion
 }

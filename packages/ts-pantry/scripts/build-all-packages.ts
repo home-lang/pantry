@@ -2098,7 +2098,7 @@ else {
       if (!recipeAllowsMirror(candidateVersion, {
         upstream: loaded.upstreamVersion ?? candidateVersion,
         current: loaded.publicationVersion ?? candidateVersion,
-      })) break
+      }, loaded.requiresRecipeBuild)) break
       // tryPkgxMirror reports the "mirroring from pkgx" event ITSELF, but only once
       // the download confirms pkgx actually ships this artifact — so packages pkgx
       // doesn't host (our apps/deps, source builds) are never mislabeled as mirrored.

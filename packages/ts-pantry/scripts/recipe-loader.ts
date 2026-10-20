@@ -48,6 +48,7 @@ export async function loadRecipe(
           recipe: recipeDefToNormalized(def, _platform, identity?.upstream),
           upstreamVersion: identity?.upstream,
           publicationVersion: identity?.current,
+          requiresRecipeBuild: Object.keys(def.revisions ?? {}).length > 0,
           source: 'recipe',
           propsDir: def.propsDir ? join(recipePath, '..', def.propsDir) : undefined,
         }

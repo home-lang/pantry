@@ -170,6 +170,8 @@ export interface LoadedRecipe {
   upstreamVersion?: string
   /** Current publishable package identity; older identities remain readable but cannot be rebuilt. */
   publicationVersion?: string
+  /** Pantry packaging repairs must keep using this recipe for later vendor releases too. */
+  requiresRecipeBuild?: boolean
   /** The normalized recipe in buildkit-compatible format */
   recipe: {
     distributable?: { url: string, 'strip-components'?: number } | null
