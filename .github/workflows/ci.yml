@@ -99,6 +99,9 @@ jobs:
         id: build_action
         run: cd packages/action && bun run build
 
+      - name: Verify consecutive normal releases retain their generated Action bundles
+        run: bun test ./packages/action/src/build-release-action.test.ts
+
       # The source CLI build prepares the pinned compiler before the Bun
       # incremental-metadata test. That regression keeps its short rebuild
       # budget; a cold compiler bootstrap is setup rather than a cache check.
