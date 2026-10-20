@@ -25,7 +25,10 @@ test('the Linux release gate renders a page with the installed package, not just
   expect(gate).toContain('--dump-dom')
   // A clean environment: only HOME and a PATH without the package, so an
   // inherited LD_LIBRARY_PATH cannot supply the library the package lacks.
-  expect(gate).toContain(`env: { HOME: root, PATH: '/usr/bin:/bin' }`)
+  expect(gate).toContain(`env: { HOME: root, PATH: '/usr/bin:/bin', LD_DEBUG: 'files' }`)
+  // And a host NSS cannot stand in: the providers must load from the package.
+  expect(gate).toContain('calling init:')
+  expect(gate).toContain('not the installed package')
   // The sandbox stays on.
   expect(gate).not.toContain("'--no-sandbox'")
   expect(gate).toContain('userns,')

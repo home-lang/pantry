@@ -26,14 +26,18 @@ async function run(name: string, args: string[], timeout = 30_000): Promise<stri
   return output
 }
 
-/** Run with nothing inherited but HOME and a PATH without the package, so only its own layout resolves libraries. */
-async function runClean(name: string, args: string[], timeout = 60_000): Promise<string> {
+/**
+ * Run with nothing inherited but HOME and a PATH without the package, so only
+ * its own layout resolves libraries. LD_DEBUG=files makes the dynamic loader
+ * report each library it initialises (on stderr) without changing a lookup.
+ */
+async function runClean(name: string, args: string[], timeout = 60_000): Promise<{ stdout: string, stderr: string }> {
   const stdout = join(artifacts, `${name}.stdout.log`)
   const stderr = join(artifacts, `${name}.stderr.log`)
-  const child = Bun.spawn(args, { cwd: root, env: { HOME: root, PATH: '/usr/bin:/bin' }, stdout: Bun.file(stdout), stderr: Bun.file(stderr), signal: AbortSignal.timeout(timeout) })
+  const child = Bun.spawn(args, { cwd: root, env: { HOME: root, PATH: '/usr/bin:/bin', LD_DEBUG: 'files' }, stdout: Bun.file(stdout), stderr: Bun.file(stderr), signal: AbortSignal.timeout(timeout) })
   const code = await child.exited
-  const output = await Bun.file(stdout).text()
-  assert.equal(code, 0, `${name}: ${output}${await Bun.file(stderr).text()}`)
+  const output = { stdout: await Bun.file(stdout).text(), stderr: await Bun.file(stderr).text() }
+  assert.equal(code, 0, `${name}: ${output.stdout}${output.stderr.slice(-4000)}`)
   return output
 }
 
@@ -77,8 +81,22 @@ try {
   const page = join(root, 'render-profile')
   await mkdir(page)
   const rendered = await runClean('chrome-render', [entry, '--headless=new', '--disable-gpu', '--no-first-run', `--user-data-dir=${page}`, '--dump-dom', 'data:text/html,<h1 id="pantry">rendered by the installed package</h1>'])
-  assert.match(rendered, /<h1 id="pantry">rendered by the installed package<\/h1>/, 'Chrome must render with its own libraries and its sandbox')
+  assert.match(rendered.stdout, /<h1 id="pantry">rendered by the installed package<\/h1>/, 'Chrome must render with its own libraries and its sandbox')
   proof.rendered = true
+
+  // A render alone is not proof: a host NSS (GitHub's image ships one with its
+  // own Chrome) answers NSS's dlopen fallback for a provider the package left
+  // out, and the page renders anyway. Require the loader to have initialised
+  // softokn and its crypto provider from the installed package itself.
+  const initialised = [...rendered.stderr.matchAll(/calling init: (\S+)/g)].map(match => match[1]!)
+  const nss = initialised.filter(path => /\/lib(?:softokn3|freeblpriv3)\.so$/.test(path))
+  proof.nssModules = [...new Set(nss)]
+  for (const module of ['libsoftokn3.so', 'libfreeblpriv3.so']) {
+    const loaded = nss.filter(path => path.endsWith(`/${module}`))
+    assert(loaded.length > 0, `Chrome never initialised ${module}`)
+    for (const path of loaded)
+      assert(path.startsWith(`${root}/pantry/`), `${module} came from ${path}, not the installed package`)
+  }
   proof.passed = true
 }
 finally {
