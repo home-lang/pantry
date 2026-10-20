@@ -438,6 +438,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             options.force = true;
         } else if (std.mem.eql(u8, arg, "--frozen-lockfile")) {
             options.frozen_lockfile = true;
+        } else if (std.mem.eql(u8, arg, "--ignore-scripts")) {
+            options.ignore_scripts = true;
         } else if (std.mem.eql(u8, arg, "--no-cache")) {
             options.no_cache = true;
         } else if (std.mem.eql(u8, arg, "--no-save")) {
