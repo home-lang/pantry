@@ -1,3 +1,30 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.105...v0.11.106)
+
+## 🐛 Bug Fixes
+
+- preserve sources when removing linked workspace directories ([fc94f43](https://github.com/pantry-pm/pantry/commit/fc94f43)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- qualify compiler relocation through the native Windows move ([f049c4a](https://github.com/pantry-pm/pantry/commit/f049c4a)) _(by Chris Breuer <chris@stacksjs.com>)_
+- run Windows file tree checks with the qualified runtime ([fd84afa](https://github.com/pantry-pm/pantry/commit/fd84afa)) _(by Chris Breuer <chris@stacksjs.com>)_
+- quote native cleanup runner as a workflow block ([9191b80](https://github.com/pantry-pm/pantry/commit/9191b80)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.106 ([4b5a082](https://github.com/pantry-pm/pantry/commit/4b5a082)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- update cnquery.io, dart.dev, github.com/ggerganov/llama.cpp, ohmyposh.dev, slack.com, werf.io, zed.dev ([12b801a](https://github.com/pantry-pm/pantry/commit/12b801a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.251 ([473b125](https://github.com/pantry-pm/pantry/commit/473b125)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## 🎉 Miscellaneous
+
+- Merge pull request #247 from pantry-pm/codex/preserve-linked-workspace-sources ([0d279eb](https://github.com/pantry-pm/pantry/commit/0d279eb)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#247](https://github.com/pantry-pm/pantry/issues/247), [#247](https://github.com/pantry-pm/pantry/issues/247))
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.104...v0.11.105)
 
 ## 🐛 Bug Fixes
