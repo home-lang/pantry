@@ -15,6 +15,8 @@ pub const DownloadError = error{
 };
 
 pub const DownloadOptions = struct {
+    // Total GET attempts, including the initial request. Header and body
+    // recovery consume this same limit rather than nesting retry loops.
     max_retries: u32 = 3,
     initial_retry_delay_ms: u64 = 1000,
 };
@@ -71,7 +73,7 @@ pub fn downloadFileInline(allocator: std.mem.Allocator, url: []const u8, dest_pa
 }
 
 fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool, inline_progress: ?InlineProgressOptions) !void {
-    return io_helper.runWithTimeout(downloadFileTask, .{ allocator, url, dest_path, quiet, inline_progress }, 300_000);
+    return io_helper.runDownloadWithRetry(downloadFileTask, .{ allocator, url, dest_path, quiet, inline_progress }, dest_path, .{});
 }
 
 fn reportArchiveFailure(stream: *io_helper.HttpStream, file: std.Io.File, stage: []const u8, cause: anyerror, expected: ?u64) void {
@@ -87,7 +89,7 @@ fn reportArchiveFailure(stream: *io_helper.HttpStream, file: std.Io.File, stage:
     }
 }
 
-fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool, inline_progress: ?InlineProgressOptions) anyerror!void {
+fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool, inline_progress: ?InlineProgressOptions, budget: *io_helper.HttpGetRetryBudget, created: *bool, body_failure: *bool) anyerror!void {
     // Validate URL format
     if (!std.mem.startsWith(u8, url, "http://") and !std.mem.startsWith(u8, url, "https://")) {
         style.printInvalidUrl(url);
@@ -97,7 +99,7 @@ fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []
     // The native transport owns redirect lifetimes and recomputes credentials
     // per origin. Preserve its typed failures rather than invoking a second
     // downloader with different endpoint and authentication behavior.
-    var stream = try io_helper.httpStreamGet(allocator, url);
+    var stream = try io_helper.httpStreamGetWithRetryBudget(allocator, url, budget);
     defer stream.deinit();
 
     const total_bytes = stream.contentLength();
@@ -107,6 +109,7 @@ fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []
         io_helper.printGetFailure(stream.request_url, "archive-create", err);
         return err;
     };
+    created.* = true;
     defer file.close(io_helper.io);
 
     // Perf: 128KB file write buffer + 64KB transfer buffer for better throughput
@@ -128,6 +131,7 @@ fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []
             error.EndOfStream => break,
             else => {
                 const cause = if (err == error.WriteFailed) file_writer.err orelse err else stream.readError(err);
+                body_failure.* = err != error.WriteFailed;
                 reportArchiveFailure(stream, file, if (err == error.WriteFailed) "archive-write" else "response-body", cause, total_bytes);
                 return cause;
             },
@@ -208,6 +212,7 @@ fn downloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []
     // Verify download completeness: if Content-Length was provided, check downloaded bytes match
     if (total_bytes) |expected| {
         if (bytes_downloaded != expected) {
+            body_failure.* = true;
             reportArchiveFailure(stream, file, "archive-length", error.IncompleteDownload, total_bytes);
             return error.IncompleteDownload;
         }
@@ -695,37 +700,12 @@ pub fn downloadFileWithChecksum(
     }
 }
 
-/// Download a file with retry logic and exponential backoff
+/// Download a file with one deadline and a shared safe-GET retry budget.
 pub fn downloadFileWithRetry(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, options: DownloadOptions) !void {
-    var attempt: u32 = 0;
-    var delay_ms = options.initial_retry_delay_ms;
-
-    while (attempt < options.max_retries) {
-        attempt += 1;
-
-        if (attempt > 1) {
-            style.printRetry(attempt - 1, options.max_retries - 1, delay_ms);
-            io_helper.sleepMs(delay_ms);
-        }
-
-        downloadFile(allocator, url, dest_path) catch |err| {
-            if (attempt >= options.max_retries) {
-                style.printDownloadFailed(options.max_retries, err);
-                return error.MaxRetriesExceeded;
-            }
-
-            style.printDownloadAttemptFailed(attempt, err);
-
-            // Exponential backoff: double the delay each time
-            delay_ms *= 2;
-            continue;
-        };
-
-        // Success
-        return;
-    }
-
-    return error.MaxRetriesExceeded;
+    return io_helper.runDownloadWithRetry(downloadFileTask, .{ allocator, url, dest_path, false, @as(?InlineProgressOptions, null) }, dest_path, .{
+        .max_attempts = options.max_retries,
+        .initial_retry_delay_ms = options.initial_retry_delay_ms,
+    });
 }
 
 test "buildPackageUrl" {

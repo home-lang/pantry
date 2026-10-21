@@ -21,7 +21,9 @@ let transportDrops = 0
 let rateResponses: Array<{ status: number, at: number, wallAt: number, retryAfter?: string }> = []
 let child: ReturnType<typeof Bun.spawn> | undefined
 const failures: string[] = []
-const metadata = { versions: { '1.0.0': { platforms: { 'linux-x86-64': { tarball: `binaries/${domain}/1.0.0/archive.tar.gz` } } } } }
+const platform = `${process.platform === 'darwin' ? 'darwin' : process.platform === 'win32' ? 'windows' : process.platform}-${process.arch === 'x64' ? 'x86-64' : process.arch}`
+const archivePath = `binaries/${domain}/1.0.0/archive.tar.gz`
+const metadata = { versions: { '1.0.0': { platforms: { [platform]: { tarball: archivePath } } } } }
 
 async function listen(server: Server): Promise<string> {
   await new Promise<void>((resolve, reject) => {
@@ -69,7 +71,8 @@ const handleRegistry = (req: IncomingMessage, res: ServerResponse) => {
     }
   }
   if (!url.endsWith('/metadata.json')) {
-    if (mode === 'artifact-partial') {
+    const archiveAttempts = requests.filter(path => path === url).length
+    if (mode === 'artifact-partial' || (mode === 'artifact-body-recover' && archiveAttempts === 1) || (mode === 'artifact-body-mixed' && archiveAttempts > 1)) {
       res.writeHead(200, { 'Content-Length': 1000 })
       res.write('partial archive bytes')
       setTimeout(() => res.destroy(), 5)
@@ -81,13 +84,17 @@ const handleRegistry = (req: IncomingMessage, res: ServerResponse) => {
       res.write('partial archive bytes')
       return
     }
-    const archiveAttempts = requests.filter(path => path === url).length
+    if (mode === 'artifact-body-mixed' && archiveAttempts === 1) {
+      res.writeHead(502)
+      res.end('gateway failure before interrupted bodies')
+      return
+    }
     if (mode === 'artifact-disconnect-recover' && archiveAttempts === 1) {
       transportDrops++
       req.socket.destroy()
       return
     }
-    const recoveredTransport = ['metadata-connect-recover', 'metadata-disconnect-recover', 'artifact-disconnect-recover'].includes(mode) || (mode.startsWith('metadata429') && mode.includes('recover'))
+    const recoveredTransport = ['metadata-connect-recover', 'metadata-disconnect-recover', 'artifact-disconnect-recover', 'artifact-body-recover'].includes(mode) || (mode.startsWith('metadata429') && mode.includes('recover'))
     res.writeHead(mode === 'artifact502-recover' ? (archiveAttempts === 1 ? 502 : 403) : mode === 'metadata502-recover' || recoveredTransport ? 403 : mode === 'artifact503' ? 503 : mode === 'artifact403' ? 403 : 404)
     res.end('fixture archive unavailable')
     return
@@ -123,7 +130,7 @@ const handleRegistry = (req: IncomingMessage, res: ServerResponse) => {
     res.write('{"versions":')
     return
   }
-  const selectedMetadata = mode.startsWith('artifact429') ? { versions: { '1.0.0': { platforms: { 'linux-x86-64': { tarball: `${metadata.versions['1.0.0'].platforms['linux-x86-64'].tarball}?fixture-secret-query=secret` } } } } } : metadata
+  const selectedMetadata = mode.startsWith('artifact429') || mode.startsWith('artifact-body') ? { versions: { '1.0.0': { platforms: { [platform]: { tarball: `${archivePath}?fixture-secret-query=secret` } } } } } : metadata
   res.end(mode === 'malformed' ? '{' : mode === 'null' ? 'null' : mode === 'array' ? '{"versions":[]}' : mode === 'empty' ? '{"versions":{}}' : JSON.stringify(selectedMetadata))
 }
 const registry = createServer(handleRegistry)
@@ -134,7 +141,7 @@ try {
     : segment === 'rate-limit'
     ? ['metadata429-recover', 'metadata429-date-recover', 'metadata429-invalid-recover', 'metadata429-missing-recover', 'metadata429', 'metadata429-mixed', 'metadata429-long', 'metadata429-deadline', 'artifact429-recover', 'artifact429', 'artifact429-long', 'artifact429-redirect-recover']
     : segment === 'gateway-recovery'
-    ? ['503', '403', 'metadata502-recover', 'artifact503', 'artifact403', 'artifact502-recover', 'redirect', 'disconnect', 'metadata-connect-recover', 'metadata-disconnect-recover', 'artifact-disconnect-recover']
+    ? ['503', '403', 'metadata502-recover', 'artifact503', 'artifact403', 'artifact502-recover', 'redirect', 'disconnect', 'metadata-connect-recover', 'metadata-disconnect-recover', 'artifact-disconnect-recover', 'artifact-partial', 'artifact-body-recover', 'artifact-body-mixed']
     : segment === 'metadata' ? ['503', '403', 'malformed', 'null', 'array', 'disconnect', 'stalled-head', 'stalled-body', 'artifact503', 'artifact403', 'artifact-partial', 'redirect', 'metadata502-recover', 'artifact502-recover'] : [segment]
   for (const scenario of scenarios) {
     let timer: ReturnType<typeof setTimeout> | undefined
@@ -215,8 +222,14 @@ try {
       }
       if (scenario.startsWith('artifact')) {
         const archives = requests.filter(url => url.split('?')[0] === `/binaries/${domain}/1.0.0/archive.tar.gz`)
-        const expected = scenario === 'artifact503' || scenario === 'artifact429' ? 3 : ['artifact502-recover', 'artifact-disconnect-recover', 'artifact429-recover'].includes(scenario) ? 2 : 1
+        const expected = ['artifact503', 'artifact429', 'artifact-partial', 'artifact-body-mixed'].includes(scenario) ? 3 : ['artifact502-recover', 'artifact-disconnect-recover', 'artifact429-recover', 'artifact-body-recover'].includes(scenario) ? 2 : 1
         assert.equal(archives.length, expected, 'only bounded retries of the same primary archive transport are allowed')
+      }
+      if (scenario.startsWith('artifact-body')) {
+        assert.match(output, /\[pantry:download\] (?:response-body|archive-length) failed from http:\/\/127\.0\.0\.1:/, 'the native archive body must actually be interrupted')
+        const downloadDiagnostics = output.split('\n').filter(line => line.includes('[pantry:download]') || line.includes('Registry GET')).join('\n')
+        assert.doesNotMatch(downloadDiagnostics, /fixture-secret-query/, 'body retry diagnostics cannot expose a signed URL')
+        if (scenario.includes('recover')) assert.match(output, /HTTP 403/, 'recovered body must preserve the terminal authentication response')
       }
       if (scenario.includes('429')) {
         assert.match(output, /HTTP 429 from http:\/\/127\.0\.0\.1:/, 'diagnostics identify the responding origin')

@@ -122,13 +122,21 @@ This includes a delegated Bun, pnpm, Yarn, or npm install: an unavailable
 package-manager executable, spawn failure, signal termination, or non-zero exit
 keeps `pantry install` non-zero and does not write the JS-install marker.
 
-Safe native GETs share at most two retries across connection failures, HTTP 429,
-and gateway errors (502, 503, and 504). `Retry-After` delta seconds and IMF-fixdate
+By default, safe native GETs share at most two retries across connection failures,
+interrupted archive bodies, HTTP 429, and gateway errors (502, 503, and 504).
+Headers and bodies consume the same budget. A reset or short Content-Length
+response closes the request and output file, discards the incomplete archive,
+then starts a fresh GET from the original URL. It never appends to partial bytes
+or resumes an unverified range. Any supplied checksum is still verified after a
+complete response. Filesystem failures, authentication errors, invalid input,
+checksum mismatches and cancellation remain terminal.
+
+`Retry-After` delta seconds and IMF-fixdate
 HTTP dates set a minimum wait. An excessive delay is never shortened into an
 early retry. The existing 30-second metadata and five-minute archive deadlines
 include retry waits, redirects, and response bodies. Cancellation closes the
-request before returning; partial archives and publication writes are not
-replayed. Status diagnostics identify the responding origin without including
+request and discards incomplete output before returning. Publication writes are
+not replayed. Status diagnostics identify the responding origin without including
 signed query strings or credentials. A quota that outlasts the deadline remains
 a failed installation.
 

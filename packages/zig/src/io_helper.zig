@@ -1892,22 +1892,330 @@ pub fn httpGet(allocator: std.mem.Allocator, url: []const u8) ![]u8 {
 
 /// Stream a download through the same origin-scoped native transport.
 pub fn httpDownloadFile(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8) !void {
-    return runWithTimeout(httpDownloadFileTask, .{ allocator, url, dest_path }, 300_000);
+    return runDownloadWithRetry(httpDownloadFileTask, .{ allocator, url, dest_path }, dest_path, .{});
 }
 
-fn httpDownloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8) anyerror!void {
-    const stream = try httpStreamGet(allocator, url);
+pub const HttpDownloadOptions = struct {
+    max_attempts: u32 = 3,
+    initial_retry_delay_ms: u64 = 1000,
+};
+
+/// One GET budget follows the request through headers, redirects and body.
+/// Only an incomplete body or an identified transient transport failure earns
+/// a fresh GET. File writes, credentials, invalid input and cancellation do not.
+pub const HttpGetRetryBudget = struct {
+    used: u32 = 0,
+    max_retries: u32 = 2,
+    initial_delay_ms: u64 = 1000,
+
+    fn transport(self: *HttpGetRetryBudget, err: anyerror) !bool {
+        if (!transientGetTransport(err) or self.used >= self.max_retries) return false;
+        return self.retry(err);
+    }
+
+    fn body(self: *HttpGetRetryBudget, err: anyerror) !bool {
+        if (err != error.IncompleteDownload and !transientGetTransport(err)) return false;
+        if (self.used >= self.max_retries) return false;
+        return self.retry(err);
+    }
+
+    fn retry(self: *HttpGetRetryBudget, err: anyerror) !bool {
+        self.used += 1;
+        @import("cli/style.zig").print("  Registry GET transport {s}; retry {d}/{d}\n", .{ @errorName(err), self.used, self.max_retries });
+        const multiplier = @as(u64, 1) << @as(u6, @intCast(@min(self.used - 1, 63)));
+        const delay = @min(self.initial_delay_ms *| multiplier, http_retry.max_delay_seconds * 1000);
+        try getIo().sleep(.{ .nanoseconds = @as(i96, delay) * std.time.ns_per_ms }, .awake);
+        return true;
+    }
+};
+
+/// Both archive writers use the same whole-response restart and owned deadline.
+/// Each attempt closes its file/request before cleanup and cancellation-aware
+/// backoff. The task sets `created` only after creating its destination, and
+/// `body_failure` only for response reads or a Content-Length mismatch.
+pub fn runDownloadWithRetry(comptime task: anytype, args: anytype, dest_path: []const u8, options: HttpDownloadOptions) !void {
+    if (options.max_attempts == 0) return error.InvalidDownloadOptions;
+    const Operation = struct {
+        fn run(inner_args: @TypeOf(args), path: []const u8, opts: HttpDownloadOptions) anyerror!void {
+            var budget: HttpGetRetryBudget = .{ .max_retries = opts.max_attempts - 1, .initial_delay_ms = opts.initial_retry_delay_ms };
+            while (true) {
+                var created = false;
+                var body_failure = false;
+                @call(.auto, task, inner_args ++ .{ &budget, &created, &body_failure }) catch |err| {
+                    if (created) {
+                        // Cancellation must still discard partial bytes. The
+                        // caller's timer joins this finite filesystem cleanup.
+                        const previous = getIo().swapCancelProtection(.blocked);
+                        defer _ = getIo().swapCancelProtection(previous);
+                        deleteFile(path) catch |cleanup_err| {
+                            if (cleanup_err != error.FileNotFound) {
+                                @import("cli/style.zig").printForced("  [pantry:download] incomplete archive cleanup failed: {s}\n", .{@errorName(cleanup_err)});
+                                return cleanup_err;
+                            }
+                        };
+                    }
+                    if (body_failure and try budget.body(err)) continue;
+                    return err;
+                };
+                return;
+            }
+        }
+    };
+    return runWithTimeout(Operation.run, .{ args, dest_path, options }, 300_000);
+}
+
+const ArchiveGetFixture = struct {
+    server: std.Io.net.Server,
+    responses: []const []const u8,
+    requests: std.atomic.Value(usize) = .init(0),
+    reset_count: usize = 0,
+
+    fn serve(self: *ArchiveGetFixture) !void {
+        for (self.responses, 0..) |response, index| {
+            const connection = try self.server.accept(std.testing.io);
+            defer connection.close(std.testing.io);
+            var head: [8192]u8 = undefined;
+            var reader = connection.reader(std.testing.io, &head);
+            const request_line = try reader.interface.takeDelimiterInclusive('\n');
+            if (!std.mem.startsWith(u8, request_line, "GET ")) return error.UnexpectedMethod;
+            while (true) {
+                const line = try reader.interface.takeDelimiterInclusive('\n');
+                if (std.mem.eql(u8, line, "\r\n")) break;
+            }
+            _ = self.requests.fetchAdd(1, .monotonic);
+            var buffer: [1024]u8 = undefined;
+            var writer = connection.writer(std.testing.io, &buffer);
+            try writer.interface.writeAll(response);
+            try writer.interface.flush();
+            if (index < self.reset_count) {
+                try std.testing.io.sleep(.{ .nanoseconds = 20 * std.time.ns_per_ms }, .awake);
+                if (comptime builtin.os.tag == .windows) {
+                    const ws = std.os.windows.ws2_32;
+                    const set_option = @extern(*const fn (std.Io.net.Socket.Handle, c_int, c_int, [*]const u8, c_int) callconv(.winapi) c_int, .{ .name = "setsockopt", .library_name = "ws2_32" });
+                    const linger: ws.linger = .{ .onoff = 1, .linger = 0 };
+                    if (set_option(connection.socket.handle, ws.SOL.SOCKET, ws.SO.LINGER, @ptrCast(&linger), @sizeOf(ws.linger)) != 0) return error.ResetFixtureFailed;
+                } else {
+                    const linger: std.posix.linger = .{ .onoff = 1, .linger = 0 };
+                    try std.posix.setsockopt(connection.socket.handle, std.posix.SOL.SOCKET, std.posix.SO.LINGER, std.mem.asBytes(&linger));
+                }
+            }
+        }
+    }
+};
+
+// Larger than either archive writer's buffer, so the failed attempt actually
+// persists bytes. The replacement is deliberately shorter than that partial.
+const truncated_archive_response = "HTTP/1.1 200 OK\r\nContent-Length: 300000\r\nConnection: close\r\n\r\n" ++ @as([210000]u8, @splat('x'));
+const complete_archive_response = "HTTP/1.1 200 OK\r\nContent-Length: 8\r\nConnection: close\r\n\r\ncomplete";
+
+test "archive GET restarts a truncated body from zero and preserves complete bytes" {
+    const allocator = std.testing.allocator;
+    const address = try std.Io.net.IpAddress.parse("127.0.0.1", 0);
+    var fixture: ArchiveGetFixture = .{ .server = try address.listen(std.testing.io, .{ .reuse_address = true }), .responses = &.{
+        truncated_archive_response,
+        complete_archive_response,
+    } };
+    defer fixture.server.deinit(std.testing.io);
+    var serving = try std.testing.io.concurrent(ArchiveGetFixture.serve, .{&fixture});
+    defer serving.cancel(std.testing.io) catch {};
+    const url = try std.fmt.allocPrint(allocator, "http://127.0.0.1:{d}/archive", .{fixture.server.socket.address.getPort()});
+    defer allocator.free(url);
+    const path = try uniqueTempPath(allocator, "pantry-archive-recovery");
+    defer allocator.free(path);
+    defer deleteFile(path) catch {};
+    try runWithTimeout(httpDownloadFile, .{ allocator, url, path }, 5000);
+    try serving.await(std.testing.io);
+    try std.testing.expectEqual(@as(usize, 2), fixture.requests.load(.monotonic));
+    const contents = try readFileAlloc(allocator, path, 1000);
+    defer allocator.free(contents);
+    try std.testing.expectEqualStrings("complete", contents);
+}
+
+test "archive GET recovers the actual response-body ConnectionResetByPeer" {
+    const allocator = std.testing.allocator;
+    const address = try std.Io.net.IpAddress.parse("127.0.0.1", 0);
+    var fixture: ArchiveGetFixture = .{ .server = try address.listen(std.testing.io, .{ .reuse_address = true }), .reset_count = 2, .responses = &.{ truncated_archive_response, truncated_archive_response, complete_archive_response } };
+    defer fixture.server.deinit(std.testing.io);
+    var serving = try std.testing.io.concurrent(ArchiveGetFixture.serve, .{&fixture});
+    defer serving.cancel(std.testing.io) catch {};
+    const url = try std.fmt.allocPrint(allocator, "http://127.0.0.1:{d}/archive", .{fixture.server.socket.address.getPort()});
+    defer allocator.free(url);
+    // First prove this fixture produces the exact observed typed reset after
+    // headers, rather than merely a clean but short Content-Length response.
+    {
+        const stream = try httpStreamGet(allocator, url);
+        defer stream.deinit();
+        var buffer: [65536]u8 = undefined;
+        const reader = stream.reader(&buffer);
+        const result = reader.allocRemaining(allocator, .limited(300000));
+        if (result) |bytes| {
+            allocator.free(bytes);
+            return error.ResetFixtureDidNotReset;
+        } else |err| try std.testing.expectEqual(error.ConnectionResetByPeer, stream.readError(err));
+    }
+    const path = try uniqueTempPath(allocator, "pantry-archive-reset");
+    defer allocator.free(path);
+    defer deleteFile(path) catch {};
+    try runWithTimeout(httpDownloadFile, .{ allocator, url, path }, 5000);
+    try serving.await(std.testing.io);
+    try std.testing.expectEqual(@as(usize, 3), fixture.requests.load(.monotonic));
+    const contents = try readFileAlloc(allocator, path, 1000);
+    defer allocator.free(contents);
+    try std.testing.expectEqualStrings("complete", contents);
+}
+
+test "archive GET shares one fixed budget across gateway and interrupted bodies" {
+    const allocator = std.testing.allocator;
+    const address = try std.Io.net.IpAddress.parse("127.0.0.1", 0);
+    var fixture: ArchiveGetFixture = .{ .server = try address.listen(std.testing.io, .{ .reuse_address = true }), .responses = &.{
+        "HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+        truncated_archive_response,
+        truncated_archive_response,
+    } };
+    defer fixture.server.deinit(std.testing.io);
+    var serving = try std.testing.io.concurrent(ArchiveGetFixture.serve, .{&fixture});
+    defer serving.cancel(std.testing.io) catch {};
+    const url = try std.fmt.allocPrint(allocator, "http://127.0.0.1:{d}/archive", .{fixture.server.socket.address.getPort()});
+    defer allocator.free(url);
+    const path = try uniqueTempPath(allocator, "pantry-archive-exhausted");
+    defer allocator.free(path);
+    defer deleteFile(path) catch {};
+    try std.testing.expectError(error.IncompleteDownload, runWithTimeout(httpDownloadFile, .{ allocator, url, path }, 5000));
+    try serving.await(std.testing.io);
+    try std.testing.expectEqual(@as(usize, 3), fixture.requests.load(.monotonic));
+    try std.testing.expectError(error.FileNotFound, cwd().openFile(io, path, .{}));
+}
+
+test "archive GET leaves authentication absence and filesystem failures terminal" {
+    const allocator = std.testing.allocator;
+    const cases = [_]struct { response: []const u8, expected: anyerror, filesystem_failure: bool = false }{
+        .{ .response = "HTTP/1.1 401 Unauthorized\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", .expected = error.RegistryAuthenticationRequired },
+        .{ .response = "HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", .expected = error.RegistryAuthenticationRequired },
+        .{ .response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", .expected = error.RegistryArtifactNotFound },
+        .{ .response = complete_archive_response, .expected = error.FileNotFound, .filesystem_failure = true },
+    };
+    for (cases) |case| {
+        const address = try std.Io.net.IpAddress.parse("127.0.0.1", 0);
+        var fixture: ArchiveGetFixture = .{ .server = try address.listen(std.testing.io, .{ .reuse_address = true }), .responses = &.{case.response} };
+        defer fixture.server.deinit(std.testing.io);
+        var serving = try std.testing.io.concurrent(ArchiveGetFixture.serve, .{&fixture});
+        defer serving.cancel(std.testing.io) catch {};
+        const url = try std.fmt.allocPrint(allocator, "http://127.0.0.1:{d}/archive", .{fixture.server.socket.address.getPort()});
+        defer allocator.free(url);
+        const name = try uniqueTempPath(allocator, "pantry-archive-terminal");
+        defer allocator.free(name);
+        const path = if (case.filesystem_failure) try std.fmt.allocPrint(allocator, "{s}/missing/archive", .{name}) else try allocator.dupe(u8, name);
+        defer allocator.free(path);
+        try std.testing.expectError(case.expected, runWithTimeout(httpDownloadFile, .{ allocator, url, path }, 5000));
+        try serving.await(std.testing.io);
+        try std.testing.expectEqual(@as(usize, 1), fixture.requests.load(.monotonic));
+        try std.testing.expectError(error.FileNotFound, cwd().openFile(io, path, .{}));
+    }
+}
+
+test "archive GET cancellation joins retry backoff and removes persisted partial bytes" {
+    const allocator = std.testing.allocator;
+    const address = try std.Io.net.IpAddress.parse("127.0.0.1", 0);
+    var fixture: ArchiveGetFixture = .{ .server = try address.listen(std.testing.io, .{ .reuse_address = true }), .responses = &.{truncated_archive_response} };
+    defer fixture.server.deinit(std.testing.io);
+    var serving = try std.testing.io.concurrent(ArchiveGetFixture.serve, .{&fixture});
+    defer serving.cancel(std.testing.io) catch {};
+    const url = try std.fmt.allocPrint(allocator, "http://127.0.0.1:{d}/archive", .{fixture.server.socket.address.getPort()});
+    defer allocator.free(url);
+    const path = try uniqueTempPath(allocator, "pantry-archive-canceled");
+    defer allocator.free(path);
+    defer deleteFile(path) catch {};
+    var downloading = try std.testing.io.concurrent(httpDownloadFile, .{ allocator, url, path });
+    defer downloading.cancel(std.testing.io) catch {};
+    try serving.await(std.testing.io);
+    try std.testing.io.sleep(.{ .nanoseconds = 50 * std.time.ns_per_ms }, .awake);
+    try std.testing.expectError(error.Canceled, downloading.cancel(std.testing.io));
+    try std.testing.expectEqual(@as(usize, 1), fixture.requests.load(.monotonic));
+    try std.testing.expectError(error.FileNotFound, cwd().openFile(io, path, .{}));
+}
+
+test "archive GET one deadline includes whole response retry backoff" {
+    const allocator = std.testing.allocator;
+    const address = try std.Io.net.IpAddress.parse("127.0.0.1", 0);
+    var fixture: ArchiveGetFixture = .{ .server = try address.listen(std.testing.io, .{ .reuse_address = true }), .responses = &.{truncated_archive_response} };
+    defer fixture.server.deinit(std.testing.io);
+    var serving = try std.testing.io.concurrent(ArchiveGetFixture.serve, .{&fixture});
+    defer serving.cancel(std.testing.io) catch {};
+    const url = try std.fmt.allocPrint(allocator, "http://127.0.0.1:{d}/archive", .{fixture.server.socket.address.getPort()});
+    defer allocator.free(url);
+    const path = try uniqueTempPath(allocator, "pantry-archive-timeout");
+    defer allocator.free(path);
+    defer deleteFile(path) catch {};
+    try std.testing.expectError(error.Timeout, runWithTimeout(httpDownloadFile, .{ allocator, url, path }, 250));
+    try serving.await(std.testing.io);
+    try std.testing.expectEqual(@as(usize, 1), fixture.requests.load(.monotonic));
+    try std.testing.expectError(error.FileNotFound, cwd().openFile(io, path, .{}));
+}
+
+test "archive GET progress downloads still verify the checksum after response recovery" {
+    const downloader = @import("install/downloader.zig");
+    const allocator = std.testing.allocator;
+    for ([_]bool{ true, false }) |valid_checksum| {
+        const address = try std.Io.net.IpAddress.parse("127.0.0.1", 0);
+        var fixture: ArchiveGetFixture = .{ .server = try address.listen(std.testing.io, .{ .reuse_address = true }), .responses = &.{ truncated_archive_response, complete_archive_response } };
+        defer fixture.server.deinit(std.testing.io);
+        var serving = try std.testing.io.concurrent(ArchiveGetFixture.serve, .{&fixture});
+        defer serving.cancel(std.testing.io) catch {};
+        const url = try std.fmt.allocPrint(allocator, "http://127.0.0.1:{d}/archive", .{fixture.server.socket.address.getPort()});
+        defer allocator.free(url);
+        const path = try uniqueTempPath(allocator, "pantry-archive-checksum");
+        defer allocator.free(path);
+        defer deleteFile(path) catch {};
+        const checksum = if (valid_checksum) "eebbf6457e46a7f63acdf9b97390f790ba443d60cfa44b607da7e5c40aa1cc1d" else "0000000000000000000000000000000000000000000000000000000000000000";
+        const result = runWithTimeout(downloader.downloadFileWithChecksum, .{ allocator, url, path, @as(?[]const u8, checksum) }, 5000);
+        if (valid_checksum) try result else try std.testing.expectError(error.ChecksumMismatch, result);
+        try serving.await(std.testing.io);
+        try std.testing.expectEqual(@as(usize, 2), fixture.requests.load(.monotonic));
+        const contents = try readFileAlloc(allocator, path, 1000);
+        defer allocator.free(contents);
+        try std.testing.expectEqualStrings("complete", contents);
+    }
+}
+
+test "archive GET legacy retry options preserve permanent errors without nested attempts" {
+    const downloader = @import("install/downloader.zig");
+    const allocator = std.testing.allocator;
+    const address = try std.Io.net.IpAddress.parse("127.0.0.1", 0);
+    var fixture: ArchiveGetFixture = .{ .server = try address.listen(std.testing.io, .{ .reuse_address = true }), .responses = &.{"HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"} };
+    defer fixture.server.deinit(std.testing.io);
+    var serving = try std.testing.io.concurrent(ArchiveGetFixture.serve, .{&fixture});
+    defer serving.cancel(std.testing.io) catch {};
+    const url = try std.fmt.allocPrint(allocator, "http://127.0.0.1:{d}/archive", .{fixture.server.socket.address.getPort()});
+    defer allocator.free(url);
+    const path = try uniqueTempPath(allocator, "pantry-archive-legacy");
+    defer allocator.free(path);
+    try std.testing.expectError(error.RegistryAuthenticationRequired, runWithTimeout(downloader.downloadFileWithRetry, .{ allocator, url, path, downloader.DownloadOptions{} }, 5000));
+    try serving.await(std.testing.io);
+    try std.testing.expectEqual(@as(usize, 1), fixture.requests.load(.monotonic));
+    try std.testing.expectError(error.InvalidDownloadOptions, downloader.downloadFileWithRetry(allocator, url, path, .{ .max_retries = 0 }));
+}
+
+fn httpDownloadFileTask(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, budget: *HttpGetRetryBudget, created: *bool, body_failure: *bool) anyerror!void {
+    const stream = try httpStreamGetWithRetryBudget(allocator, url, budget);
     defer stream.deinit();
     const file = try cwd().createFile(io, dest_path, .{});
+    created.* = true;
     defer file.close(io);
     var write_buf: [65536]u8 = undefined;
     var writer = file.writerStreaming(io, &write_buf);
     var transfer_buf: [65536]u8 = undefined;
     const reader = stream.reader(&transfer_buf);
-    const count = reader.streamRemaining(&writer.interface) catch |err| return requestTransportError(&stream.req, err);
-    try writer.flush();
+    const count = reader.streamRemaining(&writer.interface) catch |err| {
+        if (err == error.WriteFailed) return writer.err orelse err;
+        body_failure.* = true;
+        return stream.readError(err);
+    };
+    writer.flush() catch |err| return writer.err orelse err;
     if (stream.contentLength()) |expected| {
-        if (count != expected) return error.IncompleteDownload;
+        if (count != expected) {
+            body_failure.* = true;
+            return error.IncompleteDownload;
+        }
     }
 }
 
@@ -1952,6 +2260,11 @@ pub const HttpStream = struct {
 /// Open a streaming HTTP GET connection (for progress-tracked downloads).
 /// Returns a heap-allocated HttpStream with the response ready for body reading.
 pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream {
+    var budget: HttpGetRetryBudget = .{};
+    return httpStreamGetWithRetryBudget(allocator, url, &budget);
+}
+
+pub fn httpStreamGetWithRetryBudget(allocator: std.mem.Allocator, url: []const u8, budget: *HttpGetRetryBudget) !*HttpStream {
     const stream = try allocator.create(HttpStream);
     errdefer allocator.destroy(stream);
     const initial = decorateRequest(allocator, url);
@@ -1969,7 +2282,6 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
         if (stream.authorization) |authorization| allocator.free(authorization);
     }
     var redirects: u8 = 0;
-    var retries: u8 = 0;
     while (true) {
         const decoration = decorateRequest(allocator, stream.request_url);
         defer decoration.deinit(allocator);
@@ -1985,10 +2297,10 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
         beginStreamGetRequest(stream, uri) catch |err| {
             // The failed attempt has already closed its request. Rebuild the
             // same origin-scoped headers before the next connection attempt.
-            if (transientGetTransport(err) and retries < 2) {
+            if (transientGetTransport(err) and budget.used < budget.max_retries) {
                 if (stream.authorization) |authorization| allocator.free(authorization);
                 stream.authorization = null;
-                _ = try retryGetTransport(err, &retries);
+                _ = try budget.transport(err);
                 continue;
             }
             printGetFailure(stream.request_url, "response-headers", err);
@@ -2015,19 +2327,19 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
             continue;
         }
         const status = @backingInt(stream.response.head.status);
-        const retry_delay = responseRetryDelay(&stream.response, retries + 1);
-        if (transientGetStatus(status) and retries < 2 and retry_delay != null) {
-            retries += 1;
+        const retry_delay = responseRetryDelay(&stream.response, budget.used +| 1);
+        if (transientGetStatus(status) and budget.used < budget.max_retries and retry_delay != null) {
+            budget.used += 1;
             stream.req.deinit();
             request_open = false;
             if (stream.authorization) |authorization| allocator.free(authorization);
             stream.authorization = null;
-            printGetStatus(uri, status, retries, retry_delay);
+            printGetStatus(uri, status, budget.used, retry_delay, budget.max_retries);
             try waitGetRetrySeconds(retry_delay.?);
             continue;
         }
         if (status != 200) {
-            printGetStatus(uri, status, null, retry_delay);
+            printGetStatus(uri, status, null, retry_delay, budget.max_retries);
             return switch (status) {
                 401, 403 => error.RegistryAuthenticationRequired,
                 404 => error.RegistryArtifactNotFound,
@@ -2246,7 +2558,7 @@ fn transientGetStatus(status: u16) bool {
 
 // A valid server delay is a lower bound, never clamped into an early retry.
 // The existing caller-owned deadline cancels this sleep and the whole request.
-fn responseRetryDelay(response: *std.http.Client.Response, retries: u8) ?u64 {
+fn responseRetryDelay(response: *std.http.Client.Response, retries: u32) ?u64 {
     var headers = response.head.iterateHeaders();
     while (headers.next()) |header| {
         if (!std.ascii.eqlIgnoreCase(header.name, "Retry-After")) continue;
@@ -2259,13 +2571,13 @@ fn responseRetryDelay(response: *std.http.Client.Response, retries: u8) ?u64 {
 
 // Log the responding origin, including after redirects, without exposing a
 // signed path, query, user information, or authorization header.
-fn printGetStatus(uri: std.Uri, status: u16, retry: ?u8, delay: ?u64) void {
+fn printGetStatus(uri: std.Uri, status: u16, retry: ?u32, delay: ?u64, max_retries: u32) void {
     var buffer: [512]u8 = undefined;
     const host = if (uri.host) |value| value.toRaw(&buffer) catch "<invalid host>" else "<missing host>";
     const style = @import("cli/style.zig");
     style.print("  Registry GET HTTP {d} from {s}://{s}", .{ status, uri.scheme, host });
     if (uri.port) |port| style.print(":{d}", .{port});
-    if (retry) |attempt| style.print("; retry {d}/2 after {d}s", .{ attempt, delay.? });
+    if (retry) |attempt| style.print("; retry {d}/{d} after {d}s", .{ attempt, max_retries, delay.? });
     if (delay == null) style.print("; Retry-After exceeds request budget", .{});
     style.print("\n", .{});
 }
@@ -2368,10 +2680,10 @@ fn httpGetAttemptWithClient(client: *std.http.Client, allocator: std.mem.Allocat
     if (transientGetStatus(status)) {
         const delay = responseRetryDelay(&response, retries + 1);
         if (retries < 2 and delay != null) {
-            printGetStatus(uri, status, retries + 1, delay);
+            printGetStatus(uri, status, retries + 1, delay, 2);
             return .{ .retry_status = .{ .status = status, .delay = delay.? } };
         }
-        printGetStatus(uri, status, null, delay);
+        printGetStatus(uri, status, null, delay, 2);
     }
     if (status_only_errors and (status < 200 or status >= 300)) return .{ .response = .{ .status = status, .body = try allocator.alloc(u8, 0) } };
     const decompress_buffer: []u8 = switch (response.head.content_encoding) {

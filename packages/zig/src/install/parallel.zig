@@ -158,8 +158,8 @@ const RetryDownloadThreadContext = struct {
                     .success = false,
                     .error_msg = std.fmt.allocPrint(
                         ctx.alloc,
-                        "{s}: download failed after {d} retries ({s}): {s}",
-                        .{ task.name, ctx.options.max_retries, @errorName(err), task.url },
+                        "{s}: download failed ({s})",
+                        .{ task.name, @errorName(err) },
                     ) catch null,
                 };
                 style.print(" failed ({s})\n", .{task.name});
@@ -203,8 +203,8 @@ pub fn downloadParallelWithRetry(
         downloader.downloadFileWithRetry(allocator, tasks[0].url, tasks[0].dest_path, options) catch |err| {
             results[0].error_msg = try std.fmt.allocPrint(
                 allocator,
-                "{s}: download failed after {d} retries ({s}): {s}",
-                .{ tasks[0].name, options.max_retries, @errorName(err), tasks[0].url },
+                "{s}: download failed ({s})",
+                .{ tasks[0].name, @errorName(err) },
             );
             style.print(" failed ({s})\n", .{tasks[0].name});
             return results;

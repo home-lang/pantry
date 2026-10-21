@@ -120,7 +120,11 @@ pantry install --verbose nodejs.org@22
 - **Timeout or interrupted response:** check connectivity and service health.
   Native metadata requests have a 30-second deadline across headers, redirects
   and body reads. Native archive transfers have a five-minute deadline, including
-  stalled headers and partial bodies.
+  stalled headers, body recovery and retry waits. A transient reset or incomplete
+  body can restart the safe GET within the existing two-retry budget. Pantry
+  discards the partial output before restarting; repeated failures still return
+  the original typed error and fail installation. Disk writes, credentials and
+  checksum mismatches do not trigger another download attempt.
 
 Only a confirmed missing metadata response or a valid listing without a matching
 version/platform permits absence handling. Authentication, transport and malformed
