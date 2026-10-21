@@ -1,3 +1,19 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.112...v0.11.113)
+
+## 🐛 Bug Fixes
+
+- **download**: depend on the platform module directly ([90dc295](https://github.com/pantry-pm/pantry/commit/90dc295)) _(by Chris <chris@stacksjs.com>)_
+- **download**: recover interrupted archive bodies within one GET budget ([2bddd38](https://github.com/pantry-pm/pantry/commit/2bddd38)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.113 ([ed0d01e](https://github.com/pantry-pm/pantry/commit/ed0d01e)) _(by Chris <chris@stacksjs.com>)_
+- update buildpacks.io, circleci.com, cli.github.com, cursor.com, deno.land, github.com/ggerganov/llama.cpp, nginx.org, planetscale.com, pulumi.io, rucio.cern.ch/rucio-client, terraform.io, vim.org ([33e6f60](https://github.com/pantry-pm/pantry/commit/33e6f60)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.111...v0.11.112)
 
 ## 🐛 Bug Fixes
