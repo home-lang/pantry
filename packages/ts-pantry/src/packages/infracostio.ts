@@ -3,7 +3,7 @@
  *
  * @domain `infracost.io`
  * @programs `infracost`
- * @version `0.10.46` (51 versions available)
+ * @version `0.10.47` (52 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install infracost.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "infracost"
  * console.log(pkg.description) // "Cloud cost estimates for Terraform in pull requ..."
  * console.log(pkg.programs)    // ["infracost"]
- * console.log(pkg.versions[0]) // "0.10.46" (latest)
+ * console.log(pkg.versions[0]) // "0.10.47" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/infracost-io.md
@@ -67,6 +67,7 @@ export const infracostioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.10.47',
     '0.10.46',
     '0.10.45',
     '0.10.44',

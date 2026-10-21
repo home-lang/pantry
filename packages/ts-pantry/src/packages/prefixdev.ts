@@ -3,7 +3,7 @@
  *
  * @domain `prefix.dev`
  * @programs `pixi`
- * @version `0.82.0` (79 versions available)
+ * @version `0.82.1` (80 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install prefix.dev`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "pixi"
  * console.log(pkg.description) // "Package management made easy"
  * console.log(pkg.programs)    // ["pixi"]
- * console.log(pkg.versions[0]) // "0.82.0" (latest)
+ * console.log(pkg.versions[0]) // "0.82.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/prefix-dev.md
@@ -68,6 +68,7 @@ export const prefixdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.82.1',
     '0.82.0',
     '0.81.0',
     '0.80.0',
