@@ -118,3 +118,14 @@ Type-safe dependency specification with version constraints.
 ## License
 
 MIT
+
+### App Store submission
+
+`AppStoreConnectClient`, `ensureAppStoreVersions`, and `waitForAppStoreBuilds`
+manage Apple app versions and processed builds. `prepareAppStoreSubmission`
+applies typed `AppStoreMetadata`: pricing, territories, categories, age rating,
+localized descriptions, review contact and screenshots. Pass `submit: true` only
+when the prepared version should enter App Review. `submitAppStore` prepares an
+already-uploaded version by bundle ID and version, and preserves active review
+submissions when a release command is retried. These APIs work for macOS and iOS
+apps, independently of the application framework or an extension container.
