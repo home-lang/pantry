@@ -1,3 +1,31 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.109...v0.11.110)
+
+## ✨ Features
+
+- **apple**: support app metadata and review submission across frameworks ([38e4af6](https://github.com/pantry-pm/pantry/commit/38e4af6)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- **build**: treat +<hash> and _<hash> as one build when publishing ([e606c99](https://github.com/pantry-pm/pantry/commit/e606c99)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.110 ([802211b](https://github.com/pantry-pm/pantry/commit/802211b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update biomejs.dev, duckdb.org, github.com/ggerganov/llama.cpp, github.com/router-for-me/CLIProxyAPI, lavinmq.com, nodejs.org, opentofu.org, php.net, pnpm.io, python.org, scaleway.com, sentry.io, terragrunt.gruntwork.io, terratag.io, whatsapp.com ([8a6badd](https://github.com/pantry-pm/pantry/commit/8a6badd)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.276 ([6753ad5](https://github.com/pantry-pm/pantry/commit/6753ad5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.272 ([87367d4](https://github.com/pantry-pm/pantry/commit/87367d4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor.org, github.com/ggerganov/llama.cpp, github.com/router-for-me/CLIProxyAPI, github.com/tw93/mole, infracost.io, kernel.org/perf, odigos.io, prefix.dev, syncthing.net, unbound.net ([8fcd22c](https://github.com/pantry-pm/pantry/commit/8fcd22c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update anthropic.com/claude-code, codex.openai.com, coredns.io, github.com/ggerganov/llama.cpp, mise.jdx.dev, ollama.ai, runatlantis.io, tailscale.com, virtualenv.pypa.io, ziglang.org ([4315807](https://github.com/pantry-pm/pantry/commit/4315807)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.262 ([7d948c0](https://github.com/pantry-pm/pantry/commit/7d948c0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update anthropic.com/claude-code, circleci.com, cursor.com, depot.dev, github.com/ggerganov/llama.cpp, google.com/chrome, granted.dev, plakar.io, projen.io, vcluster.com ([aeaec44](https://github.com/pantry-pm/pantry/commit/aeaec44)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update argoproj.github.io/cd, circleci.com, cli.github.com, coder.com, dozzle.dev, dprint.dev, encore.dev, github.com/ggerganov/llama.cpp, github.com/router-for-me/CLIProxyAPI, hasura.io, iroh.computer, rectangle.app ([0bd7336](https://github.com/pantry-pm/pantry/commit/0bd7336)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.254 ([16b4f13](https://github.com/pantry-pm/pantry/commit/16b4f13)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.108...v0.11.109)
 
 ## ⚡ Performance Improvements
