@@ -1,6 +1,6 @@
 {
   "name": "@stacksjs/registry",
-  "version": "0.11.111",
+  "version": "0.11.112",
   "//": "PRIVATE ON PURPOSE. This name belongs to the stacks framework's own @stacksjs/registry (published from stacksjs/stacks at 0.72.x), which holds the npm trusted publisher for it. Every release here therefore failed on it — 401 from the OIDC exchange, then 404 on the token — and succeeding would have been worse: it would push 0.11.x over a version line another project owns. Nothing imports this backend and it has never published. Give it a name that is actually free before making it public again.",
   "private": true,
   "type": "module",

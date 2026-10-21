@@ -1,3 +1,18 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.111...v0.11.112)
+
+## 🐛 Bug Fixes
+
+- **apple**: resume reserved screenshot uploads when publication retries ([0e60419](https://github.com/pantry-pm/pantry/commit/0e60419)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.112 ([9819ff6](https://github.com/pantry-pm/pantry/commit/9819ff6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.110...v0.11.111)
 
 ## ✨ Features
