@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { createPrivateKey, createPublicKey, sign, X509Certificate } from 'node:crypto'
+import { createHash, createPrivateKey, createPublicKey, sign, X509Certificate } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 
 const APP_STORE_CONNECT_BASE_URL = 'https://api.appstoreconnect.apple.com/v1'
@@ -233,9 +233,25 @@ export class AppStoreConnectClient {
   }
 
   async upload(url: string, init: RequestInit): Promise<void> {
-    const response = await this.fetcher(url, init)
+    const headers = new Headers(init.headers)
+    // Send exactly the reserved byte range, independently of Buffer backing
+    // allocations and transfer framing. Asset URLs do not receive the JWT.
+    let body = init.body
+    let bytes: Uint8Array | undefined
+    if (ArrayBuffer.isView(body)) {
+      const copy = new ArrayBuffer(body.byteLength)
+      bytes = new Uint8Array(copy)
+      bytes.set(new Uint8Array(body.buffer, body.byteOffset, body.byteLength))
+      body = copy
+    }
+    else if (body instanceof ArrayBuffer) bytes = new Uint8Array(body)
+    if (bytes) headers.set('Content-Length', String(bytes.byteLength))
+    const response = await this.fetcher(url, { ...init, headers, body })
     if (!response.ok)
       throw new Error(`[pantry] App Store Connect asset upload failed (${response.status})`)
+    const etag = response.headers.get('etag')?.replaceAll('"', '')
+    if (bytes && etag && /^[a-f\d]{32}$/i.test(etag) && createHash('md5').update(bytes).digest('hex') !== etag.toLowerCase())
+      throw new Error('[pantry] App Store Connect received an asset part with a different checksum')
   }
 
   async findBundleId(identifier: string): Promise<AppStoreConnectResource<BundleIdAttributes> | undefined> {

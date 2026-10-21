@@ -344,3 +344,31 @@ describe('Pantry App Store Connect automation', () => {
     }])
   })
 })
+
+test('asset uploads send the exact binary slice with length and verify server integrity', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'pantry-upload-'))
+  try {
+    const keyPath = join(directory, 'key.p8')
+    const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' })
+    writeFileSync(keyPath, privateKey.export({ type: 'pkcs8', format: 'pem' }))
+    const { createHash } = await import('node:crypto')
+    const bytes = Buffer.from([99, 1, 2, 3, 88]).subarray(1, 4)
+    let mismatch = false
+    const server = Bun.serve({ port: 0, hostname: '127.0.0.1', async fetch(request) {
+      expect(request.headers.get('authorization')).toBeNull()
+      expect(request.headers.get('content-type')).toBe('image/png')
+      expect(request.headers.get('content-length')).toBe('3')
+      expect(new Uint8Array(await request.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]))
+      return new Response(null, { headers: { etag: mismatch ? '00000000000000000000000000000000' : createHash('md5').update(bytes).digest('hex').toUpperCase() } })
+    } })
+    try {
+      const client = new AppStoreConnectClient({ keyId: 'TEST', issuerId: 'test', keyPath })
+      const init = { method: 'PUT', body: bytes, headers: { 'content-type': 'image/png' } }
+      await client.upload(server.url.href, init)
+      mismatch = true
+      await expect(client.upload(server.url.href, init)).rejects.toThrow('different checksum')
+    }
+    finally { server.stop(true) }
+  }
+  finally { rmSync(directory, { recursive: true, force: true }) }
+})

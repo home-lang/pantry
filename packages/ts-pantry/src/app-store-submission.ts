@@ -1,11 +1,16 @@
 import type { AppStoreConnectClientOptions } from './app-store-connect'
 import { createHash } from 'node:crypto'
 import { basename, resolve } from 'node:path'
-import { readFile, stat } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { AppStoreConnectClient } from './app-store-connect'
 
 export type AppStorePlatform = 'macos' | 'ios'
+/** Compatibility names; placement groups are resolved from Apple's live catalog. */
 export type AppStoreScreenshotDisplayType = 'APP_DESKTOP' | 'APP_IPHONE_67' | 'APP_IPAD_PRO_3GEN_129'
+export interface AppStoreScreenshotGroup {
+  platform: 'MAC_APP_STORE' | 'IPHONE_APP_STORE' | 'IPAD_APP_STORE'
+  files: string[]
+}
 export type AppStoreReleaseType = 'MANUAL' | 'AFTER_APPROVAL' | 'SCHEDULED'
 export type AppStoreAgeRatingFrequency = 'NONE' | 'INFREQUENT_OR_MILD' | 'FREQUENT_OR_INTENSE'
 
@@ -48,7 +53,7 @@ export interface AppStoreAgeRating {
 
 /** Metadata and assets managed through the official App Store Connect API. */
 export interface AppStoreMetadata {
-  /** Metadata locale. @default the app's primary locale */
+  /** Metadata locale. @default en-US */
   locale?: string
   subtitle: string
   privacyPolicyUrl: string
@@ -78,7 +83,7 @@ export interface AppStoreMetadata {
   ageRating?: AppStoreAgeRating
   reviewContact: AppStoreReviewContact
   /** Screenshot files keyed by Apple's display type. Paths are relative to the project root. */
-  screenshots: Partial<Record<AppStoreScreenshotDisplayType, string[]>>
+  screenshots: AppStoreScreenshotGroup[] | Partial<Record<AppStoreScreenshotDisplayType, string[]>>
   /** Submit complete versions to App Review after upload. @default false */
   submitForReview?: boolean
 }
@@ -107,24 +112,12 @@ interface LocalizationAttributes extends Record<string, unknown> {
   locale: string
 }
 
-interface ScreenshotSetAttributes extends Record<string, unknown> {
-  screenshotDisplayType: AppStoreScreenshotDisplayType
-}
-
 interface UploadOperation {
   method: string
   url: string
   length: number
   offset: number
   requestHeaders: Array<{ name: string, value: string }>
-}
-
-interface ScreenshotAttributes extends Record<string, unknown> {
-  fileName: string
-  fileSize: number
-  sourceFileChecksum?: string
-  uploadOperations?: UploadOperation[]
-  assetDeliveryState?: { state?: string, errors?: Array<{ message?: string }> }
 }
 
 interface ReviewSubmissionAttributes extends Record<string, unknown> {
@@ -210,10 +203,6 @@ function applePlatform(platform: AppStorePlatform): 'IOS' | 'MAC_OS' {
   return platform === 'ios' ? 'IOS' : 'MAC_OS'
 }
 
-function displayTypesForPlatform(platform: AppStorePlatform): AppStoreScreenshotDisplayType[] {
-  return platform === 'macos' ? ['APP_DESKTOP'] : ['APP_IPHONE_67', 'APP_IPAD_PRO_3GEN_129']
-}
-
 async function updateAppInfo(client: AppStoreConnectClient, appId: string, config: AppStoreMetadata): Promise<string> {
   await client.request(`/apps/${appId}`, {
     method: 'PATCH',
@@ -276,9 +265,14 @@ async function updateAppInfo(client: AppStoreConnectClient, appId: string, confi
 }
 
 async function ensurePrice(client: AppStoreConnectClient, appId: string, config: AppStoreMetadata): Promise<void> {
-  const existing = await client.request<ListResponse<Record<string, unknown>>>(`/appPriceSchedules/${appId}/manualPrices?limit=200`)
-  if (existing.data.length)
-    return
+  try {
+    const existing = await client.request<ListResponse<Record<string, unknown>>>(`/appPriceSchedules/${appId}/manualPrices?limit=200`)
+    if (existing.data.length) return
+  }
+  catch (error) {
+    // A new app exposes the schedule relationship before the schedule exists.
+    if (!(error instanceof Error) || !error.message.includes('(404)')) throw error
+  }
   const baseTerritory = config.baseTerritory ?? 'USA'
   const pricePoints = await client.request<ListResponse<{ customerPrice: string }>>(`/apps/${appId}/appPricePoints?filter[territory]=${encodeURIComponent(baseTerritory)}&limit=200`)
   const requestedPrice = Number(config.price)
@@ -420,117 +414,127 @@ async function ensureReviewDetail(client: AppStoreConnectClient, versionId: stri
   })
 }
 
-async function ensureScreenshotSet(client: AppStoreConnectClient, localizationId: string, displayType: AppStoreScreenshotDisplayType): Promise<string> {
-  const response = await client.request<ListResponse<ScreenshotSetAttributes>>(`/appStoreVersionLocalizations/${localizationId}/appScreenshotSets?limit=200`)
-  const existing = response.data.find(item => item.attributes.screenshotDisplayType === displayType)
-  if (existing)
-    return existing.id
-  const created = await client.request<ResourceResponse<ScreenshotSetAttributes>>('/appScreenshotSets', {
-    method: 'POST',
-    body: JSON.stringify({
-      data: {
-        type: 'appScreenshotSets',
-        attributes: { screenshotDisplayType: displayType },
-        relationships: {
-          appStoreVersionLocalization: { data: { type: 'appStoreVersionLocalizations', id: localizationId } },
-        },
-      },
-    }),
-  })
-  return created.data.id
+interface LibraryImageAttributes extends Record<string, unknown> {
+  fileName: string
+  fileSize: number
+  referenceName?: string
+  specId?: string
+  state: string
+  stateDetails?: unknown
+  uploadOperations?: UploadOperation[]
 }
 
-async function waitForScreenshot(
-  client: AppStoreConnectClient,
-  id: string,
-  timeoutMs: number,
-  pollIntervalMs: number,
-): Promise<void> {
+interface AssetReferenceData extends Record<string, unknown> {
+  features: Array<{ featureId: string; placementPolicies: Array<{ placementType: string; groupLimits: Array<{ groupIds: string[]; maxCount: number }> }> }>
+  placementProfileGroups: Array<{ placementProfileGroupId: string; platform: string }>
+  placementTypes: Array<{ placementTypeId: string; specMappings: Array<{ placementGroupId: string; specs: string[] }> }>
+}
+
+async function listAssets<T extends Record<string, unknown>>(client: AppStoreConnectClient, path: string): Promise<Array<Resource<T>>> {
+  const items: Array<Resource<T>> = []
+  let next: string | undefined = path
+  while (next) {
+    const response: ListResponse<T> & { links?: { next?: string } } = await client.request(next)
+    items.push(...response.data)
+    next = response.links?.next
+  }
+  return items
+}
+
+async function readyImage(client: AppStoreConnectClient, id: string, timeoutMs: number, pollIntervalMs: number): Promise<Resource<LibraryImageAttributes>> {
   const deadline = Date.now() + timeoutMs
   while (true) {
-    const response = await client.request<ResourceResponse<ScreenshotAttributes>>(`/appScreenshots/${id}`)
-    const state = response.data.attributes.assetDeliveryState?.state
-    if (state === 'COMPLETE')
-      return
-    if (state === 'FAILED') {
-      const detail = response.data.attributes.assetDeliveryState?.errors?.map(error => error.message).filter(Boolean).join('; ')
-      throw new Error(`[pantry] App Store screenshot processing failed${detail ? `: ${detail}` : ''}`)
-    }
-    if (Date.now() >= deadline)
-      throw new Error(`[pantry] timed out waiting for App Store screenshot ${response.data.attributes.fileName}`)
-    await Bun.sleep(pollIntervalMs)
+    const { data } = await client.request<ResourceResponse<LibraryImageAttributes>>(`/appAssetLibraryImages/${id}`)
+    if (data.attributes.specId && !['AWAITING_UPLOAD', 'UPLOAD_COMPLETE', 'PROCESSING', 'FAILED', 'REJECTED', 'ARCHIVED'].includes(data.attributes.state)) return data
+    if (['FAILED', 'REJECTED', 'ARCHIVED'].includes(data.attributes.state))
+      throw new Error(`[pantry] App Store image ${data.attributes.fileName} ${data.attributes.state}: ${JSON.stringify(data.attributes.stateDetails)}`)
+    if (Date.now() >= deadline) throw new Error(`[pantry] timed out processing App Store image ${data.attributes.fileName}`)
+    await new Promise(resolve => setTimeout(resolve, pollIntervalMs))
   }
 }
 
-async function uploadScreenshot(
-  client: AppStoreConnectClient,
-  setId: string,
-  path: string,
-  timeoutMs: number,
-  pollIntervalMs: number,
-): Promise<string> {
-  const bytes = await readFile(path)
-  const file = basename(path)
-  const checksum = createHash('md5').update(bytes).digest('hex')
-  const reserved = await client.request<ResourceResponse<ScreenshotAttributes>>('/appScreenshots', {
-    method: 'POST',
-    body: JSON.stringify({
-      data: {
-        type: 'appScreenshots',
-        attributes: { fileName: file, fileSize: bytes.byteLength },
-        relationships: { appScreenshotSet: { data: { type: 'appScreenshotSets', id: setId } } },
-      },
-    }),
-  })
-  for (const operation of reserved.data.attributes.uploadOperations ?? []) {
-    const body = bytes.subarray(operation.offset, operation.offset + operation.length)
-    await client.upload(operation.url, {
-      method: operation.method,
-      headers: Object.fromEntries(operation.requestHeaders.map(header => [header.name, header.value])),
-      body,
-    })
-  }
-  await client.request(`/appScreenshots/${reserved.data.id}`, {
-    method: 'PATCH',
-    body: JSON.stringify({
-      data: {
-        type: 'appScreenshots',
-        id: reserved.data.id,
-        attributes: { uploaded: true, sourceFileChecksum: checksum },
-      },
-    }),
-  })
-  await waitForScreenshot(client, reserved.data.id, timeoutMs, pollIntervalMs)
-  return reserved.data.id
+function screenshotGroups(value: AppStoreMetadata['screenshots']): AppStoreScreenshotGroup[] {
+  if (Array.isArray(value)) return value
+  const platforms = { APP_DESKTOP: 'MAC_APP_STORE', APP_IPHONE_67: 'IPHONE_APP_STORE', APP_IPAD_PRO_3GEN_129: 'IPAD_APP_STORE' } as const
+  return Object.entries(value).map(([name, files]) => ({ platform: platforms[name as AppStoreScreenshotDisplayType], files }))
 }
 
-async function syncScreenshotSet(
-  client: AppStoreConnectClient,
-  setId: string,
-  paths: string[],
-  cwd: string,
-  timeoutMs: number,
-  pollIntervalMs: number,
+/** Use Apple's asset library and catalog, rather than deprecated screenshot sets. */
+async function syncScreenshotPlacements(
+  client: AppStoreConnectClient, appId: string, localizationId: string,
+  sets: AppStoreScreenshotGroup[], cwd: string, timeoutMs: number, pollIntervalMs: number,
 ): Promise<void> {
-  if (paths.length > 10)
-    throw new Error('[pantry] App Store screenshot sets accept at most 10 images')
-  const files = await Promise.all(paths.map(async (path) => {
-    const absolute = resolve(cwd, path)
-    await stat(absolute)
-    const bytes = await readFile(absolute)
-    return { absolute, name: basename(absolute), checksum: createHash('md5').update(bytes).digest('hex') }
-  }))
-  const existing = await client.request<ListResponse<ScreenshotAttributes>>(`/appScreenshotSets/${setId}/appScreenshots?limit=200`)
-  for (const screenshot of existing.data) {
-    const desired = files.find(file => file.name === screenshot.attributes.fileName)
-    if (!desired || desired.checksum !== screenshot.attributes.sourceFileChecksum) {
-      await client.request(`/appScreenshots/${screenshot.id}`, { method: 'DELETE' })
+  if (!sets.some(set => set.files.length)) return
+  const { data: library } = await client.request<ResourceResponse<Record<string, unknown>>>(`/apps/${appId}/assetLibrary`)
+  const { data: references } = await client.request<ListResponse<AssetReferenceData>>('/appAssetLibraryRefData')
+  const catalog = references[0]?.attributes
+  if (!catalog) throw new Error('[pantry] Apple returned no asset specification catalog')
+  const images = await listAssets<LibraryImageAttributes>(client, `/appAssetLibraries/${library.id}/images?limit=200`)
+  const placements = await listAssets<{ placementType: string; placementGroup: string }>(client, `/appStoreVersionLocalizations/${localizationId}/placements?filter[placementType]=APP_SCREENSHOT&include=image&limit=200`)
+  const desired = new Map<string, string[]>()
+  for (const set of sets) {
+    for (const relative of set.files) {
+      const path = resolve(cwd, relative)
+      const bytes = await readFile(path)
+      const referenceName = `sha256:${createHash('sha256').update(bytes).digest('hex')}`
+      const previous = images.find(item => item.attributes.referenceName === referenceName)
+      if (previous?.attributes.state === 'FAILED')
+        await client.request(`/appAssetLibraryImages/${previous.id}`, { method: 'DELETE' })
+      let image = previous?.attributes.state === 'FAILED' ? undefined : previous
+      if (image && ['REJECTED', 'ARCHIVED'].includes(image.attributes.state))
+        throw new Error(`[pantry] Existing image ${relative} is ${image.attributes.state}`)
+      if (!image) {
+        image = (await client.request<ResourceResponse<LibraryImageAttributes>>('/appAssetLibraryImages', {
+          method: 'POST', body: JSON.stringify({ data: {
+            type: 'appAssetLibraryImages',
+            attributes: { fileName: basename(path), fileSize: bytes.byteLength, category: 'APP_SCREENSHOTS_AND_PREVIEWS', referenceName },
+            relationships: { assetLibrary: { data: { type: 'appAssetLibraries', id: library.id } } },
+          } }),
+        })).data
+        let uploaded = 0
+        for (const op of image.attributes.uploadOperations ?? []) {
+          if (op.offset !== uploaded || !Number.isSafeInteger(op.length) || op.length <= 0 || op.offset + op.length > bytes.byteLength)
+            throw new Error('[pantry] Invalid Apple image upload byte range')
+          await client.upload(op.url, { method: op.method, headers: Object.fromEntries(op.requestHeaders.map(header => [header.name, header.value])), body: bytes.subarray(op.offset, op.offset + op.length) })
+          uploaded += op.length
+        }
+        if (uploaded !== bytes.byteLength) throw new Error('[pantry] Apple image upload operations do not cover the entire file')
+        await client.request(`/appAssetLibraryImages/${image.id}`, {
+          method: 'PATCH', body: JSON.stringify({ data: { type: 'appAssetLibraryImages', id: image.id, attributes: { uploaded: true } } }),
+        })
+        image = await readyImage(client, image.id, timeoutMs, pollIntervalMs)
+        images.push(image)
+      }
+      else image = await readyImage(client, image.id, timeoutMs, pollIntervalMs)
+      const mappings = catalog.placementTypes.find(type => type.placementTypeId === 'APP_SCREENSHOT')?.specMappings ?? []
+      const group = mappings.find(mapping => mapping.specs.includes(image!.attributes.specId!) && catalog.placementProfileGroups.some(profile => profile.placementProfileGroupId === mapping.placementGroupId && profile.platform === set.platform))?.placementGroupId
+      if (!group) throw new Error(`[pantry] Image ${relative} does not match an Apple screenshot specification for ${set.platform}`)
+      const ids = desired.get(group) ?? []
+      if (!ids.includes(image.id)) ids.push(image.id)
+      desired.set(group, ids)
     }
   }
-  for (const file of files) {
-    const current = existing.data.find(screenshot => screenshot.attributes.fileName === file.name && screenshot.attributes.sourceFileChecksum === file.checksum)
-    if (!current)
-      await uploadScreenshot(client, setId, file.absolute, timeoutMs, pollIntervalMs)
+  for (const [group, images] of desired) {
+    const limit = catalog.features.find(feature => feature.featureId === 'APP_STORE_VERSIONS')?.placementPolicies.find(policy => policy.placementType === 'APP_SCREENSHOT')?.groupLimits.find(limit => limit.groupIds.includes(group))?.maxCount
+    if (limit === undefined || images.length > limit) throw new Error(`[pantry] Screenshot count exceeds Apple's limit for ${group}`)
+    const current = placements.filter(placement => placement.attributes.placementGroup === group)
+    const ordered: Array<{ type: string; id: string }> = []
+    for (const imageId of images) {
+      let placement = current.find(item => item.relationships?.image?.data && !Array.isArray(item.relationships.image.data) && item.relationships.image.data.id === imageId)
+      if (!placement) placement = (await client.request<ResourceResponse<{ placementType: string; placementGroup: string }>>('/appAssetLibraryPlacements', {
+        method: 'POST', body: JSON.stringify({ data: {
+          type: 'appAssetLibraryPlacements', attributes: { placementType: 'APP_SCREENSHOT', placementGroup: group },
+          relationships: { image: { data: { type: 'appAssetLibraryImages', id: imageId } }, appStoreVersionLocalization: { data: { type: 'appStoreVersionLocalizations', id: localizationId } } },
+        } }),
+      })).data
+      ordered.push({ type: 'appAssetLibraryPlacements', id: placement.id })
+    }
+    for (const placement of current)
+      if (!ordered.some(item => item.id === placement.id)) await client.request(`/appAssetLibraryPlacements/${placement.id}`, { method: 'DELETE' })
+    await client.request('/appAssetLibraryPlacementOrderingRequests', { method: 'POST', body: JSON.stringify({ data: {
+      type: 'appAssetLibraryPlacementOrderingRequests', attributes: { placementGroup: group },
+      relationships: { orderedPlacements: { data: ordered }, appStoreVersionLocalization: { data: { type: 'appStoreVersionLocalizations', id: localizationId } } },
+    } }) })
   }
 }
 
@@ -648,13 +652,8 @@ export async function prepareAppStoreSubmission(
     await updateVersion(client, version, store)
     const localizationId = await ensureVersionLocalization(client, version.id, store)
     await ensureReviewDetail(client, version.id, store)
-    for (const displayType of displayTypesForPlatform(version.platform)) {
-      const paths = store.screenshots[displayType] ?? []
-      if (!paths.length)
-        continue
-      const setId = await ensureScreenshotSet(client, localizationId, displayType)
-      await syncScreenshotSet(client, setId, paths, cwd, timeoutMs, pollIntervalMs)
-    }
+    const screenshots = screenshotGroups(store.screenshots).filter(set => version.platform === 'macos' ? set.platform === 'MAC_APP_STORE' : set.platform !== 'MAC_APP_STORE')
+    await syncScreenshotPlacements(client, appId, localizationId, screenshots, cwd, timeoutMs, pollIntervalMs)
     results.push({ platform: version.platform, versionId: version.id, localizationId })
   }
 

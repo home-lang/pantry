@@ -124,7 +124,12 @@ MIT
 `AppStoreConnectClient`, `ensureAppStoreVersions`, and `waitForAppStoreBuilds`
 manage Apple app versions and processed builds. `prepareAppStoreSubmission`
 applies typed `AppStoreMetadata`: pricing, territories, categories, age rating,
-localized descriptions, review contact and screenshots. Pass `submit: true` only
+localized descriptions, review contact and screenshots. Screenshot uploads use
+Apple's reusable App Asset Library and discover eligible placement groups from
+the current reference catalog. Supply `screenshots: [{ platform:
+'MAC_APP_STORE', files: ['screenshots/main.png'] }]`; iPhone and iPad groups use
+`IPHONE_APP_STORE` and `IPAD_APP_STORE`. Legacy screenshot display-type keys
+remain accepted. Pass `submit: true` only
 when the prepared version should enter App Review. `submitAppStore` prepares an
 already-uploaded version by bundle ID and version, and preserves active review
 submissions when a release command is retried. These APIs work for macOS and iOS

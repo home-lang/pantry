@@ -21,7 +21,7 @@ describe('App Store Connect submission', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
-  it('synchronizes metadata, uploads screenshots, and submits an existing version', async () => {
+  it.each([false, true])('synchronizes metadata, uploads screenshots, and submits an existing version (legacy input: %s)', async (legacy) => {
     const screenshotPath = join(dir, 'mac.png')
     writeFileSync(screenshotPath, Buffer.from('test screenshot'))
     const writes: Array<{ path: string, method: string, body?: any }> = []
@@ -39,7 +39,7 @@ describe('App Store Connect submission', () => {
       if (url.pathname.endsWith('/appInfos/info-123/appInfoLocalizations'))
         return Response.json({ data: [{ type: 'appInfoLocalizations', id: 'info-loc', attributes: { locale: 'en-US' } }] })
       if (url.pathname.endsWith('/appPriceSchedules/app-123/manualPrices'))
-        return Response.json({ data: [] })
+        return Response.json({ errors: [{ detail: 'no price schedule' }] }, { status: 404 })
       if (url.pathname.endsWith('/apps/app-123/appPricePoints'))
         return Response.json({ data: [{ type: 'appPricePoints', id: 'free-price', attributes: { customerPrice: '0.0' } }] })
       if (url.pathname.endsWith('/apps/app-123/appAvailabilityV2'))
@@ -50,34 +50,29 @@ describe('App Store Connect submission', () => {
         return Response.json({ data: [{ type: 'appStoreVersionLocalizations', id: 'version-loc', attributes: { locale: 'en-US' } }] })
       if (url.pathname.endsWith('/appStoreVersions/mac-version/appStoreReviewDetail'))
         return Response.json({ data: null })
-      if (url.pathname.endsWith('/appStoreVersionLocalizations/version-loc/appScreenshotSets'))
+      if (url.pathname.endsWith('/apps/app-123/assetLibrary'))
+        return Response.json({ data: { type: 'appAssetLibraries', id: 'library-123', attributes: {} } })
+      if (url.pathname.endsWith('/appAssetLibraryRefData'))
+        return Response.json({ data: [{ type: 'appAssetLibraryRefData', id: 'catalog', attributes: {
+          placementProfileGroups: [{ placementProfileGroupId: 'MAC_GROUP_FROM_APPLE', platform: 'MAC_APP_STORE' }],
+          placementTypes: [{ placementTypeId: 'APP_SCREENSHOT', specMappings: [{ placementGroupId: 'MAC_GROUP_FROM_APPLE', specs: ['mac-spec'] }] }],
+          features: [{ featureId: 'APP_STORE_VERSIONS', placementPolicies: [{ placementType: 'APP_SCREENSHOT', groupLimits: [{ groupIds: ['MAC_GROUP_FROM_APPLE'], maxCount: 10 }] }] }],
+        } }] })
+      if (url.pathname.endsWith('/appAssetLibraries/library-123/images'))
         return Response.json({ data: [] })
-      if (url.pathname.endsWith('/appScreenshotSets') && method === 'POST')
-        return Response.json({ data: { type: 'appScreenshotSets', id: 'set-123', attributes: { screenshotDisplayType: 'APP_DESKTOP' } } }, { status: 201 })
-      if (url.pathname.endsWith('/appScreenshotSets/set-123/appScreenshots'))
+      if (url.pathname.endsWith('/appStoreVersionLocalizations/version-loc/placements'))
         return Response.json({ data: [] })
-      if (url.pathname.endsWith('/appScreenshots') && method === 'POST') {
+      if (url.pathname.endsWith('/appAssetLibraryImages') && method === 'POST') {
         screenshotCreated = true
-        return Response.json({
-          data: {
-            type: 'appScreenshots',
-            id: 'shot-123',
-            attributes: {
-              fileName: 'mac.png',
-              fileSize: 15,
-              uploadOperations: [{
-                method: 'PUT',
-                url: 'https://upload.example.test/part',
-                length: 15,
-                offset: 0,
-                requestHeaders: [{ name: 'Content-Type', value: 'image/png' }],
-              }],
-            },
-          },
-        }, { status: 201 })
+        return Response.json({ data: { type: 'appAssetLibraryImages', id: 'shot-123', attributes: {
+          fileName: 'mac.png', fileSize: 15, state: 'AWAITING_UPLOAD',
+          uploadOperations: [{ method: 'PUT', url: 'https://upload.example.test/part', length: 15, offset: 0, requestHeaders: [{ name: 'Content-Type', value: 'image/png' }] }],
+        } } }, { status: 201 })
       }
-      if (url.pathname.endsWith('/appScreenshots/shot-123') && method === 'GET')
-        return Response.json({ data: { type: 'appScreenshots', id: 'shot-123', attributes: { fileName: 'mac.png', assetDeliveryState: { state: 'COMPLETE' } } } })
+      if (url.pathname.endsWith('/appAssetLibraryImages/shot-123') && method === 'GET')
+        return Response.json({ data: { type: 'appAssetLibraryImages', id: 'shot-123', attributes: { fileName: 'mac.png', state: 'PREPARE_FOR_SUBMISSION', specId: 'mac-spec' } } })
+      if (url.pathname.endsWith('/appAssetLibraryPlacements') && method === 'POST')
+        return Response.json({ data: { ...body.data, id: 'placement-123' } }, { status: 201 })
       if (url.pathname.endsWith('/apps/app-123/reviewSubmissions'))
         return Response.json({ data: [] })
       if (url.pathname.endsWith('/reviewSubmissions') && method === 'POST')
@@ -110,7 +105,7 @@ describe('App Store Connect submission', () => {
           phone: '+1 555-555-0100',
           email: 'review@example.test',
         },
-        screenshots: { APP_DESKTOP: ['mac.png'] },
+        screenshots: legacy ? { APP_DESKTOP: ['mac.png'] } : [{ platform: 'MAC_APP_STORE', files: ['mac.png'] }],
         submitForReview: true,
     }, 'app-123', [{ platform: 'macos', id: 'mac-version', buildId: 'mac-build' }], {
       cwd: dir,
@@ -118,6 +113,11 @@ describe('App Store Connect submission', () => {
     })
 
     expect(screenshotCreated).toBe(true)
+    const committed = writes.find(write => write.path === '/v1/appAssetLibraryImages/shot-123' && write.method === 'PATCH')
+    expect(committed?.body.data.attributes).toEqual({ uploaded: true })
+    expect(writes.find(write => write.path === '/v1/appAssetLibraryPlacements')?.body.data.attributes.placementGroup).toBe('MAC_GROUP_FROM_APPLE')
+    expect(writes.find(write => write.path === '/v1/appAssetLibraryPlacementOrderingRequests')?.body.data.relationships.orderedPlacements.data).toEqual([{ type: 'appAssetLibraryPlacements', id: 'placement-123' }])
+    expect(writes.some(write => write.path.includes('appScreenshots'))).toBe(false)
     expect(result.reviewSubmissionIds).toEqual(['review-123'])
     expect(writes.some(write => write.path === '/v1/ageRatingDeclarations/info-123' && write.body.data.attributes.advertising === false)).toBe(true)
     expect(writes.some(write => write.path === '/v1/builds/mac-build' && write.body.data.attributes.usesNonExemptEncryption === false)).toBe(true)
@@ -180,7 +180,7 @@ describe('App Store Connect submission', () => {
           phone: '+1 555-555-0100',
           email: 'review@example.test',
         },
-        screenshots: {},
+        screenshots: [],
         submitForReview: true,
     }, {
       bundleId: 'dev.example.native-app',
