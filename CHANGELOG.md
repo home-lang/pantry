@@ -1,3 +1,18 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.110...v0.11.111)
+
+## ✨ Features
+
+- **apple**: publish screenshots through the reusable asset library ([f8fdccf](https://github.com/pantry-pm/pantry/commit/f8fdccf)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.111 ([267ab5c](https://github.com/pantry-pm/pantry/commit/267ab5c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.109...v0.11.110)
 
 ## ✨ Features
