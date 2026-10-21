@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { CUSTOM_BUILD_DOMAINS, classifyTargetedFailures as classify, selectedPackageSelectors, applyVersionPins, selectVersionsForBuild, assignStripe, selectRecentVersions, isAppRecipePath, isPublishedArtifactRecord, isSourceUnavailableError, scriptCompiles, matchesRequestedPackage, parseRequestedPackages, pkgxHasPrebuilt, relocateMirroredPaths, normalizeMirroredArtifact, summariseTimings, type PackageTiming } from './build-all-packages'
+import { CUSTOM_BUILD_DOMAINS, hasVersionSpelling, publishedRecordFor, versionSpellings, classifyTargetedFailures as classify, selectedPackageSelectors, applyVersionPins, selectVersionsForBuild, assignStripe, selectRecentVersions, isAppRecipePath, isPublishedArtifactRecord, isSourceUnavailableError, scriptCompiles, matchesRequestedPackage, parseRequestedPackages, pkgxHasPrebuilt, relocateMirroredPaths, normalizeMirroredArtifact, summariseTimings, type PackageTiming } from './build-all-packages'
 
 test('an explicitly requested excluded version fails instead of reporting an empty successful publication', () => {
   const child = Bun.spawnSync(['bun', 'scripts/build-all-packages.ts', '--platform', 'linux-arm64', '-p', 'unicode.org@70.1.0', '--source-only', '--print-selected'], { cwd: import.meta.dir + '/..', stdout: 'pipe', stderr: 'pipe' })
@@ -570,4 +570,55 @@ test('every exact pin survives the automatic version selection limit', async () 
 
 test('Android publication executes the repaired recipe instead of mirroring old launchers', () => {
   expect(CUSTOM_BUILD_DOMAINS.has('android.com/cmdline-tools')).toBe(true)
+})
+
+
+// One Zig dev build reached the registry twice, as `+<hash>` (the update bot)
+// and `_<hash>` (the hourly dev sync), and was built, uploaded and scanned
+// twice. The registry treats the spellings as one build; so does the builder.
+describe('build-metadata spellings', () => {
+  const realFetch = globalThis.fetch
+  const realExtra = process.env.ZIG_EXTRA_VERSIONS
+  afterEach(() => {
+    globalThis.fetch = realFetch
+    if (realExtra === undefined)
+      delete process.env.ZIG_EXTRA_VERSIONS
+    else
+      process.env.ZIG_EXTRA_VERSIONS = realExtra
+  })
+
+  const published = { tarball: 'binaries/ziglang.org/x/linux-x86-64/zig.tar.gz', sha256: 'abc', size: 10, uploadedAt: '2026-10-21T01:43:00Z' }
+
+  test('names both spellings of a build, the given one first', () => {
+    expect(versionSpellings('0.18.0-dev.367+187d0bf9e')).toEqual(['0.18.0-dev.367+187d0bf9e', '0.18.0-dev.367_187d0bf9e'])
+    expect(versionSpellings('0.18.0-dev.367_187d0bf9e')).toEqual(['0.18.0-dev.367_187d0bf9e', '0.18.0-dev.367+187d0bf9e'])
+    expect(versionSpellings('1.2.3')).toEqual(['1.2.3'])
+    expect(hasVersionSpelling(['0.15.1', '0.18.0-dev.367+187d0bf9e'], '0.18.0-dev.367_187d0bf9e')).toBe(true)
+    expect(hasVersionSpelling(['0.15.1'], '0.18.0-dev.367_187d0bf9e')).toBe(false)
+  })
+
+  test('finds a build published under the other spelling', () => {
+    const metadata = { versions: { '0.18.0-dev.367_187d0bf9e': { platforms: { 'linux-x86-64': published } } } }
+    expect(publishedRecordFor(metadata, '0.18.0-dev.367+187d0bf9e', 'linux-x86-64')).toEqual(published)
+    expect(publishedRecordFor(metadata, '0.18.0-dev.367_187d0bf9e', 'linux-x86-64')).toEqual(published)
+    expect(publishedRecordFor(metadata, '0.18.0-dev.367+187d0bf9e', 'darwin-arm64')).toBeUndefined()
+    // A stub record is still not a published artifact, under either spelling.
+    const stub = { versions: { '0.18.0-dev.367_187d0bf9e': { platforms: { 'linux-x86-64': { tarball: 'x', sha256: '', size: 0, uploadedAt: '' } } } } }
+    expect(publishedRecordFor(stub, '0.18.0-dev.367+187d0bf9e', 'linux-x86-64')).toBeUndefined()
+  })
+
+  test('queues the latest Zig dev build once when the catalog already lists it', async () => {
+    globalThis.fetch = (async () => Response.json({ master: { version: '0.18.0-dev.367+187d0bf9e' } })) as unknown as typeof fetch
+    process.env.ZIG_EXTRA_VERSIONS = '0.18.0-dev.367+187d0bf9e'
+    const pkg = { domain: 'ziglang.org', name: 'zig', versions: ['0.18.0-dev.367+187d0bf9e', '0.15.1'], latestVersion: '0.15.1', pantryYamlPath: '', hasDistributable: true, hasBuildScript: true, needsProps: false, hasProps: false, depDomains: [], isApp: false, isDownloadRecipe: false }
+    const versions = await selectVersionsForBuild(pkg, 10)
+    expect(versions.filter(v => v.startsWith('0.18.0-dev.367'))).toEqual(['0.18.0-dev.367+187d0bf9e'])
+  })
+
+  test('still adds the latest Zig dev build when the catalog does not list it yet', async () => {
+    globalThis.fetch = (async () => Response.json({ master: { version: '0.18.0-dev.368+aaaaaaaaa' } })) as unknown as typeof fetch
+    delete process.env.ZIG_EXTRA_VERSIONS
+    const pkg = { domain: 'ziglang.org', name: 'zig', versions: ['0.18.0-dev.367+187d0bf9e', '0.15.1'], latestVersion: '0.15.1', pantryYamlPath: '', hasDistributable: true, hasBuildScript: true, needsProps: false, hasProps: false, depDomains: [], isApp: false, isDownloadRecipe: false }
+    expect(await selectVersionsForBuild(pkg, 10)).toContain('0.18.0-dev.368_aaaaaaaaa')
+  })
 })

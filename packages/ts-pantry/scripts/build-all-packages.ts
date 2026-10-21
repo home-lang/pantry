@@ -168,6 +168,38 @@ export function isPublishedArtifactRecord(record: unknown): boolean {
     && typeof uploadedAt === 'string' && uploadedAt.length > 0
 }
 
+/**
+ * Every spelling a version may be published under, the given one first.
+ *
+ * Build metadata is written `+<hash>` upstream and `_<hash>` where a `+` was
+ * once inconvenient (S3 URL signing), and both reached the registry for the
+ * same build: the update bot records Zig's dev build with `+`, the dev sync
+ * adds it with `_`, and an existence check that asked for one spelling never
+ * saw the other. Each Zig dev build was built, uploaded and malware-scanned
+ * twice (693 s of scanning for one build on 2026-10-21). The registry already
+ * treats the spellings as one build (`binaryVersionSpellings`); so does this.
+ */
+export function versionSpellings(version: string): string[] {
+  return [...new Set([version, version.replace(/_/g, '+'), version.replace(/\+/g, '_')])]
+}
+
+/** Whether `versions` already holds `version` under any spelling. */
+export function hasVersionSpelling(versions: readonly string[], version: string): boolean {
+  const spellings = versionSpellings(version)
+  return versions.some(existing => spellings.includes(existing))
+}
+
+/** The published record for `version` on `platform` in a metadata.json, under whichever spelling it was published. */
+export function publishedRecordFor(metadata: unknown, version: string, platform: string): unknown {
+  const versions = (metadata as { versions?: Record<string, { platforms?: Record<string, unknown> }> } | null)?.versions
+  for (const spelling of versionSpellings(version)) {
+    const record = versions?.[spelling]?.platforms?.[platform]
+    if (isPublishedArtifactRecord(record))
+      return record
+  }
+  return undefined
+}
+
 function domainToKey(domain: string): string {
   return domain.replace(/[.\-/]/g, '').toLowerCase()
 }
@@ -1176,7 +1208,8 @@ export async function selectVersionsForBuild(pkg: BuildablePackage, maxVersions:
         const devVersion = index.master?.version
         if (devVersion) {
           const sanitizedDev = devVersion.replace(/\+/g, '_')
-          if (!versions.includes(sanitizedDev)) {
+          // The update bot may already have recorded this build as `+<hash>`.
+          if (!hasVersionSpelling(versions, sanitizedDev)) {
             versions.unshift(sanitizedDev)
           }
         }
@@ -1187,7 +1220,7 @@ export async function selectVersionsForBuild(pkg: BuildablePackage, maxVersions:
     const extraVersions = process.env.ZIG_EXTRA_VERSIONS?.split(/\s+/).filter(Boolean) ?? []
     for (const ev of extraVersions) {
       const sanitized = ev.replace(/\+/g, '_')
-      if (!versions.includes(sanitized)) {
+      if (!hasVersionSpelling(versions, sanitized)) {
         versions.unshift(sanitized)
       }
     }
@@ -1217,9 +1250,9 @@ async function checkExistsInS3(domain: string, version: string, platform: string
       // proof of existence made the sweep skip every one of them forever, so
       // those platforms could never fill no matter how many runs went by.
       //
-      // Require the fields that only a completed upload can set.
-      const record = parsed.versions?.[version]?.platforms?.[platform]
-      return isPublishedArtifactRecord(record)
+      // Require the fields that only a completed upload can set, under either
+      // build-metadata spelling (see versionSpellings).
+      return publishedRecordFor(parsed, version, platform) !== undefined
     }
 catch (err: any) {
       const isNotFound = err?.message?.includes('404') || err?.message?.includes('NoSuchKey') || err?.message?.includes('Not Found')
