@@ -3,7 +3,7 @@
  *
  * @domain `deno.land`
  * @programs `deno`
- * @version `2.9.7` (69 versions available)
+ * @version `2.9.8` (70 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install deno.land`
@@ -23,7 +23,7 @@
  * console.log(pkg.name)        // "deno"
  * console.log(pkg.description) // "A modern runtime for JavaScript and TypeScript."
  * console.log(pkg.programs)    // ["deno"]
- * console.log(pkg.versions[0]) // "2.9.7" (latest)
+ * console.log(pkg.versions[0]) // "2.9.8" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/deno-land.md
@@ -78,6 +78,7 @@ export const denoPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.9.8',
     '2.9.7',
     '2.9.6',
     '2.9.5',

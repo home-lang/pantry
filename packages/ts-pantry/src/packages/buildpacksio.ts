@@ -3,7 +3,7 @@
  *
  * @domain `buildpacks.io`
  * @programs `pack`
- * @version `0.40.2` (20 versions available)
+ * @version `0.40.10` (37 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install buildpacks.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "pack"
  * console.log(pkg.description) // "CLI for building apps using Cloud Native Buildp..."
  * console.log(pkg.programs)    // ["pack"]
- * console.log(pkg.versions[0]) // "0.40.2" (latest)
+ * console.log(pkg.versions[0]) // "0.40.10" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/buildpacks-io.md
@@ -67,6 +67,7 @@ export const buildpacksioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.40.10',
     '0.40.9',
     '0.40.8',
     '0.40.7',
