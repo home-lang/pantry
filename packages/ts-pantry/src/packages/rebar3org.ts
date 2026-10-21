@@ -3,7 +3,7 @@
  *
  * @domain `rebar3.org`
  * @programs `rebar3`
- * @version `3.27.3` (50 versions available)
+ * @version `3.28.0` (51 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install rebar3.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "rebar3"
  * console.log(pkg.description) // "Erlang build tool that makes it easy to compile..."
  * console.log(pkg.programs)    // ["rebar3"]
- * console.log(pkg.versions[0]) // "3.27.3" (latest)
+ * console.log(pkg.versions[0]) // "3.28.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/rebar3-org.md
@@ -67,6 +67,7 @@ export const rebar3orgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.28.0',
     '3.27.3',
     '3.27.2',
     '3.27.1',

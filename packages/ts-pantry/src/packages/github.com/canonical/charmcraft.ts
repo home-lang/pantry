@@ -3,7 +3,7 @@
  *
  * @domain `github.com/canonical/charmcraft`
  * @programs `charmcraft`
- * @version `4.4.2` (55 versions available)
+ * @version `4.5.0` (56 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/canonical/charmcraft`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "charmcraft"
  * console.log(pkg.description) // "Collaborate, build and publish charmed operator..."
  * console.log(pkg.programs)    // ["charmcraft"]
- * console.log(pkg.versions[0]) // "4.4.2" (latest)
+ * console.log(pkg.versions[0]) // "4.5.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/canonical/charmcraft.md
@@ -75,6 +75,7 @@ export const charmcraftPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.5.0',
     '4.4.2',
     '4.4.1',
     '4.4.0',
