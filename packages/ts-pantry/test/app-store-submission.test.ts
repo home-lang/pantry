@@ -1,4 +1,4 @@
-import { generateKeyPairSync } from 'node:crypto'
+import { createHash, generateKeyPairSync } from 'node:crypto'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -26,14 +26,17 @@ describe('App Store Connect submission', () => {
     writeFileSync(screenshotPath, Buffer.from('test screenshot'))
     const writes: Array<{ path: string, method: string, body?: any }> = []
     let screenshotCreated = false
+    let screenshotUploaded = false
     const fetcher = (async (input: string | URL | Request, init?: RequestInit) => {
       const url = new URL(String(input))
       const method = init?.method ?? 'GET'
       const body = init?.body && typeof init.body === 'string' ? JSON.parse(init.body) : undefined
       if (method !== 'GET')
         writes.push({ path: url.pathname, method, body })
-      if (url.hostname === 'upload.example.test')
+      if (url.hostname === 'upload.example.test') {
+        screenshotUploaded = true
         return new Response(null, { status: 200 })
+      }
       if (url.pathname.endsWith('/apps/app-123/appInfos'))
         return Response.json({ data: [{ type: 'appInfos', id: 'info-123', attributes: { appStoreState: 'PREPARE_FOR_SUBMISSION' } }] })
       if (url.pathname.endsWith('/appInfos/info-123/appInfoLocalizations'))
@@ -59,7 +62,10 @@ describe('App Store Connect submission', () => {
           features: [{ featureId: 'APP_STORE_VERSIONS', placementPolicies: [{ placementType: 'APP_SCREENSHOT', groupLimits: [{ groupIds: ['MAC_GROUP_FROM_APPLE'], maxCount: 10 }] }] }],
         } }] })
       if (url.pathname.endsWith('/appAssetLibraries/library-123/images'))
-        return Response.json({ data: [] })
+        return Response.json({ data: legacy ? [{ type: 'appAssetLibraryImages', id: 'shot-123', attributes: {
+          fileName: 'mac.png', fileSize: 15, state: 'AWAITING_UPLOAD', referenceName: `sha256:${createHash('sha256').update('test screenshot').digest('hex')}`,
+          uploadOperations: [{ method: 'PUT', url: 'https://upload.example.test/part', length: 15, offset: 0, requestHeaders: [{ name: 'Content-Type', value: 'image/png' }] }],
+        } }] : [] })
       if (url.pathname.endsWith('/appStoreVersionLocalizations/version-loc/placements'))
         return Response.json({ data: [] })
       if (url.pathname.endsWith('/appAssetLibraryImages') && method === 'POST') {
@@ -112,7 +118,8 @@ describe('App Store Connect submission', () => {
       screenshotPollIntervalMs: 1,
     })
 
-    expect(screenshotCreated).toBe(true)
+    expect(screenshotCreated).toBe(!legacy)
+    expect(screenshotUploaded).toBe(true)
     const committed = writes.find(write => write.path === '/v1/appAssetLibraryImages/shot-123' && write.method === 'PATCH')
     expect(committed?.body.data.attributes).toEqual({ uploaded: true })
     expect(writes.find(write => write.path === '/v1/appAssetLibraryPlacements')?.body.data.attributes.placementGroup).toBe('MAC_GROUP_FROM_APPLE')

@@ -456,7 +456,7 @@ async function readyImage(client: AppStoreConnectClient, id: string, timeoutMs: 
 function screenshotGroups(value: AppStoreMetadata['screenshots']): AppStoreScreenshotGroup[] {
   if (Array.isArray(value)) return value
   const platforms = { APP_DESKTOP: 'MAC_APP_STORE', APP_IPHONE_67: 'IPHONE_APP_STORE', APP_IPAD_PRO_3GEN_129: 'IPAD_APP_STORE' } as const
-  return Object.entries(value).map(([name, files]) => ({ platform: platforms[name as AppStoreScreenshotDisplayType], files }))
+  return Object.entries(value).flatMap(([name, files]) => files ? [{ platform: platforms[name as AppStoreScreenshotDisplayType], files }] : [])
 }
 
 /** Use Apple's asset library and catalog, rather than deprecated screenshot sets. */
@@ -491,6 +491,10 @@ async function syncScreenshotPlacements(
             relationships: { assetLibrary: { data: { type: 'appAssetLibraries', id: library.id } } },
           } }),
         })).data
+      }
+      if (image.attributes.state === 'AWAITING_UPLOAD') {
+        if (!image.attributes.uploadOperations)
+          image = (await client.request<ResourceResponse<LibraryImageAttributes>>(`/appAssetLibraryImages/${image.id}`)).data
         let uploaded = 0
         for (const op of image.attributes.uploadOperations ?? []) {
           if (op.offset !== uploaded || !Number.isSafeInteger(op.length) || op.length <= 0 || op.offset + op.length > bytes.byteLength)
@@ -502,10 +506,9 @@ async function syncScreenshotPlacements(
         await client.request(`/appAssetLibraryImages/${image.id}`, {
           method: 'PATCH', body: JSON.stringify({ data: { type: 'appAssetLibraryImages', id: image.id, attributes: { uploaded: true } } }),
         })
-        image = await readyImage(client, image.id, timeoutMs, pollIntervalMs)
-        images.push(image)
       }
-      else image = await readyImage(client, image.id, timeoutMs, pollIntervalMs)
+      image = await readyImage(client, image.id, timeoutMs, pollIntervalMs)
+      if (!images.some(existing => existing.id === image!.id)) images.push(image)
       const mappings = catalog.placementTypes.find(type => type.placementTypeId === 'APP_SCREENSHOT')?.specMappings ?? []
       const group = mappings.find(mapping => mapping.specs.includes(image!.attributes.specId!) && catalog.placementProfileGroups.some(profile => profile.placementProfileGroupId === mapping.placementGroupId && profile.platform === set.platform))?.placementGroupId
       if (!group) throw new Error(`[pantry] Image ${relative} does not match an Apple screenshot specification for ${set.platform}`)
