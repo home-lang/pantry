@@ -3,7 +3,7 @@
  *
  * @domain `argoproj.github.io/cd`
  * @programs `argocd`
- * @version `3.5.6` (213 versions available)
+ * @version `3.5.6` (214 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install argoproj.github.io/cd`
@@ -88,6 +88,7 @@ export const argoprojgithubiocdPackage = {
     '3.4.3',
     '3.4.2',
     '3.4.1',
+    '3.3.17',
     '3.3.16',
     '3.3.15',
     '3.3.14',

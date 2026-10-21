@@ -3,7 +3,7 @@
  *
  * @domain `coredns.io`
  * @programs `coredns`
- * @version `1.14.2` (16 versions available)
+ * @version `1.15.0` (57 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install coredns.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "coredns"
  * console.log(pkg.description) // "CoreDNS is a DNS server that chains plugins"
  * console.log(pkg.programs)    // ["coredns"]
- * console.log(pkg.versions[0]) // "1.14.2" (latest)
+ * console.log(pkg.versions[0]) // "1.15.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/coredns-io.md
@@ -67,6 +67,7 @@ export const corednsioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.15.0',
     '1.14.7',
     '1.14.6',
     '1.14.5',
