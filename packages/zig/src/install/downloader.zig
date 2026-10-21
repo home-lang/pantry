@@ -1,6 +1,6 @@
 const std = @import("std");
 const io_helper = @import("../io_helper.zig");
-const lib = @import("../lib.zig");
+const platform_core = @import("../core/platform.zig");
 const style = @import("../cli/style.zig");
 pub const registry_versions = @import("registry_versions.zig");
 
@@ -283,7 +283,7 @@ pub fn buildZiglangUrl(
     allocator: std.mem.Allocator,
     version: []const u8,
 ) ![]const u8 {
-    const platform = lib.Platform.current();
+    const platform = platform_core.Platform.current();
     const platform_str = switch (platform) {
         .darwin => "darwin",
         .linux => "linux",
@@ -291,7 +291,7 @@ pub fn buildZiglangUrl(
         .freebsd => "freebsd",
     };
 
-    const arch = lib.Architecture.current();
+    const arch = platform_core.Architecture.current();
     const arch_str = switch (arch) {
         .x86_64 => "x86-64",
         .aarch64 => "arm64",
@@ -312,17 +312,17 @@ pub fn buildZiglangFallbackUrl(
     allocator: std.mem.Allocator,
     version: []const u8,
 ) ![]const u8 {
-    const platform = switch (lib.Platform.current()) {
+    const platform = switch (platform_core.Platform.current()) {
         .darwin => "macos",
         .linux => "linux",
         .windows => "windows",
         .freebsd => "freebsd",
     };
-    const arch = switch (lib.Architecture.current()) {
+    const arch = switch (platform_core.Architecture.current()) {
         .x86_64 => "x86_64",
         .aarch64 => "aarch64",
     };
-    const ext = if (lib.Platform.current() == .windows) "zip" else "tar.xz";
+    const ext = if (platform_core.Platform.current() == .windows) "zip" else "tar.xz";
 
     const upstream_version = try allocator.dupe(u8, version);
     defer allocator.free(upstream_version);
@@ -349,7 +349,7 @@ pub fn buildPackageUrl(
     version: []const u8,
     format: []const u8,
 ) ![]const u8 {
-    const platform = lib.Platform.current();
+    const platform = platform_core.Platform.current();
     const platform_str = switch (platform) {
         .darwin => "darwin",
         .linux => "linux",
@@ -357,7 +357,7 @@ pub fn buildPackageUrl(
         .freebsd => "freebsd",
     };
 
-    const arch = lib.Architecture.current();
+    const arch = platform_core.Architecture.current();
     const arch_str = switch (arch) {
         .x86_64 => "x86-64",
         .aarch64 => "aarch64",
@@ -714,8 +714,8 @@ test "buildPackageUrl" {
     const url = try buildPackageUrl(allocator, "bun.sh", "1.0.0", "tar.gz");
     defer allocator.free(url);
 
-    const platform = lib.Platform.current();
-    const arch = lib.Architecture.current();
+    const platform = platform_core.Platform.current();
+    const arch = platform_core.Architecture.current();
 
     if (platform == .darwin and arch == .aarch64) {
         try std.testing.expectEqualStrings(
