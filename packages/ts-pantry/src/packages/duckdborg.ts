@@ -3,7 +3,7 @@
  *
  * @domain `duckdb.org`
  * @programs `duckdb`
- * @version `1.5.6` (55 versions available)
+ * @version `2.0.0` (56 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install duckdb.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "duckdb"
  * console.log(pkg.description) // "DuckDB is an analytical in-process SQL database..."
  * console.log(pkg.programs)    // ["duckdb"]
- * console.log(pkg.versions[0]) // "1.5.6" (latest)
+ * console.log(pkg.versions[0]) // "2.0.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/duckdb-org.md
@@ -68,6 +68,7 @@ export const duckdborgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.0.0',
     '1.5.6',
     '1.5.5',
     '1.5.4',

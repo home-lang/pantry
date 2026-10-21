@@ -3,7 +3,7 @@
  *
  * @domain `terratag.io`
  * @programs `terratag`
- * @version `0.8.0` (52 versions available)
+ * @version `0.8.1` (53 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install terratag.io`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "terratag"
  * console.log(pkg.description) // "Terratag is a CLI tool that enables users of Te..."
  * console.log(pkg.programs)    // ["terratag"]
- * console.log(pkg.versions[0]) // "0.8.0" (latest)
+ * console.log(pkg.versions[0]) // "0.8.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/terratag-io.md
@@ -75,6 +75,7 @@ export const terratagioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.8.1',
     '0.8.0',
     '0.7.7',
     '0.7.6',
