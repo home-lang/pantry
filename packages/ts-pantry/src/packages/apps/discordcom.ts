@@ -3,7 +3,7 @@
  *
  * @domain `discord.com`
  * @programs `discord`
- * @version `0.0.418` (24 versions available)
+ * @version `0.0.419` (25 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install discord.com`
@@ -22,6 +22,7 @@ export const discordcomPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   versions: [
+    '0.0.419',
     '0.0.418',
     '0.0.417',
     '0.0.416',

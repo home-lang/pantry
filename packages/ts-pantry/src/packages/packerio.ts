@@ -3,7 +3,7 @@
  *
  * @domain `packer.io`
  * @programs `packer`
- * @version `1.16.1` (49 versions available)
+ * @version `1.16.2` (50 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install packer.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "packer"
  * console.log(pkg.description) // "Packer is a tool for creating identical machine..."
  * console.log(pkg.programs)    // ["packer"]
- * console.log(pkg.versions[0]) // "1.16.1" (latest)
+ * console.log(pkg.versions[0]) // "1.16.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/packer-io.md
@@ -67,6 +67,7 @@ export const packerioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.16.2',
     '1.16.1',
     '1.16.0',
     '1.15.4',

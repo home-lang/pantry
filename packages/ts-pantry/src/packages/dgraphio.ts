@@ -3,7 +3,7 @@
  *
  * @domain `dgraph.io`
  * @programs `dgraph`
- * @version `25.5.0` (47 versions available)
+ * @version `25.5.1` (48 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install dgraph.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "dgraph"
  * console.log(pkg.description) // "high-performance graph database for real-time u..."
  * console.log(pkg.programs)    // ["dgraph"]
- * console.log(pkg.versions[0]) // "25.5.0" (latest)
+ * console.log(pkg.versions[0]) // "25.5.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/dgraph-io.md
@@ -67,6 +67,7 @@ export const dgraphioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '25.5.1',
     '25.5.0',
     '25.4.1',
     '25.4.0',

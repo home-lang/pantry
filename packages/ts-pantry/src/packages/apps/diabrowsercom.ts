@@ -20,6 +20,7 @@ export const diabrowsercomPackage = {
   dependencies: [] as const,
   buildDependencies: [] as const,
   versions: [
+    '1.54.2',
     '1.53.0',
     '1.52.0',
     '1.51.1',

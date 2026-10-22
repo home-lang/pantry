@@ -3,7 +3,7 @@
  *
  * @domain `bun.com/profile`
  * @programs `bun-profile`
- * @version `1.4.3` (20 versions available)
+ * @version `1.4.4` (21 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install bun.com/profile`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "bun-profile"
  * console.log(pkg.description) // "Official Bun profiling runtime with its native ..."
  * console.log(pkg.programs)    // ["bun-profile"]
- * console.log(pkg.versions[0]) // "1.4.3" (latest)
+ * console.log(pkg.versions[0]) // "1.4.4" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/bun-com/profile.md
@@ -71,6 +71,7 @@ export const bunprofilePackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.4.4',
     '1.4.3',
     '1.4.2',
     '1.4.1',

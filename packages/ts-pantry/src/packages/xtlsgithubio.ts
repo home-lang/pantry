@@ -3,7 +3,7 @@
  *
  * @domain `xtls.github.io`
  * @programs `xray`
- * @version `26.2.6` (49 versions available)
+ * @version `26.10.21` (37 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install xtls.github.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "xray-core"
  * console.log(pkg.description) // "Xray, Penetrates Everything. Also the best v2ra..."
  * console.log(pkg.programs)    // ["xray"]
- * console.log(pkg.versions[0]) // "26.2.6" (latest)
+ * console.log(pkg.versions[0]) // "26.10.21" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/xtls-github-io.md
@@ -68,6 +68,7 @@ export const xtlsgithubioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '26.10.21',
     '26.3.27',
     '26.2.6',
     '26.2.4',
