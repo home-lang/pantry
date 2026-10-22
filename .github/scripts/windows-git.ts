@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { lstat, mkdir, mkdtemp, readFile, realpath, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { redactFixtureOutput } from '../../packages/action/src/fixture-log'
 import { installResolvedSystemPackages } from '../../packages/action/src/system-packages'
 
 assert.equal(process.platform, 'win32', 'Git execution qualification requires a Windows host')
@@ -18,8 +19,9 @@ async function run(name: string, command: string[], cwd = owned, extra: Record<s
   env.PATH = `${join(tree, '.bin')};${process.env.PATH ?? process.env.Path ?? ''}`
   const child = Bun.spawn(command, { cwd, env, stdin: 'ignore', stdout: 'pipe', stderr: 'pipe', signal: AbortSignal.timeout(180_000) })
   const [code, stdout, stderr] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()])
-  await Bun.write(join(artifacts, `${name}.log`), stdout + stderr)
-  assert.equal(code, 0, `${name}: ${stdout}\n${stderr}`)
+  const retained = redactFixtureOutput(stdout + stderr, [process.env.GITHUB_TOKEN, process.env.GH_TOKEN])
+  await Bun.write(join(artifacts, `${name}.log`), retained)
+  assert.equal(code, 0, `${name}: ${retained}`)
   return stdout.trim()
 }
 async function install() {
