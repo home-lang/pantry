@@ -3,7 +3,7 @@
  *
  * @domain `openjdk.org`
  * @programs `jar`, `jarsigner`, `java`, `javac`, `javadoc`, ... (+22 more)
- * @version `27.0.0.35` (127 versions available)
+ * @version `27.0.0.35` (128 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install openjdk.org`
@@ -132,6 +132,7 @@ export const javaPackage = {
     '26.0.2.1.1',
     '26.0.1.8',
     '26.0.0.35',
+    '25.0.5.8',
     '25.0.4.7',
     '25.0.4.1.1',
     '25.0.3.9',

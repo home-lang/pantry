@@ -3,7 +3,7 @@
  *
  * @domain `terraform.io`
  * @programs `terraform`
- * @version `1.17.0` (40 versions available)
+ * @version `1.17.0` (41 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install terraform.io`
@@ -73,6 +73,7 @@ export const terraformPackage = {
   */
   versions: [
     '1.17.0',
+    '1.16.7',
     '1.16.6',
     '1.16.5',
     '1.16.4',
