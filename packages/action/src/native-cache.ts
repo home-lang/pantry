@@ -18,11 +18,12 @@ export async function nativeArtifactCacheIdentity(
     (await resolveTransitiveDependencies(domain, { targetOs: platform.os, targetArch: platform.arch })).map(dep => `${dep.name}@${dep.constraint.replace(/^@/, '')}`),
   lockedVersions: Map<string, string> = new Map(),
 ): Promise<string> {
+  const sdkPlatform = { os: platform.os, arch: platform.arch === 'arm64' ? 'aarch64' as const : 'x86_64' as const }
   const domains = new Map<string, Set<string>>()
   const add = (spec: string) => {
     const [name, constraint = 'latest'] = spec.split('@', 2)
     const domain = resolvePackageDomain(name)
-    if (isSupported(domain)) return domain
+    if (isSupported(domain, sdkPlatform)) return domain
     if (!domains.has(domain)) domains.set(domain, new Set())
     domains.get(domain)!.add(constraint || 'latest')
     const locked = lockedVersions.get(domain)
@@ -31,7 +32,7 @@ export async function nativeArtifactCacheIdentity(
   }
   for (const spec of specs) {
     const domain = add(spec)
-    if (isSupported(domain)) continue // SDK runtimes use their upstream versioned archives.
+    if (isSupported(domain, sdkPlatform)) continue // SDK runtimes use their upstream versioned archives.
     for (const dependency of await dependencies(domain)) add(dependency)
   }
   const platformKey = `${platform.os}-${platform.arch === 'arm64' ? 'arm64' : 'x86-64'}`

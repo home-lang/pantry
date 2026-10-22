@@ -10,6 +10,7 @@ export async function installResolvedSystemPackages(
   requests: SystemPackageRequest[],
   options: {
     installDir: string
+    platform?: installer.Platform
     nativeInstall: (specs: string[]) => Promise<number>
     onRetry?: (message: string) => void
   },
@@ -17,14 +18,14 @@ export async function installResolvedSystemPackages(
   const versions = new Map<string, string>()
   const native = new Map<string, string>()
   for (const { domain, version } of requests) {
-    if (installer.isSupported(domain)) {
+    if (installer.isSupported(domain, options.platform)) {
       const installed = await installer.installPackage(domain, version, {
-        installDir: options.installDir, quiet: true, onRetry: options.onRetry,
+        installDir: options.installDir, platform: options.platform, quiet: true, onRetry: options.onRetry,
       })
       versions.set(domain, installed.version)
       continue
     }
-    const resolved = await installer.resolvePackageVersion(domain, version)
+    const resolved = await installer.resolvePackageVersion(domain, version, options.platform)
     const previous = native.get(domain)
     if (previous && previous !== resolved)
       throw new Error(`Conflicting required versions for ${domain}: ${previous} and ${resolved}`)
@@ -47,6 +48,7 @@ export async function installResolvedSystemPackage(
   version: string,
   options: {
     installDir: string
+    platform?: installer.Platform
     nativeInstall: (spec: string) => Promise<number>
     onRetry?: (message: string) => void
   },

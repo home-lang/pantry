@@ -20,6 +20,7 @@ import { createHash } from 'node:crypto'
 import { Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { compareVersions } from './generate-zig'
+import { windowsGitArchiveDigest, windowsGitRelease, windowsGitVersionFromRelease, windowsGitVersions, windowsGitPinnedDigest } from './git-for-windows'
 
 /**
  * Base URL of the binary registry.
@@ -96,6 +97,11 @@ export function globalBinDir(): string {
  * and list of binaries for a given version and platform.
  */
 interface PackageResolver {
+  /** A vendor bundle may keep its entrypoint outside root/bin. */
+  binaryDirectory?: string
+  expectedChecksum?(version: string, platform: Platform): string | undefined
+  /** Fetch the publisher's immutable archive identity before downloading. */
+  getChecksum?(version: string, platform: Platform, options: InstallOptions): Promise<string>
   /** Build the download URL for this package+version+platform */
   getDownloadUrl(version: string, platform: Platform): string
   /** Archive format */
@@ -270,6 +276,45 @@ const resolvers: Record<string, PackageResolver> = {
   },
 }
 
+const windowsGitResolver: PackageResolver = {
+  binaryDirectory: 'cmd',
+  expectedChecksum: (version, platform) => windowsGitPinnedDigest(windowsGitRelease(version, platform)),
+  getDownloadUrl: (version, platform) => windowsGitRelease(version, platform).url,
+  getArchiveFormat: () => 'zip',
+  getBinaries: () => ['git.exe'],
+  async getChecksum(version, platform, options) {
+    const release = windowsGitRelease(version, platform)
+    return windowsGitArchiveDigest(await fetchJSON(release.metadataUrl, 5, { onRetry: options.onRetry }), release)
+  },
+}
+
+function packageResolver(domain: string, platform: Platform): PackageResolver | undefined {
+  return domain === 'git-scm.org' && platform.os === 'windows' ? windowsGitResolver : resolvers[domain]
+}
+
+function installedArchiveMatches(pkgDir: string, resolver: PackageResolver | undefined, version: string, platform: Platform): boolean {
+  if (!resolver?.getChecksum) return true
+  try {
+    const file = path.join(pkgDir, '.pantry-archive.json')
+    if (fs.statSync(file).size > 4096) return false
+    const receipt = JSON.parse(fs.readFileSync(file, 'utf8'))
+    const original = resolver.expectedChecksum?.(version, platform)
+    return receipt.schemaVersion === 1 && receipt.os === platform.os && receipt.arch === platform.arch
+      && receipt.url === resolver.getDownloadUrl(version, platform)
+      && typeof receipt.sha256 === 'string' && /^[a-f0-9]{64}$/.test(receipt.sha256)
+      && (!original || receipt.sha256 === original)
+  }
+  catch { return false }
+}
+
+function installedBinary(pkgDir: string, binary: string, binaryDirectory?: string): string | undefined {
+  for (const directory of [...new Set([binaryDirectory || '', '', 'bin'])]) {
+    const candidate = path.join(pkgDir, directory, binary)
+    try { if (fs.statSync(candidate).isFile() && fs.statSync(candidate).size > 0) return candidate }
+    catch { /* An absent optional alias may use the primary executable. */ }
+  }
+}
+
 // ── Core Install Function ──
 
 /**
@@ -319,18 +364,14 @@ function linkBinary(source: string, destination: string, platform: Platform): vo
   else fs.symlinkSync(target, destination)
 }
 
-function linkBinaries(pkgDir: string, binaries: string[], binDir: string, platform: Platform): void {
+function linkBinaries(pkgDir: string, binaries: string[], binDir: string, platform: Platform, binaryDirectory?: string): void {
   fs.mkdirSync(binDir, { recursive: true })
   let primaryBin: string | null = null
 
   for (const bin of binaries) {
-    // Check both root and bin/ subdirectory
-    let srcBin = path.join(pkgDir, bin)
-    if (!fs.existsSync(srcBin)) {
-      srcBin = path.join(pkgDir, 'bin', bin)
-    }
+    const srcBin = installedBinary(pkgDir, bin, binaryDirectory)
 
-    if (!fs.existsSync(srcBin)) {
+    if (!srcBin) {
       // Binary doesn't exist in archive — create as alias to primary binary
       // (e.g. bunx -> bun, npx -> node)
       if (primaryBin) {
@@ -356,6 +397,18 @@ export async function resolvePackageVersion(
   platform: Platform = detectPlatform(),
   options: Pick<InstallOptions, 'onRetry'> = {},
 ): Promise<string> {
+  if (domain === 'git-scm.org' && platform.os === 'windows') {
+    if (['latest', '*', ''].includes(version))
+      return windowsGitVersionFromRelease(await fetchJSON('https://api.github.com/repos/git-for-windows/git/releases/latest', 5, { onRetry: options.onRetry }))
+    if (/^[\^~>=<]/.test(version)) {
+      const candidates = windowsGitVersions(await fetchJSON('https://api.github.com/repos/git-for-windows/git/releases?per_page=100', 5, { onRetry: options.onRetry }))
+      const selected = candidates.find(candidate => resolveInstallerConstraintFromCandidates(version, [windowsGitRelease(candidate, platform).baseVersion]))
+      if (!selected) throw new Error(`No Git for Windows release satisfies ${version}`)
+      return selected
+    }
+    return windowsGitRelease(version, platform).version
+  }
+
   // Resolve semver constraints (^, ~, >=, etc.) to concrete versions
   if (/^[\^~>=<]/.test(version)) {
     version = await resolveVersionConstraint(domain, version, platform)
@@ -390,7 +443,7 @@ export async function installPackage(
   options: InstallOptions = {},
 ): Promise<InstallResult> {
   const platform = options.platform || detectPlatform()
-  const resolver: PackageResolver | undefined = resolvers[domain]
+  const resolver = packageResolver(domain, platform)
   version = await resolvePackageVersion(domain, version, platform, options)
 
   const installDir = options.installDir || path.join(process.cwd(), 'pantry')
@@ -409,9 +462,8 @@ export async function installPackage(
   }
 
   const binaryLayout = installedBinaryLayout(pkgDir)
-  const regular = (file: string): boolean => { try { return fs.statSync(file).isFile() } catch { return false } }
-  const cached = binaryLayout.valid && (declared
-    ? regular(path.join(pkgDir, declared[0])) || regular(path.join(pkgDir, 'bin', declared[0]))
+  const cached = binaryLayout.valid && installedArchiveMatches(pkgDir, resolver, version, platform) && (declared
+    ? !!installedBinary(pkgDir, declared[0], resolver?.binaryDirectory)
     : binaryLayout.programs.length > 0)
 
   if (cached) {
@@ -420,9 +472,9 @@ export async function installPackage(
     // Re-assert the .bin links even when already installed, so the genuine
     // binary keeps ownership of `.bin/<name>` if another installer clobbered it.
     if (options.createBinLinks !== false) {
-      linkBinaries(pkgDir, binaries, binDir, platform)
+      linkBinaries(pkgDir, binaries, binDir, platform, resolver?.binaryDirectory)
     }
-    const globalLinks = maybeLinkToGlobalBin(pkgDir, binaries, platform, options)
+    const globalLinks = maybeLinkToGlobalBin(pkgDir, binaries, platform, options, resolver?.binaryDirectory)
     return { name: domain, version, installPath: pkgDir, binaries, globalLinks }
   }
 
@@ -458,7 +510,7 @@ export async function installPackage(
   const archivePath = path.join(tmpDir, `archive.${format}`)
 
   try {
-    let expectedSha256: string | undefined = publishedSha256
+    let expectedSha256: string | undefined = publishedSha256 ?? await resolver?.getChecksum?.(version, platform, options)
     if (!expectedSha256 && url.startsWith(`${registryBase()}/binaries/`)) {
       const checksumPath = path.join(tmpDir, 'archive.sha256')
       await downloadFileReliably(`${url}.sha256`, checksumPath, {
@@ -522,6 +574,9 @@ export async function installPackage(
         throw new Error(`${domain}@${version} unpacked with no executables in bin/`)
       }
 
+      if (!installedBinary(candidate, binaries[0], resolver?.binaryDirectory))
+        throw new Error(`${domain}@${version} unpacked without its required primary executable ${binaries[0]}`)
+
       // Make binaries executable (non-Windows)
       if (platform.os !== 'windows') {
         for (const bin of binaries) {
@@ -547,16 +602,22 @@ export async function installPackage(
         }
       }
 
+      if (resolver?.getChecksum) {
+        fs.writeFileSync(path.join(candidate, '.pantry-archive.json'), JSON.stringify({
+          schemaVersion: 1, os: platform.os, arch: platform.arch, url, sha256: expectedSha256,
+        }) + '\n', { flag: 'wx' })
+      }
+
       fs.rmSync(pkgDir, { recursive: true, force: true })
       fs.renameSync(candidate, pkgDir)
 
       // Create .bin/ links
       if (options.createBinLinks !== false) {
-        linkBinaries(pkgDir, binaries, binDir, platform)
+        linkBinaries(pkgDir, binaries, binDir, platform, resolver?.binaryDirectory)
       }
 
       if (!options.quiet) console.log(`  ✓ ${domain}@${version}`)
-      const globalLinks = maybeLinkToGlobalBin(pkgDir, binaries, platform, options)
+      const globalLinks = maybeLinkToGlobalBin(pkgDir, binaries, platform, options, resolver?.binaryDirectory)
       return { name: domain, version, installPath: pkgDir, binaries, globalLinks }
     }
     finally { fs.rmSync(candidate, { recursive: true, force: true }) }
@@ -578,6 +639,7 @@ function maybeLinkToGlobalBin(
   binaries: string[],
   platform: Platform,
   options: InstallOptions,
+  binaryDirectory?: string,
 ): string[] {
   if (!options.globalBin) return []
 
@@ -586,9 +648,8 @@ function maybeLinkToGlobalBin(
 
   const created: string[] = []
   for (const bin of binaries) {
-    let srcBin = path.join(pkgDir, bin)
-    if (!fs.existsSync(srcBin)) srcBin = path.join(pkgDir, 'bin', bin)
-    if (!fs.existsSync(srcBin)) continue
+    const srcBin = installedBinary(pkgDir, bin, binaryDirectory)
+    if (!srcBin) continue
 
     const dstBin = path.join(targetDir, bin)
     linkBinary(srcBin, dstBin, platform)
@@ -1410,8 +1471,8 @@ function fetchJSON(url: string, maxRedirects = 5, retryOptions: NetworkRetryOpti
 // historical `bun.sh` or the canonical `bun.com`.
 resolvers['bun.com'] = resolvers['bun.sh']
 
-export function isSupported(domain: string): boolean {
-  return domain in resolvers
+export function isSupported(domain: string, platform: Platform = detectPlatform()): boolean {
+  return !!packageResolver(domain, platform)
 }
 
 /**
@@ -1433,15 +1494,15 @@ export async function isInstallable(
   domain: string,
   platform: Platform = detectPlatform(),
 ): Promise<boolean> {
-  if (isSupported(domain)) return true
+  if (isSupported(domain, platform)) return true
   return (await registryVersions(domain, platform)).length > 0
 }
 
 /**
  * Get list of all supported package domains.
  */
-export function supportedPackages(): string[] {
-  return Object.keys(resolvers)
+export function supportedPackages(platform: Platform = detectPlatform()): string[] {
+  return [...Object.keys(resolvers), ...(platform.os === 'windows' ? ['git-scm.org'] : [])]
 }
 
 /**
@@ -1449,9 +1510,9 @@ export function supportedPackages(): string[] {
  * Returns the first non-Windows binary (e.g. 'bun' for 'bun.sh', 'zig' for 'ziglang.org').
  */
 export function getPrimaryBinary(domain: string): string | undefined {
-  const resolver = resolvers[domain]
-  if (!resolver) return undefined
   const platform = detectPlatform()
+  const resolver = packageResolver(domain, platform)
+  if (!resolver) return undefined
   const bins = resolver.getBinaries(platform)
   return bins[0]
 }

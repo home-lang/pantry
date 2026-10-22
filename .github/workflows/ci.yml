@@ -409,7 +409,7 @@ jobs:
           if-no-files-found: error
 
   continuous-release:
-    needs: [lint, typecheck, test, action-redis-service, action-native-services, action-native-tools, native-browser, windows-native-runtime]
+    needs: [lint, typecheck, test, action-redis-service, action-native-services, action-native-tools, native-browser, windows-native-runtime, windows-git]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # Best-effort commit-preview publishing. Don't fail the whole workflow
@@ -498,6 +498,34 @@ jobs:
         with:
           name: windows-native-runtime-proof
           path: artifacts/windows-native-runtime
+          if-no-files-found: error
+
+  windows-git:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install the declared Windows Bun runtime
+        uses: pantry-pm/pantry/packages/action@ae59a7b7fc5f4e6f7b8041a75e6b5772680bebdf # v0.11.101
+        with:
+          version: 0.11.101
+          install: 'false'
+          packages: bun.com@1.4.3
+      - name: Install first-party JavaScript dependencies
+        run: bun install --frozen-lockfile
+      - name: Build the actual source Action
+        run: bun run --cwd packages/action build
+      - name: Verify native Windows Git, submodules, HTTPS and restored runtime resources
+        id: windows_git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PANTRY_TEST_ACTION: packages/action/dist/index.js
+        run: bun .github/scripts/windows-git.ts
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && steps.windows_git.outcome != 'skipped' }}
+        with:
+          name: windows-git-proof
+          path: artifacts/windows-git
           if-no-files-found: error
 
   native-toolchain-pins:

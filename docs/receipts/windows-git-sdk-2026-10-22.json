@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-22T23:51:22.297246+00:00",
+  "problem": "The required Windows Git request entered the Unix native dependency graph even though the registry had no Windows Git artifact.",
+  "sourceCorrection": "Route Windows Git through an explicit SDK resolver for the complete official MinGit distribution. Keep Unix Git on the existing native dependency graph. Require publisher SHA-256 metadata, retained original 2.53.0 digests, the correct target receipt, and a nonempty cmd/git.exe before activating a relative alias.",
+  "originalArchives": {
+    "version": "2.53.0+windows.1",
+    "tag": "v2.53.0.windows.1",
+    "x64Sha256": "82b562c918ec87b2ef5316ed79bb199e3a25719bb871a0f10294acf21ebd08cd",
+    "arm64Sha256": "dd03826524767f228c9131bc4b2f4d29bc6f550a39fef9bec240f3e312210a1d"
+  },
+  "localChecks": {
+    "host": "darwin-arm64",
+    "actionAndInstallerTests": {
+      "passed": 160,
+      "skipped": 9,
+      "failed": 0,
+      "assertions": 560
+    },
+    "installerRegressionSuite": {
+      "passed": 75,
+      "failed": 0,
+      "assertions": 226
+    },
+    "typecheckExitCode": 0,
+    "fixtureTypecheckExitCode": 0,
+    "pickierExitCode": 0,
+    "originalX64VendorFilesMatched": 384,
+    "coldAndWarmSdkInstallation": true,
+    "explicitTargetSwitch": "An x64 installation was replaced by the verified ARM64 archive and ARM64 PE header when the requested target changed.",
+    "windowsNativeExecution": false
+  },
+  "requiredHostedGate": {
+    "workflow": ".github/workflows/ci.yml",
+    "job": "windows-git",
+    "fixture": ".github/scripts/windows-git.ts",
+    "checks": [
+      "Actual built source Action cold install",
+      "Native PE version, repository creation and commit",
+      "Local submodules and recursive submodule commands",
+      "Complete prefix relocation and cache archive restore",
+      "HTTPS fetch of exact first-party commit"
+    ],
+    "status": "not yet executed for this source change"
+  },
+  "limits": [
+    "This change qualifies the SDK and Action route only. Generic native CLI Windows Git package provisioning remains separate.",
+    "Data-only x64 and ARM64 checks on macOS do not establish native Windows execution.",
+    "Craft requires a published qualified Pantry release before changing its pinned Action."
+  ],
+  "logs": [
+    {
+      "name": "pantry-windows-git-action-suite.log",
+      "sha256": "76ac8447f929853b8f0b8c3c62a2e3961194213e54e42e7fb860c2d792e0306c",
+      "bytes": 20021
+    },
+    {
+      "name": "pantry-windows-git-installer-suite.log",
+      "sha256": "24cb44518ebde800468d87b03fc60ac4af569e51c4bc2b065b0b4c573bc303c9",
+      "bytes": 8536
+    },
+    {
+      "name": "pantry-windows-git-types.log",
+      "sha256": "daab981844fa7f33281e2a184953a4fa46c535d8815393a7ce98c5879da37258",
+      "bytes": 25
+    },
+    {
+      "name": "pantry-windows-git-fixture-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "name": "pantry-windows-git-lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "name": "windows-git-sdk-consumer.json",
+      "sha256": "ee0e295ffe861b37836fcba784ef92ea2d22df33de8b8d8f4631f1d8ee71de0d",
+      "bytes": 264
+    },
+    {
+      "name": "windows-git-sdk-full-payload.json",
+      "sha256": "06cc2272b5e09b0c8e5f915362effcdd1c2dc4f732b6bc3e6d79bd8b9fb43ede",
+      "bytes": 64208
+    }
+  ]
+}

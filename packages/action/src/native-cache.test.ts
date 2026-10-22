@@ -99,3 +99,13 @@ test('the real GCC dependency graph authorizes caching only for its target archi
   expect((await identity({ ...platform, os: 'darwin', arch: 'arm64' })).has('libisl.sourceforge.io')).toBe(false)
   expect((await identity({ ...platform, os: 'darwin' })).has('libisl.sourceforge.io')).toBe(true)
 })
+
+
+test('Windows Git uses its versioned standalone bundle while Unix Git keeps native dependencies', async () => {
+  const windows: Platform = { os: 'windows', arch: 'x64', binaryName: 'pantry.exe', assetName: '' }
+  const unexpected = async () => { throw new Error('A standalone Windows bundle has no registry dependency graph') }
+  expect(await nativeArtifactCacheIdentity(['git-scm.org@2.53.0'], windows, unexpected, unexpected)).toMatch(/^[a-f0-9]{64}$/)
+  const seen: string[] = []
+  await nativeArtifactCacheIdentity(['git-scm.org@10.2.0'], platform, async domain => { seen.push(domain); return metadata('a') }, async () => ['openssl.org@10.2.0'])
+  expect(seen.sort()).toEqual(['git-scm.org', 'openssl.org'])
+})

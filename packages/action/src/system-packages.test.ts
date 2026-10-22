@@ -32,10 +32,10 @@ describe('native system package dependency graphs', () => {
     expect(called).toBe(false)
   })
 
-  it('installs Git through the native resolver and returns its exact version', async () => {
+  it('installs Unix Git through the native resolver and returns its exact version', async () => {
     const requests: string[] = []
     const version = await installResolvedSystemPackage('git-scm.org', '2.53.0', {
-      installDir: '/unused',
+      installDir: '/unused', platform: { os: 'linux', arch: 'x86_64' },
       nativeInstall: async spec => { requests.push(spec); return 0 },
     })
     expect(requests).toEqual(['git-scm.org@2.53.0'])
@@ -50,7 +50,7 @@ describe('native system package dependency graphs', () => {
 
   it('preserves native dependency resolution errors', async () => {
     await expect(installResolvedSystemPackage('git-scm.org', '2.53.0', {
-      installDir: '/unused', nativeInstall: async () => { throw new Error('A required library is unavailable') },
+      installDir: '/unused', platform: { os: 'linux', arch: 'x86_64' }, nativeInstall: async () => { throw new Error('A required library is unavailable') },
     })).rejects.toThrow('A required library is unavailable')
   })
 })
