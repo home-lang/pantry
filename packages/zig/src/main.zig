@@ -814,6 +814,15 @@ fn listAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn whichAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const program = ctx.getArgument(0) orelse return;
+    var result = try lib.commands.whichCommand(ctx.allocator, program, ctx.hasOption("resolve"));
+    defer result.deinit(ctx.allocator);
+    if (result.exit_code != 0) style.setDiagnosticsToStderr(true);
+    if (result.message) |message| style.printForced("{s}\n", .{message});
+    std.process.exit(result.exit_code);
+}
+
 fn loginAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
     const result = try lib.commands.loginCommand(allocator, .{
@@ -2757,6 +2766,7 @@ fn printHelp() void {
     style.print("      " ++ style.cyan ++ "list" ++ style.reset ++ ", ls            List installed packages\n", .{});
     style.print("      " ++ style.cyan ++ "tree" ++ style.reset ++ "                Show dependency tree\n", .{});
     style.print("      " ++ style.cyan ++ "why" ++ style.reset ++ "                 Explain why a package is installed\n", .{});
+    style.print("      " ++ style.cyan ++ "which" ++ style.reset ++ "               Locate an executable (--resolve for its provider)\n", .{});
     style.print("      " ++ style.cyan ++ "search" ++ style.reset ++ "              Search for packages in registry\n", .{});
     style.print("      " ++ style.cyan ++ "info" ++ style.reset ++ "                Show package information\n\n", .{});
 
@@ -4051,6 +4061,12 @@ pub fn main() !void {
     // ========================================================================
     // Shim Commands
     // ========================================================================
+    var which_cmd = try cli.BaseCommand.init(allocator, "which", "Locate an executable on PATH");
+    _ = try which_cmd.addArgument(cli.Argument.init("program", "Executable name or absolute path", .string).withRequired(true));
+    _ = try which_cmd.addOption(cli.Option.init("resolve", "resolve", "Resolve filesystem links and Pantry activation launchers to the provider file", .bool));
+    _ = which_cmd.setAction(whichAction);
+    _ = try root.addCommand(which_cmd);
+
     var shim_cmd = try cli.BaseCommand.init(allocator, "shim", "Create executable shims for packages");
 
     const shim_packages_arg = cli.Argument.init("packages", "Packages to create shims for", .string)

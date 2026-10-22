@@ -38,6 +38,7 @@ jobs:
           zig test src/io_helper.zig -lc --test-filter 'buffered copies'
           zig test src/io_helper.zig -lc --test-filter 'Windows arguments'
           zig test src/packages/semver.zig -lc --test-filter 'conjunctive'
+          zig build test:executables
 
       - name: Build for All Platforms
         run: |

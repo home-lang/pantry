@@ -169,6 +169,31 @@ pub fn resolvedActivationTarget(allocator: std.mem.Allocator, path: []const u8) 
     return null;
 }
 
+/// Resolve an executable through filesystem links and Pantry's own activation
+/// launchers. Packaging tools need the provider file rather than a launcher
+/// whose relative target belongs to an installation tree. Never executes shell.
+/// Caller owns the returned absolute path.
+pub fn resolveExecutablePath(allocator: std.mem.Allocator, path: []const u8) ![]u8 {
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    defer arena.deinit();
+    const scratch = arena.allocator();
+    const cwd_path = try io_helper.getCwdAlloc(scratch);
+    var current = try std.fs.path.resolve(scratch, &.{ cwd_path, path });
+    var visited = std.StringHashMap(void).init(scratch);
+    for (0..64) |_| {
+        const entry = try visited.getOrPut(current);
+        if (entry.found_existing) return error.ActivationCycle;
+        if (resolvedActivationTarget(scratch, current)) |target| {
+            current = target;
+            continue;
+        }
+        if (!io_helper.isExecutable(current)) return error.ExecutableNotFound;
+        var physical: [std.fs.max_path_bytes]u8 = undefined;
+        return allocator.dupe(u8, physicalPath(current, &physical) orelse current);
+    }
+    return error.ActivationCycle;
+}
+
 /// True when `a` and `b` name the same location: the same normalized path,
 /// or the same physical path once symlinks are followed (one may have been
 /// written through a symlinked parent the other was not).
@@ -1280,6 +1305,52 @@ test "declared sourceable libraries without a shebang remain links" {
     const source = try std.fs.path.join(allocator, &.{ root_buf[0..root_len], "package/bin/library.sh" });
     defer allocator.free(source);
     try std.testing.expect(!try requiresForwardingShim(allocator, source));
+}
+
+test "executable resolution: nested activation launchers and links return the provider" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    try tmp.dir.createDirPath(io_helper.io, "package/bin");
+    try tmp.dir.createDirPath(io_helper.io, "bin");
+    const file = try tmp.dir.createFile(io_helper.io, "package/bin/runtime", .{ .permissions = .executable_file });
+    try io_helper.writeAllToFile(file, "provider");
+    file.close(io_helper.io);
+    var buffer: [std.fs.max_path_bytes]u8 = undefined;
+    const length = try tmp.dir.realPathFile(io_helper.io, ".", &buffer);
+    const root = buffer[0..length];
+    const provider = try std.fs.path.join(allocator, &.{ root, "package/bin/runtime" });
+    defer allocator.free(provider);
+    const launcher = try std.fs.path.join(allocator, &.{ root, "bin/runtime" });
+    defer allocator.free(launcher);
+    try std.testing.expect(writeForwardingShim(allocator, launcher, provider, root));
+    const link = try std.fs.path.join(allocator, &.{ root, "link" });
+    defer allocator.free(link);
+    try io_helper.symLink("bin/runtime", link);
+    const outer = try std.fs.path.join(allocator, &.{ root, "outer" });
+    defer allocator.free(outer);
+    try std.testing.expect(writeForwardingShim(allocator, outer, link, root));
+    const resolved = try resolveExecutablePath(allocator, outer);
+    defer allocator.free(resolved);
+    try std.testing.expectEqualStrings(provider, resolved);
+    const direct = try resolveExecutablePath(allocator, provider);
+    defer allocator.free(direct);
+    try std.testing.expectEqualStrings(provider, direct);
+    // A normal script is the provider itself: arbitrary shell is never parsed.
+    const script = try std.fs.path.join(allocator, &.{ root, "script" });
+    defer allocator.free(script);
+    const script_file = try tmp.dir.createFile(io_helper.io, "script", .{ .permissions = .executable_file });
+    try io_helper.writeAllToFile(script_file, "#!/bin/sh\nprintf should-not-run\n");
+    script_file.close(io_helper.io);
+    const script_target = try resolveExecutablePath(allocator, script);
+    defer allocator.free(script_target);
+    try std.testing.expectEqualStrings(script, script_target);
+    // Broken providers and cyclic launchers must fail, never return a wrapper.
+    try tmp.dir.deleteFile(io_helper.io, "package/bin/runtime");
+    try std.testing.expectError(error.ExecutableNotFound, resolveExecutablePath(allocator, outer));
+    try std.testing.expect(writeForwardingShim(allocator, launcher, outer, root));
+    try std.testing.expectError(error.ActivationCycle, resolveExecutablePath(allocator, outer));
 }
 
 test "createBinarySymlink" {

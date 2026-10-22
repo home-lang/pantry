@@ -146,6 +146,21 @@ zig build compile-all
 
 ## New Commands
 
+### Executable discovery
+
+```bash
+# Locate the command selected by PATH
+pantry which craft
+
+# Return the actual installed provider file for standalone packaging
+pantry which craft --resolve
+```
+
+`--resolve` follows filesystem links and Pantry's generated activation
+launchers without executing them. Missing targets and cycles fail with a
+nonzero exit status. Ordinary scripts remain provider files; arbitrary shell
+code is never interpreted.
+
 ### Package Initialization
 
 ```bash

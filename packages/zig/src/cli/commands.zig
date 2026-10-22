@@ -24,6 +24,7 @@ const std = @import("std");
 
 pub const common = @import("commands/common.zig");
 pub const CommandResult = common.CommandResult;
+pub const whichCommand = @import("commands/which.zig").whichCommand;
 
 // ============================================================================
 // Command Modules
