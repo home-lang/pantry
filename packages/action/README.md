@@ -78,6 +78,21 @@ using the same endpoint and credential scope within the original request
 deadline. Authentication failures and missing packages remain terminal. A
 failed install still fails the job after recovery is exhausted.
 
+### Windows Git provisioning
+
+On Windows, `git-scm.org@2.53.0` resolves to the official complete MinGit
+`2.53.0+windows.1` bundle for x64 or ARM64. The SDK verifies the publisher's
+archive digest, retains the original digests for this adopted release, and
+keeps the vendor revision in the installed identity. The bundle's `cmd/git.exe`
+receives a relative `.bin/git.exe` alias; its runtime resources stay in place.
+Unix Git continues to use the native dependency graph.
+
+The required `windows-git` CI job builds the source Action and checks a cold
+installation, native Git commands, submodules, HTTPS, relocation and a cache
+round trip. Its logs and execution receipt are uploaded as `windows-git-proof`.
+Data-only archive checks on another host do not establish Windows execution.
+The generic native CLI Windows Git package path remains a separate capability.
+
 ### Linux browser installation checks
 
 The `native-browser` CI job builds the CLI from the checkout and installs
