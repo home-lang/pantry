@@ -43,8 +43,8 @@ pub fn extractArchiveQuiet(
     }
 
     // Use system tar as primary extraction method — it handles all entry types
-    // (symlinks, hard links, large archives) reliably. Fall back to Zig native
-    // tar only when system tar is unavailable.
+    // (symlinks, hard links, large archives) reliably. Zig's native tar takes
+    // over when system tar is unavailable or fails.
     var system_tar_stderr: ?[]u8 = null;
     defer if (system_tar_stderr) |s| allocator.free(s);
     const system_tar_ok = blk: {
@@ -54,37 +54,45 @@ pub fn extractArchiveQuiet(
 
     if (system_tar_ok) return;
 
-    if (verboseExtract()) {
-        if (system_tar_stderr) |s| {
-            style.print("  [pantry:extract] system tar failed, falling back to native extractor\n", .{});
-            style.print("  [pantry:extract] system tar stderr:\n{s}\n", .{s});
+    // A tar that ran and failed says why (a full disk, a damaged archive), and
+    // that reason is the one to act on, so it is printed whether or not the
+    // native extractor then manages: falling back used to bury it under the
+    // fallback's own error.
+    if (system_tar_stderr) |s| {
+        if (std.mem.startsWith(u8, s, "spawn failed")) {
+            if (verboseExtract()) style.print("  [pantry:extract] system tar unavailable ({s}), using native extractor\n", .{s});
         } else {
-            style.print("  [pantry:extract] system tar unavailable, using native extractor\n", .{});
+            style.printForced("  [pantry:extract] tar failed on {s}: {s}\n", .{ archive_path, std.mem.trim(u8, s, " \t\r\n") });
         }
     }
 
-    // System tar unavailable — fall back to Zig's native tar extraction.
-    // Only read archive into memory for the native path.
-    const data = try io_helper.readFileAlloc(allocator, archive_path, 500 * 1024 * 1024);
-    defer allocator.free(data);
+    return extractNative(allocator, archive_path, dest_dir, format);
+}
+
+/// Zig's own tar, streaming the archive from disk: an archive of any size
+/// extracts (LLVM's is 1.7 GB), and the real failure, NoSpaceLeft included,
+/// reaches the caller.
+fn extractNative(allocator: std.mem.Allocator, archive_path: []const u8, dest_dir: []const u8, format: []const u8) !void {
+    const file = try io_helper.cwd().openFile(io_helper.io, archive_path, .{ .mode = .read_only });
+    defer file.close(io_helper.io);
+    var file_buf: [65536]u8 = undefined;
+    var file_reader = file.readerStreaming(io_helper.io, &file_buf);
 
     var dest = try io_helper.cwd().openDir(io_helper.io, dest_dir, .{});
     defer dest.close(io_helper.io);
 
     if (std.mem.eql(u8, format, "tar.gz")) {
-        var input_reader: std.Io.Reader = .fixed(data);
         var window_buf: [65536]u8 = undefined;
-        var decompressor: std.compress.flate.Decompress = .init(&input_reader, .gzip, &window_buf);
-        std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{}) catch return error.ExtractionFailed;
+        var decompressor: std.compress.flate.Decompress = .init(&file_reader.interface, .gzip, &window_buf);
+        try std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{});
     } else if (std.mem.eql(u8, format, "tar.xz")) {
-        var input_reader: std.Io.Reader = .fixed(data);
         const xz_buf = try allocator.alloc(u8, 1 << 16);
-        var decompressor = std.compress.xz.Decompress.init(&input_reader, allocator, xz_buf) catch {
+        var decompressor = std.compress.xz.Decompress.init(&file_reader.interface, allocator, xz_buf) catch {
             allocator.free(xz_buf);
             return error.ExtractionFailed;
         };
         defer decompressor.deinit();
-        std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{}) catch return error.ExtractionFailed;
+        try std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{});
     } else {
         return error.UnsupportedFormat;
     }
@@ -195,6 +203,34 @@ pub fn isValidArchive(path: []const u8) bool {
     return std.mem.endsWith(u8, path, ".tar.gz") or
         std.mem.endsWith(u8, path, ".tar.xz") or
         std.mem.endsWith(u8, path, ".tgz");
+}
+
+test "the native extractor streams a gzipped tar from disk" {
+    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+    try temp.dir.createDirPath(io_helper.io, "src/pkg/bin");
+    try temp.dir.writeFile(io_helper.io, .{ .sub_path = "src/pkg/bin/tool", .data = "#!/bin/sh\necho ok\n" });
+    try temp.dir.createDirPath(io_helper.io, "out");
+    var root_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const root_len = try temp.dir.realPathFile(io_helper.io, ".", &root_buf);
+    const root = root_buf[0..root_len];
+    const archive = try std.fmt.allocPrint(allocator, "{s}/pkg.tar.gz", .{root});
+    defer allocator.free(archive);
+    const src = try std.fmt.allocPrint(allocator, "{s}/src", .{root});
+    defer allocator.free(src);
+    const out = try std.fmt.allocPrint(allocator, "{s}/out", .{root});
+    defer allocator.free(out);
+    const made = try io_helper.childRun(allocator, &[_][]const u8{ "/usr/bin/tar", "czf", archive, "-C", src, "pkg" });
+    allocator.free(made.stdout);
+    allocator.free(made.stderr);
+
+    try extractNative(allocator, archive, out, "tar.gz");
+
+    const data = try temp.dir.readFileAlloc(io_helper.io, "out/pkg/bin/tool", allocator, .limited(1024));
+    defer allocator.free(data);
+    try std.testing.expectEqualStrings("#!/bin/sh\necho ok\n", data);
 }
 
 test "isValidArchive" {
