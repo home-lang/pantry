@@ -3,7 +3,7 @@
  *
  * @domain `kaggle.com`
  * @programs `kaggle`
- * @version `1.7.4.5` (5 versions available)
+ * @version `2.2.5` (15 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install kaggle.com`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "kaggle"
  * console.log(pkg.description) // "Official Kaggle API"
  * console.log(pkg.programs)    // ["kaggle"]
- * console.log(pkg.versions[0]) // "1.7.4.5" (latest)
+ * console.log(pkg.versions[0]) // "2.2.5" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/kaggle-com.md
@@ -75,6 +75,7 @@ export const kagglecomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.2.5',
     '2.2.4',
     '2.2.3',
     '2.2.2',

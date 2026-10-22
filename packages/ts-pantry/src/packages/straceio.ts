@@ -3,7 +3,7 @@
  *
  * @domain `strace.io`
  * @programs `strace`
- * @version `6.2.0` (1 versions available)
+ * @version `7.3` (55 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install strace.io`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "strace"
  * console.log(pkg.description) // "strace is a diagnostic, debugging and instructi..."
  * console.log(pkg.programs)    // ["strace"]
- * console.log(pkg.versions[0]) // "6.2.0" (latest)
+ * console.log(pkg.versions[0]) // "7.3" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/strace-io.md
@@ -60,6 +60,7 @@ export const straceioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '7.3',
     '7.2',
     '7.1',
     '7.0',

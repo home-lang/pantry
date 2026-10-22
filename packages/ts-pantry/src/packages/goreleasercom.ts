@@ -3,7 +3,7 @@
  *
  * @domain `goreleaser.com`
  * @programs `goreleaser`
- * @version `2.18.3` (61 versions available)
+ * @version `2.19.0` (62 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install goreleaser.com`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "goreleaser"
  * console.log(pkg.description) // "Deliver Go binaries as fast and easily as possible"
  * console.log(pkg.programs)    // ["goreleaser"]
- * console.log(pkg.versions[0]) // "2.18.3" (latest)
+ * console.log(pkg.versions[0]) // "2.19.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/goreleaser-com.md
@@ -67,6 +67,7 @@ export const goreleasercomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.19.0',
     '2.18.3',
     '2.18.2',
     '2.18.1',
