@@ -3,7 +3,7 @@
  *
  * @domain `mitmproxy.org`
  * @programs `mitmproxy`
- * @version `12.2.1` (30 versions available)
+ * @version `12.3.0` (54 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install mitmproxy.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "mitmproxy"
  * console.log(pkg.description) // "An interactive TLS-capable intercepting HTTP pr..."
  * console.log(pkg.programs)    // ["mitmproxy"]
- * console.log(pkg.versions[0]) // "12.2.1" (latest)
+ * console.log(pkg.versions[0]) // "12.3.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/mitmproxy-org.md
@@ -74,6 +74,7 @@ export const mitmproxyorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '12.3.0',
     '12.2.3',
     '12.2.2',
     '12.2.1',

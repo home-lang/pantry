@@ -3,7 +3,7 @@
  *
  * @domain `buf.build`
  * @programs `buf`
- * @version `1.74.0` (61 versions available)
+ * @version `1.75.0` (62 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install buf.build`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "buf"
  * console.log(pkg.description) // "The best way of working with Protocol Buffers."
  * console.log(pkg.programs)    // ["buf"]
- * console.log(pkg.versions[0]) // "1.74.0" (latest)
+ * console.log(pkg.versions[0]) // "1.75.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/buf-build.md
@@ -67,6 +67,7 @@ export const bufbuildPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.75.0',
     '1.74.0',
     '1.73.0',
     '1.72.0',
