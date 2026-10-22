@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-22T22:57:47.400Z",
+  "sources": [
+    {
+      "repository": "stacksjs/bumpx",
+      "commit": "8e924a128fc9a779d972605862d5d50ca186adec",
+      "tag": "v0.2.26",
+      "gates": [
+        {
+          "runId": 39866466773,
+          "workflow": ".github/workflows/release.yml",
+          "requiredJobs": [
+            "npm"
+          ]
+        },
+        {
+          "runId": 39866465979,
+          "workflow": ".github/workflows/ci.yml",
+          "requiredJobs": [
+            "test",
+            "lint",
+            "typecheck",
+            "publish-commit"
+          ]
+        }
+      ],
+      "packages": [
+        {
+          "name": "@stacksjs/bumpx",
+          "version": "0.2.26",
+          "integrity": "sha512-fgoQd9bZf8u/7qY5kL2rJiHsP5wv03xu3MVb7/9c0aitTNbUu9+u/3Vk/eNUz/sKPiIuZFA0erE76Ca6nD8y/g==",
+          "tarball": "https://registry.npmjs.org/@stacksjs/bumpx/-/bumpx-0.2.26.tgz",
+          "bytes": 124428,
+          "filesSha256": "492aff8f353991d314de63a7b1e47086e630f3fe2b10be02255698e6c03077f1"
+        }
+      ],
+      "releaseCommand": "bun run release:patch",
+      "releaseScript": "./bumpx patch -r --push"
+    }
+  ],
+  "consumer": {
+    "lockfile": "bun.lock",
+    "sha256": "bdb5cbc0bc2318b55bf6a59685bbbd574329acf3bb38feb3cba4c099eee556d3",
+    "bunVersion": "1.4.2",
+    "checks": [
+      {
+        "script": "lint",
+        "exitCode": 0,
+        "outputSha256": "e346da1bb60c9e0c9841449cc44e71c4a9726240f7a67859d3cdb7f1697e4776"
+      },
+      {
+        "script": "typecheck",
+        "exitCode": 0,
+        "outputSha256": "daab981844fa7f33281e2a184953a4fa46c535d8815393a7ce98c5879da37258"
+      }
+    ]
+  }
+}
