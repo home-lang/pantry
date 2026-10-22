@@ -1,3 +1,19 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.113...v0.11.114)
+
+## ✨ Features
+
+- **cli**: resolve installed executable providers for packaging ([9864d79](https://github.com/pantry-pm/pantry/commit/9864d79)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.114 ([3439774](https://github.com/pantry-pm/pantry/commit/3439774)) _(by Chris Breuer <chris@stacksjs.com>)_
+- update craft-native.org to 0.0.278 ([26a302f](https://github.com/pantry-pm/pantry/commit/26a302f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update anthropic.com/claude-code, dagger.io, github.com/canonical/charmcraft, github.com/ggerganov/llama.cpp, ollama.ai, raycast.com, rebar3.org, stripe.com, zed.dev ([6ef9022](https://github.com/pantry-pm/pantry/commit/6ef9022)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.112...v0.11.113)
 
 ## 🐛 Bug Fixes
