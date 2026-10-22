@@ -161,7 +161,7 @@ pub fn extractGzipFromMemory(
     const strip_arg = try std.fmt.allocPrint(allocator, "--strip-components={d}", .{strip_components});
     defer allocator.free(strip_arg);
     const result = io_helper.childRun(allocator, &[_][]const u8{
-        "/usr/bin/tar", "xzf", tmp_path, "-C", dest_dir, strip_arg,
+        "/usr/bin/tar", no_same_owner, "-xzf", tmp_path, "-C", dest_dir, strip_arg,
     }) catch return native_err;
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
@@ -175,6 +175,13 @@ pub fn extractGzipFromMemory(
     }
 }
 
+/// Files a package installs belong to whoever installs it. tar run as root
+/// (ts-cloud provisions a box's /opt/pantry as root) otherwise keeps the uid
+/// each file had on the machine that built the archive, and on HQ's runner
+/// uid 1000 is the job user: it owned Chrome's tree, the binary an AppArmor
+/// profile lets create user namespaces. GNU tar and bsdtar both take it.
+const no_same_owner = "--no-same-owner";
+
 fn extractWithSystemTar(
     allocator: std.mem.Allocator,
     archive_path: []const u8,
@@ -182,7 +189,7 @@ fn extractWithSystemTar(
     stderr_out: *?[]u8,
 ) !void {
     const result = io_helper.childRun(allocator, &[_][]const u8{
-        "/usr/bin/tar", "xf", archive_path, "-C", dest_dir,
+        "/usr/bin/tar", no_same_owner, "-xf", archive_path, "-C", dest_dir,
     }) catch |err| {
         // tar binary not present — no stderr to surface, treat as unavailable
         stderr_out.* = std.fmt.allocPrint(allocator, "spawn failed: {s}", .{@errorName(err)}) catch null;
@@ -231,6 +238,35 @@ test "the native extractor streams a gzipped tar from disk" {
     const data = try temp.dir.readFileAlloc(io_helper.io, "out/pkg/bin/tool", allocator, .limited(1024));
     defer allocator.free(data);
     try std.testing.expectEqualStrings("#!/bin/sh\necho ok\n", data);
+}
+
+test "system tar extracts a package without its builder's owners" {
+    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+    try temp.dir.createDirPath(io_helper.io, "src/pkg");
+    try temp.dir.writeFile(io_helper.io, .{ .sub_path = "src/pkg/file", .data = "x" });
+    try temp.dir.createDirPath(io_helper.io, "out");
+    var root_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const root = root_buf[0..try temp.dir.realPathFile(io_helper.io, ".", &root_buf)];
+    const archive = try std.fmt.allocPrint(allocator, "{s}/pkg.tar.gz", .{root});
+    defer allocator.free(archive);
+    const src = try std.fmt.allocPrint(allocator, "{s}/src", .{root});
+    defer allocator.free(src);
+    const out = try std.fmt.allocPrint(allocator, "{s}/out", .{root});
+    defer allocator.free(out);
+    const made = try io_helper.childRun(allocator, &[_][]const u8{ "/usr/bin/tar", "czf", archive, "-C", src, "pkg" });
+    allocator.free(made.stdout);
+    allocator.free(made.stderr);
+
+    // The flag is accepted by this platform's tar, and the package extracts.
+    var stderr: ?[]u8 = null;
+    defer if (stderr) |s| allocator.free(s);
+    try extractWithSystemTar(allocator, archive, out, &stderr);
+    const data = try temp.dir.readFileAlloc(io_helper.io, "out/pkg/file", allocator, .limited(16));
+    defer allocator.free(data);
+    try std.testing.expectEqualStrings("x", data);
 }
 
 test "isValidArchive" {
