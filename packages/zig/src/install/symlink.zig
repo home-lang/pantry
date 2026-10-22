@@ -151,6 +151,11 @@ pub fn resolvedLinkTarget(allocator: std.mem.Allocator, link_path: []const u8) ?
 /// Recognizing launchers keeps provider ownership identical after activation.
 pub fn resolvedActivationTarget(allocator: std.mem.Allocator, path: []const u8) ?[]u8 {
     if (resolvedLinkTarget(allocator, path)) |target| return target;
+    // Generated launchers are small POSIX scripts. Native binaries and large
+    // foreign scripts are providers, not failed bounded launcher reads.
+    if (!isShebangScript(path)) return null;
+    const metadata = io_helper.statFile(path) catch return null;
+    if (metadata.size > 64 * 1024) return null;
     const content = io_helper.readFileAlloc(allocator, path, 64 * 1024) catch return null;
     defer allocator.free(content);
     const suffix = "\" \"$@\"\n";

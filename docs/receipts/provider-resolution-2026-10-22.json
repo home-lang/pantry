@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-22T22:59:03.843443+00:00",
+  "symptom": "which --resolve printed a failed bounded-read diagnostic before the provider path for an ordinary native Bun executable.",
+  "hostedRegression": {
+    "repository": "pantry-pm/pantry",
+    "runId": 39865061029,
+    "jobId": 120125056260,
+    "check": ".github/scripts/linux-native-tools.ts, bun-provider and canonical realpath assertion",
+    "status": "failed before source correction"
+  },
+  "publishedNegativeControl": {
+    "tag": "v0.11.118",
+    "source": "4565f3c1b0ef13193750af69eaf06e426db0f0eb",
+    "asset": "pantry-darwin-arm64.zip",
+    "assetId": 667304872,
+    "digest": "sha256:2f8fe13367e92ba9fe2ae94dd7655ac1e26b3edecc39d8c9a7bec89121758d84",
+    "bytes": 2843202,
+    "cliVersion": "pantry 0.11.118 (4565f3c1b)",
+    "providerBytes": 61884464,
+    "stdoutLines": 2,
+    "stderrBytes": 0
+  },
+  "sourceCorrection": "Only small POSIX scripts are eligible for exact Pantry launcher parsing. Native executables and larger foreign scripts remain provider files, without an attempted full-file launcher read.",
+  "localChecks": {
+    "host": "darwin-arm64",
+    "compiler": "0.17.0",
+    "nativeCliBuildExitCode": 0,
+    "realBunProvider": {
+      "exitCode": 0,
+      "stdoutLines": 1,
+      "stderrBytes": 0,
+      "canonicalPathMatched": true
+    },
+    "largeForeignScript": "Resolved quietly without executing its body.",
+    "executableResolution": "9/9 tests passed",
+    "materialization": "19 passed, one existing platform skip",
+    "checkLimits": [
+      "No published corrected CLI is established by this local source result.",
+      "Hosted Linux and Windows qualification remain required.",
+      "The Windows Git package gap and original macOS cached-install failure are separate."
+    ]
+  },
+  "logs": [
+    {
+      "name": "pantry-provider-output-red.json",
+      "sha256": "c1c30cf859aa7cfb2b250116ea06cbefa155d68a6243d455d45ea90c3a030d9a",
+      "bytes": 340
+    },
+    {
+      "name": "pantry-provider-source-red.json",
+      "sha256": "6709369a9204b87510c0a3db9dbb8ff9859ec8c9e315c268e3f26e1e27c8f252",
+      "bytes": 334
+    },
+    {
+      "name": "pantry-provider-output-green.json",
+      "sha256": "773726e35d2eddbe106fbddd990b59493483bc775846d80de4e34cee93cbe007",
+      "bytes": 244
+    },
+    {
+      "name": "pantry-large-script-output-green.json",
+      "sha256": "6d09ed44f01b3f8632d5dab8558f46a6868f40e25530dfd544bba24602cc117d",
+      "bytes": 391
+    },
+    {
+      "name": "pantry-provider-executable-tests.log",
+      "sha256": "1e84b319d1ba005a4c9507ba829a0be03392a2f6517fcfffbdea49c140a82faa",
+      "bytes": 203
+    },
+    {
+      "name": "pantry-provider-materialization-tests.log",
+      "sha256": "c3bc9c9305b66b26aa2c473dd70e91c523e8212aca6dfb393464ed5e957adf5a",
+      "bytes": 528
+    }
+  ]
+}
