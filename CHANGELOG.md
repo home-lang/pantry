@@ -1,3 +1,17 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.115...v0.11.116)
+
+## 🐛 Bug Fixes
+
+- **extract**: say why tar failed, and stream the fallback from disk ([9647508](https://github.com/pantry-pm/pantry/commit/9647508)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.116 ([95c372b](https://github.com/pantry-pm/pantry/commit/95c372b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.114...v0.11.115)
 
 ## 🐛 Bug Fixes
