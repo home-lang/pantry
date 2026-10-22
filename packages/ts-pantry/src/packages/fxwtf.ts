@@ -3,7 +3,7 @@
  *
  * @domain `fx.wtf`
  * @programs `fx`
- * @version `40.0.0` (51 versions available)
+ * @version `40.0.1` (52 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install fx.wtf`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "fx"
  * console.log(pkg.description) // "Terminal JSON viewer & processor"
  * console.log(pkg.programs)    // ["fx"]
- * console.log(pkg.versions[0]) // "40.0.0" (latest)
+ * console.log(pkg.versions[0]) // "40.0.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/fx-wtf.md
@@ -67,6 +67,7 @@ export const fxwtfPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '40.0.1',
     '40.0.0',
     '39.2.0',
     '39.1.0',

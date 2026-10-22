@@ -3,7 +3,7 @@
  *
  * @domain `steampipe.io`
  * @programs `steampipe`
- * @version `2.4.7` (37 versions available)
+ * @version `2.4.8` (38 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install steampipe.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "steampipe"
  * console.log(pkg.description) // "Zero-ETL, infinite possibilities. Live query AP..."
  * console.log(pkg.programs)    // ["steampipe"]
- * console.log(pkg.versions[0]) // "2.4.7" (latest)
+ * console.log(pkg.versions[0]) // "2.4.8" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/steampipe-io.md
@@ -68,6 +68,7 @@ export const steampipeioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.4.8',
     '2.4.7',
     '2.4.6',
     '2.4.5',
