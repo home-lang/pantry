@@ -1031,7 +1031,7 @@ fn publishSingleToRegistry(
         return CommandResult.err(allocator, err_msg);
     }
 
-    // Read tarball (use actual size + 1 as max to avoid BufferTooSmall on exact boundary)
+    // Read tarball (use actual size + 1 as max so a file exactly at the size is not FileTooBig)
     const max_read_size: usize = @max(@as(usize, @intCast(tarball_size)) + 1, 1);
     const tarball_data = io_helper.readFileAlloc(allocator, tarball_path, max_read_size) catch {
         return CommandResult.err(allocator, "Error: Could not read tarball");

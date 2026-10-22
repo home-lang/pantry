@@ -664,7 +664,7 @@ fn publishCommitPackage(
         return error.TarballTooLarge;
     }
 
-    // Read tarball data (use actual size + 1 as max to avoid BufferTooSmall on exact boundary)
+    // Read tarball data (use actual size + 1 as max so a file exactly at the size is not FileTooBig)
     const max_read_size: usize = @max(@as(usize, @intCast(tarball_size)) + 1, 1);
     const tarball_data = try io_helper.readFileAlloc(allocator, tarball_path, max_read_size);
     defer allocator.free(tarball_data);

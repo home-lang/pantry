@@ -164,7 +164,7 @@ pub fn cwd() Dir {
 pub fn readFileAlloc(allocator: std.mem.Allocator, path: []const u8, max_size: usize) ![]u8 {
     const file = cwd().openFile(io, path, .{ .mode = .read_only }) catch |err| return err;
     defer file.close(io);
-    return readFileAllocFromFile(allocator, file, max_size);
+    return readFileAllocFromFile(allocator, file, max_size) catch |err| return reportOversizedRead(path, max_size, err);
 }
 
 /// Read entire absolute-path file contents into an allocated buffer.
@@ -172,12 +172,21 @@ pub fn readFileAllocAbsolute(allocator: std.mem.Allocator, path: []const u8, max
     if (comptime is_windows) {
         const file = Dir.openFileAbsolute(io, path, .{ .mode = .read_only }) catch |err| return err;
         defer file.close(io);
-        return readFileAllocFromFile(allocator, file, max_size);
+        return readFileAllocFromFile(allocator, file, max_size) catch |err| return reportOversizedRead(path, max_size, err);
     }
 
     const fd = try std.posix.openat(std.posix.AT.FDCWD, path, .{ .ACCMODE = .RDONLY }, 0);
     defer _ = std.c.close(fd);
-    return readFileAllocFromFd(allocator, fd, max_size);
+    return readFileAllocFromFd(allocator, fd, max_size) catch |err| return reportOversizedRead(path, max_size, err);
+}
+
+/// A read refused for size names the file and the limit, always: a bare
+/// error name gives no way to tell which of the many bounded reads an install
+/// makes was over, least of all from a CI log.
+fn reportOversizedRead(path: []const u8, max_size: usize, err: anyerror) anyerror {
+    if (err == error.FileTooBig)
+        @import("cli/style.zig").printForced("  [pantry:read] {s} is larger than the {d} bytes this read takes\n", .{ path, max_size });
+    return err;
 }
 
 fn readFileAllocFromFile(allocator: std.mem.Allocator, file: File, max_size: usize) ![]u8 {
@@ -191,7 +200,7 @@ fn readFileAllocFromFd(allocator: std.mem.Allocator, fd: std.posix.fd_t, max_siz
 
     while (true) {
         if (total == buffer.len) {
-            if (buffer.len > max_size) return error.BufferTooSmall;
+            if (buffer.len > max_size) return error.FileTooBig;
             buffer = try allocator.realloc(buffer, @min(buffer.len *| 2, max_size + 1));
         }
         const n = platformRead(fd, buffer[total..]) catch |err| {
@@ -499,6 +508,20 @@ test "file writes preserve a real disk-full failure" {
     const file = try openFile("/dev/full", .{ .mode = .write_only });
     defer closeFile(file);
     try std.testing.expectError(error.NoSpaceLeft, writeAllToFile(file, "must fail"));
+}
+
+test "a read over its limit is FileTooBig, and one at the limit is whole" {
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+    try temp.dir.writeFile(io, .{ .sub_path = "four", .data = "abcd" });
+    const file = try temp.dir.openFile(io, "four", .{});
+    defer file.close(io);
+    try std.testing.expectError(error.FileTooBig, readFileAllocFromFile(std.testing.allocator, file, 3));
+    const again = try temp.dir.openFile(io, "four", .{});
+    defer again.close(io);
+    const data = try readFileAllocFromFile(std.testing.allocator, again, 4);
+    defer std.testing.allocator.free(data);
+    try std.testing.expectEqualStrings("abcd", data);
 }
 
 test "truncation preserves the file observed through an existing descriptor" {
