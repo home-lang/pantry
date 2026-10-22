@@ -502,22 +502,7 @@ pub fn lookupS3Registry(
         }
     }
 
-    // Detect current platform
-    const platform = comptime blk: {
-        const os_str = switch (@import("builtin").os.tag) {
-            .macos => "darwin",
-            .linux => "linux",
-            .windows => "windows",
-            .freebsd => "freebsd",
-            else => @compileError("Unsupported binary registry operating system"),
-        };
-        const arch_str = switch (@import("builtin").cpu.arch) {
-            .aarch64 => "arm64",
-            .x86_64 => "x86-64",
-            else => "x86-64",
-        };
-        break :blk os_str ++ "-" ++ arch_str;
-    };
+    const platform = platform_core.binaryRegistryKey(platform_core.Platform.current(), platform_core.Architecture.current());
 
     // Only versions with a tarball for this platform are candidates, and
     // `latest` skips placeholders and prereleases — see registry_versions.zig.

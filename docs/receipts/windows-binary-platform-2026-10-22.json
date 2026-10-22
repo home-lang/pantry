@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-22T22:25:03.741565+00:00",
+  "symptom": {
+    "repository": "craft-native/craft",
+    "source": "4241d2cfeae14df2eacfd333f35457d2287bda11",
+    "runId": 39859843231,
+    "jobId": 120107390000,
+    "host": "Windows Server 2025 x86-64",
+    "pantry": "0.11.113",
+    "failure": "Managed native Git provisioning failed before Vulkan ABI compilation. Curl validation found an extensionless 345728-byte executable."
+  },
+  "cause": "Both native installer fallback URLs mapped every OS other than macOS/Linux to Linux. Registry metadata contains no Windows artifact for the observed Git, curl or zlib versions.",
+  "archiveControl": {
+    "domain": "curl.se",
+    "version": "8.23.0",
+    "platform": "linux-x86-64",
+    "archiveSha256": "3b2ed411b044e2028edd87d3d4252e3545016586801bd4afe6e9ff0e7a986af8",
+    "executable": "./bin/curl",
+    "bytes": 345728,
+    "magicHex": "7f454c4602010100000000000000000003003e00",
+    "format": "ELF 64-bit x86-64"
+  },
+  "regression": {
+    "command": "zig build test:binary-platform --summary all",
+    "compiler": "0.17.0",
+    "before": "Expected windows-arm64; actual linux-arm64. One failed test.",
+    "after": "10/10 tests passed, including all eight supported OS/architecture pairs.",
+    "logs": [
+      {
+        "path": "pantry-windows-platform-red-confirmed.log",
+        "sha256": "84ea4ccb80e23d6dd7469a03b00f171b7f2e39626585e6eb783f81f5d95307a9",
+        "bytes": 1449
+      },
+      {
+        "path": "pantry-windows-platform-green.log",
+        "sha256": "4ad9523538620c5367bb08dc7170589b64ce38ff3cecf1dcfbffea467769c420",
+        "bytes": 211
+      }
+    ]
+  },
+  "fix": "One exhaustive native registry platform mapping now serves metadata selection and both global/project fallback URLs.",
+  "logs": [
+    {
+      "path": "vulkan-abi-windows-ci-failed.log",
+      "sha256": "3f081d6adce2e14a19e63d7971d403b80275d87a80073bf0f6122534b446e8ca",
+      "bytes": 21129
+    }
+  ],
+  "limits": [
+    "No native Windows execution of the corrected CLI is established by the local parameterized test.",
+    "Correct platform selection does not create missing Windows Git artifacts or complete Craft Windows CI.",
+    "The original macOS cached Git PathAlreadyExists failure remains separately unresolved."
+  ],
+  "nativeSuite": {
+    "command": "zig build test -j2 --summary all",
+    "exitCode": 0,
+    "buildSteps": "42/42",
+    "passed": 1765,
+    "existingSkipped": 14,
+    "logSha256": "ab0615e1526423c8cbd3826577e26b9d0d7826016c4f32435f2e268688f86893"
+  }
+}

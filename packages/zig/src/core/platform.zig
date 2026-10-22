@@ -88,6 +88,43 @@ pub const Architecture = enum {
     }
 };
 
+/// Platform spelling used by Pantry's native binary registry. It differs
+/// from pkgx's architecture spelling and must never substitute another OS.
+pub fn binaryRegistryKey(platform: Platform, architecture: Architecture) []const u8 {
+    return switch (platform) {
+        .darwin => switch (architecture) {
+            .aarch64 => "darwin-arm64",
+            .x86_64 => "darwin-x86-64",
+        },
+        .linux => switch (architecture) {
+            .aarch64 => "linux-arm64",
+            .x86_64 => "linux-x86-64",
+        },
+        .windows => switch (architecture) {
+            .aarch64 => "windows-arm64",
+            .x86_64 => "windows-x86-64",
+        },
+        .freebsd => switch (architecture) {
+            .aarch64 => "freebsd-arm64",
+            .x86_64 => "freebsd-x86-64",
+        },
+    };
+}
+
+test "binary registry platform: every supported host keeps its operating system" {
+    const cases = .{
+        .{ Platform.darwin, Architecture.aarch64, "darwin-arm64" },
+        .{ Platform.darwin, Architecture.x86_64, "darwin-x86-64" },
+        .{ Platform.linux, Architecture.aarch64, "linux-arm64" },
+        .{ Platform.linux, Architecture.x86_64, "linux-x86-64" },
+        .{ Platform.windows, Architecture.aarch64, "windows-arm64" },
+        .{ Platform.windows, Architecture.x86_64, "windows-x86-64" },
+        .{ Platform.freebsd, Architecture.aarch64, "freebsd-arm64" },
+        .{ Platform.freebsd, Architecture.x86_64, "freebsd-x86-64" },
+    };
+    inline for (cases) |case| try std.testing.expectEqualStrings(case[2], binaryRegistryKey(case[0], case[1]));
+}
+
 /// Path resolution utilities
 pub const Paths = struct {
     /// Get user's home directory

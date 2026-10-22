@@ -2985,19 +2985,7 @@ pub const Installer = struct {
         } else blk: {
             // Fallback: construct URL directly from known pattern when S3 lookup fails
             // (e.g., when curl subprocess can't run or registry is temporarily unreachable)
-            const platform = comptime plat: {
-                const os_str = switch (@import("builtin").os.tag) {
-                    .macos => "darwin",
-                    .linux => "linux",
-                    else => "linux",
-                };
-                const arch_str = switch (@import("builtin").cpu.arch) {
-                    .aarch64 => "arm64",
-                    .x86_64 => "x86-64",
-                    else => "x86-64",
-                };
-                break :plat os_str ++ "-" ++ arch_str;
-            };
+            const platform = core.binaryRegistryKey(core.Platform.current(), core.Architecture.current());
             break :blk std.fmt.allocPrint(
                 self.allocator,
                 "https://registry.pantry.dev/binaries/{s}/{s}/{s}/{s}-{s}.tar.gz",
@@ -3610,19 +3598,7 @@ pub const Installer = struct {
             break :blk pub_result.tarball_url;
         } else blk: {
             // Fallback: construct URL directly from known pattern when S3 lookup fails
-            const platform = comptime plat: {
-                const os_str = switch (@import("builtin").os.tag) {
-                    .macos => "darwin",
-                    .linux => "linux",
-                    else => "linux",
-                };
-                const arch_str = switch (@import("builtin").cpu.arch) {
-                    .aarch64 => "arm64",
-                    .x86_64 => "x86-64",
-                    else => "x86-64",
-                };
-                break :plat os_str ++ "-" ++ arch_str;
-            };
+            const platform = core.binaryRegistryKey(core.Platform.current(), core.Architecture.current());
             break :blk std.fmt.allocPrint(
                 self.allocator,
                 "https://registry.pantry.dev/binaries/{s}/{s}/{s}/{s}-{s}.tar.gz",
