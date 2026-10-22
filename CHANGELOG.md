@@ -1,3 +1,26 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.114...v0.11.115)
+
+## 🐛 Bug Fixes
+
+- **io**: name the file a bounded read refused, as FileTooBig ([6f760e2](https://github.com/pantry-pm/pantry/commit/6f760e2)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **cli**: distinguish package scripts from native executable providers ([55c6fb2](https://github.com/pantry-pm/pantry/commit/55c6fb2)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.115 ([7a8e69e](https://github.com/pantry-pm/pantry/commit/7a8e69e)) _(by Chris Breuer <chris@stacksjs.com>)_
+- update fx.wtf, github.com/router-for-me/CLIProxyAPI, gomplate.ca, grpc.io, istio.io, sentry.io, steampipe.io ([989dbe6](https://github.com/pantry-pm/pantry/commit/989dbe6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update anthropic.com/claude-code, argoproj.github.io/workflows, depot.dev, github.com/ggerganov/llama.cpp, moonrepo.dev/moon, rubocop.org, soliditylang.org, werf.io ([f38b6db](https://github.com/pantry-pm/pantry/commit/f38b6db)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.293 ([cb08ab6](https://github.com/pantry-pm/pantry/commit/cb08ab6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.290 ([efed6ab](https://github.com/pantry-pm/pantry/commit/efed6ab)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update alembic.sqlalchemy.org, buf.build, codex.openai.com, github.com/ggerganov/llama.cpp, iroh.computer, materialize.com, mitmproxy.org, projen.io ([7a207e0](https://github.com/pantry-pm/pantry/commit/7a207e0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.113...v0.11.114)
 
 ## ✨ Features
