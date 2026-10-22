@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, readFile, rm, stat } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, realpath, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { programsForPlatform } from '../../packages/ts-pantry/src/programs'
@@ -38,8 +38,15 @@ try {
   const provider = (await run('git-provider', [cli, 'which', git, '--resolve'])).trim()
   assert.notEqual(provider, git, 'packaging needs the provider rather than the activation launcher')
   assert(provider.startsWith(`${root}/pantry/`), 'provider must belong to this installation')
-  assert.equal(Buffer.from(await Bun.file(provider).slice(0, 4).arrayBuffer()).toString('hex'), '7f454c46')
+  // A package may intentionally supply a script (Git configures its runtime
+  // this way). Activation resolution preserves that provider without parsing it.
   assert.equal((await run('git-provider-version', [provider, '--version'])).trim(), 'git version 2.53.0')
+  const bun = Bun.which('bun')
+  assert(bun, 'the workspace must provision Bun')
+  const bunProvider = (await run('bun-provider', [cli, 'which', bun, '--resolve'])).trim()
+  assert.equal(await realpath(bunProvider), await realpath(process.execPath))
+  assert.equal(Buffer.from(await Bun.file(bunProvider).slice(0, 4).arrayBuffer()).toString('hex'), '7f454c46')
+  proof.executableProviders = { git: provider, bun: bunProvider }
   await run('git-init', [git, 'init', 'repository'])
   assert.equal((await run('git-status', [git, '-C', 'repository', 'status', '--porcelain'])).trim(), '')
   // Re-enter an existing version after the same archive restore semantics as
