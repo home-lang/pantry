@@ -1,3 +1,17 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.116...v0.11.117)
+
+## 🐛 Bug Fixes
+
+- **extract**: files a package installs belong to the installer ([f0904b0](https://github.com/pantry-pm/pantry/commit/f0904b0)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.117 ([398b1fe](https://github.com/pantry-pm/pantry/commit/398b1fe)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.115...v0.11.116)
 
 ## 🐛 Bug Fixes
