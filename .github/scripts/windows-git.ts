@@ -30,13 +30,19 @@ async function install() {
 }
 try {
   await mkdir(workspace)
+  const commandFiles: Record<string, string> = {}
+  for (const channel of ['PATH', 'ENV', 'OUTPUT', 'STATE', 'STEP_SUMMARY']) {
+    const file = join(workspace, `github-${channel.toLowerCase()}`)
+    await Bun.write(file, '')
+    commandFiles[`GITHUB_${channel}`] = file
+  }
   const action = resolve(process.env.PANTRY_TEST_ACTION || '')
   assert(process.env.PANTRY_TEST_ACTION, 'The fixture requires the actual built source Action')
   proof.sourceActionSha256 = Bun.SHA256.hash(await readFile(action), 'hex')
   await run('source-action-cold-install', [process.execPath, action], workspace, {
     INPUT_VERSION: '0.11.113', INPUT_INSTALL: 'false', INPUT_PACKAGES: 'bun.com@1.4.3 git-scm.org@2.53.0',
     INPUT_CACHE: 'false', INPUT_SERVICES: '', INPUT_RELEASE: 'false', INPUT_PUBLISH: '',
-    GITHUB_PATH: join(workspace, 'github-path'), GITHUB_ENV: join(workspace, 'github-env'),
+    ...commandFiles,
   })
   const versions = await install()
   assert.equal(versions.get('git-scm.org'), '2.53.0+windows.1')
