@@ -154,6 +154,9 @@ Zig package hashes come from the managed native compiler. They describe the
 manifest-selected package contents; `artifactSha256` separately identifies the
 complete compressed archive. The maintained deployment and
 `bun scripts/provision-zig.ts` install the required Zig 0.17.0 through Pantry.
+Both the object-storage snapshot and DynamoDB metadata backends retain the
+archive digest across writes and fresh reads. Historical records that lack
+`artifactSha256` remain readable; their native hash is never substituted for it.
 
 **Publish a Zig package:**
 

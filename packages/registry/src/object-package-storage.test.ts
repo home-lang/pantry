@@ -66,13 +66,16 @@ describe('ObjectZigStorage (Hetzner snapshot backend)', () => {
     await store.ready()
 
     const tarball = new TextEncoder().encode('zig-tarball').buffer
-    await store.publish({ name: 'mylib', version: '0.4.0', tarballUrl: '', hash: '1220abcd', publishedAt: new Date().toISOString() }, tarball)
+    const artifactSha256 = Bun.SHA256.hash(tarball, 'hex')
+    await store.publish({ name: 'mylib', version: '0.4.0', tarballUrl: '', hash: '1220abcd', artifactSha256, publishedAt: new Date().toISOString() }, tarball)
     await store.flush()
 
     const reopened = new ObjectZigStorage({ s3: s3 as any, bucket: 'pantry-registry', baseUrl: 'https://registry.pantry.dev' })
     await reopened.ready()
 
     expect((await reopened.getPackage('mylib'))?.version).toBe('0.4.0')
+    expect((await reopened.getPackage('mylib'))?.artifactSha256).toBe(artifactSha256)
+    expect((await reopened.getPackage('mylib', '0.4.0'))?.artifactSha256).toBe(artifactSha256)
     expect(await reopened.listVersions('mylib')).toEqual(['0.4.0'])
     const byHash = await reopened.getByHash('1220abcd')
     expect(byHash?.name).toBe('mylib')

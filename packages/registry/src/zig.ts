@@ -408,7 +408,7 @@ export class DynamoDBZigStorage implements ZigPackageStorage {
       })
       if (!result.Item) return null
       const d = this.unmarshal(result.Item)
-      return { name: d.name, version: d.version, description: d.description, tarballUrl: d.tarballUrl, hash: d.hash, publishedAt: d.publishedAt, license: d.license, repository: d.repository, homepage: d.homepage, author: d.author, keywords: d.keywords, malwareScan: d.malwareScan }
+      return { name: d.name, version: d.version, description: d.description, tarballUrl: d.tarballUrl, hash: d.hash, artifactSha256: d.artifactSha256, publishedAt: d.publishedAt, license: d.license, repository: d.repository, homepage: d.homepage, author: d.author, keywords: d.keywords, malwareScan: d.malwareScan }
     }
 
     // Get latest
@@ -522,6 +522,7 @@ export class DynamoDBZigStorage implements ZigPackageStorage {
         SK: `VERSION#${version}`,
         name, version, tarballUrl,
         hash: metadata.hash,
+        artifactSha256: metadata.artifactSha256,
         description: metadata.description || '',
         license: metadata.license || '',
         repository: metadata.repository || '',
