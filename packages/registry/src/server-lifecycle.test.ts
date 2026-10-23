@@ -37,3 +37,19 @@ test('a graceful drain keeps its public server handle for repeated stop and forc
     await response.catch(() => {})
   }
 })
+
+test('a restarted public server admits writes again after its previous graceful drain', async () => {
+  const port = await getAvailablePort(), base = `http://127.0.0.1:${port}`
+  const server = createServer(createLocalRegistry(base), port, new InMemoryAnalytics())
+  server.start()
+  try {
+    for (let pass = 0; pass < 2; pass++) {
+      const response = await fetch(`${base}/analytics/events`, { method: 'POST', body: '{}' })
+      expect(response.status).toBe(400)
+      await response.text()
+      await server.stop(false)
+      if (pass === 0) server.start()
+    }
+  }
+  finally { await server.stop(true) }
+})

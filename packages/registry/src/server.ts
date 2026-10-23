@@ -1954,22 +1954,23 @@ export function createServer(
   _authService = authSvc
   const baseUrl = process.env.BASE_URL || `http://localhost:${port}`
   const internalBaseUrl = process.env.REGISTRY_INTERNAL_URL || `http://127.0.0.1:${port}`
-  const handler = createHandler(
-    registry,
-    analyticsStorage,
-    zigPackageStorage,
-    baseUrl,
-    binaryStorage,
-    phpPackageStorage,
-    authSvc,
-    internalBaseUrl,
-    malwareScanner,
-    binaryPublisher,
-    buildStatus,
-  )
+  let activeHandler: ReturnType<typeof createHandler> | undefined
 
   const start = () => {
     if (server || draining) throw new Error('Registry server is already running or draining')
+    activeHandler = createHandler(
+      registry,
+      analyticsStorage,
+      zigPackageStorage,
+      baseUrl,
+      binaryStorage,
+      phpPackageStorage,
+      authSvc,
+      internalBaseUrl,
+      malwareScanner,
+      binaryPublisher,
+      buildStatus,
+    )
     const configuredIdleTimeout = Number.parseInt(process.env.PANTRY_HTTP_IDLE_TIMEOUT_SECONDS || '', 10)
     const idleTimeout = Number.isSafeInteger(configuredIdleTimeout)
       && configuredIdleTimeout >= 10
@@ -1978,7 +1979,7 @@ export function createServer(
       : 255
     server = Bun.serve({
       port,
-      fetch: handler,
+      fetch: activeHandler,
       // ClamAV streams can legitimately take longer than Bun's 10-second
       // default. Keep the client connection open through the scanner's bounded
       // timeout so retries cannot duplicate an in-flight scan.
@@ -2054,6 +2055,8 @@ export function createServer(
   const stop = (closeActiveConnections = false): Promise<void> => {
     if (!server) return Promise.resolve()
     const current = server
+    const currentHandler = activeHandler
+    if (!currentHandler) return Promise.reject(new Error('Registry server has no active request handler'))
     if (closeActiveConnections) {
       // Retain the handle while graceful drain is pending so a deadline can
       // still force its active connections closed.
@@ -2062,7 +2065,7 @@ export function createServer(
       })
     }
     draining ??= (async () => {
-      await handler.drain()
+      await currentHandler.drain()
       await current.stop(false)
     })().finally(() => {
       if (server === current) server = null
@@ -6918,7 +6921,7 @@ if (import.meta.main) {
 
   const server = createServer(registry, port, analytics, zigStorage, undefined, phpStorage, authStorage)
   server.start()
-  installRegistryShutdown(server, [registry.metadata, analytics, authStorage, zigStorage, phpStorage, _buildStatus, { flush: flushEgressLedger }])
+  installRegistryShutdown(server, [registry.metadata, analytics, authStorage, zigStorage, phpStorage, { flush: async () => { await _buildStatus?.flush() } }, { flush: flushEgressLedger }])
 
   console.log('\nEnvironment:')
   console.log(`  S3_BUCKET: ${process.env.S3_BUCKET || 'local'}`)
