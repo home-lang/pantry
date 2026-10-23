@@ -81,14 +81,14 @@
             @if (!tokens || tokens.length === 0)
             <tr id="token-empty"><td colspan="6" class="text-sm p-6" style="color: var(--fg-subtle);">No API tokens yet. Create one to start publishing.</td></tr>
             @endif
-            @each (token in tokens)
+            @foreach (tokens as token)
             <tr class="border-t border-[var(--border)]" data-token-id="{{ token.id }}">
               <td class="px-4 py-3 text-sm font-medium">{{ token.name }}</td>
               <td class="px-4 py-3 text-xs font-mono" style="color: var(--fg-subtle);">{{ token.id }}</td>
               <td class="px-4 py-3">
-                @each (perm in token.permissions)
+                @foreach (token.permissions as perm)
                 <span class="inline-block text-xs px-1.5 py-0.5 rounded mr-1" style="background: var(--bg-muted); color: var(--fg-muted);">{{ perm }}</span>
-                @endeach
+                @endforeach
               </td>
               <td class="px-4 py-3 text-xs" style="color: var(--fg-subtle);">{{ token.createdAt.split('T')[0] }}</td>
               <td class="px-4 py-3 text-xs" style="color: var(--fg-subtle);">{{ token.lastUsedAt ? token.lastUsedAt.split('T')[0] : 'never' }}</td>
@@ -103,7 +103,7 @@
                 </button>
               </td>
             </tr>
-            @endeach
+            @endforeach
           </tbody>
         </table>
       </div>
@@ -185,6 +185,8 @@
     var accountStatus = document.getElementById('account-status')
 
     function showError(element, message) {
+      element.setAttribute('role', 'alert')
+      element.style.color = 'var(--red)'
       element.textContent = message
       element.hidden = false
     }
@@ -253,6 +255,7 @@
           token.textContent = data.token
           document.getElementById('copy-new-token').setAttribute('data-copy', data.token)
           document.getElementById('new-token-alert').style.display = 'block'
+          document.getElementById('new-token-alert').dataset.tokenId = data.info.id
           form.reset()
           dialog.close()
           token.focus()
@@ -268,7 +271,27 @@
         .then(function() {
           button.closest('tr').remove()
           openButton.focus()
-          accountStatus.hidden = true
+          if (!rows.querySelector('[data-token-id]')) {
+            var empty = document.createElement('tr')
+            empty.id = 'token-empty'
+            var cell = document.createElement('td')
+            cell.colSpan = 6
+            cell.className = 'p-6 text-sm'
+            cell.textContent = 'No API tokens yet. Create one to start publishing.'
+            empty.appendChild(cell)
+            rows.appendChild(empty)
+          }
+          var notice = document.getElementById('new-token-alert')
+          if (notice.dataset.tokenId === button.getAttribute('data-delete-token')) {
+            notice.style.display = 'none'
+            delete notice.dataset.tokenId
+            document.getElementById('new-token-value').textContent = ''
+            document.getElementById('copy-new-token').setAttribute('data-copy', '')
+          }
+          accountStatus.textContent = 'Token revoked.'
+          accountStatus.style.color = 'var(--fg-muted)'
+          accountStatus.setAttribute('role', 'status')
+          accountStatus.hidden = false
         })
         .catch(function(failure) { button.disabled = false; showError(accountStatus, failure.message) })
     })

@@ -5,6 +5,7 @@ test('cookie sessions work without browser storage and token dialogs start close
   await signIn(page)
   await page.goto('/account')
   await expect(page.getByRole('heading', { name: 'Account', exact: true })).toBeVisible()
+  await expect(page.getByRole('cell', { name: /No API tokens yet/ })).toBeVisible()
   await expect(page.getByRole('dialog', { name: 'Create API Token' })).toBeHidden()
   await page.getByRole('button', { name: 'Create token', exact: true }).click()
   await expect(page.getByLabel('Token name')).toBeFocused()
@@ -24,6 +25,9 @@ test('new token remains available to copy and appears in the token list', async 
   await expect(page.locator('#new-token-value')).toHaveText(secret!)
   await expect(page.getByRole('cell', { name: 'Browser test token', exact: true })).toBeVisible()
   expect(await page.locator('html').evaluate(() => localStorage.getItem('pantry_session'))).toBeNull()
+  await page.reload()
+  await expect(page.getByRole('cell', { name: 'Browser test token', exact: true })).toBeVisible()
+  await expect(page.locator('#new-token-alert')).toBeHidden()
 })
 
 test('token creation failures are inline and allow retry', async ({ page }) => {
@@ -37,4 +41,19 @@ test('token creation failures are inline and allow retry', async ({ page }) => {
   await expect(dialog.getByRole('alert')).toHaveText('Please try again shortly')
   await expect(dialog.getByRole('button', { name: 'Create token' })).toBeEnabled()
   await expect(page.getByLabel('Token name')).toHaveValue('Retry token')
+})
+
+test('revoking the last token restores the empty state and removes the stale secret', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/account')
+  await page.getByRole('button', { name: 'Create token', exact: true }).click()
+  await page.getByLabel('Token name').fill('Temporary token')
+  await page.getByRole('dialog', { name: 'Create API Token' }).getByRole('button', { name: 'Create token' }).click()
+  await expect(page.locator('#new-token-value')).toContainText('ptry_')
+  page.on('dialog', dialog => dialog.accept())
+  await page.getByRole('button', { name: 'Revoke Temporary token', exact: true }).click()
+  await expect(page.locator('#account-status')).toHaveText('Token revoked.')
+  await expect(page.getByRole('cell', { name: /No API tokens yet/ })).toBeVisible()
+  await expect(page.locator('#new-token-alert')).toBeHidden()
+  await expect(page.locator('#new-token-value')).toBeEmpty()
 })
