@@ -52,7 +52,7 @@
             onerror="this.style.display='none'"
           />
           <h1 class="text-3xl font-semibold tracking-tight font-mono min-w-0" style="overflow-wrap: anywhere;">{{ name }}</h1>
-          <button class="copy-btn" data-copy="{{ name }}" data-tooltip="Copy package name" style="font-size: 0.625rem; padding: 0.125rem 0.375rem;">
+          <button class="copy-btn" aria-label="Copy package name" data-copy="{{ name }}" data-tooltip="Copy package name" style="font-size: 0.625rem; padding: 0.125rem 0.375rem;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: -2px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           </button>
         </div>
@@ -243,10 +243,10 @@
           <!-- Download timeline chart (ts-charts generated SVG) -->
           @if (lineChart && lineChart.linePath)
           <div class="mb-8">
-            <h2 class="text-xs uppercase tracking-widest font-medium mb-4 collapsible-toggle flex items-center gap-2" data-target="chart-downloads" style="color: var(--fg-subtle);">
+            <h2 class="mb-4"><button type="button" class="text-xs uppercase tracking-widest font-medium collapsible-toggle flex items-center gap-2" data-target="chart-downloads" aria-controls="chart-downloads" aria-expanded="true" style="color: var(--fg-subtle); background: none; border: none;">
               <svg class="collapse-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
               Downloads (Last 30 Days)
-            </h2>
+            </button></h2>
             <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 overflow-x-auto collapsible-content" id="chart-downloads">
               <svg width="{{ lineChart.width }}" height="{{ lineChart.height }}" viewBox="0 0 {{ lineChart.width }} {{ lineChart.height }}" style="width: 100%; height: auto;">
                 @foreach (lineChart.yLabels as yLabel)
