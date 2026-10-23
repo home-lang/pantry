@@ -1,3 +1,18 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.120...v0.11.121)
+
+## 🐛 Bug Fixes
+
+- **registry**: retain Zig archive identity in DynamoDB ([e3d0635](https://github.com/pantry-pm/pantry/commit/e3d0635)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.121 ([e46efb0](https://github.com/pantry-pm/pantry/commit/e46efb0)) _(by Chris <chris@stacksjs.com>)_
+- update babashka.org, cli.github.com, cursor.com, github.com/ggerganov/llama.cpp, github.com/router-for-me/CLIProxyAPI, materialize.com, moonrepo.dev/moon, ollama.ai, terragrunt.gruntwork.io ([bf11f68](https://github.com/pantry-pm/pantry/commit/bf11f68)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.119...v0.11.120)
 
 ## 🐛 Bug Fixes
