@@ -301,6 +301,7 @@ jobs:
               'CPUWeight=80' \
               'IOWeight=80' \
               'TasksMax=256' \
+              'TimeoutStopSec=300' \
               > "$REGISTRY_CAPACITY_TMP"
             mv -f "$REGISTRY_CAPACITY_TMP" "$REGISTRY_CAPACITY_DIR/pantry-registry-capacity.conf"
 

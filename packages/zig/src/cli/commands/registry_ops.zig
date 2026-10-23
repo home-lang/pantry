@@ -497,6 +497,8 @@ const provision_script =
     \\ExecStart=${bun_bin} run dist/server.js
     \\Restart=always
     \\RestartSec=5
+    \\# Drain the bounded scanner/request work and persist registry snapshots.
+    \\TimeoutStopSec=300
     \\MemoryAccounting=yes
     \\# Sized above the service's observed working set (~400 MB serving the
     \\# registry and coordinating scans), not below it. A MemoryHigh under the
