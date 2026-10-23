@@ -36,7 +36,7 @@ describe('Zig registry routes', () => {
 
   async function publish(version = '1.0.0', authorization = token): Promise<Response> {
     const form = new FormData()
-    form.append('tarball', new File([await zigPackageFixture(version)], `graphics_package_consumer-${version}.tar.gz`))
+    form.append('tarball', new File([new Uint8Array(await zigPackageFixture(version))], `graphics_package_consumer-${version}.tar.gz`))
     form.append('manifest', `.name = .graphics_package_consumer,\n.version = "${version}",`)
     form.append('description', 'Example Zig package')
     return fetch(`${baseUrl}/zig/publish`, {
