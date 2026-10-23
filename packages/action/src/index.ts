@@ -17,6 +17,8 @@ import { installRequiredSystemPackages, jsPackageManager, needsJsInstall, pantry
 import { installResolvedSystemPackages } from './system-packages'
 import { nativeArtifactCacheIdentity } from './native-cache'
 import { dependencyCache } from './cache-service'
+import { exportBuildCacheEnvironment } from './build-archive-cache-env'
+import { buildArchiveCacheDir } from './build-archive-cache'
 import type { ServiceSpec } from './services'
 import { mergeServicePackages, nativeServiceEnvironment, parseServiceSpecs } from './services'
 import type { NativeServiceState } from './native-services'
@@ -649,6 +651,15 @@ async function sendSlackNotification(webhookUrl: string, ctx: NotificationContex
 
 export async function run(): Promise<void> {
   try {
+    if (boolInput('cache-build-dependencies', process.env.PANTRY_CACHE_BUILD_DEPENDENCIES === 'true') && process.env.PANTRY_BUILD_CACHE_READY !== 'true') {
+      if (exportBuildCacheEnvironment(process.env, core)) {
+        fs.mkdirSync(buildArchiveCacheDir(), { recursive: true })
+        fs.rmSync(path.join(buildArchiveCacheDir(), 'events.jsonl'), { force: true })
+        core.saveState('build-archive-cache-summary', 'true')
+        core.info('Enabled shared, checksum-verified build dependency archive caching')
+      }
+      else core.warning('GitHub build dependency archive cache unavailable; local caching remains enabled')
+    }
     const inputs: ActionInputs = {
       version: core.getInput('version') || 'latest',
       packages: core.getInput('packages') || '',

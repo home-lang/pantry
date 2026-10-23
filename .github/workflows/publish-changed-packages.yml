@@ -57,6 +57,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  # Share verified dependency archives across packages, stripes, and CI runs.
+  PANTRY_CACHE_BUILD_DEPENDENCIES: 'true'
   # Authenticated build-status reporting (same ptry_ registry token).
   PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
   # Object storage (defaults to AWS S3; repo vars point it at Hetzner).

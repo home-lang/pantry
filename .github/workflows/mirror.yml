@@ -42,6 +42,8 @@ on:
         type: string
 
 env:
+  # Share verified dependency archives across packages, stripes, and CI runs.
+  PANTRY_CACHE_BUILD_DEPENDENCIES: 'true'
   # Authenticated build-status reporting → pantry.dev/packages (401s without it).
   PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
   # How long each job keeps STARTING packages. The budget stops new work; it

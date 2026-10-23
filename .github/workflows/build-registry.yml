@@ -22,6 +22,8 @@ on:
           - linux-x86-64
 
 env:
+  # Share verified dependency archives across packages, stripes, and CI runs.
+  PANTRY_CACHE_BUILD_DEPENDENCIES: 'true'
   # Build-status dashboard reporting is authenticated; without this token every
   # report-build POST 401s and the build is invisible on pantry.dev/packages.
   PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}

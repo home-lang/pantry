@@ -15,6 +15,7 @@ import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { homedir, platform, arch } from 'node:os'
 import { createObjectStorageClient } from './object-storage'
+import { obtainBuildArchive } from '../../action/src/build-archive-cache'
 
 /**
  * Build an S3-compatible client for the configured provider. For AWS the
@@ -313,31 +314,13 @@ else {
     const pkgInstallDir = join(installDir, pkgName, targetVersion)
     mkdirSync(pkgInstallDir, { recursive: true })
 
-    // Download tarball using AWS CLI (handles binary correctly)
-    console.log(`   ⬇️  Downloading (${(platformInfo.size / 1024 / 1024).toFixed(2)} MB)...`)
-
     const tarballPath = join(pkgInstallDir, 'package.tar.gz')
-
-    // Download via the S3-compatible client — provider-agnostic (works for AWS
-    // S3, Backblaze B2 and Hetzner) and avoids requiring the AWS CLI on the host.
-    const tarballBuf = await s3.getObjectBuffer(bucket, platformInfo.tarball)
-    writeFileSync(tarballPath, tarballBuf)
-
-    // Verify SHA256
-    console.log(`   🔐 Verifying checksum...`)
-    const actualHash = execSync(
-      currentPlatform.startsWith('darwin')
-        ? `shasum -a 256 "${tarballPath}" | cut -d' ' -f1`
-        : `sha256sum "${tarballPath}" | cut -d' ' -f1`,
-      { encoding: 'utf-8' }
-    ).trim()
-
-    if (actualHash !== platformInfo.sha256) {
-      console.error(`   ❌ Checksum mismatch!`)
-      console.error(`   Expected: ${platformInfo.sha256}`)
-      console.error(`   Actual: ${actualHash}`)
-      return false
-    }
+    await obtainBuildArchive({
+      sha256: platformInfo.sha256,
+      destination: tarballPath,
+      label: `${pkgName}@${targetVersion}/${currentPlatform}`,
+      download: async destination => { await Bun.write(destination, await s3.getObjectBuffer(bucket, platformInfo.tarball)) },
+    })
 
     // Extract tarball
     console.log(`   📂 Extracting...`)

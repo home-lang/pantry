@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { join } from 'node:path'
 import { versionSatisfies } from '../scripts/build-package'
 
 describe('native builder constraints match installed runtime dependencies', () => {
@@ -85,9 +86,9 @@ describe('declared bare dependencies never borrow the host toolchain', () => {
     const { downloadDependencies } = await import('../scripts/build-package')
     await fixture(async (root) => {
       await expect(downloadDependencies(['unit.example/library'], root, 'linux-x86-64', 'test', 'test', {
-        getObject: async () => JSON.stringify({ versions: { '1.0.0': { platforms: { 'linux-x86-64': { tarball: 'missing' } } } } }),
+        getObject: async () => JSON.stringify({ versions: { '1.0.0': { platforms: { 'linux-x86-64': { tarball: 'missing', sha256: '1'.repeat(64) } } } } }),
         getSignedUrl: async () => `file://${root}/does-not-exist.tar.gz`,
-      })).rejects.toThrow('could not install the linux-x86-64 dependency')
+      }, { cacheDir: join(root, 'cache'), remote: null })).rejects.toThrow('could not install the linux-x86-64 dependency')
     })
   })
   test('a published fixture is downloaded, extracted and registered from its own prefix', async () => {
@@ -98,26 +99,33 @@ describe('declared bare dependencies never borrow the host toolchain', () => {
     await fixture(async (root) => {
       const source = join(root, 'source')
       await mkdir(source)
+      await mkdir(join(source, 'lib/pkgconfig'), { recursive: true })
+      await writeFile(join(source, 'lib/pkgconfig/library.pc'), 'prefix=/tmp/buildkit-install-fixture\n')
       await writeFile(join(source, 'proof.txt'), 'managed artifact bytes')
       const archive = join(root, 'fixture.tar.gz')
       execFileSync('tar', ['-czf', archive, '-C', source, '.'])
       const archiveSha256 = new Bun.CryptoHasher('sha256').update(await readFile(archive)).digest('hex')
+      const archiveCache = { cacheDir: join(root, 'cache'), remote: null }
+      let downloads = 0
       const paths = await downloadDependencies(['unit.example/library'], join(root, 'installed'), 'linux-x86-64', 'test', 'test', {
         getObject: async () => JSON.stringify({ versions: { '1.0.0': { platforms: { 'linux-x86-64': { tarball: 'fixture', sha256: archiveSha256 } } } } }),
-        getSignedUrl: async () => `file://${archive}`,
-      })
+        getSignedUrl: async () => { downloads++; return `file://${archive}` },
+      }, archiveCache)
       expect(paths['unit.example/library']).toBe(join(root, 'installed', 'unit.example/library', '1.0.0'))
       expect(await readFile(join(paths['unit.example/library'], 'proof.txt'), 'utf8')).toBe('managed artifact bytes')
       await expect(downloadDependencies(['unit.example/library'], join(root, 'tampered'), 'linux-x86-64', 'test', 'test', {
         getObject: async () => JSON.stringify({ versions: { '1.0.0': { platforms: { 'linux-x86-64': { tarball: 'fixture', sha256: '0'.repeat(64) } } } } }),
         getSignedUrl: async () => `file://${archive}`,
-      })).rejects.toThrow('checksum mismatch')
+      }, archiveCache)).rejects.toThrow('checksum mismatch')
       expect(await Bun.file(join(root, 'tampered/unit.example/library/1.0.0/proof.txt')).exists()).toBe(false)
       const versions = ['1.1.1', '3.0.1']
       const coexisting = await downloadDependencies(['unit.example/library ^1.1', 'unit.example/library ^3'], join(root, 'coexisting'), 'linux-x86-64', 'test', 'test', {
         getObject: async () => JSON.stringify({ versions: Object.fromEntries(versions.map(version => [version, { platforms: { 'linux-x86-64': { tarball: 'fixture', sha256: archiveSha256 } } }])) }),
-        getSignedUrl: async () => `file://${archive}`,
-      })
+        getSignedUrl: async () => { downloads++; return `file://${archive}` },
+      }, archiveCache)
+      expect(downloads).toBe(1)
+      expect(await readFile(join(paths['unit.example/library'], 'lib/pkgconfig/library.pc'), 'utf8')).toBe(`prefix=${paths['unit.example/library']}\n`)
+      expect(await readFile(join(coexisting['unit.example/library'], 'lib/pkgconfig/library.pc'), 'utf8')).toBe(`prefix=${coexisting['unit.example/library']}\n`)
       expect(coexisting['deps.unit.example/library.version']).toBe('1.1.1')
       expect(coexisting['deps.unit.example/library@3.0.1.version']).toBe('3.0.1')
       expect(await readFile(join(coexisting['deps.unit.example/library@3.0.1.prefix'], 'proof.txt'), 'utf8')).toBe('managed artifact bytes')

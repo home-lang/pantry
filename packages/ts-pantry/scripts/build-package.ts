@@ -5,7 +5,9 @@
 // Uses buildkit to generate bash build scripts from YAML recipes (like brewkit)
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
-import { execSync } from 'node:child_process'
+import { execFileSync, execSync } from 'node:child_process'
+import type { BuildArchiveOptions } from '../../action/src/build-archive-cache'
+import { ArchiveChecksumError, obtainBuildArchive } from '../../action/src/build-archive-cache'
 import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { generateBuildScript, getSkips, type PackageRecipe, type NormalizedRecipe, type RecipeScriptStep, type RecipeTest } from './buildkit.ts'
@@ -819,6 +821,7 @@ export async function downloadDependencies(
   bucket: string,
   region: string,
   storage?: BuildDependencyStorage,
+  archiveCache?: Pick<BuildArchiveOptions, 'cacheDir' | 'remote'>,
 ): Promise<Record<string, string>> {
   const s3 = storage ?? await (async () => {
     const { createObjectStorageClient } = await import('./object-storage')
@@ -877,16 +880,21 @@ catch {
         mkdirSync(depInstallDir, { recursive: true })
         const tarballPath = join(depInstallDir, 'package.tar.gz')
         try {
-          // Presigned GET works for private buckets on any S3-compatible provider
-          // (AWS, Hetzner, B2); avoids the aws CLI and a hardcoded amazonaws.com host.
-          const dlUrl = await s3.getSignedUrl({ bucket, key: info.tarball, expiresIn: 3600 })
-          execSync(`curl -fsSL -o "${tarballPath}" "${dlUrl}"`, { stdio: 'pipe' })
-          if (!/^[a-f0-9]{64}$/i.test(info.sha256 || '') || new Bun.CryptoHasher('sha256').update(readFileSync(tarballPath)).digest('hex') !== info.sha256.toLowerCase())
-            throw new BuildDependencyResolutionError(`${domain}@${depVersion}: dependency archive checksum mismatch or missing`)
+          await obtainBuildArchive({
+            ...archiveCache,
+            sha256: info.sha256,
+            destination: tarballPath,
+            label: `${domain}@${depVersion}/${platform}`,
+            download: async (destination) => {
+              const url = await s3.getSignedUrl({ bucket, key: info.tarball, expiresIn: 3600 })
+              execFileSync('curl', ['-fsSL', '--max-time', '300', '-o', destination, url], { stdio: 'pipe' })
+            },
+          })
           execSync(`tar -xf "${tarballPath}" -C "${depInstallDir}"`, { stdio: 'pipe' })
           execSync(`rm "${tarballPath}"`)
         }
 catch (cause) {
+          if (cause instanceof ArchiveChecksumError) throw new BuildDependencyResolutionError(cause.message)
           if (cause instanceof BuildDependencyResolutionError) throw cause
           return false
         }
