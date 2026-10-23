@@ -3,10 +3,10 @@
 <section class="py-12 pb-20">
   <div class="max-w-3xl mx-auto px-6">
     <!-- Account Header -->
-    <div class="flex items-center justify-between mb-8 animate-fade-in">
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-8 animate-fade-in">
       <div>
         <h1 class="text-2xl font-semibold mb-1">Account</h1>
-        <p class="text-sm" style="color: var(--fg-muted);">
+        <p class="text-sm" style="color: var(--fg-muted); overflow-wrap: anywhere;">
           Signed in as <span class="font-medium" style="color: var(--fg);">{{ user.name }}</span>
           <span style="color: var(--fg-subtle);">({{ user.email }})</span>
         </p>

@@ -4,13 +4,14 @@
   <div class="max-w-3xl mx-auto px-6">
     <a href="/publisher" class="inline-flex items-center gap-1.5 mb-6 hvr-fg transition-colors" style="font-size: 0.8125rem; color: var(--fg-subtle);">&larr; Publisher dashboard</a>
 
-    <div id="pkg-loading" class="text-center py-12" style="color: var(--fg-subtle);">
+    <div id="pkg-loading" role="status" class="text-center py-12" style="color: var(--fg-subtle);">
       <p class="text-sm">Loading package…</p>
     </div>
 
+    <button id="pkg-retry" class="copy-btn mb-4" hidden>Retry loading package</button>
     <div id="pkg-content" style="display: none;">
       <div class="mb-8 animate-fade-in">
-        <h1 class="text-2xl font-semibold font-mono mb-2" id="pkg-title"></h1>
+        <h1 class="text-2xl font-semibold font-mono mb-2" id="pkg-title" style="overflow-wrap: anywhere;"></h1>
         <div class="flex flex-wrap gap-4 text-sm" id="pkg-stats" style="color: var(--fg-muted);"></div>
       </div>
 
@@ -102,7 +103,7 @@
           </p>
         </div>
 
-        <div id="save-status" class="text-sm" style="display: none;"></div>
+        <div id="save-status" role="status" class="text-sm" style="display: none;"></div>
 
         <button type="submit" class="rounded-lg px-4 py-2.5 font-medium text-sm transition-colors" style="background: var(--accent); color: var(--bg); cursor: pointer;">
           Save changes
@@ -127,16 +128,21 @@
     var match = window.location.pathname.match(/^\/publisher\/package\/(.+)$/)
     var pkgName = match ? decodeURIComponent(match[1]) : ''
     if (!pkgName) { window.location.href = '/publisher'; return }
+    function text(value) { var element = document.createElement('span'); element.textContent = String(value == null ? '' : value); return element.innerHTML }
     var deprecCb = document.getElementById('deprecated')
     var deprecMsg = document.getElementById('deprecation-message')
     deprecCb.addEventListener('change', function() {
       deprecMsg.style.display = deprecCb.checked ? 'block' : 'none'
     })
 
-    fetch('/publisher/api/packages/' + encodeURIComponent(pkgName), { headers: authHeaders() })
+    function loadPackage() {
+    document.getElementById('pkg-loading').style.display = 'block'
+    document.getElementById('pkg-loading').textContent = 'Loading package…'
+    document.getElementById('pkg-retry').hidden = true
+    return fetch('/publisher/api/packages/' + encodeURIComponent(pkgName), { headers: authHeaders() })
       .then(function(r) {
-        if (r.status === 401) { window.location.href = '/login'; return null }
-        if (r.status === 403 || r.status === 404) { throw new Error('Package not found or access denied') }
+        if (r.status === 401) { window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname); return null }
+        if (!r.ok) throw new Error(r.status === 403 || r.status === 404 ? 'Package not found or access denied' : 'Unable to load package. Please try again.')
         return r.json()
       })
       .then(function(data) {
@@ -148,7 +154,7 @@
         var stats = document.getElementById('pkg-stats')
         stats.innerHTML =
           '<span>Downloads: <strong>' + (data.stats?.totalDownloads || 0).toLocaleString() + '</strong></span>' +
-          (data.package.latestVersion ? '<span>Latest: <strong class="font-mono">' + data.package.latestVersion + '</strong></span>' : '') +
+          (data.package.latestVersion ? '<span>Latest: <strong class="font-mono">' + text(data.package.latestVersion) + '</strong></span>' : '') +
           (data.stats?.downloads30d != null ? '<span>30d: <strong>' + data.stats.downloads30d.toLocaleString() + '</strong></span>' : '')
 
         var p = data.package
@@ -168,20 +174,30 @@
         if (data.commits && data.commits.length > 0) {
           document.getElementById('commits-section').style.display = 'block'
           var ul = document.getElementById('commits-list')
+          ul.replaceChildren()
           data.commits.forEach(function(c) {
             var li = document.createElement('li')
             var short = (c.sha || '').slice(0, 7)
-            li.innerHTML = '<a href="/commits/' + encodeURIComponent(c.sha) + '" class="hvr-accent" style="color: var(--accent);">' + short + '</a> · ' + (c.publishedAt || '').split('T')[0]
+            li.innerHTML = '<a href="/commits/' + encodeURIComponent(c.sha) + '" class="hvr-accent" style="color: var(--accent);">' + text(short) + '</a> · ' + text((c.publishedAt || '').split('T')[0])
             ul.appendChild(li)
           })
         }
       })
-      .catch(function(err) {
-        document.getElementById('pkg-loading').innerHTML = '<p class="text-sm" style="color: var(--red);">' + (err.message || 'Failed to load') + '</p>'
+      .catch(function(error) {
+        var loading = document.getElementById('pkg-loading')
+        loading.textContent = error.message || 'Unable to load package. Please try again.'
+        loading.setAttribute('role', 'alert')
+        document.getElementById('pkg-retry').hidden = false
       })
+    }
+    document.getElementById('pkg-retry').addEventListener('click', loadPackage)
+    loadPackage()
 
     document.getElementById('pkg-settings-form').addEventListener('submit', function(e) {
       e.preventDefault()
+      var button = this.querySelector('button[type="submit"]')
+      if (button.disabled) return
+      button.disabled = true
       var status = document.getElementById('save-status')
       status.style.display = 'block'
       status.style.color = 'var(--fg-muted)'
@@ -219,8 +235,9 @@
         })
         .catch(function() {
           status.style.color = 'var(--red)'
-          status.textContent = 'Save failed'
+          status.textContent = 'Unable to save changes. Please try again.'
         })
+        .finally(function() { button.disabled = false })
     })
   })()
 </script>

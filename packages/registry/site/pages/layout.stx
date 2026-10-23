@@ -663,7 +663,7 @@
       statusTimer = setTimeout(function() { actionStatus.hidden = true }, 6000)
     }
     document.addEventListener('click', function(event) {
-      var button = event.target.closest('.copy-btn, .share-btn, #export-md-btn')
+      var button = event.target.closest('.copy-btn[data-copy], [data-copy-code], .share-btn, #export-md-btn')
       if (!button) return
       var text = button.getAttribute('data-copy')
       var success = 'Copied to clipboard.'

@@ -1,5 +1,6 @@
 <button
   type="button"
+  data-copy-code
   class="copy-btn text-[var(--fg-subtle)] hover:text-[var(--fg)] transition-colors text-xs px-2 py-1 rounded border border-transparent hover:border-[var(--border)]"
   aria-label="Copy to clipboard"
 >
