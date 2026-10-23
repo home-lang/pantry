@@ -12,10 +12,15 @@ concurrency:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
+  source-ci:
+    uses: ./.github/workflows/source-ci-gate.yml
+
   pantry:
     name: pantry
+    needs: source-ci
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:

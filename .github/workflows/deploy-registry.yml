@@ -44,14 +44,19 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   verify:
     uses: ./.github/workflows/registry-checks.yml
 
+  source-ci:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/source-ci-gate.yml
+
   deploy:
     name: hetzner
-    needs: verify
+    needs: [verify, source-ci]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
