@@ -11,7 +11,7 @@
       </p>
     </div>
 
-    <div class="grid gap-4 mb-12 animate-fade-in-delay" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+    <div class="grid gap-4 mb-12 animate-fade-in-delay" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));">
       @foreach (plans as plan)
       <div class="border rounded-lg p-5 flex flex-col" style="background: var(--bg-subtle); border-color: {{ plan.featured ? 'var(--accent)' : 'var(--border)' }};">
         <div class="flex items-baseline justify-between mb-1">
@@ -54,7 +54,7 @@
       @endforeach
     </div>
 
-    <div class="grid gap-4 mb-8" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+    <div class="grid gap-4 mb-8" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));">
       <div class="border border-[var(--border)] rounded-lg p-5" style="background: var(--bg-subtle);">
         <h2 class="text-sm font-medium mb-2">Build insurance</h2>
         <p class="mb-3" style="font-size: 0.8125rem; color: var(--fg-muted);">

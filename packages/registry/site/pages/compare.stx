@@ -14,7 +14,7 @@
     <form action="/compare" method="get" class="mb-10">
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
         <p class="text-xs uppercase tracking-widest font-medium mb-3" style="color: var(--fg-subtle);">Enter package names (comma-separated, max 4)</p>
-        <div class="flex gap-2">
+        <div class="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             name="packages"

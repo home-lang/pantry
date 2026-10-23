@@ -40,6 +40,23 @@ jobs:
         run: |
           set -o pipefail
           bun test packages/registry 2>&1 | tee artifacts/registry-availability/tests.log
+      - name: Install browser engines
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && matrix.bun == '1.4.3' }}
+        run: bunx playwright install --with-deps chromium firefox webkit
+      - name: Verify responsive UI and browser interactions
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && matrix.bun == '1.4.3' }}
+        run: |
+          bun run test:ui:types
+          bun run test:ui
+      - name: Retain browser failure evidence
+        if: ${{ failure() && matrix.bun == '1.4.3' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: registry-ui-failures
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
       - name: Lint the normal workspace
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: bun run lint

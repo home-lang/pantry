@@ -43,3 +43,7 @@ pantry
 # every recipe and catalog entry under such a domain from `git add`.
 !*.com
 !*.com/
+
+# Browser verification artifacts
+/test-results/
+/playwright-report/

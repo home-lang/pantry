@@ -9,7 +9,7 @@
     <!-- Search form with sort and view controls -->
     <form action="/search" method="get" class="mb-8">
       <div class="flex gap-2 mb-3">
-        <div class="relative flex-1">
+        <div class="relative flex-1 min-w-0">
           <input
             type="text"
             name="q"
@@ -29,7 +29,7 @@
 
       @if (hasQuery)
       <div class="flex items-center justify-between flex-wrap gap-2">
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3">
           <label class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Type:</label>
           <select name="type" class="sort-select" onchange="this.form.submit()">
             <option value="all" @if (type === 'all') selected @endif>All</option>
@@ -122,7 +122,7 @@
 
     <!-- Grid view -->
     @if (view === 'grid')
-    <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));">
+    <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));">
       @foreach (results as result)
       <a href="/package/{{ result.name }}" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
         <div class="flex items-center justify-between mb-1.5">

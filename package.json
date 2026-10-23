@@ -24,6 +24,8 @@
     "build": "for dir in packages/*; do if [ -f \"$dir/package.json\" ]; then echo \"Building $dir\" && bun run --cwd $dir build; fi; done",
     "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
     "test": "bun test",
+    "test:ui": "playwright test",
+    "test:ui:types": "bun --bun tsc --noEmit -p packages/registry/tests/ui/tsconfig.json",
     "lint": "bunx --bun pickier .",
     "lint:fix": "bunx --bun pickier . --fix",
     "format": "bunx --bun pickier . --format",
@@ -46,6 +48,7 @@
     "bun"
   ],
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@stacksjs/bumpx": "0.2.26",
     "better-dx": "^0.2.23"
   },
