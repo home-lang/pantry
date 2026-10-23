@@ -709,14 +709,15 @@ export function createHandler(
   malwareScanner: MalwareScanner = createMalwareScannerFromEnv(),
   injectedBinaryPublisher?: BinaryArtifactPublisher,
   injectedBuildStatus?: BuildStatusStore,
-): (req: Request) => Promise<Response> {
+): ((req: Request) => Promise<Response>) & { drain: () => Promise<void> } {
   const getReadyBuildStatus = async (): Promise<BuildStatusStore> => {
     const store = injectedBuildStatus || getBuildStatus()
     await store.ready()
     return store
   }
   let binaryPublisher = injectedBinaryPublisher
-  const getBinaryPublisher = (): BinaryArtifactPublisher => {
+  let drainingAdmission = false
+  const resolveBinaryPublisher = (): BinaryArtifactPublisher => {
     if (binaryPublisher) return binaryPublisher
     const secret = process.env.PANTRY_BINARY_STAGING_SECRET || getRegistryToken() || ''
     const storage = resolveStorageProvider()
@@ -755,7 +756,11 @@ export function createHandler(
     return binaryPublisher
   }
 
-  return async (req: Request): Promise<Response> => {
+  const dispatch = async (req: Request, admitted: boolean): Promise<Response> => {
+    const getBinaryPublisher = () => {
+      if (!admitted) throw new BinaryPublishError('Registry is draining publication work', 503, 'REGISTRY_DRAINING')
+      return resolveBinaryPublisher()
+    }
     const url = new URL(req.url)
     const path = url.pathname
 
@@ -1906,6 +1911,25 @@ export function createHandler(
       )
     }
   }
+  const active = new Set<Promise<Response>>()
+  const handler = (req: Request): Promise<Response> => {
+    if (drainingAdmission && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+      return Promise.resolve(Response.json({ error: 'Registry is draining active publication work', code: 'REGISTRY_DRAINING' }, { status: 503, headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' } }))
+    }
+    const result = dispatch(req, !drainingAdmission)
+    active.add(result)
+    void result.finally(() => active.delete(result)).catch(() => {})
+    return result
+  }
+  return Object.assign(handler, {
+    drain: async () => {
+      drainingAdmission = true
+      // Keep metadata reads serving while the already admitted work settles.
+      await Promise.allSettled([...active])
+      await binaryPublisher?.drain()
+    },
+  })
+
 }
 
 export function createServer(
@@ -2037,7 +2061,10 @@ export function createServer(
         if (server === current) server = null
       })
     }
-    draining ??= Promise.resolve(current.stop(false)).finally(() => {
+    draining ??= (async () => {
+      await handler.drain()
+      await current.stop(false)
+    })().finally(() => {
       if (server === current) server = null
       draining = null
     })

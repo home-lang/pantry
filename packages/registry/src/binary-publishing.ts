@@ -831,6 +831,17 @@ export class BinaryArtifactPublisher {
     return state
   }
 
+  /** Caller must fence new publication admission before awaiting detached work. */
+  async drain(): Promise<void> {
+    while (true) {
+      const pending = [...this.completing.values()].filter(state => state.settledAt === undefined)
+      if (!pending.length) return
+      // A blocked or failed publication is a settled fail-closed result. Its
+      // failure must not prevent other accepted completions from draining.
+      await Promise.allSettled(pending.map(state => state.promise))
+    }
+  }
+
   /**
    * Drop settled completions once no client can still be polling for them.
    *

@@ -1651,3 +1651,38 @@ describe('a retry does not start a competing scan', () => {
       .rejects.toThrow(/blocked by malware scanning/)
   })
 })
+
+
+it('server drain keeps native metadata readable while a detached completion settles and fences new writes', async () => {
+  const port = await getAvailablePort(), base = `http://127.0.0.1:${port}`
+  const store = new MemoryArtifactStore(), scanner = new ControlledTestScanner()
+  const publisher = new BinaryArtifactPublisher(store, scanner, { tokenSecret: 'test-secret-that-is-long-enough', completionResponseBudgetMs: 10 })
+  const bytes = Buffer.from('drained clean artifact'), initiated = publisher.initiate(request(bytes))
+  await store.putObject(store.lastUploadKey, bytes, 'application/gzip')
+  await expect(publisher.complete(initiated.uploadId, '_admin')).rejects.toMatchObject({ status: 425 })
+  await scanner.started
+  const server = createServer(createLocalRegistry(base), port, new InMemoryAnalytics(), new InMemoryZigStorage(), {
+    getObject: async () => Buffer.from(JSON.stringify({ name: 'curl.se', versions: {}, latestVersion: '1.0.0' })),
+  }, undefined, new InMemoryAuthStorage(), scanner, publisher)
+  server.start()
+  let draining: Promise<void> | undefined, drained = false
+  try {
+    draining = server.stop(false).then(() => { drained = true })
+    const metadata = await fetch(`${base}/binaries/curl.se/metadata.json`)
+    expect(metadata.status).toBe(200)
+    expect(await metadata.json()).toMatchObject({ name: 'curl.se' })
+    expect(drained).toBe(false)
+    const refused = await fetch(`${base}/api/v1/binaries/uploads`, { method: 'POST', body: '{}' })
+    expect(refused.status).toBe(503)
+    expect(await refused.json()).toMatchObject({ code: 'REGISTRY_DRAINING' })
+    scanner.release()
+    await draining
+    expect(store.files.has('binaries/example.com/tool/metadata.json')).toBe(true)
+    expect(scanner.contexts).toHaveLength(1)
+  }
+  finally {
+    scanner.release()
+    await server.stop(true)
+    await draining
+  }
+})
