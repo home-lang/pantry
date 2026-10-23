@@ -3,7 +3,7 @@
  *
  * @domain `xplr.dev`
  * @programs `xplr`
- * @version `1.1.3` (49 versions available)
+ * @version `1.2.1` (51 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install xplr.dev`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "xplr"
  * console.log(pkg.description) // "A hackable, minimal, fast TUI file explorer"
  * console.log(pkg.programs)    // ["xplr"]
- * console.log(pkg.versions[0]) // "1.1.3" (latest)
+ * console.log(pkg.versions[0]) // "1.2.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/xplr-dev.md
@@ -60,6 +60,8 @@ export const xplrdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.2.1',
+    '1.2.0',
     '1.1.3',
     '1.1.2',
     '1.1.1',

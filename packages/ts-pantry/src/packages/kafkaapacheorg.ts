@@ -3,7 +3,7 @@
  *
  * @domain `kafka.apache.org`
  * @programs `connect-distributed.sh`, `connect-mirror-maker.sh`, `connect-plugin-path.sh`, `connect-standalone.sh`, `kafka-acls.sh`, ... (+36 more)
- * @version `4.3.2` (23 versions available)
+ * @version `4.4.0` (24 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install kafka.apache.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "kafka.apache"
  * console.log(pkg.description) // "Mirror of Apache Kafka"
  * console.log(pkg.programs)    // ["connect-distributed.sh", "connect-mirror-maker.sh", ...]
- * console.log(pkg.versions[0]) // "4.3.2" (latest)
+ * console.log(pkg.versions[0]) // "4.4.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/kafka-apache-org.md
@@ -113,6 +113,7 @@ export const kafkaapacheorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.4.0',
     '4.3.2',
     '4.3.1',
     '4.3.0',
