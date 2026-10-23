@@ -12,8 +12,14 @@ export function makeCrc64SourcePortable(source: string): string {
 
 export function assertPortableActionBundle(bundle: string, workspaceRoot: string): void {
   const normalizedRoot = workspaceRoot.replaceAll('\\', '/')
+  // A short build root can also be a valid runtime namespace, URL component,
+  // MIME prefix or default work directory. Detect quoted absolute child paths
+  // emitted for concrete build inputs instead of arbitrary substring matches.
+  const roots = [normalizedRoot, JSON.stringify(workspaceRoot).slice(1, -1)]
+  const hasBuildPath = roots.some(root => ['"', "'", '`'].some(quote =>
+    bundle.includes(`${quote}${root}/`) || bundle.includes(`${quote}${root}\\`)))
   const violations = [
-    bundle.includes(normalizedRoot) || bundle.includes(JSON.stringify(workspaceRoot).slice(1, -1)) ? `build-host workspace path ${normalizedRoot}` : '',
+    hasBuildPath ? `build-host workspace path ${normalizedRoot}` : '',
     bundle.includes(`createRequire("file://${normalizedRoot}`) ? `build-host createRequire URL ${normalizedRoot}` : '',
     bundle.includes(`file://${normalizedRoot}`) ? `build-host file URL ${normalizedRoot}` : '',
     /file:\/\/\/[A-Za-z]:\//.test(bundle) ? 'Windows build-time file URL' : '',

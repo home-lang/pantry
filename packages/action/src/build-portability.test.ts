@@ -29,6 +29,15 @@ describe('GitHub Action build portability', () => {
     expect(() => assertPortableActionBundle('const p = "file:///D:/a/repo"', '/workspace/pantry')).toThrow('Windows build-time file URL')
   })
 
+  test('distinguishes concrete quoted build inputs from application namespaces', () => {
+    const portable = 'const mime = /application\\/json/; const route = "GET /app/installations"; const workdir = "/app"; const site = "https://example.com/app/source"'
+    expect(() => assertPortableActionBundle(portable, '/app')).not.toThrow()
+    const bundle = readFileSync(new URL('../dist/index.js', import.meta.url), 'utf8')
+    expect(() => assertPortableActionBundle(bundle, '/app')).not.toThrow()
+    expect(() => assertPortableActionBundle('const path = "/app/src/module.ts"', '/app')).toThrow('build-host workspace path')
+    expect(() => assertPortableActionBundle('const path = `/app/node_modules/package`', '/app')).toThrow('build-host workspace path')
+  })
+
   test('ships release asset publication retries in the committed bundle', () => {
     const bundle = readFileSync(new URL('../dist/index.js', import.meta.url), 'utf8')
     expect(bundle).toContain('remained unavailable after')
