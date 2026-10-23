@@ -9,12 +9,13 @@
  * defaults to AWS S3. Can fall back to the system package manager if not found.
  */
 
+import type { ObjectStorageProvider } from '@stacksjs/ts-cloud'
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { homedir, platform, arch } from 'node:os'
-import { createObjectStorageClient } from './object-storage'
+import { createObjectStorageClient } from '@stacksjs/ts-cloud'
 import { obtainBuildArchive } from '../../action/src/build-archive-cache'
 
 /**
@@ -22,7 +23,7 @@ import { obtainBuildArchive } from '../../action/src/build-archive-cache'
  * --region flag applies; for B2/Hetzner region/endpoint/credentials come from env.
  */
 function makeStorageClient(region: string) {
-  const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
+  const provider = (process.env.STORAGE_PROVIDER || 'aws') as ObjectStorageProvider
   return createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })
 }
 

@@ -14,6 +14,11 @@
 
 ## Dependencies
 
+- Improve our libraries and tools at their sources under `~/Code/Libraries/`
+  when Pantry needs a missing capability or fix. Add the change and relevant
+  checks there, run that library's `bun run release:patch`, then install the
+  published release in Pantry. Prefer this workflow over local compatibility
+  wrappers or vendored copies of our own libraries.
 - **buddy-bot** handles dependency updates — not renovatebot
 - **better-dx** provides shared dev tooling as peer dependencies — do not install its peers (e.g., `typescript`, `pickier`, `bun-plugin-dtsx`) separately if `better-dx` is already in `package.json`
 - If `better-dx` is in `package.json`, ensure `bunfig.toml` includes `linker = "hoisted"`

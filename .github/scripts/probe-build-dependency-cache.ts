@@ -2,12 +2,13 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { downloadDependencies } from '../../packages/ts-pantry/scripts/build-package'
-import { createObjectStorageClient } from '../../packages/ts-pantry/scripts/object-storage'
+import type { ObjectStorageProvider } from '@stacksjs/ts-cloud'
+import { createObjectStorageClient } from '@stacksjs/ts-cloud'
 
 if (process.env.PANTRY_BUILD_CACHE_READY !== 'true') throw new Error('GitHub archive cache was not configured by Setup Pantry')
 const bucket = process.env.S3_BUCKET || 'pantry-registry'
 const region = process.env.S3_REGION || 'us-east-1'
-const s3 = createObjectStorageClient({ provider: process.env.STORAGE_PROVIDER as 'hetzner' | 'aws' | 'backblaze' })
+const s3 = createObjectStorageClient({ provider: process.env.STORAGE_PROVIDER as ObjectStorageProvider })
 const requireHit = process.env.REQUIRE_SHARED_CACHE_HIT === 'true'
 let originRequests = 0
 const storage = {
