@@ -482,6 +482,9 @@ const provision_script =
     \\fi
     \\chmod 600 "$env_file"
     \\
+    \\shutdown_seconds=$(cd "$repo_path" && env -u CLAMD_MAX_ADMISSION_WAIT_MS "$bun_bin" --env-file="$env_file" -e 'import { registrySystemdStopTimeoutSeconds } from "./packages/registry/src/shutdown.ts"; console.log(registrySystemdStopTimeoutSeconds())')
+    \\case "$shutdown_seconds" in ''|*[!0-9]*) echo "Invalid registry shutdown policy" >&2; exit 1;; esac
+    \\
     \\cat > "/etc/systemd/system/${service}.service" <<UNIT
     \\[Unit]
     \\Description=Pantry Registry
@@ -498,7 +501,7 @@ const provision_script =
     \\Restart=always
     \\RestartSec=5
     \\# Drain the bounded scanner/request work and persist registry snapshots.
-    \\TimeoutStopSec=300
+    \\TimeoutStopSec=${shutdown_seconds}
     \\MemoryAccounting=yes
     \\# Sized above the service's observed working set (~400 MB serving the
     \\# registry and coordinating scans), not below it. A MemoryHigh under the

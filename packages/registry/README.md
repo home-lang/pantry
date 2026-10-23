@@ -358,16 +358,18 @@ MIT
 
 ### Shutdown and deployment
 
-The server entrypoint owns SIGTERM and SIGINT. Shutdown stops new admission,
-waits for active responses, then flushes package, Zig, PHP, auth, analytics,
-build-status and egress snapshots. Repeated shutdown requests share the same
-drain. A persistence failure is reported with a nonzero exit after every owned
-store has had a flush attempt.
+The server entrypoint owns SIGTERM and SIGINT. Shutdown fences new write
+admission, keeps metadata reads serving while admitted requests and detached
+binary completions settle, then closes the listener and flushes package, Zig,
+PHP, auth, analytics, build-status and egress snapshots. Repeated shutdown
+requests share the same drain. A persistence failure is reported with a nonzero
+exit after every owned store has had a flush attempt.
 
-The shutdown backstop is 285 seconds, above the scanner worker's 270-second
-maximum. Both the maintained systemd setup and deployment drop-in allow 300
-seconds before service-manager termination. These are shutdown limits; active
-request, scan, proxy and client deadlines retain their existing values.
+The finite shutdown backstop derives from the maintained maximum scan and
+configured scan-queue limits, with worker disposal and persistence allowances.
+Both systemd setup and the deployment drop-in evaluate that same policy using
+the service environment file, adding 15 seconds for termination reporting.
+Active request, scan, proxy and client deadlines retain their existing values.
 
 This protects accepted state during a normal service stop. Deployment still
 restarts the live service and scanner. Continuous read availability, an immutable

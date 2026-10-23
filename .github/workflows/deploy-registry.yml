@@ -59,7 +59,9 @@ jobs:
     needs: [verify, source-ci]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Admitted scans retain their existing size-derived deadline. The service
+    # owns a finite drain budget; a deployment must wait for its actual result.
+    timeout-minutes: 360
     permissions:
       contents: read
 
@@ -290,6 +292,10 @@ jobs:
             # CPUWeight sits above clamd's 25 and below rpx's 500: the registry
             # answers requests, so it must outrank the scanning it dispatches,
             # and still yield to the gateway that fronts every tenant.
+            install -d -m 0755 "$(dirname "$ENV_FILE")"
+            [ -f "$ENV_FILE" ] || install -m 0600 /dev/null "$ENV_FILE"
+            SHUTDOWN_SECONDS=$(env -u CLAMD_MAX_ADMISSION_WAIT_MS "$BUN" --env-file="$ENV_FILE" -e 'import { registrySystemdStopTimeoutSeconds } from "./packages/registry/src/shutdown.ts"; console.log(registrySystemdStopTimeoutSeconds())')
+            case "$SHUTDOWN_SECONDS" in ''|*[!0-9]*) echo "Invalid registry shutdown policy" >&2; exit 1;; esac
             REGISTRY_CAPACITY_DIR="/etc/systemd/system/${SERVICE}.service.d"
             install -d -m 0755 "$REGISTRY_CAPACITY_DIR"
             REGISTRY_CAPACITY_TMP=$(mktemp "$REGISTRY_CAPACITY_DIR/pantry-registry-capacity.conf.XXXXXX")
@@ -301,7 +307,7 @@ jobs:
               'CPUWeight=80' \
               'IOWeight=80' \
               'TasksMax=256' \
-              'TimeoutStopSec=300' \
+              "TimeoutStopSec=$SHUTDOWN_SECONDS" \
               > "$REGISTRY_CAPACITY_TMP"
             mv -f "$REGISTRY_CAPACITY_TMP" "$REGISTRY_CAPACITY_DIR/pantry-registry-capacity.conf"
 
