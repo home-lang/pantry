@@ -24,25 +24,27 @@
 
     <!-- Controls -->
     <div class="flex flex-wrap items-center gap-3 mb-3">
-      <input id="filter" type="text" placeholder="filter packages…" autocomplete="off" spellcheck="false"
+      <input id="filter" aria-label="Filter packages" type="text" placeholder="filter packages…" autocomplete="off" spellcheck="false"
         class="font-mono" style="flex: 1 1 220px; min-width: 200px; padding: 0.5rem 0.75rem; font-size: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--fg);" />
       <label class="flex items-center gap-2" style="font-size: 0.8125rem; color: var(--fg-muted);">
         <input id="group-status" type="checkbox" checked /> group by status
       </label>
-      <span id="live-dot" title="live updates" style="font-size:0.7rem;color:var(--fg-subtle)">○ live</span>
+      <span id="live-dot" role="status" title="live updates" style="font-size:0.7rem;color:var(--fg-subtle)">○ live</span>
       <span id="rowcount" class="font-mono" style="font-size: 0.8125rem; color: var(--fg-subtle);"></span>
     </div>
     <!-- Status filter chips (building first so in-flight builds are easy to find) -->
-    <div class="flex flex-wrap items-center gap-2 mb-4" id="status-chips">
-      <button class="chip chip-on" data-status="all">all</button>
-      <button class="chip" data-status="building">● building</button>
-      <button class="chip" data-status="failed">✗ failed</button>
-      <button class="chip" data-status="queued">queued</button>
-      <button class="chip" data-status="incomplete">incomplete</button>
-      <button class="chip" data-status="unbuilt">unbuilt</button>
-      <button class="chip" data-status="ok">✓ complete</button>
+    <div class="flex flex-wrap items-center gap-2 mb-4" id="status-chips" role="group" aria-label="Build status">
+      <button class="chip chip-on" aria-pressed="true" data-status="all">all</button>
+      <button class="chip" aria-pressed="false" data-status="building">● building</button>
+      <button class="chip" aria-pressed="false" data-status="failed">✗ failed</button>
+      <button class="chip" aria-pressed="false" data-status="queued">queued</button>
+      <button class="chip" aria-pressed="false" data-status="incomplete">incomplete</button>
+      <button class="chip" aria-pressed="false" data-status="unbuilt">unbuilt</button>
+      <button class="chip" aria-pressed="false" data-status="ok">✓ complete</button>
     </div>
 
+    <p id="build-message" role="alert" class="text-sm mb-3" style="color: var(--red);" hidden></p>
+    <button id="retry-builds" class="copy-btn mb-3" hidden>Retry loading packages</button>
     <!-- Table -->
     <div class="rounded-lg overflow-x-auto" style="border: 1px solid var(--border);">
       <table class="w-full" style="border-collapse: collapse; font-size: 0.85rem;">
@@ -64,6 +66,11 @@
         </tbody>
       </table>
     </div>
+    <nav id="build-pages" class="flex flex-wrap items-center justify-between gap-3 mt-3" aria-label="Build result pages" hidden>
+      <button id="build-prev" class="copy-btn">Previous</button>
+      <span id="build-page-summary" class="text-sm" role="status"></span>
+      <button id="build-next" class="copy-btn">Next</button>
+    </nav>
     <p class="mt-3" style="font-size: 0.75rem; color: var(--fg-subtle);" id="updated"></p>
 
     <!-- Unavailable versions: requested by a build but don't exist upstream
@@ -80,7 +87,7 @@
           These versions were requested by a build but have no source tarball and no prebuilt binary upstream — they 404. They are not failures and don't count against coverage. A version disappears from this list once it builds successfully.
         </p>
         <div class="flex flex-wrap items-center gap-3 mb-3">
-          <input id="unavail-filter" type="text" placeholder="filter by domain / version…" autocomplete="off" spellcheck="false"
+          <input id="unavail-filter" aria-label="Filter unavailable versions" type="text" placeholder="filter by domain / version…" autocomplete="off" spellcheck="false"
             class="font-mono" style="flex: 1 1 220px; min-width: 200px; padding: 0.45rem 0.7rem; font-size: 0.82rem; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--fg);" />
           <span id="unavail-rowcount" class="font-mono" style="font-size: 0.8125rem; color: var(--fg-subtle);"></span>
         </div>
@@ -88,10 +95,10 @@
           <table class="w-full" style="border-collapse: collapse; font-size: 0.82rem;">
             <thead>
               <tr style="background: var(--bg-subtle); color: var(--fg-subtle);">
-                <th class="unavail-th" data-sort="domain" style="text-align:left;padding:0.55rem 0.75rem;font-weight:500;cursor:pointer">package &amp; version</th>
-                <th class="unavail-th" data-sort="platform" style="text-align:left;padding:0.55rem 0.5rem;font-weight:500;cursor:pointer">platform</th>
+                <th class="" style="text-align:left;padding:0.55rem 0.75rem;font-weight:500;cursor:pointer"><button class="unavail-th" data-sort="domain" style="background:none;border:none;color:inherit;font:inherit;cursor:pointer">package &amp; version</button></th>
+                <th class="" style="text-align:left;padding:0.55rem 0.5rem;font-weight:500;cursor:pointer"><button class="unavail-th" data-sort="platform" style="background:none;border:none;color:inherit;font:inherit;cursor:pointer">platform</button></th>
                 <th style="text-align:left;padding:0.55rem 0.5rem;font-weight:500">reason</th>
-                <th class="unavail-th col-lastseen" data-sort="lastSeen" style="text-align:right;padding:0.55rem 0.75rem;font-weight:500;cursor:pointer">last seen</th>
+                <th class=" col-lastseen" style="text-align:right;padding:0.55rem 0.75rem;font-weight:500;cursor:pointer"><button class="unavail-th" data-sort="lastSeen" style="background:none;border:none;color:inherit;font:inherit;cursor:pointer">last seen</button></th>
               </tr>
             </thead>
             <tbody id="unavail-rows">
@@ -104,7 +111,7 @@
   </div>
 
   <!-- Live log drawer (lives OUTSIDE the table so re-renders never disturb it) -->
-  <div id="logdrawer" style="display:none">
+  <div id="logdrawer" role="region" aria-label="Build logs" hidden>
     <div class="ld-head">
       <div style="display:flex;align-items:center;gap:0.6rem;min-width:0">
         <span id="ld-status" class="ld-pill"></span>
@@ -113,10 +120,10 @@
       </div>
       <div style="display:flex;align-items:center;gap:0.5rem">
         <label class="ld-foll"><input type="checkbox" id="ld-follow" checked /> follow</label>
-        <button id="ld-close" class="ld-close" title="close">✕</button>
+        <button id="ld-close" class="ld-close" aria-label="Close build logs">✕</button>
       </div>
     </div>
-    <pre id="logpre" class="log-panel"></pre>
+    <pre id="logpre" tabindex="0" class="log-panel"></pre>
   </div>
 
   <style>
@@ -125,8 +132,6 @@
     .stat-card { border-radius: 0.5rem; padding: 0.85rem 1rem; background: var(--bg-subtle); border: 1px solid var(--border); }
     .stat-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.625rem; color: var(--fg-subtle); margin-bottom: 0.25rem; }
     .stat-num { font-size: 1.5rem; font-weight: 600; font-family: ui-monospace, monospace; }
-    .stat-num.bump { animation: statbump 0.4s ease; }
-    @keyframes statbump { 0%{transform:scale(1)} 40%{transform:scale(1.18)} 100%{transform:scale(1)} }
     #rows tr.pkg-row { border-top: 1px solid var(--border); cursor: pointer; }
     #rows tr.pkg-row:hover { background: var(--bg-subtle); }
     #rows tr.pkg-row.open { background: color-mix(in srgb, var(--accent) 12%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
@@ -163,7 +168,7 @@
     .host-local { border-color: var(--border); }
     /* live log drawer — fixed to the bottom, never rebuilt by the table render */
     #logdrawer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; background: #0b0b0d; border-top: 1px solid var(--border); box-shadow: 0 -8px 24px rgba(0,0,0,0.4); }
-    .ld-head { display:flex; align-items:center; justify-content:space-between; gap:0.75rem; padding: 0.5rem 1rem; border-bottom: 1px solid #1c1c20; color: #d4d4d8; font-size: 0.8rem; }
+    .ld-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:0.75rem; padding: 0.5rem 1rem; border-bottom: 1px solid #1c1c20; color: #d4d4d8; font-size: 0.8rem; }
     .ld-pill { font-size:0.66rem; font-weight:600; padding:0.1rem 0.45rem; border-radius:0.3rem; border:1px solid currentColor; }
     .ld-foll { font-size:0.7rem; color:#9ca3af; display:flex; align-items:center; gap:0.3rem; cursor:pointer; }
     .ld-close { background:transparent; border:none; color:#9ca3af; cursor:pointer; font-size:1rem; line-height:1; padding:0 0.25rem; }
@@ -188,6 +193,12 @@
     (function () {
       var PLATS = ['darwin-arm64', 'darwin-x86-64', 'linux-x86-64', 'linux-arm64']
       var packages = []
+      var pageIndex = 0
+      var pageSize = 100
+      var disposed = false
+      var intervals = new Set()
+      var pageRequests = new AbortController()
+      function trackInterval(callback, delay) { var id = setInterval(callback, delay); intervals.add(id); return id }
       var totals = { publishedVersions: 0 }
       var status = { building: [], recent: [], queue: [] }
       var queued = {}
@@ -291,7 +302,7 @@
         }
         return '<tr class="pkg-row' + (openLog === p.domain ? ' open' : '') + '" data-domain="' + esc(p.domain) + '">'
           + '<td style="padding:0.55rem 0.75rem"><a class="font-mono hvr-accent" href="/package/' + encodeURIComponent(p.domain) + '" style="color:var(--fg)" onclick="event.stopPropagation()">' + esc(p.domain) + '</a>' + msg + '</td>'
-          + '<td style="padding:0.55rem">' + badge(st) + '</td>'
+          + '<td style="padding:0.55rem"><button class="log-open" data-domain="' + esc(p.domain) + '" aria-label="View build logs for ' + esc(p.domain) + '" aria-controls="logdrawer" aria-expanded="' + (openLog === p.domain) + '" style="background:none;border:none;cursor:pointer">' + badge(st) + '</button></td>'
           + '<td class="font-mono" style="padding:0.55rem;color:var(--fg-subtle)">' + esc(p.latestVersion || '—') + '</td>'
           + cells
           + '<td class="col-lastbuilt" style="padding:0.55rem;color:var(--fg-subtle)">' + relTime(p.lastBuilt) + '</td>'
@@ -300,6 +311,10 @@
       }
 
       function render() {
+        if (disposed) return
+        var focused = document.activeElement
+        var focusedDomain = focused && focused.getAttribute('data-domain')
+        var focusedKind = focused && focused.matches('.log-open') ? '.log-open' : '.rebuild-btn'
         var bm = buildingMap()
         var q = (document.getElementById('filter').value || '').toLowerCase()
         var groupBy = document.getElementById('group-status').checked
@@ -317,7 +332,10 @@
         for (var k = 0; k < list.length; k++) counts[list[k].st] = (counts[list[k].st] || 0) + 1
         var rows = []
         var curGroup = null
-        for (var m = 0; m < list.length; m++) {
+        pageIndex = Math.min(pageIndex, Math.max(0, Math.ceil(list.length / pageSize) - 1))
+        var start = pageIndex * pageSize
+        var end = Math.min(start + pageSize, list.length)
+        for (var m = start; m < end; m++) {
           var it = list[m]
           if (groupBy && statusFilter === 'all' && it.st !== curGroup) {
             curGroup = it.st
@@ -329,7 +347,15 @@
           ? rows.join('')
           : '<tr><td colspan="9" style="padding:2rem;text-align:center;color:var(--fg-subtle)">no matches</td></tr>'
         document.getElementById('rowcount').textContent = list.length + ' / ' + packages.length
+        document.getElementById('build-pages').hidden = list.length <= pageSize
+        document.getElementById('build-page-summary').textContent = 'Showing ' + (list.length ? start + 1 : 0) + '–' + end + ' of ' + list.length
+        document.getElementById('build-prev').disabled = pageIndex === 0
+        document.getElementById('build-next').disabled = end >= list.length
         wireRows()
+        if (focusedDomain) {
+          var replacement = document.querySelector(focusedKind + '[data-domain="' + CSS.escape(focusedDomain) + '"]')
+          if (replacement) replacement.focus({ preventScroll: true })
+        }
       }
 
       // Throttle full table re-renders so a flood of SSE events can't thrash the
@@ -341,7 +367,10 @@
         renderTimer = setTimeout(function () { renderTimer = null; lastRender = Date.now(); render() }, wait)
       }
 
-      function bump(el) { if (!el) return; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump') }
+      function bump(el) {
+        if (!el || document.documentElement.classList.contains('no-animations') || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+        el.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 400 })
+      }
       function setStat(id, val) { var el = document.getElementById(id); if (el && el.textContent !== String(val)) { el.textContent = val; bump(el) } }
       function renderActionsSummary() {
         var gh = status.githubActions || {}
@@ -398,17 +427,21 @@
         document.getElementById('ld-title').textContent = domain
         document.getElementById('ld-title').href = '/package/' + encodeURIComponent(domain)
         logpre.textContent = 'loading logs…'
-        drawer.style.display = 'block'
+        drawer.hidden = false
         document.body.style.paddingBottom = '46vh'
         updateDrawerHeader()
         loadLogs(domain)
         render() // highlight the open row
+        document.getElementById('ld-close').focus({ preventScroll: true })
       }
       function closeDrawer() {
+        var previousDomain = openLog
         openLog = null
-        drawer.style.display = 'none'
+        drawer.hidden = true
         document.body.style.paddingBottom = ''
         render()
+        var trigger = previousDomain && document.querySelector('.log-open[data-domain="' + CSS.escape(previousDomain) + '"]')
+        if (trigger) trigger.focus({ preventScroll: true })
       }
       function updateDrawerHeader() {
         if (!openLog) return
@@ -423,7 +456,7 @@
         document.getElementById('ld-host').innerHTML = hostChip(r.host ? r : null)
       }
       function loadLogs(domain) {
-        fetch('/api/build-logs/' + encodeURIComponent(domain)).then(function (r) { return r.json() }).then(function (d) {
+        fetch('/api/build-logs/' + encodeURIComponent(domain), { signal: pageRequests.signal }).then(function (r) { return r.json() }).then(function (d) {
           if (openLog !== domain) return
           var lines = (d && d.logs) || []
           var sig = lines.length + ':' + (lines.length ? lines[lines.length - 1].ts : 0)
@@ -436,19 +469,29 @@
           for (var i = 0; i < lines.length; i++) html += '<span class="ll-' + esc(lines[i].state) + '">' + esc(lines[i].text) + '</span>\n'
           logpre.innerHTML = html
           if (follow && atBottom) logpre.scrollTop = logpre.scrollHeight
-        }).catch(function () {})
+        }).catch(function () { if (!disposed && openLog === domain) logpre.textContent = 'Unable to load logs. Retrying…' })
       }
       function updateDrawer() { if (openLog) { updateDrawerHeader(); loadLogs(openLog) } }
       document.getElementById('ld-close').onclick = closeDrawer
+      function handleLogsKey(event) { if (event.key === 'Escape' && openLog) closeDrawer() }
+      document.addEventListener('keydown', handleLogsKey)
 
       function wireRows() {
         var rows = document.querySelectorAll('#rows tr.pkg-row')
         for (var i = 0; i < rows.length; i++) {
-          rows[i].onclick = function () {
+          rows[i].onclick = function (event) {
+            if (event.target.closest('a, button')) return
             var domain = this.getAttribute('data-domain')
             if (openLog === domain) closeDrawer(); else openDrawer(domain)
           }
         }
+        document.querySelectorAll('.log-open').forEach(function(button) {
+          button.onclick = function(event) {
+            event.stopPropagation()
+            var domain = button.getAttribute('data-domain')
+            if (openLog === domain) closeDrawer(); else openDrawer(domain)
+          }
+        })
         var btns = document.querySelectorAll('.rebuild-btn')
         for (var j = 0; j < btns.length; j++) {
           btns[j].onclick = function (ev) {
@@ -456,66 +499,88 @@
             var domain = this.getAttribute('data-domain'), btn = this
             btn.disabled = true; btn.textContent = '…'
             fetch('/api/rebuild', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain: domain }) })
-              .then(function (r) { if (r.status === 401) { btn.disabled = false; btn.textContent = 'login'; return null } return r.json() })
-              .then(function (d) { if (d) { queued[domain] = true; btn.textContent = 'queued' } })
-              .catch(function () { btn.disabled = false; btn.textContent = 'retry' })
+              .then(function (r) { return r.json().then(function(data) { if (!r.ok) throw new Error(data.error || 'Unable to queue rebuild. Please try again.'); return data }) })
+              .then(function (d) { if (!disposed && d) { queued[domain] = true; btn.textContent = 'queued' } })
+              .catch(function (error) { if (disposed) return; btn.disabled = false; btn.textContent = 'retry'; var message = document.getElementById('build-message'); message.textContent = error.message; message.hidden = false })
           }
         }
       }
 
       function loadPackages() {
-        return fetch('/api/packages').then(function (r) { return r.json() }).then(function (d) {
+        return fetch('/api/packages', { signal: pageRequests.signal }).then(function (r) { if (!r.ok) throw new Error('Package data unavailable'); return r.json() }).then(function (d) {
           packages = d.packages || []; totals = d.totals || totals
           var el = document.getElementById('updated')
           if (el) el.textContent = 'coverage as of ' + new Date(d.generatedAt).toLocaleTimeString()
         })
       }
       function loadStatus() {
-        return fetch('/api/build-status').then(function (r) { return r.json() }).then(function (d) {
+        return fetch('/api/build-status', { signal: pageRequests.signal }).then(function (r) { if (!r.ok) throw new Error('Build status unavailable'); return r.json() }).then(function (d) {
           status = d || status; status.queue = status.queue || []; status.building = status.building || []; status.recent = status.recent || []
+          queued = {}
           for (var i = 0; i < status.queue.length; i++) queued[status.queue[i]] = true
         })
       }
-      function refreshAll() { Promise.all([loadPackages(), loadStatus()]).then(function () { renderSummary(); render() }) }
+      function refreshAll() {
+        var retry = document.getElementById('retry-builds')
+        retry.disabled = true
+        Promise.all([loadPackages(), loadStatus()]).then(function () {
+          if (disposed) return
+          document.getElementById('build-message').hidden = true
+          retry.hidden = true
+          renderSummary(); render()
+        }).catch(function () {
+          if (disposed) return
+          var message = document.getElementById('build-message')
+          message.textContent = 'Unable to load package/build data. Please try again.'
+          message.hidden = false
+          retry.hidden = false
+        }).finally(function () { retry.disabled = false })
+      }
+      document.getElementById('retry-builds').onclick = refreshAll
+      document.getElementById('build-prev').onclick = function() { pageIndex--; render() }
+      document.getElementById('build-next').onclick = function() { pageIndex++; render() }
 
       var lastBuiltTs = 0
       function applyStatus(d) {
+        if (disposed) return
         status = d || status
         status.queue = status.queue || []; status.building = status.building || []; status.recent = status.recent || []
+        queued = {}
         for (var i = 0; i < status.queue.length; i++) queued[status.queue[i]] = true
+        if (document.hidden) return
         renderSummary()      // cards: live, cheap
         updateDrawer()       // open log: live, independent of the table
         scheduleRender()     // table: throttled
         var r = status.recent[0]
-        if (r && r.state === 'built' && r.ts > lastBuiltTs) { lastBuiltTs = r.ts; loadPackages().then(function () { renderSummary(); scheduleRender() }) }
+        if (r && r.state === 'built' && r.ts > lastBuiltTs) { lastBuiltTs = r.ts; loadPackages().then(function () { if (!disposed) { renderSummary(); scheduleRender() } }).catch(function() { setLive(false) }) }
       }
 
-      document.getElementById('filter').addEventListener('input', render)
+      document.getElementById('filter').addEventListener('input', function() { pageIndex = 0; render() })
       document.getElementById('group-status').addEventListener('change', render)
       var chips = document.querySelectorAll('#status-chips .chip')
       for (var ci = 0; ci < chips.length; ci++) {
         chips[ci].onclick = function () {
           statusFilter = this.getAttribute('data-status')
-          for (var k = 0; k < chips.length; k++) chips[k].className = 'chip'
-          this.className = 'chip chip-on'; render()
+          for (var k = 0; k < chips.length; k++) { chips[k].className = 'chip'; chips[k].setAttribute('aria-pressed', 'false') }
+          this.className = 'chip chip-on'; this.setAttribute('aria-pressed', 'true'); pageIndex = 0; render()
         }
       }
 
       // Only signed-in users get the rebuild column. CSS (.col-action / body.auth-in)
       // shows/hides it; rebuilds are gated server-side regardless of the UI.
-      fetch('/auth/me', { credentials: 'include' })
+      fetch('/auth/me', { credentials: 'include', signal: pageRequests.signal })
         .then(function (r) { return r.ok ? r.json() : null })
-        .then(function (d) { if (d && d.user) { IS_LOGGED_IN = true; document.body.classList.add('auth-in') } })
+        .then(function (d) { if (!disposed && d && d.user) { IS_LOGGED_IN = true; document.body.classList.add('auth-in') } })
         .catch(function () {})
 
       refreshAll()
-      setInterval(function () { loadPackages().then(renderSummary) }, 60000) // coverage refresh
-      setInterval(updateDrawer, 1500) // live log tail while a drawer is open
+      trackInterval(function () { if (!document.hidden) loadPackages().then(function() { if (!disposed) { renderSummary(); scheduleRender() } }).catch(function() { setLive(false) }) }, 60000) // coverage refresh
+      trackInterval(function() { if (!document.hidden) updateDrawer() }, 1500) // live log tail while a drawer is open
 
-      function setLive(on) { var d = document.getElementById('live-dot'); if (d) { d.textContent = on ? '● live' : '○ reconnecting'; d.style.color = on ? 'var(--green)' : 'var(--fg-subtle)' } }
+      function setLive(on) { if (disposed) return; var d = document.getElementById('live-dot'); if (d) { d.textContent = on ? '● live' : '○ reconnecting'; d.style.color = on ? 'var(--green)' : 'var(--fg-subtle)' } }
       var statusPoll = null
-      function startStatusPolling() { if (statusPoll) return; setLive(false); statusPoll = setInterval(function () { loadStatus().then(function () { renderSummary(); updateDrawer(); scheduleRender() }) }, 4000) }
-      function stopStatusPolling() { if (statusPoll) { clearInterval(statusPoll); statusPoll = null } }
+      function startStatusPolling() { if (disposed || statusPoll) return; setLive(false); statusPoll = trackInterval(function () { if (!document.hidden) loadStatus().then(function () { if (!disposed) { renderSummary(); updateDrawer(); scheduleRender() } }).catch(function() { setLive(false) }) }, 4000) }
+      function stopStatusPolling() { if (statusPoll) { clearInterval(statusPoll); intervals.delete(statusPoll); statusPoll = null } }
       if (window.EventSource) {
         try {
           var es = new EventSource('/api/build-events-stream')
@@ -561,7 +626,7 @@
         document.getElementById('unavail-rowcount').textContent = list.length + ' / ' + unavail.length
       }
       function loadUnavail() {
-        return fetch('/api/unavailable-versions').then(function (r) { return r.json() }).then(function (d) {
+        return fetch('/api/unavailable-versions', { signal: pageRequests.signal }).then(function (r) { return r.json() }).then(function (d) {
           unavail = (d && d.versions) || []
           renderUnavail()
         }).catch(function () {})
@@ -586,8 +651,27 @@
           }
         }
         loadUnavail()
-        setInterval(loadUnavail, 60000)
+        trackInterval(function() { if (!document.hidden) loadUnavail() }, 60000)
       }
+      function handleVisibility() { if (!document.hidden && !disposed) refreshAll() }
+      document.addEventListener('visibilitychange', handleVisibility)
+      function cleanup() {
+        if (disposed) return
+        disposed = true
+        intervals.forEach(function(id) { clearInterval(id) })
+        openLog = null
+        document.removeEventListener('keydown', handleLogsKey)
+        document.removeEventListener('visibilitychange', handleVisibility)
+        clearTimeout(renderTimer)
+        pageRequests.abort()
+        if (es) es.close()
+        document.body.style.paddingBottom = ''
+        document.body.classList.remove('auth-in')
+        window.removeEventListener('stx:navigate', cleanup)
+        window.removeEventListener('pagehide', cleanup)
+      }
+      window.addEventListener('stx:navigate', cleanup)
+      window.addEventListener('pagehide', cleanup)
     })()
   </script>
 </section>

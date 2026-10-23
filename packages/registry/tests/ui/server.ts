@@ -23,6 +23,14 @@ await registry.metadata.putVersion('curl.se', '8.12.0', {
   publishedAt: '2026-01-01T00:00:00.000Z',
   description: 'Transfer data with URLs',
 })
+for (let index = 1; index <= 25; index++) {
+  await registry.metadata.putVersion(`ui-fixture-${String(index).padStart(2, '0')}`, '1.0.0', {
+    name: `ui-fixture-${String(index).padStart(2, '0')}`,
+    version: '1.0.0',
+    publishedAt: '2026-01-01T00:00:00.000Z',
+    description: 'UI & fixture packages for pagination',
+  })
+}
 const metadata = Buffer.from(JSON.stringify({
   name: 'curl.se',
   description: 'Transfer data with URLs',

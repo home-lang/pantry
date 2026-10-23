@@ -97,7 +97,7 @@
   "devDependencies": {
     "@stacksjs/bunpress": "^0.2.8",
     "@stacksjs/clapp": "^0.2.10",
-    "@stacksjs/ts-cloud": "^0.9.2",
+    "@stacksjs/ts-cloud": "^0.16.68",
     "@types/tar-stream": "^3.1.4",
     "better-dx": "^0.2.6",
     "tar-stream": "^3.2.0"

@@ -4,6 +4,7 @@
 // Reads package metadata from src/packages and build instructions from src/recipes
 // Uses buildkit to generate bash build scripts from YAML recipes (like brewkit)
 
+import type { ObjectStorageProvider } from '@stacksjs/ts-cloud'
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { execFileSync, execSync } from 'node:child_process'
 import type { BuildArchiveOptions } from '../../action/src/build-archive-cache'
@@ -824,8 +825,8 @@ export async function downloadDependencies(
   archiveCache?: Pick<BuildArchiveOptions, 'cacheDir' | 'remote'>,
 ): Promise<Record<string, string>> {
   const s3 = storage ?? await (async () => {
-    const { createObjectStorageClient } = await import('./object-storage')
-    const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
+    const { createObjectStorageClient } = await import('@stacksjs/ts-cloud')
+    const provider = (process.env.STORAGE_PROVIDER || 'aws') as ObjectStorageProvider
     return createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })
   })()
   const depPaths: Record<string, string> = {}
@@ -1179,9 +1180,9 @@ export async function resolveVersionedBuildDependencyGraph(
 }
 
 async function publishedDependencyGraph(initial: Map<string, string>, platform: string, bucket: string, region: string): Promise<Map<string, string>> {
-  const { createObjectStorageClient } = await import('./object-storage')
+  const { createObjectStorageClient } = await import('@stacksjs/ts-cloud')
   const { loadRecipe } = await import('./recipe-loader')
-  const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
+  const provider = (process.env.STORAGE_PROVIDER || 'aws') as ObjectStorageProvider
   const storage = createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })
   const cache = new Map<string, Promise<BuildDependencyMetadata>>()
   const metadata = (domain: string) => {

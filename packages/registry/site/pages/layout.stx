@@ -153,10 +153,8 @@
       if(t==='system'){var d=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.dataset.theme=d?'dark':'light'}
       else if(t==='light'){document.documentElement.dataset.theme='light'}
       var a=localStorage.getItem('pantry-accent');
-      if(a){
-        var m={blue:['oklch(0.787 0.128 230.318)','oklch(0.55 0.18 230.318)'],purple:['oklch(0.7 0.15 300)','oklch(0.55 0.15 300)'],green:['oklch(0.723 0.15 155)','oklch(0.5 0.17 155)'],amber:['oklch(0.795 0.15 85)','oklch(0.6 0.15 85)'],red:['oklch(0.637 0.2 25)','oklch(0.5 0.2 25)'],pink:['oklch(0.7 0.15 350)','oklch(0.55 0.15 350)'],teal:['oklch(0.75 0.12 190)','oklch(0.5 0.15 190)'],orange:['oklch(0.75 0.15 55)','oklch(0.55 0.15 55)']};
-        var c=m[a];if(c){var isDark=(document.documentElement.dataset.theme||'dark')==='dark';document.documentElement.style.setProperty('--accent',isDark?c[0]:c[1])}
-      }
+      if(a){document.documentElement.dataset.accent=a;document.documentElement.style.removeProperty('--accent');document.documentElement.style.removeProperty('--accent-hover')}
+      document.documentElement.dataset.themePreference=t||'dark';
       if(localStorage.getItem('pantry-compact')==='true')document.documentElement.classList.add('compact');
       if(localStorage.getItem('pantry-animations')==='false')document.documentElement.classList.add('no-animations');
       } catch (_) { /* Defaults remain usable when storage is unavailable. */ }
@@ -202,17 +200,31 @@
       --purple: oklch(0.55 0.15 300);
     }
 
+    /* Accent colors resolve in CSS so every theme toggle stays consistent. */
+    [data-accent="blue"] { --accent-dark: oklch(0.787 0.128 230.318); --accent-light: oklch(0.55 0.18 230.318); --accent-hover-dark: oklch(0.85 0.128 230.318); --accent-hover-light: oklch(0.45 0.18 230.318); }
+    [data-accent="purple"] { --accent-dark: oklch(0.7 0.15 300); --accent-light: oklch(0.55 0.15 300); --accent-hover-dark: oklch(0.76 0.15 300); --accent-hover-light: oklch(0.45 0.15 300); }
+    [data-accent="green"] { --accent-dark: oklch(0.723 0.15 155); --accent-light: oklch(0.5 0.17 155); --accent-hover-dark: oklch(0.78 0.15 155); --accent-hover-light: oklch(0.4 0.17 155); }
+    [data-accent="amber"] { --accent-dark: oklch(0.795 0.15 85); --accent-light: oklch(0.6 0.15 85); --accent-hover-dark: oklch(0.85 0.15 85); --accent-hover-light: oklch(0.5 0.15 85); }
+    [data-accent="red"] { --accent-dark: oklch(0.637 0.2 25); --accent-light: oklch(0.5 0.2 25); --accent-hover-dark: oklch(0.7 0.2 25); --accent-hover-light: oklch(0.4 0.2 25); }
+    [data-accent="pink"] { --accent-dark: oklch(0.7 0.15 350); --accent-light: oklch(0.55 0.15 350); --accent-hover-dark: oklch(0.76 0.15 350); --accent-hover-light: oklch(0.45 0.15 350); }
+    [data-accent="teal"] { --accent-dark: oklch(0.75 0.12 190); --accent-light: oklch(0.5 0.15 190); --accent-hover-dark: oklch(0.8 0.12 190); --accent-hover-light: oklch(0.4 0.15 190); }
+    [data-accent="orange"] { --accent-dark: oklch(0.75 0.15 55); --accent-light: oklch(0.55 0.15 55); --accent-hover-dark: oklch(0.8 0.15 55); --accent-hover-light: oklch(0.45 0.15 55); }
+    :root[data-accent] { --accent: var(--accent-dark, oklch(0.787 0.128 230.318)); --accent-hover: var(--accent-hover-dark, oklch(0.85 0.128 230.318)); }
+    :root[data-theme="light"][data-accent] { --accent: var(--accent-light, oklch(0.55 0.18 230.318)); --accent-hover: var(--accent-hover-light, oklch(0.45 0.18 230.318)); }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif !important; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
     body { min-height: 100vh; display: flex; flex-direction: column; }
     main, input, select, textarea { min-width: 0; }
+    main { scroll-margin-top: 3.5rem; }
+    header nav a[aria-current], footer nav a[aria-current] { color: var(--accent) !important; font-weight: 600; }
     button, input, select, textarea { font: inherit; }
     button, a, input, select, textarea { touch-action: manipulation; }
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
     .skip-link { position: fixed; top: 0.5rem; left: 0.5rem; z-index: 100; padding: 0.75rem 1rem; color: var(--bg); background: var(--accent); border-radius: 0.375rem; transform: translateY(-150%); }
     .skip-link:focus { transform: none; }
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0s !important; transition-duration: 0s !important; scroll-behavior: auto !important; }
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: 0s !important; scroll-behavior: auto !important; }
     }
     a { color: inherit; text-decoration: none; }
     h1, h2, h3, h4, h5, h6 { font-family: 'Lilex', monospace !important; }
@@ -279,6 +291,10 @@
     .shortcut-row:last-child { border-bottom: none; }
     .shortcut-key { display: inline-flex; align-items: center; justify-content: center; min-width: 1.75rem; padding: 0.125rem 0.5rem; background: var(--bg-muted); border: 1px solid var(--border); border-radius: 0.25rem; font-family: 'Lilex', monospace; font-size: 0.75rem; color: var(--fg-muted); }
 
+    .action-status { position: fixed; z-index: 110; bottom: 1.25rem; left: 50%; transform: translateX(-50%); max-width: calc(100% - 2rem); padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 0.5rem; background: var(--bg-elevated); color: var(--fg); box-shadow: 0 4px 16px oklch(0 0 0 / 0.2); }
+    .action-status[data-kind="error"] { border-color: var(--red); }
+    [hidden] { display: none !important; }
+
     /* Scroll-to-top button */
     .scroll-top { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 50; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.625rem; cursor: pointer; color: var(--fg-muted); opacity: 0; pointer-events: none; transition: all 0.3s ease; box-shadow: 0 2px 8px oklch(0 0 0 / 0.15); }
     .scroll-top.visible { opacity: 1; pointer-events: auto; }
@@ -291,9 +307,9 @@
 
     /* View mode toggle */
     .view-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 0.375rem; overflow: hidden; }
-    .view-toggle button { background: none; border: none; padding: 0.375rem 0.625rem; cursor: pointer; color: var(--fg-subtle); transition: all 0.2s; }
-    .view-toggle button.active { background: var(--bg-muted); color: var(--accent); }
-    .view-toggle button:hover:not(.active) { color: var(--fg-muted); }
+    .view-toggle :is(button, a) { background: none; border: none; padding: 0.375rem 0.625rem; cursor: pointer; color: var(--fg-subtle); transition: all 0.2s; }
+    .view-toggle :is(button, a).active { background: var(--bg-muted); color: var(--accent); }
+    .view-toggle :is(button, a):hover:not(.active) { color: var(--fg-muted); }
 
     /* Sort select */
     .sort-select { appearance: none; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.375rem 2rem 0.375rem 0.75rem; color: var(--fg); font-size: 0.8125rem; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.5rem center; }
@@ -327,7 +343,7 @@
     .search-dropdown-item .item-desc { color: var(--fg-subtle); font-size: 0.75rem; margin-left: auto; max-width: 50%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
 
     /* Pagination */
-    .pagination { display: flex; align-items: center; gap: 0.25rem; }
+    .pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; }
     .pagination a, .pagination span { display: inline-flex; align-items: center; justify-content: center; min-width: 2rem; height: 2rem; padding: 0 0.5rem; border-radius: 0.375rem; font-size: 0.8125rem; font-family: 'Lilex', monospace; transition: all 0.15s; }
     .pagination a { color: var(--fg-muted); border: 1px solid var(--border); }
     .pagination a:hover { border-color: var(--border-hover); color: var(--fg); background: var(--bg-muted); }
@@ -373,9 +389,6 @@
   </style>
 </head>
 <body>
-  <script>
-    window.pantryApiUrl = function(path) { return path }
-  </script>
   <a href="#main-content" class="skip-link">Skip to content</a>
   <!-- Header -->
   <header class="sticky top-0 z-50 backdrop-blur-xl border-b border-[var(--border)]" style="background: color-mix(in oklch, var(--bg), transparent 10%);">
@@ -512,8 +525,10 @@
       </div>
   </dialog>
 
+  <p id="action-status" class="action-status" role="status" aria-live="polite" hidden></p>
+
   <!-- Scroll-to-top button -->
-  <button id="scroll-top" class="scroll-top" aria-label="Scroll to top">
+  <button id="scroll-top" class="scroll-top" hidden aria-label="Scroll to top">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
   </button>
 
@@ -532,9 +547,54 @@
         var current = html.dataset.theme || 'dark'
         var next = current === 'dark' ? 'light' : 'dark'
         html.dataset.theme = next
+        html.dataset.themePreference = next
         writePreference('pantry-theme', next)
       })
     }
+
+    var systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
+    systemTheme.addEventListener('change', function(event) {
+      if (document.documentElement.dataset.themePreference === 'system') document.documentElement.dataset.theme = event.matches ? 'dark' : 'light'
+    })
+    // Apply saved defaults only where the URL/form has no explicit view choice.
+    function applySearchDefault(form) {
+      var field = form.querySelector('[name="view"]')
+      if (field && !field.hasAttribute('data-default-search-view') && form.id !== 'header-search-form') return
+      var view = readPreference('pantry-search-view')
+      if (!['list', 'grid', 'table'].includes(view)) { if (field) field.remove(); return }
+      if (!field) {
+        field = document.createElement('input')
+        field.type = 'hidden'
+        field.name = 'view'
+        form.appendChild(field)
+      }
+      field.setAttribute('data-default-search-view', '')
+      field.value = view
+    }
+    function updateSearchDefaults() { document.querySelectorAll('form[action="/search"]').forEach(applySearchDefault) }
+    updateSearchDefaults()
+    document.addEventListener('change', function(event) { if (event.target.id === 'pref-search-view') updateSearchDefaults() })
+    document.addEventListener('submit', function(event) {
+      if (event.target.matches('form[action="/search"]')) applySearchDefault(event.target)
+    }, true)
+    var installMethod = readPreference('pantry-install-method')
+    var preferredInstall = document.querySelector('[data-install-method="' + (['pantry', 'curl'].includes(installMethod) ? installMethod : 'pantry') + '"]')
+    if (preferredInstall) {
+      preferredInstall.parentElement.prepend(preferredInstall)
+      preferredInstall.setAttribute('data-preferred', 'true')
+    }
+
+    function updateCurrentNavigation() {
+      document.querySelectorAll('header nav a[href], footer nav a[href]').forEach(function(link) {
+        var target = new URL(link.href, window.location.href)
+        var exact = target.origin === window.location.origin && target.pathname === window.location.pathname
+        var section = target.origin === window.location.origin && ['/docs', '/publisher'].includes(target.pathname) && window.location.pathname.startsWith(target.pathname + '/')
+        if (exact || section) link.setAttribute('aria-current', exact ? 'page' : 'location')
+        else link.removeAttribute('aria-current')
+      })
+    }
+    updateCurrentNavigation()
+    window.addEventListener('stx:load', updateCurrentNavigation)
 
     // Mobile menu: expose state, close on navigation/Escape, reset at desktop size.
     var menuToggle = document.getElementById('mobile-nav-toggle')
@@ -553,6 +613,9 @@
         if (e.target.closest('a')) closeMenu()
       })
       window.matchMedia('(min-width: 1100px)').addEventListener('change', closeMenu)
+      document.addEventListener('click', function(event) {
+        if (menu.classList.contains('open') && !menu.contains(event.target) && !menuToggle.contains(event.target)) closeMenu()
+      })
     }
 
     var dialog = document.getElementById('shortcuts-dialog')
@@ -587,14 +650,14 @@
         _pendingChord = ''
         if (e.key === 'd') { window.location.href = '/docs'; return }
       }
-      if (e.key === '/') { e.preventDefault(); var si = document.getElementById('search-input') || document.getElementById('header-search-input') || document.querySelector('input[name="q"]'); if (si) { if (menuToggle && getComputedStyle(menuToggle).display !== 'none') { menu.classList.add('open'); menuToggle.setAttribute('aria-expanded', 'true') } si.focus() }; return }
+      if (e.key === '/') { e.preventDefault(); var si = document.getElementById('search-input') || document.getElementById('header-search-input') || document.querySelector('input[name="q"]'); if (si) { if (menuToggle && menu.contains(si) && getComputedStyle(menuToggle).display !== 'none') { menu.classList.add('open'); menuToggle.setAttribute('aria-expanded', 'true') } si.focus() }; return }
       if (e.key === '?') { e.preventDefault(); if (dialog) dialog.showModal(); return }
       if (e.key === 'h') { window.location.href = '/'; return }
       if (e.key === 'p') { window.location.href = '/compare'; return }
       if (e.key === 't') { window.location.href = '/stats'; return }
       if (e.key === ',') { window.location.href = '/settings'; return }
       if (e.key === 'g') { _pendingChord = 'g'; setTimeout(function() { _pendingChord = '' }, 1000); return }
-      if (e.key === 'd') { var html = document.documentElement; var c = html.dataset.theme || 'dark'; var n = c === 'dark' ? 'light' : 'dark'; html.dataset.theme = n; writePreference('pantry-theme', n); return }
+      if (e.key === 'd') { var html = document.documentElement; var c = html.dataset.theme || 'dark'; var n = c === 'dark' ? 'light' : 'dark'; html.dataset.theme = n; html.dataset.themePreference = n; writePreference('pantry-theme', n); return }
     })
 
     // Scroll-to-top
@@ -605,6 +668,7 @@
         var visible = window.scrollY > 400
         if (visible !== scrollVisible) {
           scrollVisible = visible
+          scrollBtn.hidden = !visible
           scrollBtn.classList.toggle('visible', visible)
         }
       }
@@ -615,31 +679,58 @@
       })
     }
 
-    // Copy buttons
-    document.addEventListener('click', function(e) {
-      var btn = e.target.closest('.copy-btn')
-      if (!btn) return
-      var text = btn.getAttribute('data-copy')
+    // Clipboard actions share reliable feedback and preserve each button's icon.
+    var clipboardFeedback = new WeakMap()
+    var actionStatus = document.getElementById('action-status')
+    var statusTimer
+    function announceAction(message, kind) {
+      clearTimeout(statusTimer)
+      actionStatus.textContent = message
+      actionStatus.dataset.kind = kind || 'success'
+      actionStatus.hidden = false
+      statusTimer = setTimeout(function() { actionStatus.hidden = true }, 6000)
+    }
+    document.addEventListener('click', function(event) {
+      var button = event.target.closest('.copy-btn[data-copy], [data-copy-code], .share-btn, #export-md-btn')
+      if (!button) return
+      var text = button.getAttribute('data-copy')
+      var success = 'Copied to clipboard.'
+      if (button.matches('.share-btn')) { text = button.getAttribute('data-share') || window.location.href; success = 'Link copied to clipboard.' }
+      if (button.id === 'export-md-btn') {
+        var table = document.querySelector('[data-comparison-table]')
+        if (!table) return
+        var lines = []
+        table.querySelectorAll('tr').forEach(function(row, index) {
+          var cells = Array.from(row.querySelectorAll('th, td'))
+          lines.push('| ' + cells.map(function(cell) { return cell.textContent.trim().replace(/\|/g, '\\|').replace(/\s+/g, ' ') }).join(' | ') + ' |')
+          if (index === 0) lines.push('| ' + cells.map(function() { return '---' }).join(' | ') + ' |')
+        })
+        text = '## Package Comparison\n\n' + lines.join('\n') + '\n\n*Generated by [pantry.dev](https://pantry.dev/compare)*\n'
+        success = 'Comparison copied as Markdown.'
+      }
+      if (!text) {
+        var container = button.closest('div')
+        var code = container && container.querySelector('code')
+        text = code && code.textContent
+      }
       if (!text) return
+      if (!navigator.clipboard || !navigator.clipboard.writeText) {
+        announceAction('Clipboard unavailable. Select the text and copy it manually.', 'error')
+        return
+      }
       navigator.clipboard.writeText(text).then(function() {
-        var orig = btn.textContent
-        btn.textContent = 'copied!'
-        btn.classList.add('copied')
-        setTimeout(function() { btn.textContent = orig || 'copy'; btn.classList.remove('copied') }, 2000)
-      })
-    })
-
-    // Share buttons
-    document.addEventListener('click', function(e) {
-      var btn = e.target.closest('.share-btn')
-      if (!btn) return
-      var url = btn.getAttribute('data-share') || window.location.href
-      navigator.clipboard.writeText(url).then(function() {
-        var orig = btn.innerHTML
-        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> copied!'
-        btn.classList.add('shared')
-        setTimeout(function() { btn.innerHTML = orig; btn.classList.remove('shared') }, 2000)
-      })
+        var feedback = clipboardFeedback.get(button) || { html: button.innerHTML }
+        clearTimeout(feedback.timer)
+        button.textContent = 'copied!'
+        button.classList.add('copied')
+        feedback.timer = setTimeout(function() {
+          button.innerHTML = feedback.html
+          button.classList.remove('copied')
+          clipboardFeedback.delete(button)
+        }, 2000)
+        clipboardFeedback.set(button, feedback)
+        announceAction(success)
+      }).catch(function() { announceAction('Could not copy. Select the text and copy it manually.', 'error') })
     })
 
     // Collapsible sections
@@ -649,7 +740,9 @@
       var target = document.getElementById(toggle.getAttribute('data-target'))
       if (!target) return
       toggle.classList.toggle('collapsed')
-      target.classList.toggle('collapsed')
+      var collapsed = target.classList.toggle('collapsed')
+      target.hidden = collapsed
+      toggle.setAttribute('aria-expanded', String(!collapsed))
     })
 
     // Instant search (header)

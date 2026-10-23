@@ -12,7 +12,8 @@ permissions:
 jobs:
   verify:
     name: Registry checks (Bun ${{ matrix.bun }})
-    runs-on: ubuntu-latest
+    # Keep Playwright's native dependency set stable across image migrations.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -40,8 +41,18 @@ jobs:
         run: |
           set -o pipefail
           bun test packages/registry 2>&1 | tee artifacts/registry-availability/tests.log
+      - name: Configure browser dependency downloads
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && matrix.bun == '1.4.3' }}
+        run: |
+          # The Azure mirror can remain connected while delivering almost no
+          # data, exhausting the job before Playwright's tests can start.
+          printf 'https://archive.ubuntu.com/ubuntu/\tpriority:1\nhttps://security.ubuntu.com/ubuntu/\tpriority:2\n' \
+            | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          printf '%s\n' 'Acquire::Retries "2";' 'Acquire::http::Timeout "30";' 'Acquire::https::Timeout "30";' \
+            | sudo tee /etc/apt/apt.conf.d/80-pantry-ci-downloads >/dev/null
       - name: Install browser engines
         if: ${{ !cancelled() && steps.install.outcome == 'success' && matrix.bun == '1.4.3' }}
+        timeout-minutes: 7
         run: bunx playwright install --with-deps chromium firefox webkit
       - name: Verify responsive UI and browser interactions
         if: ${{ !cancelled() && steps.install.outcome == 'success' && matrix.bun == '1.4.3' }}

@@ -26,11 +26,12 @@
  *   -h, --help               Show help
  */
 
+import type { ObjectStorageProvider } from '@stacksjs/ts-cloud'
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { execSync, spawn } from 'node:child_process'
 import { basename, dirname, join, relative } from 'node:path'
 import { parseArgs } from 'node:util'
-import { createObjectStorageClient } from './object-storage'
+import { createObjectStorageClient } from '@stacksjs/ts-cloud'
 import { reportBuild, reportBuildLog } from './report-build'
 import { fixElfRpaths, fixUp } from './fix-up'
 import { selectPublishedFiles, writeProgramInterfaces } from './published-files'
@@ -1235,7 +1236,7 @@ async function checkExistsInS3(domain: string, version: string, platform: string
   // Honor STORAGE_PROVIDER so existence checks hit the configured backend
   // (Hetzner/B2 endpoint) rather than defaulting to s3.<region>.amazonaws.com,
   // which would fail for non-AWS regions and force a needless rebuild every run.
-  const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
+  const provider = (process.env.STORAGE_PROVIDER || 'aws') as ObjectStorageProvider
   // Retry up to 3 times to avoid transient S3/network errors causing unnecessary rebuilds
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {

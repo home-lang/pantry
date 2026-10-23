@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test'
-import { createObjectStorageClient } from '../scripts/object-storage'
+import { createObjectStorageClient } from '@stacksjs/ts-cloud'
 
-const keys = ['STORAGE_PROVIDER', 'OBJECT_STORAGE_PROVIDER', 'S3_REGION', 'AWS_REGION', 'S3_ENDPOINT', 'S3_FORCE_PATH_STYLE', 'R2_ACCOUNT_ID', 'CLOUDFLARE_ACCOUNT_ID', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN']
+const keys = ['STORAGE_PROVIDER', 'OBJECT_STORAGE_PROVIDER', 'S3_REGION', 'AWS_REGION', 'AWS_DEFAULT_REGION', 'S3_ENDPOINT', 'S3_FORCE_PATH_STYLE', 'R2_ACCOUNT_ID', 'CLOUDFLARE_ACCOUNT_ID', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_SECRET_KEY', 'AWS_SESSION_TOKEN', 'HETZNER_S3_REGION', 'HETZNER_REGION']
 const saved = new Map<string, string | undefined>()
 const originalFetch = globalThis.fetch
 beforeEach(() => {
@@ -51,4 +51,17 @@ test('builders read, write and sign private R2 objects with the same configurati
 test('builders reject stale regions before attempting an R2 transfer', () => {
   Object.assign(process.env, { STORAGE_PROVIDER: 'r2', R2_ACCOUNT_ID: 'test-account', S3_REGION: 'fsn1' })
   expect(() => createObjectStorageClient()).toThrow('R2 requires S3_REGION=auto')
+})
+
+test('the published SDK preserves dependency archive bytes on Hetzner and R2', async () => {
+  const archive = Uint8Array.from([0x1f, 0x8b, 0x08, 0x00, 0xff, 0x80, 0xfe])
+  globalThis.fetch = Object.assign(async () => new Response(archive), { preconnect: originalFetch.preconnect })
+  for (const provider of ['hetzner', 'r2'] as const) {
+    const client = createObjectStorageClient({
+      provider,
+      ...(provider === 'r2' ? { accountId: 'test-account' } : {}),
+      credentials: { accessKeyId: 'test-key', secretAccessKey: 'test-secret' },
+    })
+    expect(await client.getObjectBuffer('registry', 'binaries/tool.tar.gz')).toEqual(Buffer.from(archive))
+  }
 })

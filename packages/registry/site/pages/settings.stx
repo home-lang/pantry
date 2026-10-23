@@ -14,16 +14,16 @@
       <!-- Theme -->
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
         <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Theme</h2>
-        <div class="flex gap-2" id="theme-selector">
-          <button data-theme-value="dark" class="theme-option flex-1 rounded-lg border border-[var(--border)] p-4 text-center cursor-pointer transition-all hover:border-[var(--border-hover)]" style="background: var(--bg);">
+        <div class="flex gap-2" id="theme-selector" role="group" aria-label="Theme">
+          <button data-theme-value="dark" aria-pressed="false" class="theme-option flex-1 rounded-lg border border-[var(--border)] p-4 text-center cursor-pointer transition-all hover:border-[var(--border-hover)]" style="background: var(--bg);">
             <svg class="mx-auto mb-2" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
             <span class="text-sm">Dark</span>
           </button>
-          <button data-theme-value="light" class="theme-option flex-1 rounded-lg border border-[var(--border)] p-4 text-center cursor-pointer transition-all hover:border-[var(--border-hover)]" style="background: var(--bg);">
+          <button data-theme-value="light" aria-pressed="false" class="theme-option flex-1 rounded-lg border border-[var(--border)] p-4 text-center cursor-pointer transition-all hover:border-[var(--border-hover)]" style="background: var(--bg);">
             <svg class="mx-auto mb-2" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
             <span class="text-sm">Light</span>
           </button>
-          <button data-theme-value="system" class="theme-option flex-1 rounded-lg border border-[var(--border)] p-4 text-center cursor-pointer transition-all hover:border-[var(--border-hover)]" style="background: var(--bg);">
+          <button data-theme-value="system" aria-pressed="false" class="theme-option flex-1 rounded-lg border border-[var(--border)] p-4 text-center cursor-pointer transition-all hover:border-[var(--border-hover)]" style="background: var(--bg);">
             <svg class="mx-auto mb-2" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
             <span class="text-sm">System</span>
           </button>
@@ -33,15 +33,15 @@
       <!-- Accent color -->
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
         <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Accent Color</h2>
-        <div class="flex flex-wrap gap-3" id="accent-selector">
-          <button data-accent="blue" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.787 0.128 230.318);" aria-label="Blue"></button>
-          <button data-accent="purple" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.7 0.15 300);" aria-label="Purple"></button>
-          <button data-accent="green" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.723 0.15 155);" aria-label="Green"></button>
-          <button data-accent="amber" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.795 0.15 85);" aria-label="Amber"></button>
-          <button data-accent="red" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.637 0.2 25);" aria-label="Red"></button>
-          <button data-accent="pink" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.7 0.15 350);" aria-label="Pink"></button>
-          <button data-accent="teal" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.75 0.12 190);" aria-label="Teal"></button>
-          <button data-accent="orange" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.75 0.15 55);" aria-label="Orange"></button>
+        <div class="flex flex-wrap gap-3" id="accent-selector" role="group" aria-label="Accent color">
+          <button data-accent="blue" aria-pressed="false" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.787 0.128 230.318);" aria-label="Blue"></button>
+          <button data-accent="purple" aria-pressed="false" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.7 0.15 300);" aria-label="Purple"></button>
+          <button data-accent="green" aria-pressed="false" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.723 0.15 155);" aria-label="Green"></button>
+          <button data-accent="amber" aria-pressed="false" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.795 0.15 85);" aria-label="Amber"></button>
+          <button data-accent="red" aria-pressed="false" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.637 0.2 25);" aria-label="Red"></button>
+          <button data-accent="pink" aria-pressed="false" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.7 0.15 350);" aria-label="Pink"></button>
+          <button data-accent="teal" aria-pressed="false" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.75 0.12 190);" aria-label="Teal"></button>
+          <button data-accent="orange" aria-pressed="false" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.75 0.15 55);" aria-label="Orange"></button>
         </div>
         <p class="mt-3" style="font-size: 0.75rem; color: var(--fg-subtle);">Changes apply immediately across the site.</p>
       </div>
@@ -54,10 +54,10 @@
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm font-medium">Keyboard shortcuts</p>
-              <p style="font-size: 0.75rem; color: var(--fg-subtle);">Use / ? h c t d to navigate</p>
+              <p style="font-size: 0.75rem; color: var(--fg-subtle);">Use / ? h p t d to navigate</p>
             </div>
             <label class="settings-toggle">
-              <input type="checkbox" id="pref-shortcuts" checked />
+              <input type="checkbox" id="pref-shortcuts" aria-label="Keyboard shortcuts" checked />
               <span class="settings-toggle-slider"></span>
             </label>
           </div>
@@ -69,7 +69,7 @@
               <p style="font-size: 0.75rem; color: var(--fg-subtle);">Reduce spacing for denser layouts</p>
             </div>
             <label class="settings-toggle">
-              <input type="checkbox" id="pref-compact" />
+              <input type="checkbox" id="pref-compact" aria-label="Compact mode" />
               <span class="settings-toggle-slider"></span>
             </label>
           </div>
@@ -81,7 +81,7 @@
               <p style="font-size: 0.75rem; color: var(--fg-subtle);">Enable fade-in and transition animations</p>
             </div>
             <label class="settings-toggle">
-              <input type="checkbox" id="pref-animations" checked />
+              <input type="checkbox" id="pref-animations" aria-label="Animations" checked />
               <span class="settings-toggle-slider"></span>
             </label>
           </div>
@@ -90,11 +90,10 @@
           <div class="flex items-center justify-between" style="border-top: 1px solid var(--border); padding-top: 1rem;">
             <div>
               <p class="text-sm font-medium">Default install method</p>
-              <p style="font-size: 0.75rem; color: var(--fg-subtle);">Preferred package manager for install commands</p>
+              <p style="font-size: 0.75rem; color: var(--fg-subtle);">Preferred way to install packages</p>
             </div>
-            <select id="pref-install-method" class="sort-select">
+            <select id="pref-install-method" aria-label="Default install method" class="sort-select">
               <option value="pantry">pantry</option>
-              <option value="brew">brew</option>
               <option value="curl">curl</option>
             </select>
           </div>
@@ -105,7 +104,7 @@
               <p class="text-sm font-medium">Default search view</p>
               <p style="font-size: 0.75rem; color: var(--fg-subtle);">Preferred layout for search results</p>
             </div>
-            <select id="pref-search-view" class="sort-select">
+            <select id="pref-search-view" aria-label="Default search view" class="sort-select">
               <option value="list">List</option>
               <option value="grid">Grid</option>
               <option value="table">Table</option>
@@ -123,12 +122,13 @@
         <button id="reset-settings" class="text-sm px-4 py-2 rounded-lg border border-[var(--border)] cursor-pointer hvr-fg transition-colors" style="color: var(--fg-muted); background: none;">
           Reset all settings
         </button>
+        <p id="settings-status" role="status" class="text-sm mt-3" hidden></p>
       </div>
 
       <!-- Keyboard shortcuts reference -->
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
         <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Keyboard Shortcuts</h2>
-        <div class="grid gap-0" style="grid-template-columns: 1fr 1fr;">
+        <div class="grid gap-0" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));">
           <div class="flex items-center justify-between px-3 py-2" style="border-bottom: 1px solid var(--border);">
             <span style="font-size: 0.8125rem; color: var(--fg-muted);">Focus search</span>
             <kbd class="shortcut-key">/</kbd>
@@ -170,7 +170,7 @@
 <style>
   /* Settings toggle switch */
   .settings-toggle { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
-  .settings-toggle input { opacity: 0; width: 0; height: 0; }
+  .settings-toggle input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; margin: 0; z-index: 1; cursor: pointer; }
   .settings-toggle-slider { position: absolute; cursor: pointer; inset: 0; background: var(--bg-muted); border: 1px solid var(--border); border-radius: 24px; transition: all 0.2s; }
   .settings-toggle-slider::before { content: ''; position: absolute; height: 18px; width: 18px; left: 2px; bottom: 2px; background: var(--fg-subtle); border-radius: 50%; transition: all 0.2s; }
   .settings-toggle input:checked + .settings-toggle-slider { background: var(--accent); border-color: var(--accent); }
@@ -186,39 +186,39 @@
 
 <script client>
   (function() {
-    var ACCENT_MAP = {
-      blue: { dark: 'oklch(0.787 0.128 230.318)', light: 'oklch(0.55 0.18 230.318)', hover_dark: 'oklch(0.85 0.128 230.318)', hover_light: 'oklch(0.45 0.18 230.318)' },
-      purple: { dark: 'oklch(0.7 0.15 300)', light: 'oklch(0.55 0.15 300)', hover_dark: 'oklch(0.76 0.15 300)', hover_light: 'oklch(0.45 0.15 300)' },
-      green: { dark: 'oklch(0.723 0.15 155)', light: 'oklch(0.5 0.17 155)', hover_dark: 'oklch(0.78 0.15 155)', hover_light: 'oklch(0.4 0.17 155)' },
-      amber: { dark: 'oklch(0.795 0.15 85)', light: 'oklch(0.6 0.15 85)', hover_dark: 'oklch(0.85 0.15 85)', hover_light: 'oklch(0.5 0.15 85)' },
-      red: { dark: 'oklch(0.637 0.2 25)', light: 'oklch(0.5 0.2 25)', hover_dark: 'oklch(0.7 0.2 25)', hover_light: 'oklch(0.4 0.2 25)' },
-      pink: { dark: 'oklch(0.7 0.15 350)', light: 'oklch(0.55 0.15 350)', hover_dark: 'oklch(0.76 0.15 350)', hover_light: 'oklch(0.45 0.15 350)' },
-      teal: { dark: 'oklch(0.75 0.12 190)', light: 'oklch(0.5 0.15 190)', hover_dark: 'oklch(0.8 0.12 190)', hover_light: 'oklch(0.4 0.15 190)' },
-      orange: { dark: 'oklch(0.75 0.15 55)', light: 'oklch(0.55 0.15 55)', hover_dark: 'oklch(0.8 0.15 55)', hover_light: 'oklch(0.45 0.15 55)' }
+    function loadPreference(key) {
+      try { return localStorage.getItem(key) } catch (_) { return null }
     }
-
-    function getTheme() { return document.documentElement.dataset.theme || 'dark' }
-    function getSavedAccent() { return localStorage.getItem('pantry-accent') || 'blue' }
-
+    function savePreference(key, value) {
+      try { localStorage.setItem(key, String(value)) } catch (_) {
+        var status = document.getElementById('settings-status')
+        status.textContent = 'Applied to this page. Browser storage is unavailable, so this setting cannot be saved.'
+        status.hidden = false
+      }
+    }
+    function removePreference(key) { try { localStorage.removeItem(key) } catch (_) {} }
+    function getSavedAccent() { return loadPreference('pantry-accent') || 'blue' }
     function applyAccent(name) {
-      var colors = ACCENT_MAP[name]
-      if (!colors) return
-      var isDark = getTheme() === 'dark'
-      document.documentElement.style.setProperty('--accent', isDark ? colors.dark : colors.light)
-      document.documentElement.style.setProperty('--accent-hover', isDark ? colors.hover_dark : colors.hover_light)
-      localStorage.setItem('pantry-accent', name)
+      document.documentElement.dataset.accent = name
+      document.documentElement.style.removeProperty('--accent')
+      document.documentElement.style.removeProperty('--accent-hover')
+      savePreference('pantry-accent', name)
       updateAccentUI(name)
     }
 
     function updateAccentUI(name) {
       document.querySelectorAll('.accent-option').forEach(function(btn) {
-        btn.classList.toggle('active', btn.getAttribute('data-accent') === name)
+        var active = btn.getAttribute('data-accent') === name
+        btn.classList.toggle('active', active)
+        btn.setAttribute('aria-pressed', String(active))
       })
     }
 
     function updateThemeUI(theme) {
       document.querySelectorAll('.theme-option').forEach(function(btn) {
-        btn.classList.toggle('active', btn.getAttribute('data-theme-value') === theme)
+        var active = btn.getAttribute('data-theme-value') === theme
+        btn.classList.toggle('active', active)
+        btn.setAttribute('aria-pressed', String(active))
       })
     }
 
@@ -226,13 +226,14 @@
     document.querySelectorAll('.theme-option').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var value = this.getAttribute('data-theme-value')
+        document.documentElement.dataset.themePreference = value
         if (value === 'system') {
           var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
           document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light'
-          localStorage.setItem('pantry-theme', 'system')
+          savePreference('pantry-theme', 'system')
         } else {
           document.documentElement.dataset.theme = value
-          localStorage.setItem('pantry-theme', value)
+          savePreference('pantry-theme', value)
         }
         updateThemeUI(value)
         applyAccent(getSavedAccent())
@@ -254,35 +255,36 @@
     var prefView = document.getElementById('pref-search-view')
 
     if (prefShortcuts) {
-      prefShortcuts.checked = localStorage.getItem('pantry-shortcuts') !== 'false'
+      prefShortcuts.checked = loadPreference('pantry-shortcuts') !== 'false'
       prefShortcuts.addEventListener('change', function() {
-        localStorage.setItem('pantry-shortcuts', this.checked)
+        savePreference('pantry-shortcuts', this.checked)
       })
     }
     if (prefCompact) {
-      prefCompact.checked = localStorage.getItem('pantry-compact') === 'true'
+      prefCompact.checked = loadPreference('pantry-compact') === 'true'
       prefCompact.addEventListener('change', function() {
-        localStorage.setItem('pantry-compact', this.checked)
+        savePreference('pantry-compact', this.checked)
         document.documentElement.classList.toggle('compact', this.checked)
       })
     }
     if (prefAnimations) {
-      prefAnimations.checked = localStorage.getItem('pantry-animations') !== 'false'
+      prefAnimations.checked = loadPreference('pantry-animations') !== 'false'
       prefAnimations.addEventListener('change', function() {
-        localStorage.setItem('pantry-animations', this.checked)
+        savePreference('pantry-animations', this.checked)
         document.documentElement.classList.toggle('no-animations', !this.checked)
       })
     }
     if (prefInstall) {
-      prefInstall.value = localStorage.getItem('pantry-install-method') || 'pantry'
+      var savedInstall = loadPreference('pantry-install-method')
+      prefInstall.value = ['pantry', 'curl'].includes(savedInstall) ? savedInstall : 'pantry'
       prefInstall.addEventListener('change', function() {
-        localStorage.setItem('pantry-install-method', this.value)
+        savePreference('pantry-install-method', this.value)
       })
     }
     if (prefView) {
-      prefView.value = localStorage.getItem('pantry-search-view') || 'list'
+      prefView.value = loadPreference('pantry-search-view') || 'list'
       prefView.addEventListener('change', function() {
-        localStorage.setItem('pantry-search-view', this.value)
+        savePreference('pantry-search-view', this.value)
       })
     }
 
@@ -290,14 +292,16 @@
     var resetBtn = document.getElementById('reset-settings')
     if (resetBtn) {
       resetBtn.addEventListener('click', function() {
-        localStorage.removeItem('pantry-theme')
-        localStorage.removeItem('pantry-accent')
-        localStorage.removeItem('pantry-shortcuts')
-        localStorage.removeItem('pantry-compact')
-        localStorage.removeItem('pantry-animations')
-        localStorage.removeItem('pantry-install-method')
-        localStorage.removeItem('pantry-search-view')
+        removePreference('pantry-theme')
+        removePreference('pantry-accent')
+        removePreference('pantry-shortcuts')
+        removePreference('pantry-compact')
+        removePreference('pantry-animations')
+        removePreference('pantry-install-method')
+        removePreference('pantry-search-view')
         document.documentElement.dataset.theme = 'dark'
+        document.documentElement.dataset.themePreference = 'dark'
+        delete document.documentElement.dataset.accent
         document.documentElement.style.removeProperty('--accent')
         document.documentElement.style.removeProperty('--accent-hover')
         document.documentElement.classList.remove('compact', 'no-animations')
@@ -311,12 +315,25 @@
       })
     }
 
+    var themeObserver = new MutationObserver(function() {
+      updateThemeUI(document.documentElement.dataset.themePreference || 'dark')
+    })
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme-preference'] })
+    function cleanup() {
+      themeObserver.disconnect()
+      window.removeEventListener('stx:navigate', cleanup)
+      window.removeEventListener('pagehide', cleanup)
+    }
+    window.addEventListener('stx:navigate', cleanup)
+    window.addEventListener('pagehide', cleanup)
+
     // Init UI state
-    var savedTheme = localStorage.getItem('pantry-theme') || 'dark'
+    var savedTheme = loadPreference('pantry-theme') || 'dark'
     updateThemeUI(savedTheme)
     var savedAccent = getSavedAccent()
-    applyAccent(savedAccent)
-    if (localStorage.getItem('pantry-compact') === 'true') document.documentElement.classList.add('compact')
-    if (localStorage.getItem('pantry-animations') === 'false') document.documentElement.classList.add('no-animations')
+    document.documentElement.dataset.accent = savedAccent
+    updateAccentUI(savedAccent)
+    if (loadPreference('pantry-compact') === 'true') document.documentElement.classList.add('compact')
+    if (loadPreference('pantry-animations') === 'false') document.documentElement.classList.add('no-animations')
   })()
 </script>
