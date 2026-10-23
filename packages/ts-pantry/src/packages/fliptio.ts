@@ -3,7 +3,7 @@
  *
  * @domain `flipt.io`
  * @programs `flipt`
- * @version `2.14.0` (46 versions available)
+ * @version `2.14.1` (47 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install flipt.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "flipt"
  * console.log(pkg.description) // "Enterprise-ready, GitOps enabled, CloudNative f..."
  * console.log(pkg.programs)    // ["flipt"]
- * console.log(pkg.versions[0]) // "2.14.0" (latest)
+ * console.log(pkg.versions[0]) // "2.14.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/flipt-io.md
@@ -67,6 +67,7 @@ export const fliptioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.14.1',
     '2.14.0',
     '2.13.1',
     '2.13.0',
