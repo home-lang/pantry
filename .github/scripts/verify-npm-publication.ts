@@ -92,7 +92,6 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
   try {
     const [stdout, stderr, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited])
     const output = stdout + stderr
-    if (mode === 'precheck-recovers' && metadataReads !== 4) throw new Error(`Recovered precheck must observe two transport failures, a confirmed missing version and exact uploaded metadata; reads=${metadataReads}`)
     if (uploads !== 1) throw new Error(`${mode}: expected exactly one upload, got ${uploads}; requests=${JSON.stringify(requests)}; exit=${code}\n${output}`)
     if (!metadataReads) throw new Error(`${mode}: CLI reported completion without reading public version metadata\n${output}`)
     if (!privateMode && credentialReads) throw new Error(`${mode}: public verification forwarded publishing credentials`)
@@ -125,6 +124,7 @@ async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-
   const precheckFailure = mode.startsWith('precheck-') && mode !== 'precheck-recovers'
   let uploads = 0, metadataReads = 0, tarballReads = 0, foreignRequests = 0, foreignCredentialRequests = 0
   let prematureHook = false
+  let prematurePrepublishHook = false, precheckMetadataReads = 0
   let tarball = Buffer.alloc(0), metadata: Record<string, unknown> = {}
   const foreign = createServer((request, response) => {
     foreignRequests++
@@ -165,6 +165,10 @@ async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-
       }
       if (request.method === 'GET' && path === `/${name}/${version}`) {
         metadataReads++
+        if (!uploads) {
+          precheckMetadataReads++
+          if (existsSync(prepublishMarker)) prematurePrepublishHook = true
+        }
         if (!uploads && mode === 'precheck-unavailable') { response.writeHead(502).end(); return }
         if (!uploads && mode === 'precheck-unauthorized') { response.writeHead(401).end(); return }
         if (!uploads && mode === 'precheck-forbidden') { response.writeHead(403).end(); return }
@@ -216,7 +220,7 @@ async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-
       console.log(JSON.stringify({ mode, code, uploads, metadataReads, prepublishHook: false, postpublishHook: false, verifiedNoUpload: true }))
       return
     }
-    if (mode === 'precheck-recovers' && metadataReads !== 4) throw new Error(`Recovered precheck must observe two transport failures, a confirmed missing version and exact uploaded metadata; reads=${metadataReads}`)
+    if (mode === 'precheck-recovers' && (precheckMetadataReads !== 3 || metadataReads < 4 || prematurePrepublishHook)) throw new Error(`Recovered precheck must observe two transport failures, a confirmed missing version and exact uploaded metadata; reads=${metadataReads}`)
     if (uploads !== 1) throw new Error(`${mode}: accepted upload was repeated ${uploads} times; exit=${code}\n${output}`)
     if (mode === 'upload-redirect') {
       if (code === 0 || existsSync(marker)) throw new Error('An unverified redirect completed publication or ran its hook')
