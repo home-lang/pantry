@@ -47,7 +47,10 @@ test('scroll-to-top is absent from keyboard navigation until useful', async ({ p
 })
 
 test('comparison export announces success and copies the correct table', async ({ page }) => {
-  await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', { value: { writeText: (text: string) => { document.documentElement.dataset.copied = text; return Promise.resolve() } } }))
+  await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', { value: { writeText: (text: string) => {
+    document.documentElement.dataset.copied = text
+    return Promise.resolve()
+  } } }))
   await page.goto('/compare?packages=curl.se')
   await page.getByRole('button', { name: 'export markdown' }).click()
   await expect(page.getByRole('status')).toContainText('Comparison copied as Markdown')

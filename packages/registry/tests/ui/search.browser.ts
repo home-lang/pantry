@@ -12,7 +12,7 @@ test('table view renders and survives sorting', async ({ page }) => {
 
 test('search text survives pagination and view changes without double escaping', async ({ page }) => {
   const query = 'UI & fixture'
-  await page.goto('/search?q=' + encodeURIComponent(query) + '&sort=name')
+  await page.goto(`/search?q=${encodeURIComponent(query)}&sort=name`)
   await expect(page.locator('#search-input')).toHaveValue(query)
   await page.getByRole('link', { name: 'Next page' }).click()
   expect(new URL(page.url()).searchParams.get('q')).toBe(query)
