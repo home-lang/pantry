@@ -7,7 +7,7 @@ import { promisify } from 'node:util'
 import type { ServiceSpec } from './services'
 import { nativeServiceEnvironment } from './services'
 import type { ServiceProcessIdentity } from './service-ownership'
-import { assertServiceDirectory, assertServiceProcess, claimServiceDirectory, serviceProcessIdentity } from './service-ownership'
+import { assertServiceDirectory, assertServiceProcess, claimServiceDirectory, serviceProcessIdentity, serviceGroupHasLiveProcesses } from './service-ownership'
 import { startNativeMysql } from './native-mysql'
 import { startNativeDynamodb } from './native-dynamodb'
 
@@ -50,18 +50,6 @@ function directoryExists(directory: string): boolean {
   }
 }
 
-async function groupHasLiveProcesses(group: number): Promise<boolean> {
-  if (!Number.isSafeInteger(group) || group <= 1) throw new Error('Invalid native service process group')
-  const { stdout } = await execute('/bin/ps', ['-axo', 'pgid=,stat='], { timeout: 2000 })
-  for (const line of stdout.split('\n')) {
-    if (!line.trim()) continue
-    const match = /^\s*(\d+)\s+(\S+)\s*$/.exec(line)
-    if (!match) throw new Error('Could not verify native service group shutdown')
-    if (Number(match[1]) === group && !match[2]!.startsWith('Z')) return true
-  }
-  return false
-}
-
 export async function freeServicePort(): Promise<number> {
   const server = createServer()
   await new Promise<void>((resolve, reject) => {
@@ -95,7 +83,7 @@ export async function stopNativeService(state: NativeServiceState): Promise<void
   // Startup failure may already have completed cleanup before the post step.
   if (!directoryExists(state.directory)) {
     if (state.pid && await serviceProcessIdentity(state.pid)) throw new Error('Missing native service ownership directory; refusing to signal a live PID')
-    if (state.launcher && state.process && await groupHasLiveProcesses(state.process.group))
+    if (state.launcher && state.process && await serviceGroupHasLiveProcesses(state.process.group))
       throw new Error('Missing ownership directory with a live service group; retained auxiliary data')
     for (const directory of state.auxiliaryDirectories || []) {
       if (!directoryExists(directory)) continue
@@ -149,8 +137,8 @@ export async function stopNativeService(state: NativeServiceState): Promise<void
   if (state.launcher && state.process) {
     const group = state.process.group
     const groupDeadline = Date.now() + 2000
-    while (await groupHasLiveProcesses(group) && Date.now() < groupDeadline) await pause(50)
-    if (await groupHasLiveProcesses(group)) throw new Error('Native service group still has live processes; retained its private data')
+    while (await serviceGroupHasLiveProcesses(group) && Date.now() < groupDeadline) await pause(50)
+    if (await serviceGroupHasLiveProcesses(group)) throw new Error('Native service group still has live processes; retained its private data')
   }
   if (state.process && await assertServiceProcess(state.process, state.directory))
     throw new Error('Native service is still running; retained its private directory')

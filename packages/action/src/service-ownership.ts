@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { lstatSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs'
+import { lstatSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 
@@ -29,16 +29,72 @@ export function assertServiceDirectory(directory: string, owner: string): void {
     throw new Error('Refusing cleanup of an unowned Pantry service directory')
 }
 
+/** Linux stat encloses comm in parentheses; comm itself may contain spaces and parentheses. */
+export function parseLinuxServiceProcessStat(stat: string): { pid: number, group: number, state: string, birth: string } {
+  const open = stat.indexOf('('), close = stat.lastIndexOf(')')
+  const pidText = stat.slice(0, open).trim(), fields = stat.slice(close + 1).trim().split(/\s+/)
+  const pid = Number(pidText), group = Number(fields[2])
+  if (open < 1 || close <= open || !/^\d+$/.test(pidText) || !Number.isSafeInteger(pid) || pid < 1
+    || fields.length < 20 || !/^[a-z]$/i.test(fields[0]!) || !/^\d+$/.test(fields[2]!)
+    || !Number.isSafeInteger(group) || group < 0 || !/^\d+$/.test(fields[19]!))
+    throw new Error('Could not read Linux native service process state')
+  return { pid, group, state: fields[0]!, birth: fields[19]! }
+}
+
+/** Observe only; this never authorizes a signal after losing the owned leader. */
+export async function serviceGroupHasLiveProcesses(group: number): Promise<boolean> {
+  if (!Number.isSafeInteger(group) || group <= 1) throw new Error('Invalid native service process group')
+  if (process.platform !== 'linux' && process.platform !== 'darwin') throw new Error('Native service ownership requires Linux or macOS')
+  const deadline = performance.now() + 2000
+  try { process.kill(-group, 0) }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ESRCH') return false
+    throw error
+  }
+  if (process.platform === 'linux') {
+    // Use the same kernel interface as PID ownership. A terminated group's
+    // cleanup must not depend on launching ps or enumerating its text output.
+    for (const entry of readdirSync('/proc')) {
+      if (!/^\d+$/.test(entry)) continue
+      if (performance.now() >= deadline) throw new Error('Native service group inspection exceeded its existing two-second deadline')
+      try {
+        const state = parseLinuxServiceProcessStat(readFileSync(`/proc/${entry}/stat`, 'utf8'))
+        if (state.group === group && state.state !== 'Z') return true
+      }
+      catch (error) {
+        if (['ENOENT', 'ESRCH'].includes((error as NodeJS.ErrnoException).code || '')) continue
+        throw error
+      }
+    }
+    if (performance.now() >= deadline) throw new Error('Native service group inspection exceeded its existing two-second deadline')
+    return false
+  }
+  const remaining = Math.floor(deadline - performance.now())
+  if (remaining <= 0) throw new Error('Native service group inspection exceeded its existing two-second deadline')
+  const { stdout } = await execute('/bin/ps', ['-axo', 'pgid=,stat='], { timeout: remaining }).catch((error) => {
+    const detail = error as { code?: unknown, signal?: unknown, killed?: unknown }
+    throw new Error(`Native service group inspection failed (code=${String(detail.code ?? 'unknown')}, signal=${String(detail.signal ?? 'none')}, killed=${String(detail.killed ?? false)})`, { cause: error })
+  })
+  for (const line of stdout.split('\n')) {
+    if (!line.trim()) continue
+    const match = /^\s*(\d+)\s+(\S+)\s*$/.exec(line)
+    if (!match) throw new Error('Could not verify native service group shutdown')
+    if (Number(match[1]) === group && !match[2]!.startsWith('Z')) return true
+  }
+  return false
+}
+
 /** Record kernel birth identity, user and command before detaching a service. */
 export async function serviceProcessIdentity(pid: number): Promise<ServiceProcessIdentity | undefined> {
   if (!Number.isSafeInteger(pid) || pid <= 1) throw new Error('Invalid native service PID')
   if (process.platform === 'linux') {
     const directory = `/proc/${pid}`
-    const snapshot = (): string[] => {
-      const fields = readFileSync(join(directory, 'stat'), 'utf8')
-      return fields.slice(fields.lastIndexOf(')') + 2).split(' ')
+    const snapshot = (): ReturnType<typeof parseLinuxServiceProcessStat> => {
+      const parsed = parseLinuxServiceProcessStat(readFileSync(join(directory, 'stat'), 'utf8'))
+      if (parsed.pid !== pid) throw new Error('Linux native service PID changed during inspection')
+      return parsed
     }
-    const exited = (fields: string[]): boolean => ['Z', 'X', 'x'].includes(fields[0]!)
+    const exited = (fields: ReturnType<typeof parseLinuxServiceProcessStat>): boolean => ['Z', 'X', 'x'].includes(fields.state)
     for (let attempt = 0; attempt < 20; attempt++) {
       try {
         const before = snapshot()
@@ -46,10 +102,10 @@ export async function serviceProcessIdentity(pid: number): Promise<ServiceProces
         const uid = statSync(directory).uid
         const command = readFileSync(join(directory, 'cmdline'), 'utf8').replaceAll('\0', ' ').trim()
         const after = snapshot()
-        if (before[19] !== after[19] || before[2] !== after[2])
+        if (before.birth !== after.birth || before.group !== after.group)
           throw new Error('Native service process ownership changed while reading its identity')
         if (exited(after)) return undefined
-        if (command) return { pid, uid, group: Number(after[2]), birth: after[19]!, command }
+        if (command) return { pid, uid, group: after.group, birth: after.birth, command }
         // Linux clears the address space before publishing zombie state. An
         // empty cmdline between those events is not a different live command
         // and is not proof of exit. Resample until the kernel proves either;
