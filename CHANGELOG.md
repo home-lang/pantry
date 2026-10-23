@@ -1,3 +1,63 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.119...v0.11.120)
+
+## 🐛 Bug Fixes
+
+- **ci**: avoid stalled Ubuntu mirrors in deployment checks ([9cdb6aa](https://github.com/pantry-pm/pantry/commit/9cdb6aa)) _(by Chris Breuer <chris@stacksjs.com>)_
+- use native R2 support from the released ts-cloud SDK ([b8671b5](https://github.com/pantry-pm/pantry/commit/b8671b5)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **ui**: apply changed search defaults before submission ([6540401](https://github.com/pantry-pm/pantry/commit/6540401)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **ui**: handle existing browser appearance state safely ([c984afe](https://github.com/pantry-pm/pantry/commit/c984afe)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **ui**: complete token revocation feedback and empty states ([811a008](https://github.com/pantry-pm/pantry/commit/811a008)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **ui**: show supported package installation commands ([a3cfe52](https://github.com/pantry-pm/pantry/commit/a3cfe52)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **ui**: keep navigation and page lifecycles consistent ([12f2599](https://github.com/pantry-pm/pantry/commit/12f2599)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **ui**: recover publisher workflows and render metadata safely ([4f0f141](https://github.com/pantry-pm/pantry/commit/4f0f141)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **ui**: preserve search state and enable table results ([d5fe60b](https://github.com/pantry-pm/pantry/commit/d5fe60b)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **ui**: provide reliable feedback and keyboard access for actions ([1155c11](https://github.com/pantry-pm/pantry/commit/1155c11)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **ui**: make appearance settings and saved defaults consistent ([d488967](https://github.com/pantry-pm/pantry/commit/d488967)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **ui**: use native cookie-backed sign-in flows ([c56ac05](https://github.com/pantry-pm/pantry/commit/c56ac05)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **ui**: make account token management reliable and accessible ([10e5413](https://github.com/pantry-pm/pantry/commit/10e5413)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **publish**: recover idempotent availability reads within their deadline ([2aa6659](https://github.com/pantry-pm/pantry/commit/2aa6659)) _(by Chris <chris@stacksjs.com>)_
+- **action**: distinguish build inputs from application namespaces ([3fa7910](https://github.com/pantry-pm/pantry/commit/3fa7910)) _(by Chris <chris@stacksjs.com>)_
+- share verified build dependency archives across CI runs ([a6529d0](https://github.com/pantry-pm/pantry/commit/a6529d0)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **registry**: verify the production workspace container ([64903ab](https://github.com/pantry-pm/pantry/commit/64903ab)) _(by Chris <chris@stacksjs.com>)_
+- **registry**: provision the declared native hash compiler ([efd4a1a](https://github.com/pantry-pm/pantry/commit/efd4a1a)) _(by Chris <chris@stacksjs.com>)_
+- **registry**: advertise native Zig package content hashes ([dd38b89](https://github.com/pantry-pm/pantry/commit/dd38b89)) _(by Chris <chris@stacksjs.com>)_
+- use R2-compatible storage configuration in CI tooling ([ee02578](https://github.com/pantry-pm/pantry/commit/ee02578)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **ui**: harden responsive layouts and browser interactions ([e7cc74e](https://github.com/pantry-pm/pantry/commit/e7cc74e)) _(by Chris Breuer <chris@stacksjs.com>)_
+- reduce registry traffic and prepare R2 storage cutover ([b9598fd](https://github.com/pantry-pm/pantry/commit/b9598fd)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ⚡ Performance Improvements
+
+- **ui**: bound build table rendering and clean up live resources ([6a148b3](https://github.com/pantry-pm/pantry/commit/6a148b3)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 📝 Documentation
+
+- **registry**: distinguish native package and archive hashes ([da649eb](https://github.com/pantry-pm/pantry/commit/da649eb)) _(by Chris <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- qualify native hashing within its declared execution budget ([e2b42a1](https://github.com/pantry-pm/pantry/commit/e2b42a1)) _(by Chris <chris@stacksjs.com>)_
+- **ui**: document and polish workflow regression coverage ([2af1f2e](https://github.com/pantry-pm/pantry/commit/2af1f2e)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **publish**: require confirmed absence before hooks after read recovery ([0bfbb57](https://github.com/pantry-pm/pantry/commit/0bfbb57)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.120 ([bb20aad](https://github.com/pantry-pm/pantry/commit/bb20aad)) _(by Chris <chris@stacksjs.com>)_
+- synchronize the native workspace lock for browser tooling ([4246478](https://github.com/pantry-pm/pantry/commit/4246478)) _(by Chris <chris@stacksjs.com>)_
+- update arkade.dev, github.com/ggerganov/llama.cpp, kafka.apache.org, localai.io, mise.jdx.dev, openpolicyagent.org, openssl.org, pocketbase.io, projen.io, xplr.dev, zed.dev, ziglang.org ([0111588](https://github.com/pantry-pm/pantry/commit/0111588)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org, github.com/ggerganov/llama.cpp, huggingface.co, neo4j.com, openai.com/codex, orbstack.dev, projen.io, xplr.dev ([41e2ff7](https://github.com/pantry-pm/pantry/commit/41e2ff7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org to 0.0.301 ([277ae23](https://github.com/pantry-pm/pantry/commit/277ae23)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update craft-native.org, dart.dev, dprint.dev, flipt.io, github.com/ggerganov/llama.cpp, github.com/router-for-me/CLIProxyAPI, hasura.io, ollama.ai, projen.io, seaweedfs.com ([53f79cf](https://github.com/pantry-pm/pantry/commit/53f79cf)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' into codex/settlers-native-zig-hash ([e465b71](https://github.com/pantry-pm/pantry/commit/e465b71)) _(by Chris <chris@stacksjs.com>)_
+- Merge remote-tracking branch 'origin/main' into codex/settlers-native-zig-hash ([974f2e4](https://github.com/pantry-pm/pantry/commit/974f2e4)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.118...v0.11.119)
 
 ## 🐛 Bug Fixes
