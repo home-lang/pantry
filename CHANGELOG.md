@@ -1,3 +1,29 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.118...v0.11.119)
+
+## 🐛 Bug Fixes
+
+- **installer**: provision verified native Windows Git bundles ([f924cd1](https://github.com/pantry-pm/pantry/commit/f924cd1)) _(by Chris <chris@stacksjs.com>)_
+- **which**: inspect only eligible activation launcher scripts ([9715a3b](https://github.com/pantry-pm/pantry/commit/9715a3b)) _(by Chris <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- **action**: redact child command streams before artifact retention ([a4a2811](https://github.com/pantry-pm/pantry/commit/a4a2811)) _(by Chris <chris@stacksjs.com>)_
+- **action**: initialize isolated runner command files ([ca1f15e](https://github.com/pantry-pm/pantry/commit/ca1f15e)) _(by Chris <chris@stacksjs.com>)_
+
+## 👷 Build System
+
+- **action**: ship verified Windows Git provisioning ([8a2e660](https://github.com/pantry-pm/pantry/commit/8a2e660)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.119 ([10463f1](https://github.com/pantry-pm/pantry/commit/10463f1)) _(by Chris <chris@stacksjs.com>)_
+- update alttab.app, anthropic.com/claude-code, depot.dev, etcd.io, goreleaser.com, gqlgen.com, kaggle.com, mailpit.axllent.org, obsidian.md, pulumi.io, strace.io, vale.sh, vaultproject.io, virtualenv.pypa.io ([c119a0a](https://github.com/pantry-pm/pantry/commit/c119a0a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- adopt the verified Bumpx 0.2.26 release ([b1d7fa6](https://github.com/pantry-pm/pantry/commit/b1d7fa6)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.116...v0.11.117)
 
 ## 🐛 Bug Fixes
