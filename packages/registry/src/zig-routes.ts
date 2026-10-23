@@ -21,6 +21,7 @@ import {
   type ZigPackageStorage,
 } from './zig'
 import type { AnalyticsStorage } from './analytics'
+import { validateZigHash, ZigPackageHashError } from './zig-native-hash'
 import {
   malwareScanFailureResponse,
   publicScanResult,
@@ -65,8 +66,8 @@ export async function handleZigRoutes(
   }
 
   // GET /zig/hash/{hash}
-  const hashMatch = zigPath.match(/^\/hash\/([a-f0-9]+)$/i)
-  if (hashMatch && req.method === 'GET') {
+  const hashMatch = zigPath.match(/^\/hash\/([a-zA-Z0-9_.+-]{1,256})$/)
+  if (hashMatch && validateZigHash(hashMatch[1]) && req.method === 'GET') {
     const hash = hashMatch[1]
     const info = await storage.getByHash(hash)
 
@@ -270,7 +271,6 @@ async function handleZigPublish(
     }
 
     const tarball = await tarballFile.arrayBuffer()
-    const hash = computeZigHash(tarball)
 
     // Parse manifest if provided, otherwise extract from tarball name
     let name: string
@@ -321,6 +321,15 @@ async function handleZigPublish(
     if (scan.verdict !== 'clean')
       return malwareScanFailureResponse(scan, corsHeaders)
 
+    // Hash only a clean archive. The native compiler validates the archive and
+    // manifest; build.zig is never executed and dependencies are never built.
+    let hash: string
+    try { hash = await computeZigHash(tarball) }
+    catch (error) {
+      if (!(error instanceof ZigPackageHashError)) throw error
+      return Response.json({ error: error.message }, { status: error.status, headers: corsHeaders })
+    }
+
     const tarballUrl = `${baseUrl}/zig/packages/${encodeURIComponent(name)}/${version}/tarball`
 
     const metadata: ZigPackageMetadata = {
@@ -329,6 +338,7 @@ async function handleZigPublish(
       description: typeof descriptionStr === 'string' ? descriptionStr : undefined,
       tarballUrl,
       hash,
+      artifactSha256: scan.artifactSha256,
       publishedAt: new Date().toISOString(),
       malwareScan: scan,
     }
@@ -347,6 +357,7 @@ async function handleZigPublish(
       success: true,
       message: `Published ${name}@${version}`,
       hash,
+      artifactSha256: scan.artifactSha256,
       tarballUrl,
       fetchCommand: generateFetchCommand(tarballUrl),
       dependency: generateDependencyEntry(name, tarballUrl, hash),

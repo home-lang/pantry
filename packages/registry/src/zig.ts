@@ -4,12 +4,11 @@
  * Zig uses a decentralized, content-addressed package system:
  * - Packages are identified by hash, not URL
  * - build.zig.zon is the manifest file
- * - Uses multihash format for package hashes
+ * - The native compiler computes package content and manifest hashes
  *
  * This module provides Zig package hosting support for the Pantry registry.
  */
 
-import * as crypto from 'node:crypto'
 import { DynamoDBClient } from './storage/dynamodb-client'
 import type { S3Client } from './storage/aws-client'
 import { createS3Client, resolveStorageProvider } from './storage/provider'
@@ -50,7 +49,8 @@ export interface ZigPackageMetadata {
   author?: string
   keywords?: string[]
   tarballUrl: string
-  hash: string // multihash
+  hash: string // Native compiler package hash
+  artifactSha256?: string // Complete original compressed archive identity
   publishedAt: string
   paths?: string[]
   malwareScan?: MalwareScanResult
@@ -73,30 +73,7 @@ export interface ZigPackageRecord {
   updatedAt: string
 }
 
-/**
- * Compute Zig-compatible multihash for package contents
- *
- * Zig uses a specific multihash format:
- * - SHA256 hash (0x12 = sha2-256)
- * - 32 bytes length (0x20)
- * - Followed by the hash bytes
- *
- * Returns the hash as a hex string prefixed with "1220" (sha256 multihash prefix)
- */
-export function computeZigHash(data: ArrayBuffer | Buffer): string {
-  const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data)
-  const sha256 = crypto.createHash('sha256').update(buffer).digest('hex')
-  // Multihash format: 0x12 (sha256) + 0x20 (32 bytes) + hash
-  return `1220${sha256}`
-}
-
-/**
- * Validate a Zig multihash
- */
-export function validateZigHash(hash: string): boolean {
-  // Must start with 1220 (sha256 multihash prefix) and be 68 chars total
-  return /^1220[a-f0-9]{64}$/i.test(hash)
-}
+export { computeZigHash, validateZigHash } from './zig-native-hash'
 
 /**
  * Parse a build.zig.zon file content
@@ -164,7 +141,10 @@ export function generateDependencyEntry(
 ): string {
   const safeUrl = tarballUrl.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
   const safeHash = hash.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
-  return `.${name} = .{
+  const safeName = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)
+    ? name
+    : `@"${name.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+  return `.${safeName} = .{
     .url = "${safeUrl}",
     .hash = "${safeHash}",
 },`
