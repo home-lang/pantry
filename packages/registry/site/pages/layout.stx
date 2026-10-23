@@ -153,7 +153,7 @@
       if(t==='system'){var d=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.dataset.theme=d?'dark':'light'}
       else if(t==='light'){document.documentElement.dataset.theme='light'}
       var a=localStorage.getItem('pantry-accent');
-      if(a)document.documentElement.dataset.accent=a;
+      if(a){document.documentElement.dataset.accent=a;document.documentElement.style.removeProperty('--accent');document.documentElement.style.removeProperty('--accent-hover')}
       document.documentElement.dataset.themePreference=t||'dark';
       if(localStorage.getItem('pantry-compact')==='true')document.documentElement.classList.add('compact');
       if(localStorage.getItem('pantry-animations')==='false')document.documentElement.classList.add('no-animations');
@@ -698,7 +698,8 @@
         success = 'Comparison copied as Markdown.'
       }
       if (!text) {
-        var code = button.closest('div').querySelector('code')
+        var container = button.closest('div')
+        var code = container && container.querySelector('code')
         text = code && code.textContent
       }
       if (!text) return

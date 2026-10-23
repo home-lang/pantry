@@ -200,6 +200,8 @@
     function getSavedAccent() { return loadPreference('pantry-accent') || 'blue' }
     function applyAccent(name) {
       document.documentElement.dataset.accent = name
+      document.documentElement.style.removeProperty('--accent')
+      document.documentElement.style.removeProperty('--accent-hover')
       savePreference('pantry-accent', name)
       updateAccentUI(name)
     }
