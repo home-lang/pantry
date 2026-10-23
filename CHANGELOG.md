@@ -1,3 +1,17 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.121...v0.11.122)
+
+## 🐛 Bug Fixes
+
+- **ci**: require complete source acceptance before deploy and publish ([15c99fa](https://github.com/pantry-pm/pantry/commit/15c99fa)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.122 ([0559dc1](https://github.com/pantry-pm/pantry/commit/0559dc1)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.120...v0.11.121)
 
 ## 🐛 Bug Fixes
