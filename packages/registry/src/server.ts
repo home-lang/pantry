@@ -1,6 +1,7 @@
 import { resolve, dirname, relative } from 'node:path'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { installRegistryShutdown } from './shutdown'
 import type { RegistryConfig, AuthStorage } from './types'
 import { Registry, createLocalRegistry, createRegistryFromEnv } from './registry'
 import { createAnalytics, type AnalyticsStorage, type AnalyticsCategory } from './analytics'
@@ -157,23 +158,6 @@ process.on('SIGUSR2', () => {
     .then(() => { if (_buildStatus) seedKnownPackages(_buildStatus) })
     .catch(err => console.error('Reload failed:', err))
 })
-
-// systemd sends SIGTERM on every restart, so this runs on each deploy. Handling
-// the signal suppresses the default exit, hence the explicit one — and the
-// bounded wait, so a slow bucket turns into a normal shutdown rather than
-// systemd's kill timeout.
-let _shuttingDown = false
-for (const signal of ['SIGTERM', 'SIGINT'] as const) {
-  process.on(signal, () => {
-    if (_shuttingDown)
-      return
-    _shuttingDown = true
-    Promise.race([
-      flushEgressLedger().catch(err => console.warn('Egress flush failed:', (err as Error).message)),
-      new Promise(resolve => setTimeout(resolve, 5000)),
-    ]).finally(() => process.exit(0))
-  })
-}
 
 function isKnownVersion(domain: string, version: string): boolean {
   const versions = _knownVersions.get(domain)
@@ -1937,6 +1921,7 @@ export function createServer(
   buildStatus?: BuildStatusStore,
 ): { start: () => void, stop: (closeActiveConnections?: boolean) => Promise<void> } {
   let server: ReturnType<typeof Bun.serve> | null = null
+  let draining: Promise<void> | null = null
   const analyticsStorage = analytics || createAnalytics()
   const zigPackageStorage = zigStorage || createZigStorage()
   const phpPackageStorage = phpStorage || createPhpStorage()
@@ -1960,6 +1945,7 @@ export function createServer(
   )
 
   const start = () => {
+    if (server || draining) throw new Error('Registry server is already running or draining')
     const configuredIdleTimeout = Number.parseInt(process.env.PANTRY_HTTP_IDLE_TIMEOUT_SECONDS || '', 10)
     const idleTimeout = Number.isSafeInteger(configuredIdleTimeout)
       && configuredIdleTimeout >= 10
@@ -2041,12 +2027,21 @@ export function createServer(
     console.log('  GET  /dashboard/login            - Login')
   }
 
-  const stop = async (closeActiveConnections = false) => {
-    if (server) {
-      const stopping = server
-      server = null
-      await stopping.stop(closeActiveConnections)
+  const stop = (closeActiveConnections = false): Promise<void> => {
+    if (!server) return Promise.resolve()
+    const current = server
+    if (closeActiveConnections) {
+      // Retain the handle while graceful drain is pending so a deadline can
+      // still force its active connections closed.
+      return Promise.resolve(current.stop(true)).then(() => {
+        if (server === current) server = null
+      })
     }
+    draining ??= Promise.resolve(current.stop(false)).finally(() => {
+      if (server === current) server = null
+      draining = null
+    })
+    return draining
   }
 
   return { start, stop }
@@ -6894,8 +6889,9 @@ if (import.meta.main) {
       await store.ready()
   }))
 
-  const { start } = createServer(registry, port, analytics, zigStorage, undefined, phpStorage, authStorage)
-  start()
+  const server = createServer(registry, port, analytics, zigStorage, undefined, phpStorage, authStorage)
+  server.start()
+  installRegistryShutdown(server, [registry.metadata, analytics, authStorage, zigStorage, phpStorage, _buildStatus, { flush: flushEgressLedger }])
 
   console.log('\nEnvironment:')
   console.log(`  S3_BUCKET: ${process.env.S3_BUCKET || 'local'}`)
