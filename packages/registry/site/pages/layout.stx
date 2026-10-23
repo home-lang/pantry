@@ -153,10 +153,8 @@
       if(t==='system'){var d=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.dataset.theme=d?'dark':'light'}
       else if(t==='light'){document.documentElement.dataset.theme='light'}
       var a=localStorage.getItem('pantry-accent');
-      if(a){
-        var m={blue:['oklch(0.787 0.128 230.318)','oklch(0.55 0.18 230.318)'],purple:['oklch(0.7 0.15 300)','oklch(0.55 0.15 300)'],green:['oklch(0.723 0.15 155)','oklch(0.5 0.17 155)'],amber:['oklch(0.795 0.15 85)','oklch(0.6 0.15 85)'],red:['oklch(0.637 0.2 25)','oklch(0.5 0.2 25)'],pink:['oklch(0.7 0.15 350)','oklch(0.55 0.15 350)'],teal:['oklch(0.75 0.12 190)','oklch(0.5 0.15 190)'],orange:['oklch(0.75 0.15 55)','oklch(0.55 0.15 55)']};
-        var c=m[a];if(c){var isDark=(document.documentElement.dataset.theme||'dark')==='dark';document.documentElement.style.setProperty('--accent',isDark?c[0]:c[1])}
-      }
+      if(a)document.documentElement.dataset.accent=a;
+      document.documentElement.dataset.themePreference=t||'dark';
       if(localStorage.getItem('pantry-compact')==='true')document.documentElement.classList.add('compact');
       if(localStorage.getItem('pantry-animations')==='false')document.documentElement.classList.add('no-animations');
       } catch (_) { /* Defaults remain usable when storage is unavailable. */ }
@@ -201,6 +199,18 @@
       --red: oklch(0.5 0.2 25);
       --purple: oklch(0.55 0.15 300);
     }
+
+    /* Accent colors resolve in CSS so every theme toggle stays consistent. */
+    [data-accent="blue"] { --accent-dark: oklch(0.787 0.128 230.318); --accent-light: oklch(0.55 0.18 230.318); --accent-hover-dark: oklch(0.85 0.128 230.318); --accent-hover-light: oklch(0.45 0.18 230.318); }
+    [data-accent="purple"] { --accent-dark: oklch(0.7 0.15 300); --accent-light: oklch(0.55 0.15 300); --accent-hover-dark: oklch(0.76 0.15 300); --accent-hover-light: oklch(0.45 0.15 300); }
+    [data-accent="green"] { --accent-dark: oklch(0.723 0.15 155); --accent-light: oklch(0.5 0.17 155); --accent-hover-dark: oklch(0.78 0.15 155); --accent-hover-light: oklch(0.4 0.17 155); }
+    [data-accent="amber"] { --accent-dark: oklch(0.795 0.15 85); --accent-light: oklch(0.6 0.15 85); --accent-hover-dark: oklch(0.85 0.15 85); --accent-hover-light: oklch(0.5 0.15 85); }
+    [data-accent="red"] { --accent-dark: oklch(0.637 0.2 25); --accent-light: oklch(0.5 0.2 25); --accent-hover-dark: oklch(0.7 0.2 25); --accent-hover-light: oklch(0.4 0.2 25); }
+    [data-accent="pink"] { --accent-dark: oklch(0.7 0.15 350); --accent-light: oklch(0.55 0.15 350); --accent-hover-dark: oklch(0.76 0.15 350); --accent-hover-light: oklch(0.45 0.15 350); }
+    [data-accent="teal"] { --accent-dark: oklch(0.75 0.12 190); --accent-light: oklch(0.5 0.15 190); --accent-hover-dark: oklch(0.8 0.12 190); --accent-hover-light: oklch(0.4 0.15 190); }
+    [data-accent="orange"] { --accent-dark: oklch(0.75 0.15 55); --accent-light: oklch(0.55 0.15 55); --accent-hover-dark: oklch(0.8 0.15 55); --accent-hover-light: oklch(0.45 0.15 55); }
+    :root[data-accent] { --accent: var(--accent-dark, oklch(0.787 0.128 230.318)); --accent-hover: var(--accent-hover-dark, oklch(0.85 0.128 230.318)); }
+    :root[data-theme="light"][data-accent] { --accent: var(--accent-light, oklch(0.55 0.18 230.318)); --accent-hover: var(--accent-hover-light, oklch(0.45 0.18 230.318)); }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif !important; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
@@ -529,8 +539,30 @@
         var current = html.dataset.theme || 'dark'
         var next = current === 'dark' ? 'light' : 'dark'
         html.dataset.theme = next
+        html.dataset.themePreference = next
         writePreference('pantry-theme', next)
       })
+    }
+
+    var systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
+    systemTheme.addEventListener('change', function(event) {
+      if (document.documentElement.dataset.themePreference === 'system') document.documentElement.dataset.theme = event.matches ? 'dark' : 'light'
+    })
+    // Apply saved defaults only where the URL/form has no explicit view choice.
+    var defaultView = readPreference('pantry-search-view')
+    if (['list', 'grid', 'table'].includes(defaultView)) {
+      document.querySelectorAll('form[action="/search"]').forEach(function(form) {
+        if (form.querySelector('[name="view"]')) return
+        var field = document.createElement('input')
+        field.type = 'hidden'; field.name = 'view'; field.value = defaultView
+        form.appendChild(field)
+      })
+    }
+    var installMethod = readPreference('pantry-install-method')
+    var preferredInstall = document.querySelector('[data-install-method="' + (['pantry', 'brew', 'curl'].includes(installMethod) ? installMethod : 'pantry') + '"]')
+    if (preferredInstall) {
+      preferredInstall.parentElement.prepend(preferredInstall)
+      preferredInstall.setAttribute('data-preferred', 'true')
     }
 
     // Mobile menu: expose state, close on navigation/Escape, reset at desktop size.
@@ -591,7 +623,7 @@
       if (e.key === 't') { window.location.href = '/stats'; return }
       if (e.key === ',') { window.location.href = '/settings'; return }
       if (e.key === 'g') { _pendingChord = 'g'; setTimeout(function() { _pendingChord = '' }, 1000); return }
-      if (e.key === 'd') { var html = document.documentElement; var c = html.dataset.theme || 'dark'; var n = c === 'dark' ? 'light' : 'dark'; html.dataset.theme = n; writePreference('pantry-theme', n); return }
+      if (e.key === 'd') { var html = document.documentElement; var c = html.dataset.theme || 'dark'; var n = c === 'dark' ? 'light' : 'dark'; html.dataset.theme = n; html.dataset.themePreference = n; writePreference('pantry-theme', n); return }
     })
 
     // Scroll-to-top

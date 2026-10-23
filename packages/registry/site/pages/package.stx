@@ -167,21 +167,21 @@
           <button class="copy-btn" data-copy='"{{ name }}": "^{{ latestVersion }}"'>copy</button>
         </div>
         @else
-        <div class="flex items-center justify-between gap-3 bg-[var(--bg)] rounded-md px-4 py-2.5 border border-[var(--border)]">
+        <div data-install-method="pantry" class="flex items-center justify-between gap-3 bg-[var(--bg)] rounded-md px-4 py-2.5 border border-[var(--border)]">
           <div>
             <span class="text-xs mr-2" style="color: var(--fg-subtle);">pantry</span>
             <code class="text-sm" style="color: var(--accent);">pantry install {{ name }}</code>
           </div>
           <button class="copy-btn" data-copy="pantry install {{ name }}">copy</button>
         </div>
-        <div class="flex items-center justify-between gap-3 bg-[var(--bg)] rounded-md px-4 py-2.5 border border-[var(--border)]">
+        <div data-install-method="brew" class="flex items-center justify-between gap-3 bg-[var(--bg)] rounded-md px-4 py-2.5 border border-[var(--border)]">
           <div>
             <span class="text-xs mr-2" style="color: var(--fg-subtle);">brew</span>
             <code class="text-sm" style="color: var(--fg-muted);">brew install {{ name }}</code>
           </div>
           <button class="copy-btn" data-copy="brew install {{ name }}">copy</button>
         </div>
-        <div class="flex items-center justify-between gap-3 bg-[var(--bg)] rounded-md px-4 py-2.5 border border-[var(--border)]">
+        <div data-install-method="curl" class="flex items-center justify-between gap-3 bg-[var(--bg)] rounded-md px-4 py-2.5 border border-[var(--border)]">
           <div>
             <span class="text-xs mr-2" style="color: var(--fg-subtle);">curl</span>
             <code class="text-sm" style="color: var(--fg-muted);">curl -fsSL pantry.dev | sh -s -- install {{ name }}</code>
