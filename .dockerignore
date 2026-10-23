@@ -1,0 +1,11 @@
+.git
+**/node_modules
+**/pantry
+**/.zig-cache
+**/zig-out
+**/dist
+!packages/action/dist
+.cache
+artifacts
+.env*
+*.log

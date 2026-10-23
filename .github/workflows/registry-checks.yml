@@ -25,7 +25,7 @@ jobs:
         with:
           version: 0.11.93
           install: 'false'
-          packages: bun.com@${{ matrix.bun }}
+          packages: bun.com@${{ matrix.bun }} ziglang.org@0.17.0
       - name: Install the locked workspace dependencies
         id: install
         run: bun install --frozen-lockfile
@@ -49,6 +49,11 @@ jobs:
       - name: Build the shipped registry and scanner worker
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: bun run --cwd packages/registry build
+      - name: Build the production registry container and execute its managed compiler
+        if: ${{ matrix.bun == '1.4.3' && !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          docker build -f packages/registry/Dockerfile -t pantry-registry:verification .
+          docker run --rm --entrypoint sh pantry-registry:verification -c 'test "$("$(cat pantry/registry-zig-path)" version)" = "0.17.0"'
       - name: Retain registry verification evidence
         if: always()
         uses: actions/upload-artifact@v4
