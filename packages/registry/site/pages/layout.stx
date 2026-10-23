@@ -557,15 +557,26 @@
       if (document.documentElement.dataset.themePreference === 'system') document.documentElement.dataset.theme = event.matches ? 'dark' : 'light'
     })
     // Apply saved defaults only where the URL/form has no explicit view choice.
-    var defaultView = readPreference('pantry-search-view')
-    if (['list', 'grid', 'table'].includes(defaultView)) {
-      document.querySelectorAll('form[action="/search"]').forEach(function(form) {
-        if (form.querySelector('[name="view"]')) return
-        var field = document.createElement('input')
-        field.type = 'hidden'; field.name = 'view'; field.value = defaultView
+    function applySearchDefault(form) {
+      var field = form.querySelector('[name="view"]')
+      if (field && !field.hasAttribute('data-default-search-view') && form.id !== 'header-search-form') return
+      var view = readPreference('pantry-search-view')
+      if (!['list', 'grid', 'table'].includes(view)) { if (field) field.remove(); return }
+      if (!field) {
+        field = document.createElement('input')
+        field.type = 'hidden'
+        field.name = 'view'
         form.appendChild(field)
-      })
+      }
+      field.setAttribute('data-default-search-view', '')
+      field.value = view
     }
+    function updateSearchDefaults() { document.querySelectorAll('form[action="/search"]').forEach(applySearchDefault) }
+    updateSearchDefaults()
+    document.addEventListener('change', function(event) { if (event.target.id === 'pref-search-view') updateSearchDefaults() })
+    document.addEventListener('submit', function(event) {
+      if (event.target.matches('form[action="/search"]')) applySearchDefault(event.target)
+    }, true)
     var installMethod = readPreference('pantry-install-method')
     var preferredInstall = document.querySelector('[data-install-method="' + (['pantry', 'curl'].includes(installMethod) ? installMethod : 'pantry') + '"]')
     if (preferredInstall) {
