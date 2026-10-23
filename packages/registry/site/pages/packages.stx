@@ -500,8 +500,8 @@
             btn.disabled = true; btn.textContent = '…'
             fetch('/api/rebuild', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain: domain }) })
               .then(function (r) { return r.json().then(function(data) { if (!r.ok) throw new Error(data.error || 'Unable to queue rebuild. Please try again.'); return data }) })
-              .then(function (d) { if (d) { queued[domain] = true; btn.textContent = 'queued' } })
-              .catch(function (error) { btn.disabled = false; btn.textContent = 'retry'; var message = document.getElementById('build-message'); message.textContent = error.message; message.hidden = false })
+              .then(function (d) { if (!disposed && d) { queued[domain] = true; btn.textContent = 'queued' } })
+              .catch(function (error) { if (disposed) return; btn.disabled = false; btn.textContent = 'retry'; var message = document.getElementById('build-message'); message.textContent = error.message; message.hidden = false })
           }
         }
       }
@@ -547,6 +547,7 @@
         status.queue = status.queue || []; status.building = status.building || []; status.recent = status.recent || []
         queued = {}
         for (var i = 0; i < status.queue.length; i++) queued[status.queue[i]] = true
+        if (document.hidden) return
         renderSummary()      // cards: live, cheap
         updateDrawer()       // open log: live, independent of the table
         scheduleRender()     // table: throttled
@@ -576,9 +577,9 @@
       trackInterval(function () { if (!document.hidden) loadPackages().then(function() { if (!disposed) { renderSummary(); scheduleRender() } }).catch(function() { setLive(false) }) }, 60000) // coverage refresh
       trackInterval(function() { if (!document.hidden) updateDrawer() }, 1500) // live log tail while a drawer is open
 
-      function setLive(on) { var d = document.getElementById('live-dot'); if (d) { d.textContent = on ? '● live' : '○ reconnecting'; d.style.color = on ? 'var(--green)' : 'var(--fg-subtle)' } }
+      function setLive(on) { if (disposed) return; var d = document.getElementById('live-dot'); if (d) { d.textContent = on ? '● live' : '○ reconnecting'; d.style.color = on ? 'var(--green)' : 'var(--fg-subtle)' } }
       var statusPoll = null
-      function startStatusPolling() { if (statusPoll) return; setLive(false); statusPoll = trackInterval(function () { if (!document.hidden) loadStatus().then(function () { if (!disposed) { renderSummary(); updateDrawer(); scheduleRender() } }).catch(function() { setLive(false) }) }, 4000) }
+      function startStatusPolling() { if (disposed || statusPoll) return; setLive(false); statusPoll = trackInterval(function () { if (!document.hidden) loadStatus().then(function () { if (!disposed) { renderSummary(); updateDrawer(); scheduleRender() } }).catch(function() { setLive(false) }) }, 4000) }
       function stopStatusPolling() { if (statusPoll) { clearInterval(statusPoll); intervals.delete(statusPoll); statusPoll = null } }
       if (window.EventSource) {
         try {
@@ -652,12 +653,15 @@
         loadUnavail()
         trackInterval(function() { if (!document.hidden) loadUnavail() }, 60000)
       }
+      function handleVisibility() { if (!document.hidden && !disposed) refreshAll() }
+      document.addEventListener('visibilitychange', handleVisibility)
       function cleanup() {
         if (disposed) return
         disposed = true
         intervals.forEach(function(id) { clearInterval(id) })
         openLog = null
         document.removeEventListener('keydown', handleLogsKey)
+        document.removeEventListener('visibilitychange', handleVisibility)
         clearTimeout(renderTimer)
         pageRequests.abort()
         if (es) es.close()

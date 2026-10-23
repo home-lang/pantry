@@ -216,6 +216,8 @@
     html { font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif !important; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
     body { min-height: 100vh; display: flex; flex-direction: column; }
     main, input, select, textarea { min-width: 0; }
+    main { scroll-margin-top: 3.5rem; }
+    header nav a[aria-current], footer nav a[aria-current] { color: var(--accent) !important; font-weight: 600; }
     button, input, select, textarea { font: inherit; }
     button, a, input, select, textarea { touch-action: manipulation; }
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
@@ -571,6 +573,18 @@
       preferredInstall.setAttribute('data-preferred', 'true')
     }
 
+    function updateCurrentNavigation() {
+      document.querySelectorAll('header nav a[href], footer nav a[href]').forEach(function(link) {
+        var target = new URL(link.href, window.location.href)
+        var exact = target.origin === window.location.origin && target.pathname === window.location.pathname
+        var section = target.origin === window.location.origin && ['/docs', '/publisher'].includes(target.pathname) && window.location.pathname.startsWith(target.pathname + '/')
+        if (exact || section) link.setAttribute('aria-current', exact ? 'page' : 'location')
+        else link.removeAttribute('aria-current')
+      })
+    }
+    updateCurrentNavigation()
+    window.addEventListener('stx:load', updateCurrentNavigation)
+
     // Mobile menu: expose state, close on navigation/Escape, reset at desktop size.
     var menuToggle = document.getElementById('mobile-nav-toggle')
     var menu = document.getElementById('header-nav')
@@ -588,6 +602,9 @@
         if (e.target.closest('a')) closeMenu()
       })
       window.matchMedia('(min-width: 1100px)').addEventListener('change', closeMenu)
+      document.addEventListener('click', function(event) {
+        if (menu.classList.contains('open') && !menu.contains(event.target) && !menuToggle.contains(event.target)) closeMenu()
+      })
     }
 
     var dialog = document.getElementById('shortcuts-dialog')
@@ -622,7 +639,7 @@
         _pendingChord = ''
         if (e.key === 'd') { window.location.href = '/docs'; return }
       }
-      if (e.key === '/') { e.preventDefault(); var si = document.getElementById('search-input') || document.getElementById('header-search-input') || document.querySelector('input[name="q"]'); if (si) { if (menuToggle && getComputedStyle(menuToggle).display !== 'none') { menu.classList.add('open'); menuToggle.setAttribute('aria-expanded', 'true') } si.focus() }; return }
+      if (e.key === '/') { e.preventDefault(); var si = document.getElementById('search-input') || document.getElementById('header-search-input') || document.querySelector('input[name="q"]'); if (si) { if (menuToggle && menu.contains(si) && getComputedStyle(menuToggle).display !== 'none') { menu.classList.add('open'); menuToggle.setAttribute('aria-expanded', 'true') } si.focus() }; return }
       if (e.key === '?') { e.preventDefault(); if (dialog) dialog.showModal(); return }
       if (e.key === 'h') { window.location.href = '/'; return }
       if (e.key === 'p') { window.location.href = '/compare'; return }

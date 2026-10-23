@@ -102,6 +102,13 @@
           sticky.classList.toggle('visible', !entries[0].isIntersecting)
         }, { threshold: 0, rootMargin: '-56px 0px 0px 0px' })
         observer.observe(header)
+        function cleanup() {
+          observer.disconnect()
+          window.removeEventListener('stx:navigate', cleanup)
+          window.removeEventListener('pagehide', cleanup)
+        }
+        window.addEventListener('stx:navigate', cleanup)
+        window.addEventListener('pagehide', cleanup)
       })()
     </script>
 

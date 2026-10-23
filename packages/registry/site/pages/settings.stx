@@ -313,9 +313,17 @@
       })
     }
 
-    new MutationObserver(function() {
+    var themeObserver = new MutationObserver(function() {
       updateThemeUI(document.documentElement.dataset.themePreference || 'dark')
-    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme-preference'] })
+    })
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme-preference'] })
+    function cleanup() {
+      themeObserver.disconnect()
+      window.removeEventListener('stx:navigate', cleanup)
+      window.removeEventListener('pagehide', cleanup)
+    }
+    window.addEventListener('stx:navigate', cleanup)
+    window.addEventListener('pagehide', cleanup)
 
     // Init UI state
     var savedTheme = loadPreference('pantry-theme') || 'dark'
