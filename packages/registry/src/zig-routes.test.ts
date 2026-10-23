@@ -7,6 +7,8 @@ import { getAvailablePort } from './test-utils'
 import { InMemoryZigStorage } from './zig'
 import { zigPackageFixture } from './zig-package-fixture'
 
+// These routes execute the declared native compiler with a 120-second budget.
+// Leave time for request cleanup instead of the default five-second unit limit.
 describe('Zig registry routes', () => {
   let port: number
   let baseUrl: string
@@ -59,7 +61,7 @@ describe('Zig registry routes', () => {
 
     expect((await publish('1.0.0', token)).status).toBe(401)
     expect((await publish('1.0.0', rotatedToken)).status).toBe(201)
-  })
+  }, 130_000)
 
   it('publishes canonical metadata and content-addressed evidence', async () => {
     const response = await publish()
@@ -72,7 +74,7 @@ describe('Zig registry routes', () => {
     expect(body.fetchCommand).toContain('zig fetch --save')
     expect(body.artifactSha256).toBe(createHash('sha256').update(await zigPackageFixture()).digest('hex'))
     expect(body.dependency).toContain('.@"graphics-package-consumer"')
-  })
+  }, 130_000)
 
   it('retrieves latest and exact version metadata and lists versions', async () => {
     expect((await publish('1.0.0')).status).toBe(201)
@@ -85,7 +87,7 @@ describe('Zig registry routes', () => {
     expect(latest.version).toBe('2.0.0')
     expect(exact.version).toBe('1.0.0')
     expect(versions.versions).toEqual(['2.0.0', '1.0.0'])
-  })
+  }, 130_000)
 
   it('downloads the exact published tarball and resolves its hash', async () => {
     const published = await (await publish()).json() as any
@@ -96,7 +98,7 @@ describe('Zig registry routes', () => {
     expect(tarball.headers.get('content-type')).toBe('application/gzip')
     expect(Buffer.from(await tarball.arrayBuffer()).toString('base64')).toBe((await zigPackageFixture()).toString('base64'))
     expect((await hashLookup.json() as any).name).toBe('graphics-package-consumer')
-  })
+  }, 130_000)
 
   it('searches published packages with a bounded JSON response', async () => {
     expect((await publish()).status).toBe(201)
@@ -106,7 +108,7 @@ describe('Zig registry routes', () => {
     expect(response.status).toBe(200)
     expect(body.results).toHaveLength(1)
     expect(body.results[0].name).toBe('graphics-package-consumer')
-  })
+  }, 130_000)
 
   it('rejects a malformed clean archive without publishing metadata', async () => {
     const form = new FormData()
@@ -117,7 +119,7 @@ describe('Zig registry routes', () => {
     })
     expect(response.status).toBe(422)
     expect((await fetch(`${baseUrl}/zig/packages/invalid/1.0.0`)).status).toBe(404)
-  })
+  }, 130_000)
 
   it('fails closed when the declared native compiler is unavailable', async () => {
     const previous = process.env.PANTRY_ZIG_BIN
@@ -130,7 +132,7 @@ describe('Zig registry routes', () => {
       if (previous === undefined) delete process.env.PANTRY_ZIG_BIN
       else process.env.PANTRY_ZIG_BIN = previous
     }
-  })
+  }, 130_000)
 
   it('rejects duplicate immutable versions', async () => {
     expect((await publish()).status).toBe(201)
@@ -138,7 +140,7 @@ describe('Zig registry routes', () => {
 
     expect(duplicate.status).toBe(409)
     expect(await duplicate.json()).toEqual({ error: 'Version already exists' })
-  })
+  }, 130_000)
 
   it('requires the current token to delete a package', async () => {
     expect((await publish()).status).toBe(201)
@@ -150,5 +152,5 @@ describe('Zig registry routes', () => {
     })
     expect(deleted.status).toBe(200)
     expect((await fetch(`${baseUrl}/zig/packages/graphics-package-consumer`)).status).toBe(404)
-  })
+  }, 130_000)
 })
