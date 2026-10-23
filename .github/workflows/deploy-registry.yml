@@ -144,6 +144,7 @@ jobs:
               exit 1
             fi
             "$BUN" install
+            "$BUN" packages/registry/scripts/provision-zig.ts
             (cd packages/registry && NODE_ENV=production "$BUN" run build:server)
 
             # Publish-time scanning is part of Registry readiness. Provision
@@ -311,6 +312,7 @@ jobs:
                 printf '%s=%s\n' "$key" "$value" >> "$ENV_FILE"
               fi
             }
+            set_env PANTRY_ZIG_BIN "$(cat packages/registry/pantry/registry-zig-path)"
             set_env PANTRY_MALWARE_SCANNING required
             set_env PANTRY_REQUIRE_MALWARE_SCAN_ATTESTATION true
             set_env PANTRY_REQUIRE_BINARY_SCAN_ATTESTATION "$BINARY_SCAN_ATTESTATION"

@@ -437,6 +437,7 @@ const provision_script =
     \\
     \\echo "    Installing dependencies..."
     \\(cd "$repo_path" && "$bun_bin" install --frozen-lockfile >/dev/null 2>&1 || "$bun_bin" install >/dev/null)
+    \\(cd "$repo_path" && "$bun_bin" packages/registry/scripts/provision-zig.ts)
     \\echo "    Building production server..."
     \\(cd "$repo_path/packages/registry" && NODE_ENV=production "$bun_bin" run build:server)
     \\
@@ -454,6 +455,7 @@ const provision_script =
     \\  fi
     \\}
     \\
+    \\set_env PANTRY_ZIG_BIN "$(cat "$repo_path/packages/registry/pantry/registry-zig-path")"
     \\set_env PORT "$port"
     \\set_env BASE_URL "$base_url"
     \\set_env REGISTRY_VISIBILITY "$visibility"
