@@ -43,6 +43,7 @@
     ".cache/**",
     "pantry/**",
     "packages/site/**",
+    "packages/registry/tests/ui/**",
     "packages/inspector/**",
     "packages/zig/**",
     "packages/ts-pantry/scripts/**",

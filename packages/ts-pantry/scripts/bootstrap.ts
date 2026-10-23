@@ -197,7 +197,7 @@ function resolveVersion(pkg: PackageInfo, constraint?: string): string {
 // Check if package exists in S3
 async function existsInS3(domain: string, version: string, platform: string, bucket: string, region: string): Promise<boolean> {
   try {
-    const { createObjectStorageClient } = await import('@stacksjs/ts-cloud')
+    const { createObjectStorageClient } = await import('./object-storage')
     const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
     const s3 = createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })
     const metadataKey = `binaries/${domain}/metadata.json`

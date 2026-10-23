@@ -127,6 +127,8 @@ export function resolveStorageProvider(overrides: StorageOverrides = {}): Resolv
   const provider = overrides.provider
     || (env('STORAGE_PROVIDER', 'OBJECT_STORAGE_PROVIDER') as StorageProvider | undefined)
     || 'aws'
+  if (!Object.hasOwn(DEFAULT_REGION, provider))
+    throw new Error(`Unsupported storage provider: ${provider}`)
 
   const region = overrides.region
     || (provider === 'backblaze' ? env('B2_REGION') : undefined)
@@ -135,9 +137,15 @@ export function resolveStorageProvider(overrides: StorageOverrides = {}): Resolv
     || DEFAULT_REGION[provider]
 
   const endpoint = overrides.endpoint || env('S3_ENDPOINT') || providerEndpoint(provider, region)
+  if (provider === 'r2') {
+    if (!endpoint)
+      throw new Error('R2 requires R2_ACCOUNT_ID or S3_ENDPOINT')
+    if (region !== 'auto')
+      throw new Error('R2 requires S3_REGION=auto; clear any inherited AWS_REGION or set S3_REGION explicitly')
+  }
   // R2 only serves the S3 API path-style; virtual-host addressing 404s there.
-  const forcePathStyle = overrides.forcePathStyle
-    ?? (env('S3_FORCE_PATH_STYLE') === 'true' || provider === 'r2')
+  const forcePathStyle = provider === 'r2' || (overrides.forcePathStyle
+    ?? env('S3_FORCE_PATH_STYLE') === 'true')
   const credentials = resolveCredentials(provider)
   const cdnBaseUrl = (overrides.cdnBaseUrl || env('S3_CDN_BASE_URL', 'STORAGE_CDN_BASE_URL') || '')
     .trim()

@@ -17,6 +17,8 @@ import { installRequiredSystemPackages, jsPackageManager, needsJsInstall, pantry
 import { installResolvedSystemPackages } from './system-packages'
 import { nativeArtifactCacheIdentity } from './native-cache'
 import { dependencyCache } from './cache-service'
+import { exportBuildCacheEnvironment } from './build-archive-cache-env'
+import { buildArchiveCacheDir } from './build-archive-cache'
 import type { ServiceSpec } from './services'
 import { mergeServicePackages, nativeServiceEnvironment, parseServiceSpecs } from './services'
 import type { NativeServiceState } from './native-services'
@@ -27,6 +29,7 @@ import * as path from 'node:path'
 import * as process from 'node:process'
 import * as crypto from 'node:crypto'
 import * as cache from '@actions/cache'
+import { dependencyCacheKeys } from './dependency-cache-key'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as github from '@actions/github'
@@ -648,6 +651,15 @@ async function sendSlackNotification(webhookUrl: string, ctx: NotificationContex
 
 export async function run(): Promise<void> {
   try {
+    if (boolInput('cache-build-dependencies', process.env.PANTRY_CACHE_BUILD_DEPENDENCIES === 'true') && process.env.PANTRY_BUILD_CACHE_READY !== 'true') {
+      if (exportBuildCacheEnvironment(process.env, core)) {
+        fs.mkdirSync(buildArchiveCacheDir(), { recursive: true })
+        fs.rmSync(path.join(buildArchiveCacheDir(), 'events.jsonl'), { force: true })
+        core.saveState('build-archive-cache-summary', 'true')
+        core.info('Enabled shared, checksum-verified build dependency archive caching')
+      }
+      else core.warning('GitHub build dependency archive cache unavailable; local caching remains enabled')
+    }
     const inputs: ActionInputs = {
       version: core.getInput('version') || 'latest',
       packages: core.getInput('packages') || '',
@@ -820,12 +832,9 @@ export async function run(): Promise<void> {
         core.warning(`Native artifact identity unavailable; installing without a dependency cache: ${error}`)
       }
     }
-    const cachePrefix = `pantry-v4-${resolvedVer}-${platform.os}-${platform.arch}-${artifactIdentity}-`
-    const cacheKey = `${cachePrefix}${lockHash}-${depsHash}-${cachePackages || 'all'}`
-    // Restore keys: try same OS/arch with any lock hash
-    const restoreKeys = [
-      cachePrefix,
-    ]
+    const { key: cacheKey, restoreKeys } = dependencyCacheKeys(
+      platform, artifactIdentity || 'unavailable', resolvedVer, lockHash, depsHash, cachePackages,
+    )
     let cacheHit = false
     // Whether `pantry install` ran in this step, and so may have re-pointed
     // system-package links that need re-asserting afterwards

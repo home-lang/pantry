@@ -78,6 +78,43 @@ using the same endpoint and credential scope within the original request
 deadline. Authentication failures and missing packages remain terminal. A
 failed install still fails the job after recovery is exhausted.
 
+### Build dependency archive caching
+
+The repository's mirror, source-build, sync, and publish workflows enable
+`PANTRY_CACHE_BUILD_DEPENDENCIES: 'true'`. Setup Pantry exports the job's masked
+Actions cache credentials for subsequent Bun build scripts. Other workflows can
+opt in with `cache-build-dependencies: 'true'` on the action.
+
+`build-package.ts` and `download-from-s3.ts` fetch current metadata, then reuse
+the exact SHA-256 archive from a local cache or GitHub Actions. Every hit is
+hashed again. A rebuild at the same version with a new digest downloads new
+bytes. Extraction and pkg-config rewriting happen separately for each build.
+Only the verified archive is cached; credentials, signed URLs, metadata, and
+extracted prefixes are excluded. GitHub entries are saved immediately, so a
+later build failure does not discard downloaded dependencies.
+
+The local cache defaults to `$GITHUB_WORKSPACE/.cache/pantry-build-archives/v1`
+in CI, or `~/.cache/pantry-build-archives/v1` locally. Set
+`PANTRY_BUILD_ARCHIVE_CACHE_DIR` to override it and
+`PANTRY_BUILD_ARCHIVE_CACHE_MAX_BYTES` to change its 4 GiB limit. Old archives
+are evicted after the requesting build receives its copy. Child build processes
+share a lock so they do not download the same dependency concurrently.
+
+Each GitHub entry contains one archive under an exact digest key, shared across
+workflows within GitHub's branch/cache scope and subject to normal cache
+eviction. Parallel cold runners can each download an archive before the first
+save completes. No repository cache quota increase is required. Cache outages
+fall back to object storage; checksum failures remain fatal.
+
+The action's job summary reports local/GitHub hits, object-storage archive bytes
+written, failed downloads, avoided repeat bytes, and the largest origin
+dependencies. Metadata and upstream recipe downloads are excluded; these
+counters are estimates rather than the provider's bill. Run the manual
+**Verify Shared Build Dependency Cache** workflow to populate real dependency
+archives and require successful reuse on a fresh runner with origin archive
+downloads disabled. This path uses the configured S3-compatible provider and
+continues to work if storage later moves to R2.
+
 ### Windows Git provisioning
 
 On Windows, `git-scm.org@2.53.0` resolves to the official complete MinGit

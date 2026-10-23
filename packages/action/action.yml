@@ -7,6 +7,9 @@ branding:
   color: blue
 
 inputs:
+  cache-build-dependencies:
+    description: Enable shared archive caching for repository build scripts in subsequent steps (also enabled by PANTRY_CACHE_BUILD_DEPENDENCIES=true)
+    required: false
   version:
     description: Pantry version to install (e.g. "0.8.3"). Defaults to "latest".
     required: false

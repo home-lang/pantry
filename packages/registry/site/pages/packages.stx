@@ -44,7 +44,7 @@
     </div>
 
     <!-- Table -->
-    <div class="rounded-lg overflow-hidden" style="border: 1px solid var(--border);">
+    <div class="rounded-lg overflow-x-auto" style="border: 1px solid var(--border);">
       <table class="w-full" style="border-collapse: collapse; font-size: 0.85rem;">
         <thead>
           <tr style="background: var(--bg-subtle); color: var(--fg-subtle);">
@@ -84,7 +84,7 @@
             class="font-mono" style="flex: 1 1 220px; min-width: 200px; padding: 0.45rem 0.7rem; font-size: 0.82rem; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--fg);" />
           <span id="unavail-rowcount" class="font-mono" style="font-size: 0.8125rem; color: var(--fg-subtle);"></span>
         </div>
-        <div class="rounded-lg overflow-hidden" style="border: 1px solid var(--border);">
+        <div class="rounded-lg overflow-x-auto" style="border: 1px solid var(--border);">
           <table class="w-full" style="border-collapse: collapse; font-size: 0.82rem;">
             <thead>
               <tr style="background: var(--bg-subtle); color: var(--fg-subtle);">

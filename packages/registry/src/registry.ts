@@ -495,7 +495,7 @@ export function createProductionRegistry(config: {
   baseUrl: string
   region?: string
   npmFallback?: boolean
-  storageProvider?: 'aws' | 'backblaze' | 'hetzner'
+  storageProvider?: RegistryConfig['storageProvider']
   s3Endpoint?: string
   forcePathStyle?: boolean
   metadataBackend?: 'dynamodb' | 'object' | 'file'
@@ -516,7 +516,7 @@ export function createProductionRegistry(config: {
 /**
  * Create a registry from environment variables.
  *
- * Storage provider is selected via STORAGE_PROVIDER (aws | backblaze | hetzner);
+ * Storage provider is selected via STORAGE_PROVIDER (aws | backblaze | hetzner | r2);
  * endpoint/region/credentials are resolved by the storage provider helper from
  * the matching env vars (S3_ENDPOINT, S3_REGION or B2_REGION, and the
  * provider credential vars B2_... / HETZNER_S3_...).
@@ -531,9 +531,10 @@ export function createRegistryFromEnv(): Registry {
     s3Bucket,
     // Leave region undefined unless explicitly set so the provider default applies.
     s3Region: process.env.S3_REGION || process.env.AWS_REGION,
-    storageProvider: process.env.STORAGE_PROVIDER as 'aws' | 'backblaze' | 'hetzner' | undefined,
+    storageProvider: process.env.STORAGE_PROVIDER as RegistryConfig['storageProvider'],
     s3Endpoint: process.env.S3_ENDPOINT,
-    forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
+    // Let provider defaults apply when this optional setting is absent.
+    forcePathStyle: process.env.S3_FORCE_PATH_STYLE === undefined ? undefined : process.env.S3_FORCE_PATH_STYLE === 'true',
     dynamoTable,
     metadataBackend: process.env.METADATA_BACKEND as 'dynamodb' | 'object' | 'file' | undefined,
     metadataKey: process.env.METADATA_KEY,

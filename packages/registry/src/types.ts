@@ -123,7 +123,7 @@ export interface RegistryConfig {
    * Object storage provider. AWS S3, Backblaze B2 and Hetzner Object Storage are
    * all S3-compatible. Defaults to `STORAGE_PROVIDER` env, then `'aws'`.
    */
-  storageProvider?: 'aws' | 'backblaze' | 'hetzner'
+  storageProvider?: 'aws' | 'backblaze' | 'hetzner' | 'r2'
   /** Endpoint host override (no scheme), e.g. `s3.us-west-004.backblazeb2.com`. */
   s3Endpoint?: string
   /** Force path-style addressing instead of virtual-hosted. */

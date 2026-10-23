@@ -3,7 +3,7 @@
  *
  * @domain `openssl.org`
  * @programs `openssl`, `c_rehash`
- * @version `4.0.3` (72 versions available)
+ * @version `4.1.0` (73 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install openssl.org`
@@ -24,7 +24,7 @@
  * console.log(pkg.name)        // "OpenSSL"
  * console.log(pkg.description) // "TLS/SSL and crypto library with QUIC APIs"
  * console.log(pkg.programs)    // ["openssl", "c_rehash"]
- * console.log(pkg.versions[0]) // "4.0.3" (latest)
+ * console.log(pkg.versions[0]) // "4.1.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/openssl-org.md
@@ -80,6 +80,7 @@ export const opensslPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.1.0',
     '4.0.3',
     '4.0.2',
     '4.0.1',

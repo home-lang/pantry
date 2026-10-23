@@ -40,8 +40,8 @@
 
     <!-- Package header -->
     <div class="mb-6 animate-fade-in" id="pkg-header">
-      <div class="flex items-start justify-between gap-4 mb-2">
-        <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-start justify-between gap-4 mb-2">
+        <div class="flex items-center gap-3 min-w-0">
           <img
             src="https://www.google.com/s2/favicons?domain={{ name }}&sz=32"
             alt=""
@@ -51,7 +51,7 @@
             class="rounded-sm"
             onerror="this.style.display='none'"
           />
-          <h1 class="text-3xl font-semibold tracking-tight font-mono">{{ name }}</h1>
+          <h1 class="text-3xl font-semibold tracking-tight font-mono min-w-0" style="overflow-wrap: anywhere;">{{ name }}</h1>
           <button class="copy-btn" data-copy="{{ name }}" data-tooltip="Copy package name" style="font-size: 0.625rem; padding: 0.125rem 0.375rem;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: -2px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           </button>

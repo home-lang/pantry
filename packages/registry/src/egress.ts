@@ -7,27 +7,37 @@
  * The only component that knows a download happened *and* how large it was is
  * the registry, at the moment it authorizes the redirect.
  *
- * So this records the artifact's declared size against the day it was served.
- * That is what the provider bills for, and having it day-bucketed is what makes
+ * So this records the artifact's declared size against the day GET authorized it.
+ * This is an estimate of client download bytes, not provider billing, and makes
  * "are we on track to exceed the monthly allowance?" answerable before the
  * allowance is gone rather than after.
  *
  * Caveats worth knowing when reading the numbers: this counts bytes we
  * authorized, not bytes that completed, so an abandoned download still counts;
- * and once a CDN is in front of the bucket it counts client-side downloads
- * rather than origin egress, which is the larger of the two.
+ * once a CDN is in front of the bucket it counts client-side downloads rather
+ * than cache misses; direct bucket reads and scanner/CI transfers bypass it.
+ * HEAD probes must not be recorded, since they transfer no artifact body.
  */
 
 /** Days of history to keep. Two months, so a full month is always comparable. */
 const RETENTION_DAYS = 62
+const MAX_PACKAGES_PER_DAY = 512
+
+export interface EgressPackage {
+  packageName: string
+  bytes: number
+  downloads: number
+}
 
 export interface EgressDay {
   date: string
   bytes: number
   downloads: number
+  packages?: EgressPackage[]
 }
 
 export interface EgressSnapshot {
+  measurement: 'authorized-get-bytes'
   /** UTC day key the `today` figures belong to. */
   today: string
   todayBytes: number
@@ -42,6 +52,11 @@ export interface EgressSnapshot {
   budgetUsedPercent: number | null
   /** Straight-line month-end projection from the month-to-date rate. */
   projectedMonthBytes: number
+  /** First retained day in this month; a partial month must not imply full coverage. */
+  observedSince: string | null
+  observedDays: number
+  /** Only attributed GETs; historical totals can include unattributed requests. */
+  topPackages: EgressPackage[]
   /** Newest last. */
   days: EgressDay[]
 }
@@ -93,7 +108,7 @@ export class EgressLedger {
   }
 
   /** Charge a served artifact to today's bucket. */
-  record(bytes: number): void {
+  record(bytes: number, packageName?: string): void {
     const size = Number(bytes)
     if (!Number.isFinite(size) || size < 0)
       return
@@ -102,6 +117,20 @@ export class EgressLedger {
     const day = this.days.get(key) || { date: key, bytes: 0, downloads: 0 }
     day.bytes += size
     day.downloads += 1
+    if (packageName) {
+      day.packages ??= []
+      let entry = day.packages.find(item => item.packageName === packageName)
+      if (!entry) {
+        const name = day.packages.length < MAX_PACKAGES_PER_DAY ? packageName : '(other)'
+        entry = day.packages.find(item => item.packageName === name)
+        if (!entry) {
+          entry = { packageName: name, bytes: 0, downloads: 0 }
+          day.packages.push(entry)
+        }
+      }
+      entry.bytes += size
+      entry.downloads += 1
+    }
     this.days.set(key, day)
     this.prune()
     if (this.persist && now - this.lastPersistAt >= PERSIST_INTERVAL_MS) {
@@ -119,6 +148,15 @@ export class EgressLedger {
     const monthDays = days.filter(day => day.date.startsWith(month))
     const monthBytes = monthDays.reduce((total, day) => total + day.bytes, 0)
     const budgetBytes = this.budget()
+    const packages = new Map<string, EgressPackage>()
+    for (const day of monthDays) {
+      for (const item of day.packages || []) {
+        const entry = packages.get(item.packageName) || { packageName: item.packageName, bytes: 0, downloads: 0 }
+        entry.bytes += item.bytes
+        entry.downloads += item.downloads
+        packages.set(item.packageName, entry)
+      }
+    }
 
     // Project from elapsed days rather than elapsed time: the ledger is
     // day-bucketed, so a partial first day would otherwise scale a few hours of
@@ -126,8 +164,11 @@ export class EgressLedger {
     const date = new Date(at)
     const dayOfMonth = date.getUTCDate()
     const daysInMonth = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate()
+    const observedSince = monthDays[0]?.date ?? null
+    const observedDays = observedSince ? dayOfMonth - Number(observedSince.slice(8, 10)) + 1 : 0
 
     return {
+      measurement: 'authorized-get-bytes',
       today,
       todayBytes: todayDay?.bytes ?? 0,
       todayDownloads: todayDay?.downloads ?? 0,
@@ -136,7 +177,10 @@ export class EgressLedger {
       monthDownloads: monthDays.reduce((total, day) => total + day.downloads, 0),
       budgetBytes,
       budgetUsedPercent: budgetBytes > 0 ? Math.round((monthBytes / budgetBytes) * 1000) / 10 : null,
-      projectedMonthBytes: dayOfMonth > 0 ? Math.round((monthBytes / dayOfMonth) * daysInMonth) : monthBytes,
+      projectedMonthBytes: observedDays > 0 ? Math.round((monthBytes / observedDays) * daysInMonth) : monthBytes,
+      observedSince,
+      observedDays,
+      topPackages: [...packages.values()].sort((a, b) => b.bytes - a.bytes).slice(0, 20),
       days,
     }
   }
@@ -163,6 +207,13 @@ export class EgressLedger {
         date,
         bytes,
         downloads: Number.isFinite(downloads) && downloads >= 0 ? downloads : 0,
+        packages: Array.isArray(entry?.packages)
+          ? entry.packages.filter((item: EgressPackage) =>
+            item && typeof item.packageName === 'string'
+            && Number.isFinite(item.bytes) && item.bytes >= 0
+            && Number.isFinite(item.downloads) && item.downloads >= 0,
+          ).slice(0, MAX_PACKAGES_PER_DAY + 1).map((item: EgressPackage) => ({ ...item }))
+          : undefined,
       })
     }
     this.prune()

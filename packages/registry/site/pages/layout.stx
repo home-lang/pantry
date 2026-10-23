@@ -148,6 +148,7 @@
   <!-- Prevent FOUC: apply saved theme + accent color before paint -->
   <script client>
     (function(){
+      try {
       var t=localStorage.getItem('pantry-theme');
       if(t==='system'){var d=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.dataset.theme=d?'dark':'light'}
       else if(t==='light'){document.documentElement.dataset.theme='light'}
@@ -158,6 +159,7 @@
       }
       if(localStorage.getItem('pantry-compact')==='true')document.documentElement.classList.add('compact');
       if(localStorage.getItem('pantry-animations')==='false')document.documentElement.classList.add('no-animations');
+      } catch (_) { /* Defaults remain usable when storage is unavailable. */ }
     })()
   </script>
 
@@ -203,6 +205,15 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif !important; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
     body { min-height: 100vh; display: flex; flex-direction: column; }
+    main, input, select, textarea { min-width: 0; }
+    button, input, select, textarea { font: inherit; }
+    button, a, input, select, textarea { touch-action: manipulation; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .skip-link { position: fixed; top: 0.5rem; left: 0.5rem; z-index: 100; padding: 0.75rem 1rem; color: var(--bg); background: var(--accent); border-radius: 0.375rem; transform: translateY(-150%); }
+    .skip-link:focus { transform: none; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0s !important; transition-duration: 0s !important; scroll-behavior: auto !important; }
+    }
     a { color: inherit; text-decoration: none; }
     h1, h2, h3, h4, h5, h6 { font-family: 'Lilex', monospace !important; }
     code, .font-mono { font-family: 'Lilex', monospace !important; }
@@ -221,7 +232,8 @@
 
     /* CSS-only tabs */
     .tab-container { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
-    .tab-radio { display: none; }
+    .tab-radio { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .tab-radio:focus-visible + .tab-label { outline: 2px solid var(--accent); outline-offset: -2px; }
     .tab-label { cursor: pointer; padding: 0.5rem 1rem; font-size: 0.8125rem; color: var(--fg-subtle); border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; }
     .tab-label:hover { color: var(--fg-muted); }
     .tab-content { display: none; order: 99; width: 100%; padding-top: 1.5rem; }
@@ -240,11 +252,12 @@
     /* Desktop: horizontal nav. The display lives here (not as a crosswind
        `flex` utility) so the mobile media query can hide/show it — a utility
        class would win the cascade and pin the menu permanently open. */
-    .header-nav { display: flex; align-items: center; gap: 1.5rem; }
+    .header-nav { display: flex; align-items: center; gap: 1rem; min-width: 0; }
+    .header-nav form { min-width: 0; }
     .mobile-nav-toggle { display: none; background: none; border: none; color: var(--fg-muted); cursor: pointer; padding: 0.5rem; }
-    @media (max-width: 640px) {
+    @media (max-width: 1099px) {
       .mobile-nav-toggle { display: block; }
-      .header-nav { display: none; flex-direction: column; align-items: stretch; position: absolute; top: 3.5rem; left: 0; right: 0; background: var(--bg); border-bottom: 1px solid var(--border); padding: 1rem 1.5rem; gap: 0.75rem; }
+      .header-nav { display: none; flex-direction: column; align-items: stretch; position: absolute; top: 3.5rem; left: 0; right: 0; background: var(--bg); border-bottom: 1px solid var(--border); padding: 1rem 1.5rem; gap: 0.75rem; max-height: calc(100dvh - 3.5rem); overflow-y: auto; }
       .header-nav.open { display: flex; }
       .header-nav form { width: 100%; }
       .header-nav form input { width: 100%; }
@@ -258,11 +271,10 @@
     [data-theme="light"] .theme-icon-sun { display: block; }
     [data-theme="light"] .theme-icon-moon { display: none; }
 
-    /* Keyboard shortcuts modal */
-    .shortcuts-dialog { position: fixed; inset: 0; z-index: 100; display: none; }
-    .shortcuts-dialog.open { display: flex; align-items: center; justify-content: center; }
-    .shortcuts-backdrop { position: absolute; inset: 0; background: oklch(0 0 0 / 0.6); backdrop-filter: blur(4px); }
-    .shortcuts-panel { position: relative; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem; max-width: 28rem; width: 90vw; max-height: 85vh; overflow-y: auto; }
+    /* The native dialog owns visibility, focus trapping and Escape. */
+    .shortcuts-dialog { margin: auto; color: var(--fg); background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem; width: min(28rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; }
+    .shortcuts-dialog::backdrop { background: oklch(0 0 0 / 0.6); }
+    html:has(.shortcuts-dialog[open]) { overflow: hidden; }
     .shortcut-row { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
     .shortcut-row:last-child { border-bottom: none; }
     .shortcut-key { display: inline-flex; align-items: center; justify-content: center; min-width: 1.75rem; padding: 0.125rem 0.5rem; background: var(--bg-muted); border: 1px solid var(--border); border-radius: 0.25rem; font-family: 'Lilex', monospace; font-size: 0.75rem; color: var(--fg-muted); }
@@ -291,6 +303,9 @@
     [data-tooltip] { position: relative; }
     [data-tooltip]::after { content: attr(data-tooltip); position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%) translateY(-4px); background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.25rem 0.5rem; font-size: 0.6875rem; color: var(--fg-muted); white-space: nowrap; pointer-events: none; opacity: 0; transition: all 0.15s ease; z-index: 60; }
     [data-tooltip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+    /* Header tooltips grow inward so even invisible tips cannot widen the page. */
+    .header-nav [data-tooltip]::after { left: auto; right: 0; transform: translateY(-4px); }
+    .header-nav [data-tooltip]:hover::after { transform: translateY(0); }
 
     /* Collapsible sections */
     .collapsible-toggle { cursor: pointer; user-select: none; }
@@ -300,7 +315,7 @@
     .collapsible-content.collapsed { max-height: 0 !important; opacity: 0; padding-top: 0 !important; padding-bottom: 0 !important; }
 
     /* Sticky package header */
-    .pkg-sticky-header { position: sticky; top: 3.5rem; z-index: 40; background: color-mix(in oklch, var(--bg), transparent 5%); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 0.625rem 1.5rem; transform: translateY(-100%); opacity: 0; pointer-events: none; transition: all 0.2s ease; }
+    .pkg-sticky-header { position: fixed; top: 3.5rem; left: 0; right: 0; z-index: 40; background: color-mix(in oklch, var(--bg), transparent 5%); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 0.625rem 1.5rem; transform: translateY(-100%); opacity: 0; pointer-events: none; transition: all 0.2s ease; }
     .pkg-sticky-header.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
 
     /* Instant search dropdown */
@@ -361,16 +376,17 @@
   <script>
     window.pantryApiUrl = function(path) { return path }
   </script>
+  <a href="#main-content" class="skip-link">Skip to content</a>
   <!-- Header -->
   <header class="sticky top-0 z-50 backdrop-blur-xl border-b border-[var(--border)]" style="background: color-mix(in oklch, var(--bg), transparent 10%);">
     <div class="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
       <a href="/" class="flex items-center gap-2 font-semibold text-lg">
         <span style="color: var(--accent);">pantry</span>
       </a>
-      <button class="mobile-nav-toggle" aria-label="Toggle navigation" onclick="this.nextElementSibling.classList.toggle('open')">
+      <button class="mobile-nav-toggle" aria-label="Toggle navigation" aria-controls="header-nav" aria-expanded="false" id="mobile-nav-toggle">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h14M3 10h14M3 15h14"/></svg>
       </button>
-      <nav class="header-nav text-sm" aria-label="main navigation">
+      <nav class="header-nav text-sm" aria-label="main navigation" id="header-nav">
         <form action="/search" method="get" class="flex" style="position: relative;" id="header-search-form">
           <input
             type="text"
@@ -380,7 +396,7 @@
             autocomplete="off"
             class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-3 py-1.5 w-60 outline-none transition-colors focus:border-[var(--accent)]"
             style="color: var(--fg); font-size: 0.8125rem;"
-            id="header-search-input"
+            id="header-search-input" role="combobox" aria-autocomplete="list" aria-controls="header-search-dropdown" aria-expanded="false"
           />
           <kbd class="hidden sm:inline-flex absolute right-2 top-1/2 -translate-y-1/2 bg-[var(--bg-muted)] border border-[var(--border)] rounded px-1 py-0.5 pointer-events-none" style="font-size: 0.5625rem; color: var(--fg-subtle);" id="header-search-kbd">/</kbd>
           <div class="search-dropdown" id="header-search-dropdown" role="listbox"></div>
@@ -390,18 +406,18 @@
         <a href="/pricing" class="hvr-fg transition-colors" style="color: var(--fg-muted);" data-tooltip="Plans and marketplace fees">pricing</a>
         <a href="/docs" class="hvr-fg transition-colors" style="color: var(--fg-muted);">docs</a>
         <a href="/about" class="hvr-fg transition-colors" style="color: var(--fg-muted);">about</a>
-        <a href="https://github.com/pantry-pm/pantry" target="_blank" rel="noopener" class="hvr-fg transition-colors" style="color: var(--fg-muted);">
+        <a href="https://github.com/pantry-pm/pantry" aria-label="Source code" target="_blank" rel="noopener" class="hvr-fg transition-colors" style="color: var(--fg-muted);">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
         </a>
 
         <!-- Account / Login -->
         <a href="/publisher" class="hvr-fg transition-colors" style="color: var(--fg-muted);" data-tooltip="Publisher dashboard">Publish</a>
-        <a href="/account" class="hvr-fg transition-colors" style="color: var(--fg-muted);" data-tooltip="Account" id="nav-account-link">
+        <a href="/account" class="hvr-fg transition-colors" style="color: var(--fg-muted);" data-tooltip="Account" aria-label="Account" id="nav-account-link">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </a>
 
         <!-- Settings -->
-        <a href="/settings" class="hvr-fg transition-colors" style="color: var(--fg-muted);" data-tooltip="Settings (,)">
+        <a href="/settings" class="hvr-fg transition-colors" style="color: var(--fg-muted);" data-tooltip="Settings (,)" aria-label="Settings">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </a>
 
@@ -415,7 +431,7 @@
   </header>
 
   <!-- Main -->
-  <main id="main-content" class="flex-1 flex flex-col">
+  <main id="main-content" class="flex-1 flex flex-col" tabindex="-1">
     {!! content !!}
   </main>
 
@@ -440,7 +456,7 @@
             <a href="https://github.com/pantry-pm/pantry" target="_blank" rel="noopener" class="hvr-fg transition-colors">source</a>
             <a href="https://discord.gg/stacksjs" target="_blank" rel="noopener" class="hvr-fg transition-colors">chat</a>
           </nav>
-          <button onclick="document.getElementById('shortcuts-dialog').classList.add('open')" style="font-size: 0.6875rem; color: var(--fg-subtle); background: none; border: none; cursor: pointer;" class="hvr-fg transition-colors">
+          <button data-open-shortcuts aria-haspopup="dialog" aria-controls="shortcuts-dialog" style="font-size: 0.6875rem; color: var(--fg-subtle); background: none; border: none; cursor: pointer;" class="hvr-fg transition-colors">
             press <kbd class="shortcut-key" style="font-size: 0.625rem; padding: 0 0.25rem;">?</kbd> for shortcuts
           </button>
         </div>
@@ -449,12 +465,10 @@
   </footer>
 
   <!-- Keyboard Shortcuts Modal -->
-  <div id="shortcuts-dialog" class="shortcuts-dialog" role="dialog" aria-label="Keyboard shortcuts">
-    <div class="shortcuts-backdrop" onclick="this.parentElement.classList.remove('open')"></div>
-    <div class="shortcuts-panel">
+  <dialog id="shortcuts-dialog" class="shortcuts-dialog" aria-label="Keyboard shortcuts">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-sm font-semibold">Keyboard Shortcuts</h2>
-        <button onclick="this.closest('.shortcuts-dialog').classList.remove('open')" style="background: none; border: none; cursor: pointer; color: var(--fg-subtle); padding: 0.25rem;" aria-label="Close">
+        <button data-close-shortcuts autofocus style="background: none; border: none; cursor: pointer; color: var(--fg-subtle); padding: 0.25rem;" aria-label="Close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
       </div>
@@ -496,8 +510,7 @@
           <kbd class="shortcut-key">Esc</kbd>
         </div>
       </div>
-    </div>
-  </div>
+  </dialog>
 
   <!-- Scroll-to-top button -->
   <button id="scroll-top" class="scroll-top" aria-label="Scroll to top">
@@ -505,6 +518,12 @@
   </button>
 
   <script client>
+    function readPreference(key) {
+      try { return localStorage.getItem(key) } catch (_) { return null }
+    }
+    function writePreference(key, value) {
+      try { localStorage.setItem(key, value) } catch (_) { /* Keep the current session usable. */ }
+    }
     // Theme toggle
     var toggle = document.getElementById('theme-toggle')
     if (toggle) {
@@ -513,52 +532,86 @@
         var current = html.dataset.theme || 'dark'
         var next = current === 'dark' ? 'light' : 'dark'
         html.dataset.theme = next
-        localStorage.setItem('pantry-theme', next)
+        writePreference('pantry-theme', next)
       })
     }
 
-    // Keyboard shortcuts (with chord support for g+d)
+    // Mobile menu: expose state, close on navigation/Escape, reset at desktop size.
+    var menuToggle = document.getElementById('mobile-nav-toggle')
+    var menu = document.getElementById('header-nav')
+    function closeMenu() {
+      if (menu && menu.classList.contains('open') && menu.contains(document.activeElement) && menuToggle) menuToggle.focus()
+      if (menu) menu.classList.remove('open')
+      if (menuToggle) menuToggle.setAttribute('aria-expanded', 'false')
+    }
+    if (menuToggle && menu) {
+      menuToggle.addEventListener('click', function() {
+        var open = menu.classList.toggle('open')
+        menuToggle.setAttribute('aria-expanded', String(open))
+      })
+      menu.addEventListener('click', function(e) {
+        if (e.target.closest('a')) closeMenu()
+      })
+      window.matchMedia('(min-width: 1100px)').addEventListener('change', closeMenu)
+    }
+
+    var dialog = document.getElementById('shortcuts-dialog')
+    var dialogTrigger = document.querySelector('[data-open-shortcuts]')
+    if (dialog && dialogTrigger) {
+      dialogTrigger.addEventListener('click', function() { dialogTrigger.focus(); dialog.showModal() })
+      dialog.querySelector('[data-close-shortcuts]').addEventListener('click', function() { dialog.close() })
+      dialog.addEventListener('click', function(e) {
+        if (e.target !== dialog) return
+        var bounds = dialog.getBoundingClientRect()
+        if (e.clientX < bounds.left || e.clientX > bounds.right || e.clientY < bounds.top || e.clientY > bounds.bottom) dialog.close()
+      })
+    }
+
+    // Keyboard shortcuts (with chord support for g+d).
     var _pendingChord = ''
     document.addEventListener('keydown', function(e) {
-      if (localStorage.getItem('pantry-shortcuts') === 'false') return
-      var tag = document.activeElement && document.activeElement.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
-
-      var dialog = document.getElementById('shortcuts-dialog')
-
-      // Handle chord sequences
-      if (_pendingChord === 'g') {
-        _pendingChord = ''
-        if (e.key === 'd') { window.location.href = '/docs'; return }
-        return
-      }
-
       if (e.key === 'Escape') {
-        if (dialog) dialog.classList.remove('open')
-        // Close search dropdown
+        _pendingChord = ''
+        closeMenu()
         var dd = document.getElementById('header-search-dropdown')
         if (dd) dd.classList.remove('open')
         return
       }
-      if (e.key === '/') { e.preventDefault(); var si = document.getElementById('search-input') || document.getElementById('header-search-input') || document.querySelector('input[name="q"]'); if (si) si.focus(); return }
-      if (e.key === '?') { if (dialog) dialog.classList.add('open'); return }
+      if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return
+      if (dialog && dialog.open) return
+      if (readPreference('pantry-shortcuts') === 'false') return
+      var target = e.target
+      if (target && (target.isContentEditable || target.closest('input, textarea, select, [role="textbox"]'))) return
+
+      if (_pendingChord === 'g') {
+        _pendingChord = ''
+        if (e.key === 'd') { window.location.href = '/docs'; return }
+      }
+      if (e.key === '/') { e.preventDefault(); var si = document.getElementById('search-input') || document.getElementById('header-search-input') || document.querySelector('input[name="q"]'); if (si) { if (menuToggle && getComputedStyle(menuToggle).display !== 'none') { menu.classList.add('open'); menuToggle.setAttribute('aria-expanded', 'true') } si.focus() }; return }
+      if (e.key === '?') { e.preventDefault(); if (dialog) dialog.showModal(); return }
       if (e.key === 'h') { window.location.href = '/'; return }
       if (e.key === 'p') { window.location.href = '/compare'; return }
       if (e.key === 't') { window.location.href = '/stats'; return }
       if (e.key === ',') { window.location.href = '/settings'; return }
       if (e.key === 'g') { _pendingChord = 'g'; setTimeout(function() { _pendingChord = '' }, 1000); return }
-      if (e.key === 'd') { var html = document.documentElement; var c = html.dataset.theme || 'dark'; var n = c === 'dark' ? 'light' : 'dark'; html.dataset.theme = n; localStorage.setItem('pantry-theme', n); return }
+      if (e.key === 'd') { var html = document.documentElement; var c = html.dataset.theme || 'dark'; var n = c === 'dark' ? 'light' : 'dark'; html.dataset.theme = n; writePreference('pantry-theme', n); return }
     })
 
     // Scroll-to-top
     var scrollBtn = document.getElementById('scroll-top')
     if (scrollBtn) {
-      window.addEventListener('scroll', function() {
-        if (window.scrollY > 400) { scrollBtn.classList.add('visible') }
-        else { scrollBtn.classList.remove('visible') }
-      }, { passive: true })
+      var scrollVisible = false
+      function updateScrollButton() {
+        var visible = window.scrollY > 400
+        if (visible !== scrollVisible) {
+          scrollVisible = visible
+          scrollBtn.classList.toggle('visible', visible)
+        }
+      }
+      updateScrollButton()
+      window.addEventListener('scroll', updateScrollButton, { passive: true })
       scrollBtn.addEventListener('click', function() {
-        window.scrollTo({ top: 0, behavior: 'smooth' })
+        window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })
       })
     }
 
@@ -607,43 +660,87 @@
       if (!input || !dropdown) return
 
       var debounceTimer = null
+      var controller = null
+      var generation = 0
       var highlightIdx = -1
-      var currentResults = []
 
+      function closeResults() {
+        dropdown.classList.remove('open')
+        input.setAttribute('aria-expanded', 'false')
+        input.removeAttribute('aria-activedescendant')
+        highlightIdx = -1
+      }
+      function cancelSearch() {
+        generation++
+        clearTimeout(debounceTimer)
+        if (controller) controller.abort()
+        closeResults()
+      }
       input.addEventListener('focus', function() {
         if (kbd) kbd.style.display = 'none'
       })
       input.addEventListener('blur', function() {
         if (kbd) kbd.style.display = ''
-        setTimeout(function() { dropdown.classList.remove('open') }, 200)
+        cancelSearch()
       })
-
+      // Retain input focus until a result's click has followed its link.
+      dropdown.addEventListener('mousedown', function(e) { e.preventDefault() })
       input.addEventListener('input', function() {
+        cancelSearch()
         var q = this.value.trim()
-        if (q.length < 2) { dropdown.classList.remove('open'); return }
-        clearTimeout(debounceTimer)
+        if (q.length < 2) return
+        var requestGeneration = generation
         debounceTimer = setTimeout(function() {
-          fetch('/search?q=' + encodeURIComponent(q) + '&format=json&limit=8')
-            .then(function(r) { return r.json() })
+          controller = new AbortController()
+          fetch('/search?q=' + encodeURIComponent(q) + '&format=json&limit=8', { signal: controller.signal })
+            .then(function(r) { if (!r.ok) throw new Error('Search failed'); return r.json() })
             .then(function(data) {
-              currentResults = data.results || []
-              highlightIdx = -1
-              if (currentResults.length === 0) { dropdown.classList.remove('open'); return }
-              dropdown.innerHTML = currentResults.map(function(r, i) {
-                return '<a href="/package/' + r.name + '" class="search-dropdown-item" role="option">'
-                  + '<span class="item-name">' + r.name + '</span>'
-                  + (r.version ? '<span class="col-version">' + r.version + '</span>' : '')
-                  + (r.description ? '<span class="item-desc">' + r.description + '</span>' : '')
-                  + '</a>'
-              }).join('')
-                + '<a href="/search?q=' + encodeURIComponent(q) + '" class="search-dropdown-item" style="color: var(--accent); border-top: 1px solid var(--border);">View all results</a>'
+              if (requestGeneration !== generation || document.activeElement !== input) return
+              var results = data.results || []
+              if (results.length === 0) { closeResults(); return }
+              dropdown.replaceChildren()
+              results.forEach(function(result, index) {
+                var link = document.createElement('a')
+                link.href = '/package/' + encodeURIComponent(result.name)
+                link.className = 'search-dropdown-item'
+                link.id = 'header-result-' + index
+                link.setAttribute('role', 'option')
+                link.setAttribute('aria-selected', 'false')
+                var name = document.createElement('span')
+                name.className = 'item-name'
+                name.textContent = result.name
+                link.appendChild(name)
+                if (result.version) {
+                  var version = document.createElement('span')
+                  version.className = 'col-version'
+                  version.textContent = result.version
+                  link.appendChild(version)
+                }
+                if (result.description) {
+                  var description = document.createElement('span')
+                  description.className = 'item-desc'
+                  description.textContent = result.description
+                  link.appendChild(description)
+                }
+                dropdown.appendChild(link)
+              })
+              var all = document.createElement('a')
+              all.href = '/search?q=' + encodeURIComponent(q)
+              all.className = 'search-dropdown-item'
+              all.id = 'header-result-all'
+              all.setAttribute('role', 'option')
+              all.setAttribute('aria-selected', 'false')
+              all.textContent = 'View all results'
+              dropdown.appendChild(all)
               dropdown.classList.add('open')
+              input.setAttribute('aria-expanded', 'true')
             })
-            .catch(function() { dropdown.classList.remove('open') })
+            .catch(function() { if (requestGeneration === generation) closeResults() })
         }, 200)
       })
 
       input.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { cancelSearch(); return }
         if (!dropdown.classList.contains('open')) return
         var items = dropdown.querySelectorAll('.search-dropdown-item')
         if (e.key === 'ArrowDown') { e.preventDefault(); highlightIdx = Math.min(highlightIdx + 1, items.length - 1); updateHighlight(items) }
@@ -652,9 +749,10 @@
       })
 
       function updateHighlight(items) {
-        items.forEach(function(el, i) { el.classList.toggle('highlighted', i === highlightIdx) })
+        items.forEach(function(el, i) { el.classList.toggle('highlighted', i === highlightIdx); el.setAttribute('aria-selected', String(i === highlightIdx)) })
+        if (items[highlightIdx]) input.setAttribute('aria-activedescendant', items[highlightIdx].id)
       }
     })()
-  </script>
+</script>
 </body>
 </html>

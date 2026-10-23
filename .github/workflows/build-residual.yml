@@ -21,6 +21,7 @@ on:
         type: string
 
 env:
+  PANTRY_CACHE_BUILD_DEPENDENCIES: 'true'
   PANTRY_REGISTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
   STORAGE_PROVIDER: ${{ vars.STORAGE_PROVIDER || 'aws' }}
   S3_BUCKET: ${{ vars.S3_BUCKET || 'pantry-registry' }}

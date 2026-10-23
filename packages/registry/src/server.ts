@@ -892,7 +892,7 @@ export function createHandler(
         return Response.json(data, { headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=15' } })
       }
       // Live build status: what's building now, recent outcomes, rebuild queue.
-      // Aggregate only — no per-client or per-package breakdown — so this is
+      // Aggregate only — no per-client breakdown — so this is
       // the same class of information as the download counts already on /stats.
       if (path === '/api/egress' && req.method === 'GET') {
         return Response.json(getEgressLedger().snapshot(), {
@@ -5380,7 +5380,7 @@ async function handleBinaryProxy(
       const kind = isTarball ? 'tarball' : 'checksum'
       activeRecord = await findActiveBinaryRecord(binaryStore, s3Key, kind, !storage)
       const parsed = parseBinaryKey(s3Key)
-      if (!activeRecord && parsed && isPendingMaterialize(parsed.domain, parsed.version, parsed.platform)) {
+      if (!bodyless && !activeRecord && parsed && isPendingMaterialize(parsed.domain, parsed.version, parsed.platform)) {
         const tarballKey = isTarball ? s3Key : s3Key.slice(0, -'.sha256'.length)
         _presignClient ??= createS3Client(resolveStorageProvider())
         if (getPublisher && await ensureBinaryAvailable(tarballKey, _presignClient, getPublisher())) {
@@ -5404,6 +5404,32 @@ async function handleBinaryProxy(
           code: 'BINARY_SCAN_ATTESTATION_REQUIRED',
         }, { status: 503, headers: { ...corsHeaders, 'Retry-After': '60' } })
       }
+    }
+
+    // Both HEAD and GET require the same independent production attestation.
+    // Reject before spending a client's budget or counting authorized bytes.
+    if (isTarball && activeRecord && !storage && binaryAttestationRequired()) {
+      _presignClient ??= createS3Client(resolveStorageProvider())
+      if (!await hasCleanBinaryAttestation(_presignClient, process.env.S3_BUCKET || 'pantry-registry', s3Key, activeRecord.sha256)) {
+        return Response.json({
+          error: 'Binary artifact has no clean malware-scan attestation',
+          code: 'BINARY_SCAN_ATTESTATION_REQUIRED',
+        }, { status: 503, headers: { ...corsHeaders, 'Retry-After': '60' } })
+      }
+    }
+
+    // A probe must never fetch an archive or redirect HEAD to a URL signed for
+    // GET (SigV4 binds the HTTP method). Use the validated manifest for headers.
+    if (bodyless && isTarball && activeRecord) {
+      const size = Number(activeRecord.size)
+      return new Response(null, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': contentType,
+          'Cache-Control': cacheControl,
+          ...(Number.isFinite(size) && size >= 0 ? { 'Content-Length': String(size) } : {}),
+        },
+      })
     }
 
     // Charge the download against the caller's budget before handing over a
@@ -5433,14 +5459,15 @@ async function handleBinaryProxy(
     // network counters cannot see this: the client is redirected to object
     // storage, so the transfer never touches this process.
     if (isTarball && activeRecord)
-      getEgressLedger().record(Number(activeRecord.size) || 0)
+      getEgressLedger().record(Number(activeRecord.size) || 0, parseBinaryKey(s3Key)?.domain)
 
     // Track only authorized tarball downloads fire-and-forget.
     if (isTarball) {
       const parts = s3Key.split('/')
       if (parts.length >= 4) {
-        const domain = parts[1]
-        const version = parts[2]
+        const parsed = parseBinaryKey(s3Key)
+        const domain = parsed?.domain || parts[1]
+        const version = parsed?.version || parts[2]
         analytics.trackDownload({
           packageName: domain,
           version,
@@ -5488,15 +5515,6 @@ async function handleBinaryProxy(
       // (Hetzner/B2) use private buckets, so presign a time-limited GET URL.
       const s3Bucket = process.env.S3_BUCKET || 'pantry-registry'
       const resolved = resolveStorageProvider()
-      if (binaryAttestationRequired()) {
-        _presignClient ??= createS3Client(resolved)
-        if (!await hasCleanBinaryAttestation(_presignClient, s3Bucket, s3Key, activeRecord!.sha256)) {
-          return Response.json({
-            error: 'Binary artifact has no clean malware-scan attestation',
-            code: 'BINARY_SCAN_ATTESTATION_REQUIRED',
-          }, { status: 503, headers: { ...corsHeaders, 'Retry-After': '60' } })
-        }
-      }
       let location: string
       let redirectCacheControl = cacheControl
       if (resolved.cdnBaseUrl) {

@@ -30,7 +30,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, write
 import { execSync, spawn } from 'node:child_process'
 import { basename, dirname, join, relative } from 'node:path'
 import { parseArgs } from 'node:util'
-import { createObjectStorageClient } from '@stacksjs/ts-cloud'
+import { createObjectStorageClient } from './object-storage'
 import { reportBuild, reportBuildLog } from './report-build'
 import { fixElfRpaths, fixUp } from './fix-up'
 import { selectPublishedFiles, writeProgramInterfaces } from './published-files'

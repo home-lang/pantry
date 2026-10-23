@@ -1,0 +1,18 @@
+{
+  "extends": "../../../../tsconfig.json",
+  "compilerOptions": {
+    "lib": [
+      "esnext",
+      "dom"
+    ],
+    "isolatedDeclarations": false,
+    "rootDir": "../../../..",
+    "types": [
+      "bun"
+    ]
+  },
+  "include": [
+    "*.ts"
+  ],
+  "exclude": []
+}
