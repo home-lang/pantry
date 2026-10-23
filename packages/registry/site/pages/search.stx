@@ -8,6 +8,7 @@
 
     <!-- Search form with sort and view controls -->
     <form action="/search" method="get" class="mb-8">
+      <input type="hidden" name="view" value="{{ view }}" />
       <div class="flex gap-2 mb-3">
         <div class="relative flex-1 min-w-0">
           <input
@@ -30,31 +31,31 @@
       @if (hasQuery)
       <div class="flex items-center justify-between flex-wrap gap-2">
         <div class="flex flex-wrap items-center gap-3">
-          <label class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Type:</label>
-          <select name="type" class="sort-select" onchange="this.form.submit()">
+          <label for="search-type" class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Type:</label>
+          <select id="search-type" name="type" class="sort-select" onchange="this.form.submit()">
             <option value="all" @if (type === 'all') selected @endif>All</option>
             <option value="zig" @if (type === 'zig') selected @endif>Zig</option>
             <option value="php" @if (type === 'php') selected @endif>PHP</option>
           </select>
-          <label class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Sort:</label>
-          <select name="sort" class="sort-select" onchange="this.form.submit()">
+          <label for="search-sort" class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Sort:</label>
+          <select id="search-sort" name="sort" class="sort-select" onchange="this.form.submit()">
             <option value="relevance" @if (sort === 'relevance') selected @endif>Relevance</option>
             <option value="downloads" @if (sort === 'downloads') selected @endif>Downloads</option>
             <option value="name" @if (sort === 'name') selected @endif>Name (A-Z)</option>
           </select>
         </div>
 
-        <div class="view-toggle">
-          <button type="submit" name="view" value="list" class="@if (view === 'list') active @endif" aria-label="List view" data-tooltip="List view">
+        <nav class="view-toggle" aria-label="Search result views">
+          <a href="/search?q={{ encodedQuery }}&sort={{ sort }}&type={{ type }}&view=list" aria-current="{{ view === 'list' ? 'page' : 'false' }}" class="@if (view === 'list') active @endif" aria-label="List view" data-tooltip="List view">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-          </button>
-          <button type="submit" name="view" value="grid" class="@if (view === 'grid') active @endif" aria-label="Grid view" data-tooltip="Grid view">
+          </a>
+          <a href="/search?q={{ encodedQuery }}&sort={{ sort }}&type={{ type }}&view=grid" aria-current="{{ view === 'grid' ? 'page' : 'false' }}" class="@if (view === 'grid') active @endif" aria-label="Grid view" data-tooltip="Grid view">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          </button>
-          <button type="submit" name="view" value="table" class="@if (view === 'table') active @endif" aria-label="Table view" data-tooltip="Table view">
+          </a>
+          <a href="/search?q={{ encodedQuery }}&sort={{ sort }}&type={{ type }}&view=table" aria-current="{{ view === 'table' ? 'page' : 'false' }}" class="@if (view === 'table') active @endif" aria-label="Table view" data-tooltip="Table view">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-          </button>
-        </div>
+          </a>
+        </nav>
       </div>
 
       <!-- Active filter chips -->
@@ -63,7 +64,7 @@
         @if (type !== 'all')
         <span class="filter-chip">
           type: {{ type }}
-          <a href="/search?q={{ query }}&sort={{ sort }}&view={{ view }}" aria-label="Remove type filter">
+          <a href="/search?q={{ encodedQuery }}&sort={{ sort }}&view={{ view }}" aria-label="Remove type filter">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </a>
         </span>
@@ -71,7 +72,7 @@
         @if (sort !== 'relevance')
         <span class="filter-chip">
           sort: {{ sort }}
-          <a href="/search?q={{ query }}&type={{ type }}&view={{ view }}" aria-label="Remove sort filter">
+          <a href="/search?q={{ encodedQuery }}&type={{ type }}&view={{ view }}" aria-label="Remove sort filter">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </a>
         </span>
@@ -126,7 +127,7 @@
       @foreach (results as result)
       <a href="/package/{{ result.name }}" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
         <div class="flex items-center justify-between mb-1.5">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 min-w-0">
             <img
               src="https://www.google.com/s2/favicons?domain={{ result.name }}&sz=16"
               alt=""
@@ -136,7 +137,7 @@
               class="rounded-sm"
               onerror="this.style.display='none'"
             />
-            <span class="font-mono text-sm font-medium">{{ result.name }}</span>
+            <span class="font-mono text-sm font-medium min-w-0" style="overflow-wrap: anywhere;">{{ result.name }}</span>
           </div>
           @if (result.version)
           <span class="font-mono" style="font-size: 0.6875rem; color: var(--fg-subtle);">{{ result.version }}</span>
@@ -214,7 +215,7 @@
       @foreach (results as result)
       <a href="/package/{{ result.name }}" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
         <div class="flex items-center justify-between mb-1">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 min-w-0">
             <img
               src="https://www.google.com/s2/favicons?domain={{ result.name }}&sz=16"
               alt=""
@@ -224,9 +225,9 @@
               class="rounded-sm"
               onerror="this.style.display='none'"
             />
-            <span class="font-mono text-sm font-medium">{{ result.name }}</span>
+            <span class="font-mono text-sm font-medium min-w-0" style="overflow-wrap: anywhere;">{{ result.name }}</span>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 min-w-0">
             @if (result.downloads)
             <span class="flex items-center gap-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -255,27 +256,27 @@
 
     <!-- Pagination -->
     @if (totalPages > 1)
-    <div class="flex items-center justify-between mt-6">
+    <div class="flex flex-wrap items-center justify-between gap-4 mt-6">
       <p class="text-xs" style="color: var(--fg-subtle);">
         Showing {{ pageStart }}-{{ pageEnd }} of {{ count }}
       </p>
-      <div class="pagination">
+      <nav class="pagination" aria-label="Search result pages">
         @if (page > 1)
-        <a href="/search?q={{ query }}&sort={{ sort }}&view={{ view }}&type={{ type }}&page={{ page - 1 }}">&larr;</a>
+        <a href="/search?q={{ encodedQuery }}&sort={{ sort }}&view={{ view }}&type={{ type }}&page={{ page - 1 }}" aria-label="Previous page">&larr;</a>
         @endif
         @foreach (pageNumbers as pn)
         @if (pn === page)
-        <span class="active">{{ pn }}</span>
+        <span class="active" aria-current="page">{{ pn }}</span>
         @elseif (pn === -1)
         <span class="ellipsis">&hellip;</span>
         @else
-        <a href="/search?q={{ query }}&sort={{ sort }}&view={{ view }}&type={{ type }}&page={{ pn }}">{{ pn }}</a>
+        <a href="/search?q={{ encodedQuery }}&sort={{ sort }}&view={{ view }}&type={{ type }}&page={{ pn }}">{{ pn }}</a>
         @endif
         @endforeach
         @if (page < totalPages)
-        <a href="/search?q={{ query }}&sort={{ sort }}&view={{ view }}&type={{ type }}&page={{ page + 1 }}">&rarr;</a>
+        <a href="/search?q={{ encodedQuery }}&sort={{ sort }}&view={{ view }}&type={{ type }}&page={{ page + 1 }}" aria-label="Next page">&rarr;</a>
         @endif
-      </div>
+      </nav>
     </div>
     @endif
     @endif

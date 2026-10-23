@@ -1245,7 +1245,7 @@ export function createHandler(
         const rawSort = url.searchParams.get('sort') || 'relevance'
         const sort = ['relevance', 'downloads', 'name', 'newest'].includes(rawSort) ? rawSort : 'relevance'
         const rawView = url.searchParams.get('view') || 'list'
-        const view = ['list', 'grid'].includes(rawView) ? rawView : 'list'
+        const view = ['list', 'grid', 'table'].includes(rawView) ? rawView : 'list'
         const rawType = url.searchParams.get('type') || 'all'
         const type = ['all', 'system', 'zig', 'php', 'npm'].includes(rawType) ? rawType : 'all'
         const page = Math.min(Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10) || 1), 10000)
@@ -6151,7 +6151,7 @@ async function handleSiteSearch(
 
   const suggestions = ['python.org', 'nodejs.org', 'curl.se', 'go.dev', 'redis.io', 'postgresql.org', 'bun.sh', 'rust-lang.org']
   const html = await renderSitePage('search.stx', {
-    query: escapeHtml(query),
+    query,
     encodedQuery: encodeURIComponent(query),
     results: pagedResults,
     sort,
@@ -6166,8 +6166,8 @@ async function handleSiteSearch(
     pageStart,
     pageEnd,
     pageNumbers,
-    title: type === 'zig' ? 'zig packages' : type === 'php' ? 'php packages' : query ? `search: ${escapeHtml(query)}` : 'search',
-    metaDescription: type === 'zig' ? 'Browse Zig packages on pantry.dev' : type === 'php' ? 'Browse PHP/Composer packages on pantry.dev' : query ? `Search results for "${escapeHtml(query)}" on pantry.dev` : 'Search packages on pantry.dev',
+    title: type === 'zig' ? 'zig packages' : type === 'php' ? 'php packages' : query ? `search: ${query}` : 'search',
+    metaDescription: type === 'zig' ? 'Browse Zig packages on pantry.dev' : type === 'php' ? 'Browse PHP/Composer packages on pantry.dev' : query ? `Search results for "${query}" on pantry.dev` : 'Search packages on pantry.dev',
     canonicalUrl: 'https://pantry.dev/search',
   })
   return htmlResponse(html)
@@ -6501,7 +6501,8 @@ async function handleSiteCompare(
     const html = await renderSitePage('compare.stx', {
       comparePackages: [],
       hasPackages: false,
-      packagesQuery: encodeURIComponent(packagesParam),
+      packagesQuery: packagesParam,
+      encodedPackagesQuery: encodeURIComponent(packagesParam),
       title: 'Compare',
       metaDescription: 'Compare packages side by side on pantry.dev — downloads, versions, and platform support.',
       canonicalUrl: 'https://pantry.dev/compare',
@@ -6597,7 +6598,8 @@ async function handleSiteCompare(
   const html = await renderSitePage('compare.stx', {
     comparePackages,
     hasPackages: comparePackages.length > 0,
-    packagesQuery: encodeURIComponent(packagesParam),
+    packagesQuery: packagesParam,
+      encodedPackagesQuery: encodeURIComponent(packagesParam),
     multiLineChart,
     downloadsBarChart,
     title: `Compare: ${packageNames.map(escapeHtml).join(' vs ')}`,
