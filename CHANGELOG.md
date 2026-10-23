@@ -1,3 +1,24 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.122...v0.11.123)
+
+## 🐛 Bug Fixes
+
+- **action**: inspect Linux service groups through native kernel state ([8f6e6c2](https://github.com/pantry-pm/pantry/commit/8f6e6c2)) _(by Chris <chris@stacksjs.com>)_
+- **registry**: renew request admission on restart and flush lazy build state ([b56f3c9](https://github.com/pantry-pm/pantry/commit/b56f3c9)) _(by Chris <chris@stacksjs.com>)_
+- **registry**: evaluate service stop policy from the registry environment ([282cd8f](https://github.com/pantry-pm/pantry/commit/282cd8f)) _(by Chris <chris@stacksjs.com>)_
+- **registry**: drain detached publication work while serving metadata reads ([8352eb4](https://github.com/pantry-pm/pantry/commit/8352eb4)) _(by Chris <chris@stacksjs.com>)_
+- **registry**: derive shutdown bounds from current scan admission limits ([ccc04c1](https://github.com/pantry-pm/pantry/commit/ccc04c1)) _(by Chris <chris@stacksjs.com>)_
+- **registry**: align service stop policy with publication shutdown ([1a207ad](https://github.com/pantry-pm/pantry/commit/1a207ad)) _(by Chris <chris@stacksjs.com>)_
+- **registry**: drain requests and persist snapshots on shutdown ([05c08b6](https://github.com/pantry-pm/pantry/commit/05c08b6)) _(by Chris <chris@stacksjs.com>)_
+- **test**: construct Zig uploads from owned byte buffers ([76cdb23](https://github.com/pantry-pm/pantry/commit/76cdb23)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.123 ([463361b](https://github.com/pantry-pm/pantry/commit/463361b)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.121...v0.11.122)
 
 ## 🐛 Bug Fixes

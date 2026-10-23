@@ -1,7 +1,7 @@
 {
   "name": "pantry",
   "type": "module",
-  "version": "0.11.122",
+  "version": "0.11.123",
   "private": true,
   "description": "A performant, universal package manager. Like Homebrew, but faster.",
   "author": "Chris Breuer <chris@stacksjs.com>",
