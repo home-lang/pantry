@@ -3726,7 +3726,7 @@ function extractSessionToken(req: Request): string | null {
  * would happily follow off-site, so they're rejected.
  */
 function safeRedirectTarget(value: string | null | undefined): string | null {
-  if (!value || !value.startsWith('/') || value.startsWith('//')) return null
+  if (!value || !value.startsWith('/') || value.startsWith('//') || /[\\\u0000-\u001f\u007f]/.test(value)) return null
   return value
 }
 
@@ -3907,29 +3907,35 @@ async function handleSiteAuth(
     'X-Content-Type-Options': 'nosniff',
   }
 
+  const next = safeRedirectTarget(new URL(req.url).searchParams.get('next')) || '/account'
+  const pageContext = { next, encodedNext: encodeURIComponent(next) }
+
   // Login page
   if (path === '/login') {
     if (req.method === 'POST') {
+      let formData: Awaited<ReturnType<typeof req.formData>> | undefined
       try {
-        const formData = await req.formData()
+        formData = await req.formData()
+        pageContext.next = safeRedirectTarget(formData.get('next') as string) || next
+        pageContext.encodedNext = encodeURIComponent(pageContext.next)
         const email = formData.get('email') as string || ''
         const password = formData.get('password') as string || ''
         const { sessionToken } = await auth.login(email, password)
         // The private-registry gate bounces browsers here with ?next=… — send
         // them back where they were headed instead of dumping them on /account.
-        const next = safeRedirectTarget(formData.get('next') as string || new URL(req.url).searchParams.get('next'))
+        const destination = safeRedirectTarget(formData.get('next') as string || new URL(req.url).searchParams.get('next'))
         return new Response(null, {
           status: 302,
           headers: {
             ...htmlHeaders,
-            'Location': next || '/account',
+            'Location': destination || '/account',
             'Set-Cookie': `pantry_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
           },
         })
       }
       catch {
         // Generic error message to prevent user enumeration via timing/messaging differences
-        const html = await renderSitePage('login.stx', { error: 'Invalid email or password', title: 'Log In' })
+        const html = await renderSitePage('login.stx', { ...pageContext, error: 'Invalid email or password', title: 'Log In', email: formData?.get('email') || '' })
         return new Response(html, { status: 401, headers: htmlHeaders })
       }
     }
@@ -3938,10 +3944,10 @@ async function handleSiteAuth(
     if (sessionToken) {
       const user = await auth.validateSession(sessionToken)
       if (user) {
-        return new Response(null, { status: 302, headers: { ...htmlHeaders, Location: '/account' } })
+        return new Response(null, { status: 302, headers: { ...htmlHeaders, Location: next } })
       }
     }
-    const html = await renderSitePage('login.stx', { title: 'Log In' })
+    const html = await renderSitePage('login.stx', { ...pageContext, title: 'Log In' })
     return new Response(html, { headers: htmlHeaders })
   }
 
@@ -3953,14 +3959,17 @@ async function handleSiteAuth(
       return new Response(null, { status: 302, headers: { ...htmlHeaders, Location: '/login' } })
     }
     if (req.method === 'POST') {
+      let formData: Awaited<ReturnType<typeof req.formData>> | undefined
       try {
-        const formData = await req.formData()
+        formData = await req.formData()
+        pageContext.next = safeRedirectTarget(formData.get('next') as string) || next
+        pageContext.encodedNext = encodeURIComponent(pageContext.next)
         const email = formData.get('email') as string || ''
         const name = formData.get('name') as string || ''
         const password = formData.get('password') as string || ''
         const rejection = signupRejection(email)
         if (rejection) {
-          const html = await renderSitePage('signup.stx', { error: escapeHtml(rejection), title: 'Sign Up' })
+          const html = await renderSitePage('signup.stx', { ...pageContext, error: rejection, title: 'Sign Up', email, name })
           return new Response(html, { status: 403, headers: htmlHeaders })
         }
         await auth.signup(email, name, password)
@@ -3969,13 +3978,13 @@ async function handleSiteAuth(
           status: 302,
           headers: {
             ...htmlHeaders,
-            'Location': '/account',
+            'Location': safeRedirectTarget(formData.get('next') as string) || next,
             'Set-Cookie': `pantry_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
           },
         })
       }
       catch (err: any) {
-        const html = await renderSitePage('signup.stx', { error: escapeHtml(err.message || 'Signup failed'), title: 'Sign Up' })
+        const html = await renderSitePage('signup.stx', { ...pageContext, error: err.message || 'Signup failed', title: 'Sign Up', email: formData?.get('email') || '', name: formData?.get('name') || '' })
         return new Response(html, { status: err instanceof AuthError ? err.status : 400, headers: htmlHeaders })
       }
     }
@@ -3984,10 +3993,10 @@ async function handleSiteAuth(
     if (sessionToken) {
       const user = await auth.validateSession(sessionToken)
       if (user) {
-        return new Response(null, { status: 302, headers: { ...htmlHeaders, Location: '/account' } })
+        return new Response(null, { status: 302, headers: { ...htmlHeaders, Location: next } })
       }
     }
-    const html = await renderSitePage('signup.stx', { title: 'Sign Up' })
+    const html = await renderSitePage('signup.stx', { ...pageContext, title: 'Sign Up' })
     return new Response(html, { headers: htmlHeaders })
   }
 

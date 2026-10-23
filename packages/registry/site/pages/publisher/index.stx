@@ -48,18 +48,11 @@
 <script client>
   function authHeaders(extra) {
     var h = extra || {}
-    var s = localStorage.getItem('pantry_session')
-    if (s) h['Authorization'] = 'Bearer ' + s
     return h
   }
 
   ;(function() {
-    if (!localStorage.getItem('pantry_session')) {
-      window.location.href = '/login?next=' + encodeURIComponent('/publisher')
-      return
-    }
-
-    fetch(window.pantryApiUrl('/publisher/api/packages'), { headers: authHeaders() })
+    fetch('/publisher/api/packages', { headers: authHeaders() })
       .then(function(r) {
         if (r.status === 401) { window.location.href = '/login?next=/publisher'; return null }
         return r.json()

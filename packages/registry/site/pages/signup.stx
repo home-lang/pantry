@@ -8,20 +8,18 @@
     </div>
 
     @if (error)
-    <div class="mb-6 p-3 rounded-lg border animate-fade-in" style="background: oklch(0.25 0.05 25); border-color: oklch(0.4 0.1 25); color: oklch(0.8 0.1 25);">
+    <div role="alert" class="mb-6 p-3 rounded-lg border animate-fade-in" style="background: oklch(0.25 0.05 25); border-color: oklch(0.4 0.1 25); color: oklch(0.8 0.1 25);">
       <p class="text-sm">{{ error }}</p>
     </div>
     @endif
 
-    <div id="signup-error" class="mb-6 p-3 rounded-lg border" style="background: oklch(0.25 0.05 25); border-color: oklch(0.4 0.1 25); color: oklch(0.8 0.1 25); display: none;">
-      <p class="text-sm" id="signup-error-msg"></p>
-    </div>
-
-    <form id="signup-form" class="flex flex-col gap-4 animate-fade-in-delay">
+    <form action="/signup" method="post" id="signup-form" class="flex flex-col gap-4 animate-fade-in-delay">
+      <input type="hidden" name="next" value="{{ next || '' }}" />
       <div class="flex flex-col gap-1.5">
         <label for="name" class="text-sm font-medium" style="color: var(--fg-muted);">Name</label>
         <input
           type="text"
+          value="{{ name || '' }}"
           id="name"
           name="name"
           required
@@ -36,6 +34,9 @@
         <label for="email" class="text-sm font-medium" style="color: var(--fg-muted);">Email</label>
         <input
           type="email"
+          value="{{ email || '' }}"
+          autocapitalize="none"
+          spellcheck="false"
           id="email"
           name="email"
           required
@@ -72,50 +73,10 @@
       </button>
     </form>
 
-    <script client>
-      ;(function() {
-        if (localStorage.getItem('pantry_session')) { window.location.href = '/account'; return }
-        var form = document.getElementById('signup-form')
-        if (!form) return
-        form.addEventListener('submit', function(e) {
-          e.preventDefault()
-          var btn = document.getElementById('signup-btn')
-          btn.textContent = 'Creating account...'
-          btn.disabled = true
-          fetch(window.pantryApiUrl('/auth/signup'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: document.getElementById('name').value,
-              email: document.getElementById('email').value,
-              password: document.getElementById('password').value,
-            }),
-          })
-            .then(function(r) { return r.json() })
-            .then(function(data) {
-              if (data.error) {
-                document.getElementById('signup-error-msg').textContent = data.error
-                document.getElementById('signup-error').style.display = 'block'
-                btn.textContent = 'Create account'
-                btn.disabled = false
-                return
-              }
-              localStorage.setItem('pantry_session', data.sessionToken)
-              localStorage.setItem('pantry_user', JSON.stringify(data.user))
-              window.location.href = '/account'
-            })
-            .catch(function() {
-              document.getElementById('signup-error-msg').textContent = 'Network error. Please try again.'
-              document.getElementById('signup-error').style.display = 'block'
-              btn.textContent = 'Create account'
-              btn.disabled = false
-            })
-        })
-      })()
-    </script>
+
 
     <p class="text-center text-sm mt-6 animate-fade-in-delay-2" style="color: var(--fg-subtle);">
-      Already have an account? <a href="/login" class="hvr-accent transition-colors" style="color: var(--accent);">Log in</a>
+      Already have an account? <a href="/login?next={{ encodedNext || '' }}" class="hvr-accent transition-colors" style="color: var(--accent);">Log in</a>
     </p>
   </div>
 </section>

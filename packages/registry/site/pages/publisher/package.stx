@@ -120,8 +120,6 @@
 <script client>
   function authHeaders(extra) {
     var h = extra || {}
-    var s = localStorage.getItem('pantry_session')
-    if (s) h['Authorization'] = 'Bearer ' + s
     return h
   }
 
@@ -129,18 +127,13 @@
     var match = window.location.pathname.match(/^\/publisher\/package\/(.+)$/)
     var pkgName = match ? decodeURIComponent(match[1]) : ''
     if (!pkgName) { window.location.href = '/publisher'; return }
-    if (!localStorage.getItem('pantry_session')) {
-      window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname)
-      return
-    }
-
     var deprecCb = document.getElementById('deprecated')
     var deprecMsg = document.getElementById('deprecation-message')
     deprecCb.addEventListener('change', function() {
       deprecMsg.style.display = deprecCb.checked ? 'block' : 'none'
     })
 
-    fetch(window.pantryApiUrl('/publisher/api/packages/' + encodeURIComponent(pkgName)), { headers: authHeaders() })
+    fetch('/publisher/api/packages/' + encodeURIComponent(pkgName), { headers: authHeaders() })
       .then(function(r) {
         if (r.status === 401) { window.location.href = '/login'; return null }
         if (r.status === 403 || r.status === 404) { throw new Error('Package not found or access denied') }
@@ -209,7 +202,7 @@
         },
       }
 
-      fetch(window.pantryApiUrl('/publisher/api/packages/' + encodeURIComponent(pkgName)), {
+      fetch('/publisher/api/packages/' + encodeURIComponent(pkgName), {
         method: 'PATCH',
         headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(body),
