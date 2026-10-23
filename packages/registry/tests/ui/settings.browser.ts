@@ -36,10 +36,10 @@ test('settings work with blocked storage and report that changes cannot persist'
 
 test('saved install and search defaults affect the next task', async ({ page }) => {
   await page.goto('/settings')
-  await page.getByRole('combobox', { name: 'Default install method' }).selectOption('brew')
+  await page.getByRole('combobox', { name: 'Default install method' }).selectOption('curl')
   await page.getByRole('combobox', { name: 'Default search view' }).selectOption('grid')
   await page.goto('/package/curl.se')
-  await expect(page.locator('[data-install-method]').first()).toHaveAttribute('data-install-method', 'brew')
+  await expect(page.locator('[data-install-method]').first()).toHaveAttribute('data-install-method', 'curl')
   const form = page.locator('#header-search-form')
   await expect(form.locator('input[name="view"]')).toHaveValue('grid')
   await page.getByRole('combobox', { name: 'Search packages' }).fill('curl')

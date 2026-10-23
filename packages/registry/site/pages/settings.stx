@@ -90,11 +90,10 @@
           <div class="flex items-center justify-between" style="border-top: 1px solid var(--border); padding-top: 1rem;">
             <div>
               <p class="text-sm font-medium">Default install method</p>
-              <p style="font-size: 0.75rem; color: var(--fg-subtle);">Preferred package manager for install commands</p>
+              <p style="font-size: 0.75rem; color: var(--fg-subtle);">Preferred way to install packages</p>
             </div>
             <select id="pref-install-method" aria-label="Default install method" class="sort-select">
               <option value="pantry">pantry</option>
-              <option value="brew">brew</option>
               <option value="curl">curl</option>
             </select>
           </div>
@@ -274,7 +273,8 @@
       })
     }
     if (prefInstall) {
-      prefInstall.value = loadPreference('pantry-install-method') || 'pantry'
+      var savedInstall = loadPreference('pantry-install-method')
+      prefInstall.value = ['pantry', 'curl'].includes(savedInstall) ? savedInstall : 'pantry'
       prefInstall.addEventListener('change', function() {
         savePreference('pantry-install-method', this.value)
       })

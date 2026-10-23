@@ -567,7 +567,7 @@
       })
     }
     var installMethod = readPreference('pantry-install-method')
-    var preferredInstall = document.querySelector('[data-install-method="' + (['pantry', 'brew', 'curl'].includes(installMethod) ? installMethod : 'pantry') + '"]')
+    var preferredInstall = document.querySelector('[data-install-method="' + (['pantry', 'curl'].includes(installMethod) ? installMethod : 'pantry') + '"]')
     if (preferredInstall) {
       preferredInstall.parentElement.prepend(preferredInstall)
       preferredInstall.setAttribute('data-preferred', 'true')
