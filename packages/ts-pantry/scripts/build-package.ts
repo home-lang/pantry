@@ -821,7 +821,7 @@ export async function downloadDependencies(
   storage?: BuildDependencyStorage,
 ): Promise<Record<string, string>> {
   const s3 = storage ?? await (async () => {
-    const { createObjectStorageClient } = await import('@stacksjs/ts-cloud')
+    const { createObjectStorageClient } = await import('./object-storage')
     const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
     return createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })
   })()
@@ -1171,7 +1171,7 @@ export async function resolveVersionedBuildDependencyGraph(
 }
 
 async function publishedDependencyGraph(initial: Map<string, string>, platform: string, bucket: string, region: string): Promise<Map<string, string>> {
-  const { createObjectStorageClient } = await import('@stacksjs/ts-cloud')
+  const { createObjectStorageClient } = await import('./object-storage')
   const { loadRecipe } = await import('./recipe-loader')
   const provider = (process.env.STORAGE_PROVIDER || 'aws') as 'aws' | 'backblaze' | 'hetzner'
   const storage = createObjectStorageClient({ provider, region: provider === 'aws' ? region : undefined })

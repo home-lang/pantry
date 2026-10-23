@@ -13,7 +13,7 @@
  */
 import { readFileSync } from 'node:fs'
 import { parseArgs } from 'node:util'
-import { createObjectStorageClient } from '@stacksjs/ts-cloud'
+import { createObjectStorageClient } from './object-storage'
 
 const { values } = parseArgs({
   options: {

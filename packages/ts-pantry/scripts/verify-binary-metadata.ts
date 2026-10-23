@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
-import { createObjectStorageClient } from '@stacksjs/ts-cloud'
+import { createObjectStorageClient } from './object-storage'
 import { compareVersions } from '../src/generate-zig'
 import {
   BINARY_SYNC_ALLOW_EMPTY_DOMAIN_SET,

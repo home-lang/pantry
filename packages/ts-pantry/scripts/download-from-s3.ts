@@ -14,7 +14,7 @@ import { execSync } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { homedir, platform, arch } from 'node:os'
-import { createObjectStorageClient } from '@stacksjs/ts-cloud'
+import { createObjectStorageClient } from './object-storage'
 
 /**
  * Build an S3-compatible client for the configured provider. For AWS the
