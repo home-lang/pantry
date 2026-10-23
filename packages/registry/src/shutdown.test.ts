@@ -1,8 +1,9 @@
 import { expect, test } from 'bun:test'
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createRegistryShutdown } from './shutdown'
+import { createRegistryShutdown, registryShutdownBudgetMs, registrySystemdStopTimeoutSeconds } from './shutdown'
+import { maxScanAdmissionWaitMs, maxScanBudgetMs } from './malware-scanning'
 import { FileMetadataStorage } from './storage/metadata'
 
 function deferred() {
@@ -118,3 +119,26 @@ for (const fails of [false, true]) {
     }
   })
 }
+
+
+test('shutdown and systemd policy cover actual size-derived scan and configured queue limits', () => {
+  const env = { CLAMD_MAX_ADMISSION_WAIT_MS: '1800000' }
+  const budget = registryShutdownBudgetMs(env)
+  expect(budget).toBeGreaterThan(2 * (maxScanBudgetMs() + maxScanAdmissionWaitMs(env)))
+  expect(registrySystemdStopTimeoutSeconds(env) * 1000).toBeGreaterThan(budget)
+  expect(registryShutdownBudgetMs({ CLAMD_MAX_ADMISSION_WAIT_MS: '1801000' }) - budget).toBe(2000)
+})
+
+test('service policy evaluates the real environment file through the maintained Bun interface', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'pantry-shutdown-env-'))
+  try {
+    const file = join(dir, 'registry.env')
+    writeFileSync(file, 'CLAMD_MAX_ADMISSION_WAIT_MS=1800000\n')
+    const env = { ...process.env }
+    delete env.CLAMD_MAX_ADMISSION_WAIT_MS
+    const child = Bun.spawnSync([process.execPath, `--env-file=${file}`, '-e', `import { registrySystemdStopTimeoutSeconds } from ${JSON.stringify(join(import.meta.dir, 'shutdown.ts'))}; console.log(registrySystemdStopTimeoutSeconds());`], { env, stdout: 'pipe', stderr: 'pipe' })
+    expect(child.exitCode, child.stderr.toString()).toBe(0)
+    expect(Number(child.stdout.toString().trim())).toBe(registrySystemdStopTimeoutSeconds({ CLAMD_MAX_ADMISSION_WAIT_MS: '1800000' }))
+  }
+  finally { rmSync(dir, { recursive: true, force: true }) }
+})

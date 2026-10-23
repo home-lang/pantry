@@ -1,10 +1,20 @@
-/** Above the isolated scanner's 270-second maximum, below systemd's 300 seconds. */
-export const REGISTRY_SHUTDOWN_TIMEOUT_MS = 285_000
+import { maxScanAdmissionWaitMs, maxScanBudgetMs } from './malware-scanning'
+
+/** Account for admitted HTTP work, then detached completion work and persistence. */
+export function registryShutdownBudgetMs(env: NodeJS.ProcessEnv = process.env): number {
+  const budget = 2 * (maxScanBudgetMs() + maxScanAdmissionWaitMs(env) + 30_000) + 30_000
+  if (!Number.isSafeInteger(budget) || budget <= 0) throw new Error('Registry shutdown budget exceeds the finite integer range')
+  return budget
+}
+
+export function registrySystemdStopTimeoutSeconds(env: NodeJS.ProcessEnv = process.env): number {
+  return Math.ceil(registryShutdownBudgetMs(env) / 1000) + 15
+}
 
 interface RegistryServer { stop: (closeActiveConnections?: boolean) => Promise<unknown> }
 
 /** Stop admission, drain active responses, then persist every owned snapshot. */
-export function createRegistryShutdown(server: RegistryServer, stores: readonly unknown[], timeoutMs = REGISTRY_SHUTDOWN_TIMEOUT_MS): () => Promise<void> {
+export function createRegistryShutdown(server: RegistryServer, stores: readonly unknown[], timeoutMs: number = registryShutdownBudgetMs()): () => Promise<void> {
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) throw new Error('Registry shutdown requires a finite positive deadline')
   let stopping: Promise<void> | undefined
   return () => {
