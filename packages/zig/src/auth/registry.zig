@@ -910,6 +910,19 @@ pub const RegistryClient = struct {
     }
 
     fn publicBytes(self: *RegistryClient, url: []const u8, limit: usize) !?[]u8 {
+        // Availability and original-byte readback are idempotent reads. Share
+        // Pantry's bounded transport recovery, including TLS setup failures,
+        // within the caller's existing deadline. This never retries an upload.
+        var retries: u8 = 0;
+        while (true) {
+            return self.publicBytesAttempt(url, limit) catch |err| {
+                if (try io_helper.retrySafeGetTransport(err, &retries)) continue;
+                return err;
+            };
+        }
+    }
+
+    fn publicBytesAttempt(self: *RegistryClient, url: []const u8, limit: usize) !?[]u8 {
         const registry_uri = try std.Uri.parse(self.registry_url);
         var current_url = try self.allocator.dupe(u8, url);
         defer self.allocator.free(current_url);

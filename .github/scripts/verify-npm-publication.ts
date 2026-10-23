@@ -8,7 +8,7 @@ import { join, resolve } from 'node:path'
 const executable = resolve(process.argv[2] || '')
 if (!process.argv[2]) throw new Error('Pass the actual published or normally built Pantry executable')
 const segment = process.argv[3] || 'all'
-if (!['all', 'transport', 'lookup', 'availability', 'encoding'].includes(segment)) throw new Error('Unknown publication contract segment')
+if (!['all', 'transport', 'lookup', 'availability', 'encoding', 'lookup-recovery'].includes(segment)) throw new Error('Unknown publication contract segment')
 const root = await mkdtemp(join(tmpdir(), 'pantry-publication-confirmation-'))
 const name = '@pantry-fixture/confirmation', version = '1.0.0'
 
@@ -92,6 +92,7 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
   try {
     const [stdout, stderr, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited])
     const output = stdout + stderr
+    if (mode === 'precheck-recovers' && metadataReads !== 4) throw new Error(`Recovered precheck must observe two transport failures, a confirmed missing version and exact uploaded metadata; reads=${metadataReads}`)
     if (uploads !== 1) throw new Error(`${mode}: expected exactly one upload, got ${uploads}; requests=${JSON.stringify(requests)}; exit=${code}\n${output}`)
     if (!metadataReads) throw new Error(`${mode}: CLI reported completion without reading public version metadata\n${output}`)
     if (!privateMode && credentialReads) throw new Error(`${mode}: public verification forwarded publishing credentials`)
@@ -115,13 +116,13 @@ async function check(mode: 'metadata-delay' | 'tarball-delay' | 'wrong-bytes' | 
   }
 }
 
-async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-commit' | 'upload-redirect' | 'stalled-upload-response' | 'precheck-stalled-head' | 'precheck-stalled-body' | 'precheck-unavailable' | 'precheck-disconnected' | 'precheck-unauthorized' | 'precheck-forbidden') {
+async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-commit' | 'upload-redirect' | 'stalled-upload-response' | 'precheck-stalled-head' | 'precheck-stalled-body' | 'precheck-unavailable' | 'precheck-disconnected' | 'precheck-unauthorized' | 'precheck-forbidden' | 'precheck-recovers') {
   const cwd = join(root, mode)
   await mkdir(cwd)
   await writeFile(join(cwd, 'index.txt'), 'Immutable ambiguous-response fixture\n')
   const marker = join(cwd, 'postpublish-ran')
   const prepublishMarker = join(cwd, 'prepublish-ran')
-  const precheckFailure = mode.startsWith('precheck-')
+  const precheckFailure = mode.startsWith('precheck-') && mode !== 'precheck-recovers'
   let uploads = 0, metadataReads = 0, tarballReads = 0, foreignRequests = 0, foreignCredentialRequests = 0
   let prematureHook = false
   let tarball = Buffer.alloc(0), metadata: Record<string, unknown> = {}
@@ -167,6 +168,7 @@ async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-
         if (!uploads && mode === 'precheck-unavailable') { response.writeHead(502).end(); return }
         if (!uploads && mode === 'precheck-unauthorized') { response.writeHead(401).end(); return }
         if (!uploads && mode === 'precheck-forbidden') { response.writeHead(403).end(); return }
+        if (!uploads && mode === 'precheck-recovers' && metadataReads < 3) { request.socket.destroy(); return }
         if (!uploads && mode === 'precheck-disconnected') { request.socket.destroy(); return }
         if (!uploads && mode === 'precheck-stalled-head') return
         if (!uploads && mode === 'precheck-stalled-body') {
@@ -214,6 +216,7 @@ async function checkAmbiguousUpload(mode: 'lost-response' | 'server-error-after-
       console.log(JSON.stringify({ mode, code, uploads, metadataReads, prepublishHook: false, postpublishHook: false, verifiedNoUpload: true }))
       return
     }
+    if (mode === 'precheck-recovers' && metadataReads !== 4) throw new Error(`Recovered precheck must observe two transport failures, a confirmed missing version and exact uploaded metadata; reads=${metadataReads}`)
     if (uploads !== 1) throw new Error(`${mode}: accepted upload was repeated ${uploads} times; exit=${code}\n${output}`)
     if (mode === 'upload-redirect') {
       if (code === 0 || existsSync(marker)) throw new Error('An unverified redirect completed publication or ran its hook')
@@ -242,7 +245,11 @@ try {
     try { await checkAmbiguousUpload(mode) }
     catch (error) { console.error(error); failures.push(mode) }
   }
-  if (segment === 'all' || segment === 'lookup') for (const mode of ['precheck-unavailable', 'precheck-disconnected', 'precheck-unauthorized', 'precheck-forbidden', 'precheck-stalled-head', 'precheck-stalled-body'] as const) {
+  if (segment === 'lookup-recovery') {
+    try { await checkAmbiguousUpload('precheck-recovers') }
+    catch (error) { console.error(error); failures.push('precheck-recovers') }
+  }
+  if (segment === 'all' || segment === 'lookup') for (const mode of ['precheck-unavailable', 'precheck-disconnected', 'precheck-unauthorized', 'precheck-forbidden', 'precheck-stalled-head', 'precheck-stalled-body', 'precheck-recovers'] as const) {
     try { await checkAmbiguousUpload(mode) }
     catch (error) { console.error(error); failures.push(mode) }
   }

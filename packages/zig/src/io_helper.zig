@@ -2645,7 +2645,7 @@ fn waitGetRetrySeconds(seconds: u64) !void {
     try getIo().sleep(.{ .nanoseconds = ns }, .awake);
 }
 
-fn retryGetTransport(err: anyerror, retries: *u8) !bool {
+pub fn retrySafeGetTransport(err: anyerror, retries: *u8) !bool {
     if (!transientGetTransport(err) or retries.* >= 2) return false;
     retries.* += 1;
     @import("cli/style.zig").print("  Registry GET transport {s}; retry {d}/2\n", .{ @errorName(err), retries.* });
@@ -2733,7 +2733,7 @@ fn httpGetResponseWithClient(client: *std.http.Client, allocator: std.mem.Alloca
     var retries: u8 = 0;
     while (true) {
         const result = httpGetAttemptWithClient(client, allocator, current_url, initial_uri, extra_headers, status_only_errors, retries) catch |err| {
-            if (try retryGetTransport(err, &retries)) continue;
+            if (try retrySafeGetTransport(err, &retries)) continue;
             return err;
         };
         switch (result) {
@@ -2757,6 +2757,7 @@ fn httpGetResponseWithClient(client: *std.http.Client, allocator: std.mem.Alloca
 }
 
 test "safe GET transport recovery leaves cancellation and permanent failures terminal" {
+    try std.testing.expect(transientGetTransport(error.TlsInitializationFailed));
     try std.testing.expect(transientGetTransport(error.NetworkUnreachable));
     try std.testing.expect(transientGetTransport(error.ConnectionRefused));
     try std.testing.expect(transientGetTransport(error.ConnectionResetByPeer));
