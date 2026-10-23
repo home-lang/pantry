@@ -150,7 +150,10 @@ curl -X POST http://localhost:3000/publish \
 
 ## Publishing Zig Packages
 
-Zig packages are content-addressed - they're identified by their hash, not URL.
+Zig package hashes come from the managed native compiler. They describe the
+manifest-selected package contents; `artifactSha256` separately identifies the
+complete compressed archive. The maintained deployment and
+`bun scripts/provision-zig.ts` install the required Zig 0.17.0 through Pantry.
 
 **Publish a Zig package:**
 
@@ -167,10 +170,10 @@ curl -X POST http://localhost:3000/zig/publish \
 ```json
 {
   "success": true,
-  "hash": "12209f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+  "hash": "<native compiler package hash>",
   "tarballUrl": "http://localhost:3000/zig/packages/my-zig-lib/1.0.0/tarball",
   "fetchCommand": "zig fetch --save http://localhost:3000/zig/packages/my-zig-lib/1.0.0/tarball",
-  "dependency": ".my_zig_lib = .{\n    .url = \"http://...\",\n    .hash = \"1220...\",\n},"
+  "dependency": ".my_zig_lib = .{\n    .url = \"http://...\",\n    .hash = \"<native compiler hash>\",\n},"
 }
 ```
 
@@ -180,7 +183,7 @@ curl -X POST http://localhost:3000/zig/publish \
 .dependencies = .{
     .my_zig_lib = .{
         .url = "https://registry.example.com/zig/packages/my-zig-lib/1.0.0/tarball",
-        .hash = "12209f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+        .hash = "<native compiler package hash>",
     },
 },
 ```
@@ -309,7 +312,7 @@ This creates:
 
 ```bash
 # Build
-docker build -t pantry-registry .
+docker build -f packages/registry/Dockerfile -t pantry-registry .
 
 # Run with environment variables
 docker run -d \
