@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-test('mirror and download publishers retain workspace setup and provision Linux ELF tools', () => {
+test('mirror and download publishers install only their runtime and provision Linux ELF tools', () => {
   const workflow = Bun.YAML.parse(readFileSync(new URL('../../../.github/workflows/mirror.yml', import.meta.url), 'utf8')) as {
     jobs: Record<string, { steps: Array<{ uses?: string, if?: string, with?: { packages?: string, install?: string } }> }>
   }
@@ -13,7 +13,7 @@ test('mirror and download publishers retain workspace setup and provision Linux 
     const setup = steps.findIndex(step => step.uses === './packages/action')
     const normalizer = steps.findIndex(step => step.with?.packages === 'nixos.org/patchelf@0.18.0')
     expect(setup).toBeGreaterThan(-1)
-    expect(steps[setup].with?.packages).toBeUndefined()
+    expect(steps[setup].with?.packages).toBe('bun.sh')
     expect(normalizer).toBeGreaterThan(setup)
     expect(steps[normalizer].uses).toBe('./packages/action')
     expect(steps[normalizer].if).toBe("startsWith(matrix.name, 'linux-')")

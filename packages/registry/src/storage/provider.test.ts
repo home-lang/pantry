@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { providerEndpoint, resolveStorageProvider } from './provider'
+import { createS3Client, providerEndpoint, resolveStorageProvider } from './provider'
+import { createRegistryFromEnv } from '../registry'
 
 const KEYS = [
   'STORAGE_PROVIDER',
@@ -17,6 +18,11 @@ const KEYS = [
   'R2_SECRET_ACCESS_KEY',
   'S3_ACCESS_KEY_ID',
   'S3_SECRET_ACCESS_KEY',
+  'S3_BUCKET',
+  'METADATA_BACKEND',
+  'AWS_ACCESS_KEY_ID',
+  'AWS_SECRET_ACCESS_KEY',
+  'AWS_SESSION_TOKEN',
 ]
 
 describe('storage provider resolution', () => {
@@ -55,10 +61,52 @@ describe('storage provider resolution', () => {
 
   it('leaves the R2 endpoint unset when no account id is configured', () => {
     expect(providerEndpoint('r2', 'auto')).toBeUndefined()
+    expect(() => resolveStorageProvider({ provider: 'r2' })).toThrow('R2 requires R2_ACCOUNT_ID or S3_ENDPOINT')
+  })
+
+  it('refuses stale Hetzner/AWS regions rather than signing R2 requests incorrectly', () => {
+    process.env.R2_ACCOUNT_ID = 'abc123'
+    process.env.S3_REGION = 'fsn1'
+    expect(() => resolveStorageProvider({ provider: 'r2' })).toThrow('R2 requires S3_REGION=auto')
+    process.env.S3_REGION = 'auto'
+    expect(resolveStorageProvider({ provider: 'r2', forcePathStyle: false }).forcePathStyle).toBe(true)
+  })
+
+  it('the environment registry and signed reads both use R2 path-style addressing', async () => {
+    process.env.STORAGE_PROVIDER = 'r2'
+    process.env.S3_BUCKET = 'private-registry'
+    process.env.S3_REGION = 'auto'
+    process.env.S3_ENDPOINT = 'abc123.r2.cloudflarestorage.com'
+    process.env.S3_FORCE_PATH_STYLE = 'false'
+    process.env.S3_ACCESS_KEY_ID = 'test-r2-key'
+    process.env.S3_SECRET_ACCESS_KEY = 'test-r2-secret'
+    const originalFetch = globalThis.fetch
+    const calls: string[] = []
+    globalThis.fetch = Object.assign(async (input: Parameters<typeof fetch>[0], init?: RequestInit) => {
+      calls.push(String(input))
+      const headers = new Headers(init?.headers)
+      expect(headers.get('Authorization')).toContain('/auto/s3/aws4_request')
+      return String(input).endsWith('/metadata/registry-index.json')
+        ? Response.json({}) : new Response('artifact')
+    }, { preconnect: originalFetch.preconnect })
+    try {
+      const registry = createRegistryFromEnv()
+      expect(Buffer.from(await registry.tarball.download('packages/tool.tgz')).toString()).toBe('artifact')
+      expect(calls).toEqual([
+        'https://abc123.r2.cloudflarestorage.com/private-registry/metadata/registry-index.json',
+        'https://abc123.r2.cloudflarestorage.com/private-registry/packages/tool.tgz',
+      ])
+      const url = new URL(createS3Client(resolveStorageProvider()).generatePresignedGetUrl('private-registry', 'binaries/tool/1.0/tool.tar.gz'))
+      expect(url.hostname).toBe('abc123.r2.cloudflarestorage.com')
+      expect(url.pathname).toBe('/private-registry/binaries/tool/1.0/tool.tar.gz')
+      expect(url.searchParams.get('X-Amz-Credential')).toContain('/auto/s3/aws4_request')
+    }
+    finally { globalThis.fetch = originalFetch }
   })
 
   it('prefers R2-specific credentials but accepts the generic ones', () => {
     process.env.STORAGE_PROVIDER = 'r2'
+    process.env.R2_ACCOUNT_ID = 'abc123'
     process.env.R2_ACCESS_KEY_ID = 'r2-key'
     process.env.R2_SECRET_ACCESS_KEY = 'r2-secret'
     process.env.S3_ACCESS_KEY_ID = 'generic-key'

@@ -179,8 +179,11 @@ Registry object storage is **provider-agnostic** (AWS S3, Hetzner Object Storage
 
 ## Object storage egress — what it costs and what protects it
 
-The bucket has a **5 TB/month included traffic** allowance and bills ~$1.20/TB
-beyond it; we blew through it once already. Egress is the metric to watch, and
+Hetzner Object Storage includes **about 1 TB/month of external traffic per
+account**, separate from Cloud server traffic. The exact allowance accrues
+hourly (1.116 TB in a full 31-day month). Do not mistake the old 5 TB application
+alert budget for the provider's free allowance. External overage is $1.20/TB;
+ingress and transfers within `eu-central` are free. Egress is the metric to watch, and
 it comes from four places. Anything you add near the download or scan path
 should be checked against this list.
 
@@ -188,7 +191,9 @@ should be checked against this list.
    artifacts are ~89 MB and CI pulled a fresh one on nearly every job. See the
    Zig rolling-pin rule below.
 2. **The malware scanner re-downloading artifacts.** Every scan streams the full
-   artifact out of the bucket. A clean verdict is now cached by digest at
+   artifact out of the bucket. This is free internal traffic when both ends are
+   in Hetzner's `eu-central`; GitHub-hosted backfills are external egress.
+   A clean verdict is now cached by digest at
    `attestations/sha256/<digest>.json` and reused for 7 days
    (`PANTRY_SCAN_ATTESTATION_REUSE_HOURS`), so republishing unchanged bytes no
    longer re-scans them. Scans that fail to reach a verdict back off 15m → 6h
@@ -216,7 +221,15 @@ Two rules that are easy to undo by accident:
   registry, which retains them. Do not restore the unconditional refusal.
 
 `/binaries/` answers `HEAD`. Use it for existence/freshness checks rather than a
-GET that throws the body away.
+GET that throws the body away. HEAD must return headers locally from the
+validated manifest: never download/materialize an archive, count its bytes,
+spend the download budget, or redirect to a URL signed for GET (SigV4 binds the
+method). Keep the same quarantine and attestation gates as GET.
+
+Download-only mirror jobs and metadata integrity checks need Bun, not the Zig
+workspace: use `packages: bun.sh` in their setup action. Native dependency cache
+restore prefixes include platform and artifact digests, but allow reuse across
+CLI patch releases; a prefix hit must still reconcile with the current CLI.
 
 ## Publish latency: what a stalled publish is actually waiting for
 
@@ -355,10 +368,12 @@ server can look idle while the bucket serves terabytes. Any dashboard reading
 The registry therefore keeps its own day-bucketed ledger of bytes it authorized
 (`analytics/registry-egress.json`, persisted, throttled to one write a minute).
 `GET /api/egress` reports today, month-to-date, the share of an optional
-`PANTRY_EGRESS_BUDGET_TB` allowance, and a month-end projection. Set that env
-var to the plan's allowance so the projection is meaningful. Two caveats when
-reading it: it counts bytes *authorized*, not completed, and with a CDN in front
-it counts client downloads rather than origin egress.
+`PANTRY_EGRESS_BUDGET_TB` allowance, package byte rankings, observed dates, and a
+month-end projection from the observed period. Set that env var to the plan's
+allowance so the projection is meaningful. It counts GET bytes *authorized*, not
+completed, and with a CDN it counts client downloads rather than cache misses.
+Direct bucket reads, CI, and scanner traffic bypass it. History recorded before
+the HEAD correction can include probe bytes; never use it as an invoice meter.
 
 ### Cloudflare: R2 yes, free CDN in front of Hetzner no
 
@@ -369,8 +384,10 @@ content is hosted by a Cloudflare service such as R2. Multi-TB of tarballs
 proxied from a Hetzner bucket through the free CDN is exactly the restricted
 case — it works until someone notices.
 
-- **R2 is the sanctioned and cheapest path**: `$0` egress removes this bill
-  rather than shrinking it, and `STORAGE_PROVIDER=r2` is supported
+- **R2 is a supported path for large downloads**: `$0` egress removes the
+  transfer charge, but its higher storage price and billable operations mean
+  it is not automatically cheaper overall. Compare stored GB and actual
+  external egress first. `STORAGE_PROVIDER=r2` is supported
   (account-scoped endpoint via `R2_ACCOUNT_ID`, `auto` region, path-style
   addressing — virtual-host addressing 404s on R2).
 - **`S3_CDN_BASE_URL` is what makes any CDN work.** Set it to the public CDN

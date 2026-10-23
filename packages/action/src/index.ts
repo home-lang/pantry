@@ -27,6 +27,7 @@ import * as path from 'node:path'
 import * as process from 'node:process'
 import * as crypto from 'node:crypto'
 import * as cache from '@actions/cache'
+import { dependencyCacheKeys } from './dependency-cache-key'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as github from '@actions/github'
@@ -820,12 +821,9 @@ export async function run(): Promise<void> {
         core.warning(`Native artifact identity unavailable; installing without a dependency cache: ${error}`)
       }
     }
-    const cachePrefix = `pantry-v4-${resolvedVer}-${platform.os}-${platform.arch}-${artifactIdentity}-`
-    const cacheKey = `${cachePrefix}${lockHash}-${depsHash}-${cachePackages || 'all'}`
-    // Restore keys: try same OS/arch with any lock hash
-    const restoreKeys = [
-      cachePrefix,
-    ]
+    const { key: cacheKey, restoreKeys } = dependencyCacheKeys(
+      platform, artifactIdentity || 'unavailable', resolvedVer, lockHash, depsHash, cachePackages,
+    )
     let cacheHit = false
     // Whether `pantry install` ran in this step, and so may have re-pointed
     // system-package links that need re-asserting afterwards

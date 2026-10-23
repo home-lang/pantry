@@ -5,13 +5,14 @@ import { InMemoryAnalytics } from '../analytics'
 import { binaryAttestationKey } from '../binary-publishing'
 import { Registry } from '../registry'
 import { augmentMetadataWithPkgx } from '../pkgx-fallback'
-import { createHandler } from '../server'
+import { createHandler, getEgressLedger } from '../server'
 import { InMemoryZigStorage } from '../zig'
 
 // A separate process gives every scenario fresh production caches and storage
 // configuration. Only this fixture's S3 host is intercepted; no public storage,
 // package service, registry credential, or injected BinaryStorage is used.
 const scenario = process.argv[2]
+const method = process.argv[3] || 'GET'
 const domain = 'binary-availability.fixture.test'
 const key = `binaries/${domain}/1.0.0/linux-x86-64/${domain}-1.0.0.tar.gz`
 const digest = 'a'.repeat(64)
@@ -119,7 +120,7 @@ try {
   for (let attempt = 0; attempt < 2; attempt++) {
     // Exercise the public production route with its normal S3 client, including
     // both the active-record lookup and the independent scan attestation read.
-    const response = await handler(new Request(`http://registry.fixture.test/${path}`))
+    const response = await handler(new Request(`http://registry.fixture.test/${path}`, { method }))
     const body = await response.text()
     responses.push({
       status: response.status,
@@ -131,7 +132,7 @@ try {
       fallbackDownloads,
     })
   }
-  console.log(`AVAILABILITY_RESULT ${JSON.stringify({ responses, metadataReads, attestationReads, requests, unexpectedNetwork })}`)
+  console.log(`AVAILABILITY_RESULT ${JSON.stringify({ responses, metadataReads, attestationReads, requests, unexpectedNetwork, downloads: getEgressLedger().snapshot().monthDownloads })}`)
 }
 finally {
   globalThis.fetch = originalFetch

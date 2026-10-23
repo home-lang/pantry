@@ -55,11 +55,44 @@ describe('EgressLedger', () => {
     expect(ledger.snapshot().budgetUsedPercent).toBeNull()
   })
 
-  it('projects month-end from elapsed days, not elapsed time', () => {
+  it('projects month-end from the observed days, without assuming missing history was idle', () => {
     // 6 days in with 1.2 TB used ⇒ 0.2 TB/day ⇒ 6.2 TB across August's 31 days.
     const ledger = ledgerAt(() => AUG_6)
+    ledger.load({ days: [{ date: '2026-08-01', bytes: 0, downloads: 0 }] })
     ledger.record(1.2 * TB)
     expect(ledger.snapshot().projectedMonthBytes).toBe(6.2 * TB)
+  })
+
+  it('exposes partial-month coverage and projects from it', () => {
+    const ledger = ledgerAt(() => AUG_6)
+    ledger.record(100 * GB)
+    const snapshot = ledger.snapshot()
+    expect(snapshot.observedSince).toBe('2026-08-06')
+    expect(snapshot.observedDays).toBe(1)
+    expect(snapshot.projectedMonthBytes).toBe(3.1 * TB)
+  })
+
+  it('ranks and persists attributed package bytes without inventing historical attribution', () => {
+    const ledger = ledgerAt(() => AUG_6)
+    ledger.record(GB)
+    ledger.record(2 * GB, 'github.com/example/tool')
+    ledger.record(3 * GB, 'ziglang.org')
+    ledger.record(2 * GB, 'github.com/example/tool')
+    const restored = ledgerAt(() => AUG_6)
+    restored.load(ledger.toJSON())
+    expect(restored.snapshot().topPackages).toEqual([
+      { packageName: 'github.com/example/tool', bytes: 4 * GB, downloads: 2 },
+      { packageName: 'ziglang.org', bytes: 3 * GB, downloads: 1 },
+    ])
+    expect(restored.snapshot().monthBytes).toBe(8 * GB)
+  })
+
+  it('bounds package attribution while retaining all bytes', () => {
+    const ledger = ledgerAt(() => AUG_6)
+    for (let i = 0; i < 600; i++) ledger.record(GB, `package-${i}`)
+    expect(ledger.toJSON().days[0].packages?.length).toBeLessThanOrEqual(513)
+    expect(ledger.snapshot().monthBytes).toBe(600 * GB)
+    expect(ledger.snapshot().topPackages[0]).toEqual({ packageName: '(other)', bytes: 88 * GB, downloads: 88 })
   })
 
   it('ignores negative and non-finite sizes', () => {

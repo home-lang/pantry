@@ -96,9 +96,9 @@ const config: CloudConfig = {
 
       monitoring: {
         alerts: {
-          // The bucket's included traffic. This is host NIC bandwidth, which is
-          // a different (and much smaller) number than object-storage egress —
-          // see egressEndpoints below for the one that actually gets billed.
+          // Host NIC alert threshold, separate from the object-storage quota.
+          // egressEndpoints estimates registry-authorized artifact GETs;
+          // provider billing also includes direct bucket reads outside it.
           bandwidthTb: 5,
         },
         // Artifact downloads are a redirect to the bucket, so their bytes never

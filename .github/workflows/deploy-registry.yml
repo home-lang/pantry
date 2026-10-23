@@ -80,9 +80,10 @@ jobs:
           # variable to true and dispatch one final deployment.
           BINARY_SCAN_ATTESTATION: ${{ vars.PANTRY_REQUIRE_BINARY_SCAN_ATTESTATION || 'false' }}
           # Monthly object-storage allowance in decimal TB, matching how the
-          # provider quotes and bills it. Feeds /api/egress so month-to-date
-          # usage reads as a share of the allowance instead of a bare number.
-          EGRESS_BUDGET_TB: ${{ vars.PANTRY_EGRESS_BUDGET_TB || '5' }}
+          # provider quotes it. Hetzner Object Storage includes about 1 TB,
+          # separate from the host allowance; override for your actual plan.
+          # /api/egress estimates authorized GETs, not provider-billed traffic.
+          EGRESS_BUDGET_TB: ${{ vars.PANTRY_EGRESS_BUDGET_TB || '1' }}
           REHEARSE_SCANNER_OUTAGE: ${{ inputs.rehearse_scanner_outage || false }}
         run: |
           # Create the key file with a 0600 umask before writing so it is

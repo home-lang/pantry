@@ -1,19 +1,23 @@
 import type { BinaryStorage } from './server'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { InMemoryAnalytics } from './analytics'
 import { createLocalRegistry } from './registry'
-import { createServer } from './server'
+import { createServer, getEgressLedger } from './server'
 import { getAvailablePort } from './test-utils'
 import { S3RequestError } from './storage/aws-client'
 
 /** Binary storage stub so /binaries/... has something real to serve. */
 class MockBinaryStorage implements BinaryStorage {
   private files = new Map<string, Buffer>()
+  reads: string[] = []
+  createDownloadUrl?: (key: string) => string
 
   put(key: string, data: Buffer | string): void {
     this.files.set(key, typeof data === 'string' ? Buffer.from(data) : data)
   }
 
   async getObject(key: string): Promise<Buffer> {
+    this.reads.push(key)
     const data = this.files.get(key)
     if (!data) throw new S3RequestError('GET', 404, 'NoSuchKey')
     return data
@@ -27,11 +31,14 @@ const QUARANTINED_PLUS = '0.17.0-dev.1282+c0f9b51d8'
 describe('binary proxy HEAD', () => {
   let baseUrl: string
   let server: ReturnType<typeof createServer>
+  let binaries: MockBinaryStorage
+  let analytics: InMemoryAnalytics
 
   beforeEach(async () => {
     const port = await getAvailablePort()
     baseUrl = `http://localhost:${port}`
-    const binaries = new MockBinaryStorage()
+    binaries = new MockBinaryStorage()
+    analytics = new InMemoryAnalytics()
     binaries.put('binaries/curl.se/metadata.json', JSON.stringify({ name: 'curl.se', versions: {} }))
     // A Zig-style dev build: the object key holds a literal '+'.
     const tarball = `binaries/ziglang.org/${PLUS_VERSION}/linux-arm64/ziglang.org-${PLUS_VERSION}.tar.gz`
@@ -64,7 +71,7 @@ describe('binary proxy HEAD', () => {
       }],
     }))
     binaries.put(quarantined, 'evil')
-    server = createServer(createLocalRegistry(baseUrl), port, undefined, undefined, binaries)
+    server = createServer(createLocalRegistry(baseUrl), port, analytics, undefined, binaries)
     server.start()
   })
 
@@ -86,6 +93,43 @@ describe('binary proxy HEAD', () => {
   it('still reports a missing object on HEAD', async () => {
     const res = await fetch(`${baseUrl}/binaries/curl.se/does-not-exist/metadata.json`, { method: 'HEAD' })
     expect(res.status).toBe(404)
+  })
+
+  it('answers tarball probes without fetching bytes, recording downloads, or spending the byte budget', async () => {
+    const url = `${baseUrl}/binaries/ziglang.org/${PLUS_VERSION}/linux-arm64/ziglang.org-${PLUS_VERSION}.tar.gz`
+    const before = getEgressLedger().snapshot().monthDownloads
+    // More than the default hourly byte budget: even a HEAD of a large archive
+    // used to consume it, returning 429 without transferring any artifact bytes.
+    const manifestKey = 'binaries/ziglang.org/metadata.json'
+    const manifest = JSON.parse((await binaries.getObject(manifestKey)).toString())
+    manifest.versions[PLUS_VERSION].platforms['linux-arm64'].size = 30 * 1024 ** 3
+    binaries.put(manifestKey, JSON.stringify(manifest))
+    binaries.reads = []
+    const head = await fetch(url, { method: 'HEAD' })
+    expect(head.status).toBe(200)
+    expect(head.headers.get('content-length')).toBe(String(30 * 1024 ** 3))
+    expect(await head.text()).toBe('')
+    expect(binaries.reads).toEqual([manifestKey])
+    expect(getEgressLedger().snapshot().monthDownloads).toBe(before)
+    expect(await analytics.getPackageStats('ziglang.org')).toBeNull()
+
+    manifest.versions[PLUS_VERSION].platforms['linux-arm64'].size = 4
+    binaries.put(manifestKey, JSON.stringify(manifest))
+    expect((await fetch(url)).status).toBe(200)
+    expect(getEgressLedger().snapshot().monthDownloads).toBe(before + 1)
+  })
+
+  it('does not redirect HEAD to a URL signed for GET', async () => {
+    let signed = 0
+    binaries.createDownloadUrl = key => { signed++; return `https://objects.example/${key}?signature=get-only` }
+    const url = `${baseUrl}/binaries/ziglang.org/${PLUS_VERSION}/linux-arm64/ziglang.org-${PLUS_VERSION}.tar.gz`
+    const head = await fetch(url, { method: 'HEAD', redirect: 'manual' })
+    expect(head.status).toBe(200)
+    expect(head.headers.get('location')).toBeNull()
+    expect(head.headers.get('content-length')).toBe('4')
+    expect(signed).toBe(0)
+    expect((await fetch(url, { redirect: 'manual' })).status).toBe(302)
+    expect(signed).toBe(1)
   })
 
   it('rejects methods that are neither GET nor HEAD', async () => {

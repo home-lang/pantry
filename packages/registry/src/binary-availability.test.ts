@@ -7,14 +7,16 @@ interface Result {
   attestationReads: number
   requests: string[]
   unexpectedNetwork: string[]
+  downloads: number
 }
 
-function observe(scenario: string): Result {
+function observe(scenario: string, method = 'GET'): Result {
   const child = Bun.spawnSync([
     process.execPath,
     '--no-env-file',
     fileURLToPath(new URL('./__fixtures__/binary-availability.ts', import.meta.url)),
     scenario,
+    method,
   ], {
     timeout: 4000,
     env: {
@@ -41,6 +43,27 @@ function observe(scenario: string): Result {
 }
 
 describe('binary storage availability through the production HTTP route', () => {
+  it('serves HEAD locally with clean evidence and no archive download', () => {
+    const result = observe('attestation-clean', 'HEAD')
+    expect(result.responses.map(response => [response.status, response.location])).toEqual([[200, null], [200, null]])
+    expect(result.requests.every(key => !key.endsWith('.tar.gz'))).toBe(true)
+    expect(result.attestationReads).toBe(1)
+    expect(result.downloads).toBe(0)
+  })
+
+  it('keeps HEAD behind the independent attestation gate', () => {
+    const result = observe('attestation-missing', 'HEAD')
+    expect(result.responses.map(response => response.status)).toEqual([503, 503])
+    expect(result.downloads).toBe(0)
+  })
+
+  it('does not materialize pending artifacts for HEAD', () => {
+    const result = observe('pending-head-503', 'HEAD')
+    expect(result.responses.map(response => response.status)).toEqual([404, 404])
+    expect(result.responses.every(response => response.fallbackDownloads === 0 && response.storageHeads === 0)).toBe(true)
+    expect(result.downloads).toBe(0)
+  })
+
   it.each(['pending-head-503', 'pending-head-denied'])('%s refuses fallback until storage confirms absence', (scenario) => {
     const result = observe(scenario)
     expect(result.responses[0]).toMatchObject({ status: 503, code: 'BINARY_STORAGE_UNAVAILABLE', cacheControl: 'no-store', storageHeads: 1, fallbackDownloads: 0 })
