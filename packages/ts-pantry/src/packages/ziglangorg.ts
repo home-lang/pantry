@@ -3,7 +3,7 @@
  *
  * @domain `ziglang.org`
  * @programs `zig`
- * @version `0.18.0-dev.470+6817928c3` (130 versions available)
+ * @version `0.18.0-dev.543+fa4f5b262` (131 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install ziglang.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "zig"
  * console.log(pkg.description) // "General-purpose programming language and toolch..."
  * console.log(pkg.programs)    // ["zig"]
- * console.log(pkg.versions[0]) // "0.18.0-dev.470+6817928c3" (latest)
+ * console.log(pkg.versions[0]) // "0.18.0-dev.543+fa4f5b262" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/ziglang-org.md
@@ -69,6 +69,7 @@ export const ziglangorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.18.0-dev.543+fa4f5b262',
     '0.18.0-dev.470+6817928c3',
     '0.18.0-dev.367+187d0bf9e',
     '0.18.0-dev.362+705a6b4ef',

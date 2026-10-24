@@ -3,7 +3,7 @@
  *
  * @domain `github.com/tw93/mole`
  * @programs `mole`, `mo`
- * @version `1.62.0` (72 versions available)
+ * @version `1.63.0` (73 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/tw93/mole`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "mole"
  * console.log(pkg.description) // "Deep clean and optimize your Mac"
  * console.log(pkg.programs)    // ["mole", "mo"]
- * console.log(pkg.versions[0]) // "1.62.0" (latest)
+ * console.log(pkg.versions[0]) // "1.63.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/tw93/mole.md
@@ -66,6 +66,7 @@ export const molePackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.63.0',
     '1.62.0',
     '1.61.0',
     '1.60.0',
