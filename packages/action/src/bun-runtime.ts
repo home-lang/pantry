@@ -18,8 +18,9 @@ export interface BunRuntimeSetup {
  * warning reported a successful setup and deferred the failure to whatever
  * step next ran `bun`, as an unrelated `bun: command not found` (#234).
  *
- * Linking `bunx` stays best-effort: it is a convenience alias, and the
- * runtime itself is already in place by the time it is attempted.
+ * Pantry owns the activation of both programs. In particular, `bun` can be
+ * a launcher that restores its provider environment. Linking `bunx` to that
+ * launcher loses its executor arguments and runs `bun <package>` instead.
  */
 export async function setupBunRuntime({ install, binDir, onLinked }: BunRuntimeSetup): Promise<void> {
   try {
@@ -33,12 +34,5 @@ export async function setupBunRuntime({ install, binDir, onLinked }: BunRuntimeS
   const bunPath = path.join(binDir, 'bun')
   if (!fs.existsSync(bunPath)) return
 
-  const bunxPath = path.join(binDir, 'bunx')
-  try { fs.unlinkSync(bunxPath) }
-  catch { /* doesn't exist */ }
-  try {
-    fs.symlinkSync(bunPath, bunxPath)
-  }
-  catch { /* bunx is an alias; bun itself is installed */ }
   onLinked?.()
 }

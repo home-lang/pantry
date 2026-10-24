@@ -1022,18 +1022,10 @@ export async function run(): Promise<void> {
       catch { /* zig not installed */ }
     }
 
-    // ── Ensure bun symlinks ──
+    // Pantry activates bun and bunx separately; retain their executor arguments.
     const bunPath = path.join(pantryBinDir, 'bun')
-    const bunxPath = path.join(pantryBinDir, 'bunx')
-    try {
-      if (fs.existsSync(bunPath)) {
-        // Remove stale symlink before creating to avoid EEXIST race
-        try { fs.unlinkSync(bunxPath) } catch { /* doesn't exist */ }
-        fs.symlinkSync(bunPath, bunxPath)
-        core.exportVariable('BUN_INSTALL', pantryDir)
-      }
-    }
-    catch { /* bun not in deps */ }
+    if (fs.existsSync(bunPath))
+      core.exportVariable('BUN_INSTALL', pantryDir)
 
     // Launch only after Pantry has installed the complete service dependency
     // graph and all executable-link reconciliation has finished.

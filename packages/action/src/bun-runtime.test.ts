@@ -30,29 +30,35 @@ describe('setup-only (install: false) Bun runtime', () => {
     expect(fs.existsSync(path.join(binDir, 'bunx'))).toBe(false)
   })
 
-  test('a successful install links bunx and exports the runtime', async () => {
+  test('a successful install preserves the provider bunx activation and exports the runtime', async () => {
     const binDir = tempBinDir()
     let linked = false
     await setupBunRuntime({
       binDir,
       install: async () => {
         fs.writeFileSync(path.join(binDir, 'bun'), '#!/bin/sh\n', { mode: 0o755 })
+        fs.writeFileSync(path.join(binDir, 'bunx'), '#!/bin/sh\nexec "$(dirname "$0")/bun" x "$@"\n', { mode: 0o755 })
       },
       onLinked: () => { linked = true },
     })
     expect(linked).toBe(true)
-    expect(fs.readlinkSync(path.join(binDir, 'bunx'))).toBe(path.join(binDir, 'bun'))
+    expect(fs.lstatSync(path.join(binDir, 'bunx')).isSymbolicLink()).toBe(false)
+    expect(fs.readFileSync(path.join(binDir, 'bunx'), 'utf8')).toContain('/bun" x "$@"')
   })
 
-  test('a stale bunx link is replaced rather than failing setup', async () => {
+  test.skipIf(process.platform === 'win32')('executor arguments survive a primary runtime launcher', async () => {
     const binDir = tempBinDir()
-    fs.symlinkSync('/nonexistent/bun', path.join(binDir, 'bunx'))
+    const activation = '#!/bin/sh\nexec "$(dirname "$0")/bun" x "$@"\n'
     await setupBunRuntime({
       binDir,
       install: async () => {
-        fs.writeFileSync(path.join(binDir, 'bun'), '#!/bin/sh\n', { mode: 0o755 })
+        fs.writeFileSync(path.join(binDir, 'bun'), '#!/bin/sh\nprintf "%s\\n" "$@"\n', { mode: 0o755 })
+        fs.writeFileSync(path.join(binDir, 'bunx'), activation, { mode: 0o755 })
       },
     })
-    expect(fs.readlinkSync(path.join(binDir, 'bunx'))).toBe(path.join(binDir, 'bun'))
+    const result = Bun.spawnSync([path.join(binDir, 'bunx'), '--bun', '@stacksjs/buddy@0.75.283', '--version'])
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout.toString().trim().split('\n')).toEqual(['x', '--bun', '@stacksjs/buddy@0.75.283', '--version'])
+    expect(fs.readFileSync(path.join(binDir, 'bunx'), 'utf8')).toBe(activation)
   })
 })
