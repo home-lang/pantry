@@ -144,8 +144,9 @@ jobs:
 
             git config --global --add safe.directory "$REPO_PATH"
             git checkout -- bun.lock 2>/dev/null || true
-            git fetch origin main
-            git reset --hard origin/main
+            # CI approved this commit; main may move while its checks run.
+            git fetch --no-tags origin "$EXPECTED_SHA"
+            git reset --hard "$EXPECTED_SHA"
             DEPLOYED_SHA=$(git rev-parse HEAD)
             if [ "$DEPLOYED_SHA" != "$EXPECTED_SHA" ]; then
               echo "Expected commit $EXPECTED_SHA but checkout is $DEPLOYED_SHA" >&2
