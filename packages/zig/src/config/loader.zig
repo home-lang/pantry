@@ -48,42 +48,7 @@ pub const pantryConfigLoader = struct {
             const json_content = try self.executeTsConfig(ts_config_path);
             defer self.allocator.free(json_content);
 
-            // Parse JSON into a Value
-            const parsed = try std.json.parseFromSlice(
-                std.json.Value,
-                self.allocator,
-                json_content,
-                .{},
-            );
-
-            // Merge with defaults if provided
-            const final_config = if (options.defaults) |defaults| blk: {
-                defer parsed.deinit();
-                const merged = try zig_config.deepMerge(
-                    self.allocator,
-                    defaults,
-                    parsed.value,
-                    .{ .strategy = options.merge_strategy },
-                );
-                break :blk merged;
-            } else parsed.value;
-
-            // Create ConfigResult
-            var sources = try self.allocator.alloc(zig_config.SourceInfo, 1);
-            sources[0] = zig_config.SourceInfo{
-                .source = .typescript,
-                .path = try self.allocator.dupe(u8, ts_config_path),
-                .priority = 1,
-            };
-
-            return zig_config.UntypedConfigResult{
-                .config = final_config,
-                .source = .typescript,
-                .sources = sources,
-                .loaded_at = @intCast(io_helper.clockGettime().sec * 1000),
-                .allocator = self.allocator,
-                .parsed_json = if (options.defaults == null) parsed else null,
-            };
+            return try self.parseTypeScriptConfig(json_content, ts_config_path, options);
         }
 
         // Fall back to standard zig-config loading
@@ -99,6 +64,55 @@ pub const pantryConfigLoader = struct {
         };
 
         return try self.zig_config_loader.load(zig_config_options);
+    }
+
+    /// Parse the TypeScript runtime output into the shared result contract.
+    fn parseTypeScriptConfig(
+        self: *pantryConfigLoader,
+        json_content: []const u8,
+        ts_config_path: []const u8,
+        options: LoadOptions,
+    ) !zig_config.UntypedConfigResult {
+        // Parse JSON into a Value
+        const parsed = try std.json.parseFromSlice(
+            std.json.Value,
+            self.allocator,
+            json_content,
+            .{},
+        );
+        defer parsed.deinit();
+
+        // Merge with defaults if provided
+        const final_config = if (options.defaults) |defaults| blk: {
+            const merged = try zig_config.deepMerge(
+                self.allocator,
+                defaults,
+                parsed.value,
+                .{ .strategy = options.merge_strategy },
+            );
+            break :blk merged;
+        } else try zig_config.cloneJsonValue(self.allocator, parsed.value);
+        // UntypedConfigResult destroys its config as independently owned data.
+        // Parsed JSON belongs to its arena and may also borrow runtime stdout.
+        errdefer zig_config.utils.freeJsonValue(self.allocator, final_config);
+
+        // Create ConfigResult
+        var sources = try self.allocator.alloc(zig_config.SourceInfo, 1);
+        errdefer self.allocator.free(sources);
+        sources[0] = zig_config.SourceInfo{
+            .source = .typescript,
+            .path = try self.allocator.dupe(u8, ts_config_path),
+            .priority = 1,
+        };
+
+        return zig_config.UntypedConfigResult{
+            .config = final_config,
+            .source = .typescript,
+            .sources = sources,
+            .loaded_at = @intCast(io_helper.clockGettime().sec * 1000),
+            .allocator = self.allocator,
+            .parsed_json = null,
+        };
     }
 
     /// Execute TypeScript config file using Bun or Node.js
@@ -274,10 +288,33 @@ test "pantryConfigLoader initialization" {
     try std.testing.expect(loader.allocator.ptr == allocator.ptr);
 }
 
-// NOTE: TypeScript config parsing test disabled because it requires Bun/Node.js runtime
-// The functionality works in practice - it executes .config.ts files using Bun or Node.js
-// and parses the resulting JSON output.
-//
-// test "pantryConfigLoader parses TypeScript config" {
-//     // Test would require Bun or Node.js to be installed in test environment
-// }
+test "TypeScript config owns nested strings and arrays through destruction" {
+    const allocator = std.testing.allocator;
+    var loader = try pantryConfigLoader.init(allocator);
+    var result = blk: {
+        const json = try allocator.dupe(u8, "{\"services\":{\"postDatabaseSetup\":[\"exit 37\"]},\"label\":\"owned value\"}");
+        defer allocator.free(json);
+        break :blk try loader.parseTypeScriptConfig(json, "pantry.config.ts", .{ .name = "pantry" });
+    };
+    defer result.deinit();
+    try std.testing.expectEqualStrings("owned value", result.config.object.get("label").?.string);
+    const hooks = result.config.object.get("services").?.object.get("postDatabaseSetup").?.array.items;
+    try std.testing.expectEqualStrings("exit 37", hooks[0].string);
+}
+
+test "TypeScript config owns merged defaults after runtime output is released" {
+    const allocator = std.testing.allocator;
+    var loader = try pantryConfigLoader.init(allocator);
+    const defaults = try std.json.parseFromSlice(std.json.Value, allocator, "{\"enabled\":true,\"label\":\"default\"}", .{});
+    defer defaults.deinit();
+    var result = blk: {
+        const json = try allocator.dupe(u8, "{\"label\":\"override\",\"items\":[\"one\",\"two\"]}");
+        defer allocator.free(json);
+        break :blk try loader.parseTypeScriptConfig(json, "pantry.config.ts", .{ .name = "pantry", .defaults = defaults.value });
+    };
+    defer result.deinit();
+    try std.testing.expect(result.config.object.get("enabled").?.bool);
+    try std.testing.expectEqualStrings("override", result.config.object.get("label").?.string);
+    try std.testing.expectEqualStrings("two", result.config.object.get("items").?.array.items[1].string);
+    try std.testing.expectEqualStrings("default", defaults.value.object.get("label").?.string);
+}
