@@ -1,3 +1,19 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.123...v0.11.124)
+
+## 🐛 Bug Fixes
+
+- **config**: own TypeScript values outside the parser arena ([bff2ee6](https://github.com/pantry-pm/pantry/commit/bff2ee6)) _(by Chris <chris@stacksjs.com>)_
+- **install**: propagate required project setup failures ([4ef4b99](https://github.com/pantry-pm/pantry/commit/4ef4b99)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.124 ([8d9fecf](https://github.com/pantry-pm/pantry/commit/8d9fecf)) _(by Chris <chris@stacksjs.com>)_
+- update alttab.app, cli.github.com, coder.com, coder.com/code-server, codex.openai.com, flutter.dev, fly.io, github.com/chainguard-dev/apko, mongodb.com/shell, wait4x.dev ([b583035](https://github.com/pantry-pm/pantry/commit/b583035)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.122...v0.11.123)
 
 ## 🐛 Bug Fixes
