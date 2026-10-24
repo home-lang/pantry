@@ -120,7 +120,7 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
         .auto_link = pantry_config.install.auto_link,
         .link_search_paths = pantry_config.install.link_search_paths,
     };
-    const result = try lib.commands.installCommandWithOptions(allocator, packages.items, install_options);
+    var result = try lib.commands.installCommandWithOptions(allocator, packages.items, install_options);
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
@@ -143,11 +143,9 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     // it exists, and postSetup is guarded by a per-project marker so it never
     // re-seeds. `--force` re-runs postSetup.
     if (lib.commands.shouldRunProjectPostInstall(result.exit_code, packages.items.len, dry_run, ignore_scripts)) {
-        if (lib.shell.ShellCommands.init(allocator)) |sc_val| {
-            var sc = sc_val;
-            defer sc.deinit();
-            sc.runProjectPostInstall(cwd_buf, force);
-        } else |_| {}
+        var sc = try lib.shell.ShellCommands.init(allocator);
+        defer sc.deinit();
+        try sc.runProjectPostInstall(cwd_buf, force);
     }
 
     std.process.exit(result.exit_code);

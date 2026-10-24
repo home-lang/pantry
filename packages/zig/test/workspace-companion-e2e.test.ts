@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -9,6 +9,62 @@ const binary = process.env.PANTRY_SOURCE_CLI
 // The normal unit pass runs before the CLI is built. CI invokes this suite
 // again with the source binary, and verifies its exact commit before testing.
 describe.skipIf(!binary)('source CLI companion workspace lifecycle', () => {
+  it('reports required project setup failures and retries only incomplete setup', () => {
+    const configurations = [
+      { services: { postDatabaseSetup: ['exit 37', 'printf unexpected > after-hook.txt'] } },
+      { postSetup: { commands: [{ command: 'exit 37', required: true }, { command: 'printf unexpected > after-hook.txt' }] } },
+      { postSetup: { commands: [{ command: 'exit 37' }, { command: 'printf unexpected > after-hook.txt' }] } },
+    ]
+    for (const config of configurations) {
+      const root = mkdtempSync(join(tmpdir(), 'pantry-required-setup-'))
+      try {
+        mkdirSync(join(root, 'pantry/.bin'), { recursive: true })
+        symlinkSync(process.execPath, join(root, 'pantry/.bin/bun'))
+        writeFileSync(join(root, 'package.json'), '{"name":"required-setup","private":true}')
+        writeFileSync(join(root, 'deps.yaml'), 'dependencies: {}\n')
+        const configPath = join(root, 'pantry.config.ts')
+        writeFileSync(configPath, `export default ${JSON.stringify(config)}\n`)
+        const run = (args = ['install']) => {
+          const result = spawnSync(binary!, args, { cwd: root, encoding: 'utf8', timeout: 15_000 })
+          if (result.error) throw result.error
+          return result
+        }
+        const failed = run()
+        expect(failed.stdout + failed.stderr).toContain('failed (exit 37)')
+        expect(failed.status).not.toBe(0)
+        expect(existsSync(join(root, 'after-hook.txt'))).toBe(false)
+        expect(existsSync(join(root, 'pantry/.postsetup-done'))).toBe(false)
+
+        writeFileSync(configPath, 'export default { services: { postDatabaseSetup: ["printf repaired > after-hook.txt"] } }\n')
+        expect(run().status).toBe(0)
+        expect(readFileSync(join(root, 'after-hook.txt'), 'utf8')).toBe('repaired')
+        expect(existsSync(join(root, 'pantry/.postsetup-done'))).toBe(true)
+        writeFileSync(configPath, `export default ${JSON.stringify(config)}\n`)
+        expect(run().status).toBe(0)
+        expect(run(['install', '--force']).status).not.toBe(0)
+        expect(existsSync(join(root, 'pantry/.postsetup-done'))).toBe(false)
+      }
+      finally { rmSync(root, { recursive: true, force: true }) }
+    }
+  }, 30_000)
+
+  it('keeps explicitly optional project setup failures nonfatal', () => {
+    const root = mkdtempSync(join(tmpdir(), 'pantry-optional-setup-'))
+    try {
+      mkdirSync(join(root, 'pantry/.bin'), { recursive: true })
+      symlinkSync(process.execPath, join(root, 'pantry/.bin/bun'))
+      writeFileSync(join(root, 'package.json'), '{"name":"optional-setup","private":true}')
+      writeFileSync(join(root, 'deps.yaml'), 'dependencies: {}\n')
+      writeFileSync(join(root, 'pantry.config.ts'), 'export default { postSetup: { commands: [{ command: "exit 29", required: false }, { command: "printf continued > after-hook.txt" }] } }\n')
+      const result = spawnSync(binary!, ['install'], { cwd: root, encoding: 'utf8', timeout: 15_000 })
+      if (result.error) throw result.error
+      expect(result.status).toBe(0)
+      expect(readFileSync(join(root, 'after-hook.txt'), 'utf8')).toBe('continued')
+      expect(existsSync(join(root, 'pantry/.postsetup-done'))).toBe(true)
+    }
+    finally { rmSync(root, { recursive: true, force: true }) }
+  })
+
   it('bootstraps a companion Bun before completing a fresh JS workspace', () => {
     const root = mkdtempSync(join(tmpdir(), 'pantry-companion-bootstrap-'))
     try {

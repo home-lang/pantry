@@ -292,7 +292,9 @@ pub const ShellCommands = struct {
 
             // Bring the project online: start autoStart services, wait for them,
             // auto-create the app database, and run one-time postSetup.
-            self.postInstallSteps(project_root, false);
+            // Shell activation remains best-effort. An explicit install uses
+            // runProjectPostInstall and reports required setup failures.
+            self.postInstallSteps(project_root, false) catch {};
         } else if (env_exists and dep_file != null) {
             // Environment exists but dep file may have changed
             // Check if we need to update (only when cache was invalidated)
@@ -962,22 +964,22 @@ pub const ShellCommands = struct {
     /// same work `shell:activate` does after a cache-miss install, exposed so a
     /// plain `pantry install` (what the shell integration runs on `cd`) yields a
     /// ready-to-use project — services started and database seeded — instead of
-    /// just installed binaries. Best-effort and fully idempotent.
-    pub fn runProjectPostInstall(self: *ShellCommands, pwd: []const u8, force: bool) void {
-        const project_root = (self.detectProjectRoot(pwd) catch null) orelse return;
+    /// just installed binaries. Required setup failures reach the install CLI.
+    pub fn runProjectPostInstall(self: *ShellCommands, pwd: []const u8, force: bool) !void {
+        const project_root = (try self.detectProjectRoot(pwd)) orelse return;
         defer self.allocator.free(project_root);
-        self.postInstallSteps(project_root, force);
+        try self.postInstallSteps(project_root, force);
     }
 
     /// The post-install sequence, given an already-resolved project root: start
     /// the `autoStart` services, wait for them to come up, auto-create the app
-    /// database, and run one-time postSetup. Each step is independently
-    /// fault-tolerant so a failure in one never blocks the rest.
-    fn postInstallSteps(self: *ShellCommands, project_root: []const u8, force: bool) void {
+    /// database, and run one-time postSetup. Optional service discovery remains
+    /// best-effort; a required project command must fail an explicit install.
+    fn postInstallSteps(self: *ShellCommands, project_root: []const u8, force: bool) !void {
         self.autoStartServices(project_root) catch {};
         self.waitForServices(project_root) catch {};
         self.autoCreateDatabase(project_root) catch {};
-        self.executePostSetupCommands(project_root, force) catch {};
+        try self.executePostSetupCommands(project_root, force);
     }
 
     /// Auto-start services configured in pantry.json or deps.yaml
@@ -2419,6 +2421,13 @@ pub const ShellCommands = struct {
             if (io_helper.accessAbsolute(marker_path, .{})) |_| {
                 return; // already completed for this project
             } else |_| {}
+        } else {
+            // A forced run re-arms setup. Its old success marker must not
+            // suppress the next install if a required command now fails.
+            io_helper.deleteFile(marker_path) catch |err| switch (err) {
+                error.FileNotFound => {},
+                else => return err,
+            };
         }
 
         try self.runPostSetupCommandsInner(project_root);
