@@ -65,7 +65,7 @@
     "packages/*"
   ],
   "dependencies": {
-    "@cwcss/crosswind": "^0.2.16",
+    "@cwcss/crosswind": "^0.2.19",
     "@stacksjs/stx": "^0.2.192",
     "@stacksjs/ts-cloud": "^0.16.68"
   }

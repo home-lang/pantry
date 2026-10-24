@@ -12,9 +12,9 @@
     "lookup": "bun run lookup.ts"
   },
   "dependencies": {
-    "@stacksjs/ts-cloud": "^0.7.26"
+    "@stacksjs/ts-cloud": "^0.16.68"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "bun-types": "latest1.4.4"
   }
 }

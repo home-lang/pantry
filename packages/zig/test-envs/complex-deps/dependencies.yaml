@@ -4,9 +4,9 @@ dependencies:
   python.org: 3.11.9
 
   # CLI tools that should work reliably
-  stedolan.github.io/jq: ^1.7.0
-  curl.se: ^8.5.0
+  stedolan.github.io/jq: ^1.8.1
+  curl.se: ^8.17.0
   gnu.org/wget: ^1.25.0
 
   # Build tools
-  cmake.org: ^3.28.0
+  cmake.org: ^3.31.12

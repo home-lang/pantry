@@ -1,6 +1,6 @@
 dependencies:
   # Test packages for deeply nested environment
-  zlib.net: 1.2
+  zlib.net: 1.3.2
   curl.se: ^8.5.0
 
   # This should create a unique environment hash

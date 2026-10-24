@@ -42,16 +42,16 @@
     "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
-    "@stacksjs/stx": "^0.2.82",
-    "@ts-charts/array": "^0.2.0",
-    "@ts-charts/format": "^0.2.0",
-    "@ts-charts/path": "^0.2.0",
-    "@ts-charts/scale": "^0.2.0",
-    "@ts-charts/shape": "^0.2.0",
-    "tar-stream": "^3.2.0"
+    "@stacksjs/stx": "^0.2.686",
+    "@ts-charts/array": "^0.2.7",
+    "@ts-charts/format": "^0.2.7",
+    "@ts-charts/path": "^0.2.7",
+    "@ts-charts/scale": "^0.2.7",
+    "@ts-charts/shape": "^0.2.7",
+    "tar-stream": "^3.2.2"
   },
   "devDependencies": {
-    "@types/tar-stream": "^3.1.4",
+    "@types/tar-stream": "^3.1.5",
     "bun-types": "latest",
     "typescript": "^7.0.2"
   }
