@@ -1,3 +1,17 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.124...v0.11.125)
+
+## 🐛 Bug Fixes
+
+- **registry**: own native Zig compiler and upload caches ([d97b356](https://github.com/pantry-pm/pantry/commit/d97b356)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.125 ([4cda4ab](https://github.com/pantry-pm/pantry/commit/4cda4ab)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.123...v0.11.124)
 
 ## 🐛 Bug Fixes
