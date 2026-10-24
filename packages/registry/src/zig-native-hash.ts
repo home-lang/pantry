@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { isAbsolute, join, resolve } from 'node:path'
 
@@ -17,9 +17,9 @@ export class ZigPackageHashError extends Error {
   constructor(message: string, readonly status: 422 | 503) { super(message) }
 }
 
-async function execute(zig: string, args: string[], cwd: string): Promise<string> {
+async function execute(zig: string, args: string[], cwd: string, cache: string): Promise<string> {
   let child: Bun.Subprocess<'ignore', 'pipe', 'pipe'>
-  try { child = Bun.spawn([zig, ...args], { cwd, stdin: 'ignore', stdout: 'pipe', stderr: 'pipe' }) }
+  try { child = Bun.spawn([zig, ...args], { cwd, env: { ...process.env, ZIG_GLOBAL_CACHE_DIR: cache }, stdin: 'ignore', stdout: 'pipe', stderr: 'pipe' }) }
   catch { throw new ZigPackageHashError('The declared native Zig executable is unavailable', 503) }
   let timedOut = false
   const timer = setTimeout(() => {
@@ -62,13 +62,19 @@ async function execute(zig: string, args: string[], cwd: string): Promise<string
 export async function computeZigHash(data: ArrayBuffer | Buffer): Promise<string> {
   const zig = process.env.PANTRY_ZIG_BIN || managedRegistryZig() || Bun.which('zig')
   if (!zig) throw new ZigPackageHashError(`The registry requires managed Zig ${registryZigVersion} for package hashing`, 503)
+  // Keep the compiler's reusable manifest tooling in a managed service cache.
+  // A service need not have a user home, and cold compiler work is expensive.
+  const cache = process.env.PANTRY_ZIG_CACHE_DIR || resolve(import.meta.dir, '..', 'pantry', 'zig-cache')
+  if (!isAbsolute(cache)) throw new ZigPackageHashError('PANTRY_ZIG_CACHE_DIR must be an absolute path', 503)
+  await mkdir(cache, { recursive: true, mode: 0o700 })
   const directory = await mkdtemp(join(tmpdir(), 'pantry-zig-hash-'))
   try {
-    if (await execute(zig, ['version'], directory) !== registryZigVersion)
+    if (await execute(zig, ['version'], directory, cache) !== registryZigVersion)
       throw new ZigPackageHashError(`The registry requires managed Zig ${registryZigVersion} for package hashing`, 503)
     const archive = join(directory, 'package.tar.gz')
     await writeFile(archive, Buffer.isBuffer(data) ? data : Buffer.from(data))
-    const hash = await execute(zig, ['fetch', archive], directory)
+    // Untrusted package data belongs to this request, never the compiler cache.
+    const hash = await execute(zig, ['fetch', '--pkg-dir', join(directory, 'packages'), archive], directory, cache)
     if (!validateZigHash(hash)) throw new ZigPackageHashError('The native compiler returned an invalid package hash', 503)
     return hash
   }

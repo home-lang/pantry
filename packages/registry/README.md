@@ -158,6 +158,8 @@ Both the object-storage snapshot and DynamoDB metadata backends retain the
 archive digest across writes and fresh reads. Historical records that lack
 `artifactSha256` remain readable; their native hash is never substituted for it.
 
+The compiler cache defaults to `pantry/zig-cache` under the registry package. Set `PANTRY_ZIG_CACHE_DIR` to an absolute service-owned path to place it elsewhere. The maintained Linux service uses systemd to own `/var/cache/pantry-registry-zig` for its configured service user. Hashing does not require a user home. Each upload uses a separate temporary package directory that is removed after success or failure; reusable compiler tooling remains in the managed cache.
+
 **Publish a Zig package:**
 
 ```bash

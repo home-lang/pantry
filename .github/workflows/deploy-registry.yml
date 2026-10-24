@@ -326,6 +326,7 @@ jobs:
               fi
             }
             set_env PANTRY_ZIG_BIN "$(cat packages/registry/pantry/registry-zig-path)"
+            set_env PANTRY_ZIG_CACHE_DIR /var/cache/pantry-registry-zig
             set_env PANTRY_MALWARE_SCANNING required
             set_env PANTRY_REQUIRE_MALWARE_SCAN_ATTESTATION true
             set_env PANTRY_REQUIRE_BINARY_SCAN_ATTESTATION "$BINARY_SCAN_ATTESTATION"
@@ -364,6 +365,15 @@ jobs:
               set_env PANTRY_BINARY_STAGING_SECRET "$(openssl rand -hex 32)"
             fi
             chmod 600 "$ENV_FILE"
+
+            # systemd creates and owns the compiler cache for the configured
+            # service user, including legacy units without a user home.
+            install -d -m 0755 "/etc/systemd/system/${SERVICE}.service.d"
+            printf '%s\n' \
+              '[Service]' \
+              'CacheDirectory=pantry-registry-zig' \
+              'CacheDirectoryMode=0700' \
+              > "/etc/systemd/system/${SERVICE}.service.d/zig-cache.conf"
 
             # Ensure legacy units also consume the managed environment file.
             install -d -m 0755 "/etc/systemd/system/${SERVICE}.service.d"
