@@ -1,3 +1,18 @@
+[Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.125...v0.11.126)
+
+## 🐛 Bug Fixes
+
+- **deploy**: check out the exact approved registry commit ([e8926bb](https://github.com/pantry-pm/pantry/commit/e8926bb)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.11.126 ([f4f8be7](https://github.com/pantry-pm/pantry/commit/f4f8be7)) _(by Chris <chris@stacksjs.com>)_
+- update craft-native.org to 0.0.319 ([24f6499](https://github.com/pantry-pm/pantry/commit/24f6499)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/pantry-pm/pantry/compare/v0.11.124...v0.11.125)
 
 ## 🐛 Bug Fixes
