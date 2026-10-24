@@ -188,16 +188,16 @@ jobs:
           # --mirror-only: download pkgx prebuilts, skip on a miss, never compile
           #   (except custom builds on their native platform). Scheduled runs
           #   stay incremental; an explicit dispatch can repair exact artifacts.
-          EXTRA=()
-          if [ -n "$TARGET_PACKAGES" ]; then EXTRA+=(--package "$TARGET_PACKAGES"); fi
-          if [ "$REBUILD_EXISTING" = 'true' ]; then EXTRA+=(--force); fi
+          set --
+          if [ -n "$TARGET_PACKAGES" ]; then set -- "$@" --package "$TARGET_PACKAGES"; fi
+          if [ "$REBUILD_EXISTING" = 'true' ]; then set -- "$@" --force; fi
           bun scripts/build-all-packages.ts \
             -b "$S3_BUCKET" -r "$AWS_REGION" \
             --platform "${{ matrix.name }}" \
             --stripe "${{ matrix.stripe }}" \
             --mirror-only --multi-version \
             --max-versions "$MAXV" --popular-max-versions "$POPV" \
-            "${EXTRA[@]}" \
+            "$@" \
             --timing-json "$RUNNER_TEMP/timings.json"
 
       # Which packages cost the sweep its wall clock. The job summary carries
@@ -283,16 +283,16 @@ jobs:
           cd packages/ts-pantry
           MAXV="${{ github.event.inputs.max-versions || '5' }}"
           POPV="${{ github.event.inputs.popular-max-versions || '20' }}"
-          EXTRA=()
-          if [ -n "$TARGET_PACKAGES" ]; then EXTRA+=(--package "$TARGET_PACKAGES"); fi
-          if [ "$REBUILD_EXISTING" = 'true' ]; then EXTRA+=(--force); fi
+          set --
+          if [ -n "$TARGET_PACKAGES" ]; then set -- "$@" --package "$TARGET_PACKAGES"; fi
+          if [ "$REBUILD_EXISTING" = 'true' ]; then set -- "$@" --force; fi
           bun scripts/build-all-packages.ts \
             -b "$S3_BUCKET" -r "$AWS_REGION" \
             --platform "${{ matrix.name }}" \
             --stripe "${{ matrix.stripe }}" \
             --download-only --multi-version \
             --max-versions "$MAXV" --popular-max-versions "$POPV" \
-            "${EXTRA[@]}" \
+            "$@" \
             --timing-json "$RUNNER_TEMP/timings.json"
 
       - name: Upload timings
