@@ -2,7 +2,7 @@
   "name": "benchmark-small",
   "private": true,
   "dependencies": {
-    "lodash": "^4.17.21",
+    "lodash": "^4.18.1",
     "chalk": "^5.4.1",
     "commander": "^13.1.0"
   },
